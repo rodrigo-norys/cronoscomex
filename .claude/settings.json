@@ -56,6 +56,19 @@
           }
         ]
       }
+    ],
+
+    "ConfigChange": [
+      {
+        "matcher": "project_settings|skills",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "${CLAUDE_PROJECT_DIR}/.claude/hooks/conferir-alinhamento.sh",
+            "timeout": 10
+          }
+        ]
+      }
     ]
   }
 }
