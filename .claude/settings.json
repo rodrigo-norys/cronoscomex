@@ -14,13 +14,15 @@
       "Edit(/data/**)",
       "Bash(git add -f *)",
       "Bash(git add --force *)",
-      "Bash(git push *)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
       "Bash(curl *)",
       "Bash(wget *)"
     ],
 
     "ask": [
       "Bash(git add *)",
+      "Bash(git push *)",
       "Bash(npm install)",
       "Bash(npm ci)"
     ],
