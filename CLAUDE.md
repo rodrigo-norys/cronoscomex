@@ -109,20 +109,13 @@ Não re-derive isto; está medido.
 Próximo passo: **`H-12`** — indicadores de risco.
 As fases estão em `docs/07-plano-entrega.md`.
 
-`npm run verify` passa: lint, typecheck, **279 testes**, build. A cadeia de
-ingestão inteira foi validada contra o arquivo real: **649 linhas, 649
-aceitas, quarentena 0%** (RNF-24 admite até 2%), parse em 111–144 ms.
+A cadeia de ingestão foi validada contra o arquivo real, dentro do limite de
+quarentena de RNF-24. **Não transcreva número medido para cá** — a contagem de
+testes vem do Vitest, os totais vêm da rota, e cópia manual diverge.
 
-`GET /api/indicators` responde sobre o arquivo real: `total 649 ·
-desembaracados 480 · emAndamento 103 · fechadoAguardandoDraft 34 ·
-emDesembaraco 32`. A rota **nasce parcial** — devolve só os blocos já
-calculados, e cresce a cada história de `H-12` a `H-13`. Zerar campo não
-calculado o tornaria indistinguível de zero medido.
-
-Rankings medidos: `responsible` soma 649 com **`indefinido` em 484** (74,6%),
-que é a limitação estrutural de A-31/R-02 exposta em vez de escondida.
-`bazarShare` = **0,3547** — `BAZAR` são 210 processos, 5,7× o segundo colocado
-real (A-34, agora com número).
+`GET /api/indicators` **nasce parcial**: devolve só os blocos já calculados, e
+cresce a cada história de `H-12` a `H-13`. Zerar campo não calculado o tornaria
+indistinguível de zero medido.
 
 **`isOverdue(process, today)` é a regra única de atraso**, em
 `src/domain/indicators.ts`. IND-15, ALE-01 e o `overdueCount` do ranking de
@@ -132,12 +125,11 @@ agentes são apresentações dela — nunca reimplementar.
 `src/domain/date-window.ts` converte o instante corrente para o dia civil no
 fuso e o devolve **ancorado em UTC**, igual às datas da planilha. Daí para baixo
 nada mais sabe de fuso — por isso `isoWeekEnd` e `arrivingThisWeek` **não**
-recebem `tz`. Ver a nota de fuso em TD-03.
+recebem `tz`. Converter para `America/Sao_Paulo` empurraria toda data para o dia
+anterior. Ver a nota de fuso em TD-03.
 
-A recarga automática foi medida sobre cópia do arquivo real: alteração do
-arquivo → estado atualizado em **2092 ms no pior caso**, para um limite de 5 s
-(RNF-14). Arquivo corrompido leva a `degradado` **preservando as 649 linhas**
-da última leitura boa.
+A recarga automática atende ao limite de 5 s de RNF-14. Arquivo corrompido leva
+a `degradado` **preservando as linhas da última leitura boa**.
 
 O log estruturado grava em `data/logs/app-<AAAAMMDD>.jsonl`, com retenção de 30
 dias expurgada na partida. **RNF-33 é garantido pelo tipo:** `LogEntry` não tem
@@ -157,13 +149,6 @@ OneDrive não conseguiu mesclar) e expõe `externalLock`/`conflictFiles` em
 detectável** quem edita, nem edição em andamento no Excel Online — a coautoria
 trava no servidor do SharePoint, e consultar o Graph violaria RNF-31.
 
-Categorias medidas: 480 desembaraçados · 103 em andamento · 34 aguardando
-draft · 32 em desembaraço. A soma fecha com o total.
-
-**Datas são civis, sem fuso** (ancoradas em UTC). Converter para
-`America/Sao_Paulo` empurraria toda data para o dia anterior — ver a nota de
-fuso em TD-03.
-
 ### Pendências abertas
 
 Não bloqueiam a implementação. Fechar antes da entrega ao operador.
@@ -178,6 +163,35 @@ Ao fechar uma pendência, remova a linha.
 
 Ao concluir uma história, marque-a em `docs/06-backlog.md` e verifique se algum
 status de `docs/09-rastreabilidade.md` mudou.
+
+## Infraestrutura de agente
+
+**Versionamento.** Há repositório git, com remote **privado** em `origin`.
+Nunca commite direto na `main`: branch por história (`H-NN/<tipo>-<descrição>`)
+ou, fora de história, `<tipo>/<escopo>-<descrição>`. Merge sempre com `--no-ff`.
+Escopos: `domain`, `io`, `app`, `http`, `web`, `tools`, `config`, `docs`,
+`claude`, `repo`. Mensagem em pt-br, sem o tipo `test`.
+
+**Permissões** (`.claude/settings.json`). `git add`, `git push`, `npm install` e
+`npm ci` pedem confirmação. `curl`, `wget`, force-push e leitura ou escrita de
+`*.xlsx` e `*.jpeg` da raiz estão negados. O modo bypass está desabilitado.
+
+**Hooks** (`.claude/hooks/`). `guard-dados-sensiveis.sh` (`PreToolUse`) bloqueia
+`git add -A/-f`, redirecionamento para caminho protegido, `git diff --output=`,
+remoção recursiva em diretório versionado, e o perfilador gravando dentro do
+repositório — falha **fechado**, porque ali o dano é publicar dado de cliente.
+`conferir-alinhamento.sh` (`ConfigChange`) avisa quando existe skill ou hook que
+este arquivo não menciona — falha **aberto**, porque travar trabalho por
+documentação atrasada inverte a prioridade.
+
+**Skills** (`.claude/skills/`). `/fatia H-NN` abre a história com contrato e
+casos-limite embutidos · `/fechar-historia H-NN` roda o portão, percorre a
+*definition of done* e imprime a prova · `/sugerir-commits` monta os commits e
+decide a branch · `/sugerir-prs` fatia a entrega em PRs. As duas últimas exigem
+aprovação do plano **e** permissão para executar.
+
+**Ao acrescentar skill, hook ou regra de permissão, atualize este bloco.** O
+hook de alinhamento avisa; quem escreve é você.
 
 ## Comandos
 
