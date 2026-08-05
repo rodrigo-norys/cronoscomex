@@ -168,9 +168,13 @@ status de `docs/09-rastreabilidade.md` mudou.
 
 **Versionamento.** Há repositório git, com remote **privado** em `origin`.
 Nunca commite direto na `main`: branch por história (`H-NN/<tipo>-<descrição>`)
-ou, fora de história, `<tipo>/<escopo>-<descrição>`. Merge sempre com `--no-ff`.
-Escopos: `domain`, `io`, `app`, `http`, `web`, `tools`, `config`, `docs`,
-`claude`, `repo`. Mensagem em pt-br, sem o tipo `test`.
+ou, fora de história, `<tipo>/<escopo>-<descrição>`. Escopos: `domain`, `io`,
+`app`, `http`, `web`, `tools`, `config`, `docs`, `claude`, `repo`. Mensagem em
+pt-br, sem o tipo `test`.
+
+**O merge acontece no GitHub, não localmente.** `branch → commits → push da
+branch → PR → merge por lá`. Mesclar na `main` antes do push **mata o PR**: a
+branch chega ao GitHub já mesclada e não há o que revisar.
 
 **Permissões** (`.claude/settings.json`). `git add`, `git push`, `npm install` e
 `npm ci` pedem confirmação. `curl`, `wget`, force-push e leitura ou escrita de
