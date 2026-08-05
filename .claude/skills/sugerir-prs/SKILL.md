@@ -1,7 +1,6 @@
 ---
 name: sugerir-prs
 description: Propõe como fatiar o trabalho não mesclado do CronosComex em 1 ou mais Pull Requests (agrupados por preocupação, ordenados pela cadeia canônica, com uma branch sugerida por PR) E escreve título e corpo de cada um em seções markdown. Descrever um único PR é o caso N=1 desta skill. Use ao preparar ou abrir PR. Apresenta o plano e o corpo, aguarda aceite, e SÓ ENTÃO pede permissão para executar o passo para fora (push da branch + `gh pr create`) — nunca faz push nem abre PR sem aprovação do plano E permissão explícita.
-disable-model-invocation: true
 argument-hint: [branch-base]
 ---
 
@@ -14,9 +13,11 @@ Os **commits** locais são da `/sugerir-commits`; esta aqui cuida de abrir o PR.
 
 **Argumento opcional:** a branch base (padrão `main`).
 
-> **Por que esta skill é só invocável por você** (`disable-model-invocation: true`): push e PR
-> são irreversíveis na prática — o objeto de commit persiste no GitHub mesmo depois de um
-> force-push. O momento de publicar é decisão sua, não inferência de que o código "parece pronto".
+> **Esta skill publica.** Push e PR são irreversíveis na prática — o objeto de commit persiste no
+> GitHub mesmo depois de um force-push. Ela pode ser carregada automaticamente, mas o portão
+> duplo abaixo não é opcional: **planejar é livre, executar não**. Nenhum push ou `gh` roda sem
+> aceite do plano E permissão explícita, e ambos ainda passam pelo prompt de permissão da
+> ferramenta.
 
 ## Estado atual deste repositório — leia antes de tentar
 
