@@ -1,0 +1,118 @@
+{
+  "_origem": "Gerado por H-01 (tools/profile_workbook.py) sobre CONTROLE DOS EMBARQUE.xlsx, aba 2026, em 03/08/2026. Os valores de styleKey e fillId sao MEDIDOS, nao ilustrativos. Ver docs/perfilamento/RESULTADO.md secao 5.",
+
+  "version": 1,
+  "sheetName": "2026",
+  "anchorColumn": "A",
+  "styledColumns": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"],
+
+  "_comentario_anchorColumn": "Celula que carrega a cor da linha. Medido: 649 de 649 linhas com REF tem chave de estilo em A (P-05 confirmada).",
+  "_comentario_styledColumns": "Colunas alteradas quando a cor da linha muda (H-27). M a P sao excluidas: tem preenchimento proprio, independente da linha (achado A-44).",
+
+  "entries": [
+    {
+      "styleKey": "argb:FF00FF00",
+      "fillId": 2,
+      "label": "Verde (tom A)",
+      "rowsAtProfiling": 258,
+      "significado": "Processo desembaracado. NAO deriva nenhum campo: a cor jamais infere status. Comprovado em A-54: ha 66 linhas com STATUS vazio e apenas 1 linha branca.",
+      "responsible": "indefinido",
+      "customsChannel": "nenhum",
+      "importerOutsideRj": false
+    },
+    {
+      "styleKey": "argb:FF00FF0D",
+      "fillId": 12,
+      "label": "Verde (tom B)",
+      "rowsAtProfiling": 219,
+      "significado": "Mesmo significado do tom A. Tons distintos ocupam blocos contiguos (linhas 2-263 e 264-483), padrao de pintura em momentos diferentes. Unificados por decisao do usuario (achado A-48).",
+      "responsible": "indefinido",
+      "customsChannel": "nenhum",
+      "importerOutsideRj": false
+    },
+    {
+      "styleKey": "argb:FF5B9BD5",
+      "fillId": 8,
+      "label": "Azul",
+      "rowsAtProfiling": 120,
+      "significado": "Processos da Samira.",
+      "responsible": "samira",
+      "customsChannel": "nenhum",
+      "importerOutsideRj": false
+    },
+    {
+      "styleKey": "argb:FFA74F7B",
+      "fillId": 27,
+      "label": "Roxo (tom A)",
+      "rowsAtProfiling": 31,
+      "significado": "Processos do Hugo.",
+      "responsible": "hugo",
+      "customsChannel": "nenhum",
+      "importerOutsideRj": false
+    },
+    {
+      "styleKey": "argb:FFA64D79",
+      "fillId": 11,
+      "label": "Roxo (tom B)",
+      "rowsAtProfiling": 5,
+      "significado": "Mesmo significado do tom A. Unificado por decisao do usuario (achado A-48).",
+      "responsible": "hugo",
+      "customsChannel": "nenhum",
+      "importerOutsideRj": false
+    },
+    {
+      "styleKey": "argb:FFFFE599",
+      "fillId": 9,
+      "label": "Bege",
+      "rowsAtProfiling": 9,
+      "significado": "Processos da Samira pertencentes a outros clientes. Subcategoria de Samira (achado A-18): o filtro Responsavel=Samira seleciona samira E samira_outros_clientes.",
+      "responsible": "samira_outros_clientes",
+      "customsChannel": "nenhum",
+      "importerOutsideRj": false
+    },
+    {
+      "styleKey": "argb:FFFF0000",
+      "fillId": 7,
+      "label": "Vermelho",
+      "rowsAtProfiling": 5,
+      "significado": "Canal Vermelho. Unica fonte do campo customsChannel; texto em STATUS nao classifica (achado A-06).",
+      "responsible": "indefinido",
+      "customsChannel": "vermelho",
+      "importerOutsideRj": false
+    },
+    {
+      "styleKey": "argb:FFFFFF00",
+      "fillId": 10,
+      "label": "Amarelo forte",
+      "rowsAtProfiling": 1,
+      "significado": "Importador localizado fora do RJ. Decisao do usuario sobre o achado A-38: a unica linha amarela tem CANAL AMARELO no STATUS por coincidencia, nao por regra.",
+      "responsible": "indefinido",
+      "customsChannel": "nenhum",
+      "importerOutsideRj": true
+    },
+    {
+      "styleKey": "theme:0|tint:0.0000",
+      "fillId": 13,
+      "label": "Branco (do tema)",
+      "rowsAtProfiling": 1,
+      "significado": "Processo em desembaracamento, segundo a secao 3 da especificacao. NAO deriva nenhum campo. Medido: apenas 1 linha em 649, contra 66 com STATUS vazio (achado A-54).",
+      "responsible": "indefinido",
+      "customsChannel": "nenhum",
+      "importerOutsideRj": false
+    }
+  ],
+
+  "_dominios": {
+    "responsible": ["samira", "hugo", "samira_outros_clientes", "indefinido"],
+    "customsChannel": ["vermelho", "nenhum", "indefinido"],
+    "importerOutsideRj": [true, false]
+  },
+
+  "_regras": [
+    "LEITURA: a chave e derivada do fillId do cellXf da celula ancora. Varios styleId produzem a mesma chave (medido: FF00FF00 vem dos styleIds 199, 165 e 189, que diferem em borda). Isso e correto e desejado.",
+    "ESCRITA (H-27): trocar o styleId inteiro DESTRUIRIA borda e fonte da linha. A escrita troca apenas o fillId, preservando fontId, borderId e numFmtId do cellXf original. Ver achado A-49.",
+    "Chave ausente deste mapa: a linha ENTRA nos indicadores de volume com responsible e customsChannel em 'indefinido' e importerOutsideRj em null, e aparece na quarentena com motivo COR_NAO_MAPEADA. Nunca e descartada em silencio.",
+    "NAO ha tolerancia nem aproximacao por proximidade de cor. Os tons A e B sao entradas SEPARADAS que apontam para o mesmo significado - nao ha limiar de distancia. Ver ADR-0003.",
+    "Cobertura medida em 03/08/2026: as 9 entradas cobrem 649 de 649 linhas com REF preenchido (100%). Taxa de COR_NAO_MAPEADA esperada: 0%."
+  ]
+}

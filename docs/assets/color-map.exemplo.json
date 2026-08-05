@@ -1,0 +1,90 @@
+{
+  "_comentario": "ESQUELETO, NAO CONFIGURACAO PRONTA. Os valores de styleKey e styleId abaixo sao ILUSTRATIVOS. Os reais sao produzidos por H-01 (npm run profile), no campo styleKeys do relatorio de perfilamento. Copie este arquivo para config/color-map.json e substitua styleKey e styleId pelos valores medidos. Ver ADR-0003 e a tabela TD-05 em 03-modelo-dados.md.",
+
+  "version": 1,
+  "anchorColumn": "A",
+  "styledColumns": ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"],
+
+  "_comentario_anchorColumn": "Coluna cuja celula carrega a cor da linha. A foto 2 da planilha real prova que a cor NAO e uniforme: M, N e O tem preenchimento proprio (achado A-44).",
+  "_comentario_styledColumns": "Colunas alteradas quando a cor da linha muda, em H-27. M a P sao deliberadamente excluidas.",
+
+  "entries": [
+    {
+      "styleKey": "argb:FF0070C0",
+      "label": "Azul",
+      "significado": "Processos da Samira",
+      "responsible": "samira",
+      "customsChannel": "nenhum",
+      "importerOutsideRj": false,
+      "styleId": 12
+    },
+    {
+      "styleKey": "argb:FF7030A0",
+      "label": "Roxo",
+      "significado": "Processos do Hugo",
+      "responsible": "hugo",
+      "customsChannel": "nenhum",
+      "importerOutsideRj": false,
+      "styleId": 13
+    },
+    {
+      "styleKey": "argb:FFF5F0DC",
+      "label": "Bege",
+      "significado": "Processos da Samira pertencentes a outros clientes. Subcategoria de Samira (achado A-18): o filtro Responsavel=Samira seleciona samira E samira_outros_clientes.",
+      "responsible": "samira_outros_clientes",
+      "customsChannel": "nenhum",
+      "importerOutsideRj": false,
+      "styleId": 17
+    },
+    {
+      "styleKey": "argb:FFFF0000",
+      "label": "Vermelho",
+      "significado": "Canal Vermelho. Unica fonte do campo customsChannel; texto em STATUS nao classifica (achado A-06).",
+      "responsible": "indefinido",
+      "customsChannel": "vermelho",
+      "importerOutsideRj": false,
+      "styleId": 15
+    },
+    {
+      "styleKey": "argb:FFFFFF00",
+      "label": "Amarelo forte",
+      "significado": "Importador localizado fora do RJ. Decisao do usuario sobre o achado A-38: a linha amarela da foto 2 tem CANAL AMARELO no STATUS por coincidencia, nao por regra. Canal Amarelo nao e rastreavel de forma estruturada.",
+      "responsible": "indefinido",
+      "customsChannel": "nenhum",
+      "importerOutsideRj": true,
+      "styleId": 16
+    },
+    {
+      "styleKey": "argb:FF00B050",
+      "label": "Verde",
+      "significado": "Processo desembaracado. NAO deriva nenhum campo: a cor jamais infere status (achado A-04). Presente no mapa apenas para que a linha nao caia em quarentena.",
+      "responsible": "indefinido",
+      "customsChannel": "nenhum",
+      "importerOutsideRj": false,
+      "styleId": 14
+    },
+    {
+      "styleKey": "none",
+      "label": "Branco (sem preenchimento)",
+      "significado": "Processo em desembaracamento. NAO deriva nenhum campo: a foto 2 mostra linha branca com STATUS preenchido, refutando a coerencia afirmada em secao 3 da especificacao (achado A-04).",
+      "responsible": "indefinido",
+      "customsChannel": "nenhum",
+      "importerOutsideRj": false,
+      "styleId": 0
+    }
+  ],
+
+  "_dominios": {
+    "responsible": ["samira", "hugo", "samira_outros_clientes", "indefinido"],
+    "customsChannel": ["vermelho", "nenhum", "indefinido"],
+    "importerOutsideRj": [true, false]
+  },
+
+  "_regras": [
+    "Chave de estilo ausente deste mapa: a linha ENTRA nos indicadores de volume com responsible e customsChannel em 'indefinido' e importerOutsideRj em null, e aparece no relatorio de quarentena com motivo COR_NAO_MAPEADA. Nunca e descartada em silencio.",
+    "NAO ha tolerancia nem aproximacao por proximidade de cor. argb:FF00B051 esta a um bit do verde argb:FF00B050 e NAO e reconhecido. Ver ADR-0003.",
+    "Formatos validos de styleKey: 'argb:RRGGBBAA', 'theme:N|tint:D.DDDD' (tint arredondado a 4 casas), 'indexed:N', ou 'none'.",
+    "Duas entradas com a mesma styleKey fazem a aplicacao falhar na partida, indicando a chave repetida.",
+    "styleId deve ser um estilo JA EXISTENTE no arquivo, obtido em H-01. A escrita de cor (H-27) reutiliza estilos existentes e nunca modifica xl/styles.xml."
+  ]
+}

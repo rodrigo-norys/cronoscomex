@@ -1,0 +1,18 @@
+{
+  "_comentario": "Copie para config/app.json e ajuste workbookPath. Este arquivo NAO vai para o controle de versao: o caminho revela estrutura de pastas e nome da organizacao.",
+
+  "workbookPath": "C:\\Users\\<usuario>\\OneDrive - <organizacao>\\<pasta>\\CONTROLE DOS EMBARQUE.xlsx",
+
+  "_comentario_sheetName": "Medido em H-01: o arquivo tem 4 abas com 3 esquemas distintos. Apenas 2026 esta em escopo (A-46, D-10). Na virada de ano, troque para a aba nova e reexecute o perfilamento.",
+  "sheetName": "2026",
+
+  "headerRow": 1,
+  "firstDataRow": 2,
+  "port": 5173,
+
+  "_comentario_stalled": "Limiar do alerta Processos parados (ALE-06). A especificacao nunca define o numero (A-32); 15 e premissa.",
+  "stalledDaysThreshold": 15,
+
+  "topN": 10,
+  "timezone": "America/Sao_Paulo"
+}

@@ -1,0 +1,243 @@
+# 09 — Matriz de Rastreabilidade
+
+Uma linha por indicador (22) e por alerta (6) da especificação funcional.
+**Cobertura total: 28 linhas.** Nenhum item da especificação fica de fora, e
+nenhuma história existe sem aparecer em ao menos uma linha (verificado na
+seção 4).
+
+**Cadeia base**, pré-requisito de todos os itens e omitida das linhas para
+legibilidade: `H-02` → `H-03` → `H-05` → `H-06` → `H-07` → `H-08`.
+
+**Legenda de status:**
+- ✅ **Backend entregue** — a regra está calculada e servida pela API, com teste.
+  A apresentação pode continuar pendente da história de interface.
+- ✅ **Implementável** — todos os campos existem, a regra está formalizada e as
+  premissas foram confirmadas por medição.
+- **Bloqueado** — falta dado na origem; nenhuma implementação é possível sem
+  mudar a planilha.
+
+> **`H-01` foi executada em 03/08/2026.** Os 16 itens antes marcados como
+> "Condicionado" passaram a **Implementável**: P-01, P-03 e P-06 foram
+> confirmadas por medição sobre `CONTROLE DOS EMBARQUE.xlsx`, aba `2026`
+> (649 linhas). Resultado em [perfilamento/RESULTADO.md](perfilamento/RESULTADO.md).
+
+---
+
+## 1. Indicadores (§4)
+
+| # | Indicador | Campos de origem | Regra de cálculo formalizada | Histórias | Testes | Status |
+|---|---|---|---|---|---|---|
+| IND-01 | Quantidade de processos | REF | `count(ref ≠ '')`, incluindo `fechado_aguardando_draft` | H-09, H-16 | `indicators-counts.test.ts` · `process-builder.test.ts` | ✅ **Backend entregue** (`H-09`); cartão pendente de `H-16` |
+| IND-02 | Processos em andamento | STATUS | `count(category = 'em_andamento')`. Não somar com `em_desembaraco` (§2.1) | H-09, H-16 | `indicators-counts.test.ts` · `status-classifier.test.ts` | ✅ **Backend entregue** (`H-09`); cartão pendente de `H-16` |
+| IND-03 | Processos em desembaraço | STATUS | `count(category = 'em_desembaraco')` — STATUS vazio após trim | H-09, H-16 | `indicators-counts.test.ts` · `status-classifier.test.ts` | ✅ **Backend entregue** (`H-09`); cartão pendente de `H-16`. Cartão ausente de §6 foi acrescentado (A-12) |
+| IND-04 | Processos desembaraçados | STATUS | `count(category = 'desembaracado')`, via dicionário de variantes (TD-02) | H-09, H-16 | `indicators-counts.test.ts` · `status-classifier.test.ts` | ✅ **Backend entregue** (`H-09`); cartão pendente de `H-16`. Grafia `DESEMBARÇADA` tratada (A-03) |
+| IND-05 | Fechado — aguardando draft | REF + todas as demais colunas | `count(category = 'fechado_aguardando_draft')`. Regra §2.2 precede §2.1 (A-22) | H-09, H-16 | `status-classifier.test.ts` · `process-builder.test.ts` | ✅ **Backend entregue** (`H-09`); cartão pendente de `H-16` |
+| IND-06 | Canal Vermelho | Cor da linha (célula A) | `count(customsChannel = 'vermelho')`. **Só a cor é fonte**; texto em STATUS vira anomalia (A-06) | H-04, H-12, H-16, H-27 | `color-mapper.test.ts` · `indicators-risk.test.ts` | ✅ **Implementável** — as 9 chaves reais mapeadas, cobertura 100% |
+| IND-07 | Containers chegando hoje | ETA2 | `count(eta2 = hoje)`, fuso `America/Sao_Paulo` | H-10, H-16 | `indicators-calendar.test.ts` | ✅ **Backend entregue** (`H-10`); apresentação pendente — P-03 confirmada: 585 datas reais, zero texto sem ano |
+| IND-08 | Containers chegando esta semana | ETA2 | `count(hoje ≤ eta2 ≤ domingo ISO)`. Semana segunda–domingo (A-07) | H-10, H-16 | `indicators-calendar.test.ts` | ✅ **Backend entregue** (`H-10`); apresentação pendente — P-03 confirmada |
+| IND-09 | Containers chegando em 15 dias | ETA2 | `count(hoje ≤ eta2 ≤ hoje+15)`, extremos inclusivos (A-35) | H-10, H-16 | `indicators-calendar.test.ts` | ✅ **Backend entregue** (`H-10`); apresentação pendente — P-03 confirmada |
+| IND-10 | Clientes com mais processos | CLT | `count` agrupado por `normKey(CLT)`, desc; desempate alfabético (A-25, A-26) | H-11, H-18 | `indicators-rankings.test.ts` · `normalizer.test.ts` | ✅ **Backend entregue** (`H-11`); apresentação pendente |
+| IND-11 | Importadores com mais processos | IMPORTADOR | `count` agrupado por `normKey(IMPORTADOR)`, desc | H-11, H-18 | `indicators-rankings.test.ts` | ✅ **Backend entregue** (`H-11`); apresentação pendente |
+| IND-12 | Navios previstos | NAVIO + ETA2 | `lista(vessel, eta2)` onde `eta2 ≥ hoje`, asc por `eta2` e depois por `vesselKey` (A-24) | H-10, H-17 | `indicators-calendar.test.ts` | ✅ **Backend entregue** (`H-10`); apresentação pendente — P-03 confirmada |
+| IND-13 | Mercadorias | MERCADORIA | `count` agrupado por `normKey(MERCADORIA)`, desc, com `bazarShare` exposto (A-34) | H-11 | `indicators-rankings.test.ts` | ✅ **Backend entregue** (`H-11`); apresentação pendente. **Limitação medida:** `BAZAR` são 210 processos, 35,47% dos que têm mercadoria — 5,7× o segundo colocado real. Exposta em `meta.bazarShare` (A-34) |
+| IND-14 | Documentos pendentes | DOCS ENVIADOS + ETA2 + STATUS | `count(docsSent = null ∧ eta2 ≤ hoje+10 ∧ category ≠ 'desembaracado')` (A-08) | H-12, H-16 | `indicators-risk.test.ts` | ✅ **Implementável** — P-03 confirmada |
+| IND-15 | Processos atrasados | ETA2 + STATUS | `count(eta2 < hoje ∧ category ≠ 'desembaracado')`. `eta2 = null` nunca satisfaz (A-20) | H-12, H-16 | `indicators-risk.test.ts` | ✅ **Implementável** — P-03 confirmada |
+| IND-16 | Processos desembaraçados hoje | RG + STATUS | `count(rg = hoje ∧ category = 'desembaracado')`. Cruzamento acrescentado por A-05 e A-29 | H-13, H-16 | `indicators-time.test.ts` | ✅ **Implementável** — P-03 confirmada |
+| IND-17 | Ranking de agentes | AGENTE | `count` agrupado por `normKey(AGENTE)`, desc, com `overdueCount` para atender ao objetivo declarado (A-27) | H-11 | `indicators-rankings.test.ts` | ✅ **Backend entregue** (`H-11`); apresentação pendente — P-01 confirmada: coluna E é `AGENTE`, 576 valores, 35 distintos |
+| IND-18 | Ranking de clientes | CLT | Top 10 de IND-10, apresentação visual (A-25) | H-11, H-18 | `indicators-rankings.test.ts` | ✅ **Backend entregue** (`H-11`); apresentação pendente |
+| IND-19 | Ranking de importadores | IMPORTADOR | Top 10 de IND-11, apresentação visual | H-11, H-18 | `indicators-rankings.test.ts` | ✅ **Backend entregue** (`H-11`); apresentação pendente |
+| IND-20 | Ranking por responsável | Cor da linha (célula A) | `count` agrupado por `responsible`, com as 4 chaves sempre presentes, inclusive `indefinido` (A-17, A-18, A-28) | H-04, H-11, H-27 | `color-mapper.test.ts` · `indicators-rankings.test.ts` | ✅ **Backend entregue** (`H-11`); apresentação pendente — 9 chaves mapeadas. Limitação estrutural mantida (A-31, R-02): linha vermelha ou verde perde o responsável. Medido: 477 linhas verdes sem responsável |
+| IND-21 | Tempo médio até desembaraço | — | Exigiria `DATA_PRESENÇA_DE_CARGA − RG`. A coluna **não existe** e o usuário determinou que não haverá colunas novas | — | — | **Bloqueado por lacuna.** A própria especificação (§4, observação) já o declara fora de escopo. Custo da decisão registrado em `03-modelo-dados.md §5` |
+| IND-22 | Tempo médio de envio documental | RG + DOCS ENVIADOS | `avg(rg − docsSent)` em dias. Ordem da subtração corrigida por A-02; negativos e pares incompletos excluídos e contados (A-30) | H-13, H-19 | `indicators-time.test.ts` | ✅ **Implementável** — P-03 confirmada |
+
+---
+
+## 2. Alertas (§5)
+
+| # | Alerta | Campos de origem | Condição formalizada | Histórias | Testes | Status |
+|---|---|---|---|---|---|---|
+| ALE-01 | ETA vencida | ETA2 + STATUS | `eta2 < hoje ∧ category ≠ 'desembaracado'`. Severidade 1. Mesma regra de IND-15, duas apresentações (A-19) | H-14, H-20 | `alerts.test.ts` | ✅ **Implementável** — P-03 confirmada |
+| ALE-02 | Documentação pendente | DOCS ENVIADOS + ETA2 + STATUS | `docsSent = null ∧ eta2 ≤ hoje+10 ∧ category ≠ 'desembaracado'`. Severidade 3 | H-14, H-20 | `alerts.test.ts` | ✅ **Implementável** — P-03 confirmada |
+| ALE-03 | Canal Vermelho | Cor da linha (célula A) | `customsChannel = 'vermelho'`. Severidade 2. Só a cor é fonte (A-06) | H-04, H-14, H-20 | `alerts.test.ts` · `color-mapper.test.ts` | ✅ **Implementável** — chaves reais mapeadas |
+| ALE-04 | Chegadas hoje | ETA2 | `eta2 = hoje`. Severidade 5 | H-14, H-20 | `alerts.test.ts` | ✅ **Implementável** — P-03 confirmada |
+| ALE-05 | Chegadas nos próximos 7 dias | ETA2 | `hoje ≤ eta2 ≤ hoje+7`, extremos inclusivos. Severidade 6 | H-14, H-20 | `alerts.test.ts` | ✅ **Implementável** — P-03 confirmada |
+| ALE-06 | Processos parados | STATUS + histórico de leituras | `dias desde o último evento de mudança ≥ 15` (limiar configurável, A-32). Severidade 4 | H-28, H-29, H-20 | `history-store.test.ts` · `alerts.test.ts` | **Implementável — destravado.** A especificação o declara dependente de histórico inexistente (A-33); o ADR-0005 o fornece |
+
+---
+
+## 3. Cobertura complementar da especificação
+
+A matriz obrigatória cobre indicadores e alertas. Os demais itens da
+especificação são rastreados aqui, para que **nenhum** fique fora.
+
+### 3.1. Telas (§6)
+
+| Tela | Requisito | Histórias | Status |
+|---|---|---|---|
+| Página Inicial | RF-09 | H-16 | Implementável. Cartão "Em desembaraço" acrescentado (A-12); cartões de urgência acrescentados (A-40) |
+| Página Operacional | RF-10 | H-17, H-22 | Implementável. "Processo ativo" definido (A-16); busca por BL e CNTR acrescentada (A-39) |
+| Página Clientes | RF-11 | H-18 | Implementável |
+| Página Performance | RF-12 | H-19 | Implementável. Denominador exibido (A-42); nota sobre IND-21 fora de escopo |
+| Página Alertas | RF-13 | H-20 | Implementável. Ordem de severidade fixada (A-41) |
+| Página Histórico | RF-14 | H-21, H-28 | **Destravado** pelo ADR-0005. Sem retroatividade anterior à primeira execução (A-43) |
+| Detalhe do processo | RF-15 | H-22 | Implementável. Exibe `statusRaw` e as colunas fora de escopo |
+
+### 3.2. Filtros globais (§7)
+
+| Filtro | Campo | Histórias | Status |
+|---|---|---|---|
+| Período | ETA2 | H-15 | ✅ Implementável (P-03 confirmada) |
+| Cliente | CLT | H-15 | Implementável |
+| Importador | IMPORTADOR | H-15 | Implementável |
+| Navio | NAVIO | H-15 | Implementável |
+| Agente | AGENTE | H-15 | ✅ Implementável (P-01 confirmada) |
+| Mercadoria | MERCADORIA | H-15 | Implementável, com limitação de "BAZAR" |
+| Categoria de status | STATUS derivado | H-15 | Implementável. Vocabulário corrigido: "Aguardando desembaraço" removido e "Em andamento" acrescentado (A-01) |
+| Responsável | Cor | H-04, H-15 | ✅ Implementável (P-06 mapeada). `samira` inclui `samira_outros_clientes` (A-18) |
+| Canal | Cor | H-04, H-15 | ✅ Implementável (P-06 mapeada). Domínio `vermelho`/`nenhum`/`indefinido` (A-37) |
+| Porto | ETA | H-15 | Implementável. Domínio aberto, derivado dos dados (A-36) |
+| Importador fora do RJ | Cor | H-04, H-15 | ✅ Implementável (P-06 mapeada). Filtro definido em §3 e ausente de §7; acrescentado (A-11) |
+
+### 3.3. Colunas da planilha (§2)
+
+| Coluna | Uso | Histórias | Status |
+|---|---|---|---|
+| REF | Chave natural, IND-01 | H-03, H-07 | Implementável. Duplicidade tratada (TD-06) |
+| CLT | IND-10, IND-18, filtro | H-03, H-11 | Implementável |
+| IMPORTADOR | IND-11, IND-19, filtro | H-03, H-11 | Implementável |
+| BL | Consulta | H-03, H-17 | Implementável via busca (A-39) |
+| AGENTE | IND-17, filtro | H-03, H-11 | ✅ Implementável (P-01 confirmada) |
+| CNTR | Consulta | H-03, H-17 | Implementável via busca |
+| NAVIO | IND-12, filtro | H-03, H-10 | Implementável |
+| ETA (porto) | Filtro | H-03, H-15 | Implementável |
+| ETA2 | 9 indicadores e 4 alertas | H-03, H-05 | ✅ Implementável (P-03 confirmada) |
+| MERCADORIA | IND-13, filtro | H-03, H-11 | Implementável, com limitação |
+| RG | IND-16, IND-22 | H-03, H-05 | ✅ Implementável (P-03 confirmada) |
+| STATUS | Classificação, detalhe | H-03, H-06, H-22 | Implementável |
+| Coluna 13 | Somente exibição | H-03, H-22 | Fora de escopo para indicadores (§2), lido e exibido |
+| R$ ENVIADO | Somente exibição | H-03, H-22 | Fora de escopo para indicadores (§2), tipo misto (A-45) |
+| DOCS ENVIADOS | IND-14, IND-22, ALE-02 | H-03, H-05 | ✅ Implementável (P-03 confirmada) |
+| Coluna P | Somente exibição | H-01, H-03, H-22 | Não documentada em §2. ✅ P-02 resolvida: cabeçalho `Coluna1`, 1 valor em 649 linhas (A-50) |
+
+### 3.4. Convenção de cores (§3)
+
+| Cor | Significado | Campo derivado | Histórias | Status |
+|---|---|---|---|---|
+| Azul | Samira | `responsible = samira` | H-04, H-27 | ✅ Implementável (P-06 mapeada) |
+| Roxo | Hugo | `responsible = hugo` | H-04, H-27 | ✅ Implementável (P-06 mapeada) |
+| Bege | Samira, outros clientes | `responsible = samira_outros_clientes` | H-04, H-27 | ✅ Implementável (P-06 mapeada) (A-18) |
+| Vermelho | Canal Vermelho | `customsChannel = vermelho` | H-04, H-27 | ✅ Implementável (P-06 mapeada) |
+| Amarelo forte | Importador fora do RJ | `importerOutsideRj = true` | H-04, H-27 | ✅ Implementável (P-06 mapeada). Decisão do usuário sobre A-38 |
+| Verde | Desembaraçado | **Nenhum** — confirmação visual apenas | H-04 | Por decisão de A-04, a cor nunca infere status |
+| Branco | Em desembaraçamento | **Nenhum** — idem | H-04 | Idem. A foto 2 refuta a coerência afirmada (A-04) |
+
+### 3.5. Melhorias futuras (§8)
+
+| Item | Destino |
+|---|---|
+| Coluna RESPONSÁVEL | Adiada por decisão do usuário. Custo em `03-modelo-dados.md §5` |
+| Coluna CANAL | Adiada por decisão do usuário. Custo idem |
+| Coluna DATA_PRESENÇA_DE_CARGA | Adiada por decisão do usuário. Mantém IND-21 bloqueado |
+| Coluna DATA_ÚLTIMA_ATUALIZAÇÃO | **Descartada por desnecessária** — resolvida pelo ADR-0005 |
+| Coluna CATEGORIA_MACRO | Adiada por decisão do usuário. Mantém a limitação de IND-13 |
+| Alerta por e-mail/Teams | Fora de escopo — a aplicação não faz chamada de rede (RNF-31) |
+| Notificação imediata de Canal Vermelho | Fora de escopo — idem |
+| Normalização automática de nomes | Fora de escopo — a normalização implementada é determinística, não corretiva (TD-04) |
+| Indicadores preditivos | Fora de escopo |
+| Alerta de boleto pendente com ETA vencida | Fora de escopo — Coluna 13 e R$ ENVIADO não alimentam indicadores (§2) |
+| Alerta de processo sem responsável | **Atendido parcialmente** — `responsible = indefinido` é contado e exibido em IND-20, e a linha aparece na quarentena (A-17) |
+| Métricas de SLA | Fora de escopo |
+
+---
+
+## 4. Verificação de histórias órfãs
+
+As 32 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
+
+| História | Aparece em | Papel |
+|---|---|---|
+| H-01 | IND-06, IND-17, IND-20, ALE-03, §3.3 (coluna P), e todas as linhas antes "Condicionadas" | ✅ **Concluída.** Resolveu P-01 a P-07 e produziu os valores reais de `config/color-map.json` e `config/status-aliases.json` |
+| H-02 | Cadeia base | ✅ **Concluída.** Sem ela nada compila nem executa |
+| H-03 | Cadeia base, §3.3 (todas as colunas) | ✅ **Concluída.** Fonte de todo campo lido |
+| H-04 | IND-06, IND-20, ALE-03, §3.2 (3 filtros), §3.4 (7 cores) | ✅ **Concluída.** Origem dos campos derivados de cor |
+| H-05 | Cadeia base, §3.3 (ETA2, RG, DOCS ENVIADOS) | ✅ **Concluída.** Datas e chaves de agrupamento |
+| H-06 | Cadeia base, IND-02 a IND-05, §3.3 (STATUS) | ✅ **Concluída.** Classificação canônica |
+| H-07 | Cadeia base, IND-01, IND-05 | ✅ **Concluída.** Composição e quarentena |
+| H-08 | Cadeia base | ✅ **Concluída.** Recarga automática, base de RF-07. RNF-14 medido em 2092 ms no pior caso |
+| H-09 | IND-01 a IND-05 | ✅ **Concluída.** Contagens por categoria. Medido: 649 = 480 + 103 + 34 + 32 |
+| H-10 | IND-07, IND-08, IND-09, IND-12 | ✅ **Concluída.** Indicadores de calendário. O fuso é resolvido num único ponto: `today()` |
+| H-11 | IND-10, IND-11, IND-13, IND-17, IND-18, IND-19, IND-20 | ✅ **Concluída.** Agrupamentos e rankings. `bazarShare` medido em 35,47% |
+| H-12 | IND-06, IND-14, IND-15 | Indicadores de risco |
+| H-13 | IND-16, IND-22 | Indicadores de tempo |
+| H-14 | ALE-01 a ALE-05 | Alertas do estado atual |
+| H-15 | §3.2 (os 11 filtros) | Filtros globais **e** a faixa de estado `degradado` no topo de todas as páginas (A-57) |
+| H-16 | IND-01 a IND-09, IND-14 a IND-16, §3.1 (Página Inicial) | Cartões-resumo |
+| H-17 | IND-12, §3.1 (Página Operacional), §3.3 (BL, CNTR) | Tabela, busca e calendário |
+| H-18 | IND-10, IND-11, IND-18, IND-19, §3.1 (Página Clientes) | Rankings visuais |
+| H-19 | IND-22, §3.1 (Página Performance) | Quebras do tempo documental |
+| H-20 | ALE-01 a ALE-06, §3.1 (Página Alertas) | Lista de alertas |
+| H-21 | §3.1 (Página Histórico) | Série mensal |
+| H-22 | §3.1 (Detalhe), §3.3 (STATUS, Coluna 13, R$ ENVIADO, Coluna P) | Única tela onde `statusRaw` é exibido |
+| H-23 | §5 abaixo (RF-20, RF-28) | Fila de edições |
+| H-24 | §5 abaixo (RF-22) | Preservação do arquivo na escrita |
+| H-25 | §5 abaixo (RF-23 a RF-26) | Seis defesas de integridade |
+| H-26 | §5 abaixo (RF-21) | Comando de aplicação |
+| H-27 | IND-06, IND-20, §3.4 (as 5 cores com significado) | Torna editáveis os campos de cor |
+| H-28 | ALE-06, §3.1 (Página Histórico) | Histórico append-only |
+| H-29 | ALE-06 | Alerta de processos parados |
+| H-30 | §5 abaixo (operação) | Empacotamento e execução |
+| H-31 | §5 abaixo (RF-16, observabilidade) | ✅ **Concluída.** Logs e métricas. Fecha a Fase 1 |
+| H-32 | §5 abaixo (RF-16, observabilidade) | Sinal de interferência externa no arquivo (A-58) |
+
+---
+
+## 5. Requisitos funcionais sem indicador correspondente
+
+Itens que não derivam do catálogo de §4/§5, e que existem por decorrência da
+virada de escopo (edição) ou por necessidade operacional.
+
+| Requisito | Origem | Histórias | Status |
+|---|---|---|---|
+| RF-06 · Quarentena sem descarte silencioso | A-03, A-21, decisão de arquitetura | H-07 | Implementável |
+| RF-08 · Relatório de divergências | A-05, A-06, A-30 | H-07 | Implementável |
+| RF-16 · Painel de saúde da ingestão | Necessidade operacional | H-16, H-31 | Implementável |
+| RF-20, RF-28 · Editar e descartar edições | Decisão do usuário | H-23 | Implementável |
+| RF-21 · Aplicar sob comando explícito | Decisão do usuário (D7) | H-26 | Implementável |
+| RF-22 · Preservar formatação na escrita | ADR-0004 | H-24 | Implementável |
+| RF-23 a RF-26 · Defesas de integridade | D7 | H-25 | Implementável |
+| RF-27 · Editar campos de cor | Decorrência de RF-20 | H-27 | ✅ Implementável (P-06 mapeada) |
+| Empacotamento e execução | Necessidade operacional | H-30 | Implementável |
+
+---
+
+## 6. Fechamento
+
+| Métrica | Valor |
+|---|---|
+| Indicadores da especificação | 22 |
+| Alertas da especificação | 6 |
+| **Linhas na matriz obrigatória** | **28** |
+| ✅ Implementáveis de imediato | **21 indicadores + 6 alertas** |
+| Condicionados a perfilamento | **0** — `H-01` concluída em 03/08/2026 |
+| Bloqueados por lacuna de dado | 1 (IND-21) |
+| Destravados por decisão de arquitetura | 2 (ALE-06 e Página Histórico, via ADR-0005) |
+| Histórias no backlog | 31 |
+| Histórias órfãs | **0** |
+
+**A Fase 0 está concluída.** `H-01` rodou sobre o arquivo real e resolveu as
+sete premissas que condicionavam 16 itens desta matriz. O saldo:
+
+| Item | Antes | Depois |
+|---|---|---|
+| P-03 · datas com ano | risco R-03, impacto 5 | ✅ confirmada — 1.201 datas reais, zero texto sem ano. **R-03 encerrado** |
+| P-01 · coluna E | IND-17 sem fonte | ✅ confirmada — `AGENTE`, 576 valores |
+| P-06 · cores | `color-map.json` era esqueleto | ✅ 9 chaves reais, cobertura **100%** das 649 linhas |
+| P-04 · uma aba | assumida | ❌ refutada — 4 abas; escopo fixado na `2026` |
+| A-49 · escrita de cor | `H-27` trocava `styleId` | ✅ corrigida para trocar `fillId` — a versão anterior destruiria bordas |
+
+**O único item bloqueado continua sendo IND-21**, por ausência da data de
+presença de carga — lacuna de origem, não de plano.
+
+A Fase 1 pode começar. Nenhuma premissa de dado permanece aberta; a única
+pendência é **P-14** (crescimento mensal), que depende de informação do usuário
+e não bloqueia implementação alguma.

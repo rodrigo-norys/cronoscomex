@@ -1,0 +1,311 @@
+# 04 — Arquitetura
+
+## 1. Contexto do sistema
+
+```mermaid
+graph LR
+    U["Operador<br/>(usuário único)"]
+    APP["CronosComex<br/>aplicação local"]
+    XLSX[("planilha.xlsx<br/>pasta OneDrive local")]
+    OD["OneDrive<br/>(agente do Windows)"]
+    SP["SharePoint<br/>(cópia da organização)"]
+    XL["Microsoft Excel"]
+
+    U -->|"consulta indicadores<br/>e edita processos"| APP
+    APP -->|"lê a cada alteração"| XLSX
+    APP -->|"grava sob comando explícito"| XLSX
+    U -->|"edita diretamente"| XL
+    XL -->|"salva"| XLSX
+    XLSX <-->|"sincroniza"| OD
+    OD <-->|"replica"| SP
+
+    classDef sistema fill:#1f6feb,stroke:#0d419d,color:#fff
+    classDef externo fill:#30363d,stroke:#484f58,color:#fff
+    classDef dado fill:#8957e5,stroke:#6e40c9,color:#fff
+    class APP sistema
+    class U,OD,SP,XL externo
+    class XLSX dado
+```
+
+**Fronteira do sistema:** apenas o bloco `CronosComex`. OneDrive, SharePoint e
+Excel são atores externos que a aplicação não controla e sobre os quais não faz
+suposição de disponibilidade. A aplicação não realiza nenhuma chamada de rede
+externa (RNF-31).
+
+---
+
+## 2. Containers
+
+```mermaid
+graph TB
+    subgraph maquina["Máquina Windows do operador"]
+        subgraph app["CronosComex"]
+            SRV["Servidor Node<br/>Fastify 5.11.2 · TypeScript<br/>127.0.0.1:5173"]
+            WEB["Interface web<br/>React 19.2.8 · Vite 8.2.0<br/>SPA servida pelo próprio Node"]
+        end
+
+        XLSX[("planilha.xlsx")]
+        DATA[("data/<br/>history.jsonl<br/>pending-edits.jsonl<br/>quarantine.json<br/>backups/")]
+        CFG[("config/<br/>app.json<br/>color-map.json<br/>status-aliases.json")]
+        BROWSER["Edge / Chrome"]
+    end
+
+    BROWSER -->|"HTTP · JSON"| SRV
+    WEB -.->|"carregada em"| BROWSER
+    SRV -->|"lê e vigia"| XLSX
+    SRV -->|"grava sob comando"| XLSX
+    SRV -->|"lê e escreve"| DATA
+    SRV -->|"lê na partida"| CFG
+
+    classDef proc fill:#1f6feb,stroke:#0d419d,color:#fff
+    classDef dado fill:#8957e5,stroke:#6e40c9,color:#fff
+    classDef externo fill:#30363d,stroke:#484f58,color:#fff
+    class SRV,WEB proc
+    class XLSX,DATA,CFG dado
+    class BROWSER externo
+```
+
+| Container | Responsabilidade | Tecnologia |
+|---|---|---|
+| **Servidor Node** | Ler a planilha, calcular indicadores e alertas, servir a API e a SPA, gravar no `.xlsx` sob comando | Node 22 · Fastify 5.11.2 · TypeScript 7.0.2 |
+| **Interface web** | Apresentar as 6 páginas, os filtros globais e o formulário de edição. **Nenhuma regra de negócio** (RNF-38) | React 19.2.8 · Vite 8.2.0 · Tailwind 4.3.3 · Recharts 3.10.1 |
+| **planilha.xlsx** | Fonte da verdade. Não pertence ao sistema | Arquivo OOXML |
+| **data/** | Histórico, fila de edições, quarentena e backups. Descartável sem perda de dado de negócio | JSONL, JSON, XLSX |
+| **config/** | Caminho do arquivo, mapa de cores, dicionário de grafias | JSON |
+
+O servidor escuta exclusivamente em `127.0.0.1` (RNF-29): não há superfície de
+rede, e por isso não há autenticação (RNF-32).
+
+---
+
+## 3. Componentes do módulo de ingestão e cálculo
+
+```mermaid
+graph TB
+    WATCH["watcher"]
+    READER["xlsx-reader"]
+    STYLE["style-extractor"]
+    COLOR["color-mapper"]
+    NORM["normalizer"]
+    CLASS["status-classifier"]
+    BUILD["process-builder"]
+    QUAR["quarantine-reporter"]
+    STORE["process-store"]
+    HIST["history-store"]
+    IND["indicators"]
+    ALERT["alerts"]
+    API["http-api"]
+
+    WATCH -->|"caminho do arquivo"| READER
+    READER -->|"RawRow[]"| BUILD
+    READER -->|"célula A de cada linha"| STYLE
+    STYLE -->|"styleKey"| COLOR
+    COLOR -->|"campos derivados de cor"| BUILD
+    NORM -->|"normKey, parseDate"| BUILD
+    CLASS -->|"StatusCategory"| BUILD
+    BUILD -->|"Process[]"| STORE
+    BUILD -->|"itens rejeitados"| QUAR
+    STORE -->|"Process[]"| HIST
+    STORE -->|"Process[] filtrados"| IND
+    STORE -->|"Process[] filtrados"| ALERT
+    HIST -->|"dias na categoria"| ALERT
+    HIST -->|"série mensal"| IND
+    IND --> API
+    ALERT --> API
+    QUAR --> API
+    STORE --> API
+
+    classDef io fill:#8957e5,stroke:#6e40c9,color:#fff
+    classDef puro fill:#1f6feb,stroke:#0d419d,color:#fff
+    classDef borda fill:#238636,stroke:#1a7f37,color:#fff
+    class WATCH,READER,HIST,QUAR io
+    class STYLE,COLOR,NORM,CLASS,BUILD,IND,ALERT puro
+    class STORE,API borda
+```
+
+Azul = função pura, sem I/O, testável isoladamente. Roxo = componente com
+efeito colateral em disco. Verde = fronteira.
+
+| Componente | Responsabilidade (uma frase) | Entrada | Saída |
+|---|---|---|---|
+| `watcher` | Detectar alteração do `.xlsx` e disparar reprocessamento com debounce | Caminho do arquivo, sinal de pausa | Evento `fileChanged` |
+| `xlsx-reader` | Abrir o arquivo e devolver as linhas cruas e a célula-âncora de estilo de cada uma | Caminho do arquivo | `RawRow[]`, hash SHA-256 do arquivo |
+| `style-extractor` | Converter `cell.fill` na chave de estilo literal, sem resolver cor | `Cell` | `styleKey: string` |
+| `color-mapper` | Traduzir a chave de estilo em responsável, canal e localização do importador | `styleKey`, `color-map.json` | `{ responsible, customsChannel, importerOutsideRj }` ou não-mapeado |
+| `normalizer` | Normalizar texto para agrupamento e converter célula em data | `string \| number \| Date` | `string` normalizada, `Date \| null`, anomalias |
+| `status-classifier` | Aplicar TD-01 e devolver a categoria canônica | `RawRow`, `status-aliases.json` | `StatusCategory`, anomalias |
+| `process-builder` | Compor o `Process` a partir dos anteriores e decidir aceite ou quarentena | `RawRow[]` e os módulos acima | `Process[]`, `QuarantineItem[]` |
+| `quarantine-reporter` | Persistir o relatório de linhas não interpretadas e de divergências | `QuarantineItem[]` | `data/quarantine.json` |
+| `process-store` | Guardar o conjunto corrente em memória e aplicar os filtros globais | `Process[]`, `FilterSet` | `Process[]` filtrado |
+| `history-store` | Detectar mudanças de categoria, gravá-las e responder há quantos dias cada processo está parado | `Process[]` | `data/history.jsonl`, `Map<ref, dias>`, série mensal |
+| `indicators` | Calcular os 21 indicadores em escopo sobre um conjunto já filtrado | `Process[]` | `IndicatorSet` |
+| `alerts` | Calcular os 6 alertas e ordená-los por severidade | `Process[]`, dias parados | `Alert[]` |
+| `http-api` | Expor os contratos de `05-contratos-api.md` e servir a SPA | Requisição HTTP | Resposta JSON |
+
+### 3.1. Componentes de escrita
+
+```mermaid
+graph LR
+    UI["interface"]
+    QUEUE["edit-queue"]
+    GUARD["write-guard"]
+    ZIP["xlsx-surgeon"]
+    BAK["backup-manager"]
+    WATCH["watcher"]
+    XLSX[("planilha.xlsx")]
+
+    UI -->|"PATCH edição"| QUEUE
+    QUEUE -->|"data/pending-edits.jsonl"| QUEUE
+    UI -->|"POST aplicar"| GUARD
+    QUEUE -->|"edições consolidadas"| GUARD
+    GUARD -->|"1. pausa"| WATCH
+    GUARD -->|"2. backup"| BAK
+    GUARD -->|"3. hash e lock conferem"| ZIP
+    ZIP -->|"4. escreve arquivo temporário e renomeia"| XLSX
+    GUARD -->|"5. valida releitura"| ZIP
+    GUARD -->|"6. falhou: restaura"| BAK
+    GUARD -->|"7. retoma"| WATCH
+
+    classDef proc fill:#1f6feb,stroke:#0d419d,color:#fff
+    classDef dado fill:#8957e5,stroke:#6e40c9,color:#fff
+    class UI,QUEUE,GUARD,ZIP,BAK,WATCH proc
+    class XLSX dado
+```
+
+| Componente | Responsabilidade (uma frase) | Entrada | Saída |
+|---|---|---|---|
+| `edit-queue` | Registrar, consolidar e descartar edições ainda não aplicadas | `EditCommand` | `data/pending-edits.jsonl`, projeção consolidada |
+| `write-guard` | Orquestrar a sequência de defesas e abortar ao primeiro sinal de risco | Edições consolidadas | `WriteResult` com motivo em caso de recusa |
+| `xlsx-surgeon` | Alterar somente os nós `<c>` das células afetadas dentro do zip, preservando todo o resto byte a byte | Buffer do `.xlsx`, `CellEdit[]` | Buffer do `.xlsx` novo |
+| `backup-manager` | Copiar o arquivo antes da escrita, restaurá-lo em caso de falha e expurgar backups vencidos | Caminho do arquivo | Caminho do backup |
+
+### 3.2. Sequência de aplicação de edições
+
+```mermaid
+sequenceDiagram
+    participant U as Operador
+    participant API as http-api
+    participant G as write-guard
+    participant W as watcher
+    participant B as backup-manager
+    participant S as xlsx-surgeon
+    participant F as planilha.xlsx
+
+    U->>API: POST /api/edits/apply
+    API->>G: aplicar edições consolidadas
+    G->>W: pausar
+    G->>F: existe ~$planilha.xlsx?
+    alt Excel está com o arquivo aberto
+        F-->>G: lock presente
+        G->>W: retomar
+        G-->>U: 409 EXCEL_ABERTO
+    else livre
+        G->>F: SHA-256 atual
+        alt hash difere do da última leitura
+            G->>W: retomar
+            G-->>U: 409 ARQUIVO_MUDOU + diferenças
+        else confere
+            G->>B: copiar para data/backups/
+            G->>S: aplicar CellEdit[] no buffer
+            S->>F: gravar .tmp e renomear
+            G->>S: reabrir e conferir as células alteradas
+            alt validação falhou
+                G->>B: restaurar backup
+                G->>W: retomar
+                G-->>U: 500 ESCRITA_INVALIDA (arquivo restaurado)
+            else validação passou
+                G->>W: retomar
+                G-->>U: 200 + resumo
+                W->>API: fileChanged → releitura
+            end
+        end
+    end
+```
+
+---
+
+## 4. Estrutura de diretórios
+
+```
+cronoscomex/
+├─ config/
+│  ├─ app.json
+│  ├─ color-map.json
+│  └─ status-aliases.json
+├─ data/                      # gerado em execução, fora do controle de versão
+│  ├─ history.jsonl
+│  ├─ pending-edits.jsonl
+│  ├─ quarantine.json
+│  ├─ applied/
+│  └─ backups/
+├─ src/
+│  ├─ domain/                 # funções puras — nenhum I/O
+│  │  ├─ types.ts
+│  │  ├─ normalizer.ts
+│  │  ├─ status-classifier.ts
+│  │  ├─ color-mapper.ts
+│  │  ├─ process-builder.ts
+│  │  ├─ indicators.ts
+│  │  ├─ alerts.ts
+│  │  └─ filters.ts
+│  ├─ io/
+│  │  ├─ xlsx-reader.ts
+│  │  ├─ style-extractor.ts
+│  │  ├─ xlsx-surgeon.ts
+│  │  ├─ backup-manager.ts
+│  │  ├─ watcher.ts
+│  │  ├─ history-store.ts
+│  │  ├─ edit-queue.ts
+│  │  └─ quarantine-reporter.ts
+│  ├─ app/
+│  │  ├─ process-store.ts
+│  │  ├─ write-guard.ts
+│  │  └─ config.ts
+│  ├─ http/
+│  │  ├─ server.ts
+│  │  └─ routes/
+│  └─ profiling/
+│     └─ profile-workbook.ts  # H-01
+├─ web/
+│  ├─ src/
+│  │  ├─ pages/
+│  │  ├─ components/
+│  │  ├─ hooks/
+│  │  └─ api-client.ts
+│  └─ index.html
+├─ tests/
+│  ├─ domain/
+│  ├─ io/
+│  └─ fixtures/               # .xlsx versionados — nunca a planilha real
+└─ package.json
+```
+
+**Regra de dependência:** `domain/` não importa nada de `io/`, `app/`, `http/`
+ou `web/`. A seta aponta sempre para dentro. Isso é o que torna os testes de
+regra de negócio independentes de arquivo e de servidor (RNF-38).
+
+---
+
+## 5. Ciclo de vida
+
+```mermaid
+stateDiagram-v2
+    [*] --> Partindo
+    Partindo --> Lendo: config carregada
+    Lendo --> Pronto: parse concluído
+    Lendo --> Degradado: arquivo ausente ou ilegível
+    Pronto --> Lendo: watcher detectou alteração
+    Pronto --> Escrevendo: operador aplicou edições
+    Escrevendo --> Lendo: escrita concluída
+    Escrevendo --> Pronto: escrita recusada
+    Degradado --> Lendo: arquivo reapareceu
+    Pronto --> [*]: encerramento
+    Degradado --> [*]: encerramento
+```
+
+**Estado `Degradado`:** o arquivo sumiu, está bloqueado ou não pôde ser
+interpretado. A aplicação **mantém em memória a última leitura válida** e a
+exibe com aviso visível de que o dado está congelado, junto do horário da
+última leitura bem-sucedida. Ela não apresenta tela vazia nem número zerado —
+um indicador em zero é indistinguível de um indicador sem dado, e essa
+confusão é justamente o que o painel existe para eliminar.

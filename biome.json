@@ -1,0 +1,67 @@
+{
+  "$schema": "./node_modules/@biomejs/biome/configuration_schema.json",
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "includes": ["src/**", "web/**", "tests/**", "*.json", "!dist", "!data", "!node_modules"]
+  },
+  "formatter": {
+    "enabled": true,
+    "indentStyle": "space",
+    "indentWidth": 2,
+    "lineWidth": 100
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "preset": "recommended",
+      "correctness": {
+        "noUnusedImports": "error",
+        "noUnusedVariables": "error"
+      }
+    }
+  },
+  "javascript": {
+    "formatter": {
+      "quoteStyle": "single",
+      "semicolons": "asNeeded"
+    }
+  },
+  "overrides": [
+    {
+      "includes": ["src/domain/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": {
+              "level": "error",
+              "options": {
+                "patterns": [
+                  {
+                    "group": [
+                      "**/io/**",
+                      "**/app/**",
+                      "**/http/**",
+                      "**/web/**",
+                      "node:fs",
+                      "node:fs/*",
+                      "node:path",
+                      "fastify",
+                      "exceljs",
+                      "fflate",
+                      "chokidar"
+                    ],
+                    "message": "REGRA DE FRONTEIRA (ADR-0006): src/domain/ nao importa I/O, app, http nem web. Funcoes de dominio sao puras e testaveis sem servidor nem arquivo."
+                  }
+                ]
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

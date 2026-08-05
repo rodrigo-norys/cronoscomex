@@ -1,0 +1,46 @@
+{
+  "name": "cronoscomex",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Painel operacional de desembaraco aduaneiro. Le a planilha .xlsx local, calcula indicadores e grava de volta sob comando explicito.",
+  "engines": {
+    "node": ">=22.12.0 <23"
+  },
+  "scripts": {
+    "dev": "node --watch --experimental-strip-types src/http/server.ts",
+    "dev:web": "vite --config web/vite.config.ts",
+    "build": "tsc --noEmit && vite build --config web/vite.config.ts",
+    "start": "node --experimental-strip-types src/http/server.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run lint && npm run typecheck && npm test && npm run build",
+    "profile": "python3 tools/profile_workbook.py",
+    "fixtures": "python3 tools/build_fixtures.py"
+  },
+  "dependencies": {
+    "fastify": "5.11.2",
+    "@fastify/static": "10.1.2",
+    "exceljs": "4.4.0",
+    "fflate": "0.8.3",
+    "chokidar": "5.0.0"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.6",
+    "typescript": "7.0.2",
+    "vitest": "4.1.10",
+    "vite": "8.2.0",
+    "@vitejs/plugin-react": "6.0.5",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "@types/node": "22.20.0",
+    "tailwindcss": "4.3.3",
+    "@tailwindcss/vite": "4.3.3",
+    "recharts": "3.10.1"
+  }
+}

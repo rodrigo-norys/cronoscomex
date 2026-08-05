@@ -1,0 +1,45 @@
+{
+  "_origem": "Gerado por H-01 sobre CONTROLE DOS EMBARQUE.xlsx, aba 2026, em 03/08/2026. As 63 grafias distintas de STATUS foram inspecionadas; as listadas abaixo sao as que significam processo concluido. Ver docs/perfilamento/RESULTADO.md secao 6 e a tabela TD-02 em docs/03-modelo-dados.md.",
+
+  "version": 1,
+
+  "_comentario_normalizacao": "As formas abaixo ja estao NORMALIZADAS por normKey(): trim, maiusculas, remocao de diacriticos, colapso de espacos internos. A comparacao e por igualdade exata contra esta lista.",
+
+  "desembaracado": [
+    "DESEMBARACADA",
+    "DESEMBARCADA"
+  ],
+
+  "_evidencia": {
+    "DESEMBARACADA": {
+      "grafiaOriginal": "DESEMBARAÇADA",
+      "ocorrencias": 479,
+      "nota": "Forma canonica da secao 2.1 da especificacao."
+    },
+    "DESEMBARCADA": {
+      "grafiaOriginal": "DESEMBARÇADA",
+      "ocorrencias": 1,
+      "nota": "Erro de digitacao real, sem o segundo A. Visivel na foto 2 e confirmado no arquivo. Achado A-03."
+    }
+  },
+
+  "_naoIncluidas": {
+    "_comentario": "Valores proximos que NAO entram no dicionario. Recebem a anomalia VARIANTE_STATUS_PROXIMA e sao classificados como 'em_andamento'. A decisao de promove-los e HUMANA e se materializa editando este arquivo - a aplicacao nunca reclassifica por adivinhacao.",
+    "DESEMBARACADA 03/02": {
+      "ocorrencias": 1,
+      "distanciaLevenshtein": 6,
+      "risco": "Processo aparentemente concluido, com a data anexada ao texto. Sera contado como 'Em andamento'. Se a intencao for conta-lo como concluido, a correcao correta e limpar o texto na planilha, nao alargar este dicionario - alargar aceitaria qualquer sufixo."
+    },
+    "DESEMBARACADA 28/01": {
+      "ocorrencias": 1,
+      "distanciaLevenshtein": 6,
+      "risco": "Idem."
+    }
+  },
+
+  "_regras": [
+    "TD-02: valor cuja distancia de Levenshtein ate qualquer forma do dicionario seja menor ou igual a 3 recebe a anomalia VARIANTE_STATUS_PROXIMA e entra no relatorio de divergencias, mas NAO e reclassificado.",
+    "As duas entradas de _naoIncluidas tem distancia 6 e portanto nem sequer geram a anomalia. Ficam registradas aqui para que a decisao seja consciente, e nao um esquecimento.",
+    "Se este arquivo nao existir ou nao tiver a chave 'desembaracado', a aplicacao FALHA NA PARTIDA. Sem dicionario, nenhum processo seria classificado como concluido, e falhar alto e preferivel a contar errado."
+  ]
+}
