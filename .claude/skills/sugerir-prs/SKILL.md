@@ -19,15 +19,20 @@ Os **commits** locais são da `/sugerir-commits`; esta aqui cuida de abrir o PR.
 > aceite do plano E permissão explícita, e ambos ainda passam pelo prompt de permissão da
 > ferramenta.
 
-## Estado atual deste repositório — leia antes de tentar
+## Pré-requisitos — confira, não presuma
 
-Medido em 05/08/2026:
+Esta skill não afirma o estado do repositório: estado descrito em prosa envelhece, e uma
+afirmação errada aqui faz você parar quando podia seguir, ou seguir quando devia parar.
+**Meça na hora**, em paralelo:
 
-- `gh` **está instalado e autenticado** ✅
-- **Não há remote configurado** ❌ — `git config --get remote.origin.url` devolve vazio
+```bash
+git rev-parse --is-inside-work-tree     # repositório inicializado
+git config --get remote.origin.url      # remote configurado
+gh auth status                          # gh autenticado
+```
 
-**Logo, esta skill não consegue executar hoje**, e deve parar no pré-requisito. Configurar o
-remote é decisão sua, e há uma pendência aberta antes dela — ver "Antes do primeiro push".
+Faltando qualquer um, **pare e diga qual** — não há como abrir PR, e configurar remote ou
+autenticar `gh` é decisão do usuário, não sua.
 
 ## Fluxo de execução — regra deste repositório
 
@@ -141,8 +146,9 @@ gh pr create --base main \
 - **Um marcador por mudança técnica relevante** no resumo; prefixe pela área quando ajudar
   (`Domain:`/`IO:`/`HTTP:`/`Web:`). Não despeje o diff.
 - **Verificação: só o que existe, e aqui existe portão de verdade.** O projeto tem
-  `npm run verify` = lint + typecheck + test + build. Informe o resultado **real** — por exemplo
-  `npm run verify` → 279 testes, build OK. Nunca relate resultado que não rodou.
+  `npm run verify` = teste do hook + lint + typecheck + test + build. Informe o resultado **real**,
+  com o número que o Vitest devolveu naquela execução. **Nunca copie contagem de teste de outro
+  documento** — a contagem muda a cada fatia, e cópia manual diverge em silêncio.
 
   Se `node --version` não devolver `v22.23.2`, prefixe `nvm use &&`: o shell herda a versão do
   processo que lançou o editor, e `npm run dev` falha com `node: bad option`.
@@ -155,14 +161,16 @@ gh pr create --base main \
   mudança em tabela de decisão (`docs/03-modelo-dados.md`), fixture a regenerar
   (`tools/build_fixtures.py`), pendência aberta ou fechada no `CLAUDE.md`.
 
-## Antes do primeiro push — pendência aberta
+## O que o push tem de irreversível
 
-O repositório é local e nunca foi publicado. Antes de configurar remote e abrir o primeiro PR,
-reveja a decisão **D-2** de `docs/governance-tooling-claude.md`. Os documentos foram sanitizados
-em 05/08/2026 — contagem, qualificador e nomes de sistema removidos —, mas o princípio continua
-valendo: o que hoje é local e inofensivo, no push vira público e permanente.
+O perigo não é o push, é o **commit**: o histórico do git é cumulativo, então um segredo
+commitado localmente viaja em todo push futuro, e continua alcançável pelo hash mesmo depois
+de removido do topo. Por isso a varredura acontece **antes** de commitar (`/sugerir-commits`) e
+de novo aqui, sobre `git diff <base>...HEAD`.
 
-`docs/perfilamento/*.json` já está no `.gitignore` por esse motivo. O restante de `docs/` não.
+O princípio que rege a decisão **D-2** de `docs/governance-tooling-claude.md`: o que hoje é
+local e inofensivo, no push vira público e permanente. `docs/perfilamento/*.json` está no
+`.gitignore` por isso; o restante de `docs/` não está, e por isso é conferido a cada PR.
 
 > Antes de abrir: rode `/fechar-historia H-NN` se o PR fecha uma história, e `/sugerir-commits`
 > para o plano de commits.

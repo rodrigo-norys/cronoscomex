@@ -4,6 +4,7 @@
     "disableBypassPermissionsMode": "disable",
 
     "deny": [
+      "mcp__*",
       "Read(/*.xlsx)",
       "Edit(/*.xlsx)",
       "Read(/*.jpeg)",

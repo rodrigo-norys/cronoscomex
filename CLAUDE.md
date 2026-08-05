@@ -180,13 +180,27 @@ branch chega ao GitHub já mesclada e não há o que revisar.
 `npm ci` pedem confirmação. `curl`, `wget`, force-push e leitura ou escrita de
 `*.xlsx` e `*.jpeg` da raiz estão negados. O modo bypass está desabilitado.
 
+**`mcp__*` está negado — todo MCP, de todo servidor.** Conector é caminho de
+saída que **não passa** pelas regras de `Bash` nem de arquivo: negar `curl` e
+deixar `sharepoint_upload_file` aberto seria o inverso do modelo de ameaça. O
+glob no nome da ferramenta cobre conector que ainda nem foi criado, e o cliente
+remove as ferramentas negadas do contexto. `deny` vence `allow`, então **não há
+exceção parcial**: para usar um conector, remova a linha deliberadamente.
+
 **Hooks** (`.claude/hooks/`). `guard-dados-sensiveis.sh` (`PreToolUse`) bloqueia
 `git add -A/-f`, redirecionamento para caminho protegido, `git diff --output=`,
 remoção recursiva em diretório versionado, e o perfilador gravando dentro do
 repositório — falha **fechado**, porque ali o dano é publicar dado de cliente.
-`conferir-alinhamento.sh` (`ConfigChange`) avisa quando existe skill ou hook que
-este arquivo não menciona — falha **aberto**, porque travar trabalho por
-documentação atrasada inverte a prioridade.
+Testa por **subcomando**, não sobre a linha inteira: sem isso um `grep "git add"`
+casaria como staging real. `conferir-alinhamento.sh` (`ConfigChange`) avisa
+quando existe skill ou hook que este arquivo não menciona — falha **aberto**,
+porque travar trabalho por documentação atrasada inverte a prioridade.
+
+**`test-guard.sh` é a regressão do guard**, e roda **primeiro** no
+`npm run verify`. O guard é a única camada mecânica de autoria nossa — regra de
+permissão é do cliente, skill é instrução —, e uma regex quebrada nele falha em
+silêncio: continuaria saindo `0`. Metade dos casos são falsos positivos que
+precisam **passar**; dois deles já morderam de verdade. Exige `bash` e `jq`.
 
 **Skills** (`.claude/skills/`). `/fatia H-NN` abre a história com contrato e
 casos-limite embutidos · `/fechar-historia H-NN` roda o portão, percorre a
