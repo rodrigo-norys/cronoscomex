@@ -26,8 +26,8 @@ Portões inegociáveis:
 - **Sem aprovação do plano E sem permissão explícita, não rodo nada.** Aprovar o plano não é
   permissão para executar — são dois passos distintos. Isso decorre da regra do
   `~/.claude/CLAUDE.md`: *"você não irá commitar automaticamente"*.
-- **`git push` não entra aqui.** Push é para fora e fica com você — hoje nem é possível, porque
-  não há remote configurado. Para PR, veja `/sugerir-prs`.
+- **`git push` não entra aqui.** Push é para fora; esta skill para nos commits locais. Quem
+  empurra a branch e abre o PR é `/sugerir-prs`.
 - **Nenhum dado real no commit.** Antes de agrupar, confira que nenhum diff carrega valor de
   célula da planilha, `.xlsx` ou `.jpeg` da raiz, conteúdo de `config/app.json`, ou caminho
   absoluto com o nome de usuário do SO. O commit é o primeiro passo para o GitHub público, e o
@@ -121,8 +121,16 @@ Derivados da estrutura real e da fronteira que o Biome impõe — use o mais esp
 - **Várias preocupações independentes:** proponha **uma branch por grupo** e aponte
   `/sugerir-prs` para o fatiamento completo da entrega.
 
-Ao voltar para a `main`, use `git merge --no-ff <branch>`: sem isso o merge some e o histórico
-volta a ser um acúmulo linear, que é justamente o que a branch existe para evitar.
+**Não mescle na `main` por conta própria.** Havendo remote configurado — e há —, o merge local
+**mata o PR**: quando a branch chega ao GitHub ela já está mesclada, e não há o que revisar. A
+sequência correta termina fora daqui:
+
+```
+branch → commits (esta skill para aqui) → /sugerir-prs empurra e abre o PR → merge no GitHub
+```
+
+Merge local com `git merge --no-ff` só se aplica a trabalho que **não** vai virar PR. Neste
+projeto isso é a exceção, não a regra.
 
 ## Formato de saída
 
