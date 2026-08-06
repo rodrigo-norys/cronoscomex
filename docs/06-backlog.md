@@ -1031,6 +1031,44 @@ export function documentaryLeadTime(p: Process[]): LeadTime           // IND-22
 
 ### H-14 — Entregar os cinco alertas derivados do estado atual
 
+> ✅ **CONCLUÍDA em 06/08/2026.** 38 testes próprios; suíte total em 373.
+>
+> **Verificado contra a planilha real** com `today = 2026-08-06`, sobre as 649
+> linhas: **40 linhas de alerta para 25 processos distintos** —
+> `eta_vencida 17 · documentacao_pendente 14 · chegadas_7_dias 7 ·
+> canal_vermelho 2 · chegadas_hoje 0 · processos_parados 0`. Os números batem
+> **exatamente** com a projeção feita na fatia, antes de existir código.
+>
+> **A fatia rendeu quatro achados novos**, todos decididos antes da primeira
+> linha — A-59, A-60, A-61 e A-62. Foi o retorno mais alto do protocolo até
+> agora: A-59 sozinho evitaria 5 alertas errados em 14.
+>
+> **A-59 mudou a regra dos três alertas silenciosos.** ALE-03, ALE-04 e ALE-05
+> não declaravam condição de status; lidos ao pé da letra, alertariam sobre
+> processo já concluído. A decisão de que a página é **fila de trabalho** — e
+> não panorama — fechou a questão: `≠ desembaracado` vale nos cinco. Sem isso,
+> 3 dos 5 alertas de Canal Vermelho seriam sobre processos encerrados.
+>
+> **`historyStartedAt` é `null`, não uma data inventada** (A-61). O campo existe
+> para a interface não sugerir retroatividade inexistente, e preenchê-lo antes
+> de `H-28` faria exatamente o oposto.
+>
+> **ALE-06 já funciona — falta o dado, não o código.** `buildAlerts` recebe
+> `stalledDays` e o limiar, e há teste provando que gera o alerta quando o mapa
+> traz o processo no limiar. `H-29` passa a alimentá-lo; até lá a chave fica em
+> `0`, que é diferente de ausente.
+>
+> **Divergências resolvidas:** faltavam `src/http/server.ts` e
+> `tests/http/alerts.test.ts` na lista de arquivos — a rota constava, mas rota
+> não registrada não existe. E ALE-02 duplicaria a condição de A-08, que vivia
+> dentro de `pendingDocsCount`: `hasPendingDocs` foi extraído no mesmo padrão de
+> `isOverdue`, pelo mesmo motivo.
+>
+> **Detalhe de texto que vale registro:** as mensagens pluralizam (`1 dia`,
+> nunca `1 dias`), e carga que já chegou sem documento ganha frase própria —
+> a janela de IND-14 não tem piso, então o intervalo fica negativo, e
+> `ETA em -3 dias` seria ilegível. Medido: 13 alertas caem no singular.
+
 **Objetivo:** ALE-01 a ALE-05 numa lista única ordenada por severidade fixa.
 ALE-06 depende de histórico e é entregue em `H-29`.
 
@@ -1047,8 +1085,11 @@ ALE-06 depende de histórico e é entregue em `H-29`.
 
 **Arquivos:**
 - `src/domain/alerts.ts`
+- `src/domain/indicators.ts` — `hasPendingDocs`, extraído no fechamento
 - `src/http/routes/alerts.ts`
+- `src/http/server.ts` — registro da rota; omitido do plano original
 - `tests/domain/alerts.test.ts`
+- `tests/http/alerts.test.ts` — omitido do plano original
 
 **Contrato fixado:**
 
