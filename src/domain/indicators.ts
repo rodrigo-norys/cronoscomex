@@ -248,9 +248,9 @@ export function agentRanking(
 
 /** As quatro chaves de `Responsible`, sempre presentes (A-28). */
 const RESPONSIBLE_KEYS: readonly Responsible[] = [
-  'samira',
-  'hugo',
-  'samira_outros_clientes',
+  'colaborador1',
+  'colaborador2',
+  'colaborador1_outros_clientes',
   'indefinido',
 ]
 
@@ -261,8 +261,8 @@ const RESPONSIBLE_KEYS: readonly Responsible[] = [
  * responsavel identificavel pela cor (A-17, A-28). Escondê-lo faria o ranking
  * parecer completo quando nao e.
  *
- * `samira` e `samira_outros_clientes` aparecem SEPARADAS aqui. O filtro faz o
- * oposto — `responsible=samira` seleciona ambas (A-18) —, porque sao perguntas
+ * `colaborador1` e `colaborador1_outros_clientes` aparecem SEPARADAS aqui. O filtro faz o
+ * oposto — `responsible=colaborador1` seleciona ambas (A-18) —, porque sao perguntas
  * diferentes: o ranking mostra a distribuicao, o filtro recorta o trabalho.
  */
 export function responsibleRanking(processes: readonly Process[]): GroupCount[] {

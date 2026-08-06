@@ -17,10 +17,20 @@ export type StatusCategory =
 
 /**
  * Responsavel pelo processo. Derivado EXCLUSIVAMENTE da cor da linha.
- * `samira_outros_clientes` e subcategoria de Samira: o filtro "Responsavel =
- * Samira" seleciona os dois (achado A-18).
+ *
+ * `colaborador1_outros_clientes` e subcategoria de `colaborador1`: o filtro
+ * "Responsavel = Colaborador 1" seleciona os dois (achado A-18).
+ *
+ * As chaves sao deliberadamente impessoais. A planilha identifica o responsavel
+ * pelo nome proprio; o dominio nao precisa disso para nada, e carregar nome de
+ * pessoa num tipo publico contraria a mesma regra que proibe nome de cliente em
+ * log (regra inviolavel 8).
  */
-export type Responsible = 'samira' | 'hugo' | 'samira_outros_clientes' | 'indefinido'
+export type Responsible =
+  | 'colaborador1'
+  | 'colaborador2'
+  | 'colaborador1_outros_clientes'
+  | 'indefinido'
 
 /**
  * Canal de fiscalizacao. Apenas a COR e fonte; texto em STATUS nao classifica

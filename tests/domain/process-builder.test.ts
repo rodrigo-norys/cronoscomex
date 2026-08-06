@@ -9,7 +9,7 @@ const ENTRADAS: ColorMapEntry[] = [
     styleKey: 'argb:FF5B9BD5',
     fillId: 8,
     label: 'Azul',
-    responsible: 'samira',
+    responsible: 'colaborador1',
     customsChannel: 'nenhum',
     importerOutsideRj: false,
   },
@@ -70,7 +70,7 @@ describe('buildProcesses — aceite e rejeicao', () => {
     expect(p?.clientRaw).toBe('acme log')
     expect(p?.clientKey).toBe('ACME LOG')
     expect(p?.statusCategory).toBe('desembaracado')
-    expect(p?.responsible).toBe('samira')
+    expect(p?.responsible).toBe('colaborador1')
     expect(p?.sourceRow).toBe(2)
   })
 
