@@ -18,6 +18,10 @@ export interface HealthResponse {
   rowsQuarantined: number
   pendingEditsCount: number
   degradedReason: string | null
+  /** `H-32`. Alguem tem a planilha aberta no Excel. Sinal, nunca acao (A-58). */
+  externalLock: boolean
+  /** `H-32`. Arquivos de conflito do OneDrive, so o nome. */
+  conflictFiles: string[]
 }
 
 /**
@@ -50,6 +54,8 @@ export function registerHealthRoute(
       // Fila de edicoes chega em H-23.
       pendingEditsCount: 0,
       degradedReason: state.degradedReason,
+      externalLock: state.externalLock,
+      conflictFiles: state.conflictFiles,
     }
   })
 }
