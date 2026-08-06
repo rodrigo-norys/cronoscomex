@@ -1,7 +1,11 @@
 import { readFileSync } from 'node:fs'
-import { describe, expect, it } from 'vitest'
+import { afterAll, describe, expect, it } from 'vitest'
 import type { AppConfig } from '../../src/app/config.ts'
 import { readWorkbook, WorkbookReadError } from '../../src/io/xlsx-reader.ts'
+import { awaitExcelJsCleanup } from '../support/exceljs-cleanup.ts'
+
+// Mitigacao temporaria de H-33 — ver tests/support/exceljs-cleanup.ts.
+afterAll(awaitExcelJsCleanup)
 
 function config(fixture: string, overrides: Partial<AppConfig> = {}): AppConfig {
   return {
