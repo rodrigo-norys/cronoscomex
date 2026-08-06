@@ -1157,6 +1157,11 @@ indicadores e alertas simultaneamente.
 >
 > A correção é inteiramente de apresentação: o domínio já recebe `today` por
 > parâmetro.
+>
+> **Roteamento à mão (D-16).** `History API` para trocar de página, `popstate`
+> para o botão "voltar", `URLSearchParams` para os filtros na URL. Sem
+> `react-router`: são sete páginas planas numa aplicação local, e o plano proíbe
+> dependência não prevista. A decisão registra os gatilhos de reavaliação.
 
 **Arquivos:**
 - `web/src/App.tsx`, `web/src/components/FilterBar.tsx`
