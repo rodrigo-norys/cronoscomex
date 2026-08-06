@@ -54,15 +54,15 @@ de ser precaução teórica e passa a ter evidência no próprio arquivo.
 
 A especificação funcional descreve **apenas** o esquema de 2026.
 
-### Aba CNPJ — alerta de segurança
+### Aba CNPJ — fora de escopo por conter dado sensível
 
-Contém 28 linhas com: `EMPRESA`, `CNPJ`, `CNPJ / CPF`, `INSCRIÇÃO ESTADUAL`,
-`DADOS BANCÁRIOS` (26 valores), `EMAIL` (21), `EMAIL / LOGIN` (9) e
-**uma coluna de credencial** — credenciais de sistemas de terceiros, num
-arquivo sincronizado com o SharePoint da organização.
+Contém 28 linhas de dado cadastral e de acesso de terceiros. O inventário
+detalhado das colunas **não é versionado**: descrever a estrutura de um dado
+sensível é descrever onde ele está.
 
-A aplicação **não lê, não exibe e não registra** essa aba. A exposição em si é
-anterior a este projeto e independe dele, mas fica registrada.
+A aplicação **não lê, não exibe e não registra** essa aba — decisão de escopo
+D-10, motivada pelo achado A-47. A exposição em si é anterior a este projeto e
+independe dele, mas fica registrada.
 
 ---
 
@@ -122,9 +122,9 @@ Chave de estilo extraída da célula da coluna A, para as 649 linhas com REF.
 |---|---|---|---|
 | `argb:FF00FF00` | 2 | 258 | Verde — desembaraçado |
 | `argb:FF00FF0D` | 12 | 219 | **Verde, segundo tom — não previsto** |
-| `argb:FF5B9BD5` | 8 | 120 | Azul — Samira |
-| `argb:FFA74F7B` | 27 | 31 | Roxo — Hugo |
-| `argb:FFFFE599` | 9 | 9 | Bege — Samira, outros clientes |
+| `argb:FF5B9BD5` | 8 | 120 | Azul — Colaborador 1 |
+| `argb:FFA74F7B` | 27 | 31 | Roxo — Colaborador 2 |
+| `argb:FFFFE599` | 9 | 9 | Bege — Colaborador 1, outros clientes |
 | `argb:FFFF0000` | 7 | 5 | Vermelho — Canal Vermelho |
 | `argb:FFA64D79` | 11 | 5 | **Roxo, segundo tom — não previsto** |
 | `argb:FFFFFF00` | 10 | 1 | Amarelo forte — importador fora do RJ |

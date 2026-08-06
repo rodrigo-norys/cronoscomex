@@ -85,7 +85,7 @@ Apenas a aba **`2026`** entra no escopo, por decisão do usuário. As demais:
 |---|---|
 | `2025` (665 linhas) | Esquema diferente: coluna A é `REF. FAITH`, **não tem DOCS ENVIADOS**, e tem duas colunas chamadas `ETA` |
 | `2024` (191 linhas) | Esquema mais divergente ainda: **sem IMPORTADOR**, tem `ARMAD`, e a coluna de situação chama-se `ANDAMENTO` |
-| `CNPJ` (28 linhas) | **Dado sensível.** Contém CNPJ/CPF, inscrição estadual, dados bancários, e-mail e uma coluna de credencial de terceiros. Não é lida, não é exibida, não é registrada em log — ver A-47 |
+| `CNPJ` (28 linhas) | **Dado sensível** — cadastral e de acesso, de terceiros. O inventário das colunas não é versionado. Não é lida, não é exibida, não é registrada em log — ver A-47 |
 
 A aba em uso é configurável em `config/app.json` (`sheetName: "2026"`). Na
 virada do ano, alterar essa linha aponta a aplicação para a aba nova.

@@ -240,7 +240,7 @@ mesmo arquivo que o operador já pode abrir no Excel.
 | Nome de cliente (CLT) | Pode ser pessoa jurídica ou identificar pessoa natural | Somente no `.xlsx` e em memória |
 | Nome de importador | Idem | Idem |
 | Nome de agente de carga | Idem | Idem |
-| Nome do responsável interno (Samira, Hugo) | Pessoa natural identificada | Derivado de cor, somente em memória |
+| Nome do responsável interno (Colaborador 1, Colaborador 2) | Pessoa natural identificada | Derivado de cor, somente em memória |
 
 ### 4.3. Base legal e minimização
 
