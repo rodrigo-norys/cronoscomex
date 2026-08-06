@@ -1,4 +1,4 @@
-import { addDays, isoWeekEnd, isWithin, toIsoDay } from './date-window.ts'
+import { addDays, diffDays, isoWeekEnd, isWithin, toIsoDay } from './date-window.ts'
 import type { Process, Responsible } from './types.ts'
 
 /**
@@ -295,4 +295,71 @@ export function bazarShare(processes: readonly Process[]): number | null {
 
   const bazar = withGoods.filter((process) => process.goodsKey === BAZAR_KEY).length
   return Number((bazar / withGoods.length).toFixed(4))
+}
+
+/**
+ * IND-16. Desembaracados **hoje**, cruzando data de registro E categoria.
+ *
+ * O cruzamento nao esta na especificacao: foi acrescentado por A-29, depois que
+ * A-05 mostrou uma linha com RG preenchido e STATUS de canal amarelo — categoria
+ * `em_andamento`. Sem a segunda condicao, o indicador contaria como concluido um
+ * processo que nao concluiu.
+ */
+export function clearedTodayCount(processes: readonly Process[], today: Date): number {
+  return processes.filter(
+    (process) =>
+      process.statusCategory === 'desembaracado' &&
+      isWithin(process.registrationDate, today, today),
+  ).length
+}
+
+/** IND-22. Bloco `documentaryLeadTime` de GET /api/indicators. */
+export interface LeadTime {
+  /** `null` quando `sampleSize` e zero — media de conjunto vazio nao e zero. */
+  averageDays: number | null
+  sampleSize: number
+  excludedNegative: number
+  excludedIncomplete: number
+}
+
+/**
+ * IND-22. Media de `registrationDate − docsSentDate`, em dias.
+ *
+ * A ordem da subtracao vem de A-02: a especificacao a descrevia invertida numa
+ * secao e correta em outra, e RG e a extremidade FINAL do intervalo.
+ *
+ * As duas exclusoes de A-30 sao **contadas, nunca silenciadas**: par incompleto
+ * e intervalo negativo saem da media, mas aparecem no resultado. Um numero
+ * calculado sobre 12 de 649 linhas precisa dizer isso — e o mesmo motivo de
+ * `sampleSize` existir (A-42, A-52).
+ */
+export function documentaryLeadTime(processes: readonly Process[]): LeadTime {
+  let totalDays = 0
+  const result: LeadTime = {
+    averageDays: null,
+    sampleSize: 0,
+    excludedNegative: 0,
+    excludedIncomplete: 0,
+  }
+
+  for (const { registrationDate, docsSentDate } of processes) {
+    if (registrationDate === null || docsSentDate === null) {
+      result.excludedIncomplete++
+      continue
+    }
+
+    const days = diffDays(docsSentDate, registrationDate)
+    if (days < 0) {
+      result.excludedNegative++
+      continue
+    }
+
+    totalDays += days
+    result.sampleSize++
+  }
+
+  if (result.sampleSize > 0) {
+    result.averageDays = Number((totalDays / result.sampleSize).toFixed(1))
+  }
+  return result
 }
