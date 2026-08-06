@@ -19,9 +19,9 @@ Leia, nesta ordem:
 4. `docs/03-modelo-dados.md` — as tabelas de decisão TD-01 a TD-06 e TD-05.1
 
 Para regra de negócio, consulte `docs/01-auditoria-especificacao.md`: os 55
-achados (A-NN) explicam **por que** cada regra é como é. A especificação
-original (`especificacao-dashboard-comex.md`) tem defeitos conhecidos e
-documentados — não a siga literalmente sem checar a auditoria.
+achados (A-NN) explicam **por que** cada regra é como é, cada um citando o
+trecho de origem. A especificação original é documento do cliente e **não é
+versionada** — a auditoria é autossuficiente, e é ela que vale.
 
 ## Regras invioláveis
 

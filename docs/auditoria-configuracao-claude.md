@@ -282,8 +282,8 @@ python3 tools/profile_workbook.py "CONTROLE DOS EMBARQUE.xlsx" docs/perfilamento
 ```
 
 O comando casa `Bash(python3 tools/profile_workbook.py *)` e **roda sem prompt**.
-O JSON gerado tem 15 valores da coluna de credencial da aba `CNPJ`, os `IMPORTADOR` e
-`MERCADORIA` das quatro abas, e os dados bancários. O arquivo cai em `docs/`,
+O JSON gerado tem amostras de todas as colunas das quatro abas, inclusive as da
+aba `CNPJ`, que é dado de acesso de terceiros. O arquivo cai em `docs/`,
 que não está no `.gitignore`. Na sessão seguinte o agente lê o JSON de volta
 (coberto pelo `allow` genérico de `Read`) e as credenciais entram no contexto e
 na transcrição. No `H-30`, `git add docs/ && git push` publica.

@@ -93,7 +93,7 @@ especificação são rastreados aqui, para que **nenhum** fique fora.
 | Agente | AGENTE | H-15 | ✅ Implementável (P-01 confirmada) |
 | Mercadoria | MERCADORIA | H-15 | Implementável, com limitação de "BAZAR" |
 | Categoria de status | STATUS derivado | H-15 | Implementável. Vocabulário corrigido: "Aguardando desembaraço" removido e "Em andamento" acrescentado (A-01) |
-| Responsável | Cor | H-04, H-15 | ✅ Implementável (P-06 mapeada). `samira` inclui `samira_outros_clientes` (A-18) |
+| Responsável | Cor | H-04, H-15 | ✅ Implementável (P-06 mapeada). `colaborador1` inclui `colaborador1_outros_clientes` (A-18) |
 | Canal | Cor | H-04, H-15 | ✅ Implementável (P-06 mapeada). Domínio `vermelho`/`nenhum`/`indefinido` (A-37) |
 | Porto | ETA | H-15 | Implementável. Domínio aberto, derivado dos dados (A-36) |
 | Importador fora do RJ | Cor | H-04, H-15 | ✅ Implementável (P-06 mapeada). Filtro definido em §3 e ausente de §7; acrescentado (A-11) |
@@ -123,9 +123,9 @@ especificação são rastreados aqui, para que **nenhum** fique fora.
 
 | Cor | Significado | Campo derivado | Histórias | Status |
 |---|---|---|---|---|
-| Azul | Samira | `responsible = samira` | H-04, H-27 | ✅ Implementável (P-06 mapeada) |
-| Roxo | Hugo | `responsible = hugo` | H-04, H-27 | ✅ Implementável (P-06 mapeada) |
-| Bege | Samira, outros clientes | `responsible = samira_outros_clientes` | H-04, H-27 | ✅ Implementável (P-06 mapeada) (A-18) |
+| Azul | Colaborador 1 | `responsible = colaborador1` | H-04, H-27 | ✅ Implementável (P-06 mapeada) |
+| Roxo | Colaborador 2 | `responsible = colaborador2` | H-04, H-27 | ✅ Implementável (P-06 mapeada) |
+| Bege | Colaborador 1, outros clientes | `responsible = colaborador1_outros_clientes` | H-04, H-27 | ✅ Implementável (P-06 mapeada) (A-18) |
 | Vermelho | Canal Vermelho | `customsChannel = vermelho` | H-04, H-27 | ✅ Implementável (P-06 mapeada) |
 | Amarelo forte | Importador fora do RJ | `importerOutsideRj = true` | H-04, H-27 | ✅ Implementável (P-06 mapeada). Decisão do usuário sobre A-38 |
 | Verde | Desembaraçado | **Nenhum** — confirmação visual apenas | H-04 | Por decisão de A-04, a cor nunca infere status |
