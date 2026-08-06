@@ -15,7 +15,11 @@ const config: AppConfig = {
   timezone: 'America/Sao_Paulo',
 }
 
-function process(sourceRow: number, statusCategory: StatusCategory): Process {
+function process(
+  sourceRow: number,
+  statusCategory: StatusCategory,
+  extra: Partial<Process> = {},
+): Process {
   return {
     sourceRow,
     ref: `FT${String(sourceRow).padStart(3, '0')}.26`,
@@ -46,6 +50,7 @@ function process(sourceRow: number, statusCategory: StatusCategory): Process {
     importerOutsideRj: null,
     styleKey: 'none',
     anomalies: [],
+    ...extra,
   }
 }
 
@@ -100,7 +105,8 @@ describe('GET /api/indicators', () => {
     const body = (await app.inject({ method: 'GET', url: '/api/indicators' })).json()
 
     expect(Object.keys(body).sort()).toEqual(['counts', 'expectedVessels', 'meta', 'rankings'])
-    expect(body.counts).not.toHaveProperty('canalVermelho')
+    // `desembaracadosHoje` e `documentaryLeadTime` chegam em H-13.
+    expect(body.counts).not.toHaveProperty('desembaracadosHoje')
     expect(body).not.toHaveProperty('documentaryLeadTime')
 
     await app.close()
@@ -149,6 +155,47 @@ describe('GET /api/indicators', () => {
 
     expect(resposta.statusCode).toBe(200)
     expect(resposta.json().counts.total).toBe(0)
+
+    await app.close()
+  })
+})
+
+describe('GET /api/indicators — indicadores de risco (H-12)', () => {
+  /**
+   * A rota resolve `hoje` pelo relogio real, entao os casos usam datas
+   * inequivocamente no passado e no futuro. As fronteiras exatas de cada regra
+   * sao exercidas em `indicators-risk.test.ts`, com `hoje` fixo.
+   */
+  const PASSADO = new Date('2020-01-01T00:00:00Z')
+  const FUTURO_DISTANTE = new Date('2099-01-01T00:00:00Z')
+
+  it('devolve canalVermelho, documentosPendentes e atrasados', async () => {
+    const processes = [
+      process(2, 'em_andamento', { customsChannel: 'vermelho', eta2: PASSADO }),
+      process(3, 'em_desembaraco', { eta2: PASSADO }),
+      process(4, 'desembaracado', { eta2: PASSADO }),
+      process(5, 'em_andamento', { eta2: FUTURO_DISTANTE }),
+    ]
+    const app = buildServer(config, fakeStore(state({ processes })))
+
+    const counts = (await app.inject({ method: 'GET', url: '/api/indicators' })).json().counts
+
+    expect(counts.canalVermelho).toBe(1)
+    // Os dois do passado nao concluidos; o desembaracado e o futuro ficam fora.
+    expect(counts.atrasados).toBe(2)
+    expect(counts.documentosPendentes).toBe(2)
+
+    await app.close()
+  })
+
+  it('devolve os tres zerados quando nao ha processo de risco', async () => {
+    const app = buildServer(config, fakeStore(state()))
+
+    const counts = (await app.inject({ method: 'GET', url: '/api/indicators' })).json().counts
+
+    expect(counts.canalVermelho).toBe(0)
+    expect(counts.atrasados).toBe(0)
+    expect(counts.documentosPendentes).toBe(0)
 
     await app.close()
   })
