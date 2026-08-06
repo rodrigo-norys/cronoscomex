@@ -147,6 +147,15 @@ em que `lastReadAt === null` — nunca houve leitura, não há o que congelar. O
 aviso de dado congelado é uma faixa persistente no topo de **todas** as
 páginas, entregue por `H-15` na casca da aplicação (achado A-57).
 
+**A leitura deixa 4 temporários em `/tmp` — é do ExcelJS, e `H-33` corrige.**
+Medido: `readWorkbook` retorna com 5 operações de FS pendentes, porque pular as
+abas fora de escopo (regra 10) impede o ExcelJS de limpar seus temporários. O
+listener de `exit` do pacote `tmp` os apaga, as operações pendentes falham com
+`ENOENT`, e o exit code cai **sem reprovar teste nenhum** — 1 vez em 8. Daí
+`fileParallelism: false` em `vitest.config.ts`, que é **mitigação temporária**:
+custa 5,3 s → 11,1 s na suíte e sai quando `H-33` trocar o leitor por `fflate`.
+Não acumula em produção: estabiliza em 4, modo `600`, some no encerramento.
+
 **Interferência externa é sinal, nunca ação** (achado A-58). `H-32` detecta
 `~$<nome>.xlsx` (alguém com a planilha aberta) e `*Cópia em conflito*` (o
 OneDrive não conseguiu mesclar) e expõe `externalLock`/`conflictFiles` em
@@ -213,8 +222,32 @@ casos-limite embutidos · `/fechar-historia H-NN` roda o portão, percorre a
 decide a branch · `/sugerir-prs` fatia a entrega em PRs. As duas últimas exigem
 aprovação do plano **e** permissão para executar.
 
-**Ao acrescentar skill, hook ou regra de permissão, atualize este bloco.** O
-hook de alinhamento avisa; quem escreve é você.
+**Gates no GitHub** (`.github/workflows/`), em `pull_request` e em `push` na
+`main`. `verify.yml` roda o portão inteiro com o Node de `.nvmrc` —
+`node-version-file` resolve no CI o mesmo problema que `nvm use` resolve na
+máquina. `dados-sensiveis.yml` roda `verifica-dados-sensiveis.sh`, que recusa
+planilha fora de `tests/fixtures/`, `config/app.json`, artefato de `data/`,
+imagem, perfilamento bruto, caminho absoluto de usuário em código ou
+configuração (A-05), e — só onde há usuário real — o nome do dono da máquina em
+qualquer arquivo.
+
+**Por que existe, se o hook já cobre:** `guard-dados-sensiveis.sh` é
+`PreToolUse` — ele vê o que **o agente** faz. Não roda em commit feito pelo
+terminal fora do Claude Code, nem pela interface web do GitHub, nem com o hook
+desabilitado. O gate é a única camada que roda sempre.
+
+`test-verifica-dados-sensiveis.sh` é a regressão desse guard, com 19 casos, e
+roda **primeiro** no workflow — mesma razão de `test-guard.sh` rodar primeiro no
+`verify`. A lista de arquivos vem de `git ls-files`, com
+`ARQUIVOS_PARA_VERIFICAR` como ponto de injeção: sem ele a regressão seria
+impossível, porque o hook — corretamente — impede montar um índice de teste
+contendo planilha e `config/app.json`.
+
+**Falta ligar branch protection na `main`**, exigindo os dois checks e PR. É
+configuração do GitHub, não arquivo versionado.
+
+**Ao acrescentar skill, hook, workflow ou regra de permissão, atualize este
+bloco.** O hook de alinhamento avisa; quem escreve é você.
 
 ## Comandos
 

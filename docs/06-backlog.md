@@ -1943,6 +1943,66 @@ com `409 EXCEL_ABERTO` é de `H-25`. Esta história produz o sinal, não a reaç
 
 ---
 
+### H-33 — Trocar o leitor de `.xlsx` do ExcelJS para `fflate`
+
+**Objetivo:** eliminar os arquivos temporários que a leitura deixa em `/tmp` e
+o erro não determinístico que eles produzem no portão.
+
+**Diagnóstico medido em 06/08/2026** — não re-derive:
+
+- Em **todos** os arquivos, inclusive a planilha real, `xl/sharedStrings.xml`
+  fica na posição **10** do zip e a primeira worksheet na posição **4**. O
+  ExcelJS então grava **cada aba** num arquivo temporário e a reparseia depois
+  (`workbook-reader.js`, linhas 113–129).
+- A regra inviolável 10 manda pular as abas fora de escopo sem consumir suas
+  linhas. Com isso `tempFileCleanupCallback()` nunca roda, e `readWorkbook`
+  **retorna com trabalho pendente**: medido, **5 `FSReqCallback` + 1
+  `PipeWrap`** vivos depois da promise resolver, e **4 temporários** em `/tmp`.
+- `tmp.setGracefulCleanup()` registra um listener de `process.exit` que apaga
+  esses arquivos. As operações pendentes tentam abri-los e falham com `ENOENT`
+  — erro **não tratado**, que derruba o exit code sem reprovar teste algum.
+- Efeito no portão: **1 reprovação em 8** execuções com paralelismo entre
+  arquivos; **0 em 6** sem paralelismo.
+- Efeito em produção: **não acumula** — estabiliza em 4 temporários ao longo de
+  6 releituras no mesmo processo, modo `600`, apagados no encerramento. O que
+  existe é o XML das quatro abas, incluindo a `CNPJ`, vivo em `/tmp` enquanto o
+  servidor roda.
+
+**Arquivos:**
+- `src/io/xlsx-reader.ts`
+- `tests/io/xlsx-reader.test.ts`
+- `vitest.config.ts` — remover `fileParallelism: false`
+
+**Contrato fixado:** `readWorkbook(config)` mantém a assinatura e o `ReadResult`
+atuais. A troca é interna; nenhum chamador muda.
+
+**Critérios de aceite:**
+- **Dado** uma leitura completa, **então** `/tmp` não recebe arquivo algum, e
+  `process.getActiveResourcesInfo()` não cresce depois que a promise resolve.
+- **Dado** as 7 fixtures, **então** todos os testes de `H-03` a `H-07`
+  continuam passando **sem alteração** — a troca é transparente.
+- **Dado** `vitest.config.ts` sem `fileParallelism: false`, **então** o portão
+  passa 10 vezes seguidas.
+- **Dado** a planilha real, **então** as 649 linhas são lidas com os mesmos
+  valores, chaves de estilo e hash de hoje.
+
+**Casos-limite:**
+- Célula com `t="s"` apontando para `sharedStrings` — o pool é global ao
+  arquivo e precisa ser carregado inteiro (limitação OOXML, regra 10).
+- Célula com fórmula → vale o resultado, não a expressão.
+- `richText` → concatenar os fragmentos.
+- Aba inexistente → `WorkbookReadError` com a lista de abas, como hoje.
+
+**Ganho colateral:** nenhuma aba fora de escopo chega a tocar o disco. A regra
+inviolável 10 passa a valer **por construção**, não por convenção. E o
+`ExcelJS` sai do caminho de leitura, restando apenas como dependência histórica
+— avaliar a remoção.
+
+**Dependências:** H-07
+**Tamanho:** M
+
+---
+
 ## Resumo do backlog
 
 | Épico | Histórias | P | M | G |
@@ -1953,8 +2013,8 @@ com `409 EXCEL_ABERTO` é de `H-25`. Esta história produz o sinal, não a reaç
 | E4 — Interface | H-15 … H-22 | 6 | 2 | 0 |
 | E5 — Edição e escrita | H-23 … H-27 | 0 | 5 | 0 |
 | E6 — Histórico | H-28, H-29 | 1 | 1 | 0 |
-| E7 — Operação | H-30, **H-31 ✅**, H-32 | 3 | 0 | 0 |
-| **Total** | **32** | **16** | **16** | **0** |
+| E7 — Operação | H-30, **H-31 ✅**, H-32, H-33 | 3 | 1 | 0 |
+| **Total** | **33** | **16** | **17** | **0** |
 
 **Nenhuma história é G.** As duas candidatas naturais foram quebradas: a
 escrita no `.xlsx` virou `H-24` (cirurgia), `H-25` (defesas) e `H-26` (comando
@@ -1962,7 +2022,7 @@ ponta a ponta); os indicadores viraram cinco histórias por natureza de cálculo
 
 ### Varredura de verbos de decisão em aberto
 
-Os textos das 32 histórias foram varridos em busca de "escolher", "avaliar",
+Os textos das 33 histórias foram varridos em busca de "escolher", "avaliar",
 "definir", "decidir" e "ver qual". As ocorrências encontradas foram eliminadas:
 
 | Onde estava | Como foi fechado |
