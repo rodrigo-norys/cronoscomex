@@ -6,6 +6,13 @@ export default defineConfig({
     environment: 'node',
     env: { NODE_ENV: 'test' },
     include: ['tests/**/*.test.ts'],
+    /*
+     * O paralelismo entre arquivos permanece LIGADO. A corrida que derrubava o
+     * exit code de forma nao deterministica e tratada onde ela existe — em
+     * `tests/support/exceljs-cleanup.ts` —, e nao desligando o paralelismo:
+     * aquilo reduzia a probabilidade sem remover a causa, e ainda assim
+     * reprovou no runner do GitHub.
+     */
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts'],
