@@ -9,6 +9,17 @@
 | **Unidade — domínio** | ~70% da suíte · cobertura **≥ 90%** de linhas (RNF-35) | Normalização, classificação, mapeamento de cor, os 21 indicadores, os 6 alertas, filtros | Vitest 4.1.10 |
 | **Integração — I/O** | ~25% da suíte · cobertura **≥ 80%** (RNF-36) | Leitura de `.xlsx`, cirurgia no XML, defesas de escrita, histórico, fila de edições | Vitest + fixtures `.xlsx` |
 | **Ponta a ponta** | ~5% da suíte | Fluxo completo: ler → filtrar → editar → aplicar → reler | Vitest + servidor Fastify em processo |
+| **Interface** | proporção a definir com `H-16` a `H-22` | Casca, navegação, faixa de estado, filtros e as sete páginas | Vitest + Testing Library 16.3.2 + jsdom 30.0.1 |
+
+A camada de interface **não constava do plano original** e foi acrescentada em
+06/08/2026, antes da primeira história de tela — ver decisão D-17. As três
+primeiras rodam no projeto `servidor` do `vitest.config.ts`, em ambiente `node`;
+a quarta roda no projeto `interface`, em `jsdom`.
+
+**O cliente não calcula**, então o que se testa aqui é comportamento, não regra:
+qual página o endereço resolve, qual faixa aparece em cada estado, se o filtro
+sobrevive a recarregar. Toda regra de negócio continua em `src/domain/`, coberta
+pela primeira camada.
 
 **Regra absoluta:** nenhum teste aponta para a planilha real (RNF-37). Toda a
 suíte roda sobre fixtures versionadas em `tests/fixtures/`.
