@@ -4,6 +4,7 @@ import { store as defaultStore, type StoreAccess } from '../../app/process-store
 import { type Alert, type AlertCounts, buildAlerts, countByType } from '../../domain/alerts.ts'
 import { today as currentDay } from '../../domain/date-window.ts'
 import { apiError } from '../errors.ts'
+import { filteredProcesses } from '../filter-request.ts'
 
 /**
  * GET /api/alerts — contrato em docs/05-contratos-api.md.
@@ -31,7 +32,7 @@ export function registerAlertsRoute(
   config: AppConfig,
   store: StoreAccess = defaultStore,
 ): void {
-  app.get('/api/alerts', (_request, reply) => {
+  app.get('/api/alerts', (request, reply) => {
     const state = store.getState()
 
     // 503 apenas quando NUNCA houve leitura, como em /api/indicators: com uma
@@ -49,7 +50,12 @@ export function registerAlertsRoute(
     }
 
     const day = currentDay(config.timezone)
-    const items = buildAlerts(state.processes, day, NO_HISTORY, config.stalledDaysThreshold)
+
+    // RF-18: todo alerta respeita os filtros ativos, como os indicadores.
+    const processes = filteredProcesses(request, reply, state.processes)
+    if (processes === null) return reply
+
+    const items = buildAlerts(processes, day, NO_HISTORY, config.stalledDaysThreshold)
 
     const body: AlertsResponse = {
       items,
