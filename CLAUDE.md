@@ -254,10 +254,19 @@ silêncio: continuaria saindo `0`. Metade dos casos são falsos positivos que
 precisam **passar**; dois deles já morderam de verdade. Exige `bash` e `jq`.
 
 **Skills** (`.claude/skills/`). `/fatia H-NN` abre a história com contrato e
-casos-limite embutidos · `/fechar-historia H-NN` roda o portão, percorre a
+casos-limite embutidos · `/novo-indicador IND-NN` conduz um indicador pelo ciclo
+das quatro camadas · `/fechar-historia H-NN` roda o portão, percorre a
 *definition of done* e imprime a prova · `/sugerir-commits` monta os commits e
 decide a branch · `/sugerir-prs` fatia a entrega em PRs. As duas últimas exigem
 aprovação do plano **e** permissão para executar.
+
+**`/novo-indicador` existe por causa de uma omissão que se repetiu cinco vezes.**
+`src/http/routes/indicators.ts` ficou de fora da lista de arquivos de `H-09` a
+`H-13`, sempre — indicador calculado e não servido não existe para o usuário. A
+skill fixa os quatro passos (domínio → teste → rota → conferência contra a
+planilha real) e carrega as armadilhas já medidas: `null` não é `0`, exclusão se
+conta, `eta2 = null` nunca satisfaz calendário, e `isWithin` está errado onde a
+janela não tem piso.
 
 **Gates no GitHub** (`.github/workflows/`), em `pull_request` e em `push` na
 `main`. `verify.yml` roda o portão inteiro com o Node de `.nvmrc` —
@@ -329,7 +338,7 @@ processo e são abandonados. Os gatilhos abaixo são objetivos.
 
 | Gatilho | O que criar | Por quê agora e não antes |
 |---|---|---|
-| **Ao concluir `H-13`** | Skill `novo-indicador` | Ali você terá feito `H-09` a `H-13` — cinco histórias com o mesmo ciclo: função pura em `src/domain/indicators.ts` → teste com os valores da tabela de decisão → campo no schema de `GET /api/indicators` → cartão na interface. A skill sai da repetição real, com o formato já estabilizado |
+| ~~**Ao concluir `H-13`**~~ | ~~Skill `novo-indicador`~~ | ✅ **Criada em 06/08/2026**, ao fechar `H-13`. Saiu da repetição real de `H-09` a `H-13`, com o formato já estabilizado — e com a omissão sistemática da rota como motivo principal |
 | **Antes de iniciar a Fase 3** (`H-24`) | Subagent de review para manipulação de XML | `H-24` tem 8 casos-limite (escapes, `sharedStrings`, fórmula órfã, `xml:space`, ordem dos nós) e o custo de errar é a planilha da empresa. É o único ponto do projeto onde revisão adversarial se paga |
 | **Ao concluir `H-20`** | Skill `nova-pagina` | Após `H-16` a `H-20` haverá cinco páginas com o mesmo padrão: consumir rota → respeitar filtros globais → estado vazio explícito → nunca calcular no cliente |
 | **Se aparecer a aba `2027`** | Reexecutar `H-01` | `python3 tools/profile_workbook.py`, depois `tools/build_fixtures.py`. As abas `2025` e `2024` provam que **o esquema muda entre anos**. Risco R-14 |
