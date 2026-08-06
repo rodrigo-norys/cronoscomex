@@ -152,7 +152,7 @@ especificação são rastreados aqui, para que **nenhum** fique fora.
 
 ## 4. Verificação de histórias órfãs
 
-As 32 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
+As 33 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
 
 | História | Aparece em | Papel |
 |---|---|---|
@@ -188,6 +188,7 @@ As 32 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
 | H-30 | §5 abaixo (operação) | Empacotamento e execução |
 | H-31 | §5 abaixo (RF-16, observabilidade) | ✅ **Concluída.** Logs e métricas. Fecha a Fase 1 |
 | H-32 | §5 abaixo (RF-16, observabilidade) | Sinal de interferência externa no arquivo (A-58) |
+| H-33 | Cadeia base | Troca o leitor de `.xlsx` para `fflate`: elimina os temporários em `/tmp` e o erro não determinístico do portão |
 
 ---
 
