@@ -1,0 +1,39 @@
+name: verify
+
+# O portao obrigatorio do projeto, do lado que nao da para contornar. O hook
+# local guard-dados-sensiveis.sh e PreToolUse: protege contra o agente, mas nao
+# roda em commit feito fora do Claude Code nem pela interface web do GitHub.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+# So a ultima execucao de cada ref interessa.
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # node-version-file resolve no CI o mesmo problema que `nvm use` resolve
+      # na maquina do operador: garante o 22.23.2 fixado em .nvmrc e engines.
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      # lint + typecheck + test + build, na ordem definida em package.json.
+      # test-guard.sh roda primeiro, como regressao do hook.
+      - name: Portao de qualidade
+        run: npm run verify
