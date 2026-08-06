@@ -855,6 +855,31 @@ Ordenação: `count` decrescente, desempate por `key` ascendente. `topN` padrão
 
 ### H-12 — Entregar os indicadores de risco
 
+> ✅ **CONCLUÍDA em 05/08/2026.** 28 testes próprios; suíte total em 307.
+>
+> **Verificado contra a planilha real** com `today = 2026-08-05`, sobre as 649
+> linhas: `canalVermelho 5 · documentosPendentes 14 · atrasados 4`, com 169
+> processos não desembaraçados. A validação usou `app.inject()` do Fastify, e
+> não HTTP: exercita a rota inteira sem abrir socket, o que dispensa afrouxar a
+> negação de `curl` nas permissões.
+>
+> **Divergências resolvidas:** a dependência declarada era `H-10`, mas `H-11` já
+> havia extraído `isOverdue(process, today)` para o `overdueCount` do ranking de
+> agentes — `overdueCount` desta fatia é apresentação dela, e a dependência
+> efetiva passa a ser `H-11`; `src/http/routes/indicators.ts` não constava da
+> lista de arquivos, e sem ele os três indicadores ficariam calculados mas
+> invisíveis na API, mesma situação de `H-09` a `H-11`.
+>
+> **Armadilha registrada em código e teste: IND-14 tem teto e não tem piso.**
+> A condição é `eta2 <= hoje+10`, nunca `hoje <= eta2 <= hoje+10`. Usar
+> `isWithin` — o reflexo natural, já que ele existe desde `H-10` para IND-09 —
+> excluiria toda carga que já chegou sem documento, exatamente o caso mais
+> grave. O teste com `eta2 = 2025-01-01` fixa isso.
+>
+> **O segundo critério de aceite já estava satisfeito desde `H-07`:**
+> `CANAL_EM_TEXTO_STATUS` é gerado pelo classificador. Esta fatia verificou
+> apenas o outro lado — que a cor, e só a cor, alimenta IND-06 (A-06).
+
 **Objetivo:** IND-06, IND-14 e IND-15, com as exclusões definidas na auditoria.
 
 **Arquivos:**
@@ -897,7 +922,8 @@ export function overdueCount(p: Process[], today: Date): number       // IND-15
   ausente de ambos.
 - `customsChannel = 'indefinido'` (cor não mapeada) → não conta em IND-06.
 
-**Dependências:** H-10
+**Dependências:** H-11 — corrigido de `H-10` no fechamento: `overdueCount`
+apoia-se em `isOverdue`, extraído por `H-11`
 **Tamanho:** P
 
 ---
@@ -1923,7 +1949,7 @@ com `409 EXCEL_ABERTO` é de `H-25`. Esta história produz o sinal, não a reaç
 |---|---|---|---|---|
 | E1 — Fundação e perfilamento ✅ | H-01 ✅, H-02 ✅ | 0 | 2 | 0 |
 | E2 — Leitura e normalização ✅ | **H-03 ✅ H-04 ✅ H-05 ✅ H-06 ✅ H-07 ✅ H-08 ✅** | 3 | 3 | 0 |
-| E3 — Indicadores e alertas | **H-09 ✅ H-10 ✅ H-11 ✅**, H-12 … H-14 | 3 | 3 | 0 |
+| E3 — Indicadores e alertas | **H-09 ✅ H-10 ✅ H-11 ✅ H-12 ✅**, H-13, H-14 | 3 | 3 | 0 |
 | E4 — Interface | H-15 … H-22 | 6 | 2 | 0 |
 | E5 — Edição e escrita | H-23 … H-27 | 0 | 5 | 0 |
 | E6 — Histórico | H-28, H-29 | 1 | 1 | 0 |
