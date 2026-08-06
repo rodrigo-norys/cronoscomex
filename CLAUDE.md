@@ -105,8 +105,8 @@ Não re-derive isto; está medido.
 
 ## Estado
 
-**Fases 0 e 1 concluídas. Fase 2 em andamento: `H-09` a `H-11` fechadas.**
-Próximo passo: **`H-12`** — indicadores de risco.
+**Fases 0 e 1 concluídas. Fase 2 em andamento: `H-09` a `H-12` fechadas.**
+Próximo passo: **`H-13`** — indicadores de tempo.
 As fases estão em `docs/07-plano-entrega.md`.
 
 A cadeia de ingestão foi validada contra o arquivo real, dentro do limite de
@@ -114,8 +114,13 @@ quarentena de RNF-24. **Não transcreva número medido para cá** — a contagem
 testes vem do Vitest, os totais vêm da rota, e cópia manual diverge.
 
 `GET /api/indicators` **nasce parcial**: devolve só os blocos já calculados, e
-cresce a cada história de `H-12` a `H-13`. Zerar campo não calculado o tornaria
-indistinguível de zero medido.
+fecha em `H-13`, com `desembaracadosHoje` e `documentaryLeadTime`. Zerar campo
+não calculado o tornaria indistinguível de zero medido.
+
+**IND-14 tem teto e não tem piso:** `eta2 <= hoje+10`, nunca
+`hoje <= eta2 <= hoje+10`. Usar `isWithin` ali — o reflexo natural, já que ele
+existe para IND-09 — excluiria toda carga que já chegou sem documento, o caso
+mais grave. Há teste com `eta2 = 2025-01-01` fixando isso.
 
 **`isOverdue(process, today)` é a regra única de atraso**, em
 `src/domain/indicators.ts`. IND-15, ALE-01 e o `overdueCount` do ranking de
