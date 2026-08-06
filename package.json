@@ -15,10 +15,11 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:hooks": "bash .claude/hooks/test-guard.sh",
+    "test:strip": "node --experimental-strip-types tools/verificar-strip-types.mjs",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "typecheck": "tsc --noEmit",
-    "verify": "npm run test:hooks && npm run lint && npm run typecheck && npm test && npm run build",
+    "verify": "npm run test:hooks && npm run test:strip && npm run lint && npm run typecheck && npm test && npm run build",
     "profile": "python3 tools/profile_workbook.py",
     "fixtures": "python3 tools/build_fixtures.py"
   },
