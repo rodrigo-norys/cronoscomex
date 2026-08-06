@@ -96,11 +96,24 @@ roda_local reprova 'caminho Windows em src/'             'src/windows.ts'
 roda_local aprova  'marcador generico em docs/'          'docs/marcador.md'
 roda_local aprova  'payload de ataque no test-guard'     '.claude/hooks/test-guard.sh'
 
+# A isencao existe porque uma regressao de guard carrega os proprios padroes
+# que o guard detecta. Ela vale SO para caminho absoluto — o caso abaixo prova
+# que o nome real do dono da maquina continua reprovando mesmo nesses arquivos.
+# O payload usa um nome DIFERENTE do usuario simulado: senao este caso mediria
+# o check do nome, nao o da isencao.
+mkdir -p .github/scripts
+printf 'payload: "/home/beltrano/Desktop/x"\n' > .github/scripts/test-verifica-dados-sensiveis.sh
+roda_local aprova  'regressao de guard com payload de caminho'  '.github/scripts/test-verifica-dados-sensiveis.sh'
+
 printf '\nNome real do usuario do sistema\n'
 printf 'o operador fulano rodou o painel\n' > docs/nota.md
 printf 'o operador rodou o painel\n'        > docs/limpo.md
 roda_local reprova 'nome do usuario em documento'        'docs/nota.md'
 roda_local aprova  'documento sem o nome'                'docs/limpo.md'
+
+# A isencao NAO cobre o nome real: ali nao existe payload legitimo.
+printf 'o operador fulano trabalhou aqui\n' > .github/scripts/test-verifica-dados-sensiveis.sh
+roda_local reprova 'nome do usuario numa regressao de guard' '.github/scripts/test-verifica-dados-sensiveis.sh'
 
 printf '\n%d passaram, %d falharam\n' "$passou" "$falhou"
 [ "$falhou" -eq 0 ] || exit 1

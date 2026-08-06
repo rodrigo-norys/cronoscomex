@@ -17,6 +17,18 @@ set -uo pipefail
 achados=0
 ESTE_SCRIPT='.github/scripts/verifica-dados-sensiveis.sh'
 
+# Arquivos de regressao de guard carregam, por natureza, os proprios padroes
+# que os guards detectam — sem eles nao ha como provar que o guard pega o caso.
+# A isencao vale SO para o check de caminho absoluto. O nome real do dono da
+# maquina continua valendo para eles: ali nao existe payload legitimo.
+eh_regressao_de_guard() {
+  case "$1" in
+    "$ESTE_SCRIPT" | '.github/scripts/test-verifica-dados-sensiveis.sh' | '.claude/hooks/test-guard.sh')
+      return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
 reportar() {
   achados=$((achados + 1))
   printf '\n[FALHA] %s\n' "$1"
@@ -27,7 +39,11 @@ reportar() {
 # regressao em .github/scripts/test-verifica-dados-sensiveis.sh: o hook
 # guard-dados-sensiveis.sh — corretamente — impede montar um indice com
 # planilha e config/app.json, mesmo em repositorio descartavel.
-versionados="${ARQUIVOS_PARA_VERIFICAR:-$(git ls-files)}"
+#
+# Sem os dois-pontos de proposito: `${VAR-default}` distingue "nao definida" de
+# "definida e vazia". Com `${VAR:-default}`, testar a lista vazia cairia no
+# `git ls-files` e analisaria a arvore inteira.
+versionados="${ARQUIVOS_PARA_VERIFICAR-$(git ls-files)}"
 
 # 1. Planilhas fora das fixtures. As 7 de tests/fixtures/ sao derivadas do
 #    arquivo real com nomes trocados, e versiona-las e exigencia da regra 7.
@@ -69,7 +85,7 @@ alvos_config="$(printf '%s\n' "$versionados" |
 absolutos=''
 while IFS= read -r arquivo; do
   [ -z "$arquivo" ] && continue
-  [ "$arquivo" = "$ESTE_SCRIPT" ] && continue
+  eh_regressao_de_guard "$arquivo" && continue
   grep -Iq . "$arquivo" 2>/dev/null || continue
   # A barra final e o que distingue diretorio de usuario (`/home/fulano/`) de
   # um caminho qualquer sob /home — o test-guard.sh usa `/home/vazamento.txt`
