@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { addDays, isoWeekEnd, isWithin, today, toIsoDay } from '../../src/domain/date-window.ts'
+import {
+  addDays,
+  diffDays,
+  isoWeekEnd,
+  isWithin,
+  today,
+  toIsoDay,
+} from '../../src/domain/date-window.ts'
 
 const SP = 'America/Sao_Paulo'
 
@@ -82,6 +89,35 @@ describe('addDays', () => {
     addDays(origem, 10)
 
     expect(toIsoDay(origem)).toBe('2026-08-03')
+  })
+})
+
+describe('diffDays', () => {
+  it('conta os dias inteiros entre duas ancoras', () => {
+    expect(diffDays(civil('2026-07-20'), civil('2026-07-30'))).toBe(10)
+  })
+
+  it('devolve zero para a mesma data', () => {
+    expect(diffDays(civil('2026-07-20'), civil('2026-07-20'))).toBe(0)
+  })
+
+  it('devolve negativo quando a ordem se inverte', () => {
+    expect(diffDays(civil('2026-07-30'), civil('2026-07-20'))).toBe(-10)
+  })
+
+  it('atravessa fevereiro de ano bissexto', () => {
+    expect(diffDays(civil('2028-02-28'), civil('2028-03-01'))).toBe(2)
+  })
+
+  // O horario de verao nao existe para data civil ancorada em UTC (TD-03).
+  it('nao perde nem ganha dia na virada de outubro', () => {
+    expect(diffDays(civil('2026-10-01'), civil('2026-11-01'))).toBe(31)
+  })
+
+  it('e o inverso de addDays', () => {
+    const origem = civil('2026-08-03')
+
+    expect(diffDays(origem, addDays(origem, 15))).toBe(15)
   })
 })
 

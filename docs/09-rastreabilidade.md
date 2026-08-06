@@ -42,13 +42,13 @@ legibilidade: `H-02` → `H-03` → `H-05` → `H-06` → `H-07` → `H-08`.
 | IND-13 | Mercadorias | MERCADORIA | `count` agrupado por `normKey(MERCADORIA)`, desc, com `bazarShare` exposto (A-34) | H-11 | `indicators-rankings.test.ts` | ✅ **Backend entregue** (`H-11`); apresentação pendente. **Limitação medida:** `BAZAR` são 210 processos, 35,47% dos que têm mercadoria — 5,7× o segundo colocado real. Exposta em `meta.bazarShare` (A-34) |
 | IND-14 | Documentos pendentes | DOCS ENVIADOS + ETA2 + STATUS | `count(docsSent = null ∧ eta2 ≤ hoje+10 ∧ category ≠ 'desembaracado')` (A-08) | H-12, H-16 | `indicators-risk.test.ts` | ✅ **Backend entregue** (`H-12`); cartão pendente de `H-16` — P-03 confirmada |
 | IND-15 | Processos atrasados | ETA2 + STATUS | `count(eta2 < hoje ∧ category ≠ 'desembaracado')`. `eta2 = null` nunca satisfaz (A-20) | H-12, H-16 | `indicators-risk.test.ts` | ✅ **Backend entregue** (`H-12`); cartão pendente de `H-16` — P-03 confirmada |
-| IND-16 | Processos desembaraçados hoje | RG + STATUS | `count(rg = hoje ∧ category = 'desembaracado')`. Cruzamento acrescentado por A-05 e A-29 | H-13, H-16 | `indicators-time.test.ts` | ✅ **Implementável** — P-03 confirmada |
+| IND-16 | Processos desembaraçados hoje | RG + STATUS | `count(rg = hoje ∧ category = 'desembaracado')`. Cruzamento acrescentado por A-05 e A-29 | H-13, H-16 | `indicators-time.test.ts` | ✅ **Backend entregue** (`H-13`); cartão pendente de `H-16` — P-03 confirmada. **O cruzamento de A-29 é necessário na prática:** medidas 3 linhas com RG preenchido em processo não desembaraçado |
 | IND-17 | Ranking de agentes | AGENTE | `count` agrupado por `normKey(AGENTE)`, desc, com `overdueCount` para atender ao objetivo declarado (A-27) | H-11 | `indicators-rankings.test.ts` | ✅ **Backend entregue** (`H-11`); apresentação pendente — P-01 confirmada: coluna E é `AGENTE`, 576 valores, 35 distintos |
 | IND-18 | Ranking de clientes | CLT | Top 10 de IND-10, apresentação visual (A-25) | H-11, H-18 | `indicators-rankings.test.ts` | ✅ **Backend entregue** (`H-11`); apresentação pendente |
 | IND-19 | Ranking de importadores | IMPORTADOR | Top 10 de IND-11, apresentação visual | H-11, H-18 | `indicators-rankings.test.ts` | ✅ **Backend entregue** (`H-11`); apresentação pendente |
 | IND-20 | Ranking por responsável | Cor da linha (célula A) | `count` agrupado por `responsible`, com as 4 chaves sempre presentes, inclusive `indefinido` (A-17, A-18, A-28) | H-04, H-11, H-27 | `color-mapper.test.ts` · `indicators-rankings.test.ts` | ✅ **Backend entregue** (`H-11`); apresentação pendente — 9 chaves mapeadas. Limitação estrutural mantida (A-31, R-02): linha vermelha ou verde perde o responsável. Medido: 477 linhas verdes sem responsável |
 | IND-21 | Tempo médio até desembaraço | — | Exigiria `DATA_PRESENÇA_DE_CARGA − RG`. A coluna **não existe** e o usuário determinou que não haverá colunas novas | — | — | **Bloqueado por lacuna.** A própria especificação (§4, observação) já o declara fora de escopo. Custo da decisão registrado em `03-modelo-dados.md §5` |
-| IND-22 | Tempo médio de envio documental | RG + DOCS ENVIADOS | `avg(rg − docsSent)` em dias. Ordem da subtração corrigida por A-02; negativos e pares incompletos excluídos e contados (A-30) | H-13, H-19 | `indicators-time.test.ts` | ✅ **Implementável** — P-03 confirmada |
+| IND-22 | Tempo médio de envio documental | RG + DOCS ENVIADOS | `avg(rg − docsSent)` em dias. Ordem da subtração corrigida por A-02; negativos e pares incompletos excluídos e contados (A-30) | H-13, H-19 | `indicators-time.test.ts` | ✅ **Backend entregue** (`H-13`); quebras pendentes de `H-19` — P-03 confirmada. **Medido:** média 12,5 dias sobre amostra de 101 (15,6% da base), com 1 negativo e 547 pares incompletos. A exclusão de A-30 não era hipótese |
 
 ---
 
@@ -168,7 +168,7 @@ As 33 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
 | H-10 | IND-07, IND-08, IND-09, IND-12 | ✅ **Concluída.** Indicadores de calendário. O fuso é resolvido num único ponto: `today()` |
 | H-11 | IND-10, IND-11, IND-13, IND-17, IND-18, IND-19, IND-20 | ✅ **Concluída.** Agrupamentos e rankings. `bazarShare` medido em 35,47% |
 | H-12 | IND-06, IND-14, IND-15 | ✅ **Concluída.** Indicadores de risco. `overdueCount` é apresentação de `isOverdue`, nunca reimplementação |
-| H-13 | IND-16, IND-22 | Indicadores de tempo |
+| H-13 | IND-16, IND-22 | ✅ **Concluída.** Indicadores de tempo. Fecha o contrato de `GET /api/indicators`, que nasceu parcial em `H-09`. Medido: `averageDays 12,5` sobre amostra de 101 |
 | H-14 | ALE-01 a ALE-05 | Alertas do estado atual |
 | H-15 | §3.2 (os 11 filtros) | Filtros globais **e** a faixa de estado `degradado` no topo de todas as páginas (A-57) |
 | H-16 | IND-01 a IND-09, IND-14 a IND-16, §3.1 (Página Inicial) | Cartões-resumo |

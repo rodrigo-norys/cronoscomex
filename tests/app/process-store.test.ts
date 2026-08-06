@@ -1,17 +1,13 @@
 import { copyFileSync, existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppConfig } from '../../src/app/config.ts'
 import type { Logger, LogInput } from '../../src/app/logger.ts'
 import { getState, initStore, reload } from '../../src/app/process-store.ts'
 import type { ColorMapEntry } from '../../src/domain/color-mapper.ts'
 import type { RawRow } from '../../src/domain/types.ts'
 import type { ReadResult } from '../../src/io/xlsx-reader.ts'
-import { awaitExcelJsCleanup } from '../support/exceljs-cleanup.ts'
-
-// Mitigacao temporaria de H-33 — ver tests/support/exceljs-cleanup.ts.
-afterAll(awaitExcelJsCleanup)
 
 const COLOR_MAP: ColorMapEntry[] = [
   {
