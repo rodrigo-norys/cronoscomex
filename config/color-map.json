@@ -35,8 +35,8 @@
       "fillId": 8,
       "label": "Azul",
       "rowsAtProfiling": 120,
-      "significado": "Processos da Samira.",
-      "responsible": "samira",
+      "significado": "Processos do Colaborador 1.",
+      "responsible": "colaborador1",
       "customsChannel": "nenhum",
       "importerOutsideRj": false
     },
@@ -45,8 +45,8 @@
       "fillId": 27,
       "label": "Roxo (tom A)",
       "rowsAtProfiling": 31,
-      "significado": "Processos do Hugo.",
-      "responsible": "hugo",
+      "significado": "Processos do Colaborador 2.",
+      "responsible": "colaborador2",
       "customsChannel": "nenhum",
       "importerOutsideRj": false
     },
@@ -56,7 +56,7 @@
       "label": "Roxo (tom B)",
       "rowsAtProfiling": 5,
       "significado": "Mesmo significado do tom A. Unificado por decisao do usuario (achado A-48).",
-      "responsible": "hugo",
+      "responsible": "colaborador2",
       "customsChannel": "nenhum",
       "importerOutsideRj": false
     },
@@ -65,8 +65,8 @@
       "fillId": 9,
       "label": "Bege",
       "rowsAtProfiling": 9,
-      "significado": "Processos da Samira pertencentes a outros clientes. Subcategoria de Samira (achado A-18): o filtro Responsavel=Samira seleciona samira E samira_outros_clientes.",
-      "responsible": "samira_outros_clientes",
+      "significado": "Processos do Colaborador 1 pertencentes a outros clientes. Subcategoria de Colaborador 1 (achado A-18): o filtro Responsavel=Colaborador 1 seleciona colaborador1 E colaborador1_outros_clientes.",
+      "responsible": "colaborador1_outros_clientes",
       "customsChannel": "nenhum",
       "importerOutsideRj": false
     },
@@ -103,7 +103,7 @@
   ],
 
   "_dominios": {
-    "responsible": ["samira", "hugo", "samira_outros_clientes", "indefinido"],
+    "responsible": ["colaborador1", "colaborador2", "colaborador1_outros_clientes", "indefinido"],
     "customsChannel": ["vermelho", "nenhum", "indefinido"],
     "importerOutsideRj": [true, false]
   },

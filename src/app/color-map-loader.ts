@@ -14,9 +14,9 @@ export class ColorMapError extends Error {
 }
 
 const RESPONSIBLE: readonly Responsible[] = [
-  'samira',
-  'hugo',
-  'samira_outros_clientes',
+  'colaborador1',
+  'colaborador2',
+  'colaborador1_outros_clientes',
   'indefinido',
 ]
 const CHANNEL: readonly CustomsChannel[] = ['vermelho', 'nenhum', 'indefinido']

@@ -206,7 +206,7 @@ materializando.
 | | |
 |---|---|
 | **Probabilidade** | 5 — é **certo** que ocorra: A-31 demonstra que uma linha só tem uma cor, e a cor codifica responsável, canal e localização do importador |
-| **Impacto** | 3 — um processo da Samira em Canal Vermelho perde a informação de responsável |
+| **Impacto** | 3 — um processo do Colaborador 1 em Canal Vermelho perde a informação de responsável |
 | **Gatilho observável** | Contagem de `responsible: 'indefinido'` no ranking por responsável desproporcional ao volume total |
 | **Mitigação preventiva** | Os três campos são independentes e admitem `indefinido`; a aplicação **nunca** infere um a partir do outro; o ranking exibe `indefinido` como categoria visível, e não o esconde |
 | **Contingência** | Acrescentar as colunas `RESPONSÁVEL` e `CANAL` em texto, como §8 da especificação já sugere. A decisão do usuário foi não criar colunas novas; o custo dessa decisão está registrado em `03-modelo-dados.md §5` |

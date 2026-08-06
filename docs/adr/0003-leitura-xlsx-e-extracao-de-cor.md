@@ -9,9 +9,9 @@ nenhuma coluna de texto** — existem apenas como cor de preenchimento da linha:
 
 | Cor | Significado |
 |---|---|
-| Azul | Processos da Samira |
-| Roxo | Processos do Hugo |
-| Bege | Processos da Samira, de outros clientes |
+| Azul | Processos do Colaborador 1 |
+| Roxo | Processos do Colaborador 2 |
+| Bege | Processos do Colaborador 1, de outros clientes |
 | Vermelho | Canal Vermelho |
 | Amarelo forte | Importador fora do RJ |
 | Verde | Desembaraçado (confirmação visual) |
@@ -136,7 +136,7 @@ destruiria bordas — ver TD-05.1 e o achado A-49.
   chave de estilo na célula A.
 - **A cor codifica dimensões concorrentes** (A-31): uma linha tem uma cor, mas
   a especificação lhe atribui quatro significados de dimensões diferentes. Um
-  processo da Samira em Canal Vermelho perde o responsável. Esta decisão **não
+  processo do Colaborador 1 em Canal Vermelho perde o responsável. Esta decisão **não
   resolve** esse problema — ele é da origem do dado, e está registrado como
   R-02, com a contingência sendo criar as colunas de texto que §8 sugere.
 

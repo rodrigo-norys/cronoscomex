@@ -27,7 +27,7 @@ parâmetro, **E** entre parâmetros distintos.
 | `agent` | `string[]` | Chave normalizada de AGENTE |
 | `goods` | `string[]` | Chave normalizada de MERCADORIA |
 | `category` | `string[]` | `desembaracado` · `em_desembaraco` · `em_andamento` · `fechado_aguardando_draft` |
-| `responsible` | `string[]` | `samira` · `hugo` · `samira_outros_clientes` · `indefinido`. O valor `samira` seleciona **também** `samira_outros_clientes` (A-18) |
+| `responsible` | `string[]` | `colaborador1` · `colaborador2` · `colaborador1_outros_clientes` · `indefinido`. O valor `colaborador1` seleciona **também** `colaborador1_outros_clientes` (A-18) |
 | `channel` | `string[]` | `vermelho` · `nenhum` · `indefinido` |
 | `port` | `string[]` | Chave normalizada de ETA. Domínio aberto (A-36) |
 | `importerOutsideRj` | `boolean` | `true` · `false` |
@@ -66,7 +66,7 @@ Parâmetro com valor fora do domínio → `400 FILTRO_INVALIDO`.
 ```ts
 type StatusCategory = 'desembaracado' | 'em_desembaraco' | 'em_andamento'
                     | 'fechado_aguardando_draft'
-type Responsible    = 'samira' | 'hugo' | 'samira_outros_clientes' | 'indefinido'
+type Responsible    = 'colaborador1' | 'colaborador2' | 'colaborador1_outros_clientes' | 'indefinido'
 type CustomsChannel = 'vermelho' | 'nenhum' | 'indefinido'
 
 interface ProcessDto {
@@ -311,7 +311,7 @@ Valores disponíveis para cada filtro, derivados do arquivo, não de lista fixa
   "clients":   [ { "key": "RSASSI", "label": "RSASSI", "count": 0 } ],
   "importers": [], "vessels": [], "agents": [], "goods": [], "ports": [],
   "categories":  [ { "key": "desembaracado", "label": "Desembaraçado", "count": 0 } ],
-  "responsible": [ { "key": "samira", "label": "Samira", "count": 0 } ],
+  "responsible": [ { "key": "colaborador1", "label": "Colaborador 1", "count": 0 } ],
   "channels":    [ { "key": "vermelho", "label": "Canal Vermelho", "count": 0 } ]
 }
 ```
@@ -436,7 +436,7 @@ Fase 4 (`H-27`). Os três são gravados como **uma única** mudança de estilo d
 linha, porque compartilham a mesma célula-âncora.
 
 ```jsonc
-{ "responsible": "hugo", "customsChannel": "nenhum", "importerOutsideRj": false }
+{ "responsible": "colaborador2", "customsChannel": "nenhum", "importerOutsideRj": false }
 ```
 
 A combinação enviada precisa corresponder a exatamente uma entrada de
