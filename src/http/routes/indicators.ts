@@ -14,6 +14,9 @@ import {
   expectedVessels,
   type GroupCount,
   groupCount,
+  overdueCount,
+  pendingDocsCount,
+  redChannelCount,
   responsibleRanking,
 } from '../../domain/indicators.ts'
 import { apiError } from '../errors.ts'
@@ -30,6 +33,9 @@ export interface IndicatorsCounts extends CategoryCounts {
   chegandoHoje: number
   chegandoSemana: number
   chegando15Dias: number
+  canalVermelho: number
+  documentosPendentes: number
+  atrasados: number
 }
 
 export interface IndicatorsRankings {
@@ -90,6 +96,9 @@ export function registerIndicatorsRoute(
         chegandoHoje: arrivingToday(processes, day),
         chegandoSemana: arrivingThisWeek(processes, day),
         chegando15Dias: arrivingIn15Days(processes, day),
+        canalVermelho: redChannelCount(processes),
+        documentosPendentes: pendingDocsCount(processes, day),
+        atrasados: overdueCount(processes, day),
       },
       rankings: {
         clients: groupCount(
