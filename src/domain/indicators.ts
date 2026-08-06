@@ -133,6 +133,46 @@ export function isOverdue(process: Process, today: Date): boolean {
   return process.eta2.getTime() < today.getTime() && process.statusCategory !== 'desembaracado'
 }
 
+/**
+ * IND-06. **Apenas a cor e fonte** (A-06).
+ *
+ * STATUS mencionando canal nao conta: o classificador ja registra isso como
+ * anomalia `CANAL_EM_TEXTO_STATUS`, e transformar texto em canal seria
+ * adivinhar. `indefinido` (cor nao mapeada) tambem nao conta — nao saber a cor
+ * nao e o mesmo que saber que ela nao e vermelha.
+ */
+export function redChannelCount(processes: readonly Process[]): number {
+  return processes.filter((process) => process.customsChannel === 'vermelho').length
+}
+
+/** Prazo de antecedencia da documentacao, em dias (A-08). */
+export const PENDING_DOCS_HORIZON_DAYS = 10
+
+/**
+ * IND-14. Processos sem DOCS ENVIADOS cuja chegada esta proxima ou ja passou.
+ *
+ * A janela tem TETO e nao tem PISO: `eta2 <= hoje+10`, nunca
+ * `hoje <= eta2 <= hoje+10`. Um intervalo fechado — o reflexo natural, ja que
+ * `isWithin` existe desde H-10 — excluiria todo processo cuja carga ja chegou
+ * sem documento, que sao exatamente os mais graves.
+ */
+export function pendingDocsCount(processes: readonly Process[], today: Date): number {
+  const horizon = addDays(today, PENDING_DOCS_HORIZON_DAYS).getTime()
+
+  return processes.filter(
+    (process) =>
+      process.docsSentDate === null &&
+      process.eta2 !== null &&
+      process.eta2.getTime() <= horizon &&
+      process.statusCategory !== 'desembaracado',
+  ).length
+}
+
+/** IND-15. Apresentacao de `isOverdue` — a regra vive la, nunca aqui. */
+export function overdueCount(processes: readonly Process[], today: Date): number {
+  return processes.filter((process) => isOverdue(process, today)).length
+}
+
 /** Uma linha de ranking. Formato de `05-contratos-api.md §1.3`. */
 export interface GroupCount {
   /** Chave normalizada (TD-04). Vazia quando o campo de origem esta vazio. */
