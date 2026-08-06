@@ -1,9 +1,15 @@
-# Planilha real: dado de cliente e, na aba CNPJ, credenciais de terceiros
+# Planilha real: dado de cliente e, na aba CNPJ, dado de acesso de terceiros
 *.xlsx
 !tests/fixtures/*.xlsx
 
 # Prints da planilha real
 *.jpeg
+*.jpg
+*.png
+
+# Especificacao funcional original: documento do cliente. O que este
+# repositorio guarda e a AUDITORIA dela, em docs/01-auditoria-especificacao.md
+especificacao-dashboard-comex.md
 
 # Estado de execucao
 data/
