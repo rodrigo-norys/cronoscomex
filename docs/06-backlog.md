@@ -1034,6 +1034,17 @@ export function documentaryLeadTime(p: Process[]): LeadTime           // IND-22
 **Objetivo:** ALE-01 a ALE-05 numa lista única ordenada por severidade fixa.
 ALE-06 depende de histórico e é entregue em `H-29`.
 
+> **Decidido em 06/08/2026, antes da implementação** — três achados novos:
+>
+> - **A-59:** `category ≠ 'desembaracado'` vale nos **cinco** alertas, não só em
+>   ALE-01 e ALE-02. A página é fila de trabalho; processo concluído não pede
+>   ação. Sem o filtro, 5 de 14 alertas seriam sobre processos encerrados.
+> - **A-61:** `historyStartedAt` é `string | null`, e vale `null` até `H-28`.
+> - **A-62:** a fila também muda pela passagem do dia, sem a planilha mudar.
+>   Tela aberta atravessando a meia-noite exibe o dia anterior. **Em aberto,
+>   endereçado a `H-15`** — não bloqueia esta história, porque o domínio já
+>   recebe `today` como parâmetro.
+
 **Arquivos:**
 - `src/domain/alerts.ts`
 - `src/http/routes/alerts.ts`
@@ -1089,6 +1100,14 @@ ascendente, nulos por último.
 
 **Objetivo:** navegação entre as páginas e filtros que se aplicam a todos os
 indicadores e alertas simultaneamente.
+
+> **A-62 chega aqui, em aberto.** Indicadores de calendário e alertas dependem
+> do **dia corrente**, resolvido a cada requisição. Uma tela deixada aberta
+> atravessando a meia-noite segue exibindo a fila do dia anterior: nenhum
+> arquivo muda à meia-noite, então o watcher não dispara. Decidir nesta casca
+> entre revalidar quando a aba volta ao foco, comparar `meta.today` da resposta
+> com o dia do cliente e avisar, ou recarregar em intervalo fixo. A correção é
+> inteiramente de apresentação — o domínio já recebe `today` por parâmetro.
 
 **Arquivos:**
 - `web/src/App.tsx`, `web/src/components/FilterBar.tsx`
@@ -1311,9 +1330,15 @@ export function leadTimeByGroup(p: Process[], key: (x: Process) => string,
 **Critérios de aceite:**
 - **Dado** a página, **então** os alertas aparecem na ordem de severidade
   definida em `H-14`.
+- **Dado** um processo com mais de um alerta, **então** ele aparece **uma única
+  vez**, agrupando seus tipos — decisão do usuário em 06/08/2026, achado A-60.
+  A rota continua achatada; o agrupamento é de apresentação. Medido na planilha
+  real: 40 linhas para 25 processos distintos, com um deles em 3 tipos.
 - **Dado** o cabeçalho, **então** exibe a contagem por tipo, incluindo os
   seis tipos.
 - **Dado** um alerta clicado, **então** abre o detalhe do processo.
+- **Dado** `historyStartedAt = null`, **então** a ressalva de que ainda não há
+  histórico é exibida, em vez de data vazia (A-61).
 - **Dado** o alerta "Processos parados", **então** o limiar em uso é exibido, e
   marcado como premissa (A-32).
 - **Dado** que o histórico começou recentemente, **então** `historyStartedAt` é
@@ -1718,6 +1743,11 @@ preenchimento próprio e **não** são alteradas.
 
 **Objetivo:** acumular a série de eventos que destrava o alerta de processos
 parados e a Página Histórico.
+
+> **Herda de `H-14` (A-61):** `historyStartedAt`, em `GET /api/alerts`, vale
+> `null` desde `H-14` porque não havia histórico. **É esta história que passa a
+> devolver a data** — a da primeira leitura registrada. Enquanto continuar
+> `null`, `H-20` exibe a ressalva em vez de data vazia.
 
 **Arquivos:**
 - `src/io/history-store.ts`
