@@ -151,10 +151,18 @@ alguma**.
 
 ## Fonte original
 
-- `../especificacao-dashboard-comex.md` — especificação funcional, tratada como
-  fonte da verdade para regras de negócio e catálogo de indicadores, e como
-  **superada** no que diz respeito a arquitetura de fonte de dados
-- `../planilha1.jpeg`, `../planilha2.jpeg` — fotos das linhas 475–484 da
-  planilha real (colunas A–K e K–R). Evidência secundária
-- `../CONTROLE DOS EMBARQUE.xlsx` — **a planilha real**, perfilada por `H-01`.
-  Não versionar: contém dado de cliente e, na aba `CNPJ`, credenciais
+**Nenhum dos artefatos abaixo é versionado.** Todos são material do cliente:
+ficam apenas na máquina de desenvolvimento. O que este repositório guarda é o
+que foi **derivado** deles — a auditoria, as tabelas de decisão e o esquema
+medido —, nunca o original.
+
+- **Especificação funcional** — documento do cliente. Tratada como fonte da
+  verdade para regras de negócio e catálogo de indicadores, e como **superada**
+  no que diz respeito a arquitetura de fonte de dados. Auditada integralmente em
+  [01-auditoria-especificacao.md](01-auditoria-especificacao.md), com os 55
+  achados citando o trecho de origem — quem lê a auditoria não precisa dela
+- **Fotos das linhas 475–484** da planilha real (colunas A–K e K–R). Evidência
+  secundária, usada para confirmar ou contestar a especificação
+- **A planilha real**, perfilada por `H-01`. Contém dado de cliente e, na aba
+  `CNPJ`, dado sensível — ver a decisão de escopo D-10 em
+  [10-governanca.md](10-governanca.md)

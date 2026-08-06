@@ -10,7 +10,7 @@ const entradaValida = {
   styleKey: 'argb:FF5B9BD5',
   fillId: 8,
   label: 'Azul',
-  responsible: 'samira',
+  responsible: 'colaborador1',
   customsChannel: 'nenhum',
   importerOutsideRj: false,
 }

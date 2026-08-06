@@ -12,8 +12,8 @@
     {
       "styleKey": "argb:FF0070C0",
       "label": "Azul",
-      "significado": "Processos da Samira",
-      "responsible": "samira",
+      "significado": "Processos do Colaborador 1",
+      "responsible": "colaborador1",
       "customsChannel": "nenhum",
       "importerOutsideRj": false,
       "styleId": 12
@@ -21,8 +21,8 @@
     {
       "styleKey": "argb:FF7030A0",
       "label": "Roxo",
-      "significado": "Processos do Hugo",
-      "responsible": "hugo",
+      "significado": "Processos do Colaborador 2",
+      "responsible": "colaborador2",
       "customsChannel": "nenhum",
       "importerOutsideRj": false,
       "styleId": 13
@@ -30,8 +30,8 @@
     {
       "styleKey": "argb:FFF5F0DC",
       "label": "Bege",
-      "significado": "Processos da Samira pertencentes a outros clientes. Subcategoria de Samira (achado A-18): o filtro Responsavel=Samira seleciona samira E samira_outros_clientes.",
-      "responsible": "samira_outros_clientes",
+      "significado": "Processos do Colaborador 1 pertencentes a outros clientes. Subcategoria de Colaborador 1 (achado A-18): o filtro Responsavel=Colaborador 1 seleciona colaborador1 E colaborador1_outros_clientes.",
+      "responsible": "colaborador1_outros_clientes",
       "customsChannel": "nenhum",
       "importerOutsideRj": false,
       "styleId": 17
@@ -75,7 +75,7 @@
   ],
 
   "_dominios": {
-    "responsible": ["samira", "hugo", "samira_outros_clientes", "indefinido"],
+    "responsible": ["colaborador1", "colaborador2", "colaborador1_outros_clientes", "indefinido"],
     "customsChannel": ["vermelho", "nenhum", "indefinido"],
     "importerOutsideRj": [true, false]
   },

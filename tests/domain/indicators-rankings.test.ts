@@ -231,15 +231,15 @@ describe('agentRanking — IND-17 com overdueCount (A-27)', () => {
 
 describe('responsibleRanking — IND-20 com as quatro chaves (A-28)', () => {
   it('devolve as quatro chaves, inclusive as zeradas', () => {
-    const lista = responsibleRanking([process({ responsible: 'samira' })])
+    const lista = responsibleRanking([process({ responsible: 'colaborador1' })])
 
     expect(lista.map((g) => g.key).sort()).toEqual([
-      'hugo',
+      'colaborador1',
+      'colaborador1_outros_clientes',
+      'colaborador2',
       'indefinido',
-      'samira',
-      'samira_outros_clientes',
     ])
-    expect(lista.find((g) => g.key === 'hugo')?.count).toBe(0)
+    expect(lista.find((g) => g.key === 'colaborador2')?.count).toBe(0)
   })
 
   // O peso de 'indefinido' mede quanto da planilha nao tem responsavel
@@ -248,22 +248,22 @@ describe('responsibleRanking — IND-20 com as quatro chaves (A-28)', () => {
     const lista = responsibleRanking([
       process({ responsible: 'indefinido' }),
       process({ responsible: 'indefinido' }),
-      process({ responsible: 'samira' }),
+      process({ responsible: 'colaborador1' }),
     ])
 
     expect(lista[0]).toMatchObject({ key: 'indefinido', count: 2 })
-    expect(lista[1]).toMatchObject({ key: 'samira', count: 1 })
+    expect(lista[1]).toMatchObject({ key: 'colaborador1', count: 1 })
   })
 
   // O filtro faz o oposto (A-18); o ranking mostra a distribuicao real.
-  it('mantem samira e samira_outros_clientes separadas', () => {
+  it('mantem colaborador1 e colaborador1_outros_clientes separadas', () => {
     const lista = responsibleRanking([
-      process({ responsible: 'samira' }),
-      process({ responsible: 'samira_outros_clientes' }),
+      process({ responsible: 'colaborador1' }),
+      process({ responsible: 'colaborador1_outros_clientes' }),
     ])
 
-    expect(lista.find((g) => g.key === 'samira')?.count).toBe(1)
-    expect(lista.find((g) => g.key === 'samira_outros_clientes')?.count).toBe(1)
+    expect(lista.find((g) => g.key === 'colaborador1')?.count).toBe(1)
+    expect(lista.find((g) => g.key === 'colaborador1_outros_clientes')?.count).toBe(1)
   })
 
   it('devolve as quatro chaves zeradas para conjunto vazio', () => {

@@ -276,7 +276,7 @@ export function extractStyleKey(cell: unknown): string   // TD-05
 > em `src/app/color-map-loader.ts` pela regra de fronteira.
 >
 > Validada contra o **arquivo real**: 649 linhas, **0 não mapeadas**. Produz
-> IND-20 (Samira 120 · Hugo 36 · Samira-outros 9 · indefinido 484),
+> IND-20 (Colaborador 1 120 · Colaborador 2 36 · Colaborador 1-outros 9 · indefinido 484),
 > IND-06 (5 em Canal Vermelho) e 1 importador fora do RJ.
 >
 > **Divergência resolvida:** `ColorMapEntry` usa **`fillId`**, não `styleId` —
@@ -317,9 +317,9 @@ Chave ausente do mapa → `{ responsible: 'indefinido', customsChannel:
 
 **Critérios de aceite:**
 - **Dado** `color-map.json` com a entrada azul, **quando** `resolveColor("argb:FF0070C0")`
-  roda, **então** devolve `responsible: 'samira'` e `mapped: true`.
+  roda, **então** devolve `responsible: 'colaborador1'` e `mapped: true`.
 - **Dado** a entrada bege, **quando** resolvida, **então** devolve
-  `responsible: 'samira_outros_clientes'` — subcategoria de Samira (A-18).
+  `responsible: 'colaborador1_outros_clientes'` — subcategoria de Colaborador 1 (A-18).
 - **Dado** a entrada vermelha, **então** `customsChannel: 'vermelho'`.
 - **Dado** a entrada amarela, **então** `importerOutsideRj: true` — e
   `customsChannel: 'nenhum'`, conforme decisão do usuário sobre A-38.
@@ -791,7 +791,7 @@ domingo, fuso `America/Sao_Paulo` (A-07).
 > fração para a tela declarar a limitação.
 >
 > **A-31 e R-02 confirmados em produção:** `responsibleRanking` devolve
-> `indefinido 484 · samira 120 · hugo 36 · samira_outros_clientes 9`, somando
+> `indefinido 484 · colaborador1 120 · colaborador2 36 · colaborador1_outros_clientes 9`, somando
 > 649. Os 484 são exatamente a medição de `H-04` — 74,6% da planilha não tem
 > responsável identificável pela cor. O ranking mostra isso em vez de escondê-lo.
 >
@@ -834,7 +834,7 @@ Ordenação: `count` decrescente, desempate por `key` ascendente. `topN` padrão
 - **Dado** o ranking de agentes, **então** cada entrada traz `overdueCount` com
   os processos daquele agente que satisfazem IND-15 (A-27).
 - **Dado** o ranking por responsável, **então** devolve as **quatro** chaves —
-  `samira`, `hugo`, `samira_outros_clientes`, `indefinido` — inclusive as com
+  `colaborador1`, `colaborador2`, `colaborador1_outros_clientes`, `indefinido` — inclusive as com
   contagem zero (A-28).
 - **Dado** `MERCADORIA` dominada por `BAZAR`, **então** o grupo `BAZAR` aparece
   normalmente e `meta.bazarShare` traz sua fração do total (A-34).
@@ -1111,8 +1111,8 @@ export function applyFilters(p: Process[], f: FilterSet): Process[]
   resultado satisfaz **ambos** (E entre parâmetros).
 - **Dado** `client=ACME LOG&client=YRD`, **então** o resultado satisfaz
   **qualquer um** dos dois (OU dentro do parâmetro).
-- **Dado** `responsible=samira`, **então** o resultado inclui também os
-  processos `samira_outros_clientes` (A-18).
+- **Dado** `responsible=colaborador1`, **então** o resultado inclui também os
+  processos `colaborador1_outros_clientes` (A-18).
 - **Dado** nenhum filtro, **então** o resultado é o conjunto completo.
 - **Dado** um filtro com valor fora do domínio, **então** a API devolve `400
   FILTRO_INVALIDO`.
@@ -1671,7 +1671,7 @@ colunas que acompanham a cor da linha, conforme A-44. M, N, O e P têm
 preenchimento próprio e **não** são alteradas.
 
 **Critérios de aceite:**
-- **Dado** a combinação `responsible: 'hugo'`, `customsChannel: 'nenhum'`,
+- **Dado** a combinação `responsible: 'colaborador2'`, `customsChannel: 'nenhum'`,
   `importerOutsideRj: false`, **então** as células recebem um `xf` com
   `fillId = 27` (roxo), preservando `fontId`, `borderId` e `numFmtId` de cada
   célula.

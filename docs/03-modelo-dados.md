@@ -20,9 +20,9 @@ export type StatusCategory =
   | 'fechado_aguardando_draft'
 
 export type Responsible =
-  | 'samira'
-  | 'hugo'
-  | 'samira_outros_clientes'
+  | 'colaborador1'
+  | 'colaborador2'
+  | 'colaborador1_outros_clientes'
   | 'indefinido'
 
 export type CustomsChannel = 'vermelho' | 'nenhum' | 'indefinido'
@@ -265,12 +265,12 @@ estrutura:**
   "version": 1,
   "anchorColumn": "A",
   "entries": [
-    { "styleKey": "argb:FF0070C0", "label": "Azul",         "responsible": "samira",                 "customsChannel": "nenhum",  "importerOutsideRj": false, "styleId": 12 },
-    { "styleKey": "argb:FF7030A0", "label": "Roxo",         "responsible": "hugo",                   "customsChannel": "nenhum",  "importerOutsideRj": false, "styleId": 13 },
+    { "styleKey": "argb:FF0070C0", "label": "Azul",         "responsible": "colaborador1",                 "customsChannel": "nenhum",  "importerOutsideRj": false, "styleId": 12 },
+    { "styleKey": "argb:FF7030A0", "label": "Roxo",         "responsible": "colaborador2",                   "customsChannel": "nenhum",  "importerOutsideRj": false, "styleId": 13 },
     { "styleKey": "argb:FF00B050", "label": "Verde",        "responsible": "indefinido",             "customsChannel": "nenhum",  "importerOutsideRj": false, "styleId": 14 },
     { "styleKey": "argb:FFFF0000", "label": "Vermelho",     "responsible": "indefinido",             "customsChannel": "vermelho","importerOutsideRj": false, "styleId": 15 },
     { "styleKey": "argb:FFFFFF00", "label": "Amarelo forte","responsible": "indefinido",             "customsChannel": "nenhum",  "importerOutsideRj": true,  "styleId": 16 },
-    { "styleKey": "argb:FFF5F0DC", "label": "Bege",         "responsible": "samira_outros_clientes", "customsChannel": "nenhum",  "importerOutsideRj": false, "styleId": 17 },
+    { "styleKey": "argb:FFF5F0DC", "label": "Bege",         "responsible": "colaborador1_outros_clientes", "customsChannel": "nenhum",  "importerOutsideRj": false, "styleId": 17 },
     { "styleKey": "none",          "label": "Branco",       "responsible": "indefinido",             "customsChannel": "nenhum",  "importerOutsideRj": false, "styleId": 0  }
   ]
 }
@@ -285,11 +285,11 @@ Taxa de `COR_NAO_MAPEADA` esperada: **0%**.
 |---|---|---|---|---|---|
 | `argb:FF00FF00` | 2 | 258 | indefinido | nenhum | false |
 | `argb:FF00FF0D` | 12 | 219 | indefinido | nenhum | false |
-| `argb:FF5B9BD5` | 8 | 120 | **samira** | nenhum | false |
-| `argb:FFA74F7B` | 27 | 31 | **hugo** | nenhum | false |
-| `argb:FFFFE599` | 9 | 9 | **samira_outros_clientes** | nenhum | false |
+| `argb:FF5B9BD5` | 8 | 120 | **colaborador1** | nenhum | false |
+| `argb:FFA74F7B` | 27 | 31 | **colaborador2** | nenhum | false |
+| `argb:FFFFE599` | 9 | 9 | **colaborador1_outros_clientes** | nenhum | false |
 | `argb:FFFF0000` | 7 | 5 | indefinido | **vermelho** | false |
-| `argb:FFA64D79` | 11 | 5 | **hugo** | nenhum | false |
+| `argb:FFA64D79` | 11 | 5 | **colaborador2** | nenhum | false |
 | `argb:FFFFFF00` | 10 | 1 | indefinido | nenhum | **true** |
 | `theme:0\|tint:0.0000` | 13 | 1 | indefinido | nenhum | false |
 
@@ -298,7 +298,7 @@ significado** (A-48) — não há limiar de distância, apenas duas linhas no ma
 
 | Chave lida | No mapa? | Resultado |
 |---|---|---|
-| `argb:FF5B9BD5` | sim | `responsible = samira` |
+| `argb:FF5B9BD5` | sim | `responsible = colaborador1` |
 | `argb:FF00FF0D` | sim | mesmo significado do tom A |
 | `theme:9\|tint:0.3999` | não | `responsible/customsChannel = indefinido`, `importerOutsideRj = null`, anomalia `COR_NAO_MAPEADA`, linha no relatório de quarentena |
 | `argb:FF00B051` (um bit do verde) | não | idem — **nenhuma aproximação por proximidade é feita** |
