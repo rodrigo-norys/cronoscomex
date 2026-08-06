@@ -1,0 +1,34 @@
+name: dados-sensiveis
+
+# Verifica que nenhum dado real do operador entrou no repositorio.
+#
+# Complementa o hook local guard-dados-sensiveis.sh, que e PreToolUse e por
+# isso so ve o que o agente faz. Este roda sobre o que esta versionado, em
+# qualquer commit — inclusive os feitos direto no terminal ou pela web.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: dados-sensiveis-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  dados-sensiveis:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      # A regressao roda PRIMEIRO, pelo mesmo motivo que test-guard.sh roda
+      # primeiro no `npm run verify`: uma regex quebrada no guard falha em
+      # silencio — continuaria saindo 0 e dizendo "aprovado".
+      - name: Regressao do guard
+        run: bash .github/scripts/test-verifica-dados-sensiveis.sh
+
+      - name: Verificar a arvore versionada
+        run: bash .github/scripts/verifica-dados-sensiveis.sh
