@@ -147,14 +147,23 @@ em que `lastReadAt === null` — nunca houve leitura, não há o que congelar. O
 aviso de dado congelado é uma faixa persistente no topo de **todas** as
 páginas, entregue por `H-15` na casca da aplicação (achado A-57).
 
-**A leitura deixa 4 temporários em `/tmp` — é do ExcelJS, e `H-33` corrige.**
-Medido: `readWorkbook` retorna com 5 operações de FS pendentes, porque pular as
-abas fora de escopo (regra 10) impede o ExcelJS de limpar seus temporários. O
-listener de `exit` do pacote `tmp` os apaga, as operações pendentes falham com
-`ENOENT`, e o exit code cai **sem reprovar teste nenhum** — 1 vez em 8. Daí
-`fileParallelism: false` em `vitest.config.ts`, que é **mitigação temporária**:
-custa 5,3 s → 11,1 s na suíte e sai quando `H-33` trocar o leitor por `fflate`.
-Não acumula em produção: estabiliza em 4, modo `600`, some no encerramento.
+**`readWorkbook` resolve antes de o ExcelJS terminar — é dele, e `H-33` corrige.**
+Medido: retorna com 4 temporários em `/tmp` e 5 operações de FS pendentes,
+porque pular as abas fora de escopo (regra 10) salta o drain que o próprio
+`read()` do ExcelJS faz. **Não é vazamento** — a limpeza conclui sozinha em
+menos de 200 ms. O que falha é a corrida: se o processo sai nessa janela, o
+listener de `exit` do pacote `tmp` apaga os arquivos e as operações pendentes
+morrem com `ENOENT`, derrubando o exit code **sem reprovar teste nenhum**.
+
+Por isso o sintoma é **exclusivo de teste**: o worker do Vitest encerra logo
+após o último teste, enquanto em produção o servidor fica vivo e limpa. A
+espera vive em `tests/support/exceljs-cleanup.ts`, chamada num `afterAll` dos
+dois arquivos que leem `.xlsx` — pagar por ela em produção seria consertar o
+lugar errado, e drenar dentro de `readWorkbook` esbarraria na regra 10.
+
+**Desligar o paralelismo do Vitest não resolve** — foi tentado, dava 0 em 6
+localmente e mesmo assim reprovou no runner do GitHub. Reduzir probabilidade
+não é corrigir causa.
 
 **Interferência externa é sinal, nunca ação** (achado A-58). `H-32` detecta
 `~$<nome>.xlsx` (alguém com a planilha aberta) e `*Cópia em conflito*` (o

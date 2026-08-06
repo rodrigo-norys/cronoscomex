@@ -1961,17 +1961,26 @@ o erro não determinístico que eles produzem no portão.
 - `tmp.setGracefulCleanup()` registra um listener de `process.exit` que apaga
   esses arquivos. As operações pendentes tentam abri-los e falham com `ENOENT`
   — erro **não tratado**, que derruba o exit code sem reprovar teste algum.
-- Efeito no portão: **1 reprovação em 8** execuções com paralelismo entre
-  arquivos; **0 em 6** sem paralelismo.
-- Efeito em produção: **não acumula** — estabiliza em 4 temporários ao longo de
-  6 releituras no mesmo processo, modo `600`, apagados no encerramento. O que
-  existe é o XML das quatro abas, incluindo a `CNPJ`, vivo em `/tmp` enquanto o
-  servidor roda.
+- **Não é vazamento:** a limpeza conclui sozinha em menos de 200 ms. O que
+  falha é a corrida — se o processo sai nessa janela, os temporários já foram
+  apagados e as operações pendentes morrem.
+- Efeito no portão: **1 reprovação em 8** execuções. Desligar o paralelismo do
+  Vitest dava **0 em 6** localmente e **mesmo assim reprovou no runner do
+  GitHub** — reduzir probabilidade não é corrigir causa. A espera passou a
+  viver em `tests/support/exceljs-cleanup.ts`, e com ela o portão deu **10 de
+  10** com paralelismo ligado.
+- Efeito em produção: **nenhum**. O servidor fica vivo e a limpeza conclui;
+  estabiliza em 4 temporários ao longo de 6 releituras no mesmo processo, modo
+  `600`, apagados no encerramento.
+- A causa de fundo está no ExcelJS: o `read()` dele faz `await value.read()` em
+  cada aba, **drenando** antes de seguir. A regra inviolável 10 obriga a pular
+  as abas fora de escopo, e é esse drain que fica faltando.
 
 **Arquivos:**
 - `src/io/xlsx-reader.ts`
 - `tests/io/xlsx-reader.test.ts`
-- `vitest.config.ts` — remover `fileParallelism: false`
+- `tests/support/exceljs-cleanup.ts` — **remover**, junto com os dois `afterAll`
+  que o chamam
 
 **Contrato fixado:** `readWorkbook(config)` mantém a assinatura e o `ReadResult`
 atuais. A troca é interna; nenhum chamador muda.
@@ -1981,8 +1990,9 @@ atuais. A troca é interna; nenhum chamador muda.
   `process.getActiveResourcesInfo()` não cresce depois que a promise resolve.
 - **Dado** as 7 fixtures, **então** todos os testes de `H-03` a `H-07`
   continuam passando **sem alteração** — a troca é transparente.
-- **Dado** `vitest.config.ts` sem `fileParallelism: false`, **então** o portão
-  passa 10 vezes seguidas.
+- **Dado** `tests/support/exceljs-cleanup.ts` removido, **então** o portão passa
+  10 vezes seguidas — a espera deixa de ser necessária porque não há mais o que
+  esperar.
 - **Dado** a planilha real, **então** as 649 linhas são lidas com os mesmos
   valores, chaves de estilo e hash de hoje.
 
