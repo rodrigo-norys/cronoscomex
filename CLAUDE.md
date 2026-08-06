@@ -105,17 +105,37 @@ Não re-derive isto; está medido.
 
 ## Estado
 
-**Fases 0 e 1 concluídas. Fase 2 em andamento: `H-09` a `H-12` fechadas.**
-Próximo passo: **`H-13`** — indicadores de tempo.
+**Fases 0 e 1 concluídas. Fase 2 em andamento: `H-09` a `H-13` fechadas.**
+Próximo passo: **`H-14`** — os cinco alertas derivados do estado atual.
 As fases estão em `docs/07-plano-entrega.md`.
 
 A cadeia de ingestão foi validada contra o arquivo real, dentro do limite de
 quarentena de RNF-24. **Não transcreva número medido para cá** — a contagem de
 testes vem do Vitest, os totais vêm da rota, e cópia manual diverge.
 
-`GET /api/indicators` **nasce parcial**: devolve só os blocos já calculados, e
-fecha em `H-13`, com `desembaracadosHoje` e `documentaryLeadTime`. Zerar campo
-não calculado o tornaria indistinguível de zero medido.
+`GET /api/indicators` **está completo desde `H-13`** — os 21 indicadores em
+escopo. Ele nasceu parcial em `H-09` e cresceu bloco a bloco, nunca preenchendo
+com zero o que ainda não calculava: zero em campo não implementado seria
+indistinguível de zero medido. O teste que assegurava a ausência dos últimos
+dois campos virou o inverso — fixa a lista completa das chaves, e campo que
+entre sem passar pelo contrato quebra a suíte.
+
+**`diffDays` não arredonda, e isso é deliberado.** Toda data do domínio é
+meia-noite UTC — `serialToDate` trunca o serial do Excel com `Math.floor`, e
+`today` monta a âncora a partir do dia civil —, então a diferença é inteira
+**por construção**. Um `Math.round` ali mascararia o dia em que a invariante
+quebrasse. A média de IND-22 é que leva uma casa decimal.
+
+**As exclusões de IND-22 são contadas, nunca silenciadas** (A-30). Medido na
+planilha real: 1 intervalo negativo e 547 pares incompletos, para 101 válidos —
+amostra de 15,6% da base, o que torna `sampleSize` parte do número, não enfeite.
+Pela mesma razão `averageDays` é `null` com amostra vazia: zero dias afirmaria
+documento enviado no mesmo dia do registro.
+
+**O cruzamento de IND-16 com a categoria é necessário na prática, não em tese.**
+A-29 acrescentou `∧ category = 'desembaracado'` a partir de uma única linha da
+foto 2; o arquivo real tem **3** linhas com RG preenchido em processo não
+desembaraçado. Sem o cruzamento, elas contariam como concluídas.
 
 **IND-14 tem teto e não tem piso:** `eta2 <= hoje+10`, nunca
 `hoje <= eta2 <= hoje+10`. Usar `isWithin` ali — o reflexo natural, já que ele
@@ -147,23 +167,31 @@ em que `lastReadAt === null` — nunca houve leitura, não há o que congelar. O
 aviso de dado congelado é uma faixa persistente no topo de **todas** as
 páginas, entregue por `H-15` na casca da aplicação (achado A-57).
 
-**`readWorkbook` resolve antes de o ExcelJS terminar — é dele, e `H-33` corrige.**
-Medido: retorna com 4 temporários em `/tmp` e 5 operações de FS pendentes,
-porque pular as abas fora de escopo (regra 10) salta o drain que o próprio
-`read()` do ExcelJS faz. **Não é vazamento** — a limpeza conclui sozinha em
-menos de 200 ms. O que falha é a corrida: se o processo sai nessa janela, o
-listener de `exit` do pacote `tmp` apaga os arquivos e as operações pendentes
-morrem com `ENOENT`, derrubando o exit code **sem reprovar teste nenhum**.
+**Ao pular uma aba fora de escopo, feche o descritor dela** —
+`discardWorksheetStream` em `src/io/xlsx-reader.ts`. Não é zelo: quando
+`xl/sharedStrings.xml` vem depois das worksheets no zip — o caso de **todos** os
+arquivos aqui —, o ExcelJS despeja cada aba num temporário do pacote `tmp` e
+abre um `ReadStream` sobre ele antes de emitir a worksheet. Um `continue` puro
+deixa esse `open` em voo; a biblioteca apaga o temporário logo em seguida, o
+`open` resolve em `ENOENT`, e um stream que emite `error` **sem ouvinte** vira
+exceção não tratada — derrubando o exit code **sem reprovar teste nenhum**.
 
-Por isso o sintoma é **exclusivo de teste**: o worker do Vitest encerra logo
-após o último teste, enquanto em produção o servidor fica vivo e limpa. A
-espera vive em `tests/support/exceljs-cleanup.ts`, chamada num `afterAll` dos
-dois arquivos que leem `.xlsx` — pagar por ela em produção seria consertar o
-lugar errado, e drenar dentro de `readWorkbook` esbarraria na regra 10.
+**As duas metades são necessárias.** `destroy()` sozinho foi medido em 3 de 20
+rodadas com erro, igual ao baseline: o `open` já está em voo e vai falhar de
+qualquer jeito. Com o ouvinte de `error` junto, 0 em 55. Fechar é também **mais**
+aderente à regra 10 que pular: em vez de manter aberto um descritor sobre o
+conteúdo integral de uma aba fora de escopo, encerra-o de propósito. Nenhuma
+célula é materializada nos dois casos.
 
-**Desligar o paralelismo do Vitest não resolve** — foi tentado, dava 0 em 6
-localmente e mesmo assim reprovou no runner do GitHub. Reduzir probabilidade
-não é corrigir causa.
+Isso encerra a dívida que vivia em `tests/support/exceljs-cleanup.ts`, removido.
+**`H-33` continua de pé, com outro motivador:** os temporários ainda são
+escritos, e o objetivo dela passa a ser que nenhuma aba fora de escopo toque o
+disco — regra 10 por construção. O urgente saiu, o estrutural ficou.
+
+**Desligar o paralelismo do Vitest nunca foi o caminho** — foi tentado, dava 0
+em 6 localmente e mesmo assim reprovou no runner do GitHub. Reduzir
+probabilidade não é corrigir causa; o `vitest.config.ts` mantém o paralelismo
+ligado de propósito.
 
 **Interferência externa é sinal, nunca ação** (achado A-58). `H-32` detecta
 `~$<nome>.xlsx` (alguém com a planilha aberta) e `*Cópia em conflito*` (o
