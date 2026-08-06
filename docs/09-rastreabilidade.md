@@ -187,7 +187,7 @@ As 33 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
 | H-29 | ALE-06 | Alerta de processos parados |
 | H-30 | §5 abaixo (operação) | Empacotamento e execução |
 | H-31 | §5 abaixo (RF-16, observabilidade) | ✅ **Concluída.** Logs e métricas. Fecha a Fase 1 |
-| H-32 | §5 abaixo (RF-16, observabilidade) | Sinal de interferência externa no arquivo (A-58) |
+| H-32 | §5 abaixo (RF-16, observabilidade) | ✅ **Concluída.** Sinal de interferência externa no arquivo (A-58). Antecipada para destravar `H-15`. Sinal, nunca ação: a leitura acontece igual |
 | H-33 | Cadeia base | Troca o leitor de `.xlsx` para `fflate`: elimina os temporários em `/tmp` e o erro não determinístico do portão |
 
 ---
