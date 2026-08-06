@@ -41,6 +41,18 @@ export function addDays(date: Date, days: number): Date {
 }
 
 /**
+ * Dias inteiros de `from` ate `to`. Negativo quando `to` precede `from`.
+ *
+ * O resultado e inteiro por construcao, nao por arredondamento: toda data do
+ * dominio e meia-noite UTC — `serialToDate` trunca o serial do Excel com
+ * `Math.floor` antes de converter, e `today` monta a ancora a partir do dia
+ * civil. Arredondar aqui mascararia o dia em que essa invariante quebrasse.
+ */
+export function diffDays(from: Date, to: Date): number {
+  return (to.getTime() - from.getTime()) / DAY_MS
+}
+
+/**
  * O domingo que encerra a semana ISO de `ref` — segunda a domingo (A-07).
  *
  * Nao recebe fuso: `ref` ja e data civil ancorada em UTC, entao o dia da semana

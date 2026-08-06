@@ -116,6 +116,39 @@ async function hashFile(path: string): Promise<string> {
 }
 
 /**
+ * Encerra o descritor da aba fora de escopo, sem ler uma unica celula.
+ *
+ * Quando `xl/sharedStrings.xml` vem DEPOIS das worksheets na ordem do zip — o
+ * caso do arquivo real —, o ExcelJS despeja cada aba num temporario do pacote
+ * `tmp`, abre um `ReadStream` sobre ele e so entao emite o WorksheetReader.
+ * Pular a aba com `continue` deixa esse stream com o `open` pendente, e a
+ * biblioteca apaga o temporario logo em seguida: o `open` resolve em `ENOENT`,
+ * excecao nao tratada que derruba o exit code **sem reprovar teste algum**.
+ *
+ * Destruir e MAIS aderente a regra inviolavel 10 que o `continue` puro: em vez
+ * de deixar aberto um descritor sobre o conteudo integral de uma aba fora de
+ * escopo, encerra-o deliberadamente. Nenhuma celula e materializada.
+ *
+ * O listener vazio NAO e mascaramento: `destroy()` sozinho nao basta, porque o
+ * `open` ja esta em voo e vai falhar de qualquer forma. Um stream que emite
+ * `error` sem ouvinte vira excecao nao tratada — e esta e a unica falha
+ * possivel aqui, sobre um arquivo que a propria biblioteca acabou de apagar e
+ * que ninguem mais vai ler. Silenciar seria esconder um erro de leitura da aba
+ * em escopo; esse caminho nao passa por aqui.
+ *
+ * `iterator` e propriedade interna do WorksheetReader, nao declarada nos tipos.
+ * O acesso e defensivo em todos os niveis porque o caminho sem temporario
+ * entrega um gerador, que nao tem `destroy` — ai nao ha descritor a fechar.
+ */
+function discardWorksheetStream(worksheet: unknown): void {
+  const { iterator } = worksheet as {
+    iterator?: { on?: (event: string, handler: () => void) => void; destroy?: () => void }
+  }
+  iterator?.on?.('error', () => {})
+  iterator?.destroy?.()
+}
+
+/**
  * Le a aba em escopo e devolve as linhas cruas.
  *
  * Usa leitura em FLUXO e pula as demais abas sem consumir suas linhas
@@ -145,7 +178,10 @@ export async function readWorkbook(config: AppConfig): Promise<ReadResult> {
     const name = (worksheet as { name?: string }).name
 
     // Pula sem iterar as linhas: as celulas nunca sao materializadas.
-    if (name !== sheetName) continue
+    if (name !== sheetName) {
+      discardWorksheetStream(worksheet)
+      continue
+    }
 
     for await (const row of worksheet) {
       if (row.number < config.firstDataRow) continue

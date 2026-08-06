@@ -930,11 +930,61 @@ apoia-se em `isOverdue`, extraído por `H-11`
 
 ### H-13 — Entregar os indicadores de tempo
 
+> ✅ **CONCLUÍDA em 06/08/2026.** 28 testes próprios; suíte total em 335.
+>
+> **`GET /api/indicators` deixou de nascer parcial.** Esta era a última das
+> cinco histórias que construíram a rota (`H-09` a `H-13`), e com ela o contrato
+> de `05-contratos-api.md` está completo: os 21 indicadores em escopo. O teste
+> que assegurava a **ausência** de `desembaracadosHoje` e `documentaryLeadTime`
+> foi invertido, não apagado — agora fixa a lista completa das 12 chaves de
+> `counts` e das 5 do corpo, com `toEqual` sobre as chaves ordenadas. Campo que
+> entre sem passar pelo contrato quebra o teste.
+>
+> **Verificado contra a planilha real** com `today = 2026-08-06`, sobre as 649
+> linhas, 0 em quarentena: `desembaracadosHoje 0` · `averageDays 12,5 ·
+> sampleSize 101 · excludedNegative 1 · excludedIncomplete 547`.
+>
+> **O zero de IND-16 é medido, e isso foi provado, não presumido.** O RG mais
+> recente da planilha é `2026-07-31`, seis dias antes da medição; passando esse
+> dia como `today`, a mesma função devolve `3`. Zero medido e defeito de
+> comparação são indistinguíveis pelo resultado — a distinção exigiu a segunda
+> execução.
+>
+> **Duas previsões da auditoria se confirmaram como fato no arquivo.** Existe
+> **1 intervalo negativo real** (DOCS ENVIADOS posterior ao RG): sem a exclusão
+> de A-30 ele entraria na média puxando-a para baixo, invisível. E existem
+> **3 linhas com RG preenchido em processo não desembaraçado** — o caso da foto
+> 2 de A-05, reproduzido três vezes. O cruzamento com a categoria acrescentado
+> por A-29 não é zelo defensivo: sem ele, essas três contariam como concluídas
+> no dia em que o RG delas fosse hoje.
+>
+> **A-52 se confirma com folga, e `sampleSize` deixa de ser enfeite.** 134 de
+> 649 linhas têm DOCS ENVIADOS (20,6%), e a amostra válida de 101 é **15,6% da
+> base**. A ressalva prevista para `H-19` será necessária.
+>
+> **Divergências resolvidas:** `src/http/routes/indicators.ts` não constava da
+> lista de arquivos pela **quarta vez consecutiva** — a omissão é sistemática,
+> não acidente, e aqui vinha agravada por um teste que assere a ausência dos
+> campos e reprovaria; a lista abaixo foi corrigida. A tensão entre "dias
+> inteiros" (A-02) e a média `10.5` do caso-limite era aparente: cada
+> **intervalo** é inteiro, a **média** deles carrega uma casa decimal.
+>
+> **`diffDays` entrou em `date-window.ts`, e não arredonda de propósito.** É o
+> quinto arquivo da fatia: `DAY_MS` é privado do módulo, e duplicar a constante
+> em `indicators.ts` seria pior. O resultado é inteiro **por construção** —
+> `serialToDate` trunca o serial do Excel com `Math.floor`, e `today` monta a
+> âncora a partir do dia civil. Um `Math.round` ali mascararia o dia em que essa
+> invariante quebrasse.
+
 **Objetivo:** IND-16 e IND-22, com a ordem de subtração corrigida.
 
 **Arquivos:**
 - `src/domain/indicators.ts`
+- `src/domain/date-window.ts` — `diffDays`, acrescentado no fechamento
+- `src/http/routes/indicators.ts` — omitido do plano original; ver divergências
 - `tests/domain/indicators-time.test.ts`
+- `tests/domain/date-window.test.ts`
+- `tests/http/indicators.test.ts`
 
 **Contrato fixado:**
 
@@ -1945,8 +1995,14 @@ com `409 EXCEL_ABERTO` é de `H-25`. Esta história produz o sinal, não a reaç
 
 ### H-33 — Trocar o leitor de `.xlsx` do ExcelJS para `fflate`
 
-**Objetivo:** eliminar os arquivos temporários que a leitura deixa em `/tmp` e
-o erro não determinístico que eles produzem no portão.
+**Objetivo:** eliminar os arquivos temporários que a leitura deixa em `/tmp`.
+
+> ⚠️ **O motivador mudou em 06/08/2026, e a história encolheu.** O erro não
+> determinístico do portão **já foi corrigido na origem**, fora desta história —
+> ver o bloco *Correção do `ENOENT`* abaixo. O que resta aqui é o objetivo
+> maior, e independente: **nenhuma aba fora de escopo deve tocar o disco**. Isso
+> é regra inviolável 10 valendo por construção, não mais conserto de portão.
+> Reavaliar o tamanho e a prioridade — o urgente saiu, o estrutural ficou.
 
 **Diagnóstico medido em 06/08/2026** — não re-derive:
 
@@ -1976,11 +2032,45 @@ o erro não determinístico que eles produzem no portão.
   cada aba, **drenando** antes de seguir. A regra inviolável 10 obriga a pular
   as abas fora de escopo, e é esse drain que fica faltando.
 
+**Correção do `ENOENT` — feita em 06/08/2026, fora desta história:**
+
+O diagnóstico acima estava certo no mecanismo e **errado no ponto de conserto**.
+Ele conclui que a causa exige trocar o leitor; não exigia.
+
+O que faltava não era o *drain* das abas fora de escopo, e sim **fechar o
+descritor delas**. Ao pular uma aba, o `ReadStream` que o ExcelJS abriu sobre o
+temporário fica com o `open` em voo; `tempFileCleanupCallback()` apaga o arquivo
+logo em seguida, o `open` resolve em `ENOENT`, e um stream que emite `error`
+**sem ouvinte** vira exceção não tratada. `discardWorksheetStream` em
+`src/io/xlsx-reader.ts` instala o ouvinte e destrói o stream — sem materializar
+célula alguma, portanto **mais** aderente à regra 10 que o `continue` puro, que
+deixava aberto um descritor sobre o conteúdo integral de uma aba fora de escopo.
+
+**`destroy()` sozinho não resolve** — foi medido: **3 em 20**, estatisticamente
+igual ao baseline. O `open` já está em voo e vai falhar de qualquer forma; sem o
+ouvinte, continua virando exceção. As duas metades são necessárias.
+
+| Configuração | Rodadas com `ENOENT` |
+|---|---|
+| `main` em 4837da3, **com** `exceljs-cleanup.ts` | **1 em 15** |
+| Mesma coisa, após `H-13` (335 testes) | **2 em 15** |
+| `destroy()` sozinho | **3 em 20** |
+| `destroy()` + ouvinte de `error`, **com** a mitigação | **0 em 25** |
+| `destroy()` + ouvinte de `error`, **sem** a mitigação | **0 em 30** |
+
+A mitigação foi removida: `tests/support/exceljs-cleanup.ts` e os dois `afterAll`
+que o chamavam. O terceiro critério de aceite desta história — "o portão passa
+10 vezes seguidas sem a espera" — está **cumprido por outra via**, com folga de
+3×.
+
+Não há teste determinístico para uma corrida; a evidência é empírica, em 55
+rodadas. O que **está** coberto por teste é o comportamento observável, e ele
+não mudou: `nao materializa nenhuma linha das abas fora de escopo`, em
+`tests/io/xlsx-reader.test.ts`.
+
 **Arquivos:**
 - `src/io/xlsx-reader.ts`
 - `tests/io/xlsx-reader.test.ts`
-- `tests/support/exceljs-cleanup.ts` — **remover**, junto com os dois `afterAll`
-  que o chamam
 
 **Contrato fixado:** `readWorkbook(config)` mantém a assinatura e o `ReadResult`
 atuais. A troca é interna; nenhum chamador muda.
@@ -1990,9 +2080,8 @@ atuais. A troca é interna; nenhum chamador muda.
   `process.getActiveResourcesInfo()` não cresce depois que a promise resolve.
 - **Dado** as 7 fixtures, **então** todos os testes de `H-03` a `H-07`
   continuam passando **sem alteração** — a troca é transparente.
-- **Dado** `tests/support/exceljs-cleanup.ts` removido, **então** o portão passa
-  10 vezes seguidas — a espera deixa de ser necessária porque não há mais o que
-  esperar.
+- ✅ **Cumprido fora desta história.** `tests/support/exceljs-cleanup.ts` já foi
+  removido, e o portão passou **30 vezes seguidas** sem ele.
 - **Dado** a planilha real, **então** as 649 linhas são lidas com os mesmos
   valores, chaves de estilo e hash de hoje.
 
