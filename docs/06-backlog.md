@@ -1101,13 +1101,21 @@ ascendente, nulos por último.
 **Objetivo:** navegação entre as páginas e filtros que se aplicam a todos os
 indicadores e alertas simultaneamente.
 
-> **A-62 chega aqui, em aberto.** Indicadores de calendário e alertas dependem
+> **A-62 chega aqui, já decidido.** Indicadores de calendário e alertas dependem
 > do **dia corrente**, resolvido a cada requisição. Uma tela deixada aberta
 > atravessando a meia-noite segue exibindo a fila do dia anterior: nenhum
-> arquivo muda à meia-noite, então o watcher não dispara. Decidir nesta casca
-> entre revalidar quando a aba volta ao foco, comparar `meta.today` da resposta
-> com o dia do cliente e avisar, ou recarregar em intervalo fixo. A correção é
-> inteiramente de apresentação — o domínio já recebe `today` por parâmetro.
+> arquivo muda à meia-noite, então o watcher não dispara. Três frentes:
+>
+> - **revalidar no `visibilitychange`** — o gatilho principal. Sobrevive à
+>   máquina suspensa, ao contrário de um timer agendado para a meia-noite
+> - **comparar o dia do servidor com o do cliente** — rede para o painel que
+>   nunca perde o foco. Só `GET /api/indicators` expõe `meta.today` hoje; a
+>   casca já consome `GET /api/health` e é o candidato a fonte única
+> - **botão de atualização manual**, que chama `POST /api/reload` **antes** de
+>   refazer as requisições — quem clica acabou de mexer na planilha
+>
+> A correção é inteiramente de apresentação: o domínio já recebe `today` por
+> parâmetro.
 
 **Arquivos:**
 - `web/src/App.tsx`, `web/src/components/FilterBar.tsx`
