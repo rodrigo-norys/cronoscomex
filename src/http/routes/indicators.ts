@@ -9,11 +9,14 @@ import {
   arrivingToday,
   bazarShare,
   type CategoryCounts,
+  clearedTodayCount,
   countByCategory,
+  documentaryLeadTime,
   type ExpectedVessel,
   expectedVessels,
   type GroupCount,
   groupCount,
+  type LeadTime,
   overdueCount,
   pendingDocsCount,
   redChannelCount,
@@ -24,10 +27,10 @@ import { apiError } from '../errors.ts'
 /**
  * GET /api/indicators — contrato em docs/05-contratos-api.md.
  *
- * A rota e compartilhada por H-09 a H-13 e nasce parcial: devolve apenas os
- * blocos ja calculados. Preencher com zero o que ainda nao foi implementado
- * tornaria "nao calculado" indistinguivel de "zero" — a confusao que o painel
- * existe para eliminar.
+ * A rota foi construida por H-09 a H-13 e nasceu parcial: cada historia
+ * acrescentou os seus blocos, e nenhuma preencheu com zero o que ainda nao
+ * calculava — zero em campo nao implementado seria indistinguivel de zero
+ * medido. Com H-13 o contrato esta **completo**: os 21 indicadores em escopo.
  */
 export interface IndicatorsCounts extends CategoryCounts {
   chegandoHoje: number
@@ -36,6 +39,7 @@ export interface IndicatorsCounts extends CategoryCounts {
   canalVermelho: number
   documentosPendentes: number
   atrasados: number
+  desembaracadosHoje: number
 }
 
 export interface IndicatorsRankings {
@@ -59,6 +63,7 @@ export interface IndicatorsResponse {
   counts: IndicatorsCounts
   rankings: IndicatorsRankings
   expectedVessels: ExpectedVessel[]
+  documentaryLeadTime: LeadTime
   meta: IndicatorsMeta
 }
 
@@ -99,6 +104,7 @@ export function registerIndicatorsRoute(
         canalVermelho: redChannelCount(processes),
         documentosPendentes: pendingDocsCount(processes, day),
         atrasados: overdueCount(processes, day),
+        desembaracadosHoje: clearedTodayCount(processes, day),
       },
       rankings: {
         clients: groupCount(
@@ -123,6 +129,7 @@ export function registerIndicatorsRoute(
         responsible: responsibleRanking(processes),
       },
       expectedVessels: expectedVessels(processes, day),
+      documentaryLeadTime: documentaryLeadTime(processes),
       meta: {
         today: toIsoDay(day),
         timezone: config.timezone,
