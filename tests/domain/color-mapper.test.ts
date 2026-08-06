@@ -28,7 +28,7 @@ const MAPA: ColorMapEntry[] = [
     styleKey: 'argb:FF5B9BD5',
     fillId: 8,
     label: 'Azul',
-    responsible: 'samira',
+    responsible: 'colaborador1',
     customsChannel: 'nenhum',
     importerOutsideRj: false,
   },
@@ -36,7 +36,7 @@ const MAPA: ColorMapEntry[] = [
     styleKey: 'argb:FFA74F7B',
     fillId: 27,
     label: 'Roxo (tom A)',
-    responsible: 'hugo',
+    responsible: 'colaborador2',
     customsChannel: 'nenhum',
     importerOutsideRj: false,
   },
@@ -44,7 +44,7 @@ const MAPA: ColorMapEntry[] = [
     styleKey: 'argb:FFA64D79',
     fillId: 11,
     label: 'Roxo (tom B)',
-    responsible: 'hugo',
+    responsible: 'colaborador2',
     customsChannel: 'nenhum',
     importerOutsideRj: false,
   },
@@ -52,7 +52,7 @@ const MAPA: ColorMapEntry[] = [
     styleKey: 'argb:FFFFE599',
     fillId: 9,
     label: 'Bege',
-    responsible: 'samira_outros_clientes',
+    responsible: 'colaborador1_outros_clientes',
     customsChannel: 'nenhum',
     importerOutsideRj: false,
   },
@@ -83,16 +83,16 @@ const MAPA: ColorMapEntry[] = [
 ]
 
 describe('resolveColor — as 9 cores reais', () => {
-  it('azul identifica a Samira', () => {
+  it('azul identifica o Colaborador 1', () => {
     const r = resolveColor('argb:FF5B9BD5', MAPA)
 
-    expect(r.responsible).toBe('samira')
+    expect(r.responsible).toBe('colaborador1')
     expect(r.mapped).toBe(true)
     expect(r.label).toBe('Azul')
   })
 
-  it('bege e subcategoria de Samira, nao um responsavel novo (A-18)', () => {
-    expect(resolveColor('argb:FFFFE599', MAPA).responsible).toBe('samira_outros_clientes')
+  it('bege e subcategoria de Colaborador 1, nao um responsavel novo (A-18)', () => {
+    expect(resolveColor('argb:FFFFE599', MAPA).responsible).toBe('colaborador1_outros_clientes')
   })
 
   it('vermelho identifica o Canal Vermelho', () => {
@@ -141,8 +141,8 @@ describe('resolveColor — as 9 cores reais', () => {
   })
 
   it('os dois tons de roxo identificam o mesmo responsavel (A-48)', () => {
-    expect(resolveColor('argb:FFA74F7B', MAPA).responsible).toBe('hugo')
-    expect(resolveColor('argb:FFA64D79', MAPA).responsible).toBe('hugo')
+    expect(resolveColor('argb:FFA74F7B', MAPA).responsible).toBe('colaborador2')
+    expect(resolveColor('argb:FFA64D79', MAPA).responsible).toBe('colaborador2')
   })
 })
 
