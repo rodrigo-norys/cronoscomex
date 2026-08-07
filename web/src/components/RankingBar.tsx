@@ -6,10 +6,20 @@ type RankingEntry = IndicatorsResponse['rankings']['clients'][number]
 interface RankingBarProps {
   title: string
   entries: readonly RankingEntry[]
-  /** Recebe a **chave normalizada**, que e o que os filtros casam (TD-04). */
-  onSelect: (key: string) => void
+  /**
+   * Recebe a **chave normalizada**, que e o que os filtros casam (TD-04).
+   *
+   * Ausente torna a linha inerte, e isso e usado de proposito no ranking por
+   * responsavel de `H-19`: A-18 faz o filtro `colaborador1` selecionar **junto**
+   * `colaborador1_outros_clientes`, enquanto o ranking os exibe separados, por
+   * serem perguntas diferentes. Clicar numa linha de 120 e cair numa tela de 129
+   * faria o operador desconfiar do numero certo.
+   */
+  onSelect?: (key: string) => void
   /** Fica sob o titulo, antes da lista: ressalva lida depois nao ressalva nada. */
   caveat?: ReactNode
+  /** Metrica ao lado da contagem — o `overdueCount` de A-27 em `H-19`. */
+  secondary?: (entry: RankingEntry) => ReactNode
   emptyMessage: string
 }
 
@@ -21,7 +31,14 @@ interface RankingBarProps {
  * unica aritmetica e a largura da barra — proporcao de pixel, nao indicador
  * derivado, do mesmo estatuto da soma exibida na Pagina Inicial.
  */
-export function RankingBar({ title, entries, onSelect, caveat, emptyMessage }: RankingBarProps) {
+export function RankingBar({
+  title,
+  entries,
+  onSelect,
+  caveat,
+  secondary,
+  emptyMessage,
+}: RankingBarProps) {
   const largest = entries.reduce((greatest, entry) => Math.max(greatest, entry.count), 0)
 
   return (
@@ -35,7 +52,12 @@ export function RankingBar({ title, entries, onSelect, caveat, emptyMessage }: R
         <ol className="mt-3 flex flex-col gap-1">
           {entries.map((entry) => (
             <li key={entry.key}>
-              <RankingRow entry={entry} largest={largest} onSelect={onSelect} />
+              <RankingRow
+                entry={entry}
+                largest={largest}
+                {...(onSelect ? { onSelect } : {})}
+                {...(secondary ? { secondary } : {})}
+              />
             </li>
           ))}
         </ol>
@@ -53,21 +75,18 @@ function RankingRow({
   entry,
   largest,
   onSelect,
+  secondary,
 }: {
   entry: RankingEntry
   largest: number
-  onSelect: (key: string) => void
+  onSelect?: (key: string) => void
+  secondary?: (entry: RankingEntry) => ReactNode
 }) {
   const label = displayLabel(entry)
   const share = largest === 0 ? 0 : (entry.count / largest) * 100
 
-  return (
-    <button
-      type="button"
-      onClick={() => onSelect(entry.key)}
-      title={`Filtrar por ${label} e abrir na Página Operacional`}
-      className="group flex w-full items-center gap-3 rounded px-1 py-1 text-left hover:bg-slate-50"
-    >
+  const content = (
+    <>
       <span className="w-40 shrink-0 truncate text-sm text-slate-700 group-hover:text-slate-900">
         {label}
       </span>
@@ -80,6 +99,22 @@ function RankingRow({
       <span className="w-12 shrink-0 text-right text-sm tabular-nums text-slate-600">
         {entry.count.toLocaleString('pt-BR')}
       </span>
+      {secondary && <span className="w-24 shrink-0 text-right text-xs">{secondary(entry)}</span>}
+    </>
+  )
+
+  const shared = 'group flex w-full items-center gap-3 rounded px-1 py-1 text-left'
+
+  if (onSelect === undefined) return <span className={shared}>{content}</span>
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(entry.key)}
+      title={`Filtrar por ${label} e abrir na Página Operacional`}
+      className={`${shared} hover:bg-slate-50`}
+    >
+      {content}
     </button>
   )
 }
