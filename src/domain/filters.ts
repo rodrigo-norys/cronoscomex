@@ -144,6 +144,26 @@ function asList(raw: unknown): string[] {
   return (Array.isArray(raw) ? raw : [raw]).map(String).filter((value) => value !== '')
 }
 
+/**
+ * Como `asList`, mas a string vazia **sobrevive** — ela e chave legitima nos
+ * filtros de dominio aberto (TD-04), nao ausencia de valor.
+ *
+ * A distincao esta na presenca do parametro, e nao no seu conteudo: `?goods=`
+ * chega como `''` e significa "mercadoria em branco"; parametro ausente chega
+ * como `undefined` e nao filtra nada. `asList` colapsa os dois casos, e por
+ * isso nao serve aqui.
+ *
+ * Sem esta funcao, `optionsOf` oferecia a chave vazia — de proposito, para
+ * tornar o buraco investigavel — e `applyFilters` a casava corretamente, mas
+ * ela morria no meio do caminho: a selecao virava um recorte que nao recortava
+ * nada, e a tela mostrava a base inteira como se fossem os processos em branco.
+ * Descarte silencioso do lado errado da regra inviolavel 3.
+ */
+function asKeyList(raw: unknown): string[] {
+  if (raw === undefined || raw === null) return []
+  return (Array.isArray(raw) ? raw : [raw]).map(String)
+}
+
 function asSingle(raw: unknown): string | null {
   const list = asList(raw)
   return list.at(-1) ?? null
@@ -187,20 +207,24 @@ function parseBoolean(raw: unknown, field: string): boolean | null {
  * dominio aberto (cliente, navio, porto...) aceitam qualquer texto, porque a
  * lista vem dos dados e nao de catalogo (A-36). Valor inexistente ali produz
  * resultado vazio com `200`, que e resposta legitima.
+ *
+ * Os seis de dominio aberto usam `asKeyList`, que preserva a chave vazia; os
+ * demais seguem com `asList`, onde `''` e ausencia mesmo — `?category=` nao e
+ * "categoria em branco", porque categoria em branco nao existe.
  */
 export function parseFilters(query: Record<string, unknown>): FilterSet {
   return {
     etaFrom: parseIsoDay(query.etaFrom, 'etaFrom'),
     etaTo: parseIsoDay(query.etaTo, 'etaTo'),
-    client: asList(query.client),
-    importer: asList(query.importer),
-    vessel: asList(query.vessel),
-    agent: asList(query.agent),
-    goods: asList(query.goods),
+    client: asKeyList(query.client),
+    importer: asKeyList(query.importer),
+    vessel: asKeyList(query.vessel),
+    agent: asKeyList(query.agent),
+    goods: asKeyList(query.goods),
     category: parseEnum(query.category, 'category', STATUS_CATEGORIES),
     responsible: parseEnum(query.responsible, 'responsible', RESPONSIBLES),
     channel: parseEnum(query.channel, 'channel', CUSTOMS_CHANNELS),
-    port: asList(query.port),
+    port: asKeyList(query.port),
     importerOutsideRj: parseBoolean(query.importerOutsideRj, 'importerOutsideRj'),
   }
 }
