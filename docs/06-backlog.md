@@ -1662,11 +1662,54 @@ export function leadTimeByGroup(p: Process[], key: (x: Process) => string,
 
 ### H-20 — Entregar a Página Alertas
 
+> ✅ **CONCLUÍDA em 07/08/2026.** 15 testes próprios em 1 arquivo; suíte total
+> em **708**.
+>
+> **O backlog se contradizia, e o critério de aceite venceu.** Ele manda o
+> processo aparecer **uma única vez** agrupando tipos — decisão do usuário em
+> 06/08/2026, A-60 —, enquanto o caso-limite mandava o oposto: "aparece três
+> vezes, uma por tipo". Era texto anterior à decisão, que ficou. Corrigido
+> abaixo.
+>
+> **O agrupamento preserva a ordem de primeira aparição, e isso não é detalhe.**
+> A lista chega ordenada por severidade, depois `eta2` com nulos por último, e
+> `sourceRow` no desempate. Como o primeiro alerta de um processo é o mais
+> severo dele, a posição de primeira aparição **já é** a posição correta do
+> grupo — a ordenação do servidor é herdada inteira, sem reordenar nada no
+> cliente (regra inviolável 6). Verificado no arquivo real: as 40 linhas viram
+> 25 grupos e a sequência de severidade **não quebra em nenhum ponto**.
+>
+> **Os dois zeros da planilha significam coisas opostas, e a tela os separa.**
+> `chegadas_hoje: 0` é medido — nada chega hoje. `processos_parados: 0` é **não
+> mensurável**: a rota passa histórico vazio até `H-28`. Exibi-los igual
+> afirmaria que nada está parado, quando o que se sabe é que ainda não dá para
+> saber. O de parados vira traço, com a nota explicando o porquê, o limiar de 15
+> dias declarado como premissa (A-32) e a ausência de retroatividade (A-43).
+>
+> **Conferido contra a planilha real:** 40 linhas achatadas para **25**
+> processos; 12 com um tipo, 11 com dois, **2 com três** — o backlog dizia "um
+> deles", e são dois. Contagens: `eta_vencida` 17, `documentacao_pendente` 14,
+> `chegadas_7_dias` 7, `canal_vermelho` 2, os outros dois zerados. **Zero
+> processos concluídos na fila**, que é o filtro de A-59 funcionando. E **zero
+> alertas com `eta2` nulo** — o caso-limite não é observável no arquivo hoje, e
+> por isso é coberto por fixture.
+>
+> **Divergências resolvidas: quatro.** ① a contradição do backlog · ② a regra de
+> posição do grupo, que ninguém tinha escrito · ③ seis arquivos fora da lista,
+> entre eles `web/tests/support/api-stub.ts` — o stub **rejeita** rota não
+> prevista, então sem `/api/alerts` toda tela em `/alertas` quebraria, inclusive
+> as três asserções da casca herdadas da `H-19` · ④ o zero não mensurável de
+> ALE-06.
+
 **Objetivo:** lista única dos alertas, ordenada por severidade.
 
 **Arquivos:**
 - `web/src/pages/Alerts.tsx`
 - `web/src/components/AlertRow.tsx`
+- **Omitidos do plano original**, e necessários: `web/src/api-client.ts`
+  (`getAlerts` não existia), `web/src/hooks/useAlerts.ts`, `web/src/App.tsx`,
+  `web/tests/support/api-stub.ts`, `web/tests/Alerts.test.tsx` e
+  `web/tests/App.test.tsx`
 
 **Contrato fixado:** consome `GET /api/alerts`.
 
@@ -1689,7 +1732,10 @@ export function leadTimeByGroup(p: Process[], key: (x: Process) => string,
 
 **Casos-limite:**
 - Nenhum alerta → mensagem afirmativa de ausência de pendências, não tela vazia.
-- Um processo em três tipos de alerta → aparece três vezes, uma por tipo.
+- Um processo em três tipos de alerta → aparece **uma vez, com os três tipos**.
+  ⚠️ O texto original dizia "aparece três vezes, uma por tipo" — anterior à
+  decisão de 06/08/2026 (A-60), e contraditório com o critério de aceite acima.
+  Corrigido ao fechar `H-20`. Medido: 2 processos em 3 tipos.
 - Alerta com `eta2 = null` → exibido por último em seu grupo.
 
 **Dependências:** H-14, H-15
