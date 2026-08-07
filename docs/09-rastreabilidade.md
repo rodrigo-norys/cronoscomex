@@ -171,7 +171,7 @@ As 33 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
 | H-13 | IND-16, IND-22 | ✅ **Concluída.** Indicadores de tempo. Fecha o contrato de `GET /api/indicators`, que nasceu parcial em `H-09`. Medido: `averageDays 12,5` sobre amostra de 101 |
 | H-14 | ALE-01 a ALE-05 | ✅ **Concluída.** Alertas do estado atual. Fila de trabalho: `≠ desembaracado` nos cinco (A-59). Medido: 40 linhas para 25 processos |
 | H-15 | §3.2 (os 11 filtros) | ✅ **Concluída.** Filtros globais, casca com navegação, faixa de estado (A-57) e as três frentes de A-62. Saiu em três entregas. Medido: `port=RO` devolve 2 processos, confirmando A-36 |
-| H-16 | IND-01 a IND-09, IND-14 a IND-16, §3.1 (Página Inicial) | Cartões-resumo — **12**, não 11: `IND-16` faltava na lista e entrou por A-64 |
+| H-16 | IND-01 a IND-09, IND-14 a IND-16, §3.1 (Página Inicial) | ✅ **Concluída.** Cartões-resumo — **12**, não 11: `IND-16` faltava na lista e entrou por A-64 |
 | H-17 | IND-12, §3.1 (Página Operacional), §3.3 (BL, CNTR) | ✅ **Concluída.** Tabela, busca e calendário. Saiu em duas entregas. Entrega também `GET /api/processes`, de que `H-22` depende |
 | H-18 | IND-10, IND-11, **IND-13**, IND-18, IND-19, §3.1 (Página Clientes) | ✅ **Concluída.** Rankings visuais. `IND-13` entrou por A-65: mercadoria é a terceira dimensão do mesmo painel de distribuição. Corrigiu também o descarte da chave vazia em `parseFilters`, que tornava inócua a opção "(em branco)" nos nove filtros da barra desde `H-15` |
 | H-19 | **IND-17**, **IND-20**, IND-22, §3.1 (Página Performance) | ✅ **Concluída.** Quebras do tempo documental. `IND-17` e `IND-20` entraram por A-65: a página já agrupa por agente e por responsável, e contagem com `overdueCount` é outra métrica sobre os mesmos grupos |
