@@ -38,7 +38,7 @@ legibilidade: `H-02` → `H-03` → `H-05` → `H-06` → `H-07` → `H-08`.
 | IND-09 | Containers chegando em 15 dias | ETA2 | `count(hoje ≤ eta2 ≤ hoje+15)`, extremos inclusivos (A-35) | H-10, H-16 | `indicators-calendar.test.ts` | ✅ **Entregue** — backend em `H-10`, cartão em `H-16`. P-03 confirmada |
 | IND-10 | Clientes com mais processos | CLT | `count` agrupado por `normKey(CLT)`, desc; desempate alfabético (A-25, A-26) | H-11, H-18 | `indicators-rankings.test.ts` · `normalizer.test.ts` | ✅ **Backend entregue** (`H-11`); apresentação pendente |
 | IND-11 | Importadores com mais processos | IMPORTADOR | `count` agrupado por `normKey(IMPORTADOR)`, desc | H-11, H-18 | `indicators-rankings.test.ts` | ✅ **Backend entregue** (`H-11`); apresentação pendente |
-| IND-12 | Navios previstos | NAVIO + ETA2 | `lista(vessel, eta2)` onde `eta2 ≥ hoje`, asc por `eta2` e depois por `vesselKey` (A-24) | H-10, H-17 | `indicators-calendar.test.ts` | ✅ **Entregue** — backend em `H-10`, cartão em `H-16`. P-03 confirmada |
+| IND-12 | Navios previstos | NAVIO + ETA2 | `lista(vessel, eta2)` onde `eta2 ≥ hoje`, asc por `eta2` e depois por `vesselKey` (A-24) | H-10, H-17 | `indicators-calendar.test.ts` · `Operational.test.tsx` | ✅ **Entregue** — backend em `H-10`, calendário em `H-17`. `arrivalCalendar` é um **recorte** dele com teto de 15 dias; IND-12 segue sem teto, por definição. Medido: 16 grupos (navio, dia), 8 dentro do horizonte |
 | IND-13 | Mercadorias | MERCADORIA | `count` agrupado por `normKey(MERCADORIA)`, desc, com `bazarShare` exposto (A-34) | H-11, H-18 | `indicators-rankings.test.ts` | ✅ **Backend entregue** (`H-11`); apresentação em `H-18`, atribuída por **A-65** — antes nenhuma página o exibia. **Limitação medida:** `BAZAR` são 210 processos, 35,47% dos que têm mercadoria — 5,7× o segundo colocado real. Exposta em `meta.bazarShare` (A-34), e exibida junto do ranking que ela qualifica |
 | IND-14 | Documentos pendentes | DOCS ENVIADOS + ETA2 + STATUS | `count(docsSent = null ∧ eta2 ≤ hoje+10 ∧ category ≠ 'desembaracado')` (A-08) | H-12, H-16 | `indicators-risk.test.ts` | ✅ **Entregue** — backend em `H-12`, cartão de urgência em `H-16` (A-40), visualmente distinto dos de volume |
 | IND-15 | Processos atrasados | ETA2 + STATUS | `count(eta2 < hoje ∧ category ≠ 'desembaracado')`. `eta2 = null` nunca satisfaz (A-20) | H-12, H-16 | `indicators-risk.test.ts` | ✅ **Entregue** — backend em `H-12`, cartão de urgência em `H-16` (A-40), visualmente distinto dos de volume |
@@ -75,7 +75,7 @@ especificação são rastreados aqui, para que **nenhum** fique fora.
 | Tela | Requisito | Histórias | Status |
 |---|---|---|---|
 | Página Inicial | RF-09 | H-16 | ✅ **Entregue.** 12 cartões: "Em desembaraço" por A-12, os dois de urgência por A-40, "Desembaraçados hoje" por A-64. A soma das 4 categorias é exibida e confere (649) |
-| Página Operacional | RF-10 | H-17, H-22 | Implementável. "Processo ativo" definido (A-16); busca por BL e CNTR acrescentada (A-39) |
+| Página Operacional | RF-10 | H-17, H-22 | ✅ **Entregue.** Tabela de 8 colunas com ordenação por clique e paginação, busca por REF/BL/CNTR (A-39), e o calendário de chegadas. "Processo ativo" (A-16) é o padrão da página, não da rota. Medido: 169 ativos de 649 |
 | Página Clientes | RF-11 | H-18 | Implementável |
 | Página Performance | RF-12 | H-19 | Implementável. Denominador exibido (A-42); nota sobre IND-21 fora de escopo |
 | Página Alertas | RF-13 | H-20 | Implementável. Ordem de severidade fixada (A-41) |
@@ -105,9 +105,9 @@ especificação são rastreados aqui, para que **nenhum** fique fora.
 | REF | Chave natural, IND-01 | H-03, H-07 | Implementável. Duplicidade tratada (TD-06) |
 | CLT | IND-10, IND-18, filtro | H-03, H-11 | Implementável |
 | IMPORTADOR | IND-11, IND-19, filtro | H-03, H-11 | Implementável |
-| BL | Consulta | H-03, H-17 | Implementável via busca (A-39) |
+| BL | Consulta | H-03, H-17 | ✅ **Entregue.** Busca por substring, sem caixa e sem acento. Medido: `search=NBSC` devolve 61 no conjunto todo, 7 entre os ativos |
 | AGENTE | IND-17, filtro | H-03, H-11 | ✅ Implementável (P-01 confirmada) |
-| CNTR | Consulta | H-03, H-17 | Implementável via busca |
+| CNTR | Consulta | H-03, H-17 | ✅ **Entregue.** Mesma busca do BL; a coluna aparece na tabela para o operador ver por que a linha casou |
 | NAVIO | IND-12, filtro | H-03, H-10 | Implementável |
 | ETA (porto) | Filtro | H-03, H-15 | ✅ **Entregue** com o filtro de porto |
 | ETA2 | 9 indicadores e 4 alertas | H-03, H-05 | ✅ Implementável (P-03 confirmada) |
@@ -172,7 +172,7 @@ As 33 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
 | H-14 | ALE-01 a ALE-05 | ✅ **Concluída.** Alertas do estado atual. Fila de trabalho: `≠ desembaracado` nos cinco (A-59). Medido: 40 linhas para 25 processos |
 | H-15 | §3.2 (os 11 filtros) | ✅ **Concluída.** Filtros globais, casca com navegação, faixa de estado (A-57) e as três frentes de A-62. Saiu em três entregas. Medido: `port=RO` devolve 2 processos, confirmando A-36 |
 | H-16 | IND-01 a IND-09, IND-14 a IND-16, §3.1 (Página Inicial) | Cartões-resumo — **12**, não 11: `IND-16` faltava na lista e entrou por A-64 |
-| H-17 | IND-12, §3.1 (Página Operacional), §3.3 (BL, CNTR) | Tabela, busca e calendário |
+| H-17 | IND-12, §3.1 (Página Operacional), §3.3 (BL, CNTR) | ✅ **Concluída.** Tabela, busca e calendário. Saiu em duas entregas. Entrega também `GET /api/processes`, de que `H-22` depende |
 | H-18 | IND-10, IND-11, **IND-13**, IND-18, IND-19, §3.1 (Página Clientes) | Rankings visuais. `IND-13` entrou por A-65: mercadoria é a terceira dimensão do mesmo painel de distribuição |
 | H-19 | **IND-17**, **IND-20**, IND-22, §3.1 (Página Performance) | Quebras do tempo documental. `IND-17` e `IND-20` entraram por A-65: a página já agrupa por agente e por responsável, e contagem com `overdueCount` é outra métrica sobre os mesmos grupos |
 | H-20 | ALE-01 a ALE-06, §3.1 (Página Alertas) | Lista de alertas |

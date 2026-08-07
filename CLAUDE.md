@@ -116,9 +116,9 @@ Não re-derive isto; está medido.
 **Fases 0 e 1 concluídas. Fase 2 em andamento: `H-09` a `H-14` fechadas** — o
 épico E3 (indicadores e alertas) está inteiro —, **mais `H-32`, antecipada**
 porque era dependência declarada de `H-15` e não existia, **`H-15`, que abriu o
-épico E4, e `H-16`, a primeira página de dado.** Próximo passo: **`H-17`**, a
-Página Operacional com tabela, busca e calendário. As fases estão em
-`docs/07-plano-entrega.md`.
+épico E4, `H-16`, a primeira página de dado, e `H-17`, que entrega também
+`GET /api/processes`.** Próximo passo: **`H-18`**, a Página Clientes — rankings
+de CLT, IMPORTADOR e MERCADORIA. As fases estão em `docs/07-plano-entrega.md`.
 
 **`H-16` a `H-21` são paralelas no grafo** (`H15 --> H16 & H17 & …`), não uma
 cadeia: a ordem numérica é do backlog, não dependência. Só `H-22` tem
@@ -148,6 +148,19 @@ origem. Os 6 alertas já estavam em `H-20`.
 > **Ao acrescentar indicador ou alerta, confira quem o exibe.** Servir não é
 > entregar: a cadeia é domínio → rota → **tela**, e o plano erra no último elo
 > com regularidade — quatro vezes até aqui.
+
+**`H-17` saiu em duas entregas**, pelo mesmo motivo de `H-15`: `M` subestimado.
+A ① — domínio, rota e calendário — tinha valor sozinha, porque `H-22` também
+depende de `GET /api/processes`.
+
+**Busca e ordenação são regra, e vivem em `src/domain/process-query.ts`.**
+`matchesSearch` **não** reaproveita `normKey`: aquele colapsa espaço interno
+porque existe para agrupar — `EVER  FAIR` e `EVER FAIR` são o mesmo navio —, e
+na busca o espaço importa, porque quem digita um trecho de container espera
+casar o que vê. **O nulo fica por último também em `desc`:** inverter o
+comparador inteiro o jogaria para o topo, e a planilha tem 64 processos sem
+ETA2 — uma tela de traços ao clicar na coluna. Empate desempata por `sourceRow`,
+senão a ordem entre iguais mudaria entre páginas.
 
 **Página de dado não trata `503` como falha.** `GET /api/indicators` responde
 `503` enquanto `lastReadAt` é `null`, e isso vira um estado próprio —
@@ -448,14 +461,15 @@ saudável e não é.
 > `node: bad option` **não é erro de código**: o shell herdou um Node abaixo de
 > `engines`. Prefixe `nvm use &&` — o `nvm use` não persiste entre chamadas.
 
-> **Depois de `git switch` com o `dev` no ar, toque um arquivo de `src/`.**
-> Medido em 07/08/2026: o `node --watch` continuou servindo o código da branch
-> anterior — `GET /api/health` respondia **sem** o campo `today` que o arquivo
-> em disco já tinha. O git troca os arquivos de uma vez, e o observador não vê
-> o que precisa; `touch src/http/server.ts` força o reinício. Como aqui é branch
-> por história, trocar de branch com o `dev` rodando é rotina, e o sintoma —
-> interface quebrando contra um contrato que o código já cumpre — aponta para o
-> lugar errado.
+> **Depois de `git switch` com o `dev` no ar, reinicie o `npm run dev`.**
+> Medido duas vezes em 07/08/2026: o `node --watch` continuou servindo o código
+> da branch anterior — primeiro `GET /api/health` sem o campo `today`, depois
+> `GET /api/processes` respondendo `404` com a rota já em disco. O git troca os
+> arquivos de uma vez, e o observador não vê o que precisa. **`touch` resolveu
+> no primeiro caso e não no segundo**; só derrubar e subir o processo é
+> confiável. Como aqui é branch por história, trocar de branch com o `dev`
+> rodando é rotina, e o sintoma — interface quebrando contra um contrato que o
+> código já cumpre — aponta para o lugar errado.
 
 **Para conferir uma história contra a planilha real** — passo obrigatório antes
 de fechar —, monte o script no scratchpad e use o carregador, em vez de repetir
