@@ -112,6 +112,10 @@ describe('GET /api/indicators', () => {
     const body = (await app.inject({ method: 'GET', url: '/api/indicators' })).json()
 
     expect(Object.keys(body).sort()).toEqual([
+      // `arrivalCalendar` entrou em `H-17`: recorte de `expectedVessels` com o
+      // teto de 15 dias, que precisa vir do servidor para nao virar regra no
+      // cliente. `expectedVessels` (IND-12) segue intacto, sem teto (A-24).
+      'arrivalCalendar',
       'counts',
       'documentaryLeadTime',
       'expectedVessels',
