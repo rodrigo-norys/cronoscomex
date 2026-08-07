@@ -1,6 +1,7 @@
 import type { FilterOptionsResponse } from '../../src/http/routes/filter-options.ts'
 import type { HealthResponse } from '../../src/http/routes/health.ts'
 import type { IndicatorsResponse } from '../../src/http/routes/indicators.ts'
+import type { ProcessDto, ProcessesResponse } from '../../src/http/routes/processes.ts'
 import type { QuarantineResponse } from '../../src/http/routes/quarantine.ts'
 
 /**
@@ -13,7 +14,14 @@ import type { QuarantineResponse } from '../../src/http/routes/quarantine.ts'
  * cliente divergir do servidor em silencio, que foi exatamente o que o
  * esqueleto de `H-02` fazia, com metade dos campos.
  */
-export type { FilterOptionsResponse, HealthResponse, IndicatorsResponse, QuarantineResponse }
+export type {
+  FilterOptionsResponse,
+  HealthResponse,
+  IndicatorsResponse,
+  ProcessDto,
+  ProcessesResponse,
+  QuarantineResponse,
+}
 
 /**
  * `503 ARQUIVO_INDISPONIVEL` nao e falha de rede: significa que **nunca** houve
@@ -65,6 +73,23 @@ export async function getIndicators(
   if (!response.ok) throw new Error(`GET /api/indicators respondeu ${response.status}`)
 
   return (await response.json()) as IndicatorsResponse
+}
+
+/**
+ * A lista de processos, ja filtrada, buscada, ordenada e paginada no servidor.
+ *
+ * `queryString` carrega os onze filtros globais **e** os parametros da pagina.
+ * Como em `getIndicators`, ela vem pronta e e apenas anexada.
+ */
+export async function getProcesses(
+  queryString: string,
+  signal?: AbortSignal,
+): Promise<ProcessesResponse> {
+  const response = await fetch(`/api/processes${queryString}`, signal ? { signal } : undefined)
+  if (response.status === 503) throw new NoReadYetError('GET /api/processes')
+  if (!response.ok) throw new Error(`GET /api/processes respondeu ${response.status}`)
+
+  return (await response.json()) as ProcessesResponse
 }
 
 /**
