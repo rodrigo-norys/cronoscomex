@@ -119,9 +119,13 @@ porque era dependência declarada de `H-15` e não existia, **`H-15`, que abriu 
 épico E4, `H-16`, a primeira página de dado, `H-17`, que entrega também
 `GET /api/processes`, `H-18`, os três rankings, `H-19`, que fecha as duas
 últimas regras sem tela, `H-20`, a fila de trabalho, e `H-22`, o detalhe.**
-Restam de interface só a `H-21`, que depende do histórico de `H-28`. Próximo
-passo: **Fase 3**, que abre com `H-23`. As fases estão em
-`docs/07-plano-entrega.md`.
+Restam de interface só a `H-21`, que depende do histórico de `H-28`. **A Fase 3
+abriu com `H-23`, a fila de edições.** Próximo passo: **`H-24`**, a escrita
+cirúrgica no `.xlsx`. As fases estão em `docs/07-plano-entrega.md`.
+
+> **`H-24` é o ponto onde errar custa a planilha da empresa**, e o único do
+> projeto em que o plano prevê revisão adversarial. O gatilho do subagent de
+> review de XML está atingido.
 
 **`H-22` construiu a rota que o plano dava como pronta.**
 `GET /api/processes/:ref` estava em `docs/05-contratos-api.md` desde o começo e
@@ -207,6 +211,24 @@ nem aviso, nos nove filtros da barra. Nos demais — categoria, canal,
 responsável, datas — vazio segue sendo ausência, porque lá não existe chave em
 branco. Medido: o recorte devolve 57 processos sem mercadoria e 38 sem cliente,
 onde antes devolvia 649.
+
+**A edição é projetada, nunca gravada — e a projeção refaz o que deriva.**
+`H-23` aplica a fila sobre os processos lidos em `getState()`, reconstruindo a
+linha crua com `toRawRow` e passando pelo **mesmo** `buildProcesses` da leitura.
+Editar `clientRaw` refaz `clientKey`, senão os rankings agrupam pelo valor
+velho; editar `statusRaw` reclassifica por TD-01; editar RG cria
+`RG_SEM_DESEMBARACO`. Reimplementar essas regras sobre `Process` daria duas
+implementações que divergem no primeiro ajuste — o argumento de `isOverdue`.
+
+**`toRawRow` emite data como `Date`, não como texto ISO.** `parseCellDate`
+aceita `Date`, serial numérico e `dd/MM/yyyy`; `AAAA-MM-DD` cai em
+`DATA_SEM_ANO`. Foi defeito real, pego por dois testes da projeção.
+
+**A fila é lida a cada `getState`, de propósito.** Ela muda sem releitura do
+arquivo — `POST /api/edits` não dispara o watcher —, e cache ali precisaria de
+invalidação vinda das rotas. **`value: null` é célula vazia, nunca
+cancelamento**: este tem rota própria, e o descarte é uma **lápide** anexada ao
+`.jsonl`, preservando o append-only.
 
 **A identidade de REF é `normKey`, e a rota de detalhe usa a mesma chave.**
 TD-06 define assim, e é por ela que a ingestão detecta duplicata — igualdade
