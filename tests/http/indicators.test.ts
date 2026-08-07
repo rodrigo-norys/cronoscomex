@@ -75,6 +75,7 @@ function state(overrides: Partial<StoreState> = {}): StoreState {
     rowsQuarantined: 0,
     externalLock: false,
     conflictFiles: [],
+    pendingEdits: [],
     ...overrides,
   }
 }
