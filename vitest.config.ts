@@ -5,9 +5,9 @@ import { defineConfig } from 'vitest/config'
  * Dois ambientes, um por camada.
  *
  * O servidor roda em Node e nao tem DOM; os componentes precisam de um. Um
- * ambiente unico obrigaria a escolher entre carregar `jsdom` para 441 testes
- * que nao o usam, ou deixar a interface sem teste. `projects` resolve sem
- * pagar nenhum dos dois precos.
+ * ambiente unico obrigaria a escolher entre carregar `jsdom` para as centenas
+ * de testes de servidor que nao o usam, ou deixar a interface sem teste.
+ * `projects` resolve sem pagar nenhum dos dois precos.
  *
  * O comentario que vivia aqui sobre o paralelismo saiu com a correcao de
  * `H-32`: a corrida que o motivava foi resolvida na origem, fechando o
