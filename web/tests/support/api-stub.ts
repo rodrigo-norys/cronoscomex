@@ -1,4 +1,5 @@
 import { vi } from 'vitest'
+import type { FilterOptionsResponse } from '../../../src/http/routes/filter-options.ts'
 import type { HealthResponse } from '../../../src/http/routes/health.ts'
 
 export function healthFixture(overrides: Partial<HealthResponse> = {}): HealthResponse {
@@ -22,11 +23,41 @@ export function healthFixture(overrides: Partial<HealthResponse> = {}): HealthRe
   }
 }
 
+/** Enxuto de proposito: os nove blocos existem, com valores que cabem no
+ * assert. A rota real e testada em `tests/http/`, sobre a fixture. */
+export function filterOptionsFixture(
+  overrides: Partial<FilterOptionsResponse> = {},
+): FilterOptionsResponse {
+  return {
+    clients: [
+      { key: 'ACME', label: 'ACME', count: 12 },
+      { key: 'YRD', label: 'YRD', count: 5 },
+    ],
+    importers: [{ key: 'IMP', label: 'IMP', count: 3 }],
+    vessels: [{ key: 'EVER FAIR', label: 'EVER FAIR', count: 2 }],
+    agents: [{ key: 'AG', label: 'AG', count: 4 }],
+    goods: [{ key: 'BAZAR', label: 'BAZAR', count: 9 }],
+    ports: [
+      { key: 'RJ', label: 'RJ', count: 40 },
+      { key: 'RO', label: 'RO', count: 2 },
+    ],
+    categories: [
+      { key: 'em_andamento', label: 'Em andamento', count: 103 },
+      { key: 'desembaracado', label: 'Desembaraçado', count: 480 },
+    ],
+    responsible: [{ key: 'colaborador1', label: 'Colaborador 1', count: 20 }],
+    channels: [{ key: 'vermelho', label: 'Canal Vermelho', count: 5 }],
+    ...overrides,
+  }
+}
+
 export interface ApiStub {
   /** `METODO /caminho`, na ordem em que foram chamados. Prova a ordem de A-62. */
   readonly calls: string[]
   serve(health: HealthResponse): void
+  serveOptions(options: FilterOptionsResponse): void
   failNextHealth(message: string): void
+  failOptions(): void
 }
 
 /**
@@ -38,6 +69,8 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
   const calls: string[] = []
   let health = initial
   let healthFailure: string | null = null
+  let options = filterOptionsFixture()
+  let optionsFails = false
 
   vi.stubGlobal(
     'fetch',
@@ -58,6 +91,14 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
         } as Response)
       }
 
+      if (url === '/api/filters/options') {
+        return Promise.resolve({
+          ok: !optionsFails,
+          status: optionsFails ? 503 : 200,
+          json: () => Promise.resolve(options),
+        } as Response)
+      }
+
       if (url === '/api/reload') {
         return Promise.resolve({
           ok: true,
@@ -75,8 +116,14 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
     serve: (next) => {
       health = next
     },
+    serveOptions: (next) => {
+      options = next
+    },
     failNextHealth: (message) => {
       healthFailure = message
+    },
+    failOptions: () => {
+      optionsFails = true
     },
   }
 }
