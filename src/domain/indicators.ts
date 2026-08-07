@@ -1,4 +1,5 @@
 import { addDays, diffDays, isoWeekEnd, isWithin, toIsoDay } from './date-window.ts'
+import { RESPONSIBLE_LABELS } from './filters.ts'
 import type { Process, Responsible } from './types.ts'
 
 /**
@@ -331,7 +332,16 @@ export function responsibleRanking(processes: readonly Process[]): GroupCount[] 
     counts.set(process.responsible, (counts.get(process.responsible) ?? 0) + 1)
   }
 
-  return sortRanking([...counts.entries()].map(([key, count]) => ({ key, label: key, count })))
+  return sortRanking(
+    [...counts.entries()].map(([key, count]) => ({
+      key,
+      // O rotulo legivel nasce aqui, e nao na tela: `colaborador1` e chave de
+      // dominio fechado, e traduzi-la no cliente seria a mesma regra escrita
+      // duas vezes — a rota de opcoes ja usa este mapa (A-28).
+      label: RESPONSIBLE_LABELS[key as Responsible] ?? key,
+      count,
+    })),
+  )
 }
 
 /** Chave normalizada da mercadoria que domina a base (A-34). */
@@ -421,4 +431,76 @@ export function documentaryLeadTime(processes: readonly Process[]): LeadTime {
     result.averageDays = Number((totalDays / result.sampleSize).toFixed(1))
   }
   return result
+}
+
+/** Uma linha de quebra de IND-22: o grupo, o volume e o tempo daquele grupo. */
+export type LeadTimeGroup = GroupCount & LeadTime
+
+/**
+ * IND-22 quebrado por grupo — cliente, agente, navio ou responsavel (`H-19`).
+ *
+ * **Ordena por `sampleSize` decrescente, nao por `count`.** Os outros rankings
+ * ordenam por volume porque respondem "quem tem mais"; este responde "onde da
+ * para comparar", e as duas perguntas divergem na pratica: apenas 101 dos 649
+ * processos tem as duas datas, e dos 509 grupos de cliente **425 nao tem
+ * nenhuma**. Por volume, o topo da tabela seriam os maiores clientes, todos com
+ * traco — a informacao ficaria fora do corte, embaixo. O desempate segue por
+ * `count` e depois pela chave, para a ordem nao mudar entre chamadas.
+ *
+ * **Nao corta.** Quem corta nao pode ser quem conta: a rota precisa do total de
+ * grupos para dizer quantos ficaram de fora, e um `topN` aqui apagaria esse
+ * numero antes de alguem poder informa-lo (regra inviolavel 2).
+ *
+ * Grupo sem nenhum par completo entra com `averageDays: null` e `sampleSize: 0`
+ * — some-lo esconderia que o campo nao e preenchido para aquele grupo, que e
+ * informacao sobre a planilha, nao ausencia de informacao.
+ */
+export function leadTimeByGroup(
+  processes: readonly Process[],
+  key: (process: Process) => string,
+  label: (process: Process) => string,
+): LeadTimeGroup[] {
+  const groups = new Map<string, LeadTimeGroup & { totalDays: number }>()
+
+  for (const process of processes) {
+    const groupKey = key(process)
+    let group = groups.get(groupKey)
+
+    if (group === undefined) {
+      group = {
+        key: groupKey,
+        label: label(process).trim(),
+        count: 0,
+        averageDays: null,
+        sampleSize: 0,
+        excludedNegative: 0,
+        excludedIncomplete: 0,
+        totalDays: 0,
+      }
+      groups.set(groupKey, group)
+    }
+    group.count++
+
+    const { registrationDate, docsSentDate } = process
+    if (registrationDate === null || docsSentDate === null) {
+      group.excludedIncomplete++
+      continue
+    }
+
+    const days = diffDays(docsSentDate, registrationDate)
+    if (days < 0) {
+      group.excludedNegative++
+      continue
+    }
+
+    group.totalDays += days
+    group.sampleSize++
+  }
+
+  return [...groups.values()]
+    .map(({ totalDays, ...group }) => ({
+      ...group,
+      averageDays: group.sampleSize > 0 ? Number((totalDays / group.sampleSize).toFixed(1)) : null,
+    }))
+    .sort((a, b) => b.sampleSize - a.sampleSize || b.count - a.count || a.key.localeCompare(b.key))
 }
