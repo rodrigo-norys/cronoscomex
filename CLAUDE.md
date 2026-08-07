@@ -117,9 +117,14 @@ Não re-derive isto; está medido.
 épico E3 (indicadores e alertas) está inteiro —, **mais `H-32`, antecipada**
 porque era dependência declarada de `H-15` e não existia, **`H-15`, que abriu o
 épico E4, `H-16`, a primeira página de dado, `H-17`, que entrega também
-`GET /api/processes`, e `H-18`, os três rankings.** Próximo passo: **`H-19`**, a
-Página Performance — IND-17 e IND-20, que A-65 encontrou sem tela. As fases
-estão em `docs/07-plano-entrega.md`.
+`GET /api/processes`, `H-18`, os três rankings, e `H-19`, que fecha as duas
+últimas regras sem tela.** Próximo passo: **`H-20`**, a Página Alertas — a fila
+de trabalho dos seis alertas. As fases estão em `docs/07-plano-entrega.md`.
+
+**Com `H-19`, todo indicador em escopo tem tela.** A varredura de A-65 fechou:
+`IND-21` é a única linha sem história de interface, e por ausência de dado na
+origem, não por esquecimento. `/fechar-historia` passou a conferir isso
+mecanicamente.
 
 **`H-16` a `H-21` são paralelas no grafo** (`H15 --> H16 & H17 & …`), não uma
 cadeia: a ordem numérica é do backlog, não dependência. Só `H-22` tem
@@ -193,6 +198,21 @@ nem aviso, nos nove filtros da barra. Nos demais — categoria, canal,
 responsável, datas — vazio segue sendo ausência, porque lá não existe chave em
 branco. Medido: o recorte devolve 57 processos sem mercadoria e 38 sem cliente,
 onde antes devolvia 649.
+
+**Quebra de tempo ordena por amostra; ranking de volume ordena por volume.** As
+duas perguntas divergem, e a diferença é medida: dos 509 grupos de cliente, 425
+não têm nenhum par completo de datas, então ordenar a quebra de IND-22 por
+volume encheria o topo de traços e empurraria a média para fora do corte. Por
+isso `leadTimeByGroup` ordena por `sampleSize` desc, desempatando por `count` e
+pela chave. **E ela não corta:** quem corta não pode ser quem conta — a rota
+precisa do total para anunciar quantos grupos ficaram de fora, e um teto no
+domínio apagaria esse número antes de alguém exibi-lo.
+
+**Nem toda linha de ranking pode ser clicável.** O de responsável não é: A-18 faz
+o filtro `colaborador1` selecionar **junto** `colaborador1_outros_clientes`,
+enquanto o ranking os exibe separados porque são perguntas diferentes. Clicar
+numa linha de 120 e chegar a uma tela de 129 faz o operador desconfiar do número
+certo. O de agentes não tem a armadilha e é clicável.
 
 **O clique de um ranking aplica, não alterna.** `toggle` puro desmarcaria o
 valor já selecionado e levaria à Operacional com o filtro que o clique acabou
