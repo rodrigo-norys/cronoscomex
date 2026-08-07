@@ -222,6 +222,8 @@ export interface ApiStub {
   failAlerts(): void
   serveProcesses(page: ProcessesResponse): void
   serveProcessDetail(detail: ProcessDetailResponse): void
+  /** `POST /api/edits` passa a recusar com esta mensagem. */
+  failEnqueueEdit(message: string): void
   processDetailNotFound(): void
   processDetailWithoutRead(): void
   failProcessDetail(): void
@@ -253,6 +255,7 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
   let processesStatus = 200
   let detail = processDetailFixture()
   let detailStatus = 200
+  let enqueueFailure: string | null = null
 
   vi.stubGlobal(
     'fetch',
@@ -276,6 +279,32 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
           ok: alertsStatus === 200,
           status: alertsStatus,
           json: () => Promise.resolve(alerts),
+        } as Response)
+      }
+
+      // As rotas de edicao de `H-23`. O stub nao mantem fila: cada teste serve
+      // o detalhe que quer ver, e o que se verifica aqui e a chamada.
+      if (path === '/api/edits') {
+        if (init?.method === 'POST' && enqueueFailure !== null) {
+          const message = enqueueFailure
+          return Promise.resolve({
+            ok: false,
+            status: 400,
+            json: () => Promise.resolve({ error: { code: 'CORPO_INVALIDO', message } }),
+          } as Response)
+        }
+        return Promise.resolve({
+          ok: true,
+          status: init?.method === 'POST' ? 201 : 200,
+          json: () => Promise.resolve({ items: [], count: 0, discarded: 0 }),
+        } as Response)
+      }
+
+      if (path.startsWith('/api/edits/')) {
+        return Promise.resolve({
+          ok: true,
+          status: 204,
+          json: () => Promise.resolve({}),
         } as Response)
       }
 
@@ -376,6 +405,9 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
     },
     serveProcessDetail: (next) => {
       detail = next
+    },
+    failEnqueueEdit: (message) => {
+      enqueueFailure = message
     },
     processDetailNotFound: () => {
       detailStatus = 404
