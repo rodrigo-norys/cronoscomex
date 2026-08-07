@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  ARRIVAL_HORIZON_DAYS,
+  arrivalCalendar,
   arrivingIn15Days,
   arrivingThisWeek,
   arrivingToday,
@@ -221,5 +223,96 @@ describe('expectedVessels — IND-12', () => {
 
   it('devolve lista vazia para conjunto vazio', () => {
     expect(expectedVessels([], HOJE)).toEqual([])
+  })
+})
+
+/**
+ * `H-17`. O calendario da Pagina Operacional: as chegadas de hoje ate hoje+15,
+ * agrupadas por dia e, dentro do dia, por navio.
+ *
+ * Reaproveita `expectedVessels` (IND-12) em vez de mexer nele: aquele nao tem
+ * teto por definicao (A-24) e esta entregue desde `H-10`. O teto e desta
+ * apresentacao.
+ */
+describe('arrivalCalendar — o calendario de chegadas', () => {
+  it('agrupa por dia, e dentro do dia por navio', () => {
+    const dias = arrivalCalendar(
+      [
+        process({ eta2: '2026-08-05', vessel: 'NAVIO BETA' }),
+        process({ eta2: '2026-08-05', vessel: 'NAVIO ALFA' }),
+        process({ eta2: '2026-08-05', vessel: 'NAVIO ALFA' }),
+        process({ eta2: '2026-08-06', vessel: 'NAVIO GAMA' }),
+      ],
+      HOJE,
+    )
+
+    expect(dias.map((d) => d.eta2)).toEqual(['2026-08-05', '2026-08-06'])
+    expect(dias[0]?.vessels.map((v) => v.vesselKey)).toEqual(['NAVIO ALFA', 'NAVIO BETA'])
+    expect(dias[0]?.vessels[0]?.processCount).toBe(2)
+  })
+
+  // A interface nao soma: a regra inviolavel 6 vale para adicao tambem.
+  it('traz o total do dia somado', () => {
+    const dias = arrivalCalendar(
+      [
+        process({ eta2: '2026-08-05', vessel: 'NAVIO ALFA' }),
+        process({ eta2: '2026-08-05', vessel: 'NAVIO ALFA' }),
+        process({ eta2: '2026-08-05', vessel: 'NAVIO BETA' }),
+      ],
+      HOJE,
+    )
+
+    expect(dias[0]?.processCount).toBe(3)
+  })
+
+  it('inclui hoje e o decimo quinto dia, e exclui o decimo sexto', () => {
+    const dias = arrivalCalendar(
+      [
+        process({ eta2: '2026-08-03', vessel: 'HOJE' }),
+        process({ eta2: '2026-08-18', vessel: 'DIA 15' }),
+        process({ eta2: '2026-08-19', vessel: 'DIA 16' }),
+      ],
+      HOJE,
+    )
+
+    expect(dias.map((d) => d.eta2)).toEqual(['2026-08-03', '2026-08-18'])
+  })
+
+  it('exclui o passado, herdado de expectedVessels', () => {
+    const dias = arrivalCalendar([process({ eta2: '2026-08-02', vessel: 'ONTEM' })], HOJE)
+
+    expect(dias).toEqual([])
+  })
+
+  // Dia sem chegada nao vira linha vazia: o calendario lista o que chega, e o
+  // vazio so afastaria as datas que importam.
+  it('omite os dias sem chegada, sem buraco', () => {
+    const dias = arrivalCalendar(
+      [
+        process({ eta2: '2026-08-03', vessel: 'NAVIO ALFA' }),
+        process({ eta2: '2026-08-10', vessel: 'NAVIO BETA' }),
+      ],
+      HOJE,
+    )
+
+    expect(dias).toHaveLength(2)
+    expect(dias.map((d) => d.eta2)).toEqual(['2026-08-03', '2026-08-10'])
+  })
+
+  it('aceita horizonte diferente do padrao', () => {
+    const processos = [
+      process({ eta2: '2026-08-05', vessel: 'DENTRO' }),
+      process({ eta2: '2026-08-11', vessel: 'FORA' }),
+    ]
+
+    expect(arrivalCalendar(processos, HOJE, 7).map((d) => d.eta2)).toEqual(['2026-08-05'])
+  })
+
+  it('devolve lista vazia para conjunto vazio', () => {
+    expect(arrivalCalendar([], HOJE)).toEqual([])
+  })
+
+  it('o horizonte padrao e 15, o mesmo de IND-09 (A-35)', () => {
+    expect(ARRIVAL_HORIZON_DAYS).toBe(15)
   })
 })
