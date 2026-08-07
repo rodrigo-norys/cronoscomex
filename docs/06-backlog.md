@@ -1776,11 +1776,75 @@ export function leadTimeByGroup(p: Process[], key: (x: Process) => string,
 
 ### H-22 — Entregar a tela de detalhe do processo
 
+> ✅ **CONCLUÍDA em 07/08/2026.** 23 testes próprios em 3 arquivos; suíte total
+> em **731**.
+>
+> **A rota do contrato não existia.** O backlog dizia "Contrato fixado:
+> `GET /api/processes/:ref`" e listava **um único arquivo**, a página. Mas só
+> `GET /api/processes` estava registrada: o `:ref` estava documentado em
+> `docs/05-contratos-api.md` desde o plano e **nunca fora implementado**. É a
+> maior omissão de lista até aqui — faltava o lado servidor inteiro. Por isso a
+> história saiu em duas entregas, como `H-15`, `H-17` e `H-19`.
+>
+> **A REF é resolvida por `normKey`, não por igualdade literal.** TD-06 define a
+> identidade de REF assim, e é por essa chave que a ingestão detecta duplicata.
+> Igualdade literal daria `404` para uma URL em caixa diferente, num processo que
+> o domínio considera existente. A unicidade está garantida na origem: REF
+> repetida vai para quarentena e não chega ao estado. Medido: 649 REFs, todas
+> distintas, **zero caractere fora de `[A-Za-z0-9._-]`** — nenhuma barra, nenhum
+> espaço —, então `:ref` como parâmetro de caminho é seguro.
+>
+> **`daysInCurrentCategory` virou `number | null`.** O contrato documentado
+> trazia `0`, e zero ali **afirma** que a categoria mudou hoje — indistinguível
+> de "não há como saber". Sem histórico gravado seria sempre zero, mentindo em
+> 649 processos. Mesmo argumento de `averageDays` em IND-22 e do traço de
+> ALE-06. O documento foi corrigido.
+>
+> **A explicação da anomalia estava trancada.** `describeAnomaly` produzia
+> exatamente o texto que o critério pede e era **privada**, alimentando só o
+> relatório de quarentena. Foi exportada, e a rota enriquece cada anomalia com a
+> descrição. `ProcessDto.anomalies` continua sendo apenas os códigos — a tabela
+> da Operacional não precisa do texto, e engordá-la para servir uma tela custaria
+> em todas as outras.
+>
+> **O hook tem cinco estados, não quatro.** `naoEncontrado` existe porque `404` é
+> resposta legítima do servidor: a REF pode ter saído da planilha entre a leitura
+> que montou o link e a atual. Tratá-la como erro genérico daria "algo deu
+> errado" onde a resposta certa é "esta REF não existe" — mesma família da
+> distinção que `NoReadYetError` faz.
+>
+> **Primeira história conduzida pela `/nova-pagina`, e o passo 1 dela pagou
+> sozinho:** os três comandos de conferência mostraram que faltavam `getProcessDetail`
+> e o hook, e que o stub casava `path === '/api/processes'` — que **não** casa com
+> `/api/processes/FT074.26`. Sem a extensão, toda renderização do detalhe falharia.
+>
+> **A guarda `paginas-montadas` passou a cobrir o detalhe**, a única página que
+> ficava fora dela por viver em `PROCESS_DETAIL_PAGE` e não em `NAV_PAGES`.
+>
+> **Conferido contra a planilha real:** `FT074.26` devolve a anomalia com o texto
+> `"RG preenchido com categoria em_andamento"`; a mesma REF em minúscula resolve
+> para o mesmo processo; REF inexistente devolve `404`. **4 processos de 649** têm
+> anomalia — as 3 de A-29 mais o intervalo negativo de A-30. O
+> `fechado_aguardando_draft` `FT616.26` tem **9 campos vazios** mais `eta2` e
+> `registrationDate` nulos: 11 traços numa tela. **547 de 649** têm algum campo
+> fora de escopo preenchido, e a Coluna P tem **exatamente 1**, confirmando A-50.
+>
+> **Divergências resolvidas: quatro.** ① a rota inexistente · ② três campos do
+> contrato dependendo de `H-23` e `H-28`, servidos vazios de verdade · ③
+> `describeAnomaly` privada · ④ toda a fiação de cliente fora da lista.
+
 **Objetivo:** ver todos os campos de um processo, incluindo o texto original de
 STATUS e os campos fora de escopo.
 
 **Arquivos:**
 - `web/src/pages/ProcessDetail.tsx`
+- **Omitidos do plano original**, e necessários: `src/http/routes/processes.ts`
+  (a rota `:ref` **não existia**), `tests/http/processes.test.ts`,
+  `src/domain/process-builder.ts` (`describeAnomaly` exportada),
+  `docs/05-contratos-api.md`, `web/src/api-client.ts`,
+  `web/src/hooks/useProcessDetail.ts`, `web/src/App.tsx`,
+  `web/tests/support/api-stub.ts`, `web/tests/ProcessDetail.test.tsx`,
+  `web/tests/App.test.tsx` e `web/tests/paginas-montadas.test.tsx`
 
 **Contrato fixado:** `GET /api/processes/:ref`.
 
@@ -1801,6 +1865,9 @@ STATUS e os campos fora de escopo.
 - Processo `fechado_aguardando_draft` → campos vazios exibidos como traço, com
   a categoria explicada.
 - Processo sem nenhum evento de histórico → seção exibida vazia com explicação.
+  ⚠️ Até `H-28` a ausência é **sempre** por não haver histórico gravado, nunca
+  por o processo não ter mudado. A tela diz qual das duas, e há teste afirmando
+  que ela **não** diz a segunda.
 
 **Dependências:** H-17
 **Tamanho:** P
