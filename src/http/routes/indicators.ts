@@ -23,6 +23,7 @@ import {
   responsibleRanking,
 } from '../../domain/indicators.ts'
 import { apiError } from '../errors.ts'
+import { filteredProcesses } from '../filter-request.ts'
 
 /**
  * GET /api/indicators — contrato em docs/05-contratos-api.md.
@@ -72,7 +73,7 @@ export function registerIndicatorsRoute(
   config: AppConfig,
   store: StoreAccess = defaultStore,
 ): void {
-  app.get('/api/indicators', (_request, reply) => {
+  app.get('/api/indicators', (request, reply) => {
     const state = store.getState()
 
     // 503 apenas quando NUNCA houve leitura: nao ha o que apresentar. Com uma
@@ -93,7 +94,11 @@ export function registerIndicatorsRoute(
     // O fuso e resolvido AQUI, uma unica vez. Daqui para baixo tudo e data
     // civil ancorada em UTC, como as datas vindas da planilha (TD-03).
     const day = currentDay(config.timezone)
-    const { processes } = state
+
+    // Os filtros recortam o conjunto ANTES de qualquer calculo: todo indicador
+    // desta rota responde sobre o conjunto filtrado (RF-18).
+    const processes = filteredProcesses(request, reply, state.processes)
+    if (processes === null) return reply
 
     const body: IndicatorsResponse = {
       counts: {
