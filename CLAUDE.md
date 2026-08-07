@@ -134,6 +134,21 @@ indicador calculado e invisível. Mesmo precedente de A-12 e A-40. **Só aparece
 porque `IndicatorsCounts` obriga o campo** e a fixture do teste não compilou sem
 ele; um tipo parcial teria escondido. É o argumento de D-18 em uso.
 
+**Todo indicador e todo alerta têm tela, e isso foi varrido, não presumido**
+(A-65, 07/08/2026). A varredura aconteceu porque A-64 foi a **terceira**
+ocorrência do padrão "regra pronta, apresentação esquecida" — antes foram as
+cinco omissões da rota de indicadores, que geraram `/novo-indicador`. Encontrou
+mais três: `IND-13`, `IND-17` e `IND-20` eram servidos em `rankings.goods`,
+`.agents` e `.responsible` e **nenhuma página os consumia**. `IND-13` foi para
+`H-18`, os outros dois para `H-19`. Com eles se perdiam duas correções de
+auditoria inteiras: o `bazarShare` de A-34 e o `overdueCount` de A-27.
+`IND-21` segue sem tela **de propósito** — bloqueado por ausência de dado na
+origem. Os 6 alertas já estavam em `H-20`.
+
+> **Ao acrescentar indicador ou alerta, confira quem o exibe.** Servir não é
+> entregar: a cadeia é domínio → rota → **tela**, e o plano erra no último elo
+> com regularidade — quatro vezes até aqui.
+
 **Página de dado não trata `503` como falha.** `GET /api/indicators` responde
 `503` enquanto `lastReadAt` é `null`, e isso vira um estado próprio —
 `semLeitura`, com traços e a frase de que traço não é zero. Painel de zeros ali

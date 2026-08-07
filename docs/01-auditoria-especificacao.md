@@ -189,14 +189,16 @@ Todos com origem **medido**. Ver [perfilamento/RESULTADO.md](perfilamento/RESULT
 
 | **A-64** | LACUNA (plano) | `09-rastreabilidade.md` atribui a `H-16` os indicadores **`IND-01` a `IND-09` e `IND-14` a `IND-16`**, e a linha de `IND-16` diz "cartão pendente de `H-16`" — mas a lista de cartões de `06-backlog.md` tem **11**, e nenhum deles é `desembaracadosHoje`. Mapeando um a um, os 11 cobrem `IND-01` a `IND-09`, `IND-14` e `IND-15`. **`IND-16` fica de fora**, e nenhuma outra história o reivindica | Indicador calculado e não servido ao operador não existe para ele — é exatamente a omissão que motivou a skill `/novo-indicador`, e aqui ela reapareceu um degrau adiante, entre a rota e a tela. Encontrado ao implementar `H-16` em 07/08/2026: só apareceu porque `IndicatorsCounts` obriga o campo, e a fixture do teste não compilou sem ele. Um tipo parcial teria escondido | **RESOLVIDO**: cartão **"Desembaraçados hoje"** acrescentado, e a Página Inicial passa a ter **12**. Mesmo precedente de A-12, que acrescentou "Em desembaraço", e de A-40, que acrescentou os dois de urgência — nos três casos a especificação original omitia cartão que o catálogo de indicadores já previa. Posicionado ao fim do bloco temporal, depois de "Chegando em 15 dias": os anteriores dizem o que o dia trouxe ou trará, este diz o que ele concluiu. **Medido:** vale `0` na planilha real, e é zero **provado** — o RG mais recente é 31/07, e passando esse dia a função devolve 3 |
 
+| **A-65** | LACUNA (plano) | **Três indicadores são calculados, servidos e não exibidos por página nenhuma.** `GET /api/indicators` devolve **cinco** blocos de ranking; `H-18` consome dois (`clients`, `importers`), e `goods`, `agents` e `responsible` não são consumidos por história alguma. `02-requisitos.md` atribui `IND-13`, `IND-17` e `IND-20` a **`H-11` apenas**, que é backend. Encontrado por varredura sistemática em 07/08/2026, feita porque A-64 foi a terceira ocorrência do padrão "regra pronta, apresentação esquecida" | Pior que A-64, porque dois deles carregam **correção de auditoria que se perde inteira sem tela**. `bazarShare` existe por A-34 para tornar visível uma distorção medida — `BAZAR` são 210 processos, 35,47% dos que têm mercadoria, **5,7× o segundo colocado** —, e serve para o operador não ler o ranking como se fosse real. `overdueCount` foi acrescentado a `IND-17` por A-27 porque contagem por agente não atendia ao objetivo declarado: o que importa é quem acumula atraso (medido: `B&M` tem 246 processos e 7 atrasados). Sem apresentação, as duas correções não chegam a lugar nenhum | **RESOLVIDO**: `IND-17` e `IND-20` vão para **`H-19`**, que já agrupa por agente e por responsável — contagem e `overdueCount` entram no mesmo eixo do tempo médio, que é outra métrica sobre os mesmos grupos. `IND-13` vai para **`H-18`**, que já é "ranking e distribuição": mercadoria é uma terceira dimensão do mesmo painel, e `bazarShare` é exibido junto, nunca separado do ranking que ele qualifica. **História nova foi descartada:** um ranking só não sustenta uma página, e o épico E4 já tem sete |
+
 ## Fechamento
 
-**64 achados** — A-01 a A-64, sem lacunas na numeração — todos com destino.
+**65 achados** — A-01 a A-65, sem lacunas na numeração — todos com destino.
 Nenhum ficou sem resolução.
 
 | Destino | Quantidade | Quais |
 |---|---|---|
-| RESOLVIDO por decisão de arquitetura | 57 | todos os demais |
+| RESOLVIDO por decisão de arquitetura | 58 | todos os demais |
 | RESPONDIDO pelo usuário | 5 | A-11, A-38, A-46, A-48, A-62 |
 | PREMISSA pendente | **0** | A-09 e A-10 foram resolvidas por `H-01` |
 

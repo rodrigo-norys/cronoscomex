@@ -35,14 +35,14 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 | IND-10 | Clientes com mais processos | `count agrupado por norm(CLT)`, desc | H-11 |
 | IND-11 | Importadores com mais processos | `count agrupado por norm(IMPORTADOR)`, desc | H-11 |
 | IND-12 | Navios previstos | `lista de (NAVIO, ETA2) onde ETA2 >= hoje`, asc por ETA2 | H-10 |
-| IND-13 | Mercadorias | `count agrupado por norm(MERCADORIA)`, desc, com "BAZAR" destacado | H-11 |
+| IND-13 | Mercadorias | `count agrupado por norm(MERCADORIA)`, desc, com "BAZAR" destacado | H-11, H-18 |
 | IND-14 | Documentos pendentes | `count(DOCS_ENVIADOS vazio E ETA2 <= hoje+10 E categoria ≠ "Desembaraçado")` | H-12 |
 | IND-15 | Processos atrasados | `count(ETA2 < hoje E categoria ≠ "Desembaraçado")` | H-12 |
 | IND-16 | Processos desembaraçados hoje | `count(RG = hoje E categoria = "Desembaraçado")` | H-13 |
-| IND-17 | Ranking de agentes | `count agrupado por norm(AGENTE)`, desc, com coluna de atrasados | H-11 |
+| IND-17 | Ranking de agentes | `count agrupado por norm(AGENTE)`, desc, com coluna de atrasados | H-11, H-19 |
 | IND-18 | Ranking de clientes | Top 10 de IND-10 | H-11 |
 | IND-19 | Ranking de importadores | Top 10 de IND-11 | H-11 |
-| IND-20 | Ranking por responsável | `count agrupado por responsible` (4 valores) | H-11 |
+| IND-20 | Ranking por responsável | `count agrupado por responsible` (4 valores) | H-11, H-19 |
 | IND-21 | Tempo médio até desembaraço | **Fora de escopo.** Exige data de presença de carga, que não existe e não será criada | — |
 | IND-22 | Tempo médio de envio documental | `avg(RG − DOCS_ENVIADOS)` em dias, pares completos, intervalos negativos excluídos | H-13 |
 
