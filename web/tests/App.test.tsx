@@ -47,13 +47,20 @@ describe('casca', () => {
     expect(await screen.findByRole('region', { name: 'Cartões-resumo' })).toBeTruthy()
   })
 
-  // As seis restantes chegam de `H-17` a `H-22`; ate la o marcador diz qual.
+  // As restantes chegam de `H-18` a `H-22`; ate la o marcador diz qual.
   it('hospeda o marcador nas paginas ainda nao implementadas', () => {
-    window.history.replaceState(null, '', '/operacional')
+    window.history.replaceState(null, '', '/clientes')
     render(<App />)
 
     expect(screen.getByText(/Página ainda não implementada/)).toBeTruthy()
-    expect(screen.getByText('H-17')).toBeTruthy()
+    expect(screen.getByText('H-18')).toBeTruthy()
+  })
+
+  it('hospeda a Pagina Operacional, entregue por H-17', async () => {
+    window.history.replaceState(null, '', '/operacional')
+    render(<App />)
+
+    expect(await screen.findByRole('region', { name: 'Calendário de chegadas' })).toBeTruthy()
   })
 })
 

@@ -6,6 +6,7 @@ import { useAppData } from './hooks/useAppData.ts'
 import { useFilterOptions } from './hooks/useFilterOptions.ts'
 import { useFilters } from './hooks/useFilters.ts'
 import { Home } from './pages/Home.tsx'
+import { Operational } from './pages/Operational.tsx'
 import { NotFoundPage, PendingPage } from './pages/Placeholders.tsx'
 import { NAV_PAGES, navigate, pageOf, type Route, useRoute } from './router.ts'
 
@@ -116,7 +117,7 @@ interface PageOutletProps {
 /**
  * `dataVersion` chega como `key`: quando o dia vira ou a planilha muda, a
  * pagina inteira remonta e refaz as proprias requisicoes, sem que a casca
- * precise conhecer nenhuma delas. As paginas de `H-17` a `H-22` entram aqui.
+ * precise conhecer nenhuma delas. As paginas de `H-18` a `H-22` entram aqui.
  *
  * A casca repassa `queryString` em vez de os filtros inteiros: a pagina precisa
  * anexar o recorte as requisicoes, nunca interpreta-lo.
@@ -129,6 +130,10 @@ function PageOutlet({ route, dataVersion, health, queryString }: PageOutletProps
     return (
       <Home key={dataVersion} health={health} queryString={queryString} dataVersion={dataVersion} />
     )
+  }
+
+  if (route.pageId === 'operational') {
+    return <Operational key={dataVersion} queryString={queryString} dataVersion={dataVersion} />
   }
 
   return <PendingPage key={dataVersion} page={page} processRef={route.ref} />
