@@ -398,6 +398,34 @@ permissão é do cliente, skill é instrução —, e uma regex quebrada nele fa
 silêncio: continuaria saindo `0`. Metade dos casos são falsos positivos que
 precisam **passar**; dois deles já morderam de verdade. Exige `bash` e `jq`.
 
+**A guarda de contrato erradica a classe mecânica das omissões de plano** —
+`tests/repo/contratos.test.ts` e `web/tests/paginas-montadas.test.tsx`. São
+testes, não script novo: rodam no `verify` e no CI que já existem. Três
+asserções, nenhuma com lista fixa — toda expectativa deriva do disco:
+
+1. **toda `src/http/routes/*.ts` tem `tests/http/*.test.ts`.** Achou a lacuna na
+   primeira execução: `GET /api/quarantine` nunca teve teste de servidor, só o
+   stub do cliente — que devolve o que a interface espera, não o que a rota
+   produz;
+2. **os blocos de `GET /api/indicators` batem com o `jsonc` de
+   `docs/05-contratos-api.md`**, de topo e dentro de `counts`, `rankings` e
+   `meta`. Compara **chaves, nunca valores**: o documento traz exemplo, e exigir
+   igualdade de número transformaria cada medição nova em falha;
+3. **história com `✅ CONCLUÍDA` no backlog exige a página montada.** A fonte é
+   o bloco que `/fechar-historia` escreve, cruzado com o `story:` que
+   `web/src/router.ts` declara por página. Fechar `H-19` no documento passa a
+   **exigir** a Página Performance na casca, sem ninguém lembrar de nada.
+
+**Por que existe, se `/fatia` já pergunta:** a skill pega — 6 de 6 —, mas custa
+uma conversa por história e só roda quando alguém a invoca. As três classes de
+omissão não são iguais: esta é derivável do código, e o que sobra para o
+protocolo é o que exige julgamento — `styleId` em vez de `fillId` (`H-27`), a
+chave vazia que morria no `parseFilters` (`H-18`). **A guarda não substitui a
+fatia; libera a atenção dela.**
+
+Provado que morde, nas duas direções: bloco que a rota serve e o documento não
+declara reprova, e campo que o documento promete e a rota não serve também.
+
 **Skills** (`.claude/skills/`). `/fatia H-NN` abre a história com contrato e
 casos-limite embutidos · `/novo-indicador IND-NN` conduz um indicador pelo ciclo
 das quatro camadas · `/fechar-historia H-NN` roda o portão, percorre a
