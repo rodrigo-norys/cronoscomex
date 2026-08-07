@@ -47,13 +47,13 @@ describe('casca', () => {
     expect(await screen.findByRole('region', { name: 'Cartões-resumo' })).toBeTruthy()
   })
 
-  // As restantes chegam de `H-20` a `H-22`; ate la o marcador diz qual.
+  // As restantes chegam de `H-21` e `H-22`; ate la o marcador diz qual.
   it('hospeda o marcador nas paginas ainda nao implementadas', () => {
-    window.history.replaceState(null, '', '/alertas')
+    window.history.replaceState(null, '', '/historico')
     render(<App />)
 
     expect(screen.getByText(/Página ainda não implementada/)).toBeTruthy()
-    expect(screen.getByText('H-20')).toBeTruthy()
+    expect(screen.getByText('H-21')).toBeTruthy()
   })
 
   it('hospeda a Pagina Operacional, entregue por H-17', async () => {
@@ -76,17 +76,17 @@ describe('navegacao', () => {
     window.history.replaceState(null, '', '/?client=ACME')
     render(<App />)
 
-    fireEvent.click(within(nav()).getByRole('link', { name: 'Alertas' }))
+    fireEvent.click(within(nav()).getByRole('link', { name: 'Histórico' }))
 
-    expect(window.location.pathname).toBe('/alertas')
+    expect(window.location.pathname).toBe('/historico')
     expect(window.location.search).toBe('?client=ACME')
-    expect(screen.getByText('H-20')).toBeTruthy()
+    expect(screen.getByText('H-21')).toBeTruthy()
   })
 
   it('responde ao botao voltar do navegador', async () => {
     render(<App />)
-    fireEvent.click(within(nav()).getByRole('link', { name: 'Alertas' }))
-    expect(screen.getByText('H-20')).toBeTruthy()
+    fireEvent.click(within(nav()).getByRole('link', { name: 'Histórico' }))
+    expect(screen.getByText('H-21')).toBeTruthy()
 
     window.history.back()
 
