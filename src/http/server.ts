@@ -9,6 +9,7 @@ import { registerAlertsRoute } from './routes/alerts.ts'
 import { registerFilterOptionsRoute } from './routes/filter-options.ts'
 import { registerHealthRoute } from './routes/health.ts'
 import { registerIndicatorsRoute } from './routes/indicators.ts'
+import { registerProcessesRoute } from './routes/processes.ts'
 import { registerQuarantineRoute } from './routes/quarantine.ts'
 import { registerReloadRoute } from './routes/reload.ts'
 
@@ -31,6 +32,7 @@ export function buildServer(config: AppConfig, store: StoreAccess = defaultStore
   registerIndicatorsRoute(app, config, store)
   registerAlertsRoute(app, config, store)
   registerFilterOptionsRoute(app, store)
+  registerProcessesRoute(app, store)
 
   return app
 }
