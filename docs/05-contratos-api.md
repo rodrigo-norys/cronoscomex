@@ -339,6 +339,10 @@ por processo na exibição** (A-60).
 
 ### `GET /api/history/monthly` **[F]**
 
+> **Pendente de `H-21`.** Documentada, ainda **não registrada** no
+> servidor. `tests/repo/contratos.test.ts` cobra a existência assim que a
+> história for concluída no backlog.
+
 Série mensal da Página Histórico, derivada de `data/history.jsonl`.
 
 | Parâmetro | Tipo | Padrão |
@@ -464,6 +468,10 @@ rota dedicada abaixo.
 
 ### `POST /api/edits`
 
+> **Pendente de `H-23`.** Documentada, ainda **não registrada** no
+> servidor. `tests/repo/contratos.test.ts` cobra a existência assim que a
+> história for concluída no backlog.
+
 Enfileira uma edição. **Não toca no `.xlsx`.**
 
 ```jsonc
@@ -490,6 +498,10 @@ Enfileira uma edição. **Não toca no `.xlsx`.**
 
 ### `PATCH /api/processes/:ref/color`
 
+> **Pendente de `H-27`.** Documentada, ainda **não registrada** no
+> servidor. `tests/repo/contratos.test.ts` cobra a existência assim que a
+> história for concluída no backlog.
+
 Enfileira alteração dos campos codificados em cor. Disponível a partir da
 Fase 4 (`H-27`). Os três são gravados como **uma única** mudança de estilo da
 linha, porque compartilham a mesma célula-âncora.
@@ -513,6 +525,10 @@ concorrentes, e nem toda combinação é representável.
 
 ### `GET /api/edits`
 
+> **Pendente de `H-23`.** Documentada, ainda **não registrada** no
+> servidor. `tests/repo/contratos.test.ts` cobra a existência assim que a
+> história for concluída no backlog.
+
 ```jsonc
 { "items": [ /* edições consolidadas, uma por (ref, field) */ ], "count": 0 }
 ```
@@ -520,6 +536,10 @@ concorrentes, e nem toda combinação é representável.
 ---
 
 ### `DELETE /api/edits/:id`
+
+> **Pendente de `H-23`.** Documentada, ainda **não registrada** no
+> servidor. `tests/repo/contratos.test.ts` cobra a existência assim que a
+> história for concluída no backlog.
 
 Descarta uma edição enfileirada.
 
@@ -532,6 +552,10 @@ Descarta uma edição enfileirada.
 
 ### `DELETE /api/edits`
 
+> **Pendente de `H-23`.** Documentada, ainda **não registrada** no
+> servidor. `tests/repo/contratos.test.ts` cobra a existência assim que a
+> história for concluída no backlog.
+
 Descarta **todas** as edições enfileiradas.
 
 ```jsonc
@@ -541,6 +565,10 @@ Descarta **todas** as edições enfileiradas.
 ---
 
 ### `POST /api/edits/apply`
+
+> **Pendente de `H-26`.** Documentada, ainda **não registrada** no
+> servidor. `tests/repo/contratos.test.ts` cobra a existência assim que a
+> história for concluída no backlog.
 
 Grava a fila no `.xlsx`, executando a sequência de defesas de `04-arquitetura.md §3.2`.
 
@@ -591,6 +619,10 @@ A fila **não** é descartada em nenhum caminho de erro. O operador relê e deci
 ## 4. Rota estática
 
 ### `GET /*`
+
+> **Pendente de `H-30`.** Documentada, ainda **não registrada** no
+> servidor. `tests/repo/contratos.test.ts` cobra a existência assim que a
+> história for concluída no backlog.
 
 Serve a SPA compilada (`web/dist`). Qualquer caminho não iniciado por `/api/`
 devolve `index.html`, para que o roteamento do cliente funcione em recarga

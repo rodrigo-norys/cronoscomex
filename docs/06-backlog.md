@@ -411,6 +411,17 @@ export function levenshtein(a: string, b: string): number
 
 ### H-06 — Classificar cada linha em uma das quatro categorias canônicas
 
+> ✅ **CONCLUÍDA na Fase 1.** Bloco acrescentado retroativamente em 07/08/2026,
+> ao conferir o alinhamento dos documentos.
+>
+> Era a **única** história de `H-03` a `H-08` sem ele, enquanto a rastreabilidade
+> e o `CLAUDE.md` já a davam por concluída — a mesma inconsistência que a
+> `/fechar-historia` cita como sua razão de existir, e que seguia aberta no
+> próprio caso que a motivou.
+>
+> **Sem contagem de testes:** o total da suíte na época não ficou registrado, e
+> transcrevê-lo agora seria inventá-lo.
+
 **Objetivo:** aplicar TD-01 e TD-02, com a verificação de "Fechado — aguardando
 draft" precedendo a regra de STATUS.
 
