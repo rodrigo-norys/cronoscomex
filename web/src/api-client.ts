@@ -1,3 +1,4 @@
+import type { FilterOptionsResponse } from '../../src/http/routes/filter-options.ts'
 import type { HealthResponse } from '../../src/http/routes/health.ts'
 
 /**
@@ -10,7 +11,7 @@ import type { HealthResponse } from '../../src/http/routes/health.ts'
  * cliente divergir do servidor em silencio, que foi exatamente o que o
  * esqueleto de `H-02` fazia, com metade dos campos.
  */
-export type { HealthResponse }
+export type { FilterOptionsResponse, HealthResponse }
 
 export async function getHealth(signal?: AbortSignal): Promise<HealthResponse> {
   const response = await fetch('/api/health', signal ? { signal } : undefined)
@@ -18,6 +19,19 @@ export async function getHealth(signal?: AbortSignal): Promise<HealthResponse> {
     throw new Error(`GET /api/health respondeu ${response.status}`)
   }
   return (await response.json()) as HealthResponse
+}
+
+/**
+ * As opcoes de cada filtro, derivadas dos dados carregados (A-36) — nunca de
+ * lista fixa. Responde `503` enquanto nao houve leitura nenhuma, e nesse caso a
+ * barra fica sem opcoes em vez de inventar um catalogo.
+ */
+export async function getFilterOptions(signal?: AbortSignal): Promise<FilterOptionsResponse> {
+  const response = await fetch('/api/filters/options', signal ? { signal } : undefined)
+  if (!response.ok) {
+    throw new Error(`GET /api/filters/options respondeu ${response.status}`)
+  }
+  return (await response.json()) as FilterOptionsResponse
 }
 
 /**

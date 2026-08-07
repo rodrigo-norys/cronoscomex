@@ -1,22 +1,30 @@
+import { FilterBar } from './components/FilterBar.tsx'
 import { RefreshButton } from './components/RefreshButton.tsx'
 import { StatusBanner } from './components/StatusBanner.tsx'
 import { useAppData } from './hooks/useAppData.ts'
+import { useFilterOptions } from './hooks/useFilterOptions.ts'
+import { useFilters } from './hooks/useFilters.ts'
 import { NotFoundPage, PendingPage } from './pages/Placeholders.tsx'
 import { NAV_PAGES, navigate, pageOf, type Route, useRoute } from './router.ts'
 
 /**
- * A casca da aplicacao (`H-15`, segunda entrega).
+ * A casca da aplicacao (`H-15`).
  *
  * Ela hospeda as sete paginas, carrega a faixa de estado que A-57 exige em
- * **todas** elas, e concentra as tres frentes de A-62. Nao calcula nada: os 21
- * indicadores e os cinco alertas vem prontos do servidor (regra inviolavel 6).
- *
- * Os onze filtros globais e a `FilterBar` sao a terceira entrega. O roteador ja
- * preserva a query, entao a barra encaixa sem mexer aqui.
+ * **todas** elas, concentra as tres frentes de A-62, e monta os onze filtros
+ * globais. Nao calcula nada: os 21 indicadores e os cinco alertas vem prontos
+ * do servidor, ja recortados (regra inviolavel 6).
  */
 export function App() {
   const route = useRoute()
   const { health, healthError, dataVersion, refreshing, refresh } = useAppData()
+  const filters = useFilters()
+  const { options, error: optionsError } = useFilterOptions(dataVersion)
+
+  // O detalhe de um processo e sobre UM processo, achado pela REF: recortar o
+  // conjunto nao muda o que ele mostra. Endereco desconhecido nao tem dado
+  // nenhum a filtrar.
+  const showFilters = route.pageId !== 'processDetail' && route.pageId !== 'notFound'
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-slate-900">
@@ -36,6 +44,9 @@ export function App() {
           </div>
         </div>
         <MainNav route={route} />
+        {showFilters && (
+          <FilterBar filters={filters} options={options} optionsError={optionsError} />
+        )}
       </header>
 
       <StatusBanner health={health} />
@@ -100,7 +111,19 @@ function PageOutlet({ route, dataVersion }: { route: Route; dataVersion: number 
   return <PendingPage key={dataVersion} page={page} processRef={route.ref} />
 }
 
-function formatDay(isoDay: string): string {
-  const [year, month, day] = isoDay.split('-')
+/**
+ * Campo ausente vira travessao, nunca excecao.
+ *
+ * O tipo diz `string`, mas ele descreve o contrato, nao a resposta que chegou:
+ * dado de rede nao e verificado em execucao. Um servidor de versao anterior —
+ * medido, com o `--watch` servindo codigo velho — devolvia o corpo **sem**
+ * `today`, e `undefined.split` derrubava a casca inteira, com a faixa de estado
+ * e a navegacao junto. Tela branca e o pior dos buracos invisiveis (regra 3).
+ */
+function formatDay(isoDay: string | undefined): string {
+  const parts = isoDay?.split('-')
+  if (parts === undefined || parts.length !== 3) return '—'
+
+  const [year, month, day] = parts
   return `${day}/${month}/${year}`
 }

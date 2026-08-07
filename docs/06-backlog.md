@@ -1139,6 +1139,48 @@ ascendente, nulos por último.
 
 ### H-15 — Montar a casca da aplicação com os onze filtros globais
 
+> ✅ **CONCLUÍDA em 07/08/2026.** 125 testes próprios em 8 arquivos; suíte total
+> em **517**. Abre o épico E4 e a primeira interface do projeto.
+>
+> **Saiu em três entregas**, decididas em 06/08/2026 porque o tamanho `M` do
+> plano estava subestimado — a história continua sendo uma, só a execução foi
+> fatiada: ① backend de filtros (PR #10) · ② casca, faixa e A-62 (PR #13) ·
+> ③ `FilterBar` (esta).
+>
+> **Conferido contra a planilha real**, com os dois processos no ar: OU dentro
+> do parâmetro devolve **135** para `em_andamento` + `em_desembaraco`, que é
+> 103 + 32; E entre parâmetros devolve **2** para `em_andamento ∧ vermelho`,
+> dos 5 vermelhos; `port=RO` devolve **2**, confirmando A-36 — domínio fechado
+> os teria escondido; `responsible=colaborador1` devolve **129** com ou sem
+> `colaborador1_outros_clientes` junto, provando A-18 sobre dado real; valor
+> fora do domínio devolve `400 FILTRO_INVALIDO`.
+>
+> **Um caso-limite não é exercível contra o arquivo real, e isso é resultado.**
+> `importerOutsideRj` mede `true`=1 e `false`=648, somando exatamente 649 —
+> **zero** processos com `null`. Coerente com o fato de `H-01` de que as 9
+> chaves de cor cobrem 100% das linhas. A regra "`false` inclui apenas `false`,
+> nunca `null`" tem teste de domínio, mas nenhuma linha real a exercita hoje;
+> uma cor nova na planilha mudaria isso.
+>
+> **A URL é o único estado dos filtros**, sem cópia em `useState`: duas fontes
+> divergiriam no primeiro `popstate`, e um critério de aceite exige que
+> recarregar preserve o recorte. A escrita usa `replaceState`, não `pushState` —
+> filtro é visualização, não navegação: marcar cinco clientes empilharia cinco
+> entradas, e "voltar" viraria "desmarcar o último".
+>
+> **Dois defeitos encontrados por rodar a aplicação, não por teste.** A casca
+> inteira caía com tela branca se o `health` viesse sem `today` —
+> `undefined.split` derrubava faixa e navegação junto; o tipo descreve o
+> contrato, não a resposta que chegou. Corrigido com teste de regressão. E o
+> `node --watch` servia código **anterior ao `git switch`**: o arquivo em disco
+> tinha o campo, o processo não, e um `touch` resolveu. Como o projeto usa
+> branch por história, trocar de branch com o `dev` no ar é rotina.
+>
+> **Divergências resolvidas:** A-63 (`GET /*` especificada e sem dono no mapa
+> rota → história, atribuída a `H-30`) e D-18 (o cliente importando tipos das
+> próprias rotas). `H-34` nasceu daqui, pedida pelo usuário ao ver a casca
+> rodando.
+
 **Objetivo:** navegação entre as páginas e filtros que se aplicam a todos os
 indicadores e alertas simultaneamente.
 
@@ -1169,6 +1211,12 @@ indicadores e alertas simultaneamente.
 - `src/http/routes/filter-options.ts`
 - `src/domain/filters.ts`
 - `tests/domain/filters.test.ts`
+- **Omitidos do plano original**, e necessários: `web/src/router.ts` (D-16),
+  `web/src/hooks/useAppData.ts` e `useFilterOptions.ts`,
+  `web/src/components/StatusBanner.tsx`, `RefreshButton.tsx` e
+  `MultiSelect.tsx`, `web/src/pages/Placeholders.tsx`,
+  `src/http/routes/health.ts` (o campo `today`, por A-62),
+  `tests/http/filter-options.test.ts` e as 6 suítes de `web/tests/`
 
 **Contrato fixado:** `GET /api/filters/options` e os 11 parâmetros de consulta
 de `05-contratos-api.md §1.1`.
@@ -2330,7 +2378,7 @@ conteúdo, **nunca o caminho** — e é o caminho que o watcher precisa.
 | E1 — Fundação e perfilamento ✅ | H-01 ✅, H-02 ✅ | 0 | 2 | 0 |
 | E2 — Leitura e normalização ✅ | **H-03 ✅ H-04 ✅ H-05 ✅ H-06 ✅ H-07 ✅ H-08 ✅** | 3 | 3 | 0 |
 | E3 — Indicadores e alertas | **H-09 ✅ H-10 ✅ H-11 ✅ H-12 ✅**, H-13, H-14 | 3 | 3 | 0 |
-| E4 — Interface | H-15 … H-22 | 6 | 2 | 0 |
+| E4 — Interface | **H-15 ✅**, H-16 … H-22 | 6 | 2 | 0 |
 | E5 — Edição e escrita | H-23 … H-27 | 0 | 5 | 0 |
 | E6 — Histórico | H-28, H-29 | 1 | 1 | 0 |
 | E7 — Operação | H-30, **H-31 ✅**, H-32, H-33, H-34 | 3 | 2 | 0 |
