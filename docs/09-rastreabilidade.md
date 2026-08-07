@@ -178,7 +178,7 @@ As 33 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
 | H-20 | ALE-01 a ALE-06, §3.1 (Página Alertas) | ✅ **Concluída.** Fila de trabalho, não panorama (A-59). Corrigiu a contradição do backlog entre o critério de aceite e o caso-limite do agrupamento |
 | H-21 | §3.1 (Página Histórico) | Série mensal |
 | H-22 | §3.1 (Detalhe), §3.3 (STATUS, Coluna 13, R$ ENVIADO, Coluna P) | ✅ **Concluída.** Única tela onde `statusRaw` é exibido. Construiu a rota `:ref`, que o plano dava como fixada e nunca fora implementada |
-| H-23 | §5 abaixo (RF-20, RF-28) | Fila de edições |
+| H-23 | §5 abaixo (RF-20, RF-28) | ✅ **Concluída.** Fila de edições em disco, projetada sobre os processos lidos: o painel inteiro reflete a edição sem que o `.xlsx` seja tocado. Corrigiu a contradição de `03-modelo-dados.md` sobre `value: null` |
 | H-24 | §5 abaixo (RF-22) | Preservação do arquivo na escrita |
 | H-25 | §5 abaixo (RF-23 a RF-26) | Seis defesas de integridade |
 | H-26 | §5 abaixo (RF-21) | Comando de aplicação |
@@ -202,7 +202,7 @@ virada de escopo (edição) ou por necessidade operacional.
 | RF-06 · Quarentena sem descarte silencioso | A-03, A-21, decisão de arquitetura | H-07 | Implementável |
 | RF-08 · Relatório de divergências | A-05, A-06, A-30 | H-07 | Implementável |
 | RF-16 · Painel de saúde da ingestão | Necessidade operacional | H-16, H-31 | ✅ **Entregue.** Linhas lidas, aceitas, quarentena, taxa, última leitura e duração. O limiar de 2% (RNF-24) é destacado, e `quarantineRate` vem calculado do servidor |
-| RF-20, RF-28 · Editar e descartar edições | Decisão do usuário | H-23 | Implementável |
+| RF-20, RF-28 · Editar e descartar edições | Decisão do usuário | H-23 | ✅ **Entregue.** Formulário e painel de pendências no detalhe do processo; a re-derivação refaz categoria, chaves e anomalias. Medido: editar `statusRaw` move o processo de `em_andamento` para `desembaracado` e os indicadores acompanham |
 | RF-21 · Aplicar sob comando explícito | Decisão do usuário (D7) | H-26 | Implementável |
 | RF-22 · Preservar formatação na escrita | ADR-0004 | H-24 | Implementável |
 | RF-23 a RF-26 · Defesas de integridade | D7 | H-25 | Implementável |

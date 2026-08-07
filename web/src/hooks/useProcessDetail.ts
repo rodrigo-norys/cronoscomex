@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   getProcessDetail,
   NoReadYetError,
@@ -22,13 +22,27 @@ export type ProcessDetailState =
   | { status: 'semLeitura' }
   | { status: 'erro'; message: string }
 
-export function useProcessDetail(ref: string, dataVersion: number): ProcessDetailState {
+export interface ProcessDetailAccess {
+  state: ProcessDetailState
+  /**
+   * Refaz a requisicao sem esperar releitura da planilha.
+   *
+   * Enfileirar ou descartar uma edicao muda o que a rota devolve — a projecao e
+   * aplicada a cada `getState` —, e nada nisso dispara o watcher. Sem este
+   * gatilho a tela so mostraria a edicao no proximo `dataVersion`.
+   */
+  refresh: () => void
+}
+
+export function useProcessDetail(ref: string, dataVersion: number): ProcessDetailAccess {
   const [state, setState] = useState<ProcessDetailState>({ status: 'carregando' })
+  const [nonce, setNonce] = useState(0)
+  const refresh = useCallback(() => setNonce((current) => current + 1), [])
 
   // `dataVersion` e gatilho, nao valor lido — igual as demais paginas. Sem ele o
   // detalhe congela na primeira leitura, e uma releitura da planilha deixaria de
   // aparecer aqui.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: gatilho deliberado; remover congela o detalhe na primeira leitura
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `dataVersion` e `nonce` sao gatilhos deliberados; remove-los congela o detalhe
   useEffect(() => {
     const controller = new AbortController()
 
@@ -48,7 +62,7 @@ export function useProcessDetail(ref: string, dataVersion: number): ProcessDetai
       })
 
     return () => controller.abort()
-  }, [ref, dataVersion])
+  }, [ref, dataVersion, nonce])
 
-  return state
+  return { state, refresh }
 }

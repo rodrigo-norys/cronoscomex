@@ -67,6 +67,7 @@ function state(overrides: Partial<StoreState> = {}): StoreState {
     rowsQuarantined: 0,
     externalLock: false,
     conflictFiles: [],
+    pendingEdits: [],
     ...overrides,
   }
 }
@@ -309,6 +310,61 @@ describe('filtros globais e estado', () => {
  * **nunca fora implementada**: a lista de arquivos de `H-22` trazia apenas a
  * pagina. O protocolo de fatia pegou.
  */
+/**
+ * `H-23`. A projecao chega pronta do store: a rota so distingue, por REF, quais
+ * linhas tem edicao esperando gravacao.
+ */
+describe('edicoes pendentes na tabela e no detalhe', () => {
+  const edicao = {
+    id: 'edit-1',
+    ts: '2026-08-07T12:00:00.000Z',
+    ref: 'FT002.26',
+    sourceRow: 2,
+    field: 'eta2' as const,
+    value: '2026-09-01',
+    previous: '',
+  }
+  const comEdicao = () => state({ processes: [process(2), process(3)], pendingEdits: [edicao] })
+
+  it('marca so a linha com edicao pendente', async () => {
+    const app = buildServer(config, fakeStore(comEdicao()))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/processes' })).json()
+    const marcadas = body.items.filter((item: { hasPendingEdits: boolean }) => item.hasPendingEdits)
+
+    expect(body.items).toHaveLength(2)
+    expect(marcadas).toHaveLength(1)
+    expect(marcadas[0].ref).toBe('FT002.26')
+
+    await app.close()
+  })
+
+  it('devolve as edicoes daquele processo no detalhe', async () => {
+    const app = buildServer(config, fakeStore(comEdicao()))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/processes/FT002.26' })).json()
+
+    expect(body.pendingEdits).toHaveLength(1)
+    expect(body.pendingEdits[0].field).toBe('eta2')
+    expect(body.process.hasPendingEdits).toBe(true)
+
+    await app.close()
+  })
+
+  // O painel do detalhe e daquele REF: mostrar a fila inteira ali confundiria
+  // pendencia deste processo com pendencia de outro.
+  it('nao mistura edicao de outro processo no detalhe', async () => {
+    const app = buildServer(config, fakeStore(comEdicao()))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/processes/FT003.26' })).json()
+
+    expect(body.pendingEdits).toEqual([])
+    expect(body.process.hasPendingEdits).toBe(false)
+
+    await app.close()
+  })
+})
+
 describe('GET /api/processes/:ref — detalhe', () => {
   const umProcesso = () => state({ processes: [process(2)] })
   it('devolve o contrato completo', async () => {

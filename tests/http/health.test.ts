@@ -38,6 +38,43 @@ describe('GET /api/health', () => {
     await app.close()
   })
 
+  // `H-23`: o campo era zero fixo ate a fila existir.
+  it('reflete a contagem de edicoes pendentes', async () => {
+    const comEdicao: StoreState = {
+      state: 'pronto',
+      processes: [],
+      fileHash: 'sha256:abc',
+      sheetName: '2026',
+      lastReadAt: new Date('2026-08-07T12:00:00.000Z'),
+      lastReadOk: true,
+      degradedReason: null,
+      lastReadDurationMs: 120,
+      rowsRead: 0,
+      rowsAccepted: 0,
+      rowsQuarantined: 0,
+      externalLock: false,
+      conflictFiles: [],
+      pendingEdits: [
+        {
+          id: 'a',
+          ts: '2026-08-07T12:00:00.000Z',
+          ref: 'FT001.26',
+          sourceRow: 2,
+          field: 'eta2' as const,
+          value: '2026-09-01',
+          previous: '',
+        },
+      ],
+    }
+    const app = buildServer(config, { getState: () => comEdicao, reload: async () => undefined })
+
+    const body = (await app.inject({ method: 'GET', url: '/api/health' })).json()
+
+    expect(body.pendingEditsCount).toBe(1)
+
+    await app.close()
+  })
+
   it('fixa a lista completa de campos do contrato', async () => {
     const app = buildServer(config)
 
@@ -108,6 +145,7 @@ describe('GET /api/health', () => {
       rowsQuarantined: 0,
       externalLock: true,
       conflictFiles: ['planilha-Cópia em conflito de PC-01.xlsx'],
+      pendingEdits: [],
     }
     const app = buildServer(config, {
       getState: () => comInterferencia,

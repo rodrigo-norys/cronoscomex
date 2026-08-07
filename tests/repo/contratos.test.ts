@@ -46,6 +46,7 @@ const emptyState: StoreState = {
   rowsQuarantined: 0,
   externalLock: false,
   conflictFiles: [],
+  pendingEdits: [],
 }
 
 const fakeStore: StoreAccess = { getState: () => emptyState, reload: async () => undefined }

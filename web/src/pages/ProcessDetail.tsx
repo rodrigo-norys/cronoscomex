@@ -1,4 +1,6 @@
 import type { ProcessDetailResponse, ProcessDto } from '../api-client.ts'
+import { EditProcessForm } from '../components/EditProcessForm.tsx'
+import { PendingEditsPanel } from '../components/PendingEditsPanel.tsx'
 import { useProcessDetail } from '../hooks/useProcessDetail.ts'
 
 /**
@@ -39,7 +41,7 @@ const RESPONSIBLE_LABELS: Readonly<Record<ProcessDto['responsible'], string>> = 
 }
 
 export function ProcessDetail({ processRef, dataVersion }: ProcessDetailProps) {
-  const state = useProcessDetail(processRef, dataVersion)
+  const { state, refresh } = useProcessDetail(processRef, dataVersion)
 
   if (state.status === 'erro') {
     return (
@@ -83,11 +85,13 @@ export function ProcessDetail({ processRef, dataVersion }: ProcessDetailProps) {
     )
   }
 
-  const { process, anomalies, statusHistory, daysInCurrentCategory } = state.detail
+  const { process, anomalies, statusHistory, daysInCurrentCategory, pendingEdits } = state.detail
 
   return (
     <div className="flex flex-col gap-4">
       <Identification process={process} />
+      <EditProcessForm processRef={process.ref} onEnqueued={refresh} />
+      <PendingEditsPanel edits={pendingEdits} onChanged={refresh} />
       <StatusBlock process={process} daysInCurrentCategory={daysInCurrentCategory} />
       <Fields process={process} />
       <OutOfScope process={process} />
