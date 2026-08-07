@@ -236,7 +236,18 @@ export function buildProcesses(rows: readonly RawRow[], deps: BuildDeps): BuildR
   return { processes, quarantine, anomalies, totalDataRows }
 }
 
-function describeAnomaly(code: AnomalyCode, process: Process): string {
+/**
+ * O texto que explica a anomalia ao operador.
+ *
+ * Exportada em `H-22`: a tela de detalhe precisa dela, e o criterio de aceite
+ * pede a anomalia "com a explicacao correspondente". Traduzir codigo em texto
+ * no cliente escreveria esta tabela num segundo lugar — mesmo argumento que
+ * levou `RESPONSIBLE_LABELS` a resolver o rotulo no dominio (`H-19`).
+ *
+ * A descricao depende do processo, nao so do codigo: "RG anterior a DOCS
+ * ENVIADOS em 12 dias" e o tipo de frase que so o dominio sabe montar.
+ */
+export function describeAnomaly(code: AnomalyCode, process: Process): string {
   switch (code) {
     case 'RG_SEM_DESEMBARACO':
       return `RG preenchido com categoria ${process.statusCategory}`
