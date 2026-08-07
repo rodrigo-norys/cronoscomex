@@ -1,0 +1,99 @@
+import { render, screen } from '@testing-library/react'
+import { describe, expect, it } from 'vitest'
+import { bannerSignals, StatusBanner } from '../src/components/StatusBanner.tsx'
+import { healthFixture } from './support/api-stub.ts'
+
+describe('bannerSignals', () => {
+  it('nao produz sinal nenhum em estado pronto — a faixa some sozinha', () => {
+    expect(bannerSignals(healthFixture())).toEqual([])
+  })
+
+  it('ordena por severidade: conflito, degradado, arquivo aberto', () => {
+    const signals = bannerSignals(
+      healthFixture({
+        state: 'degradado',
+        degradedReason: 'Arquivo em uso.',
+        externalLock: true,
+        conflictFiles: ['CONTROLE - Cópia em conflito de MAQUINA 2026-08-07.xlsx'],
+      }),
+    )
+
+    expect(signals.map((signal) => signal.key)).toEqual(['conflito', 'degradado', 'arquivoAberto'])
+  })
+})
+
+describe('StatusBanner', () => {
+  it('nao renderiza nada antes da primeira resposta de health', () => {
+    const { container } = render(<StatusBanner health={null} />)
+
+    expect(container.innerHTML).toBe('')
+  })
+
+  it('informa o motivo e o horario da ultima leitura boa em estado degradado', () => {
+    render(
+      <StatusBanner
+        health={healthFixture({
+          state: 'degradado',
+          degradedReason: 'A planilha está corrompida.',
+          lastReadAt: '2026-08-07T12:00:00.000Z',
+        })}
+      />,
+    )
+
+    expect(screen.getByText(/A planilha está corrompida/)).toBeTruthy()
+    expect(screen.getByText(/Última leitura bem-sucedida/)).toBeTruthy()
+  })
+
+  it('distingue degradado sem leitura nenhuma de degradado com dado congelado', () => {
+    render(
+      <StatusBanner
+        health={healthFixture({
+          state: 'degradado',
+          degradedReason: 'Arquivo não encontrado.',
+          lastReadAt: null,
+        })}
+      />,
+    )
+
+    expect(screen.getByText(/Ainda não houve nenhuma leitura bem-sucedida/)).toBeTruthy()
+  })
+
+  it('avisa que alguem esta com a planilha aberta, sem dizer que ha problema', () => {
+    render(<StatusBanner health={healthFixture({ externalLock: true })} />)
+
+    expect(screen.getByRole('status').textContent).toMatch(/planilha aberta no Excel/)
+    expect(screen.getByText(/A leitura continua normal/)).toBeTruthy()
+  })
+
+  it('lista os nomes dos arquivos de conflito, que e o criterio de aceite', () => {
+    render(
+      <StatusBanner
+        health={healthFixture({
+          conflictFiles: [
+            'CONTROLE - Cópia em conflito 1.xlsx',
+            'CONTROLE - Cópia em conflito 2.xlsx',
+          ],
+        })}
+      />,
+    )
+
+    expect(screen.getByText('CONTROLE - Cópia em conflito 1.xlsx')).toBeTruthy()
+    expect(screen.getByText('CONTROLE - Cópia em conflito 2.xlsx')).toBeTruthy()
+  })
+
+  it('exibe os tres sinais simultaneos — nenhum encobre o outro', () => {
+    render(
+      <StatusBanner
+        health={healthFixture({
+          state: 'degradado',
+          degradedReason: 'Leitura falhou.',
+          externalLock: true,
+          conflictFiles: ['conflito.xlsx'],
+        })}
+      />,
+    )
+
+    expect(screen.getAllByRole('alert')).toHaveLength(2)
+    expect(screen.getAllByRole('status')).toHaveLength(1)
+  })
+})
