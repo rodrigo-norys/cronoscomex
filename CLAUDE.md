@@ -479,6 +479,15 @@ literal, e limiar de duas ocorrências antes de virar proposta. Só o usuário a
 invoca (`disable-model-invocation`); ela não escreve arquivo, e o resultado
 esperado na maioria das execuções é "nada a propor".
 
+**A `/fatia` também despacha**: ela diz qual skill conduz a história, por
+**teste textual** na lista de arquivos — `web/src/pages/*.tsx` chama
+`/nova-pagina`; a rota de indicadores, ou campo novo no contrato dela, chama
+`/novo-indicador`. Nasceu de uma falha real: `H-19` acrescentou campo a
+`GET /api/indicators`, gatilho declarado da segunda, e ela não foi invocada
+porque "indicador novo" foi lido como "IND-NN novo". Condição que depende de
+leitura falha; busca de string na lista, não. **Ao despachar, os caminhos que a
+skill obriga são impressos** — anunciar só o nome não informa ninguém.
+
 **`/fatia` confere a lista de arquivos, não apenas a copia.** Quatro perguntas —
 a história cria rota? acrescenta campo a rota existente? altera tipo exportado
 do domínio? acrescenta dependência? — cada uma com os arquivos que a resposta
