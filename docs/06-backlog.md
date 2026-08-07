@@ -1895,14 +1895,27 @@ vindo de `config/app.json` (`stalledDaysThreshold`, padrão **15**, A-32).
 - `scripts/build.mjs`
 - `README.md` (raiz do repositório)
 - `config/app.json.exemplo`
+- `src/http/server.ts` — a rota estática `GET /*`, acrescentada por A-63
 
 **Contrato fixado:** `npm run build` produz `dist/` com o servidor compilado e
 a SPA. `scripts/iniciar.cmd` verifica a presença do Node, sobe o servidor e
 abre o navegador em `http://127.0.0.1:5173`.
 
+> **`GET /*` chega aqui, por A-63.** `05-contratos-api.md §4` a especifica desde
+> o início — qualquer caminho fora de `/api/` devolve `index.html`, para que a
+> recarga direta de URL funcione —, mas ela nunca constou do mapa rota →
+> história, e `@fastify/static` estava em `dependencies` desde `H-02` sem
+> chamador. É desta história porque é aqui que `dist/web` passa a existir na
+> máquina do operador; antecipá-la obrigaria o servidor a lidar com a pasta
+> inexistente, que é o estado normal antes do `build`. Até então, o fallback de
+> SPA do Vite cobre `npm run dev`.
+
 **Critérios de aceite:**
 - **Dado** o duplo clique em `iniciar.cmd`, **então** o servidor sobe e o
   navegador abre na Página Inicial.
+- **Dado** a aplicação empacotada e o endereço `/alertas` recarregado
+  diretamente no navegador, **então** o servidor devolve `index.html` e a casca
+  resolve a rota — não `404` (A-63).
 - **Dado** que o Node não está instalado, **então** a janela exibe instrução de
   instalação e não fecha imediatamente.
 - **Dado** que `config/app.json` não existe, **então** a janela indica o arquivo
@@ -1918,6 +1931,11 @@ abre o navegador em `http://127.0.0.1:5173`.
   `config/app.json`.
 - Caminho da planilha com espaços e acentos → tratado corretamente.
 - Segunda execução com a aplicação já no ar → detecta e apenas abre o navegador.
+- `dist/web` inexistente → mensagem indicando que falta rodar o `build`, nunca
+  `404` cru vindo do `@fastify/static`.
+- Caminho fora do mapa da casca, como `/relatorios` → devolve `index.html`
+  igual, e é a casca quem exibe "página não encontrada". O servidor não conhece
+  as rotas do cliente, e passar a conhecê-las duplicaria o mapa.
 
 **Dependências:** H-26
 **Tamanho:** P
@@ -2219,6 +2237,92 @@ inviolável 10 passa a valer **por construção**, não por convenção. E o
 
 ---
 
+### H-34 — Configurar o caminho da planilha pela tela, sem editar JSON
+
+**Objetivo:** o operador apontar a aplicação para a planilha dele — e nunca mais
+precisar apontar de novo.
+
+> **Pedida pelo usuário em 07/08/2026**, ao ver a casca de `H-15` rodando contra
+> a planilha real. Não é conveniência: é a **saída de PD-01**. Hoje o caminho
+> vive em `config/app.json`, um arquivo que o operador teria de editar à mão,
+> com aspas, vírgulas e barras invertidas do Windows — num painel cujo usuário
+> final, por decisão registrada, **não é técnico**. Um JSON malformado hoje mata
+> a partida com `ConfigError` e uma janela que fecha.
+>
+> **A persistência já existe e não é o trabalho.** `config/app.json` é arquivo
+> em disco, lido na partida; salvar ali já significa "no dia seguinte está lá".
+> O trabalho real é outro: **trocar o caminho com o processo no ar.** Hoje
+> `initStore` roda uma vez e o watcher observa um caminho fixo — trocar exige
+> parar o watcher, reconfigurar o store, reler e observar o diretório novo. Sem
+> isso, salvar o caminho só valeria no reinício seguinte, e o botão "carregar"
+> mentiria.
+>
+> **Nem o botão é necessário no caso normal**, e isso é a favor: com o caminho
+> salvo, a aplicação lê na partida sozinha. O botão existe para a primeira
+> execução e para a troca de arquivo — na virada de ano, quando a aba `2027`
+> aparecer (risco R-14).
+
+**Arquivos:**
+- `web/src/pages/WorkbookSetup.tsx`
+- `web/src/App.tsx` — desviar para a configuração na primeira execução
+- `src/http/routes/config.ts`
+- `src/app/config.ts` — gravação preservando os demais campos
+- `src/app/process-store.ts` — reconfiguração em execução
+- `tests/http/config.test.ts`, `tests/app/config-write.test.ts`
+
+**Contrato fixado:**
+
+```jsonc
+// GET /api/config/workbook
+{ "workbookPath": "C:\\...\\planilha.xlsx", "exists": true, "readable": true }
+
+// PUT /api/config/workbook  →  { "path": "..." }
+// 200: o corpo de GET /api/health, já com a leitura nova
+// 400 CAMINHO_INVALIDO — inexistente, sem permissão, ou não é .xlsx
+```
+
+**A tela aparece sozinha quando `state = degradado` **e** `lastReadAt = null`** —
+que é exatamente "nunca houve leitura", o estado de primeira execução. Nos
+demais casos ela é alcançável pelo painel de saúde da Página Inicial. O critério
+reaproveita a distinção que `H-08` já fazia entre dado congelado e ausência de
+dado, sem inventar estado novo.
+
+**Critérios de aceite:**
+- **Dado** nenhuma planilha configurada, **então** a aplicação abre na tela de
+  configuração, não num painel de zeros — zero medido e zero por falta de
+  arquivo são coisas diferentes (regra inviolável 3).
+- **Dado** um caminho válido salvo, **então** a leitura acontece **sem
+  reiniciar** o processo, e o watcher passa a observar o diretório novo.
+- **Dado** a aplicação reaberta no dia seguinte, **então** o caminho já está lá
+  e a leitura acontece na partida, sem clique nenhum.
+- **Dado** um caminho inválido, **então** `400 CAMINHO_INVALIDO` com a razão em
+  pt-br, e o caminho anterior **continua valendo** — uma tentativa falha nunca
+  derruba a configuração que funcionava.
+- **Dado** a gravação, **então** os demais campos de `config/app.json` — `port`,
+  `sheetName`, `timezone`, limiares — chegam intactos ao arquivo.
+
+**Casos-limite:**
+- Caminho com espaços e acentos, e caminho UNC (`\\servidor\pasta`) → aceitos.
+- Arquivo existente mas sem a aba `2026` → salva o caminho e entra em
+  `degradado` com a razão, como qualquer leitura falha. Recusar o salvamento
+  esconderia do operador o motivo real.
+- Planilha aberta no Excel no momento do salvamento → salva e lê igual; o sinal
+  de `H-32` aparece na faixa (A-58).
+- `config/app.json` somente-leitura → `400` explicando, sem perder o estado.
+- Duas requisições concorrentes → a segunda espera; o store nunca é
+  reconfigurado no meio de uma leitura.
+
+**Fora desta história:** escolher a **aba** pela tela — a regra inviolável 10
+fixa `2026`, e a virada de ano é `H-01` reexecutada, não um seletor. Também não
+entra navegador de arquivos do sistema: o campo é texto, porque o servidor é
+Node e não tem diálogo nativo, e `<input type="file">` no navegador entrega o
+conteúdo, **nunca o caminho** — e é o caminho que o watcher precisa.
+
+**Dependências:** H-15, H-16
+**Tamanho:** M
+
+---
+
 ## Resumo do backlog
 
 | Épico | Histórias | P | M | G |
@@ -2229,8 +2333,8 @@ inviolável 10 passa a valer **por construção**, não por convenção. E o
 | E4 — Interface | H-15 … H-22 | 6 | 2 | 0 |
 | E5 — Edição e escrita | H-23 … H-27 | 0 | 5 | 0 |
 | E6 — Histórico | H-28, H-29 | 1 | 1 | 0 |
-| E7 — Operação | H-30, **H-31 ✅**, H-32, H-33 | 3 | 1 | 0 |
-| **Total** | **33** | **16** | **17** | **0** |
+| E7 — Operação | H-30, **H-31 ✅**, H-32, H-33, H-34 | 3 | 2 | 0 |
+| **Total** | **34** | **16** | **18** | **0** |
 
 **Nenhuma história é G.** As duas candidatas naturais foram quebradas: a
 escrita no `.xlsx` virou `H-24` (cirurgia), `H-25` (defesas) e `H-26` (comando
@@ -2238,7 +2342,7 @@ ponta a ponta); os indicadores viraram cinco histórias por natureza de cálculo
 
 ### Varredura de verbos de decisão em aberto
 
-Os textos das 33 histórias foram varridos em busca de "escolher", "avaliar",
+Os textos das 34 histórias foram varridos em busca de "escolher", "avaliar",
 "definir", "decidir" e "ver qual". As ocorrências encontradas foram eliminadas:
 
 | Onde estava | Como foi fechado |
