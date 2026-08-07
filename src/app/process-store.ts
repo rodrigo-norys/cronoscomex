@@ -1,6 +1,7 @@
 import { type ColorMapEntry, indexColorMap } from '../domain/color-mapper.ts'
 import { type BuildResult, buildProcesses, quarantineRate } from '../domain/process-builder.ts'
 import type { Process } from '../domain/types.ts'
+import { detectInterference } from '../io/interference-detector.ts'
 import { buildReport, DEFAULT_QUARANTINE_PATH, writeReport } from '../io/quarantine-reporter.ts'
 import { type ReadResult, readWorkbook } from '../io/xlsx-reader.ts'
 import type { AppConfig } from './config.ts'
@@ -34,6 +35,14 @@ export interface StoreState {
   rowsRead: number
   rowsAccepted: number
   rowsQuarantined: number
+  /**
+   * Alguem tem a planilha aberta no Excel. **Sinal, nunca acao** (A-58): a
+   * leitura acontece igual. Quem reage e a faixa de `H-15` e a escrita de
+   * `H-25`.
+   */
+  externalLock: boolean
+  /** Arquivos de conflito do OneDrive, so o nome. Vazio quando nao ha. */
+  conflictFiles: string[]
 }
 
 export interface StoreAccess {
@@ -69,6 +78,8 @@ function emptyState(): StoreState {
     rowsRead: 0,
     rowsAccepted: 0,
     rowsQuarantined: 0,
+    externalLock: false,
+    conflictFiles: [],
   }
 }
 
@@ -184,6 +195,8 @@ async function runReload(deps: StoreOptions): Promise<void> {
       rowsRead: result.totalDataRows,
       rowsAccepted: result.processes.length,
       rowsQuarantined: result.quarantine.length,
+      externalLock: current.externalLock,
+      conflictFiles: current.conflictFiles,
     }
 
     logger.log({
@@ -212,6 +225,12 @@ async function runReload(deps: StoreOptions): Promise<void> {
     // A mensagem completa vai para a interface, nunca para o log: ela carrega
     // o caminho do arquivo e pode carregar conteudo vindo da biblioteca.
     logger.log({ level: 'error', event: 'read.failed', errorCode: stage })
+  } finally {
+    // Roda SEMPRE, inclusive quando a leitura falha — e justamente com arquivo
+    // de conflito na pasta, ou com o Excel segurando o arquivo, que a leitura
+    // tende a falhar. Suprimir o sinal no erro o esconderia exatamente quando
+    // ele mais importa. `detectInterference` nunca lanca.
+    current = { ...current, ...detectInterference(deps.config.workbookPath) }
   }
 }
 

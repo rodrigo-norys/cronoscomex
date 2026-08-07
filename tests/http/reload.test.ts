@@ -27,6 +27,8 @@ function state(overrides: Partial<StoreState> = {}): StoreState {
     rowsRead: 649,
     rowsAccepted: 649,
     rowsQuarantined: 0,
+    externalLock: false,
+    conflictFiles: [],
     ...overrides,
   }
 }

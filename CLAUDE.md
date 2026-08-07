@@ -106,9 +106,16 @@ Não re-derive isto; está medido.
 ## Estado
 
 **Fases 0 e 1 concluídas. Fase 2 em andamento: `H-09` a `H-14` fechadas** — o
-épico E3 (indicadores e alertas) está inteiro. Próximo passo: **`H-15`**, a
-casca da aplicação com os onze filtros globais, que abre o épico de interface.
-As fases estão em `docs/07-plano-entrega.md`.
+épico E3 (indicadores e alertas) está inteiro —, **mais `H-32`, antecipada**
+porque é dependência declarada de `H-15` e não existia. Próximo passo:
+**`H-15`**, a casca da aplicação com os onze filtros globais, que abre o épico
+de interface. As fases estão em `docs/07-plano-entrega.md`.
+
+**`H-15` sai em três entregas**, decidido em 06/08/2026: o tamanho `M` do plano
+estava subestimado — domínio de filtros, rota de opções, alteração de duas rotas
+existentes, casca React inteira, `FilterBar` de 11 controles, faixa com 3 sinais
+e as 3 frentes de A-62. A história continua sendo uma; a execução é ① backend de
+filtros · ② casca, faixa e A-62 · ③ `FilterBar`.
 
 A cadeia de ingestão foi validada contra o arquivo real, dentro do limite de
 quarentena de RNF-24. **Não transcreva número medido para cá** — a contagem de
@@ -216,7 +223,11 @@ em 6 localmente e mesmo assim reprovou no runner do GitHub. Reduzir
 probabilidade não é corrigir causa; o `vitest.config.ts` mantém o paralelismo
 ligado de propósito.
 
-**Interferência externa é sinal, nunca ação** (achado A-58). `H-32` detecta
+**Interferência externa é sinal, nunca ação** (achado A-58, entregue por `H-32`
+em 06/08/2026). A detecção roda num `finally` dentro de `runReload`, então
+acontece **mesmo quando a leitura falha** — é justamente com arquivo de conflito
+na pasta, ou com o Excel segurando o arquivo, que ela tende a falhar. O sinal
+nunca fica preso: deriva do estado da pasta a cada leitura. `H-32` detecta
 `~$<nome>.xlsx` (alguém com a planilha aberta) e `*Cópia em conflito*` (o
 OneDrive não conseguiu mesclar) e expõe `externalLock`/`conflictFiles` em
 `GET /api/health`; a faixa de `H-15` exibe. A leitura acontece igual. **Não é
