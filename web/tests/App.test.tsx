@@ -112,7 +112,85 @@ describe('faixa de estado', () => {
   })
 })
 
+describe('filtros globais na casca', () => {
+  it('a barra vale para as paginas de dado', () => {
+    window.history.replaceState(null, '', '/alertas')
+    render(<App />)
+
+    expect(screen.getByRole('region', { name: 'Filtros' })).toBeTruthy()
+  })
+
+  it('nao aparece no detalhe do processo, que e sobre UM processo', () => {
+    window.history.replaceState(null, '', '/processo/CRO-2026-001')
+    render(<App />)
+
+    expect(screen.queryByRole('region', { name: 'Filtros' })).toBeNull()
+  })
+
+  it('nao aparece em endereco desconhecido, que nao tem dado a filtrar', () => {
+    window.history.replaceState(null, '', '/relatorios')
+    render(<App />)
+
+    expect(screen.queryByRole('region', { name: 'Filtros' })).toBeNull()
+  })
+
+  it('marcar um filtro reflete na URL', async () => {
+    render(<App />)
+    await screen.findByRole('button', { name: /Cliente/ })
+
+    fireEvent.click(screen.getByRole('button', { name: /Cliente/ }))
+    fireEvent.click(await screen.findByRole('checkbox', { name: /ACME/ }))
+
+    expect(window.location.search).toBe('?client=ACME')
+  })
+
+  it('trocar de pagina preserva o recorte montado', async () => {
+    window.history.replaceState(null, '', '/?client=ACME&category=em_andamento')
+    render(<App />)
+
+    fireEvent.click(within(nav()).getByRole('link', { name: 'Performance' }))
+
+    expect(window.location.pathname).toBe('/performance')
+    expect(window.location.search).toBe('?client=ACME&category=em_andamento')
+    expect(await screen.findByText('2 ativos')).toBeTruthy()
+  })
+
+  it('limpar zera os filtros sem sair da pagina', async () => {
+    window.history.replaceState(null, '', '/alertas?client=ACME')
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Limpar' }))
+
+    expect(window.location.search).toBe('')
+    expect(window.location.pathname).toBe('/alertas')
+  })
+})
+
+/**
+ * Regressao de um defeito medido: um servidor de versao anterior devolveu o
+ * health **sem** `today`, e `undefined.split` derrubou a casca inteira — faixa
+ * de estado e navegacao junto. O tipo descreve o contrato, nao a resposta que
+ * chegou.
+ */
+describe('resposta fora do contrato', () => {
+  it('campo de dia ausente vira traco, nao tela branca', async () => {
+    const { today: _omitido, ...semDia } = healthFixture()
+    api.serve(semDia as ReturnType<typeof healthFixture>)
+    render(<App />)
+
+    expect(await screen.findByText('—')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'CronosComex' })).toBeTruthy()
+    expect(nav()).toBeTruthy()
+  })
+})
+
 describe('botao de atualizacao (A-62)', () => {
+  /**
+   * A lista inteira, e nao so a ordem de `reload`: ela prova tambem que o
+   * refresh revalida as **opcoes** de filtro. Elas derivam dos dados (A-36), e
+   * um cliente novo na planilha precisa aparecer na barra sem recarregar a
+   * pagina — o `dataVersion` que o botao avanca e o que provoca isso.
+   */
   it('chama POST /api/reload antes de refazer as requisicoes', async () => {
     render(<App />)
     await screen.findByText('07/08/2026')
@@ -120,7 +198,13 @@ describe('botao de atualizacao (A-62)', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Atualizar' }))
 
     await waitFor(() =>
-      expect(api.calls).toEqual(['GET /api/health', 'POST /api/reload', 'GET /api/health']),
+      expect(api.calls).toEqual([
+        'GET /api/health',
+        'GET /api/filters/options',
+        'POST /api/reload',
+        'GET /api/health',
+        'GET /api/filters/options',
+      ]),
     )
   })
 })
