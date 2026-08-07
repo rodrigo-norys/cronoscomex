@@ -1889,6 +1889,62 @@ STATUS e os campos fora de escopo.
 
 ### H-23 — Editar campos na tela, enfileirando sem tocar no arquivo
 
+> ✅ **CONCLUÍDA em 07/08/2026.** 64 testes próprios em 5 arquivos; suíte total
+> em **812**. Saiu em três entregas — ① fila e rotas · ② projeção · ③ interface —,
+> pelo mesmo padrão de `H-15`, `H-17`, `H-19` e `H-22`.
+>
+> **A projeção era o coração da história e não estava na lista de arquivos.**
+> Os arquivos previstos cobriam persistência, rotas e dois componentes; nada
+> aplicava a fila sobre os processos lidos, e sem isso o critério "a tabela e os
+> indicadores refletem o valor novo" não existiria. `pendingEditsCount` e
+> `hasPendingEdits` estavam **fixos em zero e `false`** desde `H-02`.
+>
+> **A re-derivação reconstrói a linha crua e reusa `buildProcesses`.** Editar um
+> campo mexe em três coisas derivadas: `clientRaw` muda `clientKey` — sem isso
+> os rankings agrupariam pelo valor velho —, `statusRaw` muda a categoria por
+> TD-01, e `registrationDate` cria `RG_SEM_DESEMBARACO` (A-05). Reimplementar
+> TD-01 e a normalização sobre `Process` daria **duas implementações da mesma
+> regra**, que é o que o precedente de `isOverdue` proíbe. `toRawRow` vive ao
+> lado do mapa de colunas, então ida e volta não se separam.
+>
+> **A ida e volta pela data quebrou, e o teste pegou.** `toRawRow` emitia
+> `AAAA-MM-DD` como texto, e `parseCellDate` aceita `Date`, serial numérico e
+> `dd/MM/yyyy` — **não** ISO. Duas asserções reprovaram com `DATA_SEM_ANO`.
+> Corrigido para emitir `Date`, que é o que o leitor produz; a volta é exata
+> porque toda data do domínio já é meia-noite UTC.
+>
+> **A projeção é aplicada em `getState()`, lendo a fila a cada chamada.** Ela
+> muda **sem releitura do arquivo** — um `POST /api/edits` não dispara o
+> watcher —, e um cache aqui precisaria de invalidação vinda das rotas. O
+> arquivo tem alguns KB; a alternativa custa um modo de falha em que a tela
+> mostra edição que já não existe.
+>
+> **O descarte virou lápide.** O desenho original usava `value: null` **como**
+> lápide, e era por isso que `03-modelo-dados.md` dizia que ele cancelava a
+> edição anterior. Ao dar a `null` o sentido de célula vazia, a divergência
+> removeu o mecanismo sem repor outro. Reescrever o arquivo violaria o
+> **append-only** que o mesmo parágrafo declara. Então o descarte anexa
+> `{"ts":"…","discarded":"<id>"}`, e `"*"` para o esvaziamento.
+>
+> **`StoreState` ganhou campo obrigatório e o `typecheck` expôs nove fábricas
+> de estado**, exatamente como em `H-32`. É o argumento de D-18 em uso.
+>
+> **Conferido contra a planilha real:** editar `statusRaw` de `FT074.26` para
+> `DESEMBARAÇADA` leva a categoria de `em_andamento` a `desembaracado`, e os
+> indicadores acompanham — desembaraçados **480 → 481**, em andamento
+> **103 → 102**. **Um único objeto muda** entre os 649, e nada é gravado no
+> `.xlsx`.
+>
+> **Divergências resolvidas: quatro.** ① a projeção ausente da lista · ②
+> `03-modelo-dados.md` contradizendo o backlog sobre `value: null` · ③ sete
+> arquivos de fiação, entre eles o registro no `server.ts` e os quatro
+> marcadores de pendência do contrato · ④ os dois componentes sem página, que
+> foram para o detalhe do processo.
+>
+> **Duas decisões:** `crypto.randomUUID()` em vez de ULID, sem dependência nova
+> — o exemplo do contrato foi corrigido —, e o painel de pendências mostra só as
+> do REF aberto, com o esvaziamento global rotulado pelo alcance que tem.
+
 **Objetivo:** o operador altera um processo, vê o efeito imediatamente, e nada
 é gravado no `.xlsx`.
 
@@ -1898,6 +1954,14 @@ STATUS e os campos fora de escopo.
 - `web/src/components/EditProcessForm.tsx`
 - `web/src/components/PendingEditsPanel.tsx`
 - `tests/io/edit-queue.test.ts`
+- **Omitidos do plano original**, e necessários: `src/domain/editable-fields.ts`
+  e `src/domain/process-projection.ts` (regra, então domínio), `toRawRow` em
+  `src/domain/process-builder.ts`, `src/app/process-store.ts` (a projeção),
+  `src/http/server.ts`, `src/http/routes/{health,processes}.ts`,
+  `docs/05-contratos-api.md`, `docs/03-modelo-dados.md`, `web/src/api-client.ts`,
+  `web/src/hooks/useProcessDetail.ts`, `web/src/pages/ProcessDetail.tsx`,
+  `web/tests/support/api-stub.ts` e os testes de `tests/domain/`, `tests/http/`
+  e `web/tests/`
 
 **Contrato fixado:** `POST /api/edits`, `GET /api/edits`, `DELETE /api/edits/:id`,
 `DELETE /api/edits`, com a lista de campos editáveis de
@@ -1929,6 +1993,8 @@ export function discardAll(): number
 **Casos-limite:**
 - Editar `eta2` para `null` (limpar a data) → aceito; `value: null` significa
   célula vazia, e não cancelamento — o cancelamento é `DELETE`.
+  ⚠️ `docs/03-modelo-dados.md` §3.2 dizia o oposto até `H-23`. Corrigido lá, com
+  a lápide documentada como o mecanismo que substituiu o `null`.
 - Editar um campo para o mesmo valor atual → aceito e enfileirado; a decisão de
   não gravar nada é do `xlsx-surgeon`, não da fila.
 - Editar processo inexistente → `404`.
