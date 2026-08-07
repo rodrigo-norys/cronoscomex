@@ -1,4 +1,5 @@
 import { vi } from 'vitest'
+import type { AlertsResponse } from '../../../src/http/routes/alerts.ts'
 import type { FilterOptionsResponse } from '../../../src/http/routes/filter-options.ts'
 import type { HealthResponse } from '../../../src/http/routes/health.ts'
 import type { IndicatorsResponse } from '../../../src/http/routes/indicators.ts'
@@ -58,6 +59,32 @@ export function indicatorsFixture(
       weekEnd: '2026-08-09',
       bazarShare: 0.3547,
     },
+  }
+}
+
+/**
+ * Os valores medidos na planilha real em 07/08/2026: 40 linhas achatadas para
+ * 25 processos distintos. `items` fica vazio de proposito — cada teste serve o
+ * recorte que exercita.
+ *
+ * `processos_parados` e zero por motivo ESTRUTURAL: a rota passa um historico
+ * vazio ate `H-28`. `chegadas_hoje` e zero MEDIDO. Os dois numeros sao iguais e
+ * significam coisas opostas, e a pagina precisa distingui-los.
+ */
+export function alertsFixture(overrides: Partial<AlertsResponse> = {}): AlertsResponse {
+  return {
+    items: [],
+    countsByType: {
+      eta_vencida: 17,
+      canal_vermelho: 2,
+      documentacao_pendente: 14,
+      processos_parados: 0,
+      chegadas_hoje: 0,
+      chegadas_7_dias: 7,
+    },
+    stalledThresholdDays: 15,
+    historyStartedAt: null,
+    ...overrides,
   }
 }
 
@@ -168,6 +195,9 @@ export interface ApiStub {
   failNextHealth(message: string): void
   failOptions(): void
   serveIndicators(indicators: IndicatorsResponse): void
+  serveAlerts(alerts: AlertsResponse): void
+  alertsWithoutRead(): void
+  failAlerts(): void
   serveProcesses(page: ProcessesResponse): void
   processesWithoutRead(): void
   failProcesses(): void
@@ -190,6 +220,8 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
   let optionsFails = false
   let indicators = indicatorsFixture()
   let indicatorsStatus = 200
+  let alerts = alertsFixture()
+  let alertsStatus = 200
   let quarantine = quarantineFixture()
   let processes = processesFixture()
   let processesStatus = 200
@@ -208,6 +240,14 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
           ok: indicatorsStatus === 200,
           status: indicatorsStatus,
           json: () => Promise.resolve(indicators),
+        } as Response)
+      }
+
+      if (path === '/api/alerts') {
+        return Promise.resolve({
+          ok: alertsStatus === 200,
+          status: alertsStatus,
+          json: () => Promise.resolve(alerts),
         } as Response)
       }
 
@@ -285,6 +325,15 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
     },
     failIndicators: () => {
       indicatorsStatus = 500
+    },
+    serveAlerts: (next) => {
+      alerts = next
+    },
+    alertsWithoutRead: () => {
+      alertsStatus = 503
+    },
+    failAlerts: () => {
+      alertsStatus = 500
     },
     serveProcesses: (next) => {
       processes = next
