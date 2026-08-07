@@ -1,3 +1,4 @@
+import type { AlertsResponse } from '../../src/http/routes/alerts.ts'
 import type { FilterOptionsResponse } from '../../src/http/routes/filter-options.ts'
 import type { HealthResponse } from '../../src/http/routes/health.ts'
 import type { IndicatorsResponse } from '../../src/http/routes/indicators.ts'
@@ -15,6 +16,7 @@ import type { QuarantineResponse } from '../../src/http/routes/quarantine.ts'
  * esqueleto de `H-02` fazia, com metade dos campos.
  */
 export type {
+  AlertsResponse,
   FilterOptionsResponse,
   HealthResponse,
   IndicatorsResponse,
@@ -90,6 +92,24 @@ export async function getProcesses(
   if (!response.ok) throw new Error(`GET /api/processes respondeu ${response.status}`)
 
   return (await response.json()) as ProcessesResponse
+}
+
+/**
+ * Os alertas, ja recortados pelos filtros globais (RF-18).
+ *
+ * Mesmo `503` de `getIndicators`: enquanto `lastReadAt` e `null` nao ha leitura
+ * a apresentar, e lista vazia ali afirmaria ausencia de pendencia — que e o
+ * oposto de "ainda nao se sabe".
+ */
+export async function getAlerts(
+  queryString: string,
+  signal?: AbortSignal,
+): Promise<AlertsResponse> {
+  const response = await fetch(`/api/alerts${queryString}`, signal ? { signal } : undefined)
+  if (response.status === 503) throw new NoReadYetError('GET /api/alerts')
+  if (!response.ok) throw new Error(`GET /api/alerts respondeu ${response.status}`)
+
+  return (await response.json()) as AlertsResponse
 }
 
 /**
