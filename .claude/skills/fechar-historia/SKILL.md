@@ -30,9 +30,8 @@ argument-hint: [H-NN]
 
 3. **Backlog.** Acrescente o bloco `> ✅ **CONCLUÍDA em DD/MM/AAAA.** …` logo
    abaixo do título da história, no mesmo formato dos já existentes: número de
-   testes próprios, total da suíte, divergências resolvidas.
-   Motivo de o passo existir: `H-06` está concluída em dois lugares e sem este
-   bloco no terceiro. É a falha que esta skill existe para não repetir.
+   testes próprios, total da suíte, divergências resolvidas. Ver `H-06` para o
+   modo de falha que este passo evita.
 
 4. **Rastreabilidade.** Atualize o `Status` de cada linha de
    `docs/09-rastreabilidade.md` que cite a história.
@@ -44,7 +43,28 @@ argument-hint: [H-NN]
    estática por `grep` não enxerga casos gerados em tempo de execução — medido,
    `grep` devolve 273 onde o Vitest reporta 279.
 
-6. **Marcos de tooling.** Se esta história for `H-13`, `H-20` ou a última antes
+6. **Cobertura de apresentação.** Rode:
+
+   ```bash
+   python3 - <<'PY'
+   import re
+   s = open('docs/09-rastreabilidade.md', encoding='utf-8').read()
+   orfaos = []
+   for linha in s.splitlines():
+       if not re.match(r'\| (IND|ALE)-\d+ \|', linha):
+           continue
+       c = [x.strip() for x in linha.split('|')]
+       if not [h for h in re.findall(r'H-\d+', c[5]) if 16 <= int(h[2:]) <= 22]:
+           orfaos.append(f"{c[1]} — {c[2][:40]}")
+   print('\n'.join(orfaos) if orfaos else 'todos com história de interface')
+   PY
+   ```
+
+   **`IND-21` é a única saída legítima** — bloqueado por ausência de coluna na
+   origem (D-04). Qualquer outro nome é regra calculada que o operador nunca
+   verá: **pare e reporte**, não feche a história em silêncio. Ver A-65.
+
+7. **Marcos de tooling.** Se esta história for `H-13`, `H-20` ou a última antes
    de `H-24`, avise que o gatilho de tooling foi atingido.
 
 ## Prova — imprima isto no final, sem editar
