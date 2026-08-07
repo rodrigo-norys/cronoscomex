@@ -1,6 +1,6 @@
 ---
 name: sugerir-prs
-description: Propõe como fatiar o trabalho não mesclado do CronosComex em 1 ou mais Pull Requests (agrupados por preocupação, ordenados pela cadeia canônica, com uma branch sugerida por PR) E escreve título e corpo de cada um em seções markdown. Descrever um único PR é o caso N=1 desta skill. Use ao preparar ou abrir PR. Apresenta o plano e o corpo, aguarda aceite, e SÓ ENTÃO pede permissão para executar o passo para fora (push da branch + `gh pr create`) — nunca faz push nem abre PR sem aprovação do plano E permissão explícita.
+description: Propõe como fatiar o trabalho não mesclado do CronosComex em 1 ou mais Pull Requests (agrupados por preocupação, ordenados pela cadeia canônica, com uma branch sugerida por PR) E escreve título e corpo de cada um em seções markdown. Descrever um único PR é o caso N=1 desta skill. Use ao preparar ou abrir PR. Apresenta o plano, o corpo e os comandos literais, e aguarda um único aceite, que vale como permissão para o passo para fora (push da branch + `gh pr create`) — nunca faz push nem abre PR sem aprovação.
 argument-hint: [branch-base]
 ---
 
@@ -15,9 +15,8 @@ Os **commits** locais são da `/sugerir-commits`; esta aqui cuida de abrir o PR.
 
 > **Esta skill publica.** Push e PR são irreversíveis na prática — o objeto de commit persiste no
 > GitHub mesmo depois de um force-push. Ela pode ser carregada automaticamente, mas o portão
-> duplo abaixo não é opcional: **planejar é livre, executar não**. Nenhum push ou `gh` roda sem
-> aceite do plano E permissão explícita, e ambos ainda passam pelo prompt de permissão da
-> ferramenta.
+> abaixo não é opcional: **planejar é livre, executar não**. Nenhum push ou `gh` roda sem aceite
+> explícito, e ambos ainda passam pelo prompt de permissão da ferramenta.
 
 ## Pré-requisitos — confira, não presuma
 
@@ -39,16 +38,22 @@ autenticar `gh` é decisão do usuário, não sua.
 Mesma disciplina da `/sugerir-commits`, mas aqui o passo executável é **para fora** (torna branch
 e PR visíveis no GitHub, para quem tiver acesso) — por isso os portões valem em dobro:
 
-1. **Eu sugiro** o plano — quantos PRs, o escopo de cada um, a branch, o título, e o corpo em
-   markdown (escrito num arquivo `.md` no scratchpad, pré-requisito do `--body-file`).
-2. **Você aprova ou rejeita** o plano e o texto de cada PR.
-3. Com o aceite, **eu peço permissão para executar** antes de qualquer push ou `gh`.
-4. Com a permissão, **eu executo** por PR, em ordem de dependência: `git push -u origin <branch>`
-   e `gh pr create --base <base> --title … --body-file …`.
+1. **Eu sugiro** o plano — quantos PRs, o escopo de cada um, a branch, o título, o corpo em
+   markdown (escrito num arquivo `.md` no scratchpad, pré-requisito do `--body-file`) **e os
+   comandos literais**, com o remote e a base explícitos.
+2. **Você aprova ou rejeita** o plano e o texto de cada PR. A aprovação **vale como permissão
+   para executar**.
+3. **Eu executo** por PR, em ordem de dependência: `git push -u origin <branch>` e
+   `gh pr create --base <base> --title … --body-file …`.
 
 Portões inegociáveis:
 
-- **Sem aprovação do plano E sem permissão explícita, não faço push nem abro PR.** São dois passos.
+- **Sem aprovação explícita, não faço push nem abro PR.** Um portão, não dois — mas ele só vale
+  se o plano tiver mostrado **os comandos literais, o remote e a base** antes. Perguntar de novo
+  depois de uma aprovação assim não acrescenta informação: quem aprovou já viu o que seria
+  executado e para onde. **Plano vago não autoriza nada**, por mais "sim" que receba.
+- **O prompt de permissão da ferramenta continua sendo a última barreira**, e é o que protege
+  contra o caso em que o plano e o comando divergiram.
 - **Push e PR são para fora** — no GitHub não desfazem limpo. Confirmo o destino (remote, branch
   base) antes de rodar.
 - **Nenhum dado real no que vai para fora.** Título, corpo e os arquivos do diff **não** podem
@@ -126,7 +131,7 @@ plano de entrega já define a unidade, e o caminho crítico é sequencial
 - Se **mais de um PR**, dê a **ordem de abertura** (por dependência) e a relação entre eles.
 - **Escreva o corpo de cada PR num arquivo `.md`** (um por PR, no scratchpad da sessão)
   **antes** do passo de push/`gh` — o `--body-file` exige que o arquivo **já exista** na hora.
-- Por PR, depois do aceite e da permissão, execute em ordem de dependência:
+- Por PR, depois do aceite, execute em ordem de dependência:
 
 ```
 git push -u origin H-12/feat-indicadores-risco
