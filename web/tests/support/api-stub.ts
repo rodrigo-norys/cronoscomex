@@ -2,6 +2,7 @@ import { vi } from 'vitest'
 import type { FilterOptionsResponse } from '../../../src/http/routes/filter-options.ts'
 import type { HealthResponse } from '../../../src/http/routes/health.ts'
 import type { IndicatorsResponse } from '../../../src/http/routes/indicators.ts'
+import type { ProcessDto, ProcessesResponse } from '../../../src/http/routes/processes.ts'
 import type { QuarantineResponse } from '../../../src/http/routes/quarantine.ts'
 
 /**
@@ -48,6 +49,42 @@ export function indicatorsFixture(
       bazarShare: 0.3547,
     },
   }
+}
+
+export function processFixture(overrides: Partial<ProcessDto> = {}): ProcessDto {
+  return {
+    ref: 'FT501.26',
+    sourceRow: 502,
+    client: 'ACME LOG',
+    importer: 'IMPORTADORA X',
+    billOfLading: 'NBSC260812',
+    agent: 'B&M',
+    container: 'TCLU1234567',
+    vessel: 'EVER FAIR',
+    port: 'RJ',
+    goods: 'BAZAR',
+    eta2: '2026-08-20',
+    registrationDate: null,
+    docsSentDate: null,
+    statusRaw: 'EM ANDAMENTO',
+    statusCategory: 'em_andamento',
+    responsible: 'colaborador1',
+    customsChannel: 'nenhum',
+    importerOutsideRj: false,
+    boletoRaw: '',
+    paymentRaw: '',
+    columnPRaw: '',
+    anomalies: [],
+    hasPendingEdits: false,
+    ...overrides,
+  }
+}
+
+export function processesFixture(
+  items: ProcessDto[] = [processFixture()],
+  overrides: Partial<ProcessesResponse> = {},
+): ProcessesResponse {
+  return { items, total: items.length, limit: 200, offset: 0, ...overrides }
 }
 
 export function quarantineFixture(overrides: Partial<QuarantineResponse> = {}): QuarantineResponse {
@@ -121,6 +158,9 @@ export interface ApiStub {
   failNextHealth(message: string): void
   failOptions(): void
   serveIndicators(indicators: IndicatorsResponse): void
+  serveProcesses(page: ProcessesResponse): void
+  processesWithoutRead(): void
+  failProcesses(): void
   serveQuarantine(report: QuarantineResponse): void
   /** `503 ARQUIVO_INDISPONIVEL`: nunca houve leitura. Nao e falha de rede. */
   indicatorsWithoutRead(): void
@@ -141,6 +181,8 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
   let indicators = indicatorsFixture()
   let indicatorsStatus = 200
   let quarantine = quarantineFixture()
+  let processes = processesFixture()
+  let processesStatus = 200
 
   vi.stubGlobal(
     'fetch',
@@ -156,6 +198,14 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
           ok: indicatorsStatus === 200,
           status: indicatorsStatus,
           json: () => Promise.resolve(indicators),
+        } as Response)
+      }
+
+      if (path === '/api/processes') {
+        return Promise.resolve({
+          ok: processesStatus === 200,
+          status: processesStatus,
+          json: () => Promise.resolve(processes),
         } as Response)
       }
 
@@ -225,6 +275,15 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
     },
     failIndicators: () => {
       indicatorsStatus = 500
+    },
+    serveProcesses: (next) => {
+      processes = next
+    },
+    processesWithoutRead: () => {
+      processesStatus = 503
+    },
+    failProcesses: () => {
+      processesStatus = 500
     },
   }
 }
