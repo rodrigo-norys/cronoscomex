@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { clearedTodayCount, documentaryLeadTime } from '../../src/domain/indicators.ts'
+import {
+  clearedTodayCount,
+  documentaryLeadTime,
+  leadTimeByGroup,
+} from '../../src/domain/indicators.ts'
 import type { Process, StatusCategory } from '../../src/domain/types.ts'
 
 /** Data civil ancorada em UTC, como as vindas da planilha (TD-03). */
@@ -13,6 +17,8 @@ interface Fields {
   docsSent?: string | null
   statusCategory?: StatusCategory
   statusRaw?: string
+  clientKey?: string
+  clientRaw?: string
 }
 
 let nextRow = 2
@@ -22,12 +28,14 @@ function process({
   docsSent = null,
   statusCategory = 'em_andamento',
   statusRaw = '',
+  clientKey = '',
+  clientRaw = '',
 }: Fields): Process {
   const row = nextRow++
   return {
     sourceRow: row,
     ref: `FT${String(row).padStart(3, '0')}.26`,
-    clientRaw: '',
+    clientRaw,
     importerRaw: '',
     billOfLading: '',
     agentRaw: '',
@@ -42,7 +50,7 @@ function process({
     eta2: null,
     registrationDate: registration === null ? null : civil(registration),
     docsSentDate: docsSent === null ? null : civil(docsSent),
-    clientKey: '',
+    clientKey,
     importerKey: '',
     agentKey: '',
     vesselKey: '',
@@ -250,5 +258,222 @@ describe('documentaryLeadTime — IND-22', () => {
       excludedNegative: 1,
       excludedIncomplete: 2,
     })
+  })
+})
+
+/**
+ * `leadTimeByGroup` — IND-22 por dimensao (`H-19`).
+ *
+ * O agregado de `documentaryLeadTime` continua sendo a referencia: estas
+ * assercoes fixam o que a quebra acrescenta — a ordem, o grupo sem amostra e a
+ * ausencia de teto.
+ */
+const porCliente = (processes: Process[]) =>
+  leadTimeByGroup(
+    processes,
+    (p) => p.clientKey,
+    (p) => p.clientRaw,
+  )
+
+describe('leadTimeByGroup — a quebra de IND-22 (H-19)', () => {
+  it('calcula a media dentro de cada grupo, nao entre grupos', () => {
+    const grupos = porCliente([
+      process({
+        clientKey: 'A',
+        clientRaw: 'A',
+        docsSent: '2026-07-01',
+        registration: '2026-07-11',
+      }),
+      process({
+        clientKey: 'A',
+        clientRaw: 'A',
+        docsSent: '2026-07-01',
+        registration: '2026-07-21',
+      }),
+      process({
+        clientKey: 'B',
+        clientRaw: 'B',
+        docsSent: '2026-07-01',
+        registration: '2026-07-03',
+      }),
+    ])
+
+    expect(grupos.find((g) => g.key === 'A')?.averageDays).toBe(15)
+    expect(grupos.find((g) => g.key === 'B')?.averageDays).toBe(2)
+  })
+
+  /**
+   * A ordem e o que faz a tabela servir. Por volume, o topo seriam os maiores
+   * grupos — que na planilha real quase nao tem par completo: dos 509 grupos de
+   * cliente, 425 nao tem nenhum. A media ficaria fora do corte.
+   */
+  it('ordena por tamanho da amostra, nao por volume', () => {
+    const volumosoSemAmostra = Array.from({ length: 5 }, () =>
+      process({ clientKey: 'GRANDE', clientRaw: 'Grande' }),
+    )
+    const pequenoComAmostra = [
+      process({
+        clientKey: 'PEQUENO',
+        clientRaw: 'Pequeno',
+        docsSent: '2026-07-01',
+        registration: '2026-07-06',
+      }),
+    ]
+
+    const grupos = porCliente([...volumosoSemAmostra, ...pequenoComAmostra])
+
+    expect(grupos.map((g) => g.key)).toEqual(['PEQUENO', 'GRANDE'])
+    expect(grupos[0]?.count).toBe(1)
+    expect(grupos[1]?.count).toBe(5)
+  })
+
+  it('desempata por volume e depois pela chave, para a ordem nao oscilar', () => {
+    const semAmostra = (key: string, quantos: number) =>
+      Array.from({ length: quantos }, () => process({ clientKey: key, clientRaw: key }))
+
+    const grupos = porCliente([
+      ...semAmostra('ZULU', 2),
+      ...semAmostra('ALFA', 2),
+      ...semAmostra('BRAVO', 3),
+    ])
+
+    expect(grupos.map((g) => g.key)).toEqual(['BRAVO', 'ALFA', 'ZULU'])
+  })
+
+  // Grupo sem par completo permanece na lista: sumir com ele esconderia que o
+  // campo nao e preenchido para aquele grupo (regra inviolavel 3).
+  it('mantem o grupo sem nenhum par completo, com media nula', () => {
+    const grupos = porCliente([process({ clientKey: 'VAZIO', clientRaw: 'Vazio' })])
+
+    expect(grupos).toHaveLength(1)
+    expect(grupos[0]?.averageDays).toBeNull()
+    expect(grupos[0]?.sampleSize).toBe(0)
+    expect(grupos[0]?.excludedIncomplete).toBe(1)
+  })
+
+  it('exibe media com amostra 1, sem corte minimo (A-42)', () => {
+    const grupos = porCliente([
+      process({
+        clientKey: 'UNICO',
+        clientRaw: 'Unico',
+        docsSent: '2026-07-01',
+        registration: '2026-07-08',
+      }),
+    ])
+
+    expect(grupos[0]?.averageDays).toBe(7)
+    expect(grupos[0]?.sampleSize).toBe(1)
+  })
+
+  it('devolve uma casa decimal na media fracionaria', () => {
+    const grupos = porCliente([
+      process({
+        clientKey: 'X',
+        clientRaw: 'X',
+        docsSent: '2026-07-01',
+        registration: '2026-07-03',
+      }),
+      process({
+        clientKey: 'X',
+        clientRaw: 'X',
+        docsSent: '2026-07-01',
+        registration: '2026-07-04',
+      }),
+      process({
+        clientKey: 'X',
+        clientRaw: 'X',
+        docsSent: '2026-07-01',
+        registration: '2026-07-04',
+      }),
+    ])
+
+    expect(grupos[0]?.averageDays).toBe(2.7)
+  })
+
+  // As duas exclusoes de A-30 sao contadas dentro do grupo, como no agregado.
+  it('conta o intervalo negativo no grupo, sem silencia-lo', () => {
+    const grupos = porCliente([
+      process({
+        clientKey: 'N',
+        clientRaw: 'N',
+        docsSent: '2026-07-10',
+        registration: '2026-07-01',
+      }),
+    ])
+
+    expect(grupos[0]?.excludedNegative).toBe(1)
+    expect(grupos[0]?.sampleSize).toBe(0)
+    expect(grupos[0]?.averageDays).toBeNull()
+  })
+
+  it('todos os pares incompletos deixam todas as medias em traco', () => {
+    const grupos = porCliente([
+      process({ clientKey: 'A', clientRaw: 'A' }),
+      process({ clientKey: 'B', clientRaw: 'B', docsSent: '2026-07-01' }),
+      process({ clientKey: 'C', clientRaw: 'C', registration: '2026-07-01' }),
+    ])
+
+    expect(grupos.every((g) => g.averageDays === null)).toBe(true)
+    expect(grupos.every((g) => g.excludedIncomplete === 1)).toBe(true)
+  })
+
+  /**
+   * Quem corta nao pode ser quem conta: a rota precisa do total de grupos para
+   * informar quantos ficaram de fora, e um teto aqui apagaria esse numero antes
+   * de alguem poder exibi-lo (regra inviolavel 2).
+   */
+  it('nao aplica teto — devolve todos os grupos', () => {
+    const muitos = Array.from({ length: 30 }, (_, index) =>
+      process({ clientKey: `C${index}`, clientRaw: `C${index}` }),
+    )
+
+    expect(porCliente(muitos)).toHaveLength(30)
+  })
+
+  it('agrupa a chave vazia como as demais, sem descartar', () => {
+    const grupos = porCliente([process({ clientKey: '', clientRaw: '' })])
+
+    expect(grupos.map((g) => g.key)).toEqual([''])
+  })
+
+  it('devolve lista vazia para conjunto vazio', () => {
+    expect(porCliente([])).toEqual([])
+  })
+
+  /**
+   * A soma das quebras reproduz o agregado. Se divergirem, uma das duas esta
+   * errada — e a quebra e a nova.
+   */
+  it('reproduz o agregado quando somada', () => {
+    const conjunto = [
+      process({
+        clientKey: 'A',
+        clientRaw: 'A',
+        docsSent: '2026-07-01',
+        registration: '2026-07-11',
+      }),
+      process({
+        clientKey: 'B',
+        clientRaw: 'B',
+        docsSent: '2026-07-01',
+        registration: '2026-07-03',
+      }),
+      process({ clientKey: 'B', clientRaw: 'B' }),
+      process({
+        clientKey: 'C',
+        clientRaw: 'C',
+        docsSent: '2026-07-10',
+        registration: '2026-07-01',
+      }),
+    ]
+    const agregado = documentaryLeadTime(conjunto)
+    const grupos = porCliente(conjunto)
+
+    const soma = (campo: 'sampleSize' | 'excludedNegative' | 'excludedIncomplete') =>
+      grupos.reduce((total, grupo) => total + grupo[campo], 0)
+
+    expect(soma('sampleSize')).toBe(agregado.sampleSize)
+    expect(soma('excludedNegative')).toBe(agregado.excludedNegative)
+    expect(soma('excludedIncomplete')).toBe(agregado.excludedIncomplete)
   })
 })
