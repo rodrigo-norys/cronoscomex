@@ -149,23 +149,25 @@ export function redChannelCount(processes: readonly Process[]): number {
 export const PENDING_DOCS_HORIZON_DAYS = 10
 
 /**
- * IND-14. Processos sem DOCS ENVIADOS cuja chegada esta proxima ou ja passou.
+ * Predicado de documentacao pendente — IND-14 e ALE-02, a mesma regra em duas
+ * apresentacoes (A-08). Vive aqui pelo mesmo motivo de `isOverdue`: duas
+ * implementacoes da mesma condicao divergem no primeiro ajuste.
  *
  * A janela tem TETO e nao tem PISO: `eta2 <= hoje+10`, nunca
  * `hoje <= eta2 <= hoje+10`. Um intervalo fechado — o reflexo natural, ja que
  * `isWithin` existe desde H-10 — excluiria todo processo cuja carga ja chegou
  * sem documento, que sao exatamente os mais graves.
  */
-export function pendingDocsCount(processes: readonly Process[], today: Date): number {
+export function hasPendingDocs(process: Process, today: Date): boolean {
+  if (process.docsSentDate !== null || process.eta2 === null) return false
   const horizon = addDays(today, PENDING_DOCS_HORIZON_DAYS).getTime()
 
-  return processes.filter(
-    (process) =>
-      process.docsSentDate === null &&
-      process.eta2 !== null &&
-      process.eta2.getTime() <= horizon &&
-      process.statusCategory !== 'desembaracado',
-  ).length
+  return process.eta2.getTime() <= horizon && process.statusCategory !== 'desembaracado'
+}
+
+/** IND-14. Apresentacao de `hasPendingDocs` — a regra vive la, nunca aqui. */
+export function pendingDocsCount(processes: readonly Process[], today: Date): number {
+  return processes.filter((process) => hasPendingDocs(process, today)).length
 }
 
 /** IND-15. Apresentacao de `isOverdue` — a regra vive la, nunca aqui. */

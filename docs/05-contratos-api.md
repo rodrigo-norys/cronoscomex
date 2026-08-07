@@ -263,12 +263,22 @@ depois por ETA2 ascendente com nulos por último.
     "processos_parados": 0       // ALE-06
   },
   "stalledThresholdDays": 15,
-  "historyStartedAt": "2026-08-03T14:22:31.004Z"
+  "historyStartedAt": null
 }
 ```
 
+Os cinco alertas implementáveis exigem `category ≠ 'desembaracado'` (A-59). A
+condição está explícita apenas em ALE-01 e ALE-02 na especificação, mas vale nos
+cinco: a página é **fila de trabalho**, e processo concluído não pede ação.
+
 `historyStartedAt` informa desde quando existe histórico, para que a interface
-não sugira retroatividade inexistente (A-43).
+não sugira retroatividade inexistente (A-43). É `string | null`, e vale **`null`
+até `H-28`** gravar a primeira leitura — não há data a informar antes disso, e
+inventá-la afirmaria histórico inexistente (A-61).
+
+Um processo aparece em `items` uma vez **por tipo** que satisfaz, e ALE-04 está
+contido em ALE-05 por construção. O achatamento é do contrato; **`H-20` agrupa
+por processo na exibição** (A-60).
 
 | Código | Situação |
 |---|---|

@@ -105,8 +105,9 @@ Não re-derive isto; está medido.
 
 ## Estado
 
-**Fases 0 e 1 concluídas. Fase 2 em andamento: `H-09` a `H-13` fechadas.**
-Próximo passo: **`H-14`** — os cinco alertas derivados do estado atual.
+**Fases 0 e 1 concluídas. Fase 2 em andamento: `H-09` a `H-14` fechadas** — o
+épico E3 (indicadores e alertas) está inteiro. Próximo passo: **`H-15`**, a
+casca da aplicação com os onze filtros globais, que abre o épico de interface.
 As fases estão em `docs/07-plano-entrega.md`.
 
 A cadeia de ingestão foi validada contra o arquivo real, dentro do limite de
@@ -144,7 +145,29 @@ mais grave. Há teste com `eta2 = 2025-01-01` fixando isso.
 
 **`isOverdue(process, today)` é a regra única de atraso**, em
 `src/domain/indicators.ts`. IND-15, ALE-01 e o `overdueCount` do ranking de
-agentes são apresentações dela — nunca reimplementar.
+agentes são apresentações dela — nunca reimplementar. **`hasPendingDocs` é o
+par equivalente para A-08**, extraído em `H-14` pelo mesmo motivo: IND-14 e
+ALE-02 são a mesma condição, e ALE-02 precisa da lista, não da contagem.
+
+**A Página Alertas é fila de trabalho, não panorama** (A-59). Por isso
+`≠ desembaracado` vale nos **cinco** alertas, e não só em ALE-01 e ALE-02, onde
+a especificação era explícita: processo concluído não pede ação, e são 480 de
+649 na base. Medido — sem o filtro, 5 dos 14 alertas seriam sobre processos
+encerrados, e em Canal Vermelho a maioria. Cada alerta é identificado só por
+`ref` e `sourceRow`, nunca por nome de cliente (regra 8); o operador clica e cai
+no detalhe.
+
+**Um processo gera um alerta por tipo que satisfaz, e ALE-04 está contido em
+ALE-05 por construção** (A-60). O achatamento é do contrato — é o que permite
+contar por tipo e ordenar por severidade. **`H-20` agrupa por processo na
+exibição**, decisão do usuário: medido, são 40 linhas para 25 processos.
+
+**A fila também muda pela passagem do dia, sem a planilha mudar** (A-62). Nenhum
+arquivo muda à meia-noite, então o watcher não dispara e uma tela aberta segue
+no dia anterior. `H-15` resolve com três frentes: revalidar no
+`visibilitychange` — um timer agendado **não** serve, máquina suspensa não o
+executa —, comparar o dia do servidor com o do cliente, e um botão de
+atualização que chama `POST /api/reload` antes de refazer as requisições.
 
 **O fuso é resolvido em um único ponto:** `today(tz)` em
 `src/domain/date-window.ts` converte o instante corrente para o dia civil no
