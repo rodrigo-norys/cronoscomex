@@ -1157,6 +1157,11 @@ indicadores e alertas simultaneamente.
 >
 > A correção é inteiramente de apresentação: o domínio já recebe `today` por
 > parâmetro.
+>
+> **Roteamento à mão (D-16).** `History API` para trocar de página, `popstate`
+> para o botão "voltar", `URLSearchParams` para os filtros na URL. Sem
+> `react-router`: são sete páginas planas numa aplicação local, e o plano proíbe
+> dependência não prevista. A decisão registra os gatilhos de reavaliação.
 
 **Arquivos:**
 - `web/src/App.tsx`, `web/src/components/FilterBar.tsx`
@@ -2009,6 +2014,36 @@ Saída em JSON por linha, em `data/logs/app-<AAAAMMDD>.jsonl`, com retenção de
 
 ### H-32 — Sinalizar interferência externa no arquivo
 
+> ✅ **CONCLUÍDA em 06/08/2026.** 18 testes próprios; suíte total em 391.
+>
+> **Antecipada para destravar `H-15`.** Ela é dependência declarada da casca, e
+> três critérios de aceite de `H-15` pedem `externalLock` e `conflictFiles` em
+> `GET /api/health` — que não existiam. Descoberto pelo protocolo de fatia da
+> `H-15`, antes de escrever qualquer código de interface.
+>
+> **A detecção roda num `finally`, então acontece mesmo quando a leitura falha.**
+> O contrato dizia "a cada leitura" sem dizer o que fazer no erro. É justamente
+> com arquivo de conflito na pasta, ou com o Excel segurando o arquivo, que a
+> leitura tende a falhar — suprimir o sinal ali o esconderia exatamente quando
+> ele mais importa.
+>
+> **O sinal nunca fica preso** porque é derivado do estado da pasta a cada
+> leitura, nunca acumulado. Há teste criando e removendo o arquivo de lock.
+>
+> **A limitação do idioma virou teste, não nota de rodapé.** O padrão ancora em
+> `onflito` e **não** cobre `-Conflicted copy`. Um teste nomeado
+> `NAO reconhece a forma em ingles, por decisao` fixa isso: se alguém "consertar"
+> sem entender, a suíte reprova e aponta para RNF-26.
+>
+> **Divergências resolvidas:** `tests/http/health.test.ts` não constava da lista
+> de arquivos — sétima ocorrência do padrão, desta vez com a rota listada. E as
+> fábricas de estado de três outros testes de rota precisaram dos campos novos:
+> foi o `typecheck` que apontou, não revisão manual, que é o comportamento
+> desejado de um tipo obrigatório.
+>
+> **Conferido contra a pasta real:** sem lock e sem conflito no momento da
+> medição, e pasta inexistente devolvendo os sinais em branco sem lançar.
+
 **Objetivo:** o operador saber que outra pessoa está com a planilha aberta, ou
 que o OneDrive gerou um arquivo de conflito, em vez de descobrir depois.
 
@@ -2017,6 +2052,9 @@ que o OneDrive gerou um arquivo de conflito, em vez de descobrir depois.
 - `src/app/process-store.ts`
 - `src/http/routes/health.ts`
 - `tests/io/interference-detector.test.ts`
+- `tests/http/health.test.ts` — omitido do plano original
+- `tests/http/{alerts,indicators,reload}.test.ts` — fábricas de estado, por
+  exigência do tipo
 
 **Contrato fixado:**
 
