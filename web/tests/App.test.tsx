@@ -41,11 +41,19 @@ describe('casca', () => {
     expect(within(nav()).getByRole('link', { current: 'page' }).textContent).toBe('Início')
   })
 
-  it('hospeda a pagina pendente dizendo qual historia a entrega', () => {
+  it('hospeda a Pagina Inicial, entregue por H-16', async () => {
+    render(<App />)
+
+    expect(await screen.findByRole('region', { name: 'Cartões-resumo' })).toBeTruthy()
+  })
+
+  // As seis restantes chegam de `H-17` a `H-22`; ate la o marcador diz qual.
+  it('hospeda o marcador nas paginas ainda nao implementadas', () => {
+    window.history.replaceState(null, '', '/operacional')
     render(<App />)
 
     expect(screen.getByText(/Página ainda não implementada/)).toBeTruthy()
-    expect(screen.getByText('H-16')).toBeTruthy()
+    expect(screen.getByText('H-17')).toBeTruthy()
   })
 })
 
@@ -68,7 +76,7 @@ describe('navegacao', () => {
 
     window.history.back()
 
-    await waitFor(() => expect(screen.getByText('H-16')).toBeTruthy())
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Cartões-resumo' })).toBeTruthy())
   })
 
   it('exibe a REF no detalhe do processo, rota fora do menu', () => {
@@ -186,10 +194,12 @@ describe('resposta fora do contrato', () => {
 
 describe('botao de atualizacao (A-62)', () => {
   /**
-   * A lista inteira, e nao so a ordem de `reload`: ela prova tambem que o
-   * refresh revalida as **opcoes** de filtro. Elas derivam dos dados (A-36), e
-   * um cliente novo na planilha precisa aparecer na barra sem recarregar a
-   * pagina — o `dataVersion` que o botao avanca e o que provoca isso.
+   * Propriedades, e nao a lista literal: com a Pagina Inicial montada, quatro
+   * rotas participam, e a ordem entre elas depende de efeito de filho correr
+   * antes do de pai — detalhe do React, nao contrato desta historia. O que a
+   * historia garante e o `reload` **preceder** o refazer, e o refazer alcancar
+   * as opcoes de filtro e os indicadores: os tres derivam dos dados (A-36), e
+   * um cliente novo na planilha precisa aparecer sem recarregar a pagina.
    */
   it('chama POST /api/reload antes de refazer as requisicoes', async () => {
     render(<App />)
@@ -197,14 +207,21 @@ describe('botao de atualizacao (A-62)', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Atualizar' }))
 
-    await waitFor(() =>
-      expect(api.calls).toEqual([
-        'GET /api/health',
-        'GET /api/filters/options',
-        'POST /api/reload',
-        'GET /api/health',
-        'GET /api/filters/options',
-      ]),
-    )
+    await waitFor(() => expect(contar('GET /api/health')).toBe(2))
+
+    const reload = api.calls.indexOf('POST /api/reload')
+    expect(reload).toBeGreaterThan(-1)
+    expect(api.calls.lastIndexOf('GET /api/health')).toBeGreaterThan(reload)
+
+    await waitFor(() => {
+      expect(contar('GET /api/filters/options')).toBe(2)
+      expect(contar('GET /api/indicators')).toBe(2)
+      expect(contar('GET /api/quarantine')).toBe(2)
+    })
+    expect(contar('POST /api/reload')).toBe(1)
   })
 })
+
+function contar(call: string): number {
+  return api.calls.filter((made) => made === call).length
+}

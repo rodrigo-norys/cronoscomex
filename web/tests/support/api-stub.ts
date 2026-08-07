@@ -1,6 +1,67 @@
 import { vi } from 'vitest'
 import type { FilterOptionsResponse } from '../../../src/http/routes/filter-options.ts'
 import type { HealthResponse } from '../../../src/http/routes/health.ts'
+import type { IndicatorsResponse } from '../../../src/http/routes/indicators.ts'
+import type { QuarantineResponse } from '../../../src/http/routes/quarantine.ts'
+
+/**
+ * Os valores medidos na planilha real em 07/08/2026, e nao numeros inventados:
+ * a soma das quatro categorias fecha com o total por construcao, entao um teste
+ * que quebre essa invariante quebra por escolha explicita, nao por descuido na
+ * fixture.
+ */
+export function indicatorsFixture(
+  countsOverrides: Partial<IndicatorsResponse['counts']> = {},
+): IndicatorsResponse {
+  return {
+    counts: {
+      total: 649,
+      emAndamento: 103,
+      emDesembaraco: 32,
+      desembaracados: 480,
+      fechadoAguardandoDraft: 34,
+      canalVermelho: 5,
+      chegandoHoje: 0,
+      chegandoSemana: 2,
+      chegando15Dias: 60,
+      atrasados: 17,
+      documentosPendentes: 14,
+      // IND-16. Zero MEDIDO, nao ausencia: o RG mais recente da planilha e
+      // 31/07, e passando esse dia a funcao devolve 3.
+      desembaracadosHoje: 0,
+      ...countsOverrides,
+    },
+    rankings: { clients: [], importers: [], agents: [], goods: [], responsible: [] },
+    expectedVessels: [],
+    documentaryLeadTime: {
+      averageDays: 12.5,
+      sampleSize: 101,
+      excludedNegative: 1,
+      excludedIncomplete: 547,
+    },
+    meta: {
+      topN: 10,
+      today: '2026-08-07',
+      timezone: 'America/Sao_Paulo',
+      weekEnd: '2026-08-09',
+      bazarShare: 0.3547,
+    },
+  }
+}
+
+export function quarantineFixture(overrides: Partial<QuarantineResponse> = {}): QuarantineResponse {
+  return {
+    generatedAt: '2026-08-07T12:00:00.000Z',
+    sourceFileHash: 'sha256:0000',
+    totalDataRows: 649,
+    acceptedRows: 649,
+    quarantinedRows: 0,
+    quarantineRate: 0,
+    items: [],
+    anomalies: [],
+    ...overrides,
+  }
+}
 
 export function healthFixture(overrides: Partial<HealthResponse> = {}): HealthResponse {
   return {
@@ -58,10 +119,15 @@ export interface ApiStub {
   serveOptions(options: FilterOptionsResponse): void
   failNextHealth(message: string): void
   failOptions(): void
+  serveIndicators(indicators: IndicatorsResponse): void
+  serveQuarantine(report: QuarantineResponse): void
+  /** `503 ARQUIVO_INDISPONIVEL`: nunca houve leitura. Nao e falha de rede. */
+  indicatorsWithoutRead(): void
+  failIndicators(): void
 }
 
 /**
- * Substitui `fetch` pelas duas rotas que a casca conhece. Rota nao prevista
+ * Substitui `fetch` pelas rotas que a interface conhece. Rota nao prevista
  * rejeita em vez de devolver vazio: teste que bate em endereco errado precisa
  * falhar apontando para o endereco, nao para o `undefined` tres passos adiante.
  */
@@ -71,12 +137,34 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
   let healthFailure: string | null = null
   let options = filterOptionsFixture()
   let optionsFails = false
+  let indicators = indicatorsFixture()
+  let indicatorsStatus = 200
+  let quarantine = quarantineFixture()
 
   vi.stubGlobal(
     'fetch',
     vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       calls.push(`${init?.method ?? 'GET'} ${url}`)
+
+      // A query dos filtros vem anexada; o roteamento do stub e por caminho.
+      const [path = url] = url.split('?')
+
+      if (path === '/api/indicators') {
+        return Promise.resolve({
+          ok: indicatorsStatus === 200,
+          status: indicatorsStatus,
+          json: () => Promise.resolve(indicators),
+        } as Response)
+      }
+
+      if (path === '/api/quarantine') {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(quarantine),
+        } as Response)
+      }
 
       if (url === '/api/health') {
         if (healthFailure !== null) {
@@ -124,6 +212,18 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
     },
     failOptions: () => {
       optionsFails = true
+    },
+    serveIndicators: (next) => {
+      indicators = next
+    },
+    serveQuarantine: (next) => {
+      quarantine = next
+    },
+    indicatorsWithoutRead: () => {
+      indicatorsStatus = 503
+    },
+    failIndicators: () => {
+      indicatorsStatus = 500
     },
   }
 }
