@@ -2,7 +2,11 @@ import type { AlertsResponse } from '../../src/http/routes/alerts.ts'
 import type { FilterOptionsResponse } from '../../src/http/routes/filter-options.ts'
 import type { HealthResponse } from '../../src/http/routes/health.ts'
 import type { IndicatorsResponse } from '../../src/http/routes/indicators.ts'
-import type { ProcessDto, ProcessesResponse } from '../../src/http/routes/processes.ts'
+import type {
+  ProcessDetailResponse,
+  ProcessDto,
+  ProcessesResponse,
+} from '../../src/http/routes/processes.ts'
 import type { QuarantineResponse } from '../../src/http/routes/quarantine.ts'
 
 /**
@@ -20,6 +24,7 @@ export type {
   FilterOptionsResponse,
   HealthResponse,
   IndicatorsResponse,
+  ProcessDetailResponse,
   ProcessDto,
   ProcessesResponse,
   QuarantineResponse,
@@ -35,6 +40,19 @@ export class NoReadYetError extends Error {
 
   constructor(readonly route: string) {
     super(`${route} ainda nao tem leitura concluida`)
+  }
+}
+
+/**
+ * `404 PROCESSO_NAO_ENCONTRADO`. Tipo proprio pelo mesmo motivo de
+ * `NoReadYetError`: a tela precisa distinguir "esta REF nao existe" de "o
+ * servidor falhou", e as duas telas sao diferentes.
+ */
+export class ProcessNotFoundError extends Error {
+  override readonly name = 'ProcessNotFoundError'
+
+  constructor(readonly ref: string) {
+    super(`Nenhum processo com a REF ${ref}`)
   }
 }
 
@@ -110,6 +128,31 @@ export async function getAlerts(
   if (!response.ok) throw new Error(`GET /api/alerts respondeu ${response.status}`)
 
   return (await response.json()) as AlertsResponse
+}
+
+/**
+ * O detalhe de UM processo, achado pela REF.
+ *
+ * **Sem `queryString`**: os filtros globais nao valem aqui. O detalhe e sobre um
+ * processo, e recortar o conjunto nao muda o que ele mostra — a casca ja esconde
+ * a barra nesta rota.
+ *
+ * `404` vira erro proprio, e nao `NoReadYetError`: REF inexistente e resposta
+ * legitima do servidor, distinta de "ainda nao houve leitura".
+ */
+export async function getProcessDetail(
+  ref: string,
+  signal?: AbortSignal,
+): Promise<ProcessDetailResponse> {
+  const response = await fetch(
+    `/api/processes/${encodeURIComponent(ref)}`,
+    signal ? { signal } : undefined,
+  )
+  if (response.status === 503) throw new NoReadYetError('GET /api/processes/:ref')
+  if (response.status === 404) throw new ProcessNotFoundError(ref)
+  if (!response.ok) throw new Error(`GET /api/processes/:ref respondeu ${response.status}`)
+
+  return (await response.json()) as ProcessDetailResponse
 }
 
 /**

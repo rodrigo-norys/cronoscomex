@@ -118,8 +118,17 @@ Não re-derive isto; está medido.
 porque era dependência declarada de `H-15` e não existia, **`H-15`, que abriu o
 épico E4, `H-16`, a primeira página de dado, `H-17`, que entrega também
 `GET /api/processes`, `H-18`, os três rankings, `H-19`, que fecha as duas
-últimas regras sem tela, e `H-20`, a fila de trabalho.** Próximo passo:
-**`H-21`**, a Página Histórico. As fases estão em `docs/07-plano-entrega.md`.
+últimas regras sem tela, `H-20`, a fila de trabalho, e `H-22`, o detalhe.**
+Restam de interface só a `H-21`, que depende do histórico de `H-28`. Próximo
+passo: **Fase 3**, que abre com `H-23`. As fases estão em
+`docs/07-plano-entrega.md`.
+
+**`H-22` construiu a rota que o plano dava como pronta.**
+`GET /api/processes/:ref` estava em `docs/05-contratos-api.md` desde o começo e
+**nunca fora implementada** — o backlog listava só a página. Contrato documentado
+não é contrato servido, e nenhuma guarda cobria essa diferença: a de
+`tests/repo/contratos.test.ts` compara o corpo de `GET /api/indicators` com o
+documento, mas não verifica que toda rota documentada exista.
 
 **Com `H-19`, todo indicador em escopo tem tela.** A varredura de A-65 fechou:
 `IND-21` é a única linha sem história de interface, e por ausência de dado na
@@ -198,6 +207,12 @@ nem aviso, nos nove filtros da barra. Nos demais — categoria, canal,
 responsável, datas — vazio segue sendo ausência, porque lá não existe chave em
 branco. Medido: o recorte devolve 57 processos sem mercadoria e 38 sem cliente,
 onde antes devolvia 649.
+
+**A identidade de REF é `normKey`, e a rota de detalhe usa a mesma chave.**
+TD-06 define assim, e é por ela que a ingestão detecta duplicata — igualdade
+literal daria `404` numa URL em caixa diferente, para um processo que o domínio
+considera existente. Medido: 649 REFs distintas, nenhuma com caractere fora de
+`[A-Za-z0-9._-]`, então parâmetro de caminho é seguro sem rota curinga.
 
 **Zero medido e zero não mensurável não podem ter a mesma aparência.** A Página
 Alertas exibe `chegadas_hoje: 0` como `0` — nada chega hoje, e isso foi medido —

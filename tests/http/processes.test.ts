@@ -301,3 +301,138 @@ describe('filtros globais e estado', () => {
     await app.close()
   })
 })
+
+/**
+ * `GET /api/processes/:ref` — o detalhe (`H-22`).
+ *
+ * A rota estava documentada em `docs/05-contratos-api.md` desde o plano e
+ * **nunca fora implementada**: a lista de arquivos de `H-22` trazia apenas a
+ * pagina. O protocolo de fatia pegou.
+ */
+describe('GET /api/processes/:ref — detalhe', () => {
+  const umProcesso = () => state({ processes: [process(2)] })
+  it('devolve o contrato completo', async () => {
+    const app = buildServer(config, fakeStore(umProcesso()))
+
+    const response = await app.inject({ method: 'GET', url: '/api/processes/FT002.26' })
+
+    expect(response.statusCode).toBe(200)
+    expect(Object.keys(response.json()).sort()).toEqual([
+      'anomalies',
+      'daysInCurrentCategory',
+      'pendingEdits',
+      'process',
+      'statusHistory',
+    ])
+
+    await app.close()
+  })
+
+  it('devolve 404 PROCESSO_NAO_ENCONTRADO para REF inexistente', async () => {
+    const app = buildServer(config, fakeStore(umProcesso()))
+
+    const response = await app.inject({ method: 'GET', url: '/api/processes/NAO-EXISTE' })
+
+    expect(response.statusCode).toBe(404)
+    expect(response.json().error.code).toBe('PROCESSO_NAO_ENCONTRADO')
+
+    await app.close()
+  })
+
+  /**
+   * TD-06 define a identidade de REF por `normKey`, e e por ela que a ingestao
+   * detecta duplicata. Igualdade literal daria `404` num processo que o dominio
+   * considera existente.
+   */
+  it('resolve a REF pela chave normalizada, nao por igualdade literal', async () => {
+    const app = buildServer(config, fakeStore(umProcesso()))
+
+    const minuscula = await app.inject({ method: 'GET', url: '/api/processes/ft002.26' })
+    const comEspaco = await app.inject({ method: 'GET', url: '/api/processes/%20FT002.26%20' })
+
+    expect(minuscula.statusCode).toBe(200)
+    expect(minuscula.json().process.ref).toBe('FT002.26')
+    expect(comEspaco.statusCode).toBe(200)
+
+    await app.close()
+  })
+
+  // O detalhe e sobre UM processo achado pela REF: recortar o conjunto nao muda
+  // o que ele mostra, e a casca ja esconde a barra de filtros nesta rota.
+  it('ignora os filtros globais', async () => {
+    const app = buildServer(config, fakeStore(umProcesso()))
+
+    const response = await app.inject({
+      method: 'GET',
+      url: '/api/processes/FT002.26?client=NAO-EXISTE',
+    })
+
+    expect(response.statusCode).toBe(200)
+
+    await app.close()
+  })
+
+  it('devolve 503 quando nunca houve leitura', async () => {
+    const semLeitura = state({ processes: [process(2)], lastReadAt: null, lastReadOk: false })
+    const app = buildServer(config, fakeStore(semLeitura))
+
+    const response = await app.inject({ method: 'GET', url: '/api/processes/FT002.26' })
+
+    expect(response.statusCode).toBe(503)
+
+    await app.close()
+  })
+
+  /**
+   * O texto da anomalia vem do dominio, onde nasce. Traduzir codigo em frase no
+   * cliente escreveria a mesma tabela num segundo lugar (mesmo motivo de A-28).
+   */
+  it('acompanha cada anomalia da explicacao correspondente', async () => {
+    const comAnomalia = process(9, {
+      ref: 'FT009.26',
+      statusCategory: 'em_andamento',
+      anomalies: ['RG_SEM_DESEMBARACO'],
+      registrationDate: new Date('2026-07-30T00:00:00Z'),
+    })
+    const app = buildServer(config, fakeStore(state({ processes: [comAnomalia] })))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/processes/FT009.26' })).json()
+
+    expect(body.anomalies).toHaveLength(1)
+    expect(body.anomalies[0].code).toBe('RG_SEM_DESEMBARACO')
+    expect(body.anomalies[0].detail).toContain('em_andamento')
+
+    await app.close()
+  })
+
+  it('nao acrescenta o texto ao ProcessDto, que segue so com os codigos', async () => {
+    const comAnomalia = process(9, {
+      ref: 'FT009.26',
+      anomalies: ['CANAL_EM_TEXTO_STATUS'],
+    })
+    const app = buildServer(config, fakeStore(state({ processes: [comAnomalia] })))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/processes/FT009.26' })).json()
+
+    expect(body.process.anomalies).toEqual(['CANAL_EM_TEXTO_STATUS'])
+
+    await app.close()
+  })
+
+  /**
+   * Vazio de verdade, nunca preenchido com valor de espera — e
+   * `daysInCurrentCategory` e `null`, nao `0`: zero afirmaria que a categoria
+   * mudou hoje, indistinguivel de "nao ha como saber".
+   */
+  it('devolve historico e edicoes vazios ate H-23 e H-28, e dias nulo', async () => {
+    const app = buildServer(config, fakeStore(umProcesso()))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/processes/FT002.26' })).json()
+
+    expect(body.pendingEdits).toEqual([])
+    expect(body.statusHistory).toEqual([])
+    expect(body.daysInCurrentCategory).toBeNull()
+
+    await app.close()
+  })
+})

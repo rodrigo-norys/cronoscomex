@@ -3,7 +3,11 @@ import type { AlertsResponse } from '../../../src/http/routes/alerts.ts'
 import type { FilterOptionsResponse } from '../../../src/http/routes/filter-options.ts'
 import type { HealthResponse } from '../../../src/http/routes/health.ts'
 import type { IndicatorsResponse } from '../../../src/http/routes/indicators.ts'
-import type { ProcessDto, ProcessesResponse } from '../../../src/http/routes/processes.ts'
+import type {
+  ProcessDetailResponse,
+  ProcessDto,
+  ProcessesResponse,
+} from '../../../src/http/routes/processes.ts'
 import type { QuarantineResponse } from '../../../src/http/routes/quarantine.ts'
 
 /**
@@ -124,6 +128,24 @@ export function processesFixture(
   return { items, total: items.length, limit: 200, offset: 0, ...overrides }
 }
 
+/**
+ * O detalhe. `anomalies` traz o texto que vem do dominio, e os tres campos
+ * seguintes ficam vazios ate `H-23` e `H-28` — `daysInCurrentCategory` e `null`,
+ * nunca `0`: zero afirmaria que a categoria mudou hoje.
+ */
+export function processDetailFixture(
+  overrides: Partial<ProcessDetailResponse> = {},
+): ProcessDetailResponse {
+  return {
+    process: processFixture(),
+    anomalies: [],
+    pendingEdits: [],
+    statusHistory: [],
+    daysInCurrentCategory: null,
+    ...overrides,
+  }
+}
+
 export function quarantineFixture(overrides: Partial<QuarantineResponse> = {}): QuarantineResponse {
   return {
     generatedAt: '2026-08-07T12:00:00.000Z',
@@ -199,6 +221,10 @@ export interface ApiStub {
   alertsWithoutRead(): void
   failAlerts(): void
   serveProcesses(page: ProcessesResponse): void
+  serveProcessDetail(detail: ProcessDetailResponse): void
+  processDetailNotFound(): void
+  processDetailWithoutRead(): void
+  failProcessDetail(): void
   processesWithoutRead(): void
   failProcesses(): void
   serveQuarantine(report: QuarantineResponse): void
@@ -225,6 +251,8 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
   let quarantine = quarantineFixture()
   let processes = processesFixture()
   let processesStatus = 200
+  let detail = processDetailFixture()
+  let detailStatus = 200
 
   vi.stubGlobal(
     'fetch',
@@ -248,6 +276,14 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
           ok: alertsStatus === 200,
           status: alertsStatus,
           json: () => Promise.resolve(alerts),
+        } as Response)
+      }
+
+      if (path.startsWith('/api/processes/')) {
+        return Promise.resolve({
+          ok: detailStatus === 200,
+          status: detailStatus,
+          json: () => Promise.resolve(detail),
         } as Response)
       }
 
@@ -337,6 +373,18 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
     },
     serveProcesses: (next) => {
       processes = next
+    },
+    serveProcessDetail: (next) => {
+      detail = next
+    },
+    processDetailNotFound: () => {
+      detailStatus = 404
+    },
+    processDetailWithoutRead: () => {
+      detailStatus = 503
+    },
+    failProcessDetail: () => {
+      detailStatus = 500
     },
     processesWithoutRead: () => {
       processesStatus = 503

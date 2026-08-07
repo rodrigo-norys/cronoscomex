@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from '../src/App.tsx'
-import { NAV_PAGES } from '../src/router.ts'
+import { NAV_PAGES, PROCESS_DETAIL_PAGE } from '../src/router.ts'
 import { stubApi } from './support/api-stub.ts'
 
 /**
@@ -35,6 +35,26 @@ function closedStories(): Set<string> {
 
 const CLOSED = closedStories()
 
+/**
+ * As páginas verificadas: as seis do menu, **mais o detalhe do processo**.
+ *
+ * Ele ficou de fora da primeira versão por viver em `PROCESS_DETAIL_PAGE`, e não
+ * em `NAV_PAGES` — só se chega nele a partir de um processo. Mas declara
+ * `story:` como as outras, e tem a mesma exposição ao erro que esta guarda
+ * existe para pegar. Incluído em `H-22`, quando a página nasceu.
+ *
+ * O `path` dele precisa de uma REF: `/processo` sozinho não casa com nenhuma
+ * rota — `parseRoute` devolve `notFound` para REF vazia, de propósito.
+ */
+const PAGES = [
+  ...NAV_PAGES.map((page) => [page.label, page.path, page.story] as const),
+  [
+    PROCESS_DETAIL_PAGE.label,
+    `${PROCESS_DETAIL_PAGE.path}/FT001.26`,
+    PROCESS_DETAIL_PAGE.story,
+  ] as const,
+]
+
 beforeEach(() => {
   stubApi()
 })
@@ -54,23 +74,18 @@ describe('história concluída exige página montada', () => {
     expect(CLOSED.has('H-16')).toBe(true)
   })
 
-  it.each(NAV_PAGES.map((page) => [page.label, page.path, page.story] as const))(
-    '%s (%s) — %s',
-    (_label, path, story) => {
-      window.history.replaceState(null, '', path)
-      render(<App />)
+  it.each(PAGES)('%s (%s) — %s', (_label, path, story) => {
+    window.history.replaceState(null, '', path)
+    render(<App />)
 
-      const placeholder = screen.queryByText(/Página ainda não implementada/)
+    const placeholder = screen.queryByText(/Página ainda não implementada/)
 
-      // A implicação é de mão única: história concluída **exige** página. O
-      // inverso não vale — durante a própria história a página existe antes de
-      // `/fechar-historia` escrever o bloco no backlog, e exigir o marcador ali
-      // faria a guarda brigar com o fluxo que ela protege.
-      if (!CLOSED.has(story)) return
+    // A implicação é de mão única: história concluída **exige** página. O
+    // inverso não vale — durante a própria história a página existe antes de
+    // `/fechar-historia` escrever o bloco no backlog, e exigir o marcador ali
+    // faria a guarda brigar com o fluxo que ela protege.
+    if (!CLOSED.has(story)) return
 
-      expect(placeholder, `${story} está concluída no backlog, mas a página é um marcador`).toBe(
-        null,
-      )
-    },
-  )
+    expect(placeholder, `${story} está concluída no backlog, mas a página é um marcador`).toBe(null)
+  })
 })
