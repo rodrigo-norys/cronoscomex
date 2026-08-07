@@ -1,9 +1,11 @@
+import type { HealthResponse } from './api-client.ts'
 import { FilterBar } from './components/FilterBar.tsx'
 import { RefreshButton } from './components/RefreshButton.tsx'
 import { StatusBanner } from './components/StatusBanner.tsx'
 import { useAppData } from './hooks/useAppData.ts'
 import { useFilterOptions } from './hooks/useFilterOptions.ts'
 import { useFilters } from './hooks/useFilters.ts'
+import { Home } from './pages/Home.tsx'
 import { NotFoundPage, PendingPage } from './pages/Placeholders.tsx'
 import { NAV_PAGES, navigate, pageOf, type Route, useRoute } from './router.ts'
 
@@ -61,7 +63,12 @@ export function App() {
       )}
 
       <main className="px-6 py-6">
-        <PageOutlet route={route} dataVersion={dataVersion} />
+        <PageOutlet
+          route={route}
+          dataVersion={dataVersion}
+          health={health}
+          queryString={filters.queryString}
+        />
       </main>
     </div>
   )
@@ -99,14 +106,30 @@ function MainNav({ route }: { route: Route }) {
   )
 }
 
+interface PageOutletProps {
+  route: Route
+  dataVersion: number
+  health: HealthResponse | null
+  queryString: string
+}
+
 /**
  * `dataVersion` chega como `key`: quando o dia vira ou a planilha muda, a
  * pagina inteira remonta e refaz as proprias requisicoes, sem que a casca
- * precise conhecer nenhuma delas. As paginas de `H-16` a `H-22` entram aqui.
+ * precise conhecer nenhuma delas. As paginas de `H-17` a `H-22` entram aqui.
+ *
+ * A casca repassa `queryString` em vez de os filtros inteiros: a pagina precisa
+ * anexar o recorte as requisicoes, nunca interpreta-lo.
  */
-function PageOutlet({ route, dataVersion }: { route: Route; dataVersion: number }) {
+function PageOutlet({ route, dataVersion, health, queryString }: PageOutletProps) {
   const page = pageOf(route)
   if (page === null) return <NotFoundPage />
+
+  if (route.pageId === 'home') {
+    return (
+      <Home key={dataVersion} health={health} queryString={queryString} dataVersion={dataVersion} />
+    )
+  }
 
   return <PendingPage key={dataVersion} page={page} processRef={route.ref} />
 }

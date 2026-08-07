@@ -1,5 +1,7 @@
 import type { FilterOptionsResponse } from '../../src/http/routes/filter-options.ts'
 import type { HealthResponse } from '../../src/http/routes/health.ts'
+import type { IndicatorsResponse } from '../../src/http/routes/indicators.ts'
+import type { QuarantineResponse } from '../../src/http/routes/quarantine.ts'
 
 /**
  * O unico ponto da interface que fala HTTP.
@@ -11,7 +13,20 @@ import type { HealthResponse } from '../../src/http/routes/health.ts'
  * cliente divergir do servidor em silencio, que foi exatamente o que o
  * esqueleto de `H-02` fazia, com metade dos campos.
  */
-export type { FilterOptionsResponse, HealthResponse }
+export type { FilterOptionsResponse, HealthResponse, IndicatorsResponse, QuarantineResponse }
+
+/**
+ * `503 ARQUIVO_INDISPONIVEL` nao e falha de rede: significa que **nunca** houve
+ * leitura, e a interface precisa distinguir isso de "leu e deu zero" (regra
+ * inviolavel 3). Por isso vira um tipo proprio em vez de mensagem de erro.
+ */
+export class NoReadYetError extends Error {
+  override readonly name = 'NoReadYetError'
+
+  constructor(readonly route: string) {
+    super(`${route} ainda nao tem leitura concluida`)
+  }
+}
 
 export async function getHealth(signal?: AbortSignal): Promise<HealthResponse> {
   const response = await fetch('/api/health', signal ? { signal } : undefined)
@@ -32,6 +47,36 @@ export async function getFilterOptions(signal?: AbortSignal): Promise<FilterOpti
     throw new Error(`GET /api/filters/options respondeu ${response.status}`)
   }
   return (await response.json()) as FilterOptionsResponse
+}
+
+/**
+ * Os 21 indicadores, ja recortados pelos filtros globais.
+ *
+ * `queryString` vem inteira de `useFilters` — a pagina anexa, nunca remonta:
+ * reconstruir os parametros no cliente duplicaria a serializacao dos onze
+ * filtros num segundo lugar, e o recorte tem de ser o mesmo que a URL mostra.
+ */
+export async function getIndicators(
+  queryString: string,
+  signal?: AbortSignal,
+): Promise<IndicatorsResponse> {
+  const response = await fetch(`/api/indicators${queryString}`, signal ? { signal } : undefined)
+  if (response.status === 503) throw new NoReadYetError('GET /api/indicators')
+  if (!response.ok) throw new Error(`GET /api/indicators respondeu ${response.status}`)
+
+  return (await response.json()) as IndicatorsResponse
+}
+
+/**
+ * O relatorio da ultima leitura. Responde `200` com relatorio vazio enquanto
+ * nao houve leitura, entao nao ha caso de `503` aqui — e `quarantineRate` vem
+ * calculado, que e o que mantem o limiar de RNF-24 fora do cliente.
+ */
+export async function getQuarantine(signal?: AbortSignal): Promise<QuarantineResponse> {
+  const response = await fetch('/api/quarantine', signal ? { signal } : undefined)
+  if (!response.ok) throw new Error(`GET /api/quarantine respondeu ${response.status}`)
+
+  return (await response.json()) as QuarantineResponse
 }
 
 /**

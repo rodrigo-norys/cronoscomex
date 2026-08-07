@@ -187,14 +187,16 @@ Todos com origem **medido**. Ver [perfilamento/RESULTADO.md](perfilamento/RESULT
 
 | **A-63** | LACUNA (plano) | `05-contratos-api.md §4` especifica a rota estática `GET /*` — "serve a SPA compilada; qualquer caminho não iniciado por `/api/` devolve `index.html`, para que o roteamento do cliente funcione em recarga direta de URL" —, mas ela **não aparece no mapa rota → história** da mesma seção, e `src/http/server.ts` não a registra. `@fastify/static` está em `dependencies` desde `H-02`, o que mostra que a peça foi prevista e nunca agendada | O roteamento à mão de D-16 usa `History API`: com a casca de `H-15`, `/alertas` é um endereço real que o operador pode marcar como favorito ou recarregar com F5. Em `npm run dev` o Vite cobre com o fallback de SPA e o buraco fica invisível; em produção, a mesma URL responde `404`, e a descoberta acontece na instalação. Levantado ao implementar a casca em 07/08/2026 | **RESOLVIDO**: a rota passa a ser de `H-30`, que é quando `dist/web` existe na máquina do operador — a mesma história do `iniciar.cmd` e da instalação. Registrada no mapa rota → história. **Fora de `H-15`**: a casca não depende dela para nada em desenvolvimento, e antecipá-la obrigaria o servidor a lidar com `dist/web` inexistente, que é o estado normal antes do `build` |
 
+| **A-64** | LACUNA (plano) | `09-rastreabilidade.md` atribui a `H-16` os indicadores **`IND-01` a `IND-09` e `IND-14` a `IND-16`**, e a linha de `IND-16` diz "cartão pendente de `H-16`" — mas a lista de cartões de `06-backlog.md` tem **11**, e nenhum deles é `desembaracadosHoje`. Mapeando um a um, os 11 cobrem `IND-01` a `IND-09`, `IND-14` e `IND-15`. **`IND-16` fica de fora**, e nenhuma outra história o reivindica | Indicador calculado e não servido ao operador não existe para ele — é exatamente a omissão que motivou a skill `/novo-indicador`, e aqui ela reapareceu um degrau adiante, entre a rota e a tela. Encontrado ao implementar `H-16` em 07/08/2026: só apareceu porque `IndicatorsCounts` obriga o campo, e a fixture do teste não compilou sem ele. Um tipo parcial teria escondido | **RESOLVIDO**: cartão **"Desembaraçados hoje"** acrescentado, e a Página Inicial passa a ter **12**. Mesmo precedente de A-12, que acrescentou "Em desembaraço", e de A-40, que acrescentou os dois de urgência — nos três casos a especificação original omitia cartão que o catálogo de indicadores já previa. Posicionado ao fim do bloco temporal, depois de "Chegando em 15 dias": os anteriores dizem o que o dia trouxe ou trará, este diz o que ele concluiu. **Medido:** vale `0` na planilha real, e é zero **provado** — o RG mais recente é 31/07, e passando esse dia a função devolve 3 |
+
 ## Fechamento
 
-**63 achados** — A-01 a A-63, sem lacunas na numeração — todos com destino.
+**64 achados** — A-01 a A-64, sem lacunas na numeração — todos com destino.
 Nenhum ficou sem resolução.
 
 | Destino | Quantidade | Quais |
 |---|---|---|
-| RESOLVIDO por decisão de arquitetura | 56 | todos os demais |
+| RESOLVIDO por decisão de arquitetura | 57 | todos os demais |
 | RESPONDIDO pelo usuário | 5 | A-11, A-38, A-46, A-48, A-62 |
 | PREMISSA pendente | **0** | A-09 e A-10 foram resolvidas por `H-01` |
 

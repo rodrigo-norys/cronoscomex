@@ -27,22 +27,22 @@ legibilidade: `H-02` → `H-03` → `H-05` → `H-06` → `H-07` → `H-08`.
 
 | # | Indicador | Campos de origem | Regra de cálculo formalizada | Histórias | Testes | Status |
 |---|---|---|---|---|---|---|
-| IND-01 | Quantidade de processos | REF | `count(ref ≠ '')`, incluindo `fechado_aguardando_draft` | H-09, H-16 | `indicators-counts.test.ts` · `process-builder.test.ts` | ✅ **Backend entregue** (`H-09`); cartão pendente de `H-16` |
-| IND-02 | Processos em andamento | STATUS | `count(category = 'em_andamento')`. Não somar com `em_desembaraco` (§2.1) | H-09, H-16 | `indicators-counts.test.ts` · `status-classifier.test.ts` | ✅ **Backend entregue** (`H-09`); cartão pendente de `H-16` |
-| IND-03 | Processos em desembaraço | STATUS | `count(category = 'em_desembaraco')` — STATUS vazio após trim | H-09, H-16 | `indicators-counts.test.ts` · `status-classifier.test.ts` | ✅ **Backend entregue** (`H-09`); cartão pendente de `H-16`. Cartão ausente de §6 foi acrescentado (A-12) |
-| IND-04 | Processos desembaraçados | STATUS | `count(category = 'desembaracado')`, via dicionário de variantes (TD-02) | H-09, H-16 | `indicators-counts.test.ts` · `status-classifier.test.ts` | ✅ **Backend entregue** (`H-09`); cartão pendente de `H-16`. Grafia `DESEMBARÇADA` tratada (A-03) |
-| IND-05 | Fechado — aguardando draft | REF + todas as demais colunas | `count(category = 'fechado_aguardando_draft')`. Regra §2.2 precede §2.1 (A-22) | H-09, H-16 | `status-classifier.test.ts` · `process-builder.test.ts` | ✅ **Backend entregue** (`H-09`); cartão pendente de `H-16` |
-| IND-06 | Canal Vermelho | Cor da linha (célula A) | `count(customsChannel = 'vermelho')`. **Só a cor é fonte**; texto em STATUS vira anomalia (A-06) | H-04, H-12, H-16, H-27 | `color-mapper.test.ts` · `indicators-risk.test.ts` | ✅ **Backend entregue** (`H-12`); cartão pendente de `H-16` — as 9 chaves reais mapeadas, cobertura 100% |
-| IND-07 | Containers chegando hoje | ETA2 | `count(eta2 = hoje)`, fuso `America/Sao_Paulo` | H-10, H-16 | `indicators-calendar.test.ts` | ✅ **Backend entregue** (`H-10`); apresentação pendente — P-03 confirmada: 585 datas reais, zero texto sem ano |
-| IND-08 | Containers chegando esta semana | ETA2 | `count(hoje ≤ eta2 ≤ domingo ISO)`. Semana segunda–domingo (A-07) | H-10, H-16 | `indicators-calendar.test.ts` | ✅ **Backend entregue** (`H-10`); apresentação pendente — P-03 confirmada |
-| IND-09 | Containers chegando em 15 dias | ETA2 | `count(hoje ≤ eta2 ≤ hoje+15)`, extremos inclusivos (A-35) | H-10, H-16 | `indicators-calendar.test.ts` | ✅ **Backend entregue** (`H-10`); apresentação pendente — P-03 confirmada |
+| IND-01 | Quantidade de processos | REF | `count(ref ≠ '')`, incluindo `fechado_aguardando_draft` | H-09, H-16 | `indicators-counts.test.ts` · `process-builder.test.ts` | ✅ **Entregue** — backend em `H-09`, cartão em `H-16`. Medido: 649 |
+| IND-02 | Processos em andamento | STATUS | `count(category = 'em_andamento')`. Não somar com `em_desembaraco` (§2.1) | H-09, H-16 | `indicators-counts.test.ts` · `status-classifier.test.ts` | ✅ **Entregue** — backend em `H-09`, cartão em `H-16`. Medido: 649 |
+| IND-03 | Processos em desembaraço | STATUS | `count(category = 'em_desembaraco')` — STATUS vazio após trim | H-09, H-16 | `indicators-counts.test.ts` · `status-classifier.test.ts` | ✅ **Entregue** — backend em `H-09`, cartão em `H-16`, acrescentado por A-12. Medido: 32 |
+| IND-04 | Processos desembaraçados | STATUS | `count(category = 'desembaracado')`, via dicionário de variantes (TD-02) | H-09, H-16 | `indicators-counts.test.ts` · `status-classifier.test.ts` | ✅ **Entregue** — backend em `H-09`, cartão em `H-16`. Grafia `DESEMBARÇADA` tratada (A-03). Medido: 480 |
+| IND-05 | Fechado — aguardando draft | REF + todas as demais colunas | `count(category = 'fechado_aguardando_draft')`. Regra §2.2 precede §2.1 (A-22) | H-09, H-16 | `status-classifier.test.ts` · `process-builder.test.ts` | ✅ **Entregue** — backend em `H-09`, cartão em `H-16`. Medido: 649 |
+| IND-06 | Canal Vermelho | Cor da linha (célula A) | `count(customsChannel = 'vermelho')`. **Só a cor é fonte**; texto em STATUS vira anomalia (A-06) | H-04, H-12, H-16, H-27 | `color-mapper.test.ts` · `indicators-risk.test.ts` | ✅ **Entregue** — backend em `H-12`, cartão em `H-16`. As 9 chaves reais mapeadas, cobertura 100%. Medido: 5 |
+| IND-07 | Containers chegando hoje | ETA2 | `count(eta2 = hoje)`, fuso `America/Sao_Paulo` | H-10, H-16 | `indicators-calendar.test.ts` | ✅ **Entregue** — backend em `H-10`, cartão em `H-16`. P-03 confirmada: 585 datas reais, zero texto sem ano. Medido: 0 |
+| IND-08 | Containers chegando esta semana | ETA2 | `count(hoje ≤ eta2 ≤ domingo ISO)`. Semana segunda–domingo (A-07) | H-10, H-16 | `indicators-calendar.test.ts` | ✅ **Entregue** — backend em `H-10`, cartão em `H-16`. P-03 confirmada |
+| IND-09 | Containers chegando em 15 dias | ETA2 | `count(hoje ≤ eta2 ≤ hoje+15)`, extremos inclusivos (A-35) | H-10, H-16 | `indicators-calendar.test.ts` | ✅ **Entregue** — backend em `H-10`, cartão em `H-16`. P-03 confirmada |
 | IND-10 | Clientes com mais processos | CLT | `count` agrupado por `normKey(CLT)`, desc; desempate alfabético (A-25, A-26) | H-11, H-18 | `indicators-rankings.test.ts` · `normalizer.test.ts` | ✅ **Backend entregue** (`H-11`); apresentação pendente |
 | IND-11 | Importadores com mais processos | IMPORTADOR | `count` agrupado por `normKey(IMPORTADOR)`, desc | H-11, H-18 | `indicators-rankings.test.ts` | ✅ **Backend entregue** (`H-11`); apresentação pendente |
-| IND-12 | Navios previstos | NAVIO + ETA2 | `lista(vessel, eta2)` onde `eta2 ≥ hoje`, asc por `eta2` e depois por `vesselKey` (A-24) | H-10, H-17 | `indicators-calendar.test.ts` | ✅ **Backend entregue** (`H-10`); apresentação pendente — P-03 confirmada |
+| IND-12 | Navios previstos | NAVIO + ETA2 | `lista(vessel, eta2)` onde `eta2 ≥ hoje`, asc por `eta2` e depois por `vesselKey` (A-24) | H-10, H-17 | `indicators-calendar.test.ts` | ✅ **Entregue** — backend em `H-10`, cartão em `H-16`. P-03 confirmada |
 | IND-13 | Mercadorias | MERCADORIA | `count` agrupado por `normKey(MERCADORIA)`, desc, com `bazarShare` exposto (A-34) | H-11 | `indicators-rankings.test.ts` | ✅ **Backend entregue** (`H-11`); apresentação pendente. **Limitação medida:** `BAZAR` são 210 processos, 35,47% dos que têm mercadoria — 5,7× o segundo colocado real. Exposta em `meta.bazarShare` (A-34) |
-| IND-14 | Documentos pendentes | DOCS ENVIADOS + ETA2 + STATUS | `count(docsSent = null ∧ eta2 ≤ hoje+10 ∧ category ≠ 'desembaracado')` (A-08) | H-12, H-16 | `indicators-risk.test.ts` | ✅ **Backend entregue** (`H-12`); cartão pendente de `H-16` — P-03 confirmada |
-| IND-15 | Processos atrasados | ETA2 + STATUS | `count(eta2 < hoje ∧ category ≠ 'desembaracado')`. `eta2 = null` nunca satisfaz (A-20) | H-12, H-16 | `indicators-risk.test.ts` | ✅ **Backend entregue** (`H-12`); cartão pendente de `H-16` — P-03 confirmada |
-| IND-16 | Processos desembaraçados hoje | RG + STATUS | `count(rg = hoje ∧ category = 'desembaracado')`. Cruzamento acrescentado por A-05 e A-29 | H-13, H-16 | `indicators-time.test.ts` | ✅ **Backend entregue** (`H-13`); cartão pendente de `H-16` — P-03 confirmada. **O cruzamento de A-29 é necessário na prática:** medidas 3 linhas com RG preenchido em processo não desembaraçado |
+| IND-14 | Documentos pendentes | DOCS ENVIADOS + ETA2 + STATUS | `count(docsSent = null ∧ eta2 ≤ hoje+10 ∧ category ≠ 'desembaracado')` (A-08) | H-12, H-16 | `indicators-risk.test.ts` | ✅ **Entregue** — backend em `H-12`, cartão de urgência em `H-16` (A-40), visualmente distinto dos de volume |
+| IND-15 | Processos atrasados | ETA2 + STATUS | `count(eta2 < hoje ∧ category ≠ 'desembaracado')`. `eta2 = null` nunca satisfaz (A-20) | H-12, H-16 | `indicators-risk.test.ts` | ✅ **Entregue** — backend em `H-12`, cartão de urgência em `H-16` (A-40), visualmente distinto dos de volume |
+| IND-16 | Processos desembaraçados hoje | RG + STATUS | `count(rg = hoje ∧ category = 'desembaracado')`. Cruzamento acrescentado por A-05 e A-29 | H-13, H-16 | `indicators-time.test.ts` · `Home.test.tsx` | ✅ **Entregue** — backend em `H-13`, cartão em `H-16`. **O cartão faltava na lista dos 11 e foi acrescentado por A-64:** esta linha o atribuía a `H-16` e o backlog não o previa. **O cruzamento de A-29 é necessário na prática:** medidas 3 linhas com RG preenchido em processo não desembaraçado |
 | IND-17 | Ranking de agentes | AGENTE | `count` agrupado por `normKey(AGENTE)`, desc, com `overdueCount` para atender ao objetivo declarado (A-27) | H-11 | `indicators-rankings.test.ts` | ✅ **Backend entregue** (`H-11`); apresentação pendente — P-01 confirmada: coluna E é `AGENTE`, 576 valores, 35 distintos |
 | IND-18 | Ranking de clientes | CLT | Top 10 de IND-10, apresentação visual (A-25) | H-11, H-18 | `indicators-rankings.test.ts` | ✅ **Backend entregue** (`H-11`); apresentação pendente |
 | IND-19 | Ranking de importadores | IMPORTADOR | Top 10 de IND-11, apresentação visual | H-11, H-18 | `indicators-rankings.test.ts` | ✅ **Backend entregue** (`H-11`); apresentação pendente |
@@ -74,7 +74,7 @@ especificação são rastreados aqui, para que **nenhum** fique fora.
 
 | Tela | Requisito | Histórias | Status |
 |---|---|---|---|
-| Página Inicial | RF-09 | H-16 | Implementável. Cartão "Em desembaraço" acrescentado (A-12); cartões de urgência acrescentados (A-40) |
+| Página Inicial | RF-09 | H-16 | ✅ **Entregue.** 12 cartões: "Em desembaraço" por A-12, os dois de urgência por A-40, "Desembaraçados hoje" por A-64. A soma das 4 categorias é exibida e confere (649) |
 | Página Operacional | RF-10 | H-17, H-22 | Implementável. "Processo ativo" definido (A-16); busca por BL e CNTR acrescentada (A-39) |
 | Página Clientes | RF-11 | H-18 | Implementável |
 | Página Performance | RF-12 | H-19 | Implementável. Denominador exibido (A-42); nota sobre IND-21 fora de escopo |
@@ -171,7 +171,7 @@ As 33 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
 | H-13 | IND-16, IND-22 | ✅ **Concluída.** Indicadores de tempo. Fecha o contrato de `GET /api/indicators`, que nasceu parcial em `H-09`. Medido: `averageDays 12,5` sobre amostra de 101 |
 | H-14 | ALE-01 a ALE-05 | ✅ **Concluída.** Alertas do estado atual. Fila de trabalho: `≠ desembaracado` nos cinco (A-59). Medido: 40 linhas para 25 processos |
 | H-15 | §3.2 (os 11 filtros) | ✅ **Concluída.** Filtros globais, casca com navegação, faixa de estado (A-57) e as três frentes de A-62. Saiu em três entregas. Medido: `port=RO` devolve 2 processos, confirmando A-36 |
-| H-16 | IND-01 a IND-09, IND-14 a IND-16, §3.1 (Página Inicial) | Cartões-resumo |
+| H-16 | IND-01 a IND-09, IND-14 a IND-16, §3.1 (Página Inicial) | Cartões-resumo — **12**, não 11: `IND-16` faltava na lista e entrou por A-64 |
 | H-17 | IND-12, §3.1 (Página Operacional), §3.3 (BL, CNTR) | Tabela, busca e calendário |
 | H-18 | IND-10, IND-11, IND-18, IND-19, §3.1 (Página Clientes) | Rankings visuais |
 | H-19 | IND-22, §3.1 (Página Performance) | Quebras do tempo documental |
@@ -201,7 +201,7 @@ virada de escopo (edição) ou por necessidade operacional.
 |---|---|---|---|
 | RF-06 · Quarentena sem descarte silencioso | A-03, A-21, decisão de arquitetura | H-07 | Implementável |
 | RF-08 · Relatório de divergências | A-05, A-06, A-30 | H-07 | Implementável |
-| RF-16 · Painel de saúde da ingestão | Necessidade operacional | H-16, H-31 | Implementável |
+| RF-16 · Painel de saúde da ingestão | Necessidade operacional | H-16, H-31 | ✅ **Entregue.** Linhas lidas, aceitas, quarentena, taxa, última leitura e duração. O limiar de 2% (RNF-24) é destacado, e `quarantineRate` vem calculado do servidor |
 | RF-20, RF-28 · Editar e descartar edições | Decisão do usuário | H-23 | Implementável |
 | RF-21 · Aplicar sob comando explícito | Decisão do usuário (D7) | H-26 | Implementável |
 | RF-22 · Preservar formatação na escrita | ADR-0004 | H-24 | Implementável |

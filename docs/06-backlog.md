@@ -1269,6 +1269,48 @@ export function applyFilters(p: Process[], f: FilterSet): Process[]
 
 ### H-16 — Entregar a Página Inicial com os cartões-resumo
 
+> ✅ **CONCLUÍDA em 07/08/2026.** 18 testes próprios em 2 arquivos; suíte total
+> em **536**. Primeira página de dado do projeto.
+>
+> **Conferido contra a planilha real:** os doze cartões batem com
+> `GET /api/indicators` — 649 · 480 · 103 · 32 · 34 · 5 · 0 · 2 · 60 · 0 · 17 ·
+> 14 —, e a soma das quatro categorias fecha: **103 + 32 + 480 + 34 = 649**. Com
+> `category=em_andamento` o total cai para 103 e **atrasados e documentos
+> pendentes não mudam** (17 e 14): todos eles já eram `em_andamento`, coerente
+> com `isOverdue` e `hasPendingDocs` excluírem desembaraçado.
+>
+> **A-64 nasceu desta história, e só apareceu porque o tipo obriga.** A
+> rastreabilidade atribuía `IND-16` a `H-16`, o backlog listava 11 cartões, e
+> nenhum era `desembaracadosHoje` — indicador calculado e invisível, a mesma
+> omissão que motivou a skill `/novo-indicador`, um degrau adiante. Descoberto
+> quando `IndicatorsCounts` recusou a fixture do teste sem o campo; um tipo
+> parcial teria escondido.
+>
+> **Quatro estados, e nenhum deles é zero.** `GET /api/indicators` responde
+> `503` enquanto `lastReadAt` é `null`, e o cliente transforma isso em
+> `semLeitura` — doze traços e uma frase dizendo que traço não é zero. Painel de
+> zeros ali afirmaria que a planilha tem zero processos, indistinguível do caso
+> em que ela realmente tem (regra inviolável 3).
+>
+> **A conferência de A-12 é exibida, não presumida.** Somar as quatro categorias
+> no cliente não deriva indicador nem classifica nada: evidencia uma invariante
+> que o domínio garante, e é o único lugar onde a quebra fica visível antes de
+> alguém conferir na mão. Há teste com a soma divergindo de propósito.
+>
+> **O limiar de RNF-24 ficou no servidor.** `quarantineRate` vem calculado de
+> `GET /api/quarantine` — a terceira rota, que o contrato da história não
+> previa. Dividir `rowsQuarantined` por `rowsRead` no cliente e comparar com 2%
+> seria regra de negócio fora de `src/domain/`.
+>
+> **Divergências resolvidas:** cinco. A lista de arquivos omitia toda a fiação
+> de dados (`useIndicators`, os dois métodos do `api-client`), o `App.tsx` sem o
+> qual a página é inalcançável, e **zero testes** — sétima, oitava e nona
+> ocorrências do mesmo padrão. Mais a terceira rota, e o aval para a soma no
+> cliente. `src/http/routes/quarantine.ts` ganhou `QuarantineResponse`: o corpo
+> tem `generatedAt` e `sourceFileHash` nulos quando não houve leitura, e o
+> `QuarantineReport` do disco os tipa como `string` — a mesma classe de defeito
+> do `today` ausente em `H-15`.
+
 **Objetivo:** a tela de entrada mostrar volume, as 4 categorias, urgências e
 saúde da ingestão.
 
@@ -1276,16 +1318,26 @@ saúde da ingestão.
 - `web/src/pages/Home.tsx`
 - `web/src/components/StatCard.tsx`
 - `web/src/components/IngestionHealth.tsx`
+- **Omitidos do plano original**, e necessários: `web/src/hooks/useIndicators.ts`
+  (com `useQuarantine`), `web/src/api-client.ts`, `web/src/App.tsx`,
+  `src/http/routes/quarantine.ts` (o tipo de resposta),
+  `web/tests/{Home,IngestionHealth}.test.tsx` e `web/tests/support/api-stub.ts`
 
 **Contrato fixado:** consome `GET /api/indicators` e `GET /api/health`.
 
 Cartões, nesta ordem: Total · Desembaraçados · Em andamento · **Em desembaraço**
 (A-12) · Fechado — aguardando draft · Canal Vermelho · Chegando hoje · Chegando
-esta semana · Chegando em 15 dias · **Atrasados** · **Documentos pendentes**
-(A-40).
+esta semana · Chegando em 15 dias · **Desembaraçados hoje** (A-64) ·
+**Atrasados** · **Documentos pendentes** (A-40).
+
+> **Eram 11, e A-64 fez doze.** A rastreabilidade sempre atribuiu `IND-01` a
+> `IND-09` e `IND-14` a `IND-16` a esta história, mas a lista tinha 11 cartões e
+> nenhum era `desembaracadosHoje` — `IND-16` ficava calculado e invisível.
+> Mesmo precedente de A-12 e A-40. Encontrado ao implementar, porque
+> `IndicatorsCounts` obriga o campo e a fixture do teste não compilou sem ele.
 
 **Critérios de aceite:**
-- **Dado** a Página Inicial carregada, **então** exibe os 11 cartões acima.
+- **Dado** a Página Inicial carregada, **então** exibe os 12 cartões acima.
 - **Dado** os cartões das 4 categorias, **então** a soma deles é exibida junto
   do total, e as duas conferem.
 - **Dado** os cartões de Atrasados e Documentos pendentes, **então** eles são
@@ -2378,7 +2430,7 @@ conteúdo, **nunca o caminho** — e é o caminho que o watcher precisa.
 | E1 — Fundação e perfilamento ✅ | H-01 ✅, H-02 ✅ | 0 | 2 | 0 |
 | E2 — Leitura e normalização ✅ | **H-03 ✅ H-04 ✅ H-05 ✅ H-06 ✅ H-07 ✅ H-08 ✅** | 3 | 3 | 0 |
 | E3 — Indicadores e alertas | **H-09 ✅ H-10 ✅ H-11 ✅ H-12 ✅**, H-13, H-14 | 3 | 3 | 0 |
-| E4 — Interface | **H-15 ✅**, H-16 … H-22 | 6 | 2 | 0 |
+| E4 — Interface | **H-15 ✅ H-16 ✅**, H-17 … H-22 | 6 | 2 | 0 |
 | E5 — Edição e escrita | H-23 … H-27 | 0 | 5 | 0 |
 | E6 — Histórico | H-28, H-29 | 1 | 1 | 0 |
 | E7 — Operação | H-30, **H-31 ✅**, H-32, H-33, H-34 | 3 | 2 | 0 |
