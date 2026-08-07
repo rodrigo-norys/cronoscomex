@@ -86,7 +86,8 @@ src/io/        leitura e escrita de .xlsx, watcher, histórico, fila de ediçõe
 src/app/       process-store, write-guard, config
 src/http/      rotas Fastify (só serializam; não calculam)
 web/           SPA React (só apresenta; não calcula)
-tools/         o perfilador (virada de ano) e o verificador de strip-types
+tools/         perfilador (virada de ano), verificador de strip-types, e
+               carregar-planilha.mjs para conferência contra o arquivo real
 config/        app.json, color-map.json, status-aliases.json
 tests/         domain/, io/, app/, http/, fixtures/ — ambiente `node`
 web/tests/     componentes e casca — ambiente `jsdom`
@@ -312,6 +313,15 @@ das quatro camadas · `/fechar-historia H-NN` roda o portão, percorre a
 decide a branch · `/sugerir-prs` fatia a entrega em PRs. As duas últimas exigem
 aprovação do plano **e** permissão para executar.
 
+**`/fatia` confere a lista de arquivos, não apenas a copia.** Quatro perguntas —
+a história cria rota? acrescenta campo a rota existente? altera tipo exportado
+do domínio? acrescenta dependência? — cada uma com os arquivos que a resposta
+obriga. Nasceu de **6 omissões registradas no backlog**, entre elas `H-13`, cujo
+teste de rota continha uma asserção que reprovaria, e `H-32`, onde três fábricas
+de estado quebraram no `typecheck`. A skill também deixou de vir muda quando a
+história não tem caso em `08-qualidade-operacao.md` §1.3 — a cobertura é de 11
+das 33 histórias, e o silêncio parecia defeito.
+
 **`/novo-indicador` existe por causa de uma omissão que se repetiu cinco vezes.**
 `src/http/routes/indicators.ts` ficou de fora da lista de arquivos de `H-09` a
 `H-13`, sempre — indicador calculado e não servido não existe para o usuário. A
@@ -359,6 +369,21 @@ python3 tools/profile_workbook.py "<caminho.xlsx>" saida.json   # reperfilar
 
 > `node: bad option` **não é erro de código**: o shell herdou um Node abaixo de
 > `engines`. Prefixe `nvm use &&` — o `nvm use` não persiste entre chamadas.
+
+**Para conferir uma história contra a planilha real** — passo obrigatório antes
+de fechar —, monte o script no scratchpad e use o carregador, em vez de repetir
+o preâmbulo de `initStore`. Ele existe porque oito scripts de uma única sessão
+repetiram o mesmo bloco.
+
+```js
+const { carregarPlanilha, reportar } = await import('<raiz>/tools/carregar-planilha.mjs')
+const { processes, hoje, dominio } = await carregarPlanilha()
+
+reportar('IND-16', { valor: dominio.indicators.clearedTodayCount(processes, hoje) })
+```
+
+Rode da raiz do projeto, com `node --experimental-strip-types`. Ele **não** é
+usado por teste nem por produção: teste roda sobre `tests/fixtures/` (RNF-37).
 
 ## Protocolo de fatia — obrigatório ao iniciar qualquer história
 
