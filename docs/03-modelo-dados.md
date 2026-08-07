@@ -387,11 +387,21 @@ retroativo que não existe (A-43).
 ### 3.2. `data/pending-edits.jsonl` — fila de edições não aplicadas
 
 Append-only. A projeção corrente é a **última** entrada por par
-`(ref, field)`. Uma entrada com `value: null` cancela a edição anterior.
+`(ref, field)`.
+
+> **Corrigido em `H-23`.** Este parágrafo dizia que `value: null` cancelava a
+> edição anterior. Não cancela: **`null` é célula vazia**, e o operador precisa
+> dele para limpar uma data. O cancelamento ganhou rotas próprias
+> (`DELETE /api/edits/:id` e `DELETE /api/edits`), e o append-only é preservado
+> por uma **lápide** — um registro `{"ts":"…","discarded":"<id>"}`, ou
+> `"discarded":"*"` para o esvaziamento. Nada é reescrito.
+>
+> Com `null` valendo cancelamento, o operador ficaria **sem meio** de esvaziar
+> uma célula.
 
 ```jsonc
-{"id":"01J...","ts":"2026-08-03T14:30:00.000Z","ref":"FT533.26","sourceRow":483,"field":"eta2","value":"2026-08-06","previous":"2026-08-04"}
-{"id":"01J...","ts":"2026-08-03T14:31:12.000Z","ref":"FT533.26","sourceRow":483,"field":"statusRaw","value":"AG BL ORIGINAL","previous":""}
+{"id":"9f1c2a7e-…","ts":"2026-08-03T14:30:00.000Z","ref":"FT533.26","sourceRow":483,"field":"eta2","value":"2026-08-06","previous":"2026-08-04"}
+{"id":"9f1c2a7e-…","ts":"2026-08-03T14:31:12.000Z","ref":"FT533.26","sourceRow":483,"field":"statusRaw","value":"AG BL ORIGINAL","previous":""}
 ```
 
 | Campo | Tipo | Significado |

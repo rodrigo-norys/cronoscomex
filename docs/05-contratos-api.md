@@ -468,10 +468,6 @@ rota dedicada abaixo.
 
 ### `POST /api/edits`
 
-> **Pendente de `H-23`.** Documentada, ainda **não registrada** no
-> servidor. `tests/repo/contratos.test.ts` cobra a existência assim que a
-> história for concluída no backlog.
-
 Enfileira uma edição. **Não toca no `.xlsx`.**
 
 ```jsonc
@@ -480,7 +476,7 @@ Enfileira uma edição. **Não toca no `.xlsx`.**
 
 ```jsonc
 {
-  "id": "01J8ZQ...",
+  "id": "9f1c2a7e-...",   // crypto.randomUUID()
   "ref": "FT533.26", "sourceRow": 483,
   "field": "eta2", "value": "2026-08-06", "previous": "2026-08-04",
   "ts": "2026-08-03T14:30:00.000Z",
@@ -525,10 +521,6 @@ concorrentes, e nem toda combinação é representável.
 
 ### `GET /api/edits`
 
-> **Pendente de `H-23`.** Documentada, ainda **não registrada** no
-> servidor. `tests/repo/contratos.test.ts` cobra a existência assim que a
-> história for concluída no backlog.
-
 ```jsonc
 { "items": [ /* edições consolidadas, uma por (ref, field) */ ], "count": 0 }
 ```
@@ -536,10 +528,6 @@ concorrentes, e nem toda combinação é representável.
 ---
 
 ### `DELETE /api/edits/:id`
-
-> **Pendente de `H-23`.** Documentada, ainda **não registrada** no
-> servidor. `tests/repo/contratos.test.ts` cobra a existência assim que a
-> história for concluída no backlog.
 
 Descarta uma edição enfileirada.
 
@@ -551,10 +539,6 @@ Descarta uma edição enfileirada.
 ---
 
 ### `DELETE /api/edits`
-
-> **Pendente de `H-23`.** Documentada, ainda **não registrada** no
-> servidor. `tests/repo/contratos.test.ts` cobra a existência assim que a
-> história for concluída no backlog.
 
 Descarta **todas** as edições enfileiradas.
 

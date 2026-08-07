@@ -21,6 +21,7 @@ import type {
   Responsible,
   StatusCategory,
 } from '../../domain/types.ts'
+import type { PendingEdit } from '../../io/edit-queue.ts'
 import { apiError } from '../errors.ts'
 import { filteredProcesses } from '../filter-request.ts'
 
@@ -76,15 +77,6 @@ export interface AnomalyDetail {
   detail: string
 }
 
-/** Vazio ate `H-23`, que e quem enfileira edicao. A forma vem do contrato. */
-export interface PendingEditDto {
-  id: string
-  field: string
-  value: string
-  previous: string
-  ts: string
-}
-
 /** Vazio ate `H-28`, que e quem grava historico. A forma vem do contrato. */
 export interface StatusChangeDto {
   ts: string
@@ -95,7 +87,7 @@ export interface StatusChangeDto {
 export interface ProcessDetailResponse {
   process: ProcessDto
   anomalies: AnomalyDetail[]
-  pendingEdits: PendingEditDto[]
+  pendingEdits: PendingEdit[]
   statusHistory: StatusChangeDto[]
   /**
    * `null` enquanto nao ha historico gravado (`H-28`).
@@ -116,7 +108,7 @@ export interface ProcessesResponse {
   offset: number
 }
 
-function toDto(process: Process): ProcessDto {
+function toDto(process: Process, hasPendingEdits = false): ProcessDto {
   return {
     ref: process.ref,
     sourceRow: process.sourceRow,
@@ -140,7 +132,7 @@ function toDto(process: Process): ProcessDto {
     paymentRaw: process.paymentRaw,
     columnPRaw: process.columnPRaw,
     anomalies: [...process.anomalies],
-    hasPendingEdits: false,
+    hasPendingEdits,
   }
 }
 
@@ -236,8 +228,10 @@ export function registerProcessesRoute(
         .send(apiError('PROCESSO_NAO_ENCONTRADO', `Nenhum processo com a REF "${ref}".`))
     }
 
+    const pendingForRef = state.pendingEdits.filter((edit) => edit.ref === process.ref)
+
     const body: ProcessDetailResponse = {
-      process: toDto(process),
+      process: toDto(process, pendingForRef.length > 0),
       // O texto vem do dominio, onde nasce: traduzir codigo em frase no cliente
       // escreveria a mesma tabela num segundo lugar (mesmo motivo de A-28).
       anomalies: process.anomalies.map((code) => ({
@@ -247,7 +241,7 @@ export function registerProcessesRoute(
       // Os tres campos abaixo ficam vazios ate H-23 e H-28. Vazio de verdade,
       // nunca preenchido com placeholder: a tela precisa poder dizer que o
       // historico ainda nao comecou, e nao que o processo nunca mudou.
-      pendingEdits: [],
+      pendingEdits: pendingForRef,
       statusHistory: [],
       daysInCurrentCategory: null,
     }
@@ -292,13 +286,16 @@ export function registerProcessesRoute(
       throw error
     }
 
+    const editedRefs = new Set(state.pendingEdits.map((edit) => edit.ref))
     const search = query.search ?? ''
     const matching = filtered.filter(
       (process) => (!activeOnly || isActive(process)) && matchesSearch(process, search),
     )
 
     const body: ProcessesResponse = {
-      items: paginate(sortProcesses(matching, sort, order), limit, offset).map(toDto),
+      items: paginate(sortProcesses(matching, sort, order), limit, offset).map((item) =>
+        toDto(item, editedRefs.has(item.ref)),
+      ),
       total: matching.length,
       limit,
       offset,

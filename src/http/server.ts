@@ -6,6 +6,7 @@ import { store as defaultStore, initStore, reload, type StoreAccess } from '../a
 import { loadStatusAliases, StatusAliasesError } from '../app/status-aliases-loader.ts'
 import { createWatcher, DEFAULT_DEBOUNCE_MS } from '../io/watcher.ts'
 import { registerAlertsRoute } from './routes/alerts.ts'
+import { registerEditsRoutes } from './routes/edits.ts'
 import { registerFilterOptionsRoute } from './routes/filter-options.ts'
 import { registerHealthRoute } from './routes/health.ts'
 import { registerIndicatorsRoute } from './routes/indicators.ts'
@@ -33,6 +34,7 @@ export function buildServer(config: AppConfig, store: StoreAccess = defaultStore
   registerAlertsRoute(app, config, store)
   registerFilterOptionsRoute(app, store)
   registerProcessesRoute(app, store)
+  registerEditsRoutes(app, store)
 
   return app
 }

@@ -65,7 +65,7 @@ export function registerHealthRoute(
       rowsAccepted: state.rowsAccepted,
       rowsQuarantined: state.rowsQuarantined,
       // Fila de edicoes chega em H-23.
-      pendingEditsCount: 0,
+      pendingEditsCount: state.pendingEdits.length,
       degradedReason: state.degradedReason,
       externalLock: state.externalLock,
       conflictFiles: state.conflictFiles,

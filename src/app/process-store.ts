@@ -1,6 +1,8 @@
 import { type ColorMapEntry, indexColorMap } from '../domain/color-mapper.ts'
 import { type BuildResult, buildProcesses, quarantineRate } from '../domain/process-builder.ts'
+import { applyEdits } from '../domain/process-projection.ts'
 import type { Process } from '../domain/types.ts'
+import { consolidated, DEFAULT_QUEUE_PATH, type PendingEdit } from '../io/edit-queue.ts'
 import { detectInterference } from '../io/interference-detector.ts'
 import { buildReport, DEFAULT_QUARANTINE_PATH, writeReport } from '../io/quarantine-reporter.ts'
 import { type ReadResult, readWorkbook } from '../io/xlsx-reader.ts'
@@ -43,6 +45,16 @@ export interface StoreState {
   externalLock: boolean
   /** Arquivos de conflito do OneDrive, so o nome. Vazio quando nao ha. */
   conflictFiles: string[]
+  /**
+   * `H-23`. As edicoes que esperam para ser gravadas, ja consolidadas.
+   *
+   * `processes` ja vem **projetado**: o que o painel inteiro mostra e o arquivo
+   * mais o que ainda nao foi gravado. Esta lista existe para a tela poder dizer
+   * que o valor e pendente, em vez de exibi-lo como se estivesse na planilha —
+   * e serve as tres apresentacoes: a contagem no health, a marca por linha na
+   * tabela, e o painel do detalhe.
+   */
+  pendingEdits: PendingEdit[]
 }
 
 export interface StoreAccess {
@@ -55,6 +67,8 @@ export interface StoreOptions {
   colorMap: readonly ColorMapEntry[]
   statusAliases: readonly string[]
   quarantinePath?: string
+  /** Ponto de injecao para teste; em producao, `data/pending-edits.jsonl`. */
+  queuePath?: string
   /** Ausente, nada e registrado — util em teste e no uso do store como biblioteca. */
   logger?: Logger
   /** Ponto de injecao para teste. Nenhum teste toca a planilha real (RNF-38). */
@@ -80,6 +94,7 @@ function emptyState(): StoreState {
     rowsQuarantined: 0,
     externalLock: false,
     conflictFiles: [],
+    pendingEdits: [],
   }
 }
 
@@ -96,8 +111,30 @@ export function initStore(next: StoreOptions): void {
   inFlight = null
 }
 
+/**
+ * O estado com a fila de edicoes **ja projetada** sobre os processos lidos.
+ *
+ * A fila e lida a cada chamada, de proposito: ela muda sem releitura do arquivo
+ * — um `POST /api/edits` nao dispara o watcher —, e cache aqui precisaria de
+ * invalidacao vinda das rotas. O arquivo tem no maximo alguns KB, e a
+ * alternativa custa um modo de falha em que a tela mostra edicao que nao existe
+ * mais.
+ *
+ * Sem `initStore`, a projecao e pulada: nao ha `statusAliases` nem mapa de cor
+ * para re-derivar, e devolver o estado vazio e o comportamento correto.
+ */
 export function getState(): StoreState {
-  return { ...current }
+  if (options === null || current.processes.length === 0) return { ...current }
+
+  const edits = consolidated(options.queuePath ?? DEFAULT_QUEUE_PATH)
+  if (edits.length === 0) return { ...current }
+
+  const { processes } = applyEdits(current.processes, edits, {
+    colorMap: colorMapIndex,
+    statusAliases: options.statusAliases,
+  })
+
+  return { ...current, processes, pendingEdits: edits }
 }
 
 function describeFailure(error: unknown, workbookPath: string): string {
@@ -197,6 +234,9 @@ async function runReload(deps: StoreOptions): Promise<void> {
       rowsQuarantined: result.quarantine.length,
       externalLock: current.externalLock,
       conflictFiles: current.conflictFiles,
+      // A releitura nao mexe na fila: uma edicao enfileirada continua pendente
+      // depois de o arquivo mudar. Quem projeta e `getState`, a cada chamada.
+      pendingEdits: current.pendingEdits,
     }
 
     logger.log({
