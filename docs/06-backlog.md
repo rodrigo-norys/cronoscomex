@@ -1031,13 +1031,65 @@ export function documentaryLeadTime(p: Process[]): LeadTime           // IND-22
 
 ### H-14 — Entregar os cinco alertas derivados do estado atual
 
+> ✅ **CONCLUÍDA em 06/08/2026.** 38 testes próprios; suíte total em 373.
+>
+> **Verificado contra a planilha real** com `today = 2026-08-06`, sobre as 649
+> linhas: **40 linhas de alerta para 25 processos distintos** —
+> `eta_vencida 17 · documentacao_pendente 14 · chegadas_7_dias 7 ·
+> canal_vermelho 2 · chegadas_hoje 0 · processos_parados 0`. Os números batem
+> **exatamente** com a projeção feita na fatia, antes de existir código.
+>
+> **A fatia rendeu quatro achados novos**, todos decididos antes da primeira
+> linha — A-59, A-60, A-61 e A-62. Foi o retorno mais alto do protocolo até
+> agora: A-59 sozinho evitaria 5 alertas errados em 14.
+>
+> **A-59 mudou a regra dos três alertas silenciosos.** ALE-03, ALE-04 e ALE-05
+> não declaravam condição de status; lidos ao pé da letra, alertariam sobre
+> processo já concluído. A decisão de que a página é **fila de trabalho** — e
+> não panorama — fechou a questão: `≠ desembaracado` vale nos cinco. Sem isso,
+> 3 dos 5 alertas de Canal Vermelho seriam sobre processos encerrados.
+>
+> **`historyStartedAt` é `null`, não uma data inventada** (A-61). O campo existe
+> para a interface não sugerir retroatividade inexistente, e preenchê-lo antes
+> de `H-28` faria exatamente o oposto.
+>
+> **ALE-06 já funciona — falta o dado, não o código.** `buildAlerts` recebe
+> `stalledDays` e o limiar, e há teste provando que gera o alerta quando o mapa
+> traz o processo no limiar. `H-29` passa a alimentá-lo; até lá a chave fica em
+> `0`, que é diferente de ausente.
+>
+> **Divergências resolvidas:** faltavam `src/http/server.ts` e
+> `tests/http/alerts.test.ts` na lista de arquivos — a rota constava, mas rota
+> não registrada não existe. E ALE-02 duplicaria a condição de A-08, que vivia
+> dentro de `pendingDocsCount`: `hasPendingDocs` foi extraído no mesmo padrão de
+> `isOverdue`, pelo mesmo motivo.
+>
+> **Detalhe de texto que vale registro:** as mensagens pluralizam (`1 dia`,
+> nunca `1 dias`), e carga que já chegou sem documento ganha frase própria —
+> a janela de IND-14 não tem piso, então o intervalo fica negativo, e
+> `ETA em -3 dias` seria ilegível. Medido: 13 alertas caem no singular.
+
 **Objetivo:** ALE-01 a ALE-05 numa lista única ordenada por severidade fixa.
 ALE-06 depende de histórico e é entregue em `H-29`.
 
+> **Decidido em 06/08/2026, antes da implementação** — três achados novos:
+>
+> - **A-59:** `category ≠ 'desembaracado'` vale nos **cinco** alertas, não só em
+>   ALE-01 e ALE-02. A página é fila de trabalho; processo concluído não pede
+>   ação. Sem o filtro, 5 de 14 alertas seriam sobre processos encerrados.
+> - **A-61:** `historyStartedAt` é `string | null`, e vale `null` até `H-28`.
+> - **A-62:** a fila também muda pela passagem do dia, sem a planilha mudar.
+>   Tela aberta atravessando a meia-noite exibe o dia anterior. **Em aberto,
+>   endereçado a `H-15`** — não bloqueia esta história, porque o domínio já
+>   recebe `today` como parâmetro.
+
 **Arquivos:**
 - `src/domain/alerts.ts`
+- `src/domain/indicators.ts` — `hasPendingDocs`, extraído no fechamento
 - `src/http/routes/alerts.ts`
+- `src/http/server.ts` — registro da rota; omitido do plano original
 - `tests/domain/alerts.test.ts`
+- `tests/http/alerts.test.ts` — omitido do plano original
 
 **Contrato fixado:**
 
@@ -1089,6 +1141,22 @@ ascendente, nulos por último.
 
 **Objetivo:** navegação entre as páginas e filtros que se aplicam a todos os
 indicadores e alertas simultaneamente.
+
+> **A-62 chega aqui, já decidido.** Indicadores de calendário e alertas dependem
+> do **dia corrente**, resolvido a cada requisição. Uma tela deixada aberta
+> atravessando a meia-noite segue exibindo a fila do dia anterior: nenhum
+> arquivo muda à meia-noite, então o watcher não dispara. Três frentes:
+>
+> - **revalidar no `visibilitychange`** — o gatilho principal. Sobrevive à
+>   máquina suspensa, ao contrário de um timer agendado para a meia-noite
+> - **comparar o dia do servidor com o do cliente** — rede para o painel que
+>   nunca perde o foco. Só `GET /api/indicators` expõe `meta.today` hoje; a
+>   casca já consome `GET /api/health` e é o candidato a fonte única
+> - **botão de atualização manual**, que chama `POST /api/reload` **antes** de
+>   refazer as requisições — quem clica acabou de mexer na planilha
+>
+> A correção é inteiramente de apresentação: o domínio já recebe `today` por
+> parâmetro.
 
 **Arquivos:**
 - `web/src/App.tsx`, `web/src/components/FilterBar.tsx`
@@ -1311,9 +1379,15 @@ export function leadTimeByGroup(p: Process[], key: (x: Process) => string,
 **Critérios de aceite:**
 - **Dado** a página, **então** os alertas aparecem na ordem de severidade
   definida em `H-14`.
+- **Dado** um processo com mais de um alerta, **então** ele aparece **uma única
+  vez**, agrupando seus tipos — decisão do usuário em 06/08/2026, achado A-60.
+  A rota continua achatada; o agrupamento é de apresentação. Medido na planilha
+  real: 40 linhas para 25 processos distintos, com um deles em 3 tipos.
 - **Dado** o cabeçalho, **então** exibe a contagem por tipo, incluindo os
   seis tipos.
 - **Dado** um alerta clicado, **então** abre o detalhe do processo.
+- **Dado** `historyStartedAt = null`, **então** a ressalva de que ainda não há
+  histórico é exibida, em vez de data vazia (A-61).
 - **Dado** o alerta "Processos parados", **então** o limiar em uso é exibido, e
   marcado como premissa (A-32).
 - **Dado** que o histórico começou recentemente, **então** `historyStartedAt` é
@@ -1718,6 +1792,11 @@ preenchimento próprio e **não** são alteradas.
 
 **Objetivo:** acumular a série de eventos que destrava o alerta de processos
 parados e a Página Histórico.
+
+> **Herda de `H-14` (A-61):** `historyStartedAt`, em `GET /api/alerts`, vale
+> `null` desde `H-14` porque não havia histórico. **É esta história que passa a
+> devolver a data** — a da primeira leitura registrada. Enquanto continuar
+> `null`, `H-20` exibe a ressalva em vez de data vazia.
 
 **Arquivos:**
 - `src/io/history-store.ts`

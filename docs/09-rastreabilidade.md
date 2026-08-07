@@ -56,11 +56,11 @@ legibilidade: `H-02` → `H-03` → `H-05` → `H-06` → `H-07` → `H-08`.
 
 | # | Alerta | Campos de origem | Condição formalizada | Histórias | Testes | Status |
 |---|---|---|---|---|---|---|
-| ALE-01 | ETA vencida | ETA2 + STATUS | `eta2 < hoje ∧ category ≠ 'desembaracado'`. Severidade 1. Mesma regra de IND-15, duas apresentações (A-19) | H-14, H-20 | `alerts.test.ts` | ✅ **Implementável** — P-03 confirmada |
-| ALE-02 | Documentação pendente | DOCS ENVIADOS + ETA2 + STATUS | `docsSent = null ∧ eta2 ≤ hoje+10 ∧ category ≠ 'desembaracado'`. Severidade 3 | H-14, H-20 | `alerts.test.ts` | ✅ **Implementável** — P-03 confirmada |
-| ALE-03 | Canal Vermelho | Cor da linha (célula A) | `customsChannel = 'vermelho'`. Severidade 2. Só a cor é fonte (A-06) | H-04, H-14, H-20 | `alerts.test.ts` · `color-mapper.test.ts` | ✅ **Implementável** — chaves reais mapeadas |
-| ALE-04 | Chegadas hoje | ETA2 | `eta2 = hoje`. Severidade 5 | H-14, H-20 | `alerts.test.ts` | ✅ **Implementável** — P-03 confirmada |
-| ALE-05 | Chegadas nos próximos 7 dias | ETA2 | `hoje ≤ eta2 ≤ hoje+7`, extremos inclusivos. Severidade 6 | H-14, H-20 | `alerts.test.ts` | ✅ **Implementável** — P-03 confirmada |
+| ALE-01 | ETA vencida | ETA2 + STATUS | `eta2 < hoje ∧ category ≠ 'desembaracado'`. Severidade 1. Mesma regra de IND-15, duas apresentações (A-19) | H-14, H-20 | `alerts.test.ts` | ✅ **Backend entregue** (`H-14`); página pendente de `H-20`. Apresentação de `isOverdue`, nunca reimplementada. **Medido:** 17 na planilha real |
+| ALE-02 | Documentação pendente | DOCS ENVIADOS + ETA2 + STATUS | `docsSent = null ∧ eta2 ≤ hoje+10 ∧ category ≠ 'desembaracado'`. Severidade 3 | H-14, H-20 | `alerts.test.ts` | ✅ **Backend entregue** (`H-14`); página pendente de `H-20`. Apresentação de `hasPendingDocs`, extraído de `pendingDocsCount` para não duplicar A-08. **Medido:** 14 |
+| ALE-03 | Canal Vermelho | Cor da linha (célula A) | `customsChannel = 'vermelho'`. Severidade 2. Só a cor é fonte (A-06) | H-04, H-14, H-20 | `alerts.test.ts` · `color-mapper.test.ts` | ✅ **Backend entregue** (`H-14`); página pendente de `H-20`. **Medido:** 2 — eram 5 antes do filtro de A-59, e 3 estavam em processo já concluído |
+| ALE-04 | Chegadas hoje | ETA2 | `eta2 = hoje`. Severidade 5 | H-14, H-20 | `alerts.test.ts` | ✅ **Backend entregue** (`H-14`); página pendente de `H-20`. Contido em ALE-05 por construção (A-60). **Medido:** 0 |
+| ALE-05 | Chegadas nos próximos 7 dias | ETA2 | `hoje ≤ eta2 ≤ hoje+7`, extremos inclusivos. Severidade 6 | H-14, H-20 | `alerts.test.ts` | ✅ **Backend entregue** (`H-14`); página pendente de `H-20`. **Medido:** 7 |
 | ALE-06 | Processos parados | STATUS + histórico de leituras | `dias desde o último evento de mudança ≥ 15` (limiar configurável, A-32). Severidade 4 | H-28, H-29, H-20 | `history-store.test.ts` · `alerts.test.ts` | **Implementável — destravado.** A especificação o declara dependente de histórico inexistente (A-33); o ADR-0005 o fornece |
 
 ---
@@ -169,7 +169,7 @@ As 33 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
 | H-11 | IND-10, IND-11, IND-13, IND-17, IND-18, IND-19, IND-20 | ✅ **Concluída.** Agrupamentos e rankings. `bazarShare` medido em 35,47% |
 | H-12 | IND-06, IND-14, IND-15 | ✅ **Concluída.** Indicadores de risco. `overdueCount` é apresentação de `isOverdue`, nunca reimplementação |
 | H-13 | IND-16, IND-22 | ✅ **Concluída.** Indicadores de tempo. Fecha o contrato de `GET /api/indicators`, que nasceu parcial em `H-09`. Medido: `averageDays 12,5` sobre amostra de 101 |
-| H-14 | ALE-01 a ALE-05 | Alertas do estado atual |
+| H-14 | ALE-01 a ALE-05 | ✅ **Concluída.** Alertas do estado atual. Fila de trabalho: `≠ desembaracado` nos cinco (A-59). Medido: 40 linhas para 25 processos |
 | H-15 | §3.2 (os 11 filtros) | Filtros globais **e** a faixa de estado `degradado` no topo de todas as páginas (A-57) |
 | H-16 | IND-01 a IND-09, IND-14 a IND-16, §3.1 (Página Inicial) | Cartões-resumo |
 | H-17 | IND-12, §3.1 (Página Operacional), §3.3 (BL, CNTR) | Tabela, busca e calendário |
