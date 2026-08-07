@@ -1,7 +1,7 @@
 import { type ColorMapEntry, resolveColorIndexed } from './color-mapper.ts'
 import { normKey, parseCellDate } from './normalizer.ts'
 import { classify } from './status-classifier.ts'
-import type { AnomalyCode, Process, QuarantineReason, RawRow } from './types.ts'
+import type { AnomalyCode, Process, QuarantineReason, RawCell, RawRow } from './types.ts'
 
 /**
  * Composicao do `Process` e do relatorio de quarentena.
@@ -163,6 +163,53 @@ function buildOne(row: RawRow, deps: BuildDeps): { process: Process; unmappedCol
   for (const code of detectAnomalies(base)) anomalies.add(code)
 
   return { process: { ...base, anomalies: [...anomalies] }, unmappedColor: !color.mapped }
+}
+
+/**
+ * O caminho inverso de `buildOne`: um `Process` de volta a linha crua.
+ *
+ * Existe para a projecao de `H-23`. Aplicada uma edicao, tudo que dela deriva
+ * precisa ser refeito — a categoria (TD-01), as chaves de agrupamento, e ate as
+ * anomalias: editar RG num processo nao concluido cria `RG_SEM_DESEMBARACO`.
+ *
+ * **Reconstruir a linha e passa-la por `buildProcesses` reusa a derivacao
+ * inteira**, em vez de reimplementa-la sobre `Process`. Duas implementacoes da
+ * mesma regra divergem no primeiro ajuste — foi o que levou `isOverdue` a
+ * existir como funcao unica. E o mapa `COLUMN` mora aqui, entao ida e volta nao
+ * se separam.
+ *
+ * As datas voltam como `Date`, e **nao** como texto: `parseCellDate` aceita
+ * `Date`, serial numerico e `dd/MM/yyyy`, mas nao `AAAA-MM-DD` — texto ISO cai
+ * em `DATA_SEM_ANO`. Como toda data do dominio ja e meia-noite UTC, a ida e
+ * volta pelo `Date` e exata.
+ */
+export function toRawRow(process: Process): RawRow {
+  const cells: Record<string, RawCell> = {}
+  const put = (column: string, value: string): void => {
+    cells[column] = { value: value === '' ? null : value, type: value === '' ? 'null' : 'string' }
+  }
+  const putDate = (column: string, date: Date | null): void => {
+    cells[column] = date === null ? { value: null, type: 'null' } : { value: date, type: 'date' }
+  }
+
+  put(COLUMN.ref, process.ref)
+  put(COLUMN.client, process.clientRaw)
+  put(COLUMN.importer, process.importerRaw)
+  put(COLUMN.billOfLading, process.billOfLading)
+  put(COLUMN.agent, process.agentRaw)
+  put(COLUMN.container, process.container)
+  put(COLUMN.vessel, process.vesselRaw)
+  put(COLUMN.port, process.portRaw)
+  putDate(COLUMN.eta2, process.eta2)
+  put(COLUMN.goods, process.goodsRaw)
+  putDate(COLUMN.registrationDate, process.registrationDate)
+  put(COLUMN.status, process.statusRaw)
+  put(COLUMN.boleto, process.boletoRaw)
+  put(COLUMN.payment, process.paymentRaw)
+  putDate(COLUMN.docsSent, process.docsSentDate)
+  put(COLUMN.columnP, process.columnPRaw)
+
+  return { sourceRow: process.sourceRow, cells, styleKey: process.styleKey }
 }
 
 /**
