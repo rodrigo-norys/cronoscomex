@@ -1404,28 +1404,42 @@ chegadas por navio.
 
 ### H-18 — Entregar a Página Clientes
 
-**Objetivo:** ranking e distribuição por CLT e IMPORTADOR.
+**Objetivo:** ranking e distribuição por CLT, IMPORTADOR e MERCADORIA.
+
+> **`IND-13` entrou por A-65.** Ele era calculado desde `H-11`, servido em
+> `rankings.goods`, e **nenhuma página o exibia** — junto com ele se perdia o
+> `bazarShare` de A-34, que existe para o operador não ler o ranking de
+> mercadorias como se fosse real. Mercadoria é a terceira dimensão do mesmo
+> painel de distribuição, então cabe aqui sem história nova.
 
 **Arquivos:**
 - `web/src/pages/Clients.tsx`
 - `web/src/components/RankingBar.tsx`
 
-**Contrato fixado:** consome `rankings.clients` e `rankings.importers` de
-`GET /api/indicators`.
+**Contrato fixado:** consome `rankings.clients`, `rankings.importers`,
+`rankings.goods` e `meta.bazarShare` de `GET /api/indicators`.
 
 **Critérios de aceite:**
-- **Dado** a página, **então** exibe dois rankings Top 10, um por CLT e outro
-  por IMPORTADOR, em barras horizontais ordenadas decrescentes.
+- **Dado** a página, **então** exibe três rankings Top 10 — por CLT, por
+  IMPORTADOR e por MERCADORIA —, em barras horizontais ordenadas decrescentes.
 - **Dado** um item do ranking clicado, **então** o filtro global correspondente
   é aplicado e a navegação leva à Página Operacional.
 - **Dado** o rótulo de cada grupo, **então** exibe a primeira grafia encontrada,
   não a chave normalizada (A-26).
 - **Dado** grupos empatados, **então** a ordem entre eles é alfabética.
 
+- **Dado** o ranking de MERCADORIA, **então** `meta.bazarShare` é exibido
+  **junto dele**, nunca em separado: o número qualifica o ranking, e lê-lo à
+  parte não avisa ninguém (A-34, A-65). Medido: `BAZAR` são 210 processos,
+  35,47% dos que têm mercadoria — 5,7× o segundo colocado.
+
 **Casos-limite:**
 - Menos de 10 grupos → exibe os existentes, sem espaços vazios.
-- Grupo com chave vazia → rotulado `(sem valor)`.
+- Grupo com chave vazia → rotulado `(sem valor)`. Medido: é o **segundo** maior
+  grupo de mercadoria, com 57 processos.
 - Conjunto vazio → mensagem de ausência de dados, não gráfico em branco.
+- `bazarShare` é `null` → nenhum processo tem mercadoria preenchida; exibir a
+  ressalva mesmo assim afirmaria distorção que não foi medida (A-34).
 
 **Dependências:** H-11, H-15
 **Tamanho:** P
@@ -1435,7 +1449,16 @@ chegadas por navio.
 ### H-19 — Entregar a Página Performance
 
 **Objetivo:** tempo médio de envio documental, quebrado por cliente, agente,
-navio e responsável, com o denominador visível.
+navio e responsável, com o denominador visível — e os rankings de volume por
+agente e por responsável.
+
+> **`IND-17` e `IND-20` entraram por A-65.** Os dois eram calculados desde
+> `H-11`, servidos em `rankings.agents` e `rankings.responsible`, e **nenhuma
+> página os exibia**. Com `IND-17` se perdia o `overdueCount` de A-27, que foi
+> acrescentado justamente porque contagem por agente não atendia ao objetivo
+> declarado: o que importa é quem acumula atraso. Esta página já agrupa por
+> agente e por responsável — contagem é outra métrica sobre os mesmos grupos, e
+> vive ao lado do tempo médio sem página nova.
 
 **Arquivos:**
 - `web/src/pages/Performance.tsx`
@@ -1459,14 +1482,24 @@ export function leadTimeByGroup(p: Process[], key: (x: Process) => string,
   uma nota declarando-o fora de escopo por ausência da data de presença de
   carga, com referência a §4 da especificação.
 - **Dado** intervalos negativos, **então** a contagem de excluídos é exibida.
+- **Dado** o ranking de agentes (`IND-17`), **então** cada linha exibe a
+  contagem **e** o `overdueCount` ao lado — sem ele o ranking responde a
+  pergunta errada (A-27, A-65). Medido: `B&M` tem 246 processos e 7 atrasados.
+- **Dado** o ranking por responsável (`IND-20`), **então** as **quatro** chaves
+  aparecem, inclusive `indefinido` e com contagem zero (A-17, A-28). Medido:
+  `indefinido` é o maior grupo, com 484 de 649 — a limitação estrutural de A-31
+  precisa ficar visível, não escondida.
 
 **Casos-limite:**
 - Grupo com `sampleSize: 1` → média exibida com o denominador `1`, sem corte
   mínimo; omitir seria inventar regra (A-42).
 - Todos os pares incompletos → todas as médias em traço.
 - Média fracionária → uma casa decimal.
+- Agente com processos e **zero** atrasados → `overdueCount` exibido como `0`,
+  não omitido: zero atraso é resultado, e a coluna em branco pareceria falta de
+  dado.
 
-**Dependências:** H-13, H-15
+**Dependências:** H-11, H-13, H-15
 **Tamanho:** P
 
 ---
