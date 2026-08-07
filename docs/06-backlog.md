@@ -1361,6 +1361,47 @@ esta semana · Chegando em 15 dias · **Desembaraçados hoje** (A-64) ·
 
 ### H-17 — Entregar a Página Operacional com tabela, busca e calendário
 
+> ✅ **CONCLUÍDA em 07/08/2026.** 72 testes próprios em 3 arquivos; suíte total
+> em **617**.
+>
+> **Saiu em duas entregas**, porque `M` estava subestimado pelo mesmo padrão de
+> `H-15`: três camadas, rota nova com sete parâmetros além dos onze filtros
+> globais, e três componentes de interface. ① domínio, rota e calendário
+> (PR #17) · ② página, tabela e calendário na tela. A ① tinha valor sozinha —
+> `H-22` também depende de `GET /api/processes`.
+>
+> **Conferido contra a planilha real:** 169 ativos, que é exatamente 649 − 480
+> desembaraçados; `search=NBSC` devolve 61 no conjunto todo e **7** entre os
+> ativos; incluindo desembaraçados são 649 em 4 páginas, a última com 49; o
+> filtro global `category=em_desembaraco` derruba para 32. O calendário traz
+> **5 dias** e 8 grupos (navio, dia).
+>
+> **O caso-limite da ordenação foi provado sobre dado real**, não só em teste: a
+> planilha tem **64 processos sem ETA2**, e eles ficam no índice **585 de 649**
+> tanto em `asc` quanto em `desc` — verificado que do 585 em diante são *todos*
+> nulos, nas duas ordens. É o caso que a implementação ingênua erra: inverter o
+> comparador inteiro jogaria os 64 para o topo, e quem clicasse para inverter
+> ETA2 veria uma tela de traços.
+>
+> **`matchesSearch` não reaproveita `normKey`, de propósito.** Aquele colapsa
+> espaço interno porque existe para **agrupar** — `EVER  FAIR` e `EVER FAIR` são
+> o mesmo navio. Na busca o espaço importa: quem digita um trecho de container
+> espera casar o que vê. Há teste fixando a diferença nos dois sentidos.
+>
+> **O padrão de `activeOnly` difere entre página e rota, e isso é desenho.** A
+> página parte de `true` (A-16); a rota, de `false`, porque serve também `H-22`,
+> que precisa achar qualquer processo pela REF.
+>
+> **`arrivalCalendar` não mexeu em `expectedVessels`.** IND-12 não tem teto por
+> definição (A-24) e está entregue desde `H-10`. O teto de 15 dias é da
+> apresentação e vive em função nova — e veio para o servidor porque o corte é
+> grande: dos 16 grupos da planilha real, só 8 caem dentro do horizonte.
+>
+> **Divergências resolvidas: seis.** A lista de arquivos não tinha
+> `src/domain/` — busca e ordenação são regra —, nem `src/http/server.ts`, nem
+> a fiação do cliente, nem teste algum. Mais a fonte do calendário, que não
+> existia, e `hasPendingEdits`, que não é exercível até `H-23`.
+
 **Objetivo:** listar processos ativos com busca por REF, BL e CNTR, e ver as
 chegadas por navio.
 
@@ -1369,6 +1410,12 @@ chegadas por navio.
 - `web/src/components/ProcessTable.tsx`
 - `web/src/components/ArrivalCalendar.tsx`
 - `src/http/routes/processes.ts`
+- **Omitidos do plano original**, e necessários: `src/domain/process-query.ts` e
+  `arrivalCalendar` em `src/domain/indicators.ts` (busca e ordenação são regra),
+  `src/http/server.ts`, `src/http/routes/indicators.ts`,
+  `web/src/api-client.ts`, `web/src/hooks/{useProcessQuery,useProcesses}.ts`,
+  `web/src/App.tsx`, e os testes de `tests/domain/`, `tests/http/` e
+  `web/tests/`
 
 **Contrato fixado:** `GET /api/processes` com `search`, `activeOnly`, `sort`,
 `order`, `limit`, `offset`.
@@ -2463,7 +2510,7 @@ conteúdo, **nunca o caminho** — e é o caminho que o watcher precisa.
 | E1 — Fundação e perfilamento ✅ | H-01 ✅, H-02 ✅ | 0 | 2 | 0 |
 | E2 — Leitura e normalização ✅ | **H-03 ✅ H-04 ✅ H-05 ✅ H-06 ✅ H-07 ✅ H-08 ✅** | 3 | 3 | 0 |
 | E3 — Indicadores e alertas | **H-09 ✅ H-10 ✅ H-11 ✅ H-12 ✅**, H-13, H-14 | 3 | 3 | 0 |
-| E4 — Interface | **H-15 ✅ H-16 ✅**, H-17 … H-22 | 6 | 2 | 0 |
+| E4 — Interface | **H-15 ✅ H-16 ✅ H-17 ✅**, H-18 … H-22 | 6 | 2 | 0 |
 | E5 — Edição e escrita | H-23 … H-27 | 0 | 5 | 0 |
 | E6 — Histórico | H-28, H-29 | 1 | 1 | 0 |
 | E7 — Operação | H-30, **H-31 ✅**, H-32, H-33, H-34 | 3 | 2 | 0 |
