@@ -115,14 +115,30 @@ Não re-derive isto; está medido.
 
 **Fases 0 e 1 concluídas. Fase 2 em andamento: `H-09` a `H-14` fechadas** — o
 épico E3 (indicadores e alertas) está inteiro —, **mais `H-32`, antecipada**
-porque era dependência declarada de `H-15` e não existia, **e `H-15`, que abriu
-o épico E4 e a primeira interface do projeto.** Próximo passo: **`H-16`**, a
-Página Inicial com os onze cartões-resumo. As fases estão em
+porque era dependência declarada de `H-15` e não existia, **`H-15`, que abriu o
+épico E4, e `H-16`, a primeira página de dado.** Próximo passo: **`H-17`**, a
+Página Operacional com tabela, busca e calendário. As fases estão em
 `docs/07-plano-entrega.md`.
+
+**`H-16` a `H-21` são paralelas no grafo** (`H15 --> H16 & H17 & …`), não uma
+cadeia: a ordem numérica é do backlog, não dependência. Só `H-22` tem
+pré-requisito próprio — `H-17`, de onde se chega ao detalhe.
 
 **`H-15` saiu em três entregas**, decidido em 06/08/2026 porque o tamanho `M`
 do plano estava subestimado: ① backend de filtros · ② casca, faixa e A-62 ·
 ③ `FilterBar`. A história sempre foi uma; só a execução foi fatiada.
+
+**A Página Inicial tem 12 cartões, não 11** (A-64). A rastreabilidade atribuía
+`IND-16` a `H-16`, o backlog listava 11, e nenhum era `desembaracadosHoje` —
+indicador calculado e invisível. Mesmo precedente de A-12 e A-40. **Só apareceu
+porque `IndicatorsCounts` obriga o campo** e a fixture do teste não compilou sem
+ele; um tipo parcial teria escondido. É o argumento de D-18 em uso.
+
+**Página de dado não trata `503` como falha.** `GET /api/indicators` responde
+`503` enquanto `lastReadAt` é `null`, e isso vira um estado próprio —
+`semLeitura`, com traços e a frase de que traço não é zero. Painel de zeros ali
+afirmaria que a planilha tem zero processos, indistinguível do caso em que ela
+realmente tem. `H-17` a `H-22` herdam o padrão de `useIndicators`.
 
 **A casca hospeda as sete páginas, e `H-16` a `H-22` encaixam sem tocá-la.**
 `PageOutlet` passa `dataVersion` como `key` — quando o dia vira ou a planilha é
