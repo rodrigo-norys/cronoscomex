@@ -450,8 +450,13 @@ declara reprova, e campo que o documento promete e a rota não serve também.
 casos-limite embutidos · `/novo-indicador IND-NN` conduz um indicador pelo ciclo
 das quatro camadas · `/fechar-historia H-NN` roda o portão, percorre a
 *definition of done* e imprime a prova · `/sugerir-commits` monta os commits e
-decide a branch · `/sugerir-prs` fatia a entrega em PRs. As duas últimas exigem
-aprovação do plano **e** permissão para executar.
+decide a branch · `/sugerir-prs` fatia a entrega em PRs · `/nova-pagina` conduz
+uma página pelo padrão de `H-16` a `H-20`. As duas de git executam com **um
+aceite só** — o portão duplo saiu em 07/08/2026, porque a segunda pergunta não
+acrescentava informação: quem aprovou o plano já viu os comandos literais, o
+remote e a base. **A obrigação passou para o plano**, que agora é obrigado a
+mostrá-los; plano vago não autoriza nada, e o prompt de permissão da ferramenta
+continua sendo a última barreira.
 
 **`/avaliar-claude`** interrompe o trabalho e varre a própria sessão atrás de
 capacidade faltando em `.claude/` — oito sinais, cada um exigindo citação
@@ -467,6 +472,16 @@ teste de rota continha uma asserção que reprovaria, e `H-32`, onde três fábr
 de estado quebraram no `typecheck`. A skill também deixou de vir muda quando a
 história não tem caso em `08-qualidade-operacao.md` §1.3 — a cobertura é de 11
 das 33 histórias, e o silêncio parecia defeito.
+
+**`/nova-pagina` saiu do gatilho declarado, ao fechar `H-20`** — cinco páginas
+com o mesmo desenho, e as mesmas coisas fora do plano **toda vez**. Ela fixa o
+padrão (hook com os quatro estados, filtros anexados, estado vazio afirmativo,
+nada calculado no cliente) e carrega as seis omissões medidas, cada uma com a
+história em que mordeu. Três delas já são mecânicas — a guarda de contrato as
+pega —, e a skill cobre o resto: o cliente e o hook quando a rota ainda não tem
+consumidor, o stub que **rejeita** rota não prevista, e a asserção da casca que
+usa a rota da página como exemplo de marcador pendente. Essa última falhou em
+`H-18`, `H-19` e `H-20`, seguidas.
 
 **`/novo-indicador` existe por causa de uma omissão que se repetiu cinco vezes.**
 `src/http/routes/indicators.ts` ficou de fora da lista de arquivos de `H-09` a
