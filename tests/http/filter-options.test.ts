@@ -86,6 +86,7 @@ function state(processes: Process[] = []): StoreState {
     rowsQuarantined: 0,
     externalLock: false,
     conflictFiles: [],
+    pendingEdits: [],
   }
 }
 

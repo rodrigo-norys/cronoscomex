@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ProcessDetail } from '../src/pages/ProcessDetail.tsx'
 import { type ApiStub, processDetailFixture, processFixture, stubApi } from './support/api-stub.ts'
@@ -230,5 +230,138 @@ describe('requisicao', () => {
 
     await bloco('Identificação')
     expect(api.calls).toContain('GET /api/processes/FT%20501%2F26')
+  })
+})
+
+/**
+ * A edicao na tela (`H-23`). **Nada aqui grava no `.xlsx`** — o formulario
+ * enfileira, e a projecao do servidor faz o valor aparecer no painel inteiro.
+ */
+describe('edicao na tela', () => {
+  it('enfileira o campo escolhido com o valor digitado', async () => {
+    api.serveProcessDetail(processDetailFixture())
+    renderPage('FT501.26')
+
+    const form = await bloco('Editar processo')
+    fireEvent.change(within(form).getByLabelText('Campo'), { target: { value: 'clientRaw' } })
+    fireEvent.change(within(form).getByLabelText('Valor novo'), { target: { value: 'NOVO' } })
+    fireEvent.click(within(form).getByRole('button', { name: 'Enfileirar' }))
+
+    await waitFor(() => expect(api.calls).toContain('POST /api/edits'))
+  })
+
+  it('diz que a planilha nao e modificada', async () => {
+    api.serveProcessDetail(processDetailFixture())
+    renderPage()
+
+    expect(within(await bloco('Editar processo')).getByText(/não é modificada/)).toBeTruthy()
+  })
+
+  // A mensagem do 400 vem do servidor: validar de novo no cliente criaria uma
+  // segunda tabela de regras, que diverge da primeira no ajuste seguinte.
+  it('exibe a recusa do servidor sem revalidar no cliente', async () => {
+    api.serveProcessDetail(processDetailFixture())
+    api.failEnqueueEdit('O campo "statusCategory" nao e editavel.')
+    renderPage()
+
+    const form = await bloco('Editar processo')
+    fireEvent.change(within(form).getByLabelText('Valor novo'), { target: { value: 'x' } })
+    fireEvent.click(within(form).getByRole('button', { name: 'Enfileirar' }))
+
+    expect(await within(form).findByRole('alert')).toBeTruthy()
+    expect(within(form).getByText(/nao e editavel/)).toBeTruthy()
+  })
+
+  it('afirma a ausencia de pendencia quando nao ha nenhuma', async () => {
+    api.serveProcessDetail(processDetailFixture({ pendingEdits: [] }))
+    renderPage()
+
+    expect(
+      within(await bloco('Edições pendentes')).getByText(/valores exibidos são os da planilha/),
+    ).toBeTruthy()
+  })
+
+  it('lista a pendencia com o de-para, e o vazio nomeado', async () => {
+    api.serveProcessDetail(
+      processDetailFixture({
+        pendingEdits: [
+          {
+            id: 'e1',
+            ts: '2026-08-07T12:00:00.000Z',
+            ref: 'FT501.26',
+            sourceRow: 502,
+            field: 'eta2',
+            value: null,
+            previous: '2026-08-20',
+          },
+        ],
+      }),
+    )
+    renderPage()
+
+    const painel = await bloco('Edições pendentes')
+
+    expect(within(painel).getByText('ETA2')).toBeTruthy()
+    expect(within(painel).getByText('2026-08-20')).toBeTruthy()
+    expect(within(painel).getByText('(vazio)')).toBeTruthy()
+  })
+
+  it('descarta uma edicao pela lista', async () => {
+    api.serveProcessDetail(
+      processDetailFixture({
+        pendingEdits: [
+          {
+            id: 'e1',
+            ts: '2026-08-07T12:00:00.000Z',
+            ref: 'FT501.26',
+            sourceRow: 502,
+            field: 'clientRaw',
+            value: 'NOVO',
+            previous: 'ACME LOG',
+          },
+        ],
+      }),
+    )
+    renderPage()
+
+    fireEvent.click(
+      await within(await bloco('Edições pendentes')).findByRole('button', {
+        name: 'Descartar',
+      }),
+    )
+
+    await waitFor(() => expect(api.calls).toContain('DELETE /api/edits/e1'))
+  })
+
+  /**
+   * O esvaziamento atinge a fila inteira, e o rotulo diz isso. Um botao que
+   * descarta o trabalho de outros processos sem avisar seria o pior da
+   * aplicacao.
+   */
+  it('rotula o esvaziamento global com o alcance dele', async () => {
+    api.serveProcessDetail(
+      processDetailFixture({
+        pendingEdits: [
+          {
+            id: 'e1',
+            ts: '2026-08-07T12:00:00.000Z',
+            ref: 'FT501.26',
+            sourceRow: 502,
+            field: 'clientRaw',
+            value: 'NOVO',
+            previous: 'ACME LOG',
+          },
+        ],
+      }),
+    )
+    renderPage()
+
+    const painel = await bloco('Edições pendentes')
+    const botao = within(painel).getByRole('button', { name: /Esvaziar a fila inteira/ })
+
+    expect(botao.textContent).toContain('todos')
+
+    fireEvent.click(botao)
+    await waitFor(() => expect(api.calls).toContain('DELETE /api/edits'))
   })
 })

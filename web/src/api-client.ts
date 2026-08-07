@@ -1,4 +1,5 @@
 import type { AlertsResponse } from '../../src/http/routes/alerts.ts'
+import type { EditsListResponse, EnqueuedEditResponse } from '../../src/http/routes/edits.ts'
 import type { FilterOptionsResponse } from '../../src/http/routes/filter-options.ts'
 import type { HealthResponse } from '../../src/http/routes/health.ts'
 import type { IndicatorsResponse } from '../../src/http/routes/indicators.ts'
@@ -21,6 +22,8 @@ import type { QuarantineResponse } from '../../src/http/routes/quarantine.ts'
  */
 export type {
   AlertsResponse,
+  EditsListResponse,
+  EnqueuedEditResponse,
   FilterOptionsResponse,
   HealthResponse,
   IndicatorsResponse,
@@ -153,6 +156,48 @@ export async function getProcessDetail(
   if (!response.ok) throw new Error(`GET /api/processes/:ref respondeu ${response.status}`)
 
   return (await response.json()) as ProcessDetailResponse
+}
+
+/**
+ * Enfileira uma edicao. **Nao grava no `.xlsx`** — a escrita e de `H-26`.
+ *
+ * `value: null` esvazia a celula; cancelar e `discardEdit`. O `400` vira erro
+ * com a mensagem do servidor, que ja explica qual campo e por que.
+ */
+export async function enqueueEdit(
+  edit: { ref: string; field: string; value: string | null },
+  signal?: AbortSignal,
+): Promise<EnqueuedEditResponse> {
+  const response = await fetch('/api/edits', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(edit),
+    ...(signal ? { signal } : {}),
+  })
+  if (response.ok) return (await response.json()) as EnqueuedEditResponse
+
+  const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null
+  throw new Error(body?.error?.message ?? `POST /api/edits respondeu ${response.status}`)
+}
+
+export async function getEdits(signal?: AbortSignal): Promise<EditsListResponse> {
+  const response = await fetch('/api/edits', signal ? { signal } : undefined)
+  if (!response.ok) throw new Error(`GET /api/edits respondeu ${response.status}`)
+
+  return (await response.json()) as EditsListResponse
+}
+
+export async function discardEdit(id: string): Promise<void> {
+  const response = await fetch(`/api/edits/${encodeURIComponent(id)}`, { method: 'DELETE' })
+  if (!response.ok) throw new Error(`DELETE /api/edits/:id respondeu ${response.status}`)
+}
+
+/** Esvazia a fila **inteira**, de todos os processos. */
+export async function discardAllEdits(): Promise<number> {
+  const response = await fetch('/api/edits', { method: 'DELETE' })
+  if (!response.ok) throw new Error(`DELETE /api/edits respondeu ${response.status}`)
+
+  return ((await response.json()) as { discarded: number }).discarded
 }
 
 /**
