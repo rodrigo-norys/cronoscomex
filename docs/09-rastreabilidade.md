@@ -80,7 +80,7 @@ especificação são rastreados aqui, para que **nenhum** fique fora.
 | Página Performance | RF-12 | H-19 | ✅ **Entregue.** Quatro quebras de IND-22 com denominador ao lado (A-42), os rankings de agente com `overdueCount` e de responsável, e a nota de IND-21 fora de escopo. Medido: a quebra por responsável é degenerada — os 101 pares completos estão todos em `indefinido` (A-31) |
 | Página Alertas | RF-13 | H-20 | ✅ **Entregue.** Fila agrupada por processo (A-60), preservando a ordem de primeira aparição — a severidade de A-41 vem do servidor e não é refeita no cliente. Medido: 40 linhas para 25 processos |
 | Página Histórico | RF-14 | H-21, H-28 | **Destravado** pelo ADR-0005. Sem retroatividade anterior à primeira execução (A-43) |
-| Detalhe do processo | RF-15 | H-22 | Implementável. Exibe `statusRaw` e as colunas fora de escopo |
+| Detalhe do processo | RF-15 | H-22 | ✅ **Entregue.** `statusRaw` ao lado da categoria classificada, as três colunas fora de escopo rotuladas, e as anomalias com o texto que vem de `describeAnomaly`. A rota `GET /api/processes/:ref` **não existia** e foi construída aqui |
 
 ### 3.2. Filtros globais (§7)
 
@@ -113,11 +113,11 @@ especificação são rastreados aqui, para que **nenhum** fique fora.
 | ETA2 | 9 indicadores e 4 alertas | H-03, H-05 | ✅ Implementável (P-03 confirmada) |
 | MERCADORIA | IND-13, filtro | H-03, H-11 | Implementável, com limitação |
 | RG | IND-16, IND-22 | H-03, H-05 | ✅ Implementável (P-03 confirmada) |
-| STATUS | Classificação, detalhe | H-03, H-06, H-22 | Implementável |
-| Coluna 13 | Somente exibição | H-03, H-22 | Fora de escopo para indicadores (§2), lido e exibido |
-| R$ ENVIADO | Somente exibição | H-03, H-22 | Fora de escopo para indicadores (§2), tipo misto (A-45) |
+| STATUS | Classificação, detalhe | H-03, H-06, H-22 | ✅ **Entregue.** O texto original é exibido **apenas** no detalhe (§2.1), ao lado da categoria, para a regra aplicada ficar auditável |
+| Coluna 13 | Somente exibição | H-03, H-22 | ✅ **Entregue.** Fora de escopo para indicadores (§2), exibido como texto puro e **rotulado** como tal |
+| R$ ENVIADO | Somente exibição | H-03, H-22 | ✅ **Entregue.** Fora de escopo (§2), tipo misto (A-45), exibido como texto puro. Medido: 547 de 649 processos têm algum campo fora de escopo preenchido |
 | DOCS ENVIADOS | IND-14, IND-22, ALE-02 | H-03, H-05 | ✅ Implementável (P-03 confirmada) |
-| Coluna P | Somente exibição | H-01, H-03, H-22 | Não documentada em §2. ✅ P-02 resolvida: cabeçalho `Coluna1`, 1 valor em 649 linhas (A-50) |
+| Coluna P | Somente exibição | H-01, H-03, H-22 | ✅ **Entregue.** Não documentada em §2. P-02 resolvida: cabeçalho `Coluna1`, **1 valor em 649 linhas** (A-50), reconfirmado em `H-22` |
 
 ### 3.4. Convenção de cores (§3)
 
@@ -177,7 +177,7 @@ As 33 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
 | H-19 | **IND-17**, **IND-20**, IND-22, §3.1 (Página Performance) | ✅ **Concluída.** Quebras do tempo documental. `IND-17` e `IND-20` entraram por A-65: a página já agrupa por agente e por responsável, e contagem com `overdueCount` é outra métrica sobre os mesmos grupos |
 | H-20 | ALE-01 a ALE-06, §3.1 (Página Alertas) | ✅ **Concluída.** Fila de trabalho, não panorama (A-59). Corrigiu a contradição do backlog entre o critério de aceite e o caso-limite do agrupamento |
 | H-21 | §3.1 (Página Histórico) | Série mensal |
-| H-22 | §3.1 (Detalhe), §3.3 (STATUS, Coluna 13, R$ ENVIADO, Coluna P) | Única tela onde `statusRaw` é exibido |
+| H-22 | §3.1 (Detalhe), §3.3 (STATUS, Coluna 13, R$ ENVIADO, Coluna P) | ✅ **Concluída.** Única tela onde `statusRaw` é exibido. Construiu a rota `:ref`, que o plano dava como fixada e nunca fora implementada |
 | H-23 | §5 abaixo (RF-20, RF-28) | Fila de edições |
 | H-24 | §5 abaixo (RF-22) | Preservação do arquivo na escrita |
 | H-25 | §5 abaixo (RF-23 a RF-26) | Seis defesas de integridade |

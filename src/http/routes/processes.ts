@@ -1,6 +1,8 @@
 import type { FastifyInstance } from 'fastify'
 import { store as defaultStore, type StoreAccess } from '../../app/process-store.ts'
 import { toIsoDay } from '../../domain/date-window.ts'
+import { normKey } from '../../domain/normalizer.ts'
+import { describeAnomaly } from '../../domain/process-builder.ts'
 import {
   DEFAULT_LIMIT,
   isActive,
@@ -60,6 +62,50 @@ export interface ProcessDto {
    * pendente**, nao porque a informacao falta.
    */
   hasPendingEdits: boolean
+}
+
+/**
+ * `H-22`. Uma anomalia da linha, com o texto que a explica.
+ *
+ * `ProcessDto.anomalies` continua sendo so os codigos: a tabela da Pagina
+ * Operacional nao precisa do texto, e engorda-la para servir uma tela custaria
+ * em todas as outras.
+ */
+export interface AnomalyDetail {
+  code: AnomalyCode
+  detail: string
+}
+
+/** Vazio ate `H-23`, que e quem enfileira edicao. A forma vem do contrato. */
+export interface PendingEditDto {
+  id: string
+  field: string
+  value: string
+  previous: string
+  ts: string
+}
+
+/** Vazio ate `H-28`, que e quem grava historico. A forma vem do contrato. */
+export interface StatusChangeDto {
+  ts: string
+  from: StatusCategory
+  to: StatusCategory
+}
+
+export interface ProcessDetailResponse {
+  process: ProcessDto
+  anomalies: AnomalyDetail[]
+  pendingEdits: PendingEditDto[]
+  statusHistory: StatusChangeDto[]
+  /**
+   * `null` enquanto nao ha historico gravado (`H-28`).
+   *
+   * O contrato documentado trazia `0`, e zero aqui **afirma** que a categoria
+   * mudou hoje — indistinguivel de "nao ha como saber". Sem historico seria
+   * sempre zero, mentindo em 649 processos. Mesmo argumento de `averageDays`
+   * em IND-22 e do traco de ALE-06.
+   */
+  daysInCurrentCategory: number | null
 }
 
 export interface ProcessesResponse {
@@ -153,6 +199,61 @@ export function registerProcessesRoute(
   app: FastifyInstance,
   store: StoreAccess = defaultStore,
 ): void {
+  /**
+   * `GET /api/processes/:ref` — o detalhe de UM processo (`H-22`).
+   *
+   * **Nao e marcada [F].** O detalhe e sobre um processo achado pela REF, e
+   * recortar o conjunto nao muda o que ele mostra — a casca ja assume isso e
+   * esconde a barra de filtros nesta rota.
+   *
+   * A busca usa `normKey`, e nao igualdade literal: TD-06 define a identidade
+   * de REF assim, e e por essa chave que a ingestao detecta duplicata. Igualdade
+   * literal daria `404` para uma URL digitada em caixa diferente, num processo
+   * que o dominio considera existente. A unicidade esta garantida na origem —
+   * REF repetida vai para quarentena e nunca chega a `state.processes`.
+   */
+  app.get('/api/processes/:ref', (request, reply) => {
+    const state = store.getState()
+
+    if (state.lastReadAt === null) {
+      return reply
+        .code(503)
+        .send(
+          apiError(
+            'ARQUIVO_INDISPONIVEL',
+            state.degradedReason ?? 'A planilha ainda nao foi lida.',
+          ),
+        )
+    }
+
+    const { ref } = request.params as { ref: string }
+    const wanted = normKey(ref)
+    const process = state.processes.find((candidate) => normKey(candidate.ref) === wanted)
+
+    if (process === undefined) {
+      return reply
+        .code(404)
+        .send(apiError('PROCESSO_NAO_ENCONTRADO', `Nenhum processo com a REF "${ref}".`))
+    }
+
+    const body: ProcessDetailResponse = {
+      process: toDto(process),
+      // O texto vem do dominio, onde nasce: traduzir codigo em frase no cliente
+      // escreveria a mesma tabela num segundo lugar (mesmo motivo de A-28).
+      anomalies: process.anomalies.map((code) => ({
+        code,
+        detail: describeAnomaly(code, process),
+      })),
+      // Os tres campos abaixo ficam vazios ate H-23 e H-28. Vazio de verdade,
+      // nunca preenchido com placeholder: a tela precisa poder dizer que o
+      // historico ainda nao comecou, e nao que o processo nunca mudou.
+      pendingEdits: [],
+      statusHistory: [],
+      daysInCurrentCategory: null,
+    }
+    return reply.code(200).send(body)
+  })
+
   app.get('/api/processes', (request, reply) => {
     const state = store.getState()
 

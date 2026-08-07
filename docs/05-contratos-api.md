@@ -178,11 +178,29 @@ escopo, exibidos mas não usados em cálculo.
 ```jsonc
 {
   "process": { /* ProcessDto */ },
+  "anomalies": [ { "code": "RG_SEM_DESEMBARACO", "detail": "RG preenchido com categoria em_andamento" } ],
   "pendingEdits": [ { "id": "01J...", "field": "eta2", "value": "2026-08-06", "previous": "2026-08-04", "ts": "..." } ],
   "statusHistory": [ { "ts": "2026-07-30T...", "from": "em_andamento", "to": "desembaracado" } ],
-  "daysInCurrentCategory": 0
+  "daysInCurrentCategory": null
 }
 ```
+
+`anomalies` traz o **texto** da divergência, e não só o código: o critério de
+aceite de `H-22` pede a explicação ao lado, e ela nasce em
+`describeAnomaly`, no domínio. `ProcessDto.anomalies` continua sendo apenas os
+códigos — a tabela da Página Operacional não precisa do texto.
+
+`daysInCurrentCategory` é **`number | null`**, e não `0`. Zero afirma que a
+categoria mudou hoje, indistinguível de "não há histórico para saber" — e até
+`H-28` gravar o primeiro evento seria sempre zero, mentindo em todos os
+processos. Mesmo princípio de `documentaryLeadTime.averageDays` (A-42).
+
+`pendingEdits` fica vazio até `H-23`, `statusHistory` até `H-28`. **Vazio de
+verdade**, nunca preenchido com valor de espera.
+
+A REF é resolvida por `normKey`, como TD-06 define a identidade — uma URL em
+caixa diferente encontra o mesmo processo. A unicidade está garantida na
+ingestão: REF repetida vai para quarentena e não chega ao estado.
 
 | Código | Situação |
 |---|---|

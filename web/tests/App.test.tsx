@@ -93,12 +93,11 @@ describe('navegacao', () => {
     await waitFor(() => expect(screen.getByRole('region', { name: 'Cartões-resumo' })).toBeTruthy())
   })
 
-  it('exibe a REF no detalhe do processo, rota fora do menu', () => {
+  it('hospeda o detalhe do processo, rota fora do menu (H-22)', async () => {
     window.history.replaceState(null, '', '/processo/CRO-2026-001')
     render(<App />)
 
-    expect(screen.getByText(/CRO-2026-001/)).toBeTruthy()
-    expect(screen.getByText('H-22')).toBeTruthy()
+    expect(await screen.findByRole('region', { name: 'Identificação' })).toBeTruthy()
   })
 
   it('nao inventa pagina para endereco desconhecido', () => {

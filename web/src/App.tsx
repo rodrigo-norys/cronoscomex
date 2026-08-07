@@ -11,6 +11,7 @@ import { Home } from './pages/Home.tsx'
 import { Operational } from './pages/Operational.tsx'
 import { Performance } from './pages/Performance.tsx'
 import { NotFoundPage, PendingPage } from './pages/Placeholders.tsx'
+import { ProcessDetail } from './pages/ProcessDetail.tsx'
 import { NAV_PAGES, navigate, pageOf, type Route, useRoute } from './router.ts'
 
 /**
@@ -120,7 +121,7 @@ interface PageOutletProps {
 /**
  * `dataVersion` chega como `key`: quando o dia vira ou a planilha muda, a
  * pagina inteira remonta e refaz as proprias requisicoes, sem que a casca
- * precise conhecer nenhuma delas. As paginas de `H-21` e `H-22` entram aqui.
+ * precise conhecer nenhuma delas. So a Pagina Historico (`H-21`) entra aqui.
  *
  * A casca repassa `queryString` em vez de os filtros inteiros: a pagina precisa
  * anexar o recorte as requisicoes, nunca interpreta-lo.
@@ -149,6 +150,12 @@ function PageOutlet({ route, dataVersion, health, queryString }: PageOutletProps
 
   if (route.pageId === 'alerts') {
     return <Alerts key={dataVersion} queryString={queryString} dataVersion={dataVersion} />
+  }
+
+  // Sem `queryString`: o detalhe e sobre UM processo achado pela REF, e o
+  // recorte nao muda o que ele mostra — a casca ja esconde a barra aqui.
+  if (route.pageId === 'processDetail' && route.ref !== null) {
+    return <ProcessDetail key={dataVersion} processRef={route.ref} dataVersion={dataVersion} />
   }
 
   return <PendingPage key={dataVersion} page={page} processRef={route.ref} />
