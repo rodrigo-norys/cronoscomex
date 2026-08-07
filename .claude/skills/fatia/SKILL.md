@@ -44,6 +44,25 @@ Casos reais que essas perguntas teriam pego:
 - `H-32`: faltava `tests/http/health.test.ts`, e três fábricas de estado
   quebraram no `typecheck` ao ganhar campo obrigatório
 
+## Despacho — qual skill conduz esta história
+
+Teste textual, não julgamento. Responda olhando a lista de arquivos e o
+contrato que a fatia acabou de imprimir:
+
+| Se a lista de arquivos contém… | …invoque, depois deste checklist |
+|---|---|
+| `web/src/pages/*.tsx` | **`/nova-pagina H-NN`** |
+| `src/http/routes/indicators.ts`, ou o contrato acrescenta campo a `GET /api/indicators` | **`/novo-indicador IND-NN`** |
+| nenhum dos dois | nenhuma; siga direto |
+
+**Ao despachar, imprima os caminhos** que a skill obriga — os arquivos, não só
+o nome dela. Skill invocada em silêncio não informa ninguém.
+
+Isto existe porque o julgamento falhou: `H-19` acrescentou campo a
+`GET /api/indicators` — gatilho declarado da `/novo-indicador` — e a skill não
+foi invocada, porque "indicador novo" foi lido como "IND-NN novo". O teste
+acima não depende de leitura: ou o caminho está na lista, ou não está.
+
 ## O que fazer agora
 
 Monte o checklist abaixo e **aguarde**. Não escreva código antes da resposta.
