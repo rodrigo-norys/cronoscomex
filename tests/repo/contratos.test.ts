@@ -72,6 +72,91 @@ describe('toda rota tem teste de servidor', () => {
 })
 
 /**
+ * As rotas que `05-contratos-api.md` declara, com a história que a entrega
+ * quando ela ainda não existe.
+ *
+ * O marcador `> **Pendente de `H-NN`.**` logo abaixo do título é o que separa
+ * "ainda não chegou" de "sumiu". Sem ele, uma rota documentada e ausente é
+ * indistinguível de um plano adiantado — que foi exatamente o estado de
+ * `GET /api/processes/:ref` **desde o começo do projeto até `H-22`**.
+ */
+interface DocumentedRoute {
+  method: string
+  url: string
+  pendingStory: string | null
+}
+
+function documentedRoutes(): DocumentedRoute[] {
+  const document = readFileSync('docs/05-contratos-api.md', 'utf-8')
+  const routes: DocumentedRoute[] = []
+
+  for (const section of document.split(/^### /m)) {
+    const heading = section.match(/^`(GET|POST|PUT|PATCH|DELETE) ([^`]+)`/)
+    if (heading?.[1] === undefined || heading[2] === undefined) continue
+
+    const pending = section.match(/^> \*\*Pendente de `(H-\d+)`/m)
+    routes.push({
+      method: heading[1],
+      url: heading[2],
+      pendingStory: pending?.[1] ?? null,
+    })
+  }
+  return routes
+}
+
+/** As histórias com o bloco de conclusão em `docs/06-backlog.md`. */
+function closedStories(): Set<string> {
+  const backlog = readFileSync('docs/06-backlog.md', 'utf-8')
+  const closed = new Set<string>()
+
+  for (const section of backlog.split(/^### /m)) {
+    const story = section.match(/^(H-\d+)\b/)
+    if (story?.[1] && section.includes('✅ **CONCLUÍDA')) closed.add(story[1])
+  }
+  return closed
+}
+
+const DOCUMENTED = documentedRoutes()
+const CLOSED = closedStories()
+
+describe('toda rota documentada existe, ou diz de quem está esperando', () => {
+  it('encontra as rotas no documento e as histórias no backlog', () => {
+    // Âncora contra o pior modo de falha de guarda: verde por vacuidade. Se o
+    // formato de um dos dois documentos mudar, isto reprova em vez de deixar as
+    // asserções abaixo passarem sem verificar nada.
+    expect(DOCUMENTED.length).toBeGreaterThan(8)
+    expect(DOCUMENTED.some((route) => route.pendingStory !== null)).toBe(true)
+    expect(CLOSED.size).toBeGreaterThan(0)
+  })
+
+  /**
+   * `GET /api/processes/:ref` ficou documentada e ausente do começo do plano
+   * até `H-22`, sem nada acusar: a checagem de contrato compara o **corpo** de
+   * `GET /api/indicators` com o documento, e nunca a lista de rotas.
+   *
+   * A implicação é de mão única, como em `paginas-montadas`: rota implementada
+   * antes de a história fechar é estado legítimo.
+   */
+  it.each(DOCUMENTED.map((route) => [`${route.method} ${route.url}`, route] as const))(
+    '%s',
+    (_label, route) => {
+      const shouldExist = route.pendingStory === null || CLOSED.has(route.pendingStory)
+      if (!shouldExist) return
+
+      const app = buildServer(config, fakeStore)
+      const registered = app.hasRoute({ method: route.method as 'GET', url: route.url })
+
+      expect(
+        registered,
+        route.pendingStory === null
+          ? `${route.method} ${route.url} está documentada e não é servida — marque-a como pendente ou implemente-a`
+          : `${route.pendingStory} está concluída no backlog, mas ${route.method} ${route.url} não é servida`,
+      ).toBe(true)
+    },
+  )
+})
+
+/**
  * Extrai as chaves declaradas num bloco ```jsonc de `05-contratos-api.md`.
  *
  * Compara **chaves**, nunca valores: o documento traz exemplos ilustrativos, e
