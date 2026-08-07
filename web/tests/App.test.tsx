@@ -47,13 +47,13 @@ describe('casca', () => {
     expect(await screen.findByRole('region', { name: 'Cartões-resumo' })).toBeTruthy()
   })
 
-  // As restantes chegam de `H-19` a `H-22`; ate la o marcador diz qual.
+  // As restantes chegam de `H-20` a `H-22`; ate la o marcador diz qual.
   it('hospeda o marcador nas paginas ainda nao implementadas', () => {
-    window.history.replaceState(null, '', '/performance')
+    window.history.replaceState(null, '', '/alertas')
     render(<App />)
 
     expect(screen.getByText(/Página ainda não implementada/)).toBeTruthy()
-    expect(screen.getByText('H-19')).toBeTruthy()
+    expect(screen.getByText('H-20')).toBeTruthy()
   })
 
   it('hospeda a Pagina Operacional, entregue por H-17', async () => {
@@ -85,8 +85,8 @@ describe('navegacao', () => {
 
   it('responde ao botao voltar do navegador', async () => {
     render(<App />)
-    fireEvent.click(within(nav()).getByRole('link', { name: 'Performance' }))
-    expect(screen.getByText('H-19')).toBeTruthy()
+    fireEvent.click(within(nav()).getByRole('link', { name: 'Alertas' }))
+    expect(screen.getByText('H-20')).toBeTruthy()
 
     window.history.back()
 
