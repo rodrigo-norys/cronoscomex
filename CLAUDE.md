@@ -85,7 +85,7 @@ src/io/        leitura e escrita de .xlsx, watcher, histórico, fila de ediçõe
 src/app/       process-store, write-guard, config
 src/http/      rotas Fastify (só serializam; não calculam)
 web/           SPA React (só apresenta; não calcula)
-tools/         profile_workbook.py — o perfilador, para a virada de ano
+tools/         o perfilador (virada de ano) e o verificador de strip-types
 config/        app.json, color-map.json, status-aliases.json
 tests/         domain/, io/, fixtures/
 ```
@@ -281,6 +281,17 @@ casaria como staging real. `conferir-alinhamento.sh` (`ConfigChange`) avisa
 quando existe skill ou hook que este arquivo não menciona — falha **aberto**,
 porque travar trabalho por documentação atrasada inverte a prioridade.
 
+**`npm run test:strip` roda logo depois do guard, e existe por um defeito real.**
+`tools/verificar-strip-types.mjs` importa os 28 módulos de `src/` sob
+`--experimental-strip-types`, que é como a aplicação roda de verdade
+(`npm start`, `npm run dev`). O modo strip-only apenas **remove** anotações de
+tipo e recusa sintaxe que gere código: `parameter property`, `enum`, `namespace`,
+decorators. Uma `parameter property` num construtor passou por `lint`,
+`typecheck`, 441 testes e `build` — e teria derrubado a aplicação no primeiro
+`npm start`. **Nenhuma outra etapa executa `src/` com a flag:** `tsc --noEmit`
+não emite, o Vitest usa transformador próprio, e `vite build` só compila `web/`.
+Provado que pega: reintroduzir o defeito faz o passo sair com `1`.
+
 **`test-guard.sh` é a regressão do guard**, e roda **primeiro** no
 `npm run verify`. O guard é a única camada mecânica de autoria nossa — regra de
 permissão é do cliente, skill é instrução —, e uma regex quebrada nele falha em
@@ -333,7 +344,7 @@ bloco.** O hook de alinhamento avisa; quem escreve é você.
 
 ```bash
 nvm use             # Node 22.23.2, conforme .nvmrc
-npm run verify      # lint + typecheck + test + build — portão obrigatório
+npm run verify      # guard + strip-types + lint + typecheck + test + build
 npm test            # Vitest
 npm run dev         # servidor + interface
 python3 tools/profile_workbook.py "<caminho.xlsx>" saida.json   # reperfilar
