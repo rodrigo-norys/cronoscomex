@@ -72,6 +72,7 @@ versionada** — a auditoria é autossuficiente, e é ela que vale.
 | Tailwind | 4.3.3 |
 | Recharts | 3.10.1 |
 | Vitest | 4.1.10 |
+| Testing Library · jsdom | 16.3.2 · 30.0.1 — **só teste**, ver D-17 |
 | Biome (lint + format) | 2.5.6 |
 
 Não troque versão sem registrar o motivo. Não acrescente dependência que o
@@ -87,8 +88,14 @@ src/http/      rotas Fastify (só serializam; não calculam)
 web/           SPA React (só apresenta; não calcula)
 tools/         o perfilador (virada de ano) e o verificador de strip-types
 config/        app.json, color-map.json, status-aliases.json
-tests/         domain/, io/, fixtures/
+tests/         domain/, io/, app/, http/, fixtures/ — ambiente `node`
+web/tests/     componentes e casca — ambiente `jsdom`
 ```
+
+**A suíte tem dois projetos**, declarados em `vitest.config.ts`: `servidor` roda
+em `node` e cobre `tests/`; `interface` roda em `jsdom` com o plugin do React e
+cobre `web/tests/`. Ambiente único obrigaria a carregar `jsdom` para centenas de
+testes que não o usam, ou a deixar a interface sem teste.
 
 ## Fatos medidos sobre a planilha (H-01, 03/08/2026)
 
