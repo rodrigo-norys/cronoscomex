@@ -324,8 +324,61 @@ describe('parseFilters — datas e booleano', () => {
     expect(parseFilters({})).toEqual(emptyFilterSet())
   })
 
-  it('ignora parametro presente e vazio', () => {
-    expect(parseFilters({ client: '', etaFrom: '' })).toEqual(emptyFilterSet())
+  // Onde a chave vazia nao existe como valor, parametro vazio e ausencia: nao
+  // ha categoria em branco nem data em branco. Os dominios abertos fazem o
+  // oposto, no bloco seguinte.
+  it('ignora parametro presente e vazio onde a chave vazia nao e valor', () => {
+    expect(parseFilters({ etaFrom: '', category: '', importerOutsideRj: '' })).toEqual(
+      emptyFilterSet(),
+    )
+  })
+})
+
+/**
+ * A chave vazia atravessa a query inteira, e nao so o `applyFilters`.
+ *
+ * `optionsOf` a oferece de proposito e `applyFilters` a casa desde `H-15`, mas
+ * ate `H-18` ela morria no `parseFilters`: `?goods=` virava lista vazia, o
+ * recorte nao recortava, e a tela exibia a base inteira como se fossem os
+ * processos sem mercadoria. Medido na planilha real: 57 processos, o segundo
+ * maior grupo. Nenhuma camada acusava — falha silenciosa, que e o que a regra
+ * inviolavel 3 proibe.
+ */
+describe('parseFilters — chave vazia nos dominios abertos', () => {
+  it('preserva a chave vazia nos seis filtros de dominio aberto', () => {
+    const filters = parseFilters({
+      client: '',
+      importer: '',
+      vessel: '',
+      agent: '',
+      goods: '',
+      port: '',
+    })
+
+    expect(filters.client).toEqual([''])
+    expect(filters.importer).toEqual([''])
+    expect(filters.vessel).toEqual([''])
+    expect(filters.agent).toEqual([''])
+    expect(filters.goods).toEqual([''])
+    expect(filters.port).toEqual([''])
+  })
+
+  it('distingue parametro ausente de parametro vazio', () => {
+    expect(parseFilters({}).goods).toEqual([])
+    expect(parseFilters({ goods: '' }).goods).toEqual([''])
+  })
+
+  it('mantem a chave vazia ao lado de uma preenchida, sem descartar nenhuma', () => {
+    expect(parseFilters({ goods: ['', 'BAZAR'] }).goods).toEqual(['', 'BAZAR'])
+  })
+
+  it('recorta de fato o conjunto, que e o ponto de preservar a chave', () => {
+    const semMercadoria = process({ goodsKey: '' })
+    const comMercadoria = process({ goodsKey: 'BAZAR' })
+
+    const recorte = applyFilters([semMercadoria, comMercadoria], parseFilters({ goods: '' }))
+
+    expect(recorte).toEqual([semMercadoria])
   })
 })
 

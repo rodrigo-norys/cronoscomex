@@ -23,6 +23,8 @@ const config: AppConfig = {
 interface Fields {
   clientKey?: string
   clientRaw?: string
+  goodsKey?: string
+  goodsRaw?: string
   portKey?: string
   portRaw?: string
   statusCategory?: StatusCategory
@@ -46,7 +48,7 @@ function process(fields: Fields = {}): Process {
     container: '',
     vesselRaw: '',
     portRaw: fields.portRaw ?? '',
-    goodsRaw: '',
+    goodsRaw: fields.goodsRaw ?? '',
     statusRaw: '',
     boletoRaw: '',
     paymentRaw: '',
@@ -59,7 +61,7 @@ function process(fields: Fields = {}): Process {
     agentKey: '',
     vesselKey: '',
     portKey: fields.portKey ?? '',
-    goodsKey: '',
+    goodsKey: fields.goodsKey ?? '',
     statusCategory: fields.statusCategory ?? 'em_andamento',
     responsible: fields.responsible ?? 'indefinido',
     customsChannel: fields.customsChannel ?? 'nenhum',
@@ -280,6 +282,42 @@ describe('filtros nas rotas [F]', () => {
 
     expect(resposta.statusCode).toBe(400)
     expect(resposta.json().error.code).toBe('FILTRO_INVALIDO')
+
+    await app.close()
+  })
+
+  /**
+   * A chave vazia e o unico valor que `optionsOf` oferece e a query precisava
+   * carregar de volta. Ate `H-18` ela era descartada aqui, entre a URL e o
+   * `applyFilters`: o operador marcava "(em branco)" e recebia a base inteira,
+   * sem erro nem aviso. Este e o teste da ponta a ponta — o do dominio prova a
+   * regra, este prova que a rota nao a desfaz.
+   */
+  it('filtra pela chave vazia, que e valor e nao ausencia', async () => {
+    const comEsemMercadoria = [
+      process({ goodsKey: 'BAZAR', goodsRaw: 'BAZAR' }),
+      process({ goodsKey: '' }),
+      process({ goodsKey: '' }),
+    ]
+    const app = buildServer(config, fakeStore(state(comEsemMercadoria)))
+
+    const semFiltro = (await app.inject({ method: 'GET', url: '/api/indicators' })).json()
+    const emBranco = (await app.inject({ method: 'GET', url: '/api/indicators?goods=' })).json()
+
+    expect(semFiltro.counts.total).toBe(3)
+    expect(emBranco.counts.total).toBe(2)
+
+    await app.close()
+  })
+
+  it('nao confunde parametro vazio com parametro ausente', async () => {
+    const app = buildServer(config, fakeStore(state(conjunto)))
+
+    const ausente = (await app.inject({ method: 'GET', url: '/api/processes' })).json()
+    const vazio = (await app.inject({ method: 'GET', url: '/api/processes?client=' })).json()
+
+    expect(ausente.total).toBe(3)
+    expect(vazio.total).toBe(0)
 
     await app.close()
   })
