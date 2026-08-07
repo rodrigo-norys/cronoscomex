@@ -117,9 +117,9 @@ Não re-derive isto; está medido.
 épico E3 (indicadores e alertas) está inteiro —, **mais `H-32`, antecipada**
 porque era dependência declarada de `H-15` e não existia, **`H-15`, que abriu o
 épico E4, `H-16`, a primeira página de dado, `H-17`, que entrega também
-`GET /api/processes`, `H-18`, os três rankings, e `H-19`, que fecha as duas
-últimas regras sem tela.** Próximo passo: **`H-20`**, a Página Alertas — a fila
-de trabalho dos seis alertas. As fases estão em `docs/07-plano-entrega.md`.
+`GET /api/processes`, `H-18`, os três rankings, `H-19`, que fecha as duas
+últimas regras sem tela, e `H-20`, a fila de trabalho.** Próximo passo:
+**`H-21`**, a Página Histórico. As fases estão em `docs/07-plano-entrega.md`.
 
 **Com `H-19`, todo indicador em escopo tem tela.** A varredura de A-65 fechou:
 `IND-21` é a única linha sem história de interface, e por ausência de dado na
@@ -198,6 +198,21 @@ nem aviso, nos nove filtros da barra. Nos demais — categoria, canal,
 responsável, datas — vazio segue sendo ausência, porque lá não existe chave em
 branco. Medido: o recorte devolve 57 processos sem mercadoria e 38 sem cliente,
 onde antes devolvia 649.
+
+**Zero medido e zero não mensurável não podem ter a mesma aparência.** A Página
+Alertas exibe `chegadas_hoje: 0` como `0` — nada chega hoje, e isso foi medido —
+e `processos_parados` como **traço**: a rota passa histórico vazio até `H-28`,
+então o zero ali não é resultado, é ausência de instrumento. Exibi-los igual
+afirmaria que nada está parado. Mesma família da nota de `IND-21` e do estado
+`semLeitura`; é a regra 3 aplicada a um número que já existe no contrato.
+
+**Agrupar não pode reordenar.** `H-20` agrupa os alertas por processo (A-60)
+preservando a **ordem de primeira aparição**: como a lista chega ordenada por
+severidade e o primeiro alerta de um processo é o mais severo dele, essa posição
+já é a correta. A ordenação do servidor é herdada inteira — inclusive nulos por
+último e o desempate por `sourceRow` —, e nada é reordenado no cliente.
+Verificado no arquivo real: 40 linhas viram 25 grupos sem quebrar a sequência de
+severidade em ponto nenhum.
 
 **Quebra de tempo ordena por amostra; ranking de volume ordena por volume.** As
 duas perguntas divergem, e a diferença é medida: dos 509 grupos de cliente, 425
