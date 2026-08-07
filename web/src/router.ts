@@ -87,6 +87,22 @@ export function navigate(path: string): void {
   window.dispatchEvent(new PopStateEvent('popstate'))
 }
 
+/**
+ * Reescreve a query **sem empilhar historico**, ao contrario de `navigate`.
+ *
+ * Filtro e estado de visualizacao, nao navegacao: marcar cinco clientes
+ * empilharia cinco entradas, e o botao "voltar" viraria "desmarcar o ultimo" —
+ * o operador que quisesse sair da pagina teria de clicar seis vezes. Com
+ * `replaceState`, voltar sai da pagina, que e o que o gesto significa.
+ */
+export function replaceQuery(search: string): void {
+  const normalized = search === '' || search === '?' ? '' : search
+  if (normalized === window.location.search) return
+
+  window.history.replaceState(null, '', `${window.location.pathname}${normalized}`)
+  window.dispatchEvent(new PopStateEvent('popstate'))
+}
+
 function subscribe(onChange: () => void): () => void {
   window.addEventListener('popstate', onChange)
   return () => window.removeEventListener('popstate', onChange)
@@ -96,7 +112,21 @@ function currentPath(): string {
   return window.location.pathname
 }
 
+function currentSearch(): string {
+  return window.location.search
+}
+
 export function useRoute(): Route {
   const pathname = useSyncExternalStore(subscribe, currentPath, currentPath)
   return useMemo(() => parseRoute(pathname), [pathname])
+}
+
+/**
+ * Dois `useSyncExternalStore` sobre o mesmo `popstate`, e nao um sobre a URL
+ * inteira: assim mudar filtro nao invalida a rota, nem trocar de pagina
+ * reconstroi os parametros.
+ */
+export function useQuery(): URLSearchParams {
+  const search = useSyncExternalStore(subscribe, currentSearch, currentSearch)
+  return useMemo(() => new URLSearchParams(search), [search])
 }
