@@ -1543,6 +1543,61 @@ chegadas por navio.
 
 ### H-19 — Entregar a Página Performance
 
+> ✅ **CONCLUÍDA em 07/08/2026.** 36 testes próprios em 4 arquivos; suíte total
+> em **693**.
+>
+> **A ordenação foi a decisão que fez a página servir.** Os outros rankings
+> ordenam por volume, porque respondem "quem tem mais"; a quebra de IND-22
+> responde "onde dá para comparar", e as duas divergem na prática. Medido: dos
+> **509** grupos de cliente, **425 não têm nenhum par completo** — ordenar por
+> volume encheria o topo da tabela de traços e empurraria a informação para fora
+> do corte. Ordenando por tamanho da amostra, **as 10 linhas exibidas em cada
+> uma das três quebras abertas têm média de verdade**, verificado no arquivo
+> real.
+>
+> **`leadTimeByGroup` não corta, e isso é o desenho.** Quem corta não pode ser
+> quem conta: a rota precisa do total de grupos para dizer quantos ficaram de
+> fora, e um teto no domínio apagaria esse número antes de alguém poder
+> exibi-lo (regra inviolável 2). O corte acontece na rota, com `config.topN`, e
+> o rodapé de cada tabela anuncia o que sobrou. Por isso a assinatura fixada no
+> plano ficou **intacta** — a divergência que eu havia proposto deixou de
+> existir.
+>
+> **A quebra por responsável não leva teto** — quatro chaves fixas, e A-28 exige
+> as quatro. Sujeitá-la ao `topN` deixaria uma mudança de configuração quebrar
+> um critério de aceite sem teste nenhum acusando. Mesmo tratamento que
+> `rankings.responsible` já recebia.
+>
+> **Ela também é degenerada no dado real, e a tela diz isso.** Os 101 pares
+> completos estão **todos** em `indefinido` — média 12,5, que é a global; os três
+> responsáveis identificados têm amostra **zero**. Não é defeito: é A-31 e R-02
+> medidos, com 477 linhas verdes que perdem o responsável. Sem a ressalva, ler
+> "Colaborador 1: —" ao lado de "Indefinido: 12,5" leva à conclusão oposta.
+>
+> **O ranking por responsável não é clicável, de propósito.** A-18 faz o filtro
+> `colaborador1` selecionar **junto** `colaborador1_outros_clientes`, enquanto o
+> ranking os exibe separados por serem perguntas diferentes. Clicar numa linha
+> de 120 e cair numa tela de 129 faria o operador desconfiar do número certo. O
+> de agentes é clicável — lá não há a armadilha.
+>
+> **Conferido contra a planilha real:** 509 grupos de cliente, 35 de agente, 70
+> de navio, 4 de responsável. O maior agente tem 246 processos e 7 atrasados, e
+> há agente com **zero** atraso — o caso-limite não era hipótese. A soma das
+> quebras reproduz o agregado exatamente: amostra 101 = 101, negativos 1 = 1,
+> incompletos 547 = 547.
+>
+> **Divergências resolvidas: cinco** (a sexta se dissolveu, acima). A lista de
+> arquivos não tinha `src/http/routes/indicators.ts` — **sexta ocorrência** da
+> mesma omissão, e a que motivou a guarda de contrato —, nem o teste da rota,
+> nem `docs/05-contratos-api.md`, nem `web/src/App.tsx`, nem teste algum. O
+> formato do bloco na resposta não estava fixado em lugar nenhum. E
+> `responsibleRanking` devolvia `label: 'colaborador1'`, que a primeira tela a
+> exibi-lo imprimiria cru.
+>
+> **A fixture do stub quebrou no `typecheck`**, como em `H-32`: `IndicatorsResponse`
+> passou a obrigar o bloco novo. É o argumento de D-18 em uso — tipo parcial
+> teria escondido.
+
 **Objetivo:** tempo médio de envio documental, quebrado por cliente, agente,
 navio e responsável, com o denominador visível — e os rankings de volume por
 agente e por responsável.
@@ -1558,6 +1613,12 @@ agente e por responsável.
 **Arquivos:**
 - `web/src/pages/Performance.tsx`
 - `src/domain/indicators.ts` (função de quebra)
+- **Omitidos do plano original**, e necessários: `src/http/routes/indicators.ts`
+  (sexta ocorrência da omissão), `tests/http/indicators.test.ts`,
+  `docs/05-contratos-api.md`, `web/src/App.tsx`,
+  `web/src/components/RankingBar.tsx`, `web/tests/support/api-stub.ts`, e os
+  testes de `tests/domain/` e `web/tests/` — inclusive `web/tests/App.test.tsx`,
+  que usava `/performance` como exemplo de página pendente
 
 **Contrato fixado:**
 

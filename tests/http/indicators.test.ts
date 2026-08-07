@@ -119,6 +119,10 @@ describe('GET /api/indicators', () => {
       'counts',
       'documentaryLeadTime',
       'expectedVessels',
+      // `leadTimeByGroup` entrou em `H-19`: as quebras de IND-22 por cliente,
+      // agente, navio e responsavel. O agregado acima segue intacto — sao o
+      // mesmo indicador em granularidades diferentes.
+      'leadTimeByGroup',
       'meta',
       'rankings',
     ])
@@ -155,6 +159,98 @@ describe('GET /api/indicators', () => {
     // As quatro chaves de responsavel aparecem mesmo com os campos em branco.
     expect(body.rankings.responsible).toHaveLength(4)
     expect(body.meta.topN).toBe(10)
+
+    await app.close()
+  })
+
+  /**
+   * O rotulo do ranking por responsavel e o legivel, nao a chave.
+   *
+   * Ate `H-19` a rota devolvia `label: 'colaborador1'`, e nenhuma pagina o
+   * consumia — o defeito so apareceria na primeira tela a exibi-lo. Traduzir no
+   * cliente escreveria a mesma tabela duas vezes (A-28).
+   */
+  it('devolve o rotulo legivel do responsavel, nao a chave', async () => {
+    const app = buildServer(config, fakeStore(state()))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/indicators' })).json()
+    const indefinido = body.rankings.responsible.find(
+      (group: { key: string }) => group.key === 'indefinido',
+    )
+
+    expect(indefinido.label).toBe('Indefinido')
+
+    await app.close()
+  })
+})
+
+describe('GET /api/indicators — quebras de IND-22 (H-19)', () => {
+  it('devolve as quatro quebras e os totais de grupo', async () => {
+    const app = buildServer(config, fakeStore(state()))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/indicators' })).json()
+
+    expect(Object.keys(body.leadTimeByGroup).sort()).toEqual([
+      'agents',
+      'clients',
+      'groupTotals',
+      'responsible',
+      'vessels',
+    ])
+
+    await app.close()
+  })
+
+  /**
+   * O teto vale para tres quebras e **nao** para a de responsavel: sao quatro
+   * chaves fixas, e A-28 exige as quatro. Sujeita-la ao `topN` deixaria uma
+   * mudanca de configuracao quebrar um criterio de aceite sem teste acusando.
+   */
+  it('corta as tres quebras abertas em topN, e nao a de responsavel', async () => {
+    const conjunto = Array.from({ length: 14 }, (_, index) =>
+      process(index + 2, 'em_andamento', {
+        clientKey: `CLIENTE${index}`,
+        clientRaw: `Cliente ${index}`,
+      }),
+    )
+    const app = buildServer({ ...config, topN: 3 }, fakeStore(state({ processes: conjunto })))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/indicators' })).json()
+
+    expect(body.leadTimeByGroup.clients).toHaveLength(3)
+    expect(body.leadTimeByGroup.groupTotals.clients).toBe(14)
+    expect(body.leadTimeByGroup.responsible).toHaveLength(1)
+
+    await app.close()
+  })
+
+  // Regra inviolavel 2: o que o teto deixou de fora precisa ser contavel. Sem
+  // `groupTotals` a tela diria "os 10 maiores" sem dizer de quantos.
+  it('informa o total de grupos antes do corte', async () => {
+    const conjunto = [
+      process(2, 'em_andamento', { clientKey: 'A', clientRaw: 'A' }),
+      process(3, 'em_andamento', { clientKey: 'B', clientRaw: 'B' }),
+    ]
+    const app = buildServer(config, fakeStore(state({ processes: conjunto })))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/indicators' })).json()
+
+    expect(body.leadTimeByGroup.groupTotals.clients).toBe(2)
+    expect(body.leadTimeByGroup.clients).toHaveLength(2)
+
+    await app.close()
+  })
+
+  it('respeita os filtros globais, como todo bloco da rota', async () => {
+    const conjunto = [
+      process(2, 'em_andamento', { clientKey: 'ACME', clientRaw: 'Acme' }),
+      process(3, 'em_andamento', { clientKey: 'YRD', clientRaw: 'Yrd' }),
+    ]
+    const app = buildServer(config, fakeStore(state({ processes: conjunto })))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/indicators?client=ACME' })).json()
+
+    expect(body.leadTimeByGroup.groupTotals.clients).toBe(1)
 
     await app.close()
   })
