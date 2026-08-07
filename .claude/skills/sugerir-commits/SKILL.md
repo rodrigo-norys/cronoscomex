@@ -1,6 +1,6 @@
 ---
 name: sugerir-commits
-description: Analisa a árvore de trabalho do CronosComex (git status + diff) e devolve um plano de entrega — se necessário, a branch a criar antes — e os commits atômicos, cada um com seu `git add` e a mensagem pronta, usando os escopos da cadeia canônica (domain, io, app, http, web, tools, config, docs, claude). Use quando o usuário pedir para sugerir ou montar commits, agrupar mudanças pendentes, ou perguntar "o que preciso commitar". Apresenta o plano, aguarda aceite, e SÓ ENTÃO pede permissão para executar — nunca cria branch nem commita sem aprovação do plano E permissão explícita. Push não entra aqui.
+description: Analisa a árvore de trabalho do CronosComex (git status + diff) e devolve um plano de entrega — se necessário, a branch a criar antes — e os commits atômicos, cada um com seu `git add` e a mensagem pronta, usando os escopos da cadeia canônica (domain, io, app, http, web, tools, config, docs, claude). Use quando o usuário pedir para sugerir ou montar commits, agrupar mudanças pendentes, ou perguntar "o que preciso commitar". Apresenta o plano com os comandos literais e aguarda um único aceite, que vale como permissão para executar — nunca commita sem aprovação. Push não entra aqui.
 when_to_use: Quando o usuário disser "sugere os commits", "monta os commits", "agrupa o que está pendente", "o que preciso commitar" ou invocar /sugerir-commits.
 ---
 
@@ -11,21 +11,24 @@ mudanças em commits atômicos e devolve, para cada um, o par `git add` + mensag
 
 ## Fluxo de execução — regra deste repositório
 
-Esta skill **propõe e, com dupla autorização, executa** — não é só apresentação.
-A ordem é fixa e cada seta é um portão humano:
+Esta skill **propõe e, com autorização, executa** — não é só apresentação.
+A ordem é fixa, e **há um portão humano, não dois**:
 
 1. **Eu sugiro** o plano — a ação de branch (se houver) e cada commit atômico com seu
-   `git add` e a mensagem pronta.
-2. **Você aprova ou rejeita** o plano (agrupamento, mensagens, branch).
-3. Com o aceite, **eu peço permissão para executar** antes de rodar qualquer comando `git`.
-4. Com a permissão, **eu executo** `git switch`, `git add` (caminhos exatos) e `git commit`,
-   na ordem do plano.
+   `git add` de caminhos exatos e a mensagem pronta.
+2. **Você aprova ou rejeita.** A aprovação **vale como permissão para executar**.
+3. **Eu executo** `git switch`, `git add` e `git commit`, na ordem do plano.
 
 Portões inegociáveis:
 
-- **Sem aprovação do plano E sem permissão explícita, não rodo nada.** Aprovar o plano não é
-  permissão para executar — são dois passos distintos. Isso decorre da regra do
-  `~/.claude/CLAUDE.md`: *"você não irá commitar automaticamente"*.
+- **Sem aprovação explícita, não rodo nada.** O que satisfaz a regra do `~/.claude/CLAUDE.md`
+  — *"você não irá commitar automaticamente"* — é o plano ter mostrado **os comandos literais**
+  antes: cada `git add` com os caminhos exatos e cada mensagem inteira. Aprovar um plano assim é
+  aprovar a execução, e perguntar de novo depois disso não acrescenta informação nenhuma — só
+  gasta uma rodada. **A obrigação real é do plano, não da segunda pergunta:** plano vago não
+  autoriza nada, por mais "sim" que receba.
+- **O prompt de permissão da ferramenta continua sendo a última barreira.** `git add` está em
+  `ask` nas regras do projeto, e é ele que dá o direito de veto no último instante.
 - **`git push` não entra aqui.** Push é para fora; esta skill para nos commits locais. Quem
   empurra a branch e abre o PR é `/sugerir-prs`.
 - **Nenhum dado real no commit.** Antes de agrupar, confira que nenhum diff carrega valor de
@@ -158,6 +161,6 @@ O passo 1 depende de repositório git inicializado. Se `git status` responder
 `fatal: not a git repository`, **pare e diga** — sem repositório não há árvore de trabalho para
 agrupar, e `git init` é decisão do usuário, não sua.
 
-Depois de apresentar o plano, **pare e aguarde o aceite**. Com o aceite, **peça permissão** e só
-então execute os comandos na ordem (branch → `add`/`commit` de cada grupo). Não pule o pedido de
-permissão, não junte tudo num `git add` amplo, e não faça `push`.
+Depois de apresentar o plano, **pare e aguarde o aceite**. Com o aceite, execute os comandos na
+ordem (branch → `add`/`commit` de cada grupo) — **sem uma segunda pergunta**. Não junte tudo num
+`git add` amplo, e não faça `push`.
