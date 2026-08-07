@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import type { AppConfig } from '../../app/config.ts'
 import { store as defaultStore, type StoreAccess } from '../../app/process-store.ts'
 import { today as currentDay, isoWeekEnd, toIsoDay } from '../../domain/date-window.ts'
+import { RESPONSIBLE_LABELS } from '../../domain/filters.ts'
 import {
   type ArrivalDay,
   agentRanking,
@@ -19,6 +20,8 @@ import {
   type GroupCount,
   groupCount,
   type LeadTime,
+  type LeadTimeGroup,
+  leadTimeByGroup,
   overdueCount,
   pendingDocsCount,
   redChannelCount,
@@ -53,6 +56,27 @@ export interface IndicatorsRankings {
   responsible: GroupCount[]
 }
 
+/**
+ * `H-19`. IND-22 quebrado nas quatro dimensoes da Pagina Performance.
+ *
+ * As tres primeiras vem cortadas em `meta.topN`; `responsible` vem inteira. Sao
+ * quatro chaves fixas, e A-28 exige as quatro — passa-la pelo teto deixaria uma
+ * mudanca de configuracao quebrar um criterio de aceite em silencio. E o mesmo
+ * tratamento que `rankings.responsible` ja recebe.
+ */
+export interface LeadTimeBreakdowns {
+  clients: LeadTimeGroup[]
+  agents: LeadTimeGroup[]
+  vessels: LeadTimeGroup[]
+  responsible: LeadTimeGroup[]
+  /**
+   * Quantos grupos existem em cada quebra **antes** do corte. Sem isto o
+   * recorte seria descarte silencioso: medido, a quebra por cliente tem 509
+   * grupos e a tela mostra 10 (regra inviolavel 2).
+   */
+  groupTotals: Record<'clients' | 'agents' | 'vessels' | 'responsible', number>
+}
+
 export interface IndicatorsMeta {
   today: string
   timezone: string
@@ -77,6 +101,8 @@ export interface IndicatorsResponse {
    */
   arrivalCalendar: ArrivalDay[]
   documentaryLeadTime: LeadTime
+  /** `H-19`. As quebras de IND-22 — o agregado acima segue intacto. */
+  leadTimeByGroup: LeadTimeBreakdowns
   meta: IndicatorsMeta
 }
 
@@ -111,6 +137,32 @@ export function registerIndicatorsRoute(
     // desta rota responde sobre o conjunto filtrado (RF-18).
     const processes = filteredProcesses(request, reply, state.processes)
     if (processes === null) return reply
+
+    // Uma chamada por dimensao, sem teto: o corte acontece abaixo, depois de o
+    // total de grupos ser conhecido. Cortar dentro do dominio apagaria o numero
+    // que a tela precisa exibir.
+    const leadTime = {
+      clients: leadTimeByGroup(
+        processes,
+        (p) => p.clientKey,
+        (p) => p.clientRaw,
+      ),
+      agents: leadTimeByGroup(
+        processes,
+        (p) => p.agentKey,
+        (p) => p.agentRaw,
+      ),
+      vessels: leadTimeByGroup(
+        processes,
+        (p) => p.vesselKey,
+        (p) => p.vesselRaw,
+      ),
+      responsible: leadTimeByGroup(
+        processes,
+        (p) => p.responsible,
+        (p) => RESPONSIBLE_LABELS[p.responsible],
+      ),
+    }
 
     const body: IndicatorsResponse = {
       counts: {
@@ -148,6 +200,18 @@ export function registerIndicatorsRoute(
       expectedVessels: expectedVessels(processes, day),
       arrivalCalendar: arrivalCalendar(processes, day),
       documentaryLeadTime: documentaryLeadTime(processes),
+      leadTimeByGroup: {
+        clients: leadTime.clients.slice(0, config.topN),
+        agents: leadTime.agents.slice(0, config.topN),
+        vessels: leadTime.vessels.slice(0, config.topN),
+        responsible: leadTime.responsible,
+        groupTotals: {
+          clients: leadTime.clients.length,
+          agents: leadTime.agents.length,
+          vessels: leadTime.vessels.length,
+          responsible: leadTime.responsible.length,
+        },
+      },
       meta: {
         today: toIsoDay(day),
         timezone: config.timezone,
