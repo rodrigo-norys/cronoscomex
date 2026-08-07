@@ -121,6 +121,63 @@ export function expectedVessels(processes: readonly Process[], today: Date): Exp
   )
 }
 
+export interface ArrivalDay {
+  /** `AAAA-MM-DD`. */
+  eta2: string
+  vessels: ExpectedVessel[]
+  /** Soma do dia. Existe para a interface nao somar — regra inviolavel 6. */
+  processCount: number
+}
+
+/** O horizonte do calendario da Pagina Operacional, em dias. Mesmo valor de
+ * IND-09 (A-35), e pelo mesmo motivo: e o alcance que o operador planeja. */
+export const ARRIVAL_HORIZON_DAYS = 15
+
+/**
+ * As chegadas de hoje ate hoje+`horizonDays`, agrupadas por dia e, dentro do
+ * dia, por navio.
+ *
+ * **Nao mexe em `expectedVessels` (IND-12), e reaproveita.** Aquele nao tem
+ * teto por definicao — A-24 fixa "de hoje em diante" — e esta entregue e
+ * testado desde `H-10`; acrescentar limite la mudaria o indicador para todos os
+ * consumidores. O teto e desta apresentacao, entao vive aqui.
+ *
+ * O corte importa na pratica: medido na planilha real em 07/08/2026, sao 16
+ * grupos (navio, dia) no total e **8** dentro de 15 dias — o mais distante cai
+ * em 09/09. Cortar no cliente seria regra fora do dominio.
+ *
+ * **Dia sem chegada nao aparece.** O calendario lista o que chega, e uma linha
+ * vazia por dia so afastaria as que importam.
+ */
+export function arrivalCalendar(
+  processes: readonly Process[],
+  today: Date,
+  horizonDays: number = ARRIVAL_HORIZON_DAYS,
+): ArrivalDay[] {
+  const lastDay = toIsoDay(addDays(today, horizonDays))
+  const byDay = new Map<string, ArrivalDay>()
+
+  for (const vessel of expectedVessels(processes, today)) {
+    if (vessel.eta2 > lastDay) continue
+
+    const day = byDay.get(vessel.eta2)
+    if (day) {
+      day.vessels.push(vessel)
+      day.processCount += vessel.processCount
+      continue
+    }
+    byDay.set(vessel.eta2, {
+      eta2: vessel.eta2,
+      vessels: [vessel],
+      processCount: vessel.processCount,
+    })
+  }
+
+  // `expectedVessels` ja devolve ordenado por (data, navio), e `Map` preserva a
+  // ordem de insercao — a ordem do calendario vem de graca.
+  return [...byDay.values()]
+}
+
 /**
  * Predicado de atraso — IND-15 e ALE-01, a mesma regra em duas apresentacoes
  * (A-19). Vive aqui, e nao em `overdueCount` (H-12), porque o ranking de

@@ -33,6 +33,7 @@ export function indicatorsFixture(
     },
     rankings: { clients: [], importers: [], agents: [], goods: [], responsible: [] },
     expectedVessels: [],
+    arrivalCalendar: [],
     documentaryLeadTime: {
       averageDays: 12.5,
       sampleSize: 101,

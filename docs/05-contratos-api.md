@@ -222,6 +222,9 @@ está fora de escopo por lacuna de dado (§4 da especificação).
   "expectedVessels": [                       // IND-12
     { "vesselKey": "EVER FAIR", "vesselLabel": "EVER FAIR", "eta2": "2026-08-06", "processCount": 0 }
   ],
+  "arrivalCalendar": [                       // H-17 — recorte de expectedVessels
+    { "eta2": "2026-08-13", "processCount": 0, "vessels": [ /* ExpectedVessel[] */ ] }
+  ],
   "documentaryLeadTime": {                   // IND-22
     "averageDays": null,
     "sampleSize": 0,
@@ -242,6 +245,18 @@ está fora de escopo por lacuna de dado (§4 da especificação).
 de conjunto vazio não é zero, e apresentá-la como zero seria mentir sobre o
 dado (A-42). `bazarShare` acompanha IND-13 para tornar visível a distorção
 declarada em A-34.
+
+`arrivalCalendar` é o calendário da Página Operacional (`H-17`): as chegadas de
+**hoje a hoje + 15 dias**, agrupadas por dia e, dentro do dia, por navio. É um
+**recorte** de `expectedVessels`, não um indicador novo — IND-12 não tem teto
+por definição (A-24) e segue intacto. O teto vem do servidor porque cortar no
+cliente seria regra de negócio fora de `src/domain/`. Dia sem chegada não
+aparece.
+
+**Ele e `counts.chegando15Dias` respondem perguntas diferentes**, e podem
+divergir: o calendário exclui processo sem navio (A-24), IND-09 não. Medido em
+07/08/2026 os dois valem **60**, porque nenhum processo da janela está sem
+navio — coincidência de dado, não identidade.
 
 | Código | Situação |
 |---|---|
@@ -565,7 +580,7 @@ direta de URL.
 | `GET /api/health` | H-02, H-31, H-32, H-15 |
 | `GET /api/processes` | H-17 |
 | `GET /api/processes/:ref` | H-22 |
-| `GET /api/indicators` | H-09, H-10, H-11, H-12, H-13 |
+| `GET /api/indicators` | H-09, H-10, H-11, H-12, H-13, H-16, H-17 |
 | `GET /api/alerts` | H-14, H-29 |
 | `GET /api/history/monthly` | H-21, H-28 |
 | `GET /api/filters/options` | H-15 |
