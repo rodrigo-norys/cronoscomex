@@ -248,7 +248,7 @@ Não bloqueiam a implementação. Fechar antes da entrega ao operador.
 
 | # | Pendência | Quando fechar |
 |---|---|---|
-| **PD-01** | `config/app.json` aponta para `CONTROLE DOS EMBARQUE.xlsx` na **raiz do projeto**, usado para validar a partida em `H-02`. Na máquina Windows precisa do caminho real da pasta sincronizada (`C:\Users\...\OneDrive - <org>\...`). O arquivo está no `.gitignore`, então o caminho de desenvolvimento não vaza | Ao instalar na máquina do operador (`H-30`) |
+| **PD-01** | `config/app.json` aponta para `CONTROLE DOS EMBARQUE.xlsx` na **raiz do projeto**, usado para validar a partida em `H-02`. Na máquina Windows precisa do caminho real da pasta sincronizada (`C:\Users\...\OneDrive - <org>\...`). O arquivo está no `.gitignore`, então o caminho de desenvolvimento não vaza. **`H-34` dá a saída definitiva**: o caminho passa a ser configurável pela tela, e o operador nunca edita JSON | Ao instalar na máquina do operador (`H-30`), com `H-34` tornando-a indolor |
 | **PD-02** | `tests/fixtures/formatado.xlsx` foi aberto no Excel real e **não deu aviso de reparo**, mas isso foi antes da correção do formato de data (A-56). Falta reabrir e confirmar que ETA2 mostra `29/ago`, não `46236` | Antes de `H-24`, que depende dessa fixture |
 | **PD-03** | `data/` passou a ser criado em execução por `H-08`, na primeira releitura que grava `quarantine.json` (`H-28` acrescenta o histórico). Está no `.gitignore`. Falta o `README.md` da raiz instruir a criá-lo **fora** da pasta sincronizada do OneDrive, para não replicar backups na nuvem | `H-30` |
 
@@ -363,9 +363,26 @@ bloco.** O hook de alinhamento avisa; quem escreve é você.
 nvm use             # Node 22.23.2, conforme .nvmrc
 npm run verify      # guard + strip-types + lint + typecheck + test + build
 npm test            # Vitest
-npm run dev         # servidor + interface
+npm run dev         # servidor (5173) + interface (5174), no mesmo terminal
+npm run dev:server  # só a API, em 5173
+npm run dev:web     # só a interface, em 5174
 python3 tools/profile_workbook.py "<caminho.xlsx>" saida.json   # reperfilar
 ```
+
+**As duas portas são distintas e fixas, e isso foi um defeito real.** `5173`
+estava escrito em `DEFAULTS.port`, no proxy do Vite **e** era o padrão do
+próprio Vite — os três coincidiam, e a cadeia só funcionava por acidente de
+ordem: subindo a API primeiro, o Vite achava a porta ocupada e deslizava para
+`5174`. Na ordem inversa o Vite tomava a `5173`, a API morria com `EADDRINUSE`,
+e o proxy passava a apontar para o próprio Vite — que devolve HTML onde a casca
+espera JSON, produzindo "Sem contato com o servidor" e apontando para a causa
+errada. Agora `web/vite.config.ts` lê a porta da API de `config/app.json` (fonte
+única) e usa `strictPort`, que falha alto em vez de escolher outra em silêncio.
+
+`npm run dev` sobe os dois por `scripts/dev.mjs`, sem dependência nova — o `&`
+do shell não serve porque a máquina do operador é Windows (RNF-26), onde o `npm`
+invoca `cmd`. Um processo caindo derruba o outro: meia aplicação no ar parece
+saudável e não é.
 
 > `node: bad option` **não é erro de código**: o shell herdou um Node abaixo de
 > `engines`. Prefixe `nvm use &&` — o `nvm use` não persiste entre chamadas.

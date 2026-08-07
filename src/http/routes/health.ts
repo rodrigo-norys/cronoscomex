@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import type { AppConfig } from '../../app/config.ts'
 import { type AppState, store as defaultStore, type StoreAccess } from '../../app/process-store.ts'
+import { today as currentDay, toIsoDay } from '../../domain/date-window.ts'
 
 export type { AppState }
 
@@ -22,6 +23,18 @@ export interface HealthResponse {
   externalLock: boolean
   /** `H-32`. Arquivos de conflito do OneDrive, so o nome. */
   conflictFiles: string[]
+  /**
+   * `H-15`. O dia civil do servidor, em `AAAA-MM-DD`, resolvido a cada
+   * requisicao pela mesma `today(tz)` dos indicadores.
+   *
+   * Existe por A-62: indicadores de calendario e alertas dependem do dia
+   * corrente, e nenhum arquivo muda a meia-noite — o watcher nao dispara, e uma
+   * tela aberta atravessa a virada exibindo a fila de ontem. A casca compara
+   * este campo com o dia sob o qual renderizou e revalida quando diferem.
+   * `GET /api/indicators` ja expunha o dia em `meta.today`, mas a casca nao o
+   * consome: ela consome este health, e o dia precisa vir de uma fonte so.
+   */
+  today: string
 }
 
 /**
@@ -56,6 +69,7 @@ export function registerHealthRoute(
       degradedReason: state.degradedReason,
       externalLock: state.externalLock,
       conflictFiles: state.conflictFiles,
+      today: toIsoDay(currentDay(config.timezone)),
     }
   })
 }

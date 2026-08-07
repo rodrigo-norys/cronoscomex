@@ -57,8 +57,34 @@ describe('GET /api/health', () => {
       'sheetName',
       'sourceFileHash',
       'state',
+      'today',
       'workbookPath',
     ])
+
+    await app.close()
+  })
+
+  /**
+   * H-15, A-62. A casca compara este dia com aquele sob o qual renderizou: e
+   * assim que uma tela aberta atravessando a meia-noite descobre que a fila
+   * mudou sem nenhum arquivo ter mudado.
+   *
+   * O fuso e resolvido aqui, uma vez, pela mesma `today(tz)` dos indicadores.
+   * As 22h em Sao Paulo o instante corrente ja e o dia seguinte em UTC, e
+   * devolver isso adiantaria a virada em duas horas todas as noites.
+   */
+  it('devolve o dia civil do servidor no fuso configurado', async () => {
+    const app = buildServer(config)
+
+    const body = (await app.inject({ method: 'GET', url: '/api/health' })).json()
+
+    const noFusoDaConfiguracao = new Intl.DateTimeFormat('en-CA', {
+      timeZone: config.timezone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date())
+    expect(body.today).toBe(noFusoDaConfiguracao)
 
     await app.close()
   })

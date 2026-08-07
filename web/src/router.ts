@@ -1,0 +1,102 @@
+import { useMemo, useSyncExternalStore } from 'react'
+
+/**
+ * Roteamento a mao (D-16): `History API`, `popstate` e `URLSearchParams`.
+ *
+ * Sao sete paginas planas numa aplicacao local, e o `react-router` seria uma
+ * dependencia de execucao que o plano nao preve. A decisao registra os gatilhos
+ * de reavaliacao — mais de ~10 paginas, rotas aninhadas, carregamento por rota,
+ * ou este arquivo passando de ~100 linhas.
+ */
+
+export type PageId =
+  | 'home'
+  | 'operational'
+  | 'clients'
+  | 'performance'
+  | 'alerts'
+  | 'history'
+  | 'processDetail'
+  | 'notFound'
+
+export interface PageDefinition {
+  readonly id: PageId
+  readonly path: string
+  readonly label: string
+  /** A historia que substitui o marcador de pagina pendente por conteudo. */
+  readonly story: string
+}
+
+export const NAV_PAGES: readonly PageDefinition[] = [
+  { id: 'home', path: '/', label: 'Início', story: 'H-16' },
+  { id: 'operational', path: '/operacional', label: 'Operacional', story: 'H-17' },
+  { id: 'clients', path: '/clientes', label: 'Clientes', story: 'H-18' },
+  { id: 'performance', path: '/performance', label: 'Performance', story: 'H-19' },
+  { id: 'alerts', path: '/alertas', label: 'Alertas', story: 'H-20' },
+  { id: 'history', path: '/historico', label: 'Histórico', story: 'H-21' },
+]
+
+/** Fora do menu: so se chega nela a partir de um processo (`H-17` → `H-22`). */
+export const PROCESS_DETAIL_PAGE: PageDefinition = {
+  id: 'processDetail',
+  path: '/processo',
+  label: 'Detalhe do processo',
+  story: 'H-22',
+}
+
+const PROCESS_DETAIL_PREFIX = `${PROCESS_DETAIL_PAGE.path}/`
+
+export interface Route {
+  readonly pageId: PageId
+  /** Preenchido apenas em `processDetail`. */
+  readonly ref: string | null
+}
+
+const NOT_FOUND: Route = { pageId: 'notFound', ref: null }
+
+export function parseRoute(pathname: string): Route {
+  const path = pathname.length > 1 ? pathname.replace(/\/+$/, '') : pathname
+
+  if (path.startsWith(PROCESS_DETAIL_PREFIX)) {
+    const ref = decodeURIComponent(path.slice(PROCESS_DETAIL_PREFIX.length))
+    return ref === '' ? NOT_FOUND : { pageId: 'processDetail', ref }
+  }
+
+  const page = NAV_PAGES.find((candidate) => candidate.path === path)
+  return page ? { pageId: page.id, ref: null } : NOT_FOUND
+}
+
+export function pageOf(route: Route): PageDefinition | null {
+  if (route.pageId === 'processDetail') return PROCESS_DETAIL_PAGE
+  return NAV_PAGES.find((candidate) => candidate.id === route.pageId) ?? null
+}
+
+/**
+ * Troca de pagina **preservando a query**, que e onde os onze filtros globais
+ * vivem — trocar de pagina nunca limpa o recorte que o operador montou.
+ *
+ * `pushState` nao emite evento nenhum, entao o `popstate` sintetico e o que faz
+ * o assinante saber. Ele deixa navegacao programatica e botao "voltar" no mesmo
+ * caminho de atualizacao, em vez de dois.
+ */
+export function navigate(path: string): void {
+  const target = `${path}${window.location.search}`
+  if (target === `${window.location.pathname}${window.location.search}`) return
+
+  window.history.pushState(null, '', target)
+  window.dispatchEvent(new PopStateEvent('popstate'))
+}
+
+function subscribe(onChange: () => void): () => void {
+  window.addEventListener('popstate', onChange)
+  return () => window.removeEventListener('popstate', onChange)
+}
+
+function currentPath(): string {
+  return window.location.pathname
+}
+
+export function useRoute(): Route {
+  const pathname = useSyncExternalStore(subscribe, currentPath, currentPath)
+  return useMemo(() => parseRoute(pathname), [pathname])
+}

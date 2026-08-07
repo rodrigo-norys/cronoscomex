@@ -119,13 +119,22 @@ Estado do processo. Nunca falha enquanto o servidor responder.
   "pendingEditsCount": 0,
   "degradedReason": null,
   "externalLock": false,          // H-32 — existe ~$<nome>.xlsx na pasta
-  "conflictFiles": []             // H-32 — arquivos de conflito do OneDrive
+  "conflictFiles": [],            // H-32 — arquivos de conflito do OneDrive
+  "today": "2026-08-07"           // H-15 — dia civil do servidor, no fuso configurado
 }
 ```
 
 `externalLock` e `conflictFiles` são **sinal, nunca ação** (A-58): a leitura
 acontece igual e o painel continua servindo o dado. A recusa de escrita com
 `409 EXCEL_ABERTO` é outra coisa, e vive em `H-25`.
+
+`today` existe por **A-62**: indicadores de calendário e alertas dependem do dia
+corrente, e nenhum arquivo muda à meia-noite — o watcher não dispara, e uma tela
+aberta atravessa a virada exibindo a fila do dia anterior. A casca compara este
+campo com o dia sob o qual renderizou e revalida quando diferem.
+`GET /api/indicators` já expunha o dia em `meta.today`, mas a casca não o
+consome: ela consome este health, e o dia precisa vir de **uma** fonte. É a
+mesma `today(tz)` de `src/domain/date-window.ts`, resolvida a cada requisição.
 
 Os contadores aparecem zerados por serem preenchidos em execução; nenhum valor
 é afirmado aqui.
@@ -553,7 +562,7 @@ direta de URL.
 
 | Rota | Histórias |
 |---|---|
-| `GET /api/health` | H-02, H-31 |
+| `GET /api/health` | H-02, H-31, H-32, H-15 |
 | `GET /api/processes` | H-17 |
 | `GET /api/processes/:ref` | H-22 |
 | `GET /api/indicators` | H-09, H-10, H-11, H-12, H-13 |
@@ -565,3 +574,9 @@ direta de URL.
 | `POST /api/edits`, `GET`, `DELETE` | H-23 |
 | `PATCH /api/processes/:ref/color` | H-27 |
 | `POST /api/edits/apply` | H-26 |
+| `GET /*` (rota estática) | H-30 |
+
+> `GET /*` ficou **sem dono até 07/08/2026** — especificada em §4 e ausente
+> deste mapa (A-63). Ela é de `H-30`, que é quando `dist/web` existe na máquina
+> do operador. Até lá o fallback de SPA do Vite cobre `npm run dev`, e recarga
+> direta de URL em produção não é exercível.
