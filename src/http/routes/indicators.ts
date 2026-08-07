@@ -3,7 +3,9 @@ import type { AppConfig } from '../../app/config.ts'
 import { store as defaultStore, type StoreAccess } from '../../app/process-store.ts'
 import { today as currentDay, isoWeekEnd, toIsoDay } from '../../domain/date-window.ts'
 import {
+  type ArrivalDay,
   agentRanking,
+  arrivalCalendar,
   arrivingIn15Days,
   arrivingThisWeek,
   arrivingToday,
@@ -64,6 +66,16 @@ export interface IndicatorsResponse {
   counts: IndicatorsCounts
   rankings: IndicatorsRankings
   expectedVessels: ExpectedVessel[]
+  /**
+   * `H-17`. As chegadas de hoje ate hoje+15, agrupadas por dia e por navio.
+   *
+   * E um recorte de `expectedVessels`, nao um indicador novo: aquele nao tem
+   * teto por definicao (A-24, IND-12) e continua intacto. O teto vive aqui
+   * porque e da apresentacao — e precisa vir do servidor, senao cortar em
+   * `hoje+15` seria regra de negocio no cliente. Medido em 07/08/2026: dos 16
+   * grupos (navio, dia) da planilha real, **8** caem dentro do horizonte.
+   */
+  arrivalCalendar: ArrivalDay[]
   documentaryLeadTime: LeadTime
   meta: IndicatorsMeta
 }
@@ -134,6 +146,7 @@ export function registerIndicatorsRoute(
         responsible: responsibleRanking(processes),
       },
       expectedVessels: expectedVessels(processes, day),
+      arrivalCalendar: arrivalCalendar(processes, day),
       documentaryLeadTime: documentaryLeadTime(processes),
       meta: {
         today: toIsoDay(day),
