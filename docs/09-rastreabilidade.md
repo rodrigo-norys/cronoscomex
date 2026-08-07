@@ -86,17 +86,17 @@ especificação são rastreados aqui, para que **nenhum** fique fora.
 
 | Filtro | Campo | Histórias | Status |
 |---|---|---|---|
-| Período | ETA2 | H-15 | ✅ Implementável (P-03 confirmada) |
-| Cliente | CLT | H-15 | Implementável |
-| Importador | IMPORTADOR | H-15 | Implementável |
-| Navio | NAVIO | H-15 | Implementável |
-| Agente | AGENTE | H-15 | ✅ Implementável (P-01 confirmada) |
-| Mercadoria | MERCADORIA | H-15 | Implementável, com limitação de "BAZAR" |
-| Categoria de status | STATUS derivado | H-15 | Implementável. Vocabulário corrigido: "Aguardando desembaraço" removido e "Em andamento" acrescentado (A-01) |
-| Responsável | Cor | H-04, H-15 | ✅ Implementável (P-06 mapeada). `colaborador1` inclui `colaborador1_outros_clientes` (A-18) |
-| Canal | Cor | H-04, H-15 | ✅ Implementável (P-06 mapeada). Domínio `vermelho`/`nenhum`/`indefinido` (A-37) |
-| Porto | ETA | H-15 | Implementável. Domínio aberto, derivado dos dados (A-36) |
-| Importador fora do RJ | Cor | H-04, H-15 | ✅ Implementável (P-06 mapeada). Filtro definido em §3 e ausente de §7; acrescentado (A-11) |
+| Período | ETA2 | H-15 | ✅ **Entregue.** `eta2 = null` nunca satisfaz quando há limite (A-20) |
+| Cliente | CLT | H-15 | ✅ **Entregue.** Domínio aberto; medidos 509 valores na planilha real |
+| Importador | IMPORTADOR | H-15 | ✅ **Entregue.** Domínio aberto; medidos 26 valores |
+| Navio | NAVIO | H-15 | ✅ **Entregue.** Domínio aberto; medidos 70 valores |
+| Agente | AGENTE | H-15 | ✅ **Entregue.** Domínio aberto; medidos 35 valores |
+| Mercadoria | MERCADORIA | H-15 | ✅ **Entregue.** Domínio aberto; medidos 217 valores. Limitação de "BAZAR" mantida (A-34) |
+| Categoria de status | STATUS derivado | H-15 | ✅ **Entregue.** Domínio fechado, as 4 chaves sempre exibidas. Vocabulário de A-01 aplicado |
+| Responsável | Cor | H-04, H-15 | ✅ **Entregue.** A-18 provado sobre dado real: `colaborador1` devolve 129 com ou sem `colaborador1_outros_clientes` junto |
+| Canal | Cor | H-04, H-15 | ✅ **Entregue.** Domínio fechado de A-37, as 3 chaves sempre exibidas |
+| Porto | ETA | H-15 | ✅ **Entregue.** A-36 confirmado na prática: o porto `RO` existe com 2 processos, e domínio fechado o teria escondido |
+| Importador fora do RJ | Cor | H-04, H-15 | ✅ **Entregue.** Tri-estado, não caixa de marcar: `false` inclui apenas `false`, nunca `null`. Medido: `true`=1 e `false`=648 somam 649, então nenhuma linha real exercita o `null` hoje |
 
 ### 3.3. Colunas da planilha (§2)
 
@@ -109,7 +109,7 @@ especificação são rastreados aqui, para que **nenhum** fique fora.
 | AGENTE | IND-17, filtro | H-03, H-11 | ✅ Implementável (P-01 confirmada) |
 | CNTR | Consulta | H-03, H-17 | Implementável via busca |
 | NAVIO | IND-12, filtro | H-03, H-10 | Implementável |
-| ETA (porto) | Filtro | H-03, H-15 | Implementável |
+| ETA (porto) | Filtro | H-03, H-15 | ✅ **Entregue** com o filtro de porto |
 | ETA2 | 9 indicadores e 4 alertas | H-03, H-05 | ✅ Implementável (P-03 confirmada) |
 | MERCADORIA | IND-13, filtro | H-03, H-11 | Implementável, com limitação |
 | RG | IND-16, IND-22 | H-03, H-05 | ✅ Implementável (P-03 confirmada) |
@@ -170,7 +170,7 @@ As 33 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
 | H-12 | IND-06, IND-14, IND-15 | ✅ **Concluída.** Indicadores de risco. `overdueCount` é apresentação de `isOverdue`, nunca reimplementação |
 | H-13 | IND-16, IND-22 | ✅ **Concluída.** Indicadores de tempo. Fecha o contrato de `GET /api/indicators`, que nasceu parcial em `H-09`. Medido: `averageDays 12,5` sobre amostra de 101 |
 | H-14 | ALE-01 a ALE-05 | ✅ **Concluída.** Alertas do estado atual. Fila de trabalho: `≠ desembaracado` nos cinco (A-59). Medido: 40 linhas para 25 processos |
-| H-15 | §3.2 (os 11 filtros) | Filtros globais **e** a faixa de estado `degradado` no topo de todas as páginas (A-57) |
+| H-15 | §3.2 (os 11 filtros) | ✅ **Concluída.** Filtros globais, casca com navegação, faixa de estado (A-57) e as três frentes de A-62. Saiu em três entregas. Medido: `port=RO` devolve 2 processos, confirmando A-36 |
 | H-16 | IND-01 a IND-09, IND-14 a IND-16, §3.1 (Página Inicial) | Cartões-resumo |
 | H-17 | IND-12, §3.1 (Página Operacional), §3.3 (BL, CNTR) | Tabela, busca e calendário |
 | H-18 | IND-10, IND-11, IND-18, IND-19, §3.1 (Página Clientes) | Rankings visuais |

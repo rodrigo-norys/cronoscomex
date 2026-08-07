@@ -115,15 +115,45 @@ Não re-derive isto; está medido.
 
 **Fases 0 e 1 concluídas. Fase 2 em andamento: `H-09` a `H-14` fechadas** — o
 épico E3 (indicadores e alertas) está inteiro —, **mais `H-32`, antecipada**
-porque é dependência declarada de `H-15` e não existia. Próximo passo:
-**`H-15`**, a casca da aplicação com os onze filtros globais, que abre o épico
-de interface. As fases estão em `docs/07-plano-entrega.md`.
+porque era dependência declarada de `H-15` e não existia, **e `H-15`, que abriu
+o épico E4 e a primeira interface do projeto.** Próximo passo: **`H-16`**, a
+Página Inicial com os onze cartões-resumo. As fases estão em
+`docs/07-plano-entrega.md`.
 
-**`H-15` sai em três entregas**, decidido em 06/08/2026: o tamanho `M` do plano
-estava subestimado — domínio de filtros, rota de opções, alteração de duas rotas
-existentes, casca React inteira, `FilterBar` de 11 controles, faixa com 3 sinais
-e as 3 frentes de A-62. A história continua sendo uma; a execução é ① backend de
-filtros · ② casca, faixa e A-62 · ③ `FilterBar`.
+**`H-15` saiu em três entregas**, decidido em 06/08/2026 porque o tamanho `M`
+do plano estava subestimado: ① backend de filtros · ② casca, faixa e A-62 ·
+③ `FilterBar`. A história sempre foi uma; só a execução foi fatiada.
+
+**A casca hospeda as sete páginas, e `H-16` a `H-22` encaixam sem tocá-la.**
+`PageOutlet` passa `dataVersion` como `key` — quando o dia vira ou a planilha é
+relida, a página remonta e refaz as próprias requisições, sem assinar nada. O
+que a página precisa consumir é `useFilters().queryString`, anexado às suas
+requisições. Cada página pendente é um marcador explícito dizendo qual história
+a entrega: buraco visível, nunca `TODO` escondido.
+
+**A URL é o único estado dos filtros**, sem cópia em `useState` — duas fontes
+divergiriam no primeiro `popstate`, e recarregar precisa preservar o recorte. A
+escrita usa `replaceState`, não `pushState`: filtro é visualização, não
+navegação, e marcar cinco clientes empilharia cinco entradas com "voltar"
+virando "desmarcar o último". `navigate` preserva a query, então trocar de
+página nunca limpa o recorte.
+
+**O poll de 5 s do health é o que estende RNF-14 até a tela.** RNF-14 mede
+2092 ms entre o Excel salvar e o **servidor** refletir; sem o intervalo o número
+fica verdadeiro no servidor e velho no navegador. Ele pausa com a aba oculta, e
+é também o que faz a faixa de estado aparecer e sumir sozinha.
+
+**A comparação decide, o evento só provoca** (A-62). `visibilitychange` dispara
+a verificação; quem manda revalidar é `today` ou `lastReadAt` terem mudado.
+Revalidar incondicionalmente ao voltar o foco custaria uma rodada de requisições
+a cada troca de janela. O botão de atualização é a exceção deliberada — lá o
+avanço é incondicional, porque quem clicou pediu.
+
+**Resposta de rede não é verificada pelo tipo.** `HealthResponse` diz
+`today: string`, mas descreve o **contrato**, não o corpo que chegou: um
+servidor de versão anterior devolveu o health sem o campo, e `undefined.split`
+derrubou a casca inteira — faixa e navegação junto. Tela branca é o pior dos
+buracos invisíveis (regra 3). Campo ausente vira traço, e há teste de regressão.
 
 A cadeia de ingestão foi validada contra o arquivo real, dentro do limite de
 quarentena de RNF-24. **Não transcreva número medido para cá** — a contagem de
@@ -386,6 +416,15 @@ saudável e não é.
 
 > `node: bad option` **não é erro de código**: o shell herdou um Node abaixo de
 > `engines`. Prefixe `nvm use &&` — o `nvm use` não persiste entre chamadas.
+
+> **Depois de `git switch` com o `dev` no ar, toque um arquivo de `src/`.**
+> Medido em 07/08/2026: o `node --watch` continuou servindo o código da branch
+> anterior — `GET /api/health` respondia **sem** o campo `today` que o arquivo
+> em disco já tinha. O git troca os arquivos de uma vez, e o observador não vê
+> o que precisa; `touch src/http/server.ts` força o reinício. Como aqui é branch
+> por história, trocar de branch com o `dev` rodando é rotina, e o sintoma —
+> interface quebrando contra um contrato que o código já cumpre — aponta para o
+> lugar errado.
 
 **Para conferir uma história contra a planilha real** — passo obrigatório antes
 de fechar —, monte o script no scratchpad e use o carregador, em vez de repetir
