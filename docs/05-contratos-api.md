@@ -225,11 +225,18 @@ está fora de escopo por lacuna de dado (§4 da especificação).
   "arrivalCalendar": [                       // H-17 — recorte de expectedVessels
     { "eta2": "2026-08-13", "processCount": 0, "vessels": [ /* ExpectedVessel[] */ ] }
   ],
-  "documentaryLeadTime": {                   // IND-22
+  "documentaryLeadTime": {                   // IND-22 — o agregado
     "averageDays": null,
     "sampleSize": 0,
     "excludedNegative": 0,
     "excludedIncomplete": 0
+  },
+  "leadTimeByGroup": {                       // H-19 — IND-22 por dimensão
+    "clients":     [ /* LeadTimeGroup[] */ ],  // cortada em meta.topN
+    "agents":      [ /* LeadTimeGroup[] */ ],  // cortada em meta.topN
+    "vessels":     [ /* LeadTimeGroup[] */ ],  // cortada em meta.topN
+    "responsible": [ /* LeadTimeGroup[] */ ],  // inteira — 4 chaves fixas (A-28)
+    "groupTotals": { "clients": 0, "agents": 0, "vessels": 0, "responsible": 0 }
   },
   "meta": {
     "topN": 10,

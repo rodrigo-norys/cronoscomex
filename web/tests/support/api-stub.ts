@@ -41,6 +41,16 @@ export function indicatorsFixture(
       excludedNegative: 1,
       excludedIncomplete: 547,
     },
+    // `H-19`. Os totais sao os medidos na planilha real: 509 grupos de cliente,
+    // 35 de agente, 70 de navio e as 4 chaves fixas de responsavel. As listas
+    // ficam vazias de proposito — cada teste serve o recorte que exercita.
+    leadTimeByGroup: {
+      clients: [],
+      agents: [],
+      vessels: [],
+      responsible: [],
+      groupTotals: { clients: 509, agents: 35, vessels: 70, responsible: 4 },
+    },
     meta: {
       topN: 10,
       today: '2026-08-07',
