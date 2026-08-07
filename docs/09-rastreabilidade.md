@@ -56,12 +56,12 @@ legibilidade: `H-02` → `H-03` → `H-05` → `H-06` → `H-07` → `H-08`.
 
 | # | Alerta | Campos de origem | Condição formalizada | Histórias | Testes | Status |
 |---|---|---|---|---|---|---|
-| ALE-01 | ETA vencida | ETA2 + STATUS | `eta2 < hoje ∧ category ≠ 'desembaracado'`. Severidade 1. Mesma regra de IND-15, duas apresentações (A-19) | H-14, H-20 | `alerts.test.ts` | ✅ **Backend entregue** (`H-14`); página pendente de `H-20`. Apresentação de `isOverdue`, nunca reimplementada. **Medido:** 17 na planilha real |
-| ALE-02 | Documentação pendente | DOCS ENVIADOS + ETA2 + STATUS | `docsSent = null ∧ eta2 ≤ hoje+10 ∧ category ≠ 'desembaracado'`. Severidade 3 | H-14, H-20 | `alerts.test.ts` | ✅ **Backend entregue** (`H-14`); página pendente de `H-20`. Apresentação de `hasPendingDocs`, extraído de `pendingDocsCount` para não duplicar A-08. **Medido:** 14 |
-| ALE-03 | Canal Vermelho | Cor da linha (célula A) | `customsChannel = 'vermelho'`. Severidade 2. Só a cor é fonte (A-06) | H-04, H-14, H-20 | `alerts.test.ts` · `color-mapper.test.ts` | ✅ **Backend entregue** (`H-14`); página pendente de `H-20`. **Medido:** 2 — eram 5 antes do filtro de A-59, e 3 estavam em processo já concluído |
-| ALE-04 | Chegadas hoje | ETA2 | `eta2 = hoje`. Severidade 5 | H-14, H-20 | `alerts.test.ts` | ✅ **Backend entregue** (`H-14`); página pendente de `H-20`. Contido em ALE-05 por construção (A-60). **Medido:** 0 |
-| ALE-05 | Chegadas nos próximos 7 dias | ETA2 | `hoje ≤ eta2 ≤ hoje+7`, extremos inclusivos. Severidade 6 | H-14, H-20 | `alerts.test.ts` | ✅ **Backend entregue** (`H-14`); página pendente de `H-20`. **Medido:** 7 |
-| ALE-06 | Processos parados | STATUS + histórico de leituras | `dias desde o último evento de mudança ≥ 15` (limiar configurável, A-32). Severidade 4 | H-28, H-29, H-20 | `history-store.test.ts` · `alerts.test.ts` | **Implementável — destravado.** A especificação o declara dependente de histórico inexistente (A-33); o ADR-0005 o fornece |
+| ALE-01 | ETA vencida | ETA2 + STATUS | `eta2 < hoje ∧ category ≠ 'desembaracado'`. Severidade 1. Mesma regra de IND-15, duas apresentações (A-19) | H-14, H-20 | `alerts.test.ts` · `Alerts.test.tsx` | ✅ **Entregue** — backend em `H-14`, fila em `H-20`. Apresentação de `isOverdue`, nunca reimplementada. **Medido:** 17 na planilha real |
+| ALE-02 | Documentação pendente | DOCS ENVIADOS + ETA2 + STATUS | `docsSent = null ∧ eta2 ≤ hoje+10 ∧ category ≠ 'desembaracado'`. Severidade 3 | H-14, H-20 | `alerts.test.ts` · `Alerts.test.tsx` | ✅ **Entregue** — backend em `H-14`, fila em `H-20`. Apresentação de `hasPendingDocs`, extraído de `pendingDocsCount` para não duplicar A-08. **Medido:** 14 |
+| ALE-03 | Canal Vermelho | Cor da linha (célula A) | `customsChannel = 'vermelho'`. Severidade 2. Só a cor é fonte (A-06) | H-04, H-14, H-20 | `alerts.test.ts` · `color-mapper.test.ts` · `Alerts.test.tsx` | ✅ **Entregue** — backend em `H-14`, fila em `H-20`. **Medido:** 2 — eram 5 antes do filtro de A-59, e 3 estavam em processo já concluído. Conferido em `H-20`: zero processos concluídos na fila |
+| ALE-04 | Chegadas hoje | ETA2 | `eta2 = hoje`. Severidade 5 | H-14, H-20 | `alerts.test.ts` · `Alerts.test.tsx` | ✅ **Entregue** — backend em `H-14`, fila em `H-20`. Contido em ALE-05 por construção (A-60). **Medido:** 0 — zero **medido**, distinto na tela do zero não mensurável de ALE-06 |
+| ALE-05 | Chegadas nos próximos 7 dias | ETA2 | `hoje ≤ eta2 ≤ hoje+7`, extremos inclusivos. Severidade 6 | H-14, H-20 | `alerts.test.ts` · `Alerts.test.tsx` | ✅ **Entregue** — backend em `H-14`, fila em `H-20`. **Medido:** 7 |
+| ALE-06 | Processos parados | STATUS + histórico de leituras | `dias desde o último evento de mudança ≥ 15` (limiar configurável, A-32). Severidade 4 | H-28, H-29, H-20 | `history-store.test.ts` · `alerts.test.ts` · `Alerts.test.tsx` | **Backend e tela entregues em `H-20`; o alerta ainda não dispara.** A rota passa histórico vazio até `H-28`, então a contagem é sempre zero — e a página exibe **traço**, não `0`: zero medido e zero não mensurável não podem ter a mesma aparência (regra 3). O limiar de 15 dias aparece declarado como premissa (A-32) e a ausência de retroatividade também (A-43, A-61). A especificação o declara dependente de histórico inexistente (A-33); o ADR-0005 o fornece |
 
 ---
 
@@ -78,7 +78,7 @@ especificação são rastreados aqui, para que **nenhum** fique fora.
 | Página Operacional | RF-10 | H-17, H-22 | ✅ **Entregue.** Tabela de 8 colunas com ordenação por clique e paginação, busca por REF/BL/CNTR (A-39), e o calendário de chegadas. "Processo ativo" (A-16) é o padrão da página, não da rota. Medido: 169 ativos de 649 |
 | Página Clientes | RF-11 | H-18 | ✅ **Entregue.** Três rankings em barras horizontais — CLT, IMPORTADOR e MERCADORIA (A-65) —, cada item aplicando o filtro global e abrindo a Operacional. `bazarShare` exibido dentro da seção de mercadoria (A-34) |
 | Página Performance | RF-12 | H-19 | ✅ **Entregue.** Quatro quebras de IND-22 com denominador ao lado (A-42), os rankings de agente com `overdueCount` e de responsável, e a nota de IND-21 fora de escopo. Medido: a quebra por responsável é degenerada — os 101 pares completos estão todos em `indefinido` (A-31) |
-| Página Alertas | RF-13 | H-20 | Implementável. Ordem de severidade fixada (A-41) |
+| Página Alertas | RF-13 | H-20 | ✅ **Entregue.** Fila agrupada por processo (A-60), preservando a ordem de primeira aparição — a severidade de A-41 vem do servidor e não é refeita no cliente. Medido: 40 linhas para 25 processos |
 | Página Histórico | RF-14 | H-21, H-28 | **Destravado** pelo ADR-0005. Sem retroatividade anterior à primeira execução (A-43) |
 | Detalhe do processo | RF-15 | H-22 | Implementável. Exibe `statusRaw` e as colunas fora de escopo |
 
@@ -175,7 +175,7 @@ As 33 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
 | H-17 | IND-12, §3.1 (Página Operacional), §3.3 (BL, CNTR) | ✅ **Concluída.** Tabela, busca e calendário. Saiu em duas entregas. Entrega também `GET /api/processes`, de que `H-22` depende |
 | H-18 | IND-10, IND-11, **IND-13**, IND-18, IND-19, §3.1 (Página Clientes) | ✅ **Concluída.** Rankings visuais. `IND-13` entrou por A-65: mercadoria é a terceira dimensão do mesmo painel de distribuição. Corrigiu também o descarte da chave vazia em `parseFilters`, que tornava inócua a opção "(em branco)" nos nove filtros da barra desde `H-15` |
 | H-19 | **IND-17**, **IND-20**, IND-22, §3.1 (Página Performance) | ✅ **Concluída.** Quebras do tempo documental. `IND-17` e `IND-20` entraram por A-65: a página já agrupa por agente e por responsável, e contagem com `overdueCount` é outra métrica sobre os mesmos grupos |
-| H-20 | ALE-01 a ALE-06, §3.1 (Página Alertas) | Lista de alertas |
+| H-20 | ALE-01 a ALE-06, §3.1 (Página Alertas) | ✅ **Concluída.** Fila de trabalho, não panorama (A-59). Corrigiu a contradição do backlog entre o critério de aceite e o caso-limite do agrupamento |
 | H-21 | §3.1 (Página Histórico) | Série mensal |
 | H-22 | §3.1 (Detalhe), §3.3 (STATUS, Coluna 13, R$ ENVIADO, Coluna P) | Única tela onde `statusRaw` é exibido |
 | H-23 | §5 abaixo (RF-20, RF-28) | Fila de edições |
