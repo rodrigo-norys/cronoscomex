@@ -1451,6 +1451,49 @@ chegadas por navio.
 
 ### H-18 — Entregar a Página Clientes
 
+> ✅ **CONCLUÍDA em 07/08/2026.** 24 testes próprios em 4 arquivos; suíte total
+> em **641**.
+>
+> **A divergência que parou a fatia era um defeito já em produção.** A chave
+> vazia é valor legítimo nos filtros de domínio aberto: `optionsOf` a oferece de
+> propósito — "permitir filtrar por ele é o que torna o buraco investigável" — e
+> `applyFilters` a casa desde `H-15`. Mas ela morria no meio, em `parseFilters`:
+> `asList` descartava `''`, e `?goods=` virava lista vazia. O operador marcava
+> "(em branco)" e recebia a base inteira, **sem erro nem aviso**, em nove
+> filtros. `asKeyList` distingue parâmetro ausente de parâmetro presente e
+> vazio, e vale só para os seis de domínio aberto — `?category=` continua sendo
+> ausência, porque categoria em branco não existe.
+>
+> Sem a correção, o critério de aceite do clique seria insatisfazível
+> justamente no grupo mais interessante, e falharia em silêncio: valor errado
+> invisível, que é o que a regra inviolável 3 proíbe.
+>
+> **Conferido contra a planilha real:** `BAZAR` são 210 processos e 35,47% dos
+> 592 com mercadoria preenchida — 5,7× o segundo colocado real, com 37. O grupo
+> `(sem valor)` é o **segundo** maior de mercadoria, com 57, e o **maior** de
+> clientes, com 38: o topo do ranking de clientes é um buraco de
+> preenchimento. O recorte pela chave vazia devolve 57 e 38 sobre a base de 649
+> — antes devolvia 649 nos dois casos.
+>
+> **`bazarShare` fica dentro da seção de mercadoria, acima da lista.** Ressalva
+> lida depois do ranking não ressalva nada, e há teste que a procura dentro da
+> seção certa e confirma a ausência na errada.
+>
+> **O clique aplica, não alterna.** `toggle` puro desmarcaria o valor já
+> selecionado e levaria à Operacional com o filtro que o clique acabou de tirar.
+> A ordem também é regra: `replaceState` antes de `navigate`, senão a página
+> troca antes de o filtro existir.
+>
+> **Barras em `div`, não Recharts.** Ele segue instalado e sem uso; em `jsdom` o
+> `ResponsiveContainer` mede 0×0 e não renderiza, o que obrigaria a mockar
+> largura para testar o clique — que é o comportamento que importa aqui. A
+> primeira dependência de gráfico de verdade é `H-19`.
+>
+> **Divergências resolvidas: três.** A lista de arquivos não tinha
+> `web/src/App.tsx` — página que ninguém monta não existe, o precedente de
+> `H-14` — nem teste algum; e os dois testes da casca que usavam `/clientes`
+> como exemplo de marcador pendente migraram para `/performance`.
+
 **Objetivo:** ranking e distribuição por CLT, IMPORTADOR e MERCADORIA.
 
 > **`IND-13` entrou por A-65.** Ele era calculado desde `H-11`, servido em
@@ -1462,6 +1505,11 @@ chegadas por navio.
 **Arquivos:**
 - `web/src/pages/Clients.tsx`
 - `web/src/components/RankingBar.tsx`
+- **Omitidos do plano original**, e necessários: `web/src/App.tsx` (a página
+  precisa ser montada em `PageOutlet`), `src/domain/filters.ts` (a chave vazia
+  não sobrevivia à query), e os testes de `tests/domain/`, `tests/http/` e
+  `web/tests/` — inclusive `web/tests/App.test.tsx`, que usava `/clientes` como
+  exemplo de página pendente
 
 **Contrato fixado:** consome `rankings.clients`, `rankings.importers`,
 `rankings.goods` e `meta.bazarShare` de `GET /api/indicators`.

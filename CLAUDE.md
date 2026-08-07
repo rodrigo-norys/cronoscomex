@@ -116,9 +116,10 @@ Não re-derive isto; está medido.
 **Fases 0 e 1 concluídas. Fase 2 em andamento: `H-09` a `H-14` fechadas** — o
 épico E3 (indicadores e alertas) está inteiro —, **mais `H-32`, antecipada**
 porque era dependência declarada de `H-15` e não existia, **`H-15`, que abriu o
-épico E4, `H-16`, a primeira página de dado, e `H-17`, que entrega também
-`GET /api/processes`.** Próximo passo: **`H-18`**, a Página Clientes — rankings
-de CLT, IMPORTADOR e MERCADORIA. As fases estão em `docs/07-plano-entrega.md`.
+épico E4, `H-16`, a primeira página de dado, `H-17`, que entrega também
+`GET /api/processes`, e `H-18`, os três rankings.** Próximo passo: **`H-19`**, a
+Página Performance — IND-17 e IND-20, que A-65 encontrou sem tela. As fases
+estão em `docs/07-plano-entrega.md`.
 
 **`H-16` a `H-21` são paralelas no grafo** (`H15 --> H16 & H17 & …`), não uma
 cadeia: a ordem numérica é do backlog, não dependência. Só `H-22` tem
@@ -181,6 +182,23 @@ escrita usa `replaceState`, não `pushState`: filtro é visualização, não
 navegação, e marcar cinco clientes empilharia cinco entradas com "voltar"
 virando "desmarcar o último". `navigate` preserva a query, então trocar de
 página nunca limpa o recorte.
+
+**A chave vazia é valor nos seis filtros de domínio aberto, e a query precisa
+carregá-la** — `asKeyList` em `src/domain/filters.ts`, separada de `asList` por
+`H-18`. A distinção é a presença do parâmetro, não o conteúdo: `?goods=` é
+"mercadoria em branco", parâmetro ausente não filtra. Antes disso `optionsOf` a
+oferecia de propósito e `applyFilters` a casava, mas ela morria em
+`parseFilters`, no meio: marcar "(em branco)" devolvia a base inteira, sem erro
+nem aviso, nos nove filtros da barra. Nos demais — categoria, canal,
+responsável, datas — vazio segue sendo ausência, porque lá não existe chave em
+branco. Medido: o recorte devolve 57 processos sem mercadoria e 38 sem cliente,
+onde antes devolvia 649.
+
+**O clique de um ranking aplica, não alterna.** `toggle` puro desmarcaria o
+valor já selecionado e levaria à Operacional com o filtro que o clique acabou
+de tirar. A ordem também importa: `replaceState` é síncrono, então o filtro
+precisa ser escrito **antes** de `navigate` — invertido, a página troca antes
+de o filtro existir e o recorte se perde.
 
 **O poll de 5 s do health é o que estende RNF-14 até a tela.** RNF-14 mede
 2092 ms entre o Excel salvar e o **servidor** refletir; sem o intervalo o número
@@ -386,6 +404,12 @@ das quatro camadas · `/fechar-historia H-NN` roda o portão, percorre a
 *definition of done* e imprime a prova · `/sugerir-commits` monta os commits e
 decide a branch · `/sugerir-prs` fatia a entrega em PRs. As duas últimas exigem
 aprovação do plano **e** permissão para executar.
+
+**`/avaliar-claude`** interrompe o trabalho e varre a própria sessão atrás de
+capacidade faltando em `.claude/` — oito sinais, cada um exigindo citação
+literal, e limiar de duas ocorrências antes de virar proposta. Só o usuário a
+invoca (`disable-model-invocation`); ela não escreve arquivo, e o resultado
+esperado na maioria das execuções é "nada a propor".
 
 **`/fatia` confere a lista de arquivos, não apenas a copia.** Quatro perguntas —
 a história cria rota? acrescenta campo a rota existente? altera tipo exportado
