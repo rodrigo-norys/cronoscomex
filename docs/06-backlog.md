@@ -2009,6 +2009,40 @@ export function discardAll(): number
 
 ### H-24 — Alterar células dentro do `.xlsx` preservando o arquivo byte a byte
 
+> ✅ **CONCLUÍDA em 06/08/2026.** 25 testes próprios; suíte total em 855.
+> Seis divergências do plano resolvidas **antes** da primeira linha de código,
+> duas delas bloqueantes: o critério de entradas idênticas contradizia o de
+> composição de `cellXf` (`xl/styles.xml` tem de mudar no passo 5b), e TD-05.1
+> estava escrita só para `H-27`. `ADR-0004` carregava três trechos superados,
+> emendados sem apagar o original. A `formatado.xlsx` **não tinha** formatação
+> condicional, validação, autofiltro, coluna oculta nem fórmula — o primeiro
+> critério de aceite passaria vazio; `tools/build_fixtures.py --enriquecer`
+> injeta os cinco sem depender do arquivo real.
+>
+> **O `revisor-xml` reprovou na primeira invocação, por dois defeitos reais.**
+> (1) `<row/>` auto-fechada: o ponto de inserção caía entre a `/` e o `>`,
+> gerando XML malformado — o Excel descartaria a aba `2026` ao "reparar".
+> (2) Célula ausente recebendo data saía sem `s=`, caía em `cellXfs[0]` (Geral)
+> e o Excel exibiria `46263` — o defeito de A-56 no caso que o próprio backlog
+> chama de mais provável. A suíte anterior gravava texto em célula ausente e
+> data em célula existente, e nunca cruzava os dois eixos.
+>
+> Também da revisão: `count` de `sharedStrings` conta **referências**, não
+> entradas; `toExcelSerial` trunca no dia em UTC, senão `18:30` viraria o dia
+> seguinte; o `numFmt` de data vem do **próprio arquivo**, não de um embutido;
+> `xl/calcChain.xml` virou a quarta entrada tocada, com repasse do atributo `i`;
+> e a célula mestre de fórmula compartilhada é **recusada com erro**, porque
+> reescrevê-la exigiria traduzir a fórmula.
+>
+> Um defeito próprio apareceu no teste: a regex de `findCell` tratava `/>` como
+> sufixo opcional e varria até o `</c>` da célula seguinte, atravessando linhas.
+> O mesmo erro estava no helper do teste, o que quase o escondeu.
+>
+> **PD-02 fechada**: a saída foi aberta no Excel real — sem aviso de reparo,
+> `29/ago` nos três casos, cores, autofiltro, validação e coluna oculta
+> intactos. Abriu **PD-04** (célula ausente herda `fillId=0` da coluna) e
+> **PD-05** (`calcChain` só tem teste sintético).
+
 **Objetivo:** trocar o valor de células específicas sem reserializar o
 workbook, mantendo cores, filtros, comentários, validações e larguras.
 
@@ -2016,6 +2050,7 @@ workbook, mantendo cores, filtros, comentários, validações e larguras.
 - `src/io/xlsx-surgeon.ts`
 - `tests/io/xlsx-surgeon.test.ts`
 - `tests/fixtures/formatado.xlsx`
+- `tests/fixtures/data-vazia.xlsx`
 
 **Contrato fixado:**
 
@@ -2039,13 +2074,29 @@ Implementação fixada: descompactar com `fflate@0.8.3`, alterar apenas os nós
 entradas do zip inalteradas. **`workbook.xlsx.writeFile()` do ExcelJS não é
 usado** (ADR-0004).
 
+`entriesPreserved` conta as entradas do zip cujo hash bate com o original. O
+total depende do arquivo — **não fixe número literal no teste**: derive da
+contagem de entradas da fixture menos as efetivamente tocadas, senão o teste
+quebra ao regenerar a fixture.
+
 **Critérios de aceite:**
 - **Dado** `tests/fixtures/formatado.xlsx` com cores, autofiltro, comentário,
   validação de dados e formatação condicional, **quando** uma célula de texto é
   alterada, **então** o arquivo resultante mantém **todos** esses elementos.
 - **Dado** o arquivo resultante, **então** todas as entradas do zip que não
-  sejam a planilha alvo e `sharedStrings.xml` são **byte a byte idênticas** às
-  originais, verificado por hash entrada a entrada.
+  sejam a planilha alvo, `xl/sharedStrings.xml`, `xl/styles.xml` e
+  `xl/calcChain.xml` são **byte a byte idênticas** às originais, verificado por
+  hash entrada a entrada. A igualdade vale sobre o **conteúdo descomprimido**:
+  recompactar reproduz o conteúdo, não o fluxo deflate do Excel.
+- **Dado** que uma fórmula foi removida, **então** a entrada correspondente sai
+  de `xl/calcChain.xml`, e o atributo `i` — o índice da aba, herdado da entrada
+  anterior — é repassado à seguinte. Entrada órfã na cadeia de cálculo é a
+  hipótese mais provável de aviso de reparo ao abrir.
+- **Dado** que `xl/styles.xml` só pode diferir quando o passo 5b de TD-05.1
+  dispara, **então** a diferença é **estritamente aditiva**: todo `xf` que já
+  existia permanece idêntico, e mudam apenas `count` e o `xf` acrescentado. Numa
+  edição de texto — ou de data em célula que já tem formato de data —
+  `xl/styles.xml` também é byte a byte idêntico.
 - **Dado** uma célula alterada, **então** o atributo `s=` (estilo) dela é
   **preservado** — mudar valor não muda cor.
 - **Dado** uma data, **então** é gravada como serial numérico do Excel **e** a
@@ -2074,6 +2125,27 @@ usado** (ADR-0004).
 - Texto com quebra de linha → preservado, com `xml:space="preserve"`.
 - Lista de edições vazia → devolve o buffer original inalterado e
   `cellsWritten: 0`.
+- Linha auto-fechada (`<row r="3" .../>`, a forma que o Excel emite para linha
+  formatada sem célula) → é aberta antes de inserir. Calcular a posição sem
+  reescrever o XML faz o ponto de inserção cair entre a `/` e o `>`, e o arquivo
+  deixa de ser bem-formado.
+- Célula ausente do XML recebendo **data** → sem `s=` para preservar, o estilo é
+  herdado da linha (`customFormat="1"`) ou da coluna (`<cols>`), e o `numFmt` de
+  data é composto por TD-05.1 sobre ele. Emitir `<c>` sem estilo a jogaria em
+  `cellXfs[0]` (Geral), reproduzindo o defeito de A-56 justamente no caso mais
+  provável.
+
+  > O estilo da coluna pode trazer `fillId=0`, e então a célula criada sai sem
+  > preenchimento. Conferido no Excel em 06/08/2026 sobre `data-vazia.xlsx`: a
+  > data aparece como `29/ago`, correta, e a célula fica branca — o que ali
+  > combina com as vizinhas, também ausentes. Mantido assim porque é o que o
+  > próprio Excel faz ao digitar numa célula vazia, e herdar do irmão seria
+  > inferir intenção. **PD-04** reavalia em `H-26`, contra o arquivo real.
+- Célula **mestre** de fórmula compartilhada (`<f t="shared" ref="…" si="N">`) →
+  **recusada com erro**. Ela carrega a definição que as dependentes do mesmo
+  `si` referenciam; reescrevê-la noutra âncora exigiria traduzir a fórmula, o
+  que a regra inviolável 3 proíbe. A **dependente** (`<f t="shared" si="N"/>`,
+  sem `ref`) afeta só a si mesma e é permitida.
 
 **Dependências:** H-03
 **Tamanho:** M
