@@ -1,7 +1,7 @@
 ---
 name: sugerir-prs
 description: Propõe como fatiar o trabalho não mesclado do CronosComex em 1 ou mais Pull Requests (agrupados por preocupação, ordenados pela cadeia canônica, com uma branch sugerida por PR) E escreve título e corpo de cada um em seções markdown. Descrever um único PR é o caso N=1 desta skill. Use ao preparar ou abrir PR. Apresenta o plano, o corpo e os comandos literais, e aguarda um único aceite, que vale como permissão para o passo para fora (push da branch + `gh pr create`) — nunca faz push nem abre PR sem aprovação.
-argument-hint: [branch-base]
+argument-hint: '[branch-base]'
 ---
 
 # Sugerir PRs
@@ -35,8 +35,10 @@ autenticar `gh` é decisão do usuário, não sua.
 
 ## Fluxo de execução — regra deste repositório
 
-Mesma disciplina da `/sugerir-commits`, mas aqui o passo executável é **para fora** (torna branch
-e PR visíveis no GitHub, para quem tiver acesso) — por isso os portões valem em dobro:
+Mesma disciplina da `/sugerir-commits` — **um aceite só**, decidido em
+**07/08/2026** —, mas aqui o passo executável é **para fora** (torna branch e PR
+visíveis no GitHub, para quem tiver acesso; o remote em `origin` é **privado**)
+— por isso os portões valem em dobro:
 
 1. **Eu sugiro** o plano — quantos PRs, o escopo de cada um, a branch, o título, o corpo em
    markdown (escrito num arquivo `.md` no scratchpad, pré-requisito do `--body-file`) **e os

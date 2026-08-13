@@ -2,7 +2,7 @@
 name: fechar-historia
 description: Fecha uma história do CronosComex (H-NN) — roda o portão de qualidade, percorre a definition of done, atualiza backlog, rastreabilidade e o bloco Estado do CLAUDE.md, e imprime a prova de que os três ficaram consistentes. Use quando a implementação de uma história terminar.
 when_to_use: Quando o usuário disser "fechar H-12", "história concluída", "marque como pronta" ou invocar /fechar-historia H-NN.
-argument-hint: [H-NN]
+argument-hint: '[H-NN]'
 ---
 
 ## Estado atual dos três arquivos, antes de mexer
@@ -17,7 +17,7 @@ argument-hint: [H-NN]
    `v22.23.2`, prefixe `nvm use &&`. Se o portão reprovar, **pare aqui** e
    conserte — não marque nada.
 
-2. **Definition of done** (`docs/10-governanca.md`). Percorra os 8 itens e diga,
+2. **Definition of done** (`docs/10-governanca.md`). Percorra os 9 itens e diga,
    para cada um, se passou e **com base em quê**:
    - [ ] O protocolo de fatia foi apresentado e aprovado
    - [ ] Todos os critérios de aceite passam
@@ -27,21 +27,34 @@ argument-hint: [H-NN]
    - [ ] Nenhum teste aponta para a planilha real
    - [ ] História marcada em `docs/06-backlog.md`
    - [ ] `docs/09-rastreabilidade.md` conferido, se algum status mudou
+   - [ ] Comentário novo diz o que o código não diz, e todo fato medido cita a
+         fonte — régua em `.claude/rules/comentarios.md`
 
 3. **Backlog.** Acrescente o bloco `> ✅ **CONCLUÍDA em DD/MM/AAAA.** …` logo
    abaixo do título da história, no mesmo formato dos já existentes: número de
    testes próprios, total da suíte, divergências resolvidas. Ver `H-06` para o
    modo de falha que este passo evita.
 
+   **O total da suíte se copia do relatório do Vitest**, nunca se estima nem se
+   conta à mão: contagem estática por `grep` não enxerga casos gerados em tempo
+   de execução — `grep` devolveu 273 onde o Vitest reportava 279. É aqui que o
+   número mora, e só aqui.
+
 4. **Rastreabilidade.** Atualize o `Status` de cada linha de
    `docs/09-rastreabilidade.md` que cite a história.
 
 5. **`CLAUDE.md`, bloco `## Estado`.** **Releia o arquivo do disco antes de
    editar** — a cópia em contexto é o retrato do início da sessão e pode estar
-   defasada. Atualize a fase, a próxima história e o total de testes
-   **copiando do relatório do Vitest**. Não estime nem conte à mão: contagem
-   estática por `grep` não enxerga casos gerados em tempo de execução — medido,
-   `grep` devolve 273 onde o Vitest reporta 279.
+   defasada. Atualize a fase e a próxima história.
+
+   **O bloco é curto por decisão, e continua curto.** Ele diz onde a fase está
+   e qual é a próxima história — nada mais. Todo aprendizado técnico da história
+   (número medido, defeito encontrado, decisão tomada) vai no bloco
+   `✅ CONCLUÍDA` do passo 3, que é o lar dele. O `CLAUDE.md` é carregado em
+   **toda** sessão; o backlog, só quando alguém o abre. Acrescentar parágrafo
+   aqui cobra de cada sessão futura o custo de um fato que interessa a uma
+   história — foi assim que este bloco chegou a 310 linhas antes de 11/08/2026.
+   **Não transcreva número medido para o `CLAUDE.md`.**
 
 6. **Cobertura de apresentação.** Rode:
 

@@ -76,6 +76,23 @@ graph TB
 O servidor escuta exclusivamente em `127.0.0.1` (RNF-29): não há superfície de
 rede, e por isso não há autenticação (RNF-32).
 
+### As duas portas de desenvolvimento são distintas e fixas
+
+A API atende em **5173** e o Vite em **5174**. **Isso foi um defeito real:**
+`5173` estava escrito em `DEFAULTS.port`, no proxy do Vite **e** era o padrão do
+próprio Vite — os três coincidiam, e a cadeia só funcionava por acidente de
+ordem. Subindo a API primeiro, o Vite achava a porta ocupada e deslizava para
+`5174`; na ordem inversa o Vite tomava a `5173`, a API morria com `EADDRINUSE`,
+e o proxy passava a apontar para o próprio Vite — que devolve HTML onde a casca
+espera JSON, produzindo "Sem contato com o servidor" e apontando para a causa
+errada. Agora `web/vite.config.ts` lê a porta da API de `config/app.json` (fonte
+única) e usa `strictPort`, que falha alto em vez de escolher outra em silêncio.
+
+`npm run dev` sobe os dois por `scripts/dev.mjs`, sem dependência nova — o `&`
+do shell não serve porque a máquina do operador é Windows (RNF-26), onde o `npm`
+invoca `cmd`. Um processo caindo derruba o outro: meia aplicação no ar parece
+saudável e não é.
+
 ---
 
 ## 3. Componentes do módulo de ingestão e cálculo

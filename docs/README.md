@@ -36,13 +36,13 @@ Leia nesta ordem. Cada documento pressupõe o anterior.
 
 | # | Documento | O que traz | Leitura obrigatória antes de |
 |---|---|---|---|
-| 1 | [00-visao-escopo.md](00-visao-escopo.md) | Escopo, fora de escopo, 14 premissas (P-NN), o princípio da planilha-referência e o glossário | Tudo |
-| 2 | [01-auditoria-especificacao.md](01-auditoria-especificacao.md) | Os **55 defeitos** da especificação e a resolução de cada um | Qualquer regra de negócio |
+| 1 | [00-visao-escopo.md](00-visao-escopo.md) | Escopo, fora de escopo, 15 premissas (P-NN), o princípio da planilha-referência e o glossário | Tudo |
+| 2 | [01-auditoria-especificacao.md](01-auditoria-especificacao.md) | Os **65 defeitos** da especificação e a resolução de cada um | Qualquer regra de negócio |
 | 3 | [02-requisitos.md](02-requisitos.md) | Requisitos funcionais e os RNF quantificados, com origem declarada | Qualquer decisão de desempenho |
 | 4 | [03-modelo-dados.md](03-modelo-dados.md) | Modelo em memória, arquivos locais e **as 7 tabelas de decisão** (TD-01 a TD-06 + TD-05.1) | H-04, H-05, H-06, H-07, H-27 |
 | 5 | [04-arquitetura.md](04-arquitetura.md) | Diagramas de contexto, containers e componentes; estrutura de diretórios | H-02 |
 | 6 | [05-contratos-api.md](05-contratos-api.md) | Rotas, schemas, códigos de erro e campos editáveis | Qualquer rota |
-| 7 | [06-backlog.md](06-backlog.md) | **32 histórias executáveis**, com contrato, aceite e casos-limite | — |
+| 7 | [06-backlog.md](06-backlog.md) | **34 histórias executáveis**, com contrato, aceite e casos-limite | — |
 | 8 | [07-plano-entrega.md](07-plano-entrega.md) | 5 fases, grafo de dependências, caminho crítico e **15 riscos** | Planejar a ordem |
 | 9 | [08-qualidade-operacao.md](08-qualidade-operacao.md) | Testes, ingestão, observabilidade, LGPD e build | Escrever testes |
 | 10 | [09-rastreabilidade.md](09-rastreabilidade.md) | Matriz de 28 linhas: indicador/alerta → história → teste → status | Verificar cobertura |
@@ -55,7 +55,7 @@ Leia nesta ordem. Cada documento pressupõe o anterior.
 | [0001](adr/0001-planilha-como-fonte-da-verdade.md) | A planilha `.xlsx` é a única fonte da verdade |
 | [0002](adr/0002-aplicacao-local-sem-banco.md) | Aplicação local em Node, sem banco — **com a matriz de decisão de plataforma** |
 | [0003](adr/0003-leitura-xlsx-e-extracao-de-cor.md) | A cor é lida como chave de estilo literal, sem resolver RGB |
-| [0004](adr/0004-escrita-ciruragica-xlsx.md) | Escrita cirúrgica no XML, nunca reserialização |
+| [0004](adr/0004-escrita-cirurgica-xlsx.md) | Escrita cirúrgica no XML, nunca reserialização |
 | [0005](adr/0005-historico-jsonl-append-only.md) | Histórico em JSONL append-only |
 | [0006](adr/0006-indicadores-em-memoria.md) | Indicadores como funções puras em memória |
 
@@ -64,6 +64,13 @@ Leia nesta ordem. Cada documento pressupõe o anterior.
 O `CLAUDE.md` da raiz traz o **protocolo de fatia**: antes de iniciar qualquer
 história, apresentar o checklist do que será feito e aguardar. Divergências
 encontradas no plano param a implementação em vez de serem contornadas.
+
+**O registro técnico por história vive nos blocos `✅ CONCLUÍDA` de
+[06-backlog.md](06-backlog.md)** — o que foi medido, que defeito apareceu e que
+decisão foi tomada ao fechar cada `H-NN`. É `/fechar-historia` quem os escreve.
+O `CLAUDE.md` não os duplica: ele guarda o que precisa valer em **toda** sessão,
+e aponta para cá. Invariante de um módulo fica no cabeçalho do próprio arquivo
+em `src/`; por que uma guarda existe, no cabeçalho do próprio script ou teste.
 
 ### Recursos
 
