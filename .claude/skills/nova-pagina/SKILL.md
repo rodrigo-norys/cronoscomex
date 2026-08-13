@@ -2,15 +2,15 @@
 name: nova-pagina
 description: Conduz uma página do CronosComex pelo padrão que `H-16` a `H-20` estabeleceram — hook com os quatro estados, filtros globais anexados, estado vazio afirmativo, nada calculado no cliente, montagem na casca e o stub estendido. Carrega as seis omissões medidas, cada uma com a história em que mordeu. Use ao implementar qualquer página nova, DEPOIS de `/fatia H-NN`.
 when_to_use: Quando o usuário disser "implementa a Página Histórico", "falta a tela de X", "cria a página do detalhe" ou invocar /nova-pagina. Dentro de uma história, use depois de /fatia H-NN — a fatia abre a história, esta skill conduz a página dela.
-argument-hint: [H-NN]
+argument-hint: '[H-NN]'
 ---
 
 ## Por que esta skill existe
 
-Cinco páginas saíram entre `H-16` e `H-20` com o mesmo desenho, e as mesmas coisas
-ficaram de fora do plano **toda vez**. Não é descuido de execução: a lista de
-arquivos do backlog descreve a tela, e a tela precisa de fiação que ninguém
-lembra de listar.
+**Saiu do gatilho declarado, ao fechar `H-20`** — cinco páginas com o mesmo
+desenho, e as mesmas coisas fora do plano **toda vez**. Não é descuido de
+execução: a lista de arquivos do backlog descreve a tela, e a tela precisa de
+fiação que ninguém lembra de listar.
 
 O que a repetição mostrou, com a história em que mordeu:
 
@@ -61,6 +61,11 @@ export type XState =
 — ou pior, como conjunto vazio — afirmaria que a planilha tem zero linhas,
 indistinguível do caso em que ela realmente tem (regra inviolável 3).
 
+**Página de dado não trata `503` como falha.** Vira estado próprio, com traços e
+a frase de que traço não é zero. Painel de zeros ali afirmaria que a planilha tem
+zero processos. `H-17` a `H-22` herdam o padrão de `useIndicators` — copie de lá,
+não redesenhe.
+
 Duas obrigações mecânicas:
 
 - `dataVersion` entra nas dependências do `useEffect` como **gatilho**, com o
@@ -83,6 +88,17 @@ cedo em cada um evita o `?.` encadeado que esconde estado.
   "ainda não se sabe".
 - **Chave vazia vira `(sem valor)`**, nunca linha invisível. Medido: é o maior
   grupo de clientes (38) e o segundo de mercadorias (57).
+
+  **A chave vazia é valor nos seis filtros de domínio aberto, e a query precisa
+  carregá-la** — `asKeyList` em `src/domain/filters.ts`, separada de `asList` por
+  `H-18`. A distinção é a presença do parâmetro, não o conteúdo: `?goods=` é
+  "mercadoria em branco", parâmetro ausente não filtra. Antes disso `optionsOf` a
+  oferecia de propósito e `applyFilters` a casava, mas ela morria em
+  `parseFilters`, no meio: marcar "(em branco)" devolvia a base inteira, sem erro
+  nem aviso, nos nove filtros da barra. Nos demais — categoria, canal,
+  responsável, datas — vazio segue sendo ausência, porque lá não existe chave em
+  branco. Medido: o recorte devolve 57 processos sem mercadoria e 38 sem cliente,
+  onde antes devolvia 649.
 - **Rótulo é a grafia de origem** (A-26), nunca a chave normalizada.
 
 ### 4. Clique que filtra e navega
@@ -129,20 +145,48 @@ antes de a requisição resolver e falha em toda página; use `findByRole`. E
 `<article>`/`<section>` **não herdam nome acessível** do `h2`/`h3` dentro deles —
 ponha `aria-label` no elemento, o que também melhora o leitor de tela.
 
+## O que a casca já resolve — não refaça
+
+**A casca hospeda as sete páginas, e `H-16` a `H-22` encaixam sem tocá-la.**
+`PageOutlet` passa `dataVersion` como `key` — quando o dia vira ou a planilha é
+relida, a página remonta e refaz as próprias requisições, sem assinar nada. O
+que a página precisa consumir é `useFilters().queryString`, anexado às suas
+requisições. Cada página pendente é um marcador explícito dizendo qual história
+a entrega: buraco visível, nunca `TODO` escondido.
+
+**A URL é o único estado dos filtros**, sem cópia em `useState` — duas fontes
+divergiriam no primeiro `popstate`, e recarregar precisa preservar o recorte. A
+escrita usa `replaceState`, não `pushState`: filtro é visualização, não
+navegação, e marcar cinco clientes empilharia cinco entradas com "voltar"
+virando "desmarcar o último". `navigate` preserva a query, então trocar de
+página nunca limpa o recorte.
+
+**O poll de 5 s do health é o que estende RNF-14 até a tela.** RNF-14 mede
+2092 ms entre o Excel salvar e o **servidor** refletir; sem o intervalo o número
+fica verdadeiro no servidor e velho no navegador. Ele pausa com a aba oculta, e
+é também o que faz a faixa de estado aparecer e sumir sozinha.
+
 ## Armadilhas já medidas
 
 - **`503` não é falha.** É estado próprio, com frase dizendo que traço não é zero.
 - **Zero medido ≠ zero não mensurável.** `chegadas_hoje: 0` é medido;
   `processos_parados: 0` é ausência de instrumento até `H-28`, e aparece como
-  **traço** com a razão dita. Dois números iguais, sentidos opostos.
+  **traço** com a razão dita. Dois números iguais, sentidos opostos. Mesma
+  família da nota de `IND-21` e do estado `semLeitura`; é a regra inviolável 3
+  aplicada a um número que já existe no contrato.
 - **Ordem vinda do servidor não se refaz no cliente.** Ao agrupar, preserve a
   **primeira aparição**: a lista já chega ordenada, e o primeiro item de um grupo
   é o mais prioritário dele, então a posição de primeira aparição já é a correta.
+  A ordenação do servidor é herdada inteira — inclusive nulos por último e o
+  desempate por `sourceRow`. Verificado no arquivo real: 40 linhas de alerta
+  viram 25 grupos sem quebrar a sequência de severidade em ponto nenhum.
 - **Recorte que não se anuncia é descarte silencioso.** Exibindo `topN` de um
   conjunto maior, diga de quantos — regra inviolável 2.
 - **Resposta de rede não é verificada pelo tipo.** Campo ausente vira traço,
   nunca exceção: um servidor de versão anterior derrubou a casca inteira com
-  `undefined.split`.
+  `undefined.split`. `HealthResponse` diz `today: string`, mas descreve o
+  **contrato**, não o corpo que chegou. Tela branca é o pior dos buracos
+  invisíveis (regra 3), e há teste de regressão.
 
 ## Ao terminar
 
