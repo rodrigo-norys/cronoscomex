@@ -11,6 +11,12 @@
 | **Ponta a ponta** | ~5% da suíte | Fluxo completo: ler → filtrar → editar → aplicar → reler | Vitest + servidor Fastify em processo |
 | **Interface** | proporção a definir com `H-16` a `H-22` | Casca, navegação, faixa de estado, filtros e as sete páginas | Vitest + Testing Library 16.3.2 + jsdom 30.0.1 |
 
+**O paralelismo do Vitest fica ligado.** Desligá-lo foi tentado contra a corrida
+do leitor de `.xlsx` e nunca foi o caminho: dava 0 falhas em 6 rodadas
+localmente e mesmo assim reprovava no runner do GitHub. Reduzir probabilidade
+não é corrigir causa — a correção foi na origem, fechando o descritor da aba
+fora de escopo (`discardWorksheetStream`, medido em 0 falhas em 55 rodadas).
+
 A camada de interface **não constava do plano original** e foi acrescentada em
 06/08/2026, antes da primeira história de tela — ver decisão D-17. As três
 primeiras rodam no projeto `servidor` do `vitest.config.ts`, em ambiente `node`;
@@ -116,7 +122,7 @@ tabela.
 | Processo parado no limite | 15 dias, limiar 15 | gera alerta | H-29 |
 | Processo parado abaixo do limite | 14 dias, limiar 15 | não gera | H-29 |
 | Preservação do arquivo | `formatado.xlsx`, uma célula alterada | todas as demais entradas do zip idênticas por hash | H-24 |
-| Data gravada em célula sem formato | célula com `numFmtId=0`, gravar `2026-08-29` | `cellXf` composto com `numFmt` de data; Excel exibe `29/ago`, não `46236` | H-24 |
+| Data gravada em célula sem formato | célula com `numFmtId=0`, gravar `2026-08-29` | `cellXf` composto com `numFmt` de data; Excel exibe `29/ago`, não `46263` | H-24 |
 | Data gravada em célula já formatada | célula com `numFmtId=16`, gravar data | estilo **preservado**, nenhum `cellXf` novo criado | H-24 |
 | Escrita com Excel aberto | `~$planilha.xlsx` presente | recusa `EXCEL_ABERTO`, arquivo intocado | H-25 |
 | Escrita com arquivo alterado | hash divergente | recusa `ARQUIVO_MUDOU`, fila preservada | H-25 |
@@ -175,6 +181,11 @@ contagem de linhas por coluna preenchida; o painel traz `acceptedRows` e as
 contagens por categoria. Os dois têm de bater. Divergência é defeito de
 mapeamento, não de dado.
 
+A cadeia de ingestão foi validada contra o arquivo real, dentro do limite de
+quarentena de RNF-24. **Não transcreva número medido para documento** — a
+contagem de testes vem do Vitest, os totais vêm da rota, e cópia manual
+diverge.
+
 ### 2.5. Rollback
 
 | Situação | Procedimento |
@@ -192,7 +203,11 @@ mapeamento, não de dado.
 ### 3.1. Logs estruturados
 
 JSON por linha, em `data/logs/app-<AAAAMMDD>.jsonl`, retenção de 30 dias
-(`H-31`).
+(`H-31`), expurgada na partida.
+
+**RNF-33 é garantido pelo tipo, não por disciplina:** `LogEntry` não tem campo
+de texto livre, e a serialização só copia as chaves catalogadas na tabela
+abaixo — não há por onde vazar nome de cliente ou conteúdo de célula.
 
 | Evento | Campos relevantes |
 |---|---|
@@ -343,3 +358,64 @@ marcador.
 **A restauração é testada, não presumida:** o critério de aceite de `H-25`
 exige que uma validação pós-escrita falha resulte em arquivo restaurado e
 verificado — o mesmo caminho de código que o operador usaria manualmente.
+
+## 6. Régua de comentários
+
+A régua operacional está em `.claude/rules/comentarios.md`, que carrega sozinha
+ao tocar `src/`, `web/` ou `tests/`. **Esta seção é a derivação** — por que a
+régua é essa e não outra. Abra apenas para discutir a régua; para escrever
+código, a rule basta.
+
+### 6.1. O que a literatura afirma
+
+| Fonte | O que sustenta |
+|---|---|
+| Ousterhout, *A Philosophy of Software Design* | Princípio-guia: comentário descreve o que **não é óbvio no código**. Dois *red flags* nomeados: *Comment Repeats Code* e *Implementation Documentation Contaminates Interface*. Critério de suficiência: entender a abstração lendo só as declarações visíveis mais os comentários |
+| Google, *eng-practices* | Comentário explica **por quê**, não **o quê**; se o código não está claro, refatore em vez de comentar. Exceções admitidas: regex e algoritmo complexo. Decisão tomada em review vira comentário, *for posterity* |
+| Fluri et al., *Do Code and Comments Co-Evolve?* | ~90% das mudanças de comentário co-evoluem com o código no mesmo commit; código **novo** entra frequentemente sem comentário |
+| Wen et al., ICPC 2019 — 1,3 bi de mudanças de AST em 1.500 sistemas | Mudança **inconsistente** entre código e comentário tem **~1,5× mais chance** de ser commit que introduz bug |
+| Rani et al., *A Decade of Code Comment Quality Assessment*, JSS 2023 — 47 de 2.353 papers | 21 atributos de qualidade catalogados; a literatura se concentra em quatro, **predominantemente consistência entre comentário e código** |
+| Pascarella & Bacchelli, MSR 2017 | Taxonomia empírica de 6 categorias de topo e 16 internas sobre >2.000 comentários — régua única não serve para todas |
+
+### 6.2. A linha que separa mecanismo de julgamento
+
+A conclusão operacional das fontes acima: **o defeito medido não é ausência de
+comentário, nem comentário feio — é divergência.** E divergência é a única
+propriedade da lista que um script decide.
+
+| Regra | Computável? | Onde vive |
+|---|---|---|
+| Não repete o código | Não | `.claude/rules/comentarios.md` |
+| Diz o porquê, não o quê | Não | idem |
+| Interface não vaza implementação | Não | idem |
+| Cabeçalho define a invariante | Não | idem |
+| **Âncora citada é definida** — ID em título ou primeira célula de tabela, caminho existindo em disco | **Sim** | `tests/repo/contratos.test.ts` |
+| **Identificador em camelCase citado existe** | **Sim** | idem |
+| **Peça de `.claude/` mencionada no `CLAUDE.md`** | **Sim** | idem |
+
+É por isso que a régua **não virou hook**: hook exige decisão computável, e a
+metade de cima não é. E é por isso que a metade de baixo **não ficou só na
+rule**: rule é contexto, não garantia — não é reinjetada depois do `/compact`, e
+o gatilho dela é leitura de arquivo, não escrita.
+
+### 6.3. Estado medido em 12/08/2026
+
+Antes de escrever qualquer mecanismo, o repositório foi medido:
+
+- **76 de 83** arquivos `.ts`/`.tsx` de `src/` e `web/` têm bloco de comentário
+  antes do primeiro `export`
+- **331 citações** de ID do plano em comentários de `src/` e `web/src`, nas onze
+  famílias vigiadas (`H-NN`, `IND-NN`, `A-NN`, `TD-NN`, `ADR-NNNN`, `RF-NN`,
+  `RNF-NN`, `ALE-NN`, `D-NN`, `P-NN`, `R-NN`) — **zero âncoras mortas**
+- **18 caminhos** de arquivo citados em comentários — **zero inexistentes**
+- **120 citações** de identificador em camelCase, 70 distintos — **zero ausentes**
+
+> Os três números contam **apenas linhas de comentário** de `src/` e `web/src`,
+> que é o recorte da asserção. Contagens sobre o arquivo inteiro, ou incluindo
+> `web/tests/`, dão valores maiores e não são comparáveis — foi assim que a
+> primeira redação desta seção registrou 385 onde o certo era 281.
+- **1.837 linhas** de comentário em `src/` e `web/src`, **96% sem acento**
+
+A asserção nasce, portanto, **verde**: ela não conserta dívida, impede que a
+dívida entre. O único desalinhamento encontrado estava em prosa, não em
+comentário — o `CLAUDE.md` dizia "55 achados" contra 65 reais na auditoria.
