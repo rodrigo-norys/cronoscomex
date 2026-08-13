@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
 import { dirname } from 'node:path'
 import type { EditableField } from '../domain/editable-fields.ts'
+import { normKey } from '../domain/normalizer.ts'
 
 /**
  * A fila de edicoes ainda nao aplicadas — `data/pending-edits.jsonl`.
@@ -111,7 +112,14 @@ export function consolidated(path: string = DEFAULT_QUEUE_PATH): PendingEdit[] {
 
     // `Map.set` sobre chave existente atualiza o valor e **mantem** a posicao
     // de insercao, entao a ordem de primeira aparicao sai de graca.
-    byPair.set(`${record.ref}|${record.field}`, record)
+    //
+    // A chave usa `normKey`, como TD-06 define a identidade do processo. Com a
+    // REF crua, duas entradas que diferem so na caixa sobrevivem a consolidacao
+    // e resolvem para a MESMA celula: a cirurgia grava as duas, a segunda por
+    // cima da primeira, e a validacao pos-escrita condena a escrita — o
+    // operador ouve "arquivo corrompido, backup restaurado" por uma fila que a
+    // aplicacao aceitou. Achado do revisor-xml em H-25.
+    byPair.set(`${normKey(record.ref)}|${record.field}`, record)
   }
 
   return [...byPair.values()]
