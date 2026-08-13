@@ -129,6 +129,12 @@ async function hashFile(path: string): Promise<string> {
  * de deixar aberto um descritor sobre o conteudo integral de uma aba fora de
  * escopo, encerra-o deliberadamente. Nenhuma celula e materializada.
  *
+ * As duas metades sao necessarias, e isso foi medido: `destroy()` sozinho deu
+ * erro em **3 de 20 rodadas**, igual ao baseline; com o ouvinte de `error`
+ * junto, **0 em 55**. Desligar o paralelismo do Vitest nunca foi o caminho —
+ * foi tentado, deu 0 em 6 localmente e mesmo assim reprovou no runner do
+ * GitHub. Reduzir probabilidade nao e corrigir causa.
+ *
  * O listener vazio NAO e mascaramento: `destroy()` sozinho nao basta, porque o
  * `open` ja esta em voo e vai falhar de qualquer forma. Um stream que emite
  * `error` sem ouvinte vira excecao nao tratada — e esta e a unica falha
