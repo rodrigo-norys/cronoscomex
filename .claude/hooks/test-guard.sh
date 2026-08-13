@@ -6,9 +6,17 @@
 # quebrada falha em SILENCIO — o hook segue saindo 0, e a protecao some
 # sem que nada avise.
 #
+# Por isso roda PRIMEIRO no `npm run verify`, antes de lint, typecheck,
+# teste e build: verificar a protecao antes de verificar o codigo.
+# Mesma razao pela qual test-verifica-dados-sensiveis.sh roda primeiro no
+# workflow do CI.
+#
 # Convencao: `blocks` espera exit 2, `allows` espera exit 0.
 # Os casos de `allows` nao sao enfeite: cada um e um falso positivo que
-# ja aconteceu ou que a estrutura do guard torna provavel.
+# ja aconteceu ou que a estrutura do guard torna provavel — metade dos casos,
+# e dois deles ja morderam de verdade.
+#
+# Exige `bash` e `jq`.
 
 set -uo pipefail
 
@@ -48,6 +56,17 @@ blocks 'git add CONTROLE DOS EMBARQUE.xlsx'
 blocks 'git add planilha1.jpeg'
 blocks 'git add config/app.json'
 blocks 'git add data/logs/app-20260805.jsonl'
+
+# --- fixture versionada: a excecao que o CI ja fazia e o guard nao ----------
+# O guard bloqueava `tests/fixtures/*.xlsx` enquanto
+# verifica-dados-sensiveis.sh a permitia. A contradicao apareceu ao versionar
+# data-vazia.xlsx, em 13/08/2026: o commit era legitimo e o guard o barrava.
+allows 'git add tests/fixtures/data-vazia.xlsx'
+allows 'git add tools/build_fixtures.py tests/fixtures/data-vazia.xlsx docs/06-backlog.md'
+# A excecao vale para a fixture, nunca para o vizinho no mesmo comando.
+blocks 'git add tests/fixtures/data-vazia.xlsx config/app.json'
+# Travessia anula a excecao: em `case`, `*` atravessa `/`.
+blocks 'git add tests/fixtures/../CONTROLE.xlsx'
 
 # --- redirecionamento para caminho protegido -------------------------------
 blocks 'echo x > config/app.json'
