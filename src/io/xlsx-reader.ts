@@ -105,7 +105,12 @@ function resolveSheetPath(
   return { sheetName: chosen.name, sheetPath: chosen.path, available }
 }
 
-async function hashFile(path: string): Promise<string> {
+/**
+ * SHA-256 do arquivo inteiro, prefixado com `sha256:`. E o valor que
+ * `StoreState.fileHash` guarda, e o que a defesa de ARQUIVO_MUDOU de H-25
+ * compara — texto com texto.
+ */
+export async function hashFile(path: string): Promise<string> {
   return await new Promise((resolve, reject) => {
     const hash = createHash('sha256')
     createReadStream(path)
@@ -113,6 +118,15 @@ async function hashFile(path: string): Promise<string> {
       .on('error', reject)
       .on('end', () => resolve(`sha256:${hash.digest('hex')}`))
   })
+}
+
+/**
+ * O mesmo hash, sobre bytes ja em memoria. H-25 confere o buffer que a cirurgia
+ * vai operar contra o hash da leitura: sao duas aberturas do arquivo, e sem
+ * isto a janela entre elas ficaria sem defesa.
+ */
+export function hashBytes(bytes: Uint8Array): string {
+  return `sha256:${createHash('sha256').update(bytes).digest('hex')}`
 }
 
 /**
