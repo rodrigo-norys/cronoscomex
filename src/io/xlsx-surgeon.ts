@@ -16,6 +16,23 @@ import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
  * alterado, entao nenhuma celula fora da edicao muda de aparencia; e
  * xl/calcChain.xml, ao remover formula, para nao deixar entrada orfa apontando
  * para celula que nao calcula mais.
+ *
+ * DOIS LIMITES conhecidos, nenhum alcancavel pelas fixtures nem pela planilha
+ * real, ambos levantados pelo revisor-xml em H-24:
+ *
+ * 1. Se xl/sharedStrings.xml NAO existir no zip, gravar texto cria a entrada
+ *    sem declara-la em [Content_Types].xml nem em xl/_rels/workbook.xml.rels,
+ *    e o arquivo resultante e invalido. Toda planilha do Excel com texto ja
+ *    tem a entrada; um .xlsx so de numeros, produzido por outra ferramenta,
+ *    nao teria.
+ * 2. StyleTable.serialize com sectionStart === -1 — arquivo sem <cellXfs> —
+ *    produziria XML corrompido. Hoje e inalcancavel porque ensureDateFormat
+ *    sai antes quando a tabela esta vazia: protecao ACIDENTAL, nao deliberada,
+ *    e por isso anotada aqui em vez de silenciada.
+ *
+ * Nao foram tratados por escolha: cobri-los exigiria fixture que o gerador nao
+ * produz, e o codigo nao verificado por teste e o que engana. H-25 tem o
+ * write-guard, que e o lugar de recusar arquivo fora do formato esperado.
  */
 
 export interface CellEdit {
