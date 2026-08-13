@@ -95,6 +95,20 @@ Derivados da estrutura real e da fronteira que o Biome impõe — use o mais esp
    (tabela acima) e por **preocupação** (uma feature, um fix, um refactor — não misture). Uma
    deduplicação não vai junto com uma feature nova.
 
+   **O corte é o ponto verde: a preocupação fecha E o portão passa.** Não é tempo nem tamanho.
+   É isso que faz o commit atômico pagar em vez de virar cerimônia — `git bisect` pressupõe que
+   todo ponto do histórico é testável, e um commit vermelho no meio quebra a busca binária.
+   Dentro de uma história os pontos verdes caem sozinhos na cadeia canônica: contrato fechado,
+   domínio verde, rota verde, interface verde.
+
+   **Quando o agrupamento for não óbvio, prove.** Percorra os commits em `HEAD` destacado e
+   rode a suíte em cada um — foi assim que se descobriu, em `H-12`, que um `exit=1` intermitente
+   não era defeito do agrupamento. Informe a contagem de cada um no plano.
+
+   Um arquivo tocado por duas preocupações **não** se divide aqui: `git add -p` é interativo e
+   não roda neste ambiente. Escolha o commit onde ele cabe melhor e **diga por quê** — foi o caso
+   de `docs/06-backlog.md` em `H-24`, tocado pelo contrato e pelo fechamento.
+
 5. **Ordene por dependência, seguindo a cadeia canônica.** Aqui ela não é convenção: o Biome
    **quebra a build** se `src/domain/` importar `io`, `app`, `http` ou `web`.
 
