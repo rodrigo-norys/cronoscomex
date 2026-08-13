@@ -432,6 +432,102 @@ FIXTURES = {
  ], 'preservacao: tema, estilos, comentarios, vmlDrawing, customXml'),
 }
 
+# --- Enriquecimento da fixture de preservacao -------------------------------
+#
+# formatado.xlsx nascia com cores, larguras e as entradas de zip ricas (tema,
+# comentarios, customXml), mas SEM os elementos que vivem dentro do XML da
+# propria aba: formatacao condicional, validacao de dados, autofiltro, coluna
+# oculta e formula. Sao exatamente os que os defeitos do ExcelJS destroem
+# (ADR-0004) e, sem eles, o primeiro criterio de aceite de H-24 passava vazio:
+# assertaria a preservacao de elementos que nunca estiveram la.
+#
+# Roda sobre a fixture JA versionada e por isso NAO exige o arquivo real:
+#   python3 tools/build_fixtures.py --enriquecer tests/fixtures/formatado.xlsx
+#
+# O esquema OOXML impoe a ordem dos filhos de <worksheet>: sheetData ->
+# autoFilter -> mergeCells -> conditionalFormatting -> dataValidations ->
+# pageMargins. Injetar fora de ordem faz o Excel pedir reparo ao abrir.
+
+AUTO_FILTER = '<autoFilter ref="A1:P10"/>'
+
+# dxfId 0 existe: a fixture herda os 18 dxfs do arquivo real.
+CONDITIONAL_FORMATTING = (
+    '<conditionalFormatting sqref="L2:L10">'
+    '<cfRule type="containsText" dxfId="0" priority="1"'
+    ' operator="containsText" text="DESEMBARA">'
+    '<formula>NOT(ISERROR(SEARCH("DESEMBARA",L2)))</formula>'
+    '</cfRule></conditionalFormatting>'
+)
+
+DATA_VALIDATIONS = (
+    '<dataValidations count="1">'
+    '<dataValidation type="list" allowBlank="1" showInputMessage="1"'
+    ' showErrorMessage="1" sqref="H2:H10">'
+    '<formula1>"RIO,SC,MULTI,MULTIRIO,RO"</formula1>'
+    '</dataValidation></dataValidations>'
+)
+
+# Coluna P oculta. A entrada original cobria 16..16384 de uma vez; ocultar so a
+# 16 exige parti-la, porque <col> nao pode se sobrepor.
+COLUNA_ABERTA = '<col min="16" max="16384" width="9.140625" style="162"/>'
+COLUNA_OCULTA = (
+    '<col min="16" max="16" width="9.140625" style="162" hidden="1"'
+    ' customWidth="1"/>'
+    '<col min="17" max="16384" width="9.140625" style="162"/>'
+)
+
+CELULA_COM_FORMULA = 'N9'
+
+
+def enriquecer_formatado(path):
+    """Injeta na aba 2026 os elementos que vivem DENTRO do XML da planilha.
+
+    Idempotente: rodar duas vezes nao duplica nada.
+    """
+    with zipfile.ZipFile(path) as src:
+        entradas = [(i, src.read(i.filename)) for i in src.infolist()]
+
+    saida, achou = [], False
+    for info, data in entradas:
+        if info.filename != SHEET:
+            saida.append((info, data)); continue
+        achou = True
+
+        d = data.decode('utf-8')
+        if 'conditionalFormatting' in d:
+            print('  %s ja enriquecida, nada a fazer' % os.path.basename(path))
+            return
+
+        d = d.replace(COLUNA_ABERTA, COLUNA_OCULTA)
+
+        alvo = re.search(r'<c r="%s"[^>]*?(?:/>|>.*?</c>)' % CELULA_COM_FORMULA, d)
+        if not alvo:
+            raise SystemExit('celula %s ausente da aba' % CELULA_COM_FORMULA)
+        estilo = re.search(r's="(\d+)"', alvo.group(0))
+        formula = '<c r="%s"%s><f>1+1</f><v>2</v></c>' % (
+            CELULA_COM_FORMULA, ' s="%s"' % estilo.group(1) if estilo else '')
+        d = d[:alvo.start()] + formula + d[alvo.end():]
+
+        d = d.replace('</sheetData>', '</sheetData>' + AUTO_FILTER
+                      + CONDITIONAL_FORMATTING + DATA_VALIDATIONS)
+        saida.append((info, d.encode('utf-8')))
+
+    if not achou:
+        raise SystemExit('aba %s nao encontrada em %s' % (SHEET, path))
+
+    with zipfile.ZipFile(path, 'w', zipfile.ZIP_DEFLATED) as out:
+        for info, data in saida:
+            out.writestr(info, data)
+    print('  %s: autofiltro, formatacao condicional, validacao de dados,'
+          ' coluna P oculta e formula em %s'
+          % (os.path.basename(path), CELULA_COM_FORMULA))
+
+
+if len(sys.argv) > 1 and sys.argv[1] == '--enriquecer':
+    enriquecer_formatado(sys.argv[2] if len(sys.argv) > 2
+                         else 'tests/fixtures/formatado.xlsx')
+    raise SystemExit(0)
+
 print('Gerando fixtures a partir de %r\n' % SRC)
 _src = zipfile.ZipFile(SRC)
 load_row_styles(_src)
