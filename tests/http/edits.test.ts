@@ -141,6 +141,28 @@ describe('POST /api/edits', () => {
     await app.close()
   })
 
+  // O caminho mais banal do painel: digitar, notar o engano, corrigir. Sem a
+  // heranca, a segunda edicao gravaria como `previous` o valor da primeira —
+  // que nunca esteve na planilha —, e a defesa de H-25 recusaria a fila inteira
+  // para sempre. Achado do revisor-xml em H-25.
+  it('mantem previous do arquivo ao editar o mesmo campo duas vezes', async () => {
+    const app = buildApp()
+
+    await app.inject({ method: 'POST', url: '/api/edits', payload: EDICAO })
+    const segunda = (
+      await app.inject({
+        method: 'POST',
+        url: '/api/edits',
+        payload: { ...EDICAO, value: '2026-08-07' },
+      })
+    ).json()
+
+    expect(segunda.previous).toBe('2026-08-04')
+    expect(segunda.value).toBe('2026-08-07')
+
+    await app.close()
+  })
+
   it('devolve vazio em previous quando a celula estava vazia', async () => {
     const app = buildApp()
 
