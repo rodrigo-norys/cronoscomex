@@ -8,8 +8,9 @@ import type { Process } from './types.ts'
  * A pagina de alertas e **fila de trabalho**, nao panorama: cada entrada existe
  * para pedir uma acao, e por isso processo `desembaracado` fica de fora dos
  * CINCO tipos (A-59) — a especificacao so era explicita em ALE-01 e ALE-02.
- * Medido na planilha real: sem o filtro, 5 de 14 alertas seriam sobre processos
- * ja encerrados.
+ * Medido na planilha real: sao **480 de 649** processos ja desembaracados, e
+ * sem o filtro 5 de 14 alertas seriam sobre processos ja encerrados — em Canal
+ * Vermelho, a maioria.
  */
 
 export type AlertType =
@@ -102,7 +103,7 @@ function days(count: number): string {
  * Um processo aparece uma vez POR TIPO que satisfaz — sao pendencias distintas,
  * e ALE-04 esta contido em ALE-05 por construcao. O achatamento e do contrato,
  * que precisa dele para contar por tipo; a Pagina Alertas agrupa por processo na
- * exibicao (A-60).
+ * exibicao (A-60). Medido no arquivo real: 40 linhas para 25 processos.
  *
  * `stalledDays` e `threshold` alimentam ALE-06, entregue em `H-29`. Com o mapa
  * vazio nenhum alerta desse tipo e gerado, e a chave fica em zero — que e
