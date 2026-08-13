@@ -145,6 +145,22 @@ aplicação sob comando explícito — está em ADR-0001 e nas histórias `H-23`
 `H-26`. Esta alternativa multiplicaria por N o número de gravações, e cada
 gravação é uma chance de conflito com o OneDrive ou com o Excel aberto.
 
+## Emenda de 06/08/2026 — `xl/styles.xml` pode ser modificado, aditivamente
+
+Três trechos acima foram superados por A-49, A-56 e TD-05.1. Ficam **registrados
+aqui em vez de reescritos** (regra inviolável 1): a decisão de 03/08/2026 é
+histórico, e apagá-la esconderia por que a regra mudou.
+
+| Trecho superado | Onde | O que vale agora |
+|---|---|---|
+| "alterando apenas o atributo `s=` […] para um `styleId` **já existente** […] `xl/styles.xml` nunca é modificado" | §Procedimento | **Falso desde TD-05.1.** Medido em A-49: uma mesma cor vem de vários `styleId`, que diferem em borda e fonte — trocar o `styleId` inteiro destrói o que não estava em questão. Troca-se **um campo da tupla**; se a tupla resultante não existir, o passo 5b **acrescenta** um `xf`, de forma estritamente aditiva |
+| "todas as entradas exceto a planilha alvo e `sharedStrings.xml` devem ser idênticas" | §Critério de aceite verificável | Ganha `xl/styles.xml` como **terceira exceção, condicional** ao passo 5b. Nenhum `xf` existente é alterado, então nenhuma célula fora da edição muda de aparência |
+| "Se a coluna não tiver formato de data, o Excel exibirá o número" | §Consequências negativas | **Deixa de ser consequência aceita e vira defeito a corrigir** (A-56). A célula recebe `numFmt` de data pelo algoritmo de TD-05.1 — o sintoma proibido é o Excel exibir `46263` no lugar de `29/ago` |
+
+O que **não** mudou: `workbook.xlsx.writeFile()` segue proibido em qualquer
+circunstância, e toda entrada do zip fora das três citadas segue byte a byte
+idêntica — inclusive as três abas fora de escopo.
+
 ## Referências
 
 - `06-backlog.md` H-24 (cirurgia), H-25 (defesas), H-26 (comando), H-27 (cor)
