@@ -48,6 +48,19 @@ describe('enqueue', () => {
     expect(readFileSync(queuePath, 'utf-8').trim().split('\n')).toHaveLength(1)
   })
 
+  // Sem `normKey` na chave, as duas sobrevivem a consolidacao e resolvem para a
+  // MESMA celula: a cirurgia grava duas vezes e a validacao pos-escrita condena
+  // a escrita. Achado do revisor-xml em H-25.
+  it('consolida REFs que diferem so na caixa como o mesmo par', () => {
+    enqueue(command(), queuePath)
+    enqueue(command({ ref: 'ft533.26 ', value: '2026-08-09' }), queuePath)
+
+    const items = consolidated(queuePath)
+
+    expect(items).toHaveLength(1)
+    expect(items[0]?.value).toBe('2026-08-09')
+  })
+
   it('gera id distinto a cada edicao', () => {
     const primeira = enqueue(command(), queuePath)
     const segunda = enqueue(command({ field: 'statusRaw', value: 'AG BL' }), queuePath)
