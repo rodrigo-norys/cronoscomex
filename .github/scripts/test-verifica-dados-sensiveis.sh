@@ -7,6 +7,14 @@
 # Metade dos casos aqui sao falsos positivos que precisam **passar**, e dois
 # deles ja morderam de verdade durante a escrita do script.
 #
+# Sao 19 casos, e este script roda PRIMEIRO no workflow dados-sensiveis.yml —
+# mesma razao de test-guard.sh rodar primeiro no `npm run verify`.
+#
+# A lista de arquivos do alvo vem de `git ls-files`, com ARQUIVOS_PARA_VERIFICAR
+# como ponto de injecao. Sem ele esta regressao seria impossivel, porque o hook
+# guard-dados-sensiveis.sh — corretamente — impede montar um indice de teste
+# contendo planilha e config/app.json.
+#
 #   bash .github/scripts/test-verifica-dados-sensiveis.sh
 
 set -uo pipefail

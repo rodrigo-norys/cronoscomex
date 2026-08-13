@@ -16,10 +16,14 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
  *
  * Uso, a partir de um script no scratchpad:
  *
- *     const { carregarPlanilha } = await import(
+ *     const { carregarPlanilha, reportar } = await import(
  *       '/caminho/para/tools/carregar-planilha.mjs'
  *     )
  *     const { processes, hoje, config, dominio } = await carregarPlanilha()
+ *
+ *     reportar('IND-16', {
+ *       valor: dominio.indicators.clearedTodayCount(processes, hoje),
+ *     })
  *
  * Rode com `node --experimental-strip-types`, e a partir da raiz do projeto —
  * `loadConfig` resolve `config/app.json` relativo ao diretorio corrente.
