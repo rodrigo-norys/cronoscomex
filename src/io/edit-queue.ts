@@ -11,6 +11,10 @@ import type { EditableField } from '../domain/editable-fields.ts'
  * de invalidacao. O disco e a verdade, e e o que faz a fila sobreviver ao
  * reinicio do servidor.
  *
+ * Por isso ela e relida a cada `getState`, de proposito: a fila muda **sem**
+ * releitura do arquivo — `POST /api/edits` nao dispara o watcher —, entao um
+ * cache aqui precisaria de invalidacao vinda das rotas.
+ *
  * **Nada e escrito no `.xlsx`.** Esta camada so registra a intencao; quem toca
  * no arquivo e `H-24` a `H-26`, atras das defesas de `write-guard`.
  */

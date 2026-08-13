@@ -47,10 +47,31 @@ check_git_add() {
       block "'git add' em massa. Adicione caminho a caminho, para que a lista seja revisavel." ;;
   esac
 
-  case "$subcommand" in
-    *.xlsx*|*.jpeg*|*"config/app.json"*|*"data/"*)
-      block "'git add' apontando para artefato com dado real ou configuracao local." ;;
-  esac
+  # Testa CAMINHO A CAMINHO, e nao a linha inteira: a excecao de fixture precisa
+  # valer para o caminho que a satisfaz sem liberar os outros argumentos do mesmo
+  # comando. Caminho com espaco quebra em varios tokens e cai no bloqueio — falha
+  # fechado, que e a direcao certa.
+  local path
+  for path in ${subcommand#git add}; do
+    # Travessia anula a excecao: em `case`, `*` atravessa `/`, entao
+    # `tests/fixtures/../CONTROLE.xlsx` casaria o glob da fixture.
+    case "$path" in
+      *..*) block "'git add' com travessia de diretorio: $path" ;;
+    esac
+
+    # A mesma excecao que .github/scripts/verifica-dados-sensiveis.sh ja faz:
+    # planilha DENTRO de tests/fixtures/ e versionada por exigencia da regra 7 —
+    # sao 8 hoje. Sem isto as duas camadas se contradizem, e a que bloqueia e a
+    # que nao vale: o CI e quem roda em todo commit.
+    case "$path" in
+      tests/fixtures/*.xlsx) continue ;;
+    esac
+
+    case "$path" in
+      *.xlsx*|*.jpeg*|*"config/app.json"*|*"data/"*)
+        block "'git add' apontando para artefato com dado real ou configuracao local: $path" ;;
+    esac
+  done
 }
 
 check_redirect() {

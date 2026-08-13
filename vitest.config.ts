@@ -12,6 +12,11 @@ import { defineConfig } from 'vitest/config'
  * O comentario que vivia aqui sobre o paralelismo saiu com a correcao de
  * `H-32`: a corrida que o motivava foi resolvida na origem, fechando o
  * descritor da aba fora de escopo em `xlsx-reader.ts`.
+ *
+ * **Nao desligue o paralelismo aqui.** Nunca foi o caminho: foi tentado, dava
+ * 0 falhas em 6 rodadas localmente e mesmo assim reprovou no runner do GitHub.
+ * Reduzir probabilidade nao e corrigir causa, e o paralelismo fica ligado de
+ * proposito.
  */
 export default defineConfig({
   test: {

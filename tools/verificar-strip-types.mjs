@@ -16,6 +16,13 @@ import { pathToFileURL } from 'node:url'
  * O modo strip-only apenas REMOVE anotacoes de tipo. Recusa qualquer sintaxe
  * que precise gerar codigo: `parameter property`, `enum`, `namespace` e
  * `experimentalDecorators`.
+ *
+ * Sao 28 modulos importados. A `parameter property` que motivou este arquivo
+ * passou por `lint`, `typecheck`, 441 testes e `build` — quatro etapas — e
+ * teria derrubado a aplicacao no primeiro `npm start`.
+ *
+ * Roda logo depois do guard no `npm run verify`. Provado que pega:
+ * reintroduzir o defeito faz o passo sair com `1`.
  */
 
 const SRC = resolve(import.meta.dirname, '..', 'src')

@@ -62,7 +62,7 @@ testável sem servidor e sem arquivo.
 
 `workbook.xlsx.writeFile()` do ExcelJS perde formatação condicional e validações
 de dados silenciosamente. Por isso a escrita é **cirúrgica no XML**, entrada por
-entrada do zip — ver [ADR-0004](docs/adr/0004-escrita-ciruragica-xlsx.md).
+entrada do zip — ver [ADR-0004](docs/adr/0004-escrita-cirurgica-xlsx.md).
 
 Medido: alterar uma célula deixa **28 das 30 entradas do arquivo byte a byte
 idênticas**, incluindo as abas fora de escopo.

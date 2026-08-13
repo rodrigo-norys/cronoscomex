@@ -8,12 +8,17 @@ sheetData, de modo que NENHUM dado real vaze para o repositorio.
 A tecnica usada aqui e a mesma da escrita cirurgica do ADR-0004: descompactar,
 alterar apenas as entradas necessarias, recompactar preservando o resto.
 
-Uso: python3 tools/build_fixtures.py "CONTROLE DOS EMBARQUE.xlsx"
+Uso: python3 tools/build_fixtures.py "CONTROLE DOS EMBARQUE.xlsx" [destino]
+
+O destino padrao e tests/fixtures, e o script reescreve TODAS as fixtures de
+uma vez. Como o arquivo real e uma planilha viva, regenerar sobre as versionadas
+pode alterar estilos e quebrar testes que hoje passam. Para obter uma fixture
+so, gere num diretorio temporario e copie a que interessa.
 """
 import zipfile, sys, re, os, datetime
 
 SRC = sys.argv[1] if len(sys.argv) > 1 else 'CONTROLE DOS EMBARQUE.xlsx'
-OUT = 'tests/fixtures'
+OUT = sys.argv[2] if len(sys.argv) > 2 else 'tests/fixtures'
 SHEET = 'xl/worksheets/sheet1.xml'   # aba 2026
 
 # styleId por cor, medidos por H-01. Reutilizamos estilos JA existentes no
@@ -34,7 +39,7 @@ COLS = list('ABCDEFGHIJKLMNOP')
 # Mapa coluna -> styleId, extraido de uma linha REAL de cada cor.
 # Necessario porque o styleId carrega tambem o formato numerico: aplicar o
 # styleId da coluna A (numFmtId=0) numa coluna de data faz o Excel exibir o
-# serial cru (46236) em vez de 29/ago. Ver ADR-0004, "Negativas".
+# serial cru em vez da data. Ver ADR-0004, "Negativas".
 ROW_STYLES = {}
 
 
@@ -44,7 +49,7 @@ def load_row_styles(src):
     Usa o estilo mais frequente entre as celulas PREENCHIDAS daquela coluna.
     Amostrar uma linha unica nao serve: DOCS ENVIADOS so tem 20,7% de
     preenchimento, e uma linha modelo com a celula vazia traria numFmtId=0,
-    fazendo o Excel exibir 46236 em vez de 29/ago.
+    fazendo o Excel exibir o serial cru em vez da data.
     """
     import xml.etree.ElementTree as ET
     from collections import Counter, defaultdict
@@ -161,6 +166,43 @@ def assert_date_formats(src):
         raise SystemExit('colunas de data sem formato de data:\n  ' +
                          '\n  '.join(problemas))
     print('  formatos de data conferidos nas colunas I, K e O')
+def assert_general_styles(src):
+    """Falha alto se o estilo da coluna A de alguma cor tiver formato numerico.
+
+    A fixture data-vazia.xlsx depende de que esse estilo seja mesmo
+    numFmtId=0: se herdasse formato de data, o cenario de A-56 sumiria da
+    fixture e o teste de H-24 passaria sem exercitar nada.
+    """
+    import xml.etree.ElementTree as ET
+    ns = {'m': 'http://schemas.openxmlformats.org/spreadsheetml/2006/main'}
+    sr = ET.fromstring(src.read('xl/styles.xml'))
+    xfs = [int(x.get('numFmtId', 0)) for x in sr.findall('./m:cellXfs/m:xf', ns)]
+
+    problemas = ['cor %d (styleId %s, numFmtId %d)'
+                 % (color, cols.get('A', color), xfs[cols.get('A', color)])
+                 for color, cols in ROW_STYLES.items()
+                 if xfs[cols.get('A', color)] != 0]
+    if problemas:
+        raise SystemExit('estilo Geral com formato numerico:\n  ' +
+                         '\n  '.join(problemas))
+    print('  estilo Geral conferido na coluna A das %d cores' % len(ROW_STYLES))
+
+
+class AsGeneral:
+    """Marca uma celula de coluna de data que deve receber o estilo Geral da
+    linha, em vez do estilo de data tipico da coluna.
+
+    E o cenario de A-56: na planilha real, DOCS ENVIADOS nunca preenchida fica
+    com numFmtId=0, e gravar um serial ali faz o Excel exibir o numero cru.
+    Nenhuma outra fixture reproduz isso — em todas, as colunas de data ja saem
+    formatadas —, o que deixaria o criterio de aceite de H-24 sem teste.
+    """
+    __slots__ = ('value',)
+
+    def __init__(self, value=None):
+        self.value = value
+
+
 HEADERS = ['REF', 'CLT', 'IMPORTADOR', 'BL', 'AGENTE', 'CNTR', 'NAVIO', 'ETA',
            'ETA2', 'MERCADORIA', 'RG', 'STATUS', 'Coluna 13', 'R$ ENVIADO',
            'DOCS ENVIADOS', 'Coluna1']
@@ -223,8 +265,12 @@ def build_sheet_data(rows, ss):
         out.append('<row r="%d" spans="1:16">' % n)
         for col in COLS:
             if col in vals:
-                out.append(cell('%s%d' % (col, n), vals[col],
-                                by_col.get(col, style), ss))
+                value = vals[col]
+                if isinstance(value, AsGeneral):
+                    sid, value = by_col.get('A', style), value.value
+                else:
+                    sid = by_col.get(col, style)
+                out.append(cell('%s%d' % (col, n), value, sid, ss))
         out.append('</row>')
     return '<sheetData>%s</sheetData>' % ''.join(out)
 
@@ -362,6 +408,17 @@ FIXTURES = {
 
  'vazio.xlsx': ([], 'apenas o cabecalho, nenhuma linha de dados'),
 
+ 'data-vazia.xlsx': ([
+   (ST['branco'], {'A':'FT501.26','B':'CLIENTE 501','I':D('2026-08-20'),
+                   'L':'','O':AsGeneral()}),
+   (ST['bege'],   {'A':'FT502.26','B':'CLIENTE 502','I':D('2026-08-21'),
+                   'L':''}),
+   (ST['verdeA'], {'A':'FT503.26','B':'CLIENTE 503','I':D('2026-08-22'),
+                   'L':'DESEMBARAÇADA','O':D('2026-07-28')}),
+   (ST['azul'],   {'A':'FT504.26','B':'CLIENTE 504','I':D('2026-08-23'),
+                   'L':'','K':AsGeneral()}),
+ ], 'A-56: coluna de data vazia com estilo Geral, e ausente do XML'),
+
  'formatado.xlsx': ([
    (ST[k], {'A':'FT%03d.26'%i,'B':'CLIENTE %d'%i,'C':'IMPORTADORA %d'%i,
             'D':'BL%04d'%i,'E':'AGENTE %d'%(i%3),'F':'CNTR%04d'%i,
@@ -381,6 +438,7 @@ load_row_styles(_src)
 print('  estilos por coluna agregados de %d cores' % len(ROW_STYLES))
 fill_style_gaps(_src)
 assert_date_formats(_src)
+assert_general_styles(_src)
 print()
 for name, (rows, note) in FIXTURES.items():
     write_fixture(os.path.join(OUT, name), rows, note)

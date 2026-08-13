@@ -84,6 +84,8 @@ a decisão — foi o que `H-01` fez no ADR-0003.
 - [ ] Nenhum teste aponta para a planilha real
 - [ ] História marcada em `06-backlog.md`
 - [ ] `09-rastreabilidade.md` conferido, se algum status mudou
+- [ ] Comentário novo diz o que o código não diz, e todo fato medido nele cita a
+      fonte (`A-NN`, `TD-NN`, `H-NN`) — régua em `.claude/rules/comentarios.md`
 
 ### Fase
 
@@ -129,6 +131,9 @@ AAAA-MM-DD.
 | D-16 | 2026-08-06 | **Roteamento à mão**, com `History API` e `URLSearchParams`. **`react-router` fica registrado como reavaliação futura**, não como recusa definitiva | São **sete páginas planas**, sem rotas aninhadas nem carregamento por rota, numa aplicação local — e o plano proíbe dependência não prevista. O benefício mais concreto do `react-router` seria `useSearchParams`, que é camada fina sobre o `URLSearchParams` nativo. Custo do caminho escolhido: ~40–60 linhas próprias, e a obrigação de tratar `popstate` para o botão "voltar" do navegador funcionar — que vira teste, não risco. **Reavaliar se:** as páginas passarem de ~10, aparecerem rotas aninhadas ou parâmetros de rota além de `/processo/:ref`, surgir necessidade de carregamento por rota, ou o roteamento próprio ultrapassar ~100 linhas. Qualquer um desses gatilhos torna a dependência mais barata que a manutenção |
 
 | D-18 | 2026-08-07 | `web/` importa os tipos de resposta **das próprias rotas**, com `import type` — nunca valor, nunca função | O esqueleto de `H-02` redeclarava `HealthResponse` no cliente com **metade** dos campos, e nada obrigava as duas declarações a concordar: é assim que um contrato diverge em silêncio. Com `verbatimModuleSyntax`, o import é apagado na compilação — **medido** ao fechar `H-15 ②`: `grep 'fastify\|process-store\|exceljs'` no bundle de produção devolve **0**, e o `vite build` transforma 22 módulos. **O limite é estrito e a razão dele é a regra inviolável 6:** só `import type`, e só de `src/http/routes/`. Importar valor traria `fastify` e o `process-store` para o navegador; importar de `src/domain/` traria regra de negócio para o cliente, que é exatamente o que a regra proíbe. **Não afrouxa a regra 5**, que é sobre `src/domain/` não importar para fora — a direção aqui é a oposta, e o `noRestrictedImports` do Biome continua guardando aquela |
+
+| D-19 | 2026-08-04 | **Permissões do agente em `.claude/settings.json`:** `git add`, `git push`, `npm install` e `npm ci` pedem confirmação; `curl`, `wget`, force-push e leitura ou escrita de `*.xlsx` e `*.jpeg` da raiz estão negados; o modo bypass fica desabilitado | Custo: uma confirmação por operação de staging e de rede. Ganho: nenhuma via de saída de dado passa sem portão |
+| D-20 | 2026-08-04 | **`mcp__*` negado — todo MCP, de todo servidor** | Conector é caminho de saída que **não passa** pelas regras de `Bash` nem de arquivo: negar `curl` e deixar `sharepoint_upload_file` aberto seria o inverso do modelo de ameaça. O glob no nome da ferramenta cobre conector que ainda nem foi criado, e o cliente remove as ferramentas negadas do contexto. `deny` vence `allow`, então **não há exceção parcial**: para usar um conector, remova a linha deliberadamente |
 
 **D-13 e D-15 nasceram do protocolo de fatia** (`CLAUDE.md`): as duas lacunas
 apareceram ao montar o checklist de `H-02` e `H-03`, antes de qualquer código.

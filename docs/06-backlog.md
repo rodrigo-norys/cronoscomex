@@ -2054,8 +2054,9 @@ usado** (ADR-0004).
   TD-05.1 — mantendo fonte, borda e preenchimento, trocando apenas o
   `numFmtId` (A-56).
 - **Dado** uma célula de data que estava vazia e com estilo Geral
-  (`numFmtId=0`), **quando** uma data é gravada nela, **então** o Excel exibe
-  `29/ago`, **não** `46236`.
+  (`numFmtId=0`), **quando** `2026-08-29` é gravada nela, **então** o Excel
+  exibe `29/ago`, **não** `46263`. A fixture do cenário é
+  `tests/fixtures/data-vazia.xlsx`.
 - **Dado** `value: null`, **então** a célula fica vazia, preservando o estilo.
 - **Dado** o arquivo resultante, **então** o Excel o abre sem aviso de reparo.
 

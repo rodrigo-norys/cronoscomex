@@ -130,6 +130,10 @@ graph LR
 
 Em vermelho, o caminho crítico.
 
+**`H-16` a `H-21` são paralelas no grafo** (`H15 --> H16 & H17 & …`), não uma
+cadeia: a ordem numérica é do backlog, não dependência. Só `H-22` tem
+pré-requisito próprio — `H-17`, de onde se chega ao detalhe.
+
 ---
 
 ## 3. Caminho crítico

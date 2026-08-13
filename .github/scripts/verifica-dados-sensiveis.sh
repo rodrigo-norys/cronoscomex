@@ -6,6 +6,11 @@
 # e PreToolUse e so ve o que o agente faz. Este roda sobre o que efetivamente
 # esta versionado, independente de quem commitou e com qual ferramenta.
 #
+# Recusa: planilha fora de tests/fixtures/, config/app.json, artefato de data/,
+# imagem, perfilamento bruto, caminho absoluto de usuario em codigo ou
+# configuracao (A-05), e — so onde ha usuario real — o nome do dono da maquina
+# em qualquer arquivo.
+#
 # Falha FECHADO: qualquer achado devolve 1. Aqui o dano de deixar passar e
 # publicar dado de cliente, e o custo de um falso positivo e uma conversa.
 #
@@ -45,8 +50,9 @@ reportar() {
 # `git ls-files` e analisaria a arvore inteira.
 versionados="${ARQUIVOS_PARA_VERIFICAR-$(git ls-files)}"
 
-# 1. Planilhas fora das fixtures. As 7 de tests/fixtures/ sao derivadas do
+# 1. Planilhas fora das fixtures. As 8 de tests/fixtures/ sao derivadas do
 #    arquivo real com nomes trocados, e versiona-las e exigencia da regra 7.
+#    guard-dados-sensiveis.sh faz a MESMA excecao no `git add`, desde 13/08/2026.
 planilhas="$(printf '%s\n' "$versionados" | grep -iE '\.xlsx$' | grep -v '^tests/fixtures/' || true)"
 [ -n "$planilhas" ] &&
   reportar "Planilha versionada fora de tests/fixtures/." "$planilhas"

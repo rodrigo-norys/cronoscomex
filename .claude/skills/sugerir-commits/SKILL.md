@@ -12,7 +12,8 @@ mudanças em commits atômicos e devolve, para cada um, o par `git add` + mensag
 ## Fluxo de execução — regra deste repositório
 
 Esta skill **propõe e, com autorização, executa** — não é só apresentação.
-A ordem é fixa, e **há um portão humano, não dois**:
+A ordem é fixa, e **há um portão humano, não dois** — o portão duplo saiu em
+**07/08/2026**, porque a segunda pergunta não acrescentava informação:
 
 1. **Eu sugiro** o plano — a ação de branch (se houver) e cada commit atômico com seu
    `git add` de caminhos exatos e a mensagem pronta.
