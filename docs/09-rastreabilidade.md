@@ -180,7 +180,7 @@ As 33 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
 | H-22 | §3.1 (Detalhe), §3.3 (STATUS, Coluna 13, R$ ENVIADO, Coluna P) | ✅ **Concluída.** Única tela onde `statusRaw` é exibido. Construiu a rota `:ref`, que o plano dava como fixada e nunca fora implementada |
 | H-23 | §5 abaixo (RF-20, RF-28) | ✅ **Concluída.** Fila de edições em disco, projetada sobre os processos lidos: o painel inteiro reflete a edição sem que o `.xlsx` seja tocado. Corrigiu a contradição de `03-modelo-dados.md` sobre `value: null` |
 | H-24 | §5 abaixo (RF-22) | ✅ **Concluída.** Quatro entradas do zip podem mudar, e só elas: a aba alvo, `sharedStrings`, `styles` (aditivo, passo 5b de TD-05.1) e `calcChain`. Reprovada pelo `revisor-xml` na primeira invocação, por dois defeitos reais |
-| H-25 | §5 abaixo (RF-23 a RF-26) | Seis defesas de integridade |
+| H-25 | §5 abaixo (RF-23 a RF-26) | ✅ **Concluída.** Seis defesas de integridade. A célula é endereçada pela **REF**, nunca pelo `sourceRow` da fila, e o `previous` é conferido sempre: reprovada três vezes pelo `revisor-xml`, por quatro defeitos reais, dois deles introduzidos pelas correções dos anteriores. Fechou `PD-04` |
 | H-26 | §5 abaixo (RF-21) | Comando de aplicação |
 | H-27 | IND-06, IND-20, §3.4 (as 5 cores com significado) | Torna editáveis os campos de cor |
 | H-28 | ALE-06, §3.1 (Página Histórico) | Histórico append-only |
@@ -205,7 +205,7 @@ virada de escopo (edição) ou por necessidade operacional.
 | RF-20, RF-28 · Editar e descartar edições | Decisão do usuário | H-23 | ✅ **Entregue.** Formulário e painel de pendências no detalhe do processo; a re-derivação refaz categoria, chaves e anomalias. Medido: editar `statusRaw` move o processo de `em_andamento` para `desembaracado` e os indicadores acompanham |
 | RF-21 · Aplicar sob comando explícito | Decisão do usuário (D7) | H-26 | Implementável |
 | RF-22 · Preservar formatação na escrita | ADR-0004 | H-24 | ✅ **Entregue.** Formatação condicional, validação de dados, autofiltro, coluna oculta e comentários sobrevivem à edição, conferido por hash entrada a entrada e aberto no Excel real sem aviso de reparo. `PD-05` registra que a cadeia de cálculo só tem teste sintético |
-| RF-23 a RF-26 · Defesas de integridade | D7 | H-25 | Implementável |
+| RF-23 a RF-26 · Defesas de integridade | D7 | H-25 | ✅ **Entregue.** Lock, hash, backup antes de qualquer modificação, gravação atômica com `fsync`, validação pós-escrita com restauração automática, e expurgo por RNF-21. Sete recusas contra as cinco do contrato fixado — `ARQUIVO_INDISPONIVEL` e `EDICAO_OBSOLETA`, ambas justificadas no bloco da história |
 | RF-27 · Editar campos de cor | Decorrência de RF-20 | H-27 | ✅ Implementável (P-06 mapeada) |
 | Empacotamento e execução | Necessidade operacional | H-30 | Implementável |
 

@@ -2154,6 +2154,95 @@ quebra ao regenerar a fixture.
 
 ### H-25 — Proteger a escrita com as seis defesas de integridade
 
+> ✅ **CONCLUÍDA em 13/08/2026.** 42 testes próprios — 31 em
+> `tests/app/write-guard.test.ts`, 11 em `tests/io/backup-manager.test.ts` —,
+> mais 6 acrescentados a arquivos já existentes; suíte total em **903**. Seis divergências do plano resolvidas na abertura: `hashFile` e
+> `hashBytes` exportados do leitor, o estado `escrevendo` ganhando quem o
+> produza — a guarda de `409` em `POST /api/reload` era código morto desde
+> `H-08` —, `backupPath` e `edits` no `LogEntry`, `initWriteGuard` como ponto de
+> injeção espelhando `initStore`, arquivo de teste próprio para o
+> `backup-manager`, e o tipo `Conflict`, que não existia em lugar nenhum.
+>
+> **O `revisor-xml` foi invocado quatro vezes e reprovou três.** Nenhum dos
+> quatro defeitos foi pego pela suíte, e **dois deles foram introduzidos pelas
+> correções dos anteriores** — o argumento mais forte a favor do revisor começar
+> cego.
+>
+> (1) **A escrita endereçava a célula pelo `sourceRow` congelado na fila.**
+> `docs/03-modelo-dados.md` atribuía esse caso à defesa de hash, e ela não o
+> cobre: o watcher relê o arquivo alterado e o hash guardado passa a ser o
+> **novo**, então a conferência aprova e a gravação vai para a linha de outro
+> processo, com `ok: true` e `conflicts: []`. Corrigido na raiz — a célula é
+> resolvida pela **REF**, casada por `normKey`, e o `previous` de cada edição é
+> conferido contra o valor atual **sempre**, não só quando o hash diverge.
+>
+> (2) **Os dois lados do conflito usavam formatadores diferentes.** `previous`
+> vinha de `currentValue`, sobre o `Process`; `valueNow` de um formatador
+> próprio, sobre a célula crua. Em data-como-texto davam `2026-07-29` contra
+> `29/07/2026` para o mesmo dia, recusando a fila **inteira**, de forma
+> permanente. Os dois lados passaram a usar `currentValue`.
+>
+> (3) **`wrote(null, '')` condenava escrita correta.** `validateEdit` aceita
+> `''` nos campos de texto; a cirurgia gravava; `classify` relia `null`; a
+> validação restaurava o backup e informava corrupção. Corrigido na tradução:
+> texto vazio vira célula vazia.
+>
+> (4) **`previous` guardava valor que nunca esteve na célula.** A rota tira o
+> processo de `getState()`, que vem **projetado com a fila** — editar o mesmo
+> campo duas vezes gravava como `previous` o valor da edição anterior. Corrigido
+> em `src/http/routes/edits.ts`: a segunda edição de um par herda o `previous` da
+> pendente, e só a primeira calcula sobre a projeção.
+>
+> Ainda da revisão: a consolidação da fila passou a usar `normKey` — duas
+> entradas diferindo só na caixa da REF resolviam para a mesma célula e a
+> validação condenava a escrita; `fsync` antes do `rename`; o temporário é
+> removido também quando a **renomeação** falha; a aba resolvida é conferida
+> contra a lida antes de gravar bytes; o backup é gravado do **mesmo buffer**
+> que a cirurgia recebe, fechando o TOCTOU; e o `catch` geral registra
+> `ERRO_INTERNO` com `level: error`, para que programa quebrado não saia no log
+> como arquivo que recusou.
+>
+> **Divergências de contrato, registradas e não resolvidas em silêncio.**
+> `WriteRefusal` tem **sete** membros contra os cinco fixados aqui:
+> `ARQUIVO_INDISPONIVEL`, exigido por `docs/05-contratos-api.md` §3, sem o qual
+> o arquivo sumido virava exceção carregando `workbookPath` na mensagem; e
+> `EDICAO_OBSOLETA`, decisão explícita do usuário — o hash confere, e mandar
+> reler a planilha, que é o que `ARQUIVO_MUDOU` instrui, não muda nada.
+> `WriteResult` ganhou `expectedHash` e `actualHash`, que o corpo do `409` pede
+> e o guard descartava; `Conflict` ganhou `refMissing`, porque `valueNow: ''`
+> afirmaria célula vazia onde a linha inteira sumiu. `backup-manager` ganhou
+> `backupFrom(bytes)`, fora do contrato daqui. `WriteGuardStore.rebuild` e
+> `rebuildProcesses` existem para os dois lados do conflito usarem o mesmo
+> formatador. `resolveSheetPath` **voltou a ser privada**: o guard usa o
+> `sheetPath` da leitura canônica.
+>
+> **Medido sobre cópia da planilha real em 13/08/2026** — o original nunca foi
+> aberto para escrita —, em cinco execuções: escrita de uma célula em **181 a
+> 284 ms**, contra os 15 s de RNF-15 para cem; **29 das 30** entradas do zip
+> idênticas, só `xl/worksheets/sheet1.xml` mudou, e `xl/styles.xml` intacto;
+> backup byte a byte igual ao original; nenhum `.tmp` remanescente. O caso do
+> `sourceRow` deslocado gravou na linha da REF e deixou a vizinha intacta.
+>
+> **PD-04 fechada, contra o que se temia.** Medido em 13/08/2026 sobre a mesma
+> cópia, nas 649 linhas de dados da aba `2026`: a célula de `DOCS ENVIADOS`
+> (coluna `O`) **está ausente do XML** em **511** linhas e presente em **138**;
+> a coluna `P` está ausente em **641**; as colunas `A`–`N`, em nenhuma. Das 138
+> em que `O` existe, **128 têm `fillId=0`** — a coluna é branca por desenho. A
+> célula nova saiu com `fillId=0` e `numFmtId=16`, **igual às 128**: não há
+> buraco branco, e herdar da coluna, como `H-24` decidiu, reproduz o que a
+> planilha já faz. Herdar do irmão da linha teria posto o `fillId` da coluna `N`
+> nas **117** linhas em que ela vale `4`.
+>
+> **Limites conhecidos, para `H-26`:** o `fileHash` do store envelhece após o
+> sucesso, e dentro dos 2000 ms de debounce uma edição nova ainda sai
+> `ARQUIVO_MUDOU` com `conflicts: []` — quem fecha é a rotação da fila.
+> `data/pending-edits.jsonl` gravado **antes** desta história carrega o
+> `previous` projetado, e não há migração: fila anterior a 13/08/2026 precisa ser
+> esvaziada. E o critério de aceite diz que o watcher "não dispara releitura pela
+> própria escrita", enquanto o diagrama de `docs/04-arquitetura.md` §3.2 termina
+> em `fileChanged → releitura`: o código segue o diagrama, e a contradição fica
+> registrada aqui em vez de absorvida.
+
 **Objetivo:** tornar impossível corromper ou sobrescrever silenciosamente a
 planilha de produção.
 
