@@ -310,16 +310,19 @@ distância em um canal — um limiar os teria unificado "sozinho", e teria
 unificado também qualquer cor nova que alguém introduzisse com outro
 significado. Duas linhas no mapa custam menos que uma heurística.
 
-### TD-05.1 — Escrita de cor: trocar `fillId`, nunca `styleId`
+### TD-05.1 — Escrita de estilo: trocar um campo da tupla, nunca o `styleId`
 
-Aplicável a `H-27`. Medido em A-49: uma cor vem de vários `styleId`, que
-diferem em borda e fonte.
+Aplicável a **`H-24`** (campo `numFmtId`, ao gravar data) e a **`H-27`** (campo
+`fillId`, ao pintar). Medido em A-49: uma mesma cor vem de vários `styleId`, que
+diferem em borda e fonte — trocar o `styleId` inteiro destrói o que não estava
+em questão. O mesmo raciocínio vale para formato de data (A-56): a célula
+precisa ganhar `numFmt` sem perder fonte, borda e preenchimento.
 
 | Passo | Ação |
 |---|---|
 | 1 | Ler o `s=` atual da célula → `styleId` original |
 | 2 | Obter `cellXfs[styleId]` → `(fillId, fontId, borderId, numFmtId)` |
-| 3 | Substituir **apenas** `fillId` pelo `fillId` alvo do `color-map.json` |
+| 3 | Substituir **apenas o campo em questão** — `numFmtId` em `H-24`, `fillId` (do `color-map.json`) em `H-27`. Os outros três são copiados intactos |
 | 4 | Procurar em `cellXfs` um `xf` com a tupla resultante já existente |
 | 5a | Se existir → usar o índice dele como novo `s=` |
 | 5b | Se não existir → **acrescentar** um `xf` novo ao final de `cellXfs`, incrementar `count`, e usar o índice novo |
@@ -333,6 +336,8 @@ não envolvida na edição muda de aparência.
 | Linha com `styleId 199` = `(fill 2, font 1, border 34)`, pintar de azul (`fillId 8`) | Procura `(8, 1, 34, 0)`; existe como `styleId 181` → usa 181 |
 | Linha com `styleId 165` = `(fill 2, font 1, border 5)`, pintar de azul | Procura `(8, 1, 5, 0)`; **não existe** → acrescenta `xf` novo, preservando a borda 5 |
 | Trocar o `styleId` inteiro por 181, como o plano previa antes | ❌ **Destruiria a borda 5**, substituindo-a pela 34 |
+| Célula com `numFmtId 0` (Geral), gravar data (`H-24`) | Procura a tupla com o `numFmtId` de data e os outros três intactos; se não existir → acrescenta `xf` novo. É o caso de `tests/fixtures/data-vazia.xlsx` |
+| Célula com `numFmtId 16` (já é data), gravar data (`H-24`) | A tupla não muda → **nenhum `xf` novo**, `s=` preservado, `xl/styles.xml` idêntico |
 
 ### TD-06 — REF vazia e REF duplicada
 
