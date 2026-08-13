@@ -77,6 +77,41 @@ describe('logger — gravacao', () => {
     })
   })
 
+  // Os quatro eventos de escrita de 08-qualidade-operacao.md secao 3.1.
+  // `SERIALIZED_FIELDS` e lista fechada: campo fora dela some sem aviso.
+  it('serializa os campos dos eventos de escrita', () => {
+    const logger = loggerAt('2026-08-13T12:00:00Z')
+
+    logger.log({ level: 'info', event: 'write.start', edits: 3 })
+    logger.log({ level: 'warn', event: 'write.refused', errorCode: 'EXCEL_ABERTO' })
+    logger.log({
+      level: 'info',
+      event: 'write.done',
+      durationMs: 840,
+      cellsWritten: 3,
+      backupPath: 'data/backups/planilha-20260813-143512.xlsx',
+    })
+    logger.log({
+      level: 'error',
+      event: 'write.restored',
+      backupPath: 'data/backups/planilha-20260813-143512.xlsx',
+    })
+
+    const entries = linesOf(logger.currentFile())
+
+    expect(entries[0]).toMatchObject({ event: 'write.start', edits: 3 })
+    expect(entries[1]).toMatchObject({ event: 'write.refused', errorCode: 'EXCEL_ABERTO' })
+    expect(entries[2]).toMatchObject({
+      event: 'write.done',
+      cellsWritten: 3,
+      backupPath: 'data/backups/planilha-20260813-143512.xlsx',
+    })
+    expect(entries[3]).toMatchObject({
+      event: 'write.restored',
+      backupPath: 'data/backups/planilha-20260813-143512.xlsx',
+    })
+  })
+
   it('cria o diretorio de logs quando ele nao existe', () => {
     const logger = createLogger({
       directory: join(dir, 'fundo', 'logs'),

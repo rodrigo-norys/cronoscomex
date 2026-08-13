@@ -46,6 +46,19 @@ export interface LogEntry {
    */
   quarantineRate?: number
   cellsWritten?: number
+  /**
+   * Quantas edicoes a escrita vai tentar aplicar. Exigido por
+   * 08-qualidade-operacao.md secao 3.1 para `write.start`, e nomeado assim
+   * porque naquele instante nada foi aplicado ainda.
+   */
+  edits?: number
+  /**
+   * Caminho da copia de seguranca, em `write.done` e `write.restored`
+   * (08-qualidade-operacao.md secao 3.1). E relativo e fica dentro de
+   * `data/backups/`: nao carrega nome de cliente nem de arquivo de producao,
+   * porque `backup-manager` grava com o prefixo literal `planilha`.
+   */
+  backupPath?: string
   ref?: string
   sourceRow?: number
   errorCode?: string
@@ -67,6 +80,8 @@ const SERIALIZED_FIELDS: readonly (keyof LogEntry)[] = [
   'rowsQuarantined',
   'quarantineRate',
   'cellsWritten',
+  'edits',
+  'backupPath',
   'ref',
   'sourceRow',
   'errorCode',
