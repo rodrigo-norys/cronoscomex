@@ -61,7 +61,7 @@ indicador de calendário seria testável de forma determinística.
 - **Testabilidade total sem infraestrutura.** Testar "processo que chega em
   hoje + 15 conta, hoje + 16 não conta" é montar dois objetos e chamar uma
   função. Sem servidor, sem arquivo, sem banco. É essa propriedade que torna
-  viável o alvo de cobertura de 90% (RNF-35) e os 41 casos-limite obrigatórios
+  viável o alvo de cobertura de 90% (RNF-35) e os 43 casos-limite obrigatórios
   de `08-qualidade-operacao.md §1.3`.
 - **Fonte única da regra.** Cada decisão da auditoria existe em exatamente um
   lugar. IND-15 e ALE-01 compartilham a mesma função porque têm a mesma regra

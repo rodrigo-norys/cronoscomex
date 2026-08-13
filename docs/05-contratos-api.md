@@ -97,6 +97,14 @@ interface GroupCount {
 }
 ```
 
+### Estado `degradado` nunca esvazia o painel
+
+As rotas de dado devolvem `200` com a última leitura válida;
+`503 ARQUIVO_INDISPONIVEL` fica reservado ao caso em que `lastReadAt === null`
+— nunca houve leitura, não há o que congelar. O aviso de dado congelado é uma
+faixa persistente no topo de **todas** as páginas, entregue por `H-15` na casca
+da aplicação (achado A-57).
+
 ---
 
 ## 2. Rotas de leitura
