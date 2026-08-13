@@ -183,6 +183,18 @@ pt-br, sem o tipo `test`.
 **O merge acontece no GitHub, não localmente.** `branch → commits → push da
 branch → PR → merge por lá`. Mesclar na `main` antes do push **mata o PR**.
 
+**Um commit por ponto verde.** O corte não é tempo nem tamanho: é o momento em
+que uma preocupação fecha **e** o portão passa. Todo commit verde mantém o
+`git bisect` utilizável, que é o que faz o commit atômico pagar — commit
+vermelho no meio quebra a busca binária. Ofereça o commit **quando uma camada da
+cadeia fechar e o portão passar**, sem esperar o fim da história. Lembrete, não
+garantia: é instrução, e instrução falha. Se falhar seguido, o gatilho vira hook
+`PostToolUse` — ver a tabela de marcos.
+
+> Ao concluir que o portão reprovou, **rode de novo antes de agir**: há um teste
+> intermitente conhecido em `src/io/`, que devolve `exit=1` com **zero testes
+> falhando**. Medido em `H-12`: 1 falha em 4 a 8 execuções.
+
 **Skills** (`.claude/skills/`). O corpo de cada uma **só carrega quando é
 invocada** — é lá que mora o porquê de cada regra, sem custar contexto aqui.
 
