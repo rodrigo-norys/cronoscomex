@@ -55,11 +55,17 @@ Parâmetro com valor fora do domínio → `400 FILTRO_INVALIDO`.
 | `EDICAO_NAO_ENCONTRADA` | 404 | `id` de edição inexistente na fila |
 | `EXCEL_ABERTO` | 409 | Existe `~$<arquivo>.xlsx` |
 | `ARQUIVO_MUDOU` | 409 | Hash difere do da última leitura |
+| `EDICAO_OBSOLETA` | 409 | Hash **confere**, mas o valor que a edição sobrescreveria já mudou |
 | `NADA_A_APLICAR` | 409 | Fila de edições vazia |
 | `ESCRITA_EM_ANDAMENTO` | 409 | Já existe uma aplicação em curso |
-| `ARQUIVO_INDISPONIVEL` | 503 | Aplicação em estado `Degradado` |
-| `ESCRITA_INVALIDA` | 500 | Validação pós-escrita falhou; **backup restaurado** |
+| `ARQUIVO_INDISPONIVEL` | 503 | Aplicação em estado `Degradado`, ou arquivo ilegível na hora de gravar |
+| `ESCRITA_INVALIDA` | 500 | Escrita recusada ou desfeita; ver §3 para distinguir os casos |
 | `ERRO_INTERNO` | 500 | Demais falhas |
+
+> `EDICAO_OBSOLETA` e o alcance maior de `ARQUIVO_INDISPONIVEL` entraram em
+> `H-25`, cujo contrato no backlog declarava cinco recusas. As duas estão
+> justificadas em §3; a divergência está registrada no bloco de conclusão da
+> história em `docs/06-backlog.md`.
 
 ### 1.3. Tipos compartilhados
 
@@ -597,14 +603,54 @@ Corpo: vazio.
 }
 ```
 
+**409 `EDICAO_OBSOLETA` — o arquivo não mudou, a edição envelheceu:**
+
+```jsonc
+{
+  "error": {
+    "code": "EDICAO_OBSOLETA",
+    "message": "O valor mudou desde que você editou. As edições foram preservadas.",
+    "detail": {
+      "conflicts": [
+        { "ref": "FT533.26", "field": "eta2",
+          "valueWhenEdited": "2026-08-04", "valueNow": "2026-08-05", "yourValue": "2026-08-06" }
+      ]
+    }
+  }
+}
+```
+
+> **Código próprio, acrescentado em `H-25`.** O contrato fixado no backlog tinha
+> cinco recusas, e `ARQUIVO_MUDOU` cobria as duas situações. São diferentes: aqui
+> os dois hashes **conferem**, e reler a planilha — que é o que `ARQUIVO_MUDOU`
+> instrui — não muda nada. Sem a separação o corpo do 409 sairia dizendo que a
+> planilha mudou e provando o contrário na mesma resposta.
+>
+> A recusa acontece quando o valor atual de qualquer campo da fila difere do
+> `valueWhenEdited` registrado no enfileiramento, **mesmo com o hash conferindo**:
+> alteração de terceiro seguida de releitura automática deixa o hash em dia, e a
+> gravação passaria por cima dela em silêncio. Uma única edição obsoleta recusa a
+> fila inteira — aplicação parcial deixaria o operador sem saber o que foi gravado.
+
+`conflicts` ganha `"refMissing": true` quando a `ref` não está mais no arquivo.
+Sem essa marca, `valueNow: ""` afirmaria que a célula está vazia, quando a linha
+inteira desapareceu (regra inviolável 3).
+
 A fila **não** é descartada em nenhum caminho de erro. O operador relê e decide.
 
 | Código | Situação |
 |---|---|
 | 200 | Gravado e validado |
-| 409 | `EXCEL_ABERTO` · `ARQUIVO_MUDOU` · `NADA_A_APLICAR` · `ESCRITA_EM_ANDAMENTO` |
-| 500 | `ESCRITA_INVALIDA` — **backup restaurado automaticamente** |
+| 409 | `EXCEL_ABERTO` · `ARQUIVO_MUDOU` · `EDICAO_OBSOLETA` · `NADA_A_APLICAR` · `ESCRITA_EM_ANDAMENTO` |
+| 500 | `ESCRITA_INVALIDA` — backup restaurado **quando a validação pós-escrita falha** |
 | 503 | `ARQUIVO_INDISPONIVEL` |
+
+> `ESCRITA_INVALIDA` cobre mais de uma falha, e só uma delas restaura o backup.
+> A resposta distingue pelos dois campos: `restored: true` com `backupPath` é a
+> validação pós-escrita; `restored: false` significa que **nada foi gravado** —
+> arquivo somente-leitura, aba resolvida diferente da lida, entrada de fila
+> inadmissível, backup que falhou, ou cirurgia que abortou. `backupPath: null`
+> nesse conjunto indica que a recusa veio antes mesmo da cópia de segurança.
 
 ---
 
