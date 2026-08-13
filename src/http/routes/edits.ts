@@ -97,13 +97,25 @@ export function registerEditsRoutes(
     }
 
     const field = body.field as EditableField
+    // `previous` e o valor que esta na PLANILHA, nunca o que a tela mostrava.
+    // `state.processes` vem projetado com a fila, entao editar o mesmo campo
+    // duas vezes — digitar, notar o engano, corrigir — gravaria como `previous`
+    // o valor da edicao anterior, que nunca esteve no arquivo. A defesa de
+    // integridade de H-25 compara `previous` com a celula e recusaria a fila
+    // inteira, para sempre. A primeira edicao do par (ref, field) e a unica
+    // calculada sobre o arquivo; as seguintes herdam o valor dela.
+    // Achado do revisor-xml em H-25.
+    const pending = consolidated(queuePath).find(
+      (candidate) => candidate.ref === process.ref && candidate.field === field,
+    )
+
     const edit = enqueue(
       {
         ref: process.ref,
         sourceRow: process.sourceRow,
         field,
         value: body.value,
-        previous: currentValue(process, field),
+        previous: pending?.previous ?? currentValue(process, field),
       },
       queuePath,
     )

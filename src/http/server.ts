@@ -1,9 +1,10 @@
 import Fastify, { type FastifyInstance } from 'fastify'
 import { ColorMapError, loadColorMap } from '../app/color-map-loader.ts'
 import { type AppConfig, ConfigError, loadConfig } from '../app/config.ts'
-import { createLogger } from '../app/logger.ts'
+import { createLogger, type Logger } from '../app/logger.ts'
 import { store as defaultStore, initStore, reload, type StoreAccess } from '../app/process-store.ts'
 import { loadStatusAliases, StatusAliasesError } from '../app/status-aliases-loader.ts'
+import { initWriteGuard } from '../app/write-guard.ts'
 import { createWatcher, DEFAULT_DEBOUNCE_MS } from '../io/watcher.ts'
 import { registerAlertsRoute } from './routes/alerts.ts'
 import { registerEditsRoutes } from './routes/edits.ts'
@@ -43,9 +44,11 @@ const STARTUP_ERRORS = [ConfigError, ColorMapError, StatusAliasesError]
 
 async function main(): Promise<void> {
   let config: AppConfig
+  // Fora do `try` porque o write-guard, la embaixo, tambem registra nele.
+  let logger: Logger
   try {
     config = loadConfig()
-    const logger = createLogger({ timezone: config.timezone })
+    logger = createLogger({ timezone: config.timezone })
     // Expurgo antes da primeira leitura: a partida e o unico momento garantido
     // de execucao numa aplicacao que o operador liga e desliga (RNF-18).
     logger.purgeExpired()
@@ -88,6 +91,10 @@ async function main(): Promise<void> {
   const watcher = createWatcher(config.workbookPath, DEFAULT_DEBOUNCE_MS)
   watcher.onChange(reload)
   watcher.start()
+
+  // Depois do `start`: o guard pausa e retoma o observador durante a escrita
+  // (04-arquitetura.md secao 3.2), e nao teria o que pausar antes disto.
+  initWriteGuard({ config, watcher, logger })
 
   const shutdown = (): void => {
     watcher.stop()

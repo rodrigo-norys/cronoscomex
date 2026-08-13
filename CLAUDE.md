@@ -123,15 +123,17 @@ porque era dependência declarada de `H-15` e não existia, **`H-15`, que abriu 
 `GET /api/processes`, `H-18`, os três rankings, `H-19`, que fecha as duas
 últimas regras sem tela, `H-20`, a fila de trabalho, e `H-22`, o detalhe.**
 Restam de interface só a `H-21`, que depende do histórico de `H-28`. **A Fase 3
-abriu com `H-23`, a fila de edições, e `H-24`, a escrita cirúrgica no `.xlsx`.**
-Próximo passo: **`H-25`**, as seis defesas de integridade. As fases estão em
-`docs/07-plano-entrega.md`.
+abriu com `H-23`, a fila de edições, `H-24`, a escrita cirúrgica no `.xlsx`, e
+`H-25`, as seis defesas de integridade.** Próximo passo: **`H-26`**, o comando
+de aplicação. As fases estão em `docs/07-plano-entrega.md`.
 
 > **A escrita é o ponto onde errar custa a planilha da empresa.** O subagent
 > `revisor-xml` existe desde 11/08/2026 — invoque-o antes de commitar qualquer
 > mudança em `src/io/xlsx-surgeon.ts`, em `src/app/write-guard.ts` ou em código
-> que reescreva bytes do `.xlsx`. Em `H-24` ele reprovou na primeira invocação,
-> por dois defeitos reais.
+> que reescreva bytes do `.xlsx`. Em `H-24` ele reprovou na primeira invocação;
+> em `H-25`, **três das quatro**, e dois dos defeitos tinham sido introduzidos
+> pelas correções dos anteriores. **Reinvoque-o depois de corrigir**, não só
+> antes de commitar.
 
 Ao concluir uma história, marque-a em `docs/06-backlog.md` e verifique se algum
 status de `docs/09-rastreabilidade.md` mudou.
@@ -143,7 +145,6 @@ Não bloqueiam a implementação. Fechar antes da entrega ao operador.
 | # | Pendência | Quando fechar |
 |---|---|---|
 | **PD-01** | `config/app.json` aponta para `CONTROLE DOS EMBARQUE.xlsx` na **raiz do projeto**, usado para validar a partida em `H-02`. Na máquina Windows precisa do caminho real da pasta sincronizada (`C:\Users\...\OneDrive - <org>\...`). O arquivo está no `.gitignore`, então o caminho de desenvolvimento não vaza. **`H-34` dá a saída definitiva**: o caminho passa a ser configurável pela tela, e o operador nunca edita JSON | Ao instalar na máquina do operador (`H-30`), com `H-34` tornando-a indolor |
-| **PD-04** | A célula **ausente do XML** herda o estilo da coluna (`<cols>`), que na `data-vazia.xlsx` traz `fillId=0`: a data sai correta e a célula sai **sem preenchimento**. Conferido no Excel em 06/08/2026 — na fixture isso combina com as vizinhas, que também estão ausentes. **Na planilha real as 16 colunas são preenchidas em todas as linhas**, então o mesmo caminho abriria um buraco branco na faixa de cor. A alternativa é herdar do irmão mais próximo da linha, trocando só o `numFmt` — não adotada porque é inferência sobre intenção, e a fixture não consegue confirmar que o caso ocorre | `H-26`, que aplica edições contra o arquivo real e permite **medir** se a célula de `DOCS ENVIADOS` vazia está ausente ou apenas sem valor |
 | **PD-05** | A remoção de entrada em `xl/calcChain.xml` — incluindo o repasse do atributo `i`, herdado da entrada anterior — está coberta por teste unitário com entrada **sintética**, e **não** foi confirmada no Excel real. Nenhuma fixture tem `calcChain`: o `[Content_Types].xml` não a declara, e a fórmula que a fixture carrega foi injetada por `--enriquecer`, situação que o Excel não produz. Entrada órfã na cadeia é a hipótese mais provável de aviso de reparo | `H-26`, sobre um arquivo com fórmula produzido pelo próprio Excel |
 | **PD-03** | `data/` passou a ser criado em execução por `H-08`, na primeira releitura que grava `quarantine.json` (`H-28` acrescenta o histórico). Está no `.gitignore`. Falta o `README.md` da raiz instruir a criá-lo **fora** da pasta sincronizada do OneDrive, para não replicar backups na nuvem | `H-30` |
 

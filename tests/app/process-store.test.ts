@@ -4,7 +4,13 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AppConfig } from '../../src/app/config.ts'
 import type { Logger, LogInput } from '../../src/app/logger.ts'
-import { getState, initStore, reload } from '../../src/app/process-store.ts'
+import {
+  finishWriting,
+  getState,
+  initStore,
+  markWriting,
+  reload,
+} from '../../src/app/process-store.ts'
 import type { ColorMapEntry } from '../../src/domain/color-mapper.ts'
 import type { RawRow } from '../../src/domain/types.ts'
 import type { ReadResult } from '../../src/io/xlsx-reader.ts'
@@ -384,5 +390,44 @@ describe('process-store — eventos de log (H-31)', () => {
     const registrado = JSON.stringify(logger.entries)
     expect(getState().degradedReason).toContain(workbookPath)
     expect(registrado).not.toContain(workbookPath)
+  })
+})
+
+/**
+ * O estado que o write-guard produz. Ate H-25 ele era inalcancavel, e a guarda
+ * de 409 ESCRITA_EM_ANDAMENTO em `POST /api/reload` era codigo morto.
+ */
+describe('escrita em curso', () => {
+  it('marca escrevendo e volta para pronto quando a ultima leitura deu certo', async () => {
+    start()
+    await reload()
+
+    markWriting()
+    expect(getState().state).toBe('escrevendo')
+
+    finishWriting()
+    expect(getState().state).toBe('pronto')
+  })
+
+  // Escrever nao conserta leitura quebrada: voltar a 'pronto' aqui faria o
+  // painel afirmar que o dado exibido esta em dia.
+  it('volta para degradado quando a ultima leitura falhou', async () => {
+    rmSync(workbookPath)
+    start()
+    await reload()
+
+    markWriting()
+    finishWriting()
+
+    expect(getState().state).toBe('degradado')
+  })
+
+  it('ignora finishWriting fora de uma escrita', async () => {
+    start()
+    await reload()
+
+    finishWriting()
+
+    expect(getState().state).toBe('pronto')
   })
 })
