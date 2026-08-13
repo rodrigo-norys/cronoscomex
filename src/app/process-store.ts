@@ -1,7 +1,7 @@
 import { type ColorMapEntry, indexColorMap } from '../domain/color-mapper.ts'
 import { type BuildResult, buildProcesses, quarantineRate } from '../domain/process-builder.ts'
 import { applyEdits } from '../domain/process-projection.ts'
-import type { Process } from '../domain/types.ts'
+import type { Process, RawRow } from '../domain/types.ts'
 import { consolidated, DEFAULT_QUEUE_PATH, type PendingEdit } from '../io/edit-queue.ts'
 import { detectInterference } from '../io/interference-detector.ts'
 import { buildReport, DEFAULT_QUARANTINE_PATH, writeReport } from '../io/quarantine-reporter.ts'
@@ -175,9 +175,19 @@ function persistReport(
   }
 }
 
+/**
+ * Uma releitura ja em voo nao pode apagar o estado 'escrevendo'. O watcher e
+ * pausado pelo write-guard, mas a pausa cancela o agendamento — nao uma leitura
+ * que ja comecou. Sem isto, `finishWriting` sairia pelo early-return e
+ * `POST /api/reload` deixaria de recusar no meio da gravacao.
+ */
+function settled(next: AppState): AppState {
+  return current.state === 'escrevendo' ? 'escrevendo' : next
+}
+
 async function runReload(deps: StoreOptions): Promise<void> {
   const logger = deps.logger ?? NULL_LOGGER
-  current = { ...current, state: 'lendo' }
+  current = { ...current, state: settled('lendo') }
   logger.log({ level: 'info', event: 'read.start' })
 
   const startedAt = performance.now()
@@ -197,7 +207,7 @@ async function runReload(deps: StoreOptions): Promise<void> {
       const durationMs = Math.round(performance.now() - startedAt)
       current = {
         ...current,
-        state: 'pronto',
+        state: settled('pronto'),
         lastReadAt: read.readAt,
         lastReadOk: true,
         degradedReason: null,
@@ -221,7 +231,7 @@ async function runReload(deps: StoreOptions): Promise<void> {
 
     const durationMs = Math.round(performance.now() - startedAt)
     current = {
-      state: 'pronto',
+      state: settled('pronto'),
       processes: result.processes,
       fileHash: read.fileHash,
       sheetName: read.sheetName,
@@ -258,7 +268,7 @@ async function runReload(deps: StoreOptions): Promise<void> {
   } catch (error) {
     current = {
       ...current,
-      state: 'degradado',
+      state: settled('degradado'),
       lastReadOk: false,
       degradedReason: describeFailure(error, deps.config.workbookPath),
     }
@@ -293,6 +303,46 @@ export async function reload(): Promise<void> {
     inFlight = null
   })
   return inFlight
+}
+
+/**
+ * Recompoe processos a partir de linhas cruas, com o MESMO mapa de cor e os
+ * mesmos aliases da leitura corrente.
+ *
+ * H-25 usa para descrever o arquivo em disco no momento da escrita, sem passar
+ * por `getState` — que devolve os processos ja **projetados** com a fila, e por
+ * isso responderia o valor pretendido no lugar do valor gravado.
+ *
+ * Sem `initStore`, devolve lista vazia: sem mapa de cor nao ha o que compor, e
+ * lancar aqui faria o write-guard rejeitar, contra a invariante dele.
+ */
+export function rebuildProcesses(rows: RawRow[]): Process[] {
+  if (options === null) return []
+  return buildProcesses(rows, {
+    colorMap: colorMapIndex,
+    statusAliases: options.statusAliases,
+  }).processes
+}
+
+/**
+ * Marca a escrita em curso. O write-guard de H-25 e o unico chamador.
+ *
+ * `POST /api/reload` recusa com 409 ESCRITA_EM_ANDAMENTO enquanto o estado for
+ * 'escrevendo'; sem este par de funcoes aquela guarda seria inalcancavel, como
+ * foi de H-08 ate aqui.
+ */
+export function markWriting(): void {
+  current = { ...current, state: 'escrevendo' }
+}
+
+/**
+ * Encerra a escrita. O estado de volta e DERIVADO de `lastReadOk`, nao guardado
+ * na entrada: um campo com o estado anterior poderia dessincronizar do estado
+ * corrente, e nao ha o que ele saiba que `lastReadOk` ja nao diga.
+ */
+export function finishWriting(): void {
+  if (current.state !== 'escrevendo') return
+  current = { ...current, state: current.lastReadOk ? 'pronto' : 'degradado' }
 }
 
 /** Acesso injetavel nas rotas. Ver src/http/routes/health.ts. */
