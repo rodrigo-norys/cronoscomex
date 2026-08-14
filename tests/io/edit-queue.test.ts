@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -8,6 +8,7 @@ import {
   discardAll,
   type EditCommand,
   enqueue,
+  rotate,
 } from '../../src/io/edit-queue.ts'
 
 /**
@@ -17,10 +18,12 @@ import {
 
 let directory: string
 let queuePath: string
+let appliedDir: string
 
 beforeEach(() => {
   directory = mkdtempSync(join(tmpdir(), 'cronos-fila-'))
   queuePath = join(directory, 'pending-edits.jsonl')
+  appliedDir = join(directory, 'applied')
 })
 
 afterEach(() => {
@@ -250,5 +253,55 @@ describe('persistencia', () => {
 
     expect(outroProcesso).toHaveLength(2)
     expect(outroProcesso.map((edit) => edit.ref)).toEqual(['A', 'B'])
+  })
+})
+
+/**
+ * A rotacao acontece DEPOIS de a escrita ser validada, e e o que impede que a
+ * mesma fila seja reaplicada. Antes disso a fila precisa sobreviver a qualquer
+ * recusa — testado em `tests/app/write-guard.test.ts`.
+ */
+describe('rotate', () => {
+  const momento = new Date(2026, 7, 14, 15, 42, 7)
+
+  it('arquiva a fila em data/applied e a recria vazia', () => {
+    enqueue(command(), queuePath)
+    enqueue(command({ field: 'statusRaw', value: 'AG BL', previous: '' }), queuePath)
+    const antes = readFileSync(queuePath, 'utf-8')
+
+    const arquivado = rotate(queuePath, appliedDir, momento)
+
+    expect(arquivado).toBe(join(appliedDir, 'pending-edits-20260814-154207.jsonl'))
+    expect(readFileSync(arquivado as string, 'utf-8')).toBe(antes)
+    expect(readFileSync(queuePath, 'utf-8')).toBe('')
+    expect(consolidated(queuePath)).toEqual([])
+  })
+
+  // A lapide conta o que o operador desistiu de aplicar, e some se a rotacao
+  // gravar so a projecao. Mover preserva o relato inteiro.
+  it('preserva as lapides de descarte no arquivo arquivado', () => {
+    const edit = enqueue(command(), queuePath)
+    discard(edit.id, queuePath)
+
+    const arquivado = rotate(queuePath, appliedDir, momento)
+
+    expect(readFileSync(arquivado as string, 'utf-8')).toContain(`"discarded":"${edit.id}"`)
+  })
+
+  it('devolve null quando nao ha fila para arquivar', () => {
+    expect(rotate(queuePath, appliedDir, momento)).toBeNull()
+    expect(existsSync(appliedDir)).toBe(false)
+  })
+
+  it('nao sobrescreve um arquivo ja arquivado no mesmo segundo', () => {
+    enqueue(command(), queuePath)
+    const primeiro = rotate(queuePath, appliedDir, momento)
+
+    enqueue(command({ value: '2026-08-20' }), queuePath)
+    const segundo = rotate(queuePath, appliedDir, momento)
+
+    expect(segundo).not.toBe(primeiro)
+    expect(readFileSync(primeiro as string, 'utf-8')).toContain('2026-08-06')
+    expect(readFileSync(segundo as string, 'utf-8')).toContain('2026-08-20')
   })
 })
