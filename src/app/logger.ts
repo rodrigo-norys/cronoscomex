@@ -25,6 +25,15 @@ export type LogEvent =
   | 'write.refused'
   | 'write.done'
   | 'write.restored'
+  /**
+   * H-26: a fila arquivada em `data/applied/`, ou a falha em arquiva-la.
+   * Evento proprio porque `write.done` tem campos fixados em
+   * 08-qualidade-operacao.md secao 3.1 e significa "a planilha foi gravada e
+   * validada" — reutiliza-lo para a falha do arquivamento faria uma aplicacao
+   * bem-sucedida emitir DUAS linhas `write.done`, uma delas parecendo erro de
+   * escrita. Achado do revisor-xml.
+   */
+  | 'queue.archived'
   | 'history.appended'
   | 'quarantine.reported'
 
@@ -59,6 +68,12 @@ export interface LogEntry {
    * porque `backup-manager` grava com o prefixo literal `planilha`.
    */
   backupPath?: string
+  /**
+   * Caminho da fila arquivada, em `queue.archived`. Relativo e dentro de
+   * `data/applied/`, com nome derivado do proprio arquivo de fila: nao carrega
+   * `ref` nem valor de celula, que vivem no CONTEUDO do arquivo (RNF-33).
+   */
+  archivedQueuePath?: string
   ref?: string
   sourceRow?: number
   errorCode?: string
@@ -82,6 +97,7 @@ const SERIALIZED_FIELDS: readonly (keyof LogEntry)[] = [
   'cellsWritten',
   'edits',
   'backupPath',
+  'archivedQueuePath',
   'ref',
   'sourceRow',
   'errorCode',

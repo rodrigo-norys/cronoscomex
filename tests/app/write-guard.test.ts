@@ -13,6 +13,7 @@ import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 import type { AppConfig } from '../../src/app/config.ts'
+import type { LogInput } from '../../src/app/logger.ts'
 import type { StoreState } from '../../src/app/process-store.ts'
 import {
   applyPendingEdits,
@@ -95,7 +96,15 @@ function config(): AppConfig {
 
 async function setup(overrides: Partial<Parameters<typeof initWriteGuard>[0]> = {}): Promise<void> {
   state.fileHash = await hashFile(workbook)
-  initWriteGuard({ config: config(), watcher, store, queuePath, backupDir, ...overrides })
+  initWriteGuard({
+    config: config(),
+    watcher,
+    store,
+    queuePath,
+    backupDir,
+    appliedDir: join(directory, 'aplicadas'),
+    ...overrides,
+  })
 }
 
 /**
@@ -162,6 +171,9 @@ beforeEach(() => {
     rebuild: (rows) =>
       buildProcesses(rows, { colorMap: indexColorMap(COLOR_MAP), statusAliases: STATUS_ALIASES })
         .processes,
+    settle: async () => {
+      events.push('settle')
+    },
     markWriting: () => {
       state.state = 'escrevendo'
       events.push('escrevendo')
@@ -217,7 +229,37 @@ describe('escrita bem-sucedida', () => {
 
     await applyPendingEdits()
 
-    expect(events).toEqual(['escrevendo', 'pause', 'resume', 'pronto'])
+    expect(events).toEqual(['escrevendo', 'pause', 'settle', 'resume', 'pronto'])
+  })
+
+  // `pause` cancela o agendamento, não a leitura já iniciada: sem esperar, a
+  // leitura canônica competiria com uma releitura em curso, e o hash conferido
+  // poderia ser o de um estado que ninguém mais tem. Caso-limite de `H-26`.
+  it('aguarda a releitura em voo antes de ler o arquivo', async () => {
+    queueTextEdit()
+    let liberar = (): void => undefined
+    const releitura = new Promise<void>((resolve) => {
+      liberar = resolve
+    })
+
+    await setup({
+      store: {
+        ...store,
+        settle: async () => {
+          events.push('settle')
+          await releitura
+        },
+      },
+    })
+
+    const escrita = applyPendingEdits()
+    await Promise.resolve()
+    expect(events).toEqual(['escrevendo', 'pause', 'settle'])
+
+    liberar()
+    const result = await escrita
+
+    expect(result.ok).toBe(true)
   })
 
   // A renomeacao e o que torna a gravacao atomica; o temporario e transitorio
@@ -231,13 +273,118 @@ describe('escrita bem-sucedida', () => {
     expect(readdirSync(directory).filter((name) => name.endsWith('.tmp'))).toEqual([])
   })
 
-  it('nao descarta a fila — quem a rotaciona e H-26', async () => {
+  // A fila nunca é perdida: na recusa fica intacta, no sucesso é arquivada.
+  it('arquiva a fila em data/applied e a deixa vazia', async () => {
     queueTextEdit()
     await setup()
+    const antes = readFileSync(queuePath, 'utf-8')
+
+    const result = await applyPendingEdits()
+
+    expect(result.archivedQueuePath).toMatch(/pending-edits-\d{8}-\d{6}\.jsonl$/)
+    expect(readFileSync(result.archivedQueuePath as string, 'utf-8')).toBe(antes)
+    expect(readFileSync(queuePath, 'utf-8')).toBe('')
+  })
+
+  // O .xlsx já está correto e validado em disco: devolver ESCRITA_INVALIDA
+  // mandaria o operador procurar um backup obsoleto. `archivedQueuePath: null`
+  // é o que diz à interface que a fila precisa ser descartada à mão.
+  it('nao invalida a escrita quando o arquivamento da fila falha', async () => {
+    queueTextEdit()
+    const appliedDir = join(directory, 'applied')
+    writeFileSync(appliedDir, 'nao sou uma pasta', 'utf-8')
+    await setup({ appliedDir })
+
+    const result = await applyPendingEdits()
+
+    expect(result.ok).toBe(true)
+    expect(result.archivedQueuePath).toBeNull()
+    expect((await cellsOf(SOURCE_ROW)).B).toBe('CLIENTE ALTERADO')
+  })
+
+  // `write.done` significa "a planilha foi gravada e validada", e tem campos
+  // fixados em `08-qualidade-operacao.md` §3.1. Reusá-lo para a falha do
+  // arquivamento fazia uma aplicação bem-sucedida emitir DUAS linhas
+  // `write.done`, uma delas parecendo erro de escrita. Achado do `revisor-xml`.
+  it('registra o arquivamento em evento proprio, sem duplicar write.done', async () => {
+    queueTextEdit()
+    const entries: LogInput[] = []
+    await setup({
+      logger: {
+        log: (entry) => {
+          entries.push(entry)
+        },
+        purgeExpired: () => [],
+        currentFile: () => '',
+      },
+    })
 
     await applyPendingEdits()
 
-    expect(readFileSync(queuePath, 'utf-8').trim().split('\n')).toHaveLength(1)
+    expect(entries.filter((entry) => entry.event === 'write.done')).toHaveLength(1)
+    const arquivamento = entries.find((entry) => entry.event === 'queue.archived')
+    expect(arquivamento?.level).toBe('info')
+    expect(arquivamento?.archivedQueuePath).toMatch(/pending-edits-\d{8}-\d{6}\.jsonl$/)
+  })
+
+  // `rotate` devolve null SEM lançar quando o arquivo de fila já não está lá.
+  // Nada se perdeu — a gravação já aconteceu —, mas o silêncio faria resposta e
+  // log dizerem que a fila continua no lugar, e ela não está.
+  it('registra quando nao havia fila para arquivar', async () => {
+    queueTextEdit()
+    const entries: LogInput[] = []
+    let leituras = 0
+    await setup({
+      // A validação é o último passo antes do arquivamento: apagar a fila aqui
+      // reproduz alguém removendo o `.jsonl` por fora durante a escrita.
+      readWorkbookFn: async (cfg) => {
+        const read = await readWorkbook(cfg)
+        leituras += 1
+        if (leituras === 2) rmSync(queuePath)
+        return read
+      },
+      logger: {
+        log: (entry) => {
+          entries.push(entry)
+        },
+        purgeExpired: () => [],
+        currentFile: () => '',
+      },
+    })
+
+    const result = await applyPendingEdits()
+
+    expect(result.ok).toBe(true)
+    expect(result.archivedQueuePath).toBeNull()
+    expect(entries.find((entry) => entry.event === 'queue.archived')).toMatchObject({
+      level: 'warn',
+      errorCode: 'FILA_AUSENTE',
+    })
+  })
+
+  it('registra a falha do arquivamento como erro, e nao como write.done', async () => {
+    queueTextEdit()
+    const appliedDir = join(directory, 'applied')
+    writeFileSync(appliedDir, 'nao sou uma pasta', 'utf-8')
+    const entries: LogInput[] = []
+    await setup({
+      appliedDir,
+      logger: {
+        log: (entry) => {
+          entries.push(entry)
+        },
+        purgeExpired: () => [],
+        currentFile: () => '',
+      },
+    })
+
+    await applyPendingEdits()
+
+    expect(entries.filter((entry) => entry.event === 'write.done')).toHaveLength(1)
+    expect(entries.find((entry) => entry.event === 'queue.archived')).toMatchObject({
+      level: 'error',
+      errorCode: 'ERRO_INTERNO',
+    })
   })
 })
 
@@ -440,6 +587,62 @@ describe('ESCRITA_INVALIDA', () => {
     expect(result.restored).toBe(true)
     expect(result.backupPath).not.toBeNull()
     expect(readFileSync(workbook)).toEqual(originalBytes)
+  })
+
+  /**
+   * O desfecho mais grave: gravou, a validação reprovou, e o backup NÃO pôde ser
+   * reposto. `restored` continua `false`, mas o arquivo em disco é o gravado —
+   * e é a única situação em que o operador precisa do caminho do backup. A rota
+   * não tem como inferir isso de `restored`; por isso `fileState` existe.
+   */
+  it('marca o arquivo como incerto quando a restauracao tambem falha', async () => {
+    queueTextEdit()
+    let leituras = 0
+    await setup({
+      readWorkbookFn: async (cfg) => {
+        leituras += 1
+        if (leituras === 1) return await readWorkbook(cfg)
+        // A validação roda ANTES da restauração: sumir com o backup aqui é o
+        // que `restore` encontra quando o arquivo está segurado por outro
+        // processo no Windows.
+        rmSync(backupDir, { recursive: true, force: true })
+        throw new Error('arquivo ilegivel')
+      },
+    })
+
+    const result = await applyPendingEdits()
+
+    expect(result.refusal).toBe('ESCRITA_INVALIDA')
+    expect(result.restored).toBe(false)
+    expect(result.fileState).toBe('incerto')
+    expect(result.backupPath).not.toBeNull()
+    // O arquivo gravado ficou no lugar do original — é o que torna o caminho
+    // do backup a única saída, e o que a rota precisa dizer.
+    expect(readFileSync(workbook)).not.toEqual(originalBytes)
+  })
+
+  it('marca o arquivo como restaurado quando o backup volta', async () => {
+    queueTextEdit()
+    await setup({
+      readWorkbookFn: readThenFail(() => Promise.reject(new Error('arquivo ilegivel'))),
+    })
+
+    const result = await applyPendingEdits()
+
+    expect(result.restored).toBe(true)
+    expect(result.fileState).toBe('restaurado')
+  })
+
+  // Recusa que nunca chegou a gravar: o arquivo está intacto, e o backup não é
+  // caminho de recuperação nenhum.
+  it('marca o arquivo como intacto na recusa que nao gravou', async () => {
+    queueTextEdit()
+    await setup()
+    writeFileSync(join(directory, `~$${basename(workbook)}`), '', 'utf-8')
+
+    const result = await applyPendingEdits()
+
+    expect(result.fileState).toBe('intacto')
   })
 
   it('restaura tambem quando a celula gravada nao guarda o valor pretendido', async () => {

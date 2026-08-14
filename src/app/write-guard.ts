@@ -17,7 +17,13 @@ import {
   prune,
   restore,
 } from '../io/backup-manager.ts'
-import { consolidated, DEFAULT_QUEUE_PATH, type PendingEdit } from '../io/edit-queue.ts'
+import {
+  consolidated,
+  DEFAULT_APPLIED_DIR,
+  DEFAULT_QUEUE_PATH,
+  type PendingEdit,
+  rotate,
+} from '../io/edit-queue.ts'
 import { detectInterference } from '../io/interference-detector.ts'
 import type { Watcher } from '../io/watcher.ts'
 import { hashBytes, type ReadResult, readWorkbook } from '../io/xlsx-reader.ts'
@@ -30,16 +36,27 @@ import {
   markWriting,
   rebuildProcesses,
   type StoreState,
+  settle,
 } from './process-store.ts'
 
 /**
  * As seis defesas de integridade, na ordem de 04-arquitetura.md secao 3.2:
- * pausar watcher, verificar lock, conferir hash, backup, cirurgia, gravacao
- * atomica, validacao, retomar watcher.
+ * pausar watcher, ESPERAR a releitura em voo, verificar lock, conferir hash,
+ * backup, cirurgia, gravacao atomica, validacao, arquivar a fila, retomar
+ * watcher. A espera nao esta no diagrama: `pause` cancela o agendamento, nao a
+ * leitura ja iniciada, e sem ela a leitura canonica competiria com uma
+ * releitura em curso.
  *
  * A invariante que rege o modulo: **ao primeiro sinal de risco a escrita e
- * recusada, e a fila NUNCA e descartada** — nem na recusa, nem no sucesso. Quem
- * rotaciona a fila para `data/applied/` e H-26, depois de ver `ok: true`.
+ * recusada, e a fila nunca e perdida**. Em qualquer recusa ela fica intacta; no
+ * sucesso ela e ARQUIVADA em `data/applied/`, nunca apagada.
+ *
+ * O arquivamento acontece aqui, e nao na rota de H-26, por causa da janela:
+ * `finishWriting` devolve o estado a 'pronto' e `POST /api/edits` volta a
+ * aceitar. Rotacionar depois disso arquivaria — fazendo sumir — a edicao que o
+ * operador digitou durante a escrita, sem que ela tivesse sido gravada. As
+ * rotas de escrita da fila recusam enquanto o estado for 'escrevendo', e e a
+ * combinacao das duas coisas que fecha a janela.
  *
  * **A celula alvo e resolvida pela REF, nunca pelo `sourceRow` da fila.** O
  * numero de linha e congelado no momento em que o operador edita, e uma linha
@@ -118,6 +135,29 @@ export interface WriteResult {
    */
   expectedHash: string | null
   actualHash: string | null
+  /**
+   * O que aconteceu com o `.xlsx` em disco. **A rota nao tem como inferir isto
+   * de `restored`**, e tentar seria decidir sobre o arquivo fora do guard
+   * (regra inviolavel 6): `restored: false` sai tanto de uma recusa que nunca
+   * gravou quanto de uma validacao que reprovou E cuja restauracao tambem
+   * falhou — a segunda deixa o arquivo possivelmente invalido, e o backup e a
+   * unica saida. Achado do revisor-xml.
+   *
+   * - `intacto`: nada foi gravado, ou a gravacao falhou antes da renomeacao.
+   * - `gravado`: gravou e a validacao aprovou. So no sucesso.
+   * - `restaurado`: gravou, a validacao reprovou, o backup foi reposto.
+   * - `incerto`: gravou, a validacao reprovou, e a restauracao falhou. O
+   *   arquivo em disco pode estar invalido; `backupPath` e o caminho de volta.
+   */
+  fileState: 'intacto' | 'gravado' | 'restaurado' | 'incerto'
+  /**
+   * Caminho da fila arquivada em `data/applied/`. `null` em toda recusa e, no
+   * sucesso, nos dois casos em que ela nao foi arquivada: a rotacao falhou — e
+   * ai a fila continua no lugar, precisando ser descartada a mao — ou o arquivo
+   * de fila ja nao existia. O log distingue os dois em `queue.archived`; a
+   * resposta nao, e por isso a mensagem ao operador cobre os dois.
+   */
+  archivedQueuePath: string | null
 }
 
 /** O que o guard usa do store. `StoreAccess` nao serve: nao tem as transicoes. */
@@ -128,6 +168,8 @@ export interface WriteGuardStore {
    * projeta, e responderia o valor pretendido no lugar do valor gravado.
    */
   rebuild(rows: RawRow[]): readonly Process[]
+  /** Espera a releitura em voo. `pause` cancela o agendamento, nao a leitura. */
+  settle(): Promise<void>
   markWriting(): void
   finishWriting(): void
 }
@@ -144,6 +186,7 @@ export interface WriteGuardOptions {
   logger?: Logger
   queuePath?: string
   backupDir?: string
+  appliedDir?: string
   /** Ponto de injecao para teste. Nenhum teste toca a planilha real (RNF-38). */
   readWorkbookFn?: (config: AppConfig) => Promise<ReadResult>
 }
@@ -159,12 +202,14 @@ interface ResolvedOptions {
   logger: Logger
   queuePath: string
   backupDir: string
+  appliedDir: string
   readWorkbookFn: (config: AppConfig) => Promise<ReadResult>
 }
 
 const DEFAULT_STORE: WriteGuardStore = {
   getState,
   rebuild: rebuildProcesses,
+  settle,
   markWriting,
   finishWriting,
 }
@@ -180,6 +225,7 @@ export function initWriteGuard(next: WriteGuardOptions): void {
     logger: next.logger ?? NULL_LOGGER,
     queuePath: next.queuePath ?? DEFAULT_QUEUE_PATH,
     backupDir: next.backupDir ?? DEFAULT_BACKUP_DIR,
+    appliedDir: next.appliedDir ?? DEFAULT_APPLIED_DIR,
     readWorkbookFn: next.readWorkbookFn ?? readWorkbook,
   }
   writing = false
@@ -201,6 +247,8 @@ function refuse(
     durationMs: Math.round(performance.now() - startedAt),
     expectedHash: null,
     actualHash: null,
+    fileState: 'intacto',
+    archivedQueuePath: null,
     ...extra,
   }
 }
@@ -398,6 +446,12 @@ async function guardedWrite(
     store.markWriting()
     watcher.pause()
 
+    // `pause` cancela o agendamento, nao a leitura ja iniciada. Sem esperar, a
+    // leitura canonica competiria com uma releitura em curso e o hash conferido
+    // poderia ser o de um estado que ninguem mais tem. Depois de `markWriting`,
+    // para que `settled` mantenha o estado 'escrevendo' quando ela terminar.
+    await store.settle()
+
     // O lock primeiro, na ordem de 04-arquitetura.md secao 3.2: com o Excel
     // aberto E a fila inadmissivel, o motivo que o operador precisa ouvir e o
     // que ele consegue resolver.
@@ -500,7 +554,44 @@ async function guardedWrite(
 
     if (!(await validate(deps, targets))) {
       const restored = await restoreQuietly(backupPath, filePath, logger)
-      return refused('ESCRITA_INVALIDA', { backupPath, restored })
+      return refused('ESCRITA_INVALIDA', {
+        backupPath,
+        restored,
+        // Restauracao que falha deixa o arquivo gravado — e reprovado — no
+        // lugar do original. E o unico desfecho em que o operador PRECISA do
+        // caminho do backup.
+        fileState: restored ? 'restaurado' : 'incerto',
+      })
+    }
+
+    // Arquivada AQUI, e nao pela rota, por causa da janela: `finishWriting` no
+    // `finally` devolve o estado a 'pronto', e `POST /api/edits` volta a
+    // aceitar. Rotacionar depois disso arquivaria — e faria sumir — a edicao
+    // que o operador digitou nesse intervalo, sem que ela tivesse sido gravada.
+    // Achado do revisor-xml, reproduzido.
+    //
+    // Falhar aqui NAO invalida a escrita: o .xlsx ja esta correto e validado em
+    // disco, e devolver ESCRITA_INVALIDA mandaria o operador procurar um backup
+    // obsoleto. `archivedQueuePath: null` cobre os DOIS desfechos sem
+    // arquivamento — a rotacao falhou, e ai a fila ficou para tras, ou o
+    // arquivo de fila ja nao existia. Quem os distingue e o log.
+    let archivedQueuePath: string | null = null
+    try {
+      archivedQueuePath = rotate(deps.queuePath, deps.appliedDir)
+      logger.log(
+        archivedQueuePath === null
+          ? // `rotate` devolve null SEM lancar quando o arquivo de fila ja nao
+            // esta la — alguem o apagou por fora durante a escrita. Nada se
+            // perdeu, ja gravamos; mas o silencio faria a resposta e o log
+            // dizerem que a fila continua no lugar, e ela nao esta.
+            { level: 'warn', event: 'queue.archived', errorCode: 'FILA_AUSENTE' }
+          : { level: 'info', event: 'queue.archived', archivedQueuePath },
+      )
+    } catch {
+      // Evento proprio, e nao `write.done`: a planilha FOI gravada e validada,
+      // e emitir o evento de escrita como erro faria uma aplicacao
+      // bem-sucedida contar duas vezes no log e parecer falha de escrita.
+      logger.log({ level: 'error', event: 'queue.archived', errorCode: 'ERRO_INTERNO' })
     }
 
     const durationMs = Math.round(performance.now() - startedAt)
@@ -518,6 +609,8 @@ async function guardedWrite(
       durationMs,
       expectedHash: null,
       actualHash: null,
+      fileState: 'gravado',
+      archivedQueuePath,
     }
   } catch {
     // Rede de seguranca da invariante do modulo: nao rejeitar. Todo caminho
@@ -553,8 +646,10 @@ async function restoreQuietly(
     logger.log({ level: 'error', event: 'write.restored', backupPath })
     return true
   } catch {
-    // Restauracao falha deixa o arquivo invalido no disco. `restored: false` e
-    // o que faz H-26 mostrar o caminho do backup para o operador copiar a mao.
+    // Restauracao falha deixa o arquivo gravado — e reprovado — no lugar do
+    // original. Quem carrega isso para a rota e `fileState: 'incerto'`:
+    // `restored: false` sozinho nao serve, porque sai tambem de recusa que
+    // nunca gravou.
     return false
   }
 }
