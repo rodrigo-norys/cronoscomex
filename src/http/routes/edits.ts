@@ -1,4 +1,4 @@
-import type { FastifyInstance } from 'fastify'
+import type { FastifyInstance, FastifyReply } from 'fastify'
 import { store as defaultStore, type StoreAccess } from '../../app/process-store.ts'
 import { currentValue, type EditableField, validateEdit } from '../../domain/editable-fields.ts'
 import { normKey } from '../../domain/normalizer.ts'
@@ -48,7 +48,35 @@ export function registerEditsRoutes(
   store: StoreAccess = defaultStore,
   queuePath: string = DEFAULT_QUEUE_PATH,
 ): void {
+  /**
+   * Mexer na fila durante a aplicacao a faz sumir sem ser gravada: o
+   * `write-guard` tira o instantaneo do que vai gravar no inicio e arquiva o
+   * arquivo INTEIRO no fim, entao o que entra no meio e arquivado sem ter
+   * chegado ao `.xlsx` — e o painel passa a mostrar zero pendencias. Vale
+   * tambem para o descarte: a lapide seria arquivada como se tivesse sido
+   * honrada, com a edicao gravada assim mesmo. Achado do revisor-xml em H-26.
+   *
+   * A janela sao as centenas de milissegundos de uma aplicacao. Recusar e o
+   * mesmo que `POST /api/reload` ja faz, e devolve ao operador um erro que ele
+   * resolve tentando de novo — em vez de perder o que digitou.
+   */
+  const recusaDuranteEscrita = (reply: FastifyReply): boolean => {
+    if (store.getState().state !== 'escrevendo') return false
+
+    reply
+      .code(409)
+      .send(
+        apiError(
+          'ESCRITA_EM_ANDAMENTO',
+          'As alteracoes estao sendo gravadas na planilha. Tente de novo em instantes.',
+        ),
+      )
+    return true
+  }
+
   app.post('/api/edits', (request, reply) => {
+    if (recusaDuranteEscrita(reply)) return reply
+
     const state = store.getState()
 
     if (state.lastReadAt === null) {
@@ -134,6 +162,8 @@ export function registerEditsRoutes(
   })
 
   app.delete('/api/edits/:id', (request, reply) => {
+    if (recusaDuranteEscrita(reply)) return reply
+
     const { id } = request.params as { id: string }
 
     if (!discard(id, queuePath)) {
@@ -145,6 +175,8 @@ export function registerEditsRoutes(
   })
 
   app.delete('/api/edits', (_request, reply) => {
+    if (recusaDuranteEscrita(reply)) return reply
+
     const body: DiscardAllResponse = { discarded: discardAll(queuePath) }
     return reply.code(200).send(body)
   })

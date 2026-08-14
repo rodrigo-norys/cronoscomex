@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import Fastify from 'fastify'
@@ -425,6 +425,66 @@ describe('DELETE /api/edits', () => {
     expect((await app.inject({ method: 'DELETE', url: '/api/edits' })).json()).toEqual({
       discarded: 0,
     })
+
+    await app.close()
+  })
+})
+
+/**
+ * Mexer na fila durante a aplicacao a faz sumir sem ser gravada: o write-guard
+ * tira o instantaneo do que vai gravar no inicio e arquiva o arquivo INTEIRO no
+ * fim. O que entra no meio seria arquivado sem ter chegado ao `.xlsx`, e o
+ * painel passaria a mostrar zero pendencias. Achado do revisor-xml em H-26.
+ */
+describe('a fila e imutavel enquanto a escrita acontece', () => {
+  const escrevendo = state({ state: 'escrevendo' })
+
+  it('recusa POST com 409 ESCRITA_EM_ANDAMENTO, sem enfileirar', async () => {
+    const app = buildApp(escrevendo)
+
+    const resposta = await app.inject({ method: 'POST', url: '/api/edits', payload: EDICAO })
+
+    expect(resposta.statusCode).toBe(409)
+    expect(resposta.json().error.code).toBe('ESCRITA_EM_ANDAMENTO')
+    expect(existsSync(queuePath)).toBe(false)
+
+    await app.close()
+  })
+
+  // A lapide seria arquivada como se tivesse sido honrada, e a edicao gravada
+  // assim mesmo — o operador veria o descarte aceito e o valor na planilha.
+  it('recusa DELETE de uma edicao, sem gravar a lapide', async () => {
+    const pronto = buildApp()
+    const { id } = (
+      await pronto.inject({ method: 'POST', url: '/api/edits', payload: EDICAO })
+    ).json()
+    await pronto.close()
+    const antes = readFileSync(queuePath, 'utf-8')
+
+    const app = buildApp(escrevendo)
+    const resposta = await app.inject({ method: 'DELETE', url: `/api/edits/${id}` })
+
+    expect(resposta.statusCode).toBe(409)
+    expect(readFileSync(queuePath, 'utf-8')).toBe(antes)
+
+    await app.close()
+  })
+
+  it('recusa o esvaziamento da fila', async () => {
+    const app = buildApp(escrevendo)
+
+    const resposta = await app.inject({ method: 'DELETE', url: '/api/edits' })
+
+    expect(resposta.statusCode).toBe(409)
+
+    await app.close()
+  })
+
+  // Ler nao mexe na fila, entao continua servindo durante a escrita.
+  it('continua servindo GET', async () => {
+    const app = buildApp(escrevendo)
+
+    expect((await app.inject({ method: 'GET', url: '/api/edits' })).statusCode).toBe(200)
 
     await app.close()
   })
