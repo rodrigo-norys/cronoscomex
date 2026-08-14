@@ -123,17 +123,22 @@ porque era dependência declarada de `H-15` e não existia, **`H-15`, que abriu 
 `GET /api/processes`, `H-18`, os três rankings, `H-19`, que fecha as duas
 últimas regras sem tela, `H-20`, a fila de trabalho, e `H-22`, o detalhe.**
 Restam de interface só a `H-21`, que depende do histórico de `H-28`. **A Fase 3
-abriu com `H-23`, a fila de edições, `H-24`, a escrita cirúrgica no `.xlsx`, e
-`H-25`, as seis defesas de integridade.** Próximo passo: **`H-26`**, o comando
-de aplicação. As fases estão em `docs/07-plano-entrega.md`.
+abriu com `H-23`, a fila de edições, `H-24`, a escrita cirúrgica no `.xlsx`,
+`H-25`, as seis defesas de integridade, e `H-26`, o comando de aplicação — a
+primeira escrita que o operador dispara.** Próximo passo: **`H-27`**, os campos
+codificados em cor. As fases estão em `docs/07-plano-entrega.md`.
 
 > **A escrita é o ponto onde errar custa a planilha da empresa.** O subagent
 > `revisor-xml` existe desde 11/08/2026 — invoque-o antes de commitar qualquer
 > mudança em `src/io/xlsx-surgeon.ts`, em `src/app/write-guard.ts` ou em código
 > que reescreva bytes do `.xlsx`. Em `H-24` ele reprovou na primeira invocação;
-> em `H-25`, **três das quatro**, e dois dos defeitos tinham sido introduzidos
-> pelas correções dos anteriores. **Reinvoque-o depois de corrigir**, não só
-> antes de commitar.
+> em `H-25`, **três das quatro**; em `H-26`, **seis das sete**. Vários defeitos
+> foram introduzidos pelas correções dos anteriores. **Reinvoque-o depois de
+> corrigir**, não só antes de commitar.
+>
+> **Ele revisa a interface também.** Quatro dos seis defeitos de `H-26` estavam
+> na tela: mensagens que afirmavam o que o código não sabia. Ao mudar o que a
+> aplicação **diz** ao operador sobre a escrita, mande junto.
 
 Ao concluir uma história, marque-a em `docs/06-backlog.md` e verifique se algum
 status de `docs/09-rastreabilidade.md` mudou.
@@ -145,7 +150,7 @@ Não bloqueiam a implementação. Fechar antes da entrega ao operador.
 | # | Pendência | Quando fechar |
 |---|---|---|
 | **PD-01** | `config/app.json` aponta para `CONTROLE DOS EMBARQUE.xlsx` na **raiz do projeto**, usado para validar a partida em `H-02`. Na máquina Windows precisa do caminho real da pasta sincronizada (`C:\Users\...\OneDrive - <org>\...`). O arquivo está no `.gitignore`, então o caminho de desenvolvimento não vaza. **`H-34` dá a saída definitiva**: o caminho passa a ser configurável pela tela, e o operador nunca edita JSON | Ao instalar na máquina do operador (`H-30`), com `H-34` tornando-a indolor |
-| **PD-05** | A remoção de entrada em `xl/calcChain.xml` — incluindo o repasse do atributo `i`, herdado da entrada anterior — está coberta por teste unitário com entrada **sintética**, e **não** foi confirmada no Excel real. Nenhuma fixture tem `calcChain`: o `[Content_Types].xml` não a declara, e a fórmula que a fixture carrega foi injetada por `--enriquecer`, situação que o Excel não produz. Entrada órfã na cadeia é a hipótese mais provável de aviso de reparo | `H-26`, sobre um arquivo com fórmula produzido pelo próprio Excel |
+| **PD-05** | A remoção de entrada em `xl/calcChain.xml` — incluindo o repasse do atributo `i`, herdado da entrada anterior — está coberta por teste unitário com entrada **sintética**, e **não** foi confirmada no Excel real. Nenhuma fixture tem `calcChain`: o `[Content_Types].xml` não a declara, e a fórmula que a fixture carrega foi injetada por `--enriquecer`, situação que o Excel não produz. Entrada órfã na cadeia é a hipótese mais provável de aviso de reparo | Quando existir um `.xlsx` com fórmula **salvo pelo próprio Excel**. Deixou de ser tarefa de história em 14/08/2026: `H-26` fechou sem que o arquivo existisse, e a fixture montada por nós já se provou insuficiente — foi uma forma de cadeia ausente dela que escondeu um defeito real |
 | **PD-03** | `data/` passou a ser criado em execução por `H-08`, na primeira releitura que grava `quarantine.json` (`H-28` acrescenta o histórico). Está no `.gitignore`. Falta o `README.md` da raiz instruir a criá-lo **fora** da pasta sincronizada do OneDrive, para não replicar backups na nuvem | `H-30` |
 
 Ao fechar uma pendência, remova a linha.
