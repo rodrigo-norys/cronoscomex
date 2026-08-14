@@ -120,6 +120,16 @@ Derivados da estrutura real e da fronteira que o Biome impõe — use o mais esp
    mudou `docs/05-contratos-api.md` ou uma tabela de decisão de `docs/03-modelo-dados.md`, esse
    commit precede o que a implementa.
 
+   **Exceção, e é a única:** o marcador `> **Pendente de \`H-NN\`.**` em
+   `docs/05-contratos-api.md` só pode sair **no mesmo commit que serve a rota**, ou depois.
+   `tests/repo/contratos.test.ts` reprova rota documentada, sem marcador e não servida — então
+   o contrato indo na frente deixa o commit **vermelho**, e commit vermelho no meio quebra o
+   `git bisect` que o corte atômico existe para preservar. As demais mudanças do documento vão
+   antes normalmente; só o marcador viaja com a rota.
+
+   Medido em `H-26`: os dois primeiros commits reprovaram e precisaram de `git reset HEAD~2`.
+   Restam três rotas com o marcador — `H-21`, `H-27` e `H-30` —, então isto reaparece.
+
 6. **Para cada commit, devolva:**
    - O `git add` com os caminhos **exatos** daquele commit.
    - A mensagem no padrão do `~/.claude/CLAUDE.md`.
