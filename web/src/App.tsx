@@ -1,4 +1,7 @@
-import type { HealthResponse } from './api-client.ts'
+import { useState } from 'react'
+import type { ApplyRefusal, HealthResponse } from './api-client.ts'
+import { ApplyChangesButton } from './components/ApplyChangesButton.tsx'
+import { ConflictDialog } from './components/ConflictDialog.tsx'
 import { FilterBar } from './components/FilterBar.tsx'
 import { RefreshButton } from './components/RefreshButton.tsx'
 import { StatusBanner } from './components/StatusBanner.tsx'
@@ -27,6 +30,10 @@ export function App() {
   const { health, healthError, dataVersion, refreshing, refresh } = useAppData()
   const filters = useFilters()
   const { options, error: optionsError } = useFilterOptions(dataVersion)
+  // A recusa vive na casca, e nao no botao: o dialogo cobre a tela inteira, e
+  // fecha-lo nao pode depender de qual pagina estava aberta quando o operador
+  // aplicou.
+  const [refusal, setRefusal] = useState<ApplyRefusal | null>(null)
 
   // O detalhe de um processo e sobre UM processo, achado pela REF: recortar o
   // conjunto nao muda o que ele mostra. Endereco desconhecido nao tem dado
@@ -47,6 +54,11 @@ export function App() {
                 Dados de <time dateTime={health.today}>{formatDay(health.today)}</time>
               </span>
             )}
+            <ApplyChangesButton
+              pendingCount={health?.pendingEditsCount ?? 0}
+              onApplied={refresh}
+              onRefused={setRefusal}
+            />
             <RefreshButton onRefresh={refresh} busy={refreshing} />
           </div>
         </div>
@@ -75,6 +87,8 @@ export function App() {
           queryString={filters.queryString}
         />
       </main>
+
+      <ConflictDialog refusal={refusal} onClose={() => setRefusal(null)} />
     </div>
   )
 }

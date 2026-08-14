@@ -2176,7 +2176,7 @@ quebra ao regenerar a fixture.
   > data aparece como `29/ago`, correta, e a célula fica branca — o que ali
   > combina com as vizinhas, também ausentes. Mantido assim porque é o que o
   > próprio Excel faz ao digitar numa célula vazia, e herdar do irmão seria
-  > inferir intenção. **PD-04** reavalia em `H-26`, contra o arquivo real.
+  > inferir intenção. **PD-04** foi fechada em `H-25`, contra o arquivo real — ver o bloco de conclusão acima.
 - Célula **mestre** de fórmula compartilhada (`<f t="shared" ref="…" si="N">`) →
   **recusada com erro**. Ela carrega a definição que as dependentes do mesmo
   `si` referenciam; reescrevê-la noutra âncora exigiria traduzir a fórmula, o
@@ -2345,6 +2345,78 @@ validação → retomar watcher.
 
 ### H-26 — Aplicar as edições pendentes sob comando explícito
 
+> ✅ **CONCLUÍDA em 14/08/2026.** 32 testes próprios — 17 em
+> `tests/http/apply.test.ts`, 15 em `web/tests/AplicarAlteracoes.test.tsx` —,
+> mais os acrescentados a `edit-queue`, `process-store`, `write-guard` e
+> `edits`; suíte total em **954**. Dez divergências do plano resolvidas na
+> abertura, seis delas só de fiação: `server.ts`, `api-client.ts`, `App.tsx`,
+> testes de interface, o marcador de pendência em `docs/05-contratos-api.md`, e
+> `validated`, que a rota deriva de `ok` em vez de existir em `WriteResult`.
+>
+> **`rotate()` fechou o primeiro critério de aceite**, que não tinha
+> implementação: a fila vai para `data/applied/pending-edits-<AAAAMMDD-HHmmss>.jsonl`
+> por **renomeação**, preservando as lápides de descarte. **`settle()` fechou o
+> caso-limite da releitura**, que `H-25` deixou declaradamente em aberto —
+> `watcher.pause()` cancela o agendamento, não a leitura já iniciada.
+>
+> **O `revisor-xml` foi invocado sete vezes e reprovou seis.** Seis defeitos
+> reais, quatro deles na interface, e **nenhum pego pela suíte**.
+>
+> (1) **Edição digitada durante a escrita sumia sem ser gravada.** O guard tira
+> o instantâneo da fila no início e arquivava o arquivo inteiro no fim; o que
+> entrava no meio era arquivado sem chegar ao `.xlsx`, e o painel passava a
+> mostrar zero pendências. Fechado por duas metades que só funcionam juntas: as
+> três rotas que **escrevem** na fila recusam com `409 ESCRITA_EM_ANDAMENTO`, e
+> o arquivamento passou para dentro do guard, antes de `finishWriting`. Na rota
+> ele estaria fora da janela.
+>
+> (2) **`restored: false` tinha duas origens, e a rota tratava as duas como
+> "nada foi gravado".** A segunda — validação reprovada **e** restauração
+> falhada — deixa o arquivo gravado no lugar do original, e o backup é a única
+> saída, que era justamente o que a resposta omitia. Corrigido no guard, não na
+> rota: `WriteResult.fileState` (`intacto` · `gravado` · `restaurado` ·
+> `incerto`), porque inferir o estado do arquivo na rota é a decisão que a regra
+> inviolável 6 tira dela.
+>
+> (3) **`write.done` saía duas vezes** numa aplicação bem-sucedida, uma delas
+> parecendo erro de escrita. `queue.archived` virou evento próprio, fora do
+> catálogo fechado de `H-31`.
+>
+> (4) **O título do diálogo dizia "Nada foi gravado"** no desfecho em que a
+> planilha ficou possivelmente inválida — e ele é o `aria-labelledby`, o nome
+> que o leitor de tela anuncia. Eu havia corrigido a mensagem, o aviso e o
+> rodapé, e parado em três dos quatro pontos.
+>
+> (5) **A tela afirmava "nada foi gravado" em falha de rede**, quando o cliente
+> não sabe se a requisição chegou (regra inviolável 3). (6) **Mensagem vazia
+> passava pelo `??`**, abrindo diálogo sem explicação.
+>
+> **A regra da tela, que o revisor arrancou em três rodadas:** decide primeiro
+> por `conflicts.length` — vazio **não** é diálogo de conflito —, e só depois,
+> linha a linha, por `refMissing`. Nunca pelo código: são **três** ramos de 409,
+> e `ARQUIVO_MUDOU` com lista vazia é o caso mais comum de todos.
+>
+> **Medido sobre cópia da planilha real em 14/08/2026** — o original nunca foi
+> aberto para escrita —, em três execuções: **100 células em 380, 399 e 430 ms**,
+> contra os 15 s de RNF-15, com 35× de folga no pior caso. O campo escolhido foi
+> `docsSentDate` de propósito: a célula está ausente do XML em 511 das 649
+> linhas, então a maioria exercita a inserção de célula nova, o caminho mais caro
+> da cirurgia. O revisor conferiu o zip entrada a entrada no caminho fim a fim:
+> **27 das 28 entradas byte a byte idênticas**, só a aba alvo mudou.
+>
+> **Divergências de contrato registradas:** `queue.archived` fora do catálogo de
+> `H-31`; `fileState` e `archivedQueuePath` fora do `WriteResult` fixado em
+> `H-25`; `409 ESCRITA_EM_ANDAMENTO` nas três rotas da fila; e `FILA_AUSENTE`,
+> primeiro `errorCode` de log que não é código de resposta HTTP — documentado em
+> `docs/08-qualidade-operacao.md` §3.1, porque `LogEntry.errorCode` é `string` e
+> nenhuma guarda de compilação o protege.
+>
+> **Limite conhecido, não corrigido:** entre `buildServer` e `initWriteGuard` há
+> uma janela em que a rota existe e o guard não. `applyPendingEdits` lança antes
+> de tocar em arquivo, fila ou watcher — nenhum byte em risco —, e o cliente
+> degrada sem afirmar nada falso. Mover a inicialização mexeria na ordem de
+> partida por um caso sem consequência de integridade.
+
 **Objetivo:** o operador clica em "Aplicar alterações", o arquivo é atualizado e
 o painel relê.
 
@@ -2372,6 +2444,54 @@ o painel relê.
 **Casos-limite:**
 - Edição de um processo que sumiu do arquivo (linha removida no Excel) → o hash
   já terá mudado, e a recusa é `ARQUIVO_MUDOU`.
+
+  > **Divergência registrada em 14/08/2026 — o mesmo fato produz DOIS códigos,
+  > conforme o instante.** Este caso-limite foi escrito antes de
+  > `EDICAO_OBSOLETA` existir (`H-25`). Se uma releitura já pousou quando o
+  > operador aplica — o caminho mais provável, porque o watcher espera
+  > `DEFAULT_DEBOUNCE_MS` (RNF-17) e relê em seguida —, o hash **confere**, e a
+  > recusa é `EDICAO_OBSOLETA` com `conflicts[].refMissing: true`. Mandar reler
+  > a planilha, que é o que `ARQUIVO_MUDOU` instrui, não mudaria nada. Se
+  > nenhuma releitura pousou — janela de debounce, watcher pausado, ou evento
+  > que não chega em caminho de rede (P-08) —, o hash diverge e a recusa é
+  > `ARQUIVO_MUDOU` mesmo. O código não foi alterado para devolver
+  > `ARQUIVO_MUDOU` nos dois casos: seria piorar a mensagem ao operador para
+  > casar com um documento anterior ao código.
+  >
+  > **Consequência para a tela, em duas decisões e nesta ordem.** São **três**
+  > os ramos de 409 de uma aplicação, não dois:
+  >
+  > | Ramo | Código | `conflicts` |
+  > |---|---|---|
+  > | Hash divergente na leitura canônica | `ARQUIVO_MUDOU` | preenchido **ou vazio** |
+  > | Valor ou linha mudou, hash conferindo | `EDICAO_OBSOLETA` | sempre preenchido |
+  > | Hash divergente na **segunda** conferência, entre a leitura e os bytes | `ARQUIVO_MUDOU` | sempre vazio |
+  >
+  > O primeiro ramo sai **vazio** quando o arquivo mudou fora das células
+  > enfileiradas — o caso mais comum de todos, porque o `fileHash` do store
+  > envelhece após uma aplicação e uma edição nova dentro do debounce cai
+  > exatamente aqui (registrado no bloco de `H-25`). Sai preenchido quando a
+  > mudança alcançou alguma célula da fila.
+  >
+  > O terceiro existe desde `H-25`: o arquivo mudou **depois** de a aplicação já
+  > ter conferido que estava tudo certo, então não há nada a comparar campo a
+  > campo, e `conflicts: []` é a resposta honesta.
+  >
+  > **Não se infere o ramo pelo conteúdo.** `ARQUIVO_MUDOU` com lista vazia vem
+  > dos dois ramos de hash, e a resposta não os distingue — nem precisa: a
+  > instrução ao operador é a mesma, releia a planilha.
+  >
+  > 1. **`conflicts` vazio → não é diálogo de conflito.** É a mensagem do
+  >    código, e só. Abrir a tabela de três colunas sem nenhuma linha deixaria o
+  >    operador com um diálogo em branco no lugar da explicação.
+  > 2. **`conflicts` preenchido → cada linha decide por `refMissing`**, nunca
+  >    pelo código: a linha que sumiu chega pelos dois códigos, conforme o
+  >    instante, e é `refMissing` que diz "esta linha não existe mais" em vez de
+  >    "esta célula está vazia".
+  >
+  > Levantado pelo `revisor-xml`, incluindo a correção de que eu havia contado
+  > dois ramos onde há três.
+
 - Aplicação com 100 células → concluída em até 15 s (RNF-15).
 - Aplicação disparada durante uma releitura → aguarda a releitura terminar.
 
@@ -2681,6 +2801,11 @@ export interface LogEntry {
 Eventos fixados: `read.start`, `read.done`, `read.failed`, `write.start`,
 `write.refused`, `write.done`, `write.restored`, `history.appended`,
 `quarantine.reported`.
+
+> `H-26` acrescentou um décimo, `queue.archived`, fora deste catálogo fechado.
+> O motivo está em `docs/08-qualidade-operacao.md` §3.1: sem ele, a falha ao
+> arquivar a fila saía como uma segunda linha `write.done`, e uma aplicação
+> bem-sucedida contava duas vezes no log.
 
 Saída em JSON por linha, em `data/logs/app-<AAAAMMDD>.jsonl`, com retenção de
 30 dias.

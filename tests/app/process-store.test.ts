@@ -10,6 +10,7 @@ import {
   initStore,
   markWriting,
   reload,
+  settle,
 } from '../../src/app/process-store.ts'
 import type { ColorMapEntry } from '../../src/domain/color-mapper.ts'
 import type { RawRow } from '../../src/domain/types.ts'
@@ -429,5 +430,84 @@ describe('escrita em curso', () => {
     finishWriting()
 
     expect(getState().state).toBe('pronto')
+  })
+})
+
+/**
+ * O write-guard aguarda isto antes de ler o arquivo. Os testes dele injetam um
+ * dublê, entao a ligacao com `inFlight` precisa ser provada aqui — e junto com
+ * ela a de `settled`, que mantem o estado 'escrevendo' quando a releitura em
+ * voo termina.
+ */
+describe('settle', () => {
+  it('resolve na hora quando nao ha releitura em voo', async () => {
+    start()
+    await reload()
+
+    await expect(settle()).resolves.toBeUndefined()
+  })
+
+  it('so resolve depois que a releitura em voo termina', async () => {
+    let liberar = (): void => undefined
+    const bloqueio = new Promise<void>((resolve) => {
+      liberar = resolve
+    })
+    let resolvido = false
+
+    start({
+      readWorkbookFn: async () => {
+        await bloqueio
+        return {
+          rows: [],
+          fileHash: `sha256:${'c'.repeat(64)}`,
+          readAt: new Date('2026-08-14T12:00:00Z'),
+          sheetName: '2026',
+          sheetPath: 'xl/worksheets/sheet1.xml',
+        }
+      },
+    })
+
+    const releitura = reload()
+    const espera = settle().then(() => {
+      resolvido = true
+    })
+
+    await Promise.resolve()
+    expect(resolvido).toBe(false)
+
+    liberar()
+    await Promise.all([releitura, espera])
+    expect(resolvido).toBe(true)
+  })
+
+  // Sem isto, `finishWriting` sairia pelo early-return e POST /api/reload
+  // deixaria de recusar no meio da gravacao.
+  it('a releitura que termina durante a escrita nao apaga o estado escrevendo', async () => {
+    let liberar = (): void => undefined
+    const bloqueio = new Promise<void>((resolve) => {
+      liberar = resolve
+    })
+
+    start({
+      readWorkbookFn: async () => {
+        await bloqueio
+        return {
+          rows: [],
+          fileHash: `sha256:${'d'.repeat(64)}`,
+          readAt: new Date('2026-08-14T12:00:00Z'),
+          sheetName: '2026',
+          sheetPath: 'xl/worksheets/sheet1.xml',
+        }
+      },
+    })
+
+    const releitura = reload()
+    markWriting()
+
+    liberar()
+    await releitura
+    await settle()
+
+    expect(getState().state).toBe('escrevendo')
   })
 })

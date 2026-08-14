@@ -1,4 +1,6 @@
+import type { Conflict, WriteRefusal } from '../../src/app/write-guard.ts'
 import type { AlertsResponse } from '../../src/http/routes/alerts.ts'
+import type { ApplyResponse } from '../../src/http/routes/apply.ts'
 import type { EditsListResponse, EnqueuedEditResponse } from '../../src/http/routes/edits.ts'
 import type { FilterOptionsResponse } from '../../src/http/routes/filter-options.ts'
 import type { HealthResponse } from '../../src/http/routes/health.ts'
@@ -22,6 +24,8 @@ import type { QuarantineResponse } from '../../src/http/routes/quarantine.ts'
  */
 export type {
   AlertsResponse,
+  ApplyResponse,
+  Conflict,
   EditsListResponse,
   EnqueuedEditResponse,
   FilterOptionsResponse,
@@ -187,15 +191,141 @@ export async function getEdits(signal?: AbortSignal): Promise<EditsListResponse>
   return (await response.json()) as EditsListResponse
 }
 
+/**
+ * A mensagem que o servidor escreveu, quando ele escreveu uma.
+ *
+ * As duas rotas de descarte passaram a recusar com `409 ESCRITA_EM_ANDAMENTO`
+ * durante uma aplicacao (H-26), e o codigo cru nao diz ao operador o que fazer;
+ * a frase da rota diz. Ate H-26 nenhuma delas tinha caminho de erro com corpo,
+ * e por isso o status bastava.
+ */
+async function messageOf(response: Response, fallback: string): Promise<string> {
+  const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null
+  return body?.error?.message ?? fallback
+}
+
 export async function discardEdit(id: string): Promise<void> {
   const response = await fetch(`/api/edits/${encodeURIComponent(id)}`, { method: 'DELETE' })
-  if (!response.ok) throw new Error(`DELETE /api/edits/:id respondeu ${response.status}`)
+  if (!response.ok) {
+    throw new Error(await messageOf(response, `DELETE /api/edits/:id respondeu ${response.status}`))
+  }
+}
+
+/**
+ * A recusa de uma aplicacao, ja desmontada para a tela.
+ *
+ * **A tela decide em duas etapas, nesta ordem** (05-contratos-api.md secao 3):
+ * primeiro por `conflicts.length` — vazio **nao** e dialogo de conflito, e sim a
+ * mensagem do codigo —, e so depois, linha a linha, por `refMissing`. Nao se
+ * infere o ramo pelo conteudo: `ARQUIVO_MUDOU` com lista vazia e o caso mais
+ * comum de todos, e nao significa que o arquivo mudou durante a gravacao.
+ */
+/**
+ * As sete recusas do guard, mais `ERRO_INTERNO`: um 500 do proprio Fastify —
+ * corpo malformado, rota que lancou — nao passa por `WriteRefusal`, e fingir
+ * que passou faria a tela ramificar sobre um codigo que o servidor nao disse.
+ */
+export type ApplyRefusalCode = WriteRefusal | 'ERRO_INTERNO'
+
+const REFUSAL_CODES: readonly string[] = [
+  'EXCEL_ABERTO',
+  'ARQUIVO_MUDOU',
+  'EDICAO_OBSOLETA',
+  'NADA_A_APLICAR',
+  'ESCRITA_EM_ANDAMENTO',
+  'ESCRITA_INVALIDA',
+  'ARQUIVO_INDISPONIVEL',
+  'ERRO_INTERNO',
+]
+
+export interface ApplyRefusal {
+  code: ApplyRefusalCode
+  message: string
+  conflicts: Conflict[]
+  expectedHash: string | null
+  actualHash: string | null
+  /** `true` so quando o backup foi mesmo restaurado — nunca em recusa que nao gravou. */
+  restored: boolean
+  backupPath: string | null
+  /**
+   * `true` quando a planilha em disco pode estar invalida: a gravacao aconteceu,
+   * a conferencia reprovou, e a restauracao do backup TAMBEM falhou. Derivado de
+   * `backupPath` presente com `restored` falso — o servidor so envia os dois
+   * quando o arquivo deixou de estar intacto.
+   */
+  fileAtRisk: boolean
+}
+
+/**
+ * Recusa esperada, com motivo — nao falha de rede.
+ *
+ * Erro em vez de retorno de uniao porque as sete recusas sao excepcionais por
+ * natureza e o caminho feliz e um so: quem chama trata `catch` uma vez, em vez
+ * de ramificar em toda chamada.
+ */
+export class ApplyRefusedError extends Error {
+  readonly refusal: ApplyRefusal
+
+  constructor(refusal: ApplyRefusal) {
+    super(refusal.message)
+    this.name = 'ApplyRefusedError'
+    this.refusal = refusal
+  }
+}
+
+interface ApplyErrorBody {
+  error?: {
+    code?: string
+    message?: string
+    detail?: {
+      conflicts?: Conflict[]
+      expectedHash?: string
+      actualHash?: string
+      restored?: boolean
+      backupPath?: string
+    }
+  }
+}
+
+/**
+ * Grava a fila no `.xlsx`. **O unico ponto da interface que dispara escrita.**
+ *
+ * Sem `signal`: cancelar do lado do cliente nao cancela a gravacao, que ja
+ * seguiu no servidor atras das defesas de `H-25` — abortar aqui so faria a tela
+ * perder o resultado de algo que aconteceu.
+ */
+export async function applyEdits(): Promise<ApplyResponse> {
+  const response = await fetch('/api/edits/apply', { method: 'POST' })
+  if (response.ok) return (await response.json()) as ApplyResponse
+
+  const body = (await response.json().catch(() => null)) as ApplyErrorBody | null
+  const detail = body?.error?.detail
+
+  const code = body?.error?.code
+
+  throw new ApplyRefusedError({
+    code:
+      code !== undefined && REFUSAL_CODES.includes(code)
+        ? (code as ApplyRefusalCode)
+        : 'ERRO_INTERNO',
+    // `||`, e nao `??`: mensagem vazia e ausencia de mensagem, e `??` a
+    // deixaria passar para a tela como um dialogo sem explicacao.
+    message: body?.error?.message || `A aplicacao falhou (HTTP ${response.status}).`,
+    conflicts: detail?.conflicts ?? [],
+    expectedHash: detail?.expectedHash ?? null,
+    actualHash: detail?.actualHash ?? null,
+    restored: detail?.restored === true,
+    backupPath: detail?.backupPath ?? null,
+    fileAtRisk: detail?.backupPath !== undefined && detail?.restored !== true,
+  })
 }
 
 /** Esvazia a fila **inteira**, de todos os processos. */
 export async function discardAllEdits(): Promise<number> {
   const response = await fetch('/api/edits', { method: 'DELETE' })
-  if (!response.ok) throw new Error(`DELETE /api/edits respondeu ${response.status}`)
+  if (!response.ok) {
+    throw new Error(await messageOf(response, `DELETE /api/edits respondeu ${response.status}`))
+  }
 
   return ((await response.json()) as { discarded: number }).discarded
 }

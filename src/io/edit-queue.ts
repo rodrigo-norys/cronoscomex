@@ -1,6 +1,13 @@
 import { randomUUID } from 'node:crypto'
-import { appendFileSync, existsSync, mkdirSync, readFileSync } from 'node:fs'
-import { dirname } from 'node:path'
+import {
+  appendFileSync,
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  writeFileSync,
+} from 'node:fs'
+import { basename, dirname, join } from 'node:path'
 import type { EditableField } from '../domain/editable-fields.ts'
 import { normKey } from '../domain/normalizer.ts'
 
@@ -140,4 +147,64 @@ export function discardAll(path: string = DEFAULT_QUEUE_PATH): number {
 
   append(path, { ts: new Date().toISOString(), discarded: '*' })
   return count
+}
+
+export const DEFAULT_APPLIED_DIR = 'data/applied'
+
+/** Colisao so acontece com duas rotacoes no mesmo segundo; o teto evita laco. */
+const MAX_COLLISION_SUFFIX = 100
+
+/**
+ * Horario local, como em `backup-manager` e pelo mesmo motivo (RNF-30): quem le
+ * esta pasta para achar uma aplicacao e o operador, e o relogio dele e o do
+ * Windows. Os campos `ts` DENTRO do arquivo seguem em ISO UTC, entao nome e
+ * conteudo divergem no fuso — e o nome que existe para ser lido por gente.
+ */
+function stamp(moment: Date): string {
+  const pad = (value: number, width = 2): string => String(value).padStart(width, '0')
+  const day = `${moment.getFullYear()}${pad(moment.getMonth() + 1)}${pad(moment.getDate())}`
+  const time = `${pad(moment.getHours())}${pad(moment.getMinutes())}${pad(moment.getSeconds())}`
+  return `${day}-${time}`
+}
+
+/**
+ * Arquiva a fila em `data/applied/pending-edits-<AAAAMMDD-HHmmss>.jsonl` e a
+ * recria vazia. Devolve o caminho do arquivo arquivado, ou `null` quando nao
+ * havia fila.
+ *
+ * **A fila nunca e apagada sem registro** (03-modelo-dados.md secao 3.2): o que
+ * foi gravado no `.xlsx` tem de continuar auditavel, e mover preserva ate as
+ * lapides de descarte, que contam o que o operador desistiu de aplicar.
+ *
+ * Por renomeacao, e nao por copia mais truncamento: o arquivo sai inteiro do
+ * lugar de uma vez, entao nao existe instante em que a fila esteja pela metade
+ * para quem a le em paralelo.
+ *
+ * Chamada por H-26 **depois** de a escrita ter sido validada. Antes disso a
+ * fila precisa sobreviver a qualquer recusa — e o que garante que o operador
+ * nao perca o que digitou.
+ */
+export function rotate(
+  path: string = DEFAULT_QUEUE_PATH,
+  appliedDir: string = DEFAULT_APPLIED_DIR,
+  now: Date = new Date(),
+): string | null {
+  if (!existsSync(path)) return null
+
+  mkdirSync(appliedDir, { recursive: true })
+
+  const stem = basename(path).replace(/\.jsonl$/, '')
+  const base = `${stem}-${stamp(now)}`
+  for (let suffix = 0; suffix < MAX_COLLISION_SUFFIX; suffix += 1) {
+    const target = join(appliedDir, `${base}${suffix === 0 ? '' : `-${suffix}`}.jsonl`)
+    if (existsSync(target)) continue
+
+    renameSync(path, target)
+    // Recriada vazia, e nao deixada ausente: `POST /api/edits` a recria sozinho,
+    // mas o operador que abrir a pasta precisa ver que o lugar dela e aqui.
+    writeFileSync(path, '', 'utf-8')
+    return target
+  }
+
+  throw new Error(`nao foi possivel arquivar a fila em ${appliedDir}: nomes esgotados`)
 }
