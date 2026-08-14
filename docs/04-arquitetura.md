@@ -206,11 +206,13 @@ sequenceDiagram
     participant W as watcher
     participant B as backup-manager
     participant S as xlsx-surgeon
+    participant Q as edit-queue
     participant F as planilha.xlsx
 
     U->>API: POST /api/edits/apply
     API->>G: aplicar edições consolidadas
     G->>W: pausar
+    G->>G: aguardar releitura em voo
     G->>F: existe ~$planilha.xlsx?
     alt Excel está com o arquivo aberto
         F-->>G: lock presente
@@ -231,6 +233,7 @@ sequenceDiagram
                 G->>W: retomar
                 G-->>U: 500 ESCRITA_INVALIDA (arquivo restaurado)
             else validação passou
+                G->>Q: arquivar fila em data/applied/
                 G->>W: retomar
                 G-->>U: 200 + resumo
                 W->>API: fileChanged → releitura
