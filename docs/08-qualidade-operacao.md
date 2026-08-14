@@ -218,8 +218,36 @@ abaixo — não há por onde vazar nome de cliente ou conteúdo de célula.
 | `write.refused` | `errorCode` |
 | `write.done` | `durationMs`, `cellsWritten`, `backupPath` |
 | `write.restored` | `backupPath` |
+| `queue.archived` | `archivedQueuePath` quando arquivou; `errorCode` quando não |
 | `history.appended` | quantidade de eventos |
 | `quarantine.reported` | `rowsQuarantined`, `quarantineRate` |
+
+> `queue.archived` entrou em `H-26`, fora do catálogo fechado que `H-31` fixou.
+> Evento próprio, e não uma segunda linha de `write.done`, porque `write.done`
+> significa "a planilha foi gravada e validada" e tem os três campos acima:
+> reusá-lo para a falha do arquivamento fazia uma aplicação bem-sucedida emitir
+> **duas** linhas `write.done`, uma delas parecendo erro de escrita — o inverso
+> do que `H-25` corrigiu ao separar `ERRO_INTERNO` de recusa. Levantado pelo
+> `revisor-xml`.
+>
+> `archivedQueuePath` é relativo e derivado do nome do arquivo de fila
+> (`data/applied/pending-edits-<AAAAMMDD-HHmmss>.jsonl`): não carrega `ref` nem
+> valor de célula, que vivem no **conteúdo** do arquivo, nunca no caminho.
+>
+> O evento tem **três** emissões, não duas: `info` com o caminho quando
+> arquivou; `warn` com `errorCode: FILA_AUSENTE` quando o arquivo de fila já não
+> estava lá — nada se perdeu, a gravação aconteceu, mas o silêncio faria a
+> resposta afirmar que a fila continua no lugar; e `error` com
+> `errorCode: ERRO_INTERNO` quando a rotação falhou de fato.
+>
+> **`FILA_AUSENTE` é o primeiro `errorCode` de log que não vem de
+> `05-contratos-api.md` §1.2**, e fica fora de lá de propósito: aquela tabela
+> casa código de envelope com status HTTP, e este valor nunca sai numa resposta
+> — sai num log de um caminho `200`. Documentado aqui porque `H-31` existe para
+> que ninguém precise de lembrança ao ler `data/logs/`. Registrado junto o que
+> essa escolha custa: `LogEntry.errorCode` é `string`, e não união como
+> `ReadErrorCode`, então nenhuma guarda de compilação protege contra erro de
+> digitação neste valor.
 
 ### 3.2. Métricas mínimas
 

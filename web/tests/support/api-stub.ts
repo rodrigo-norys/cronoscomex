@@ -1,5 +1,6 @@
 import { vi } from 'vitest'
 import type { AlertsResponse } from '../../../src/http/routes/alerts.ts'
+import type { ApplyResponse } from '../../../src/http/routes/apply.ts'
 import type { FilterOptionsResponse } from '../../../src/http/routes/filter-options.ts'
 import type { HealthResponse } from '../../../src/http/routes/health.ts'
 import type { IndicatorsResponse } from '../../../src/http/routes/indicators.ts'
@@ -224,6 +225,12 @@ export interface ApiStub {
   serveProcessDetail(detail: ProcessDetailResponse): void
   /** `POST /api/edits` passa a recusar com esta mensagem. */
   failEnqueueEdit(message: string): void
+  /** `POST /api/edits/apply` passa a responder 200 com este corpo. */
+  serveApply(response: Partial<ApplyResponse>): void
+  /** `POST /api/edits/apply` passa a recusar, com o corpo do envelope de erro. */
+  refuseApply(status: number, code: string, message: string, detail?: unknown): void
+  /** O `fetch` de `POST /api/edits/apply` passa a REJEITAR, como falha de rede. */
+  failApplyNetwork(): void
   processDetailNotFound(): void
   processDetailWithoutRead(): void
   failProcessDetail(): void
@@ -256,6 +263,16 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
   let detail = processDetailFixture()
   let detailStatus = 200
   let enqueueFailure: string | null = null
+  let apply: ApplyResponse = {
+    applied: 1,
+    cellsWritten: 1,
+    backupPath: 'data/backups/planilha-20260814-143512.xlsx',
+    archivedQueuePath: 'data/applied/pending-edits-20260814-143512.jsonl',
+    durationMs: 210,
+    validated: true,
+  }
+  let applyRefusal: { status: number; body: unknown } | null = null
+  let applyNetworkFails = false
 
   vi.stubGlobal(
     'fetch',
@@ -297,6 +314,24 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
           ok: true,
           status: init?.method === 'POST' ? 201 : 200,
           json: () => Promise.resolve({ items: [], count: 0, discarded: 0 }),
+        } as Response)
+      }
+
+      // Antes do `startsWith` abaixo, que devolveria 204 para esta rota.
+      if (path === '/api/edits/apply') {
+        if (applyNetworkFails) return Promise.reject(new Error('Failed to fetch'))
+        if (applyRefusal !== null) {
+          const { status, body } = applyRefusal
+          return Promise.resolve({
+            ok: false,
+            status,
+            json: () => Promise.resolve(body),
+          } as Response)
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(apply),
         } as Response)
       }
 
@@ -405,6 +440,16 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
     },
     serveProcessDetail: (next) => {
       detail = next
+    },
+    serveApply: (next) => {
+      apply = { ...apply, ...next }
+      applyRefusal = null
+    },
+    refuseApply: (status, code, message, detail) => {
+      applyRefusal = { status, body: { error: { code, message, detail } } }
+    },
+    failApplyNetwork: () => {
+      applyNetworkFails = true
     },
     failEnqueueEdit: (message) => {
       enqueueFailure = message
