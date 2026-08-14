@@ -7,6 +7,7 @@ import { loadStatusAliases, StatusAliasesError } from '../app/status-aliases-loa
 import { initWriteGuard } from '../app/write-guard.ts'
 import { createWatcher, DEFAULT_DEBOUNCE_MS } from '../io/watcher.ts'
 import { registerAlertsRoute } from './routes/alerts.ts'
+import { registerApplyRoute } from './routes/apply.ts'
 import { registerEditsRoutes } from './routes/edits.ts'
 import { registerFilterOptionsRoute } from './routes/filter-options.ts'
 import { registerHealthRoute } from './routes/health.ts'
@@ -36,6 +37,7 @@ export function buildServer(config: AppConfig, store: StoreAccess = defaultStore
   registerFilterOptionsRoute(app, store)
   registerProcessesRoute(app, store)
   registerEditsRoutes(app, store)
+  registerApplyRoute(app)
 
   return app
 }
@@ -94,6 +96,13 @@ async function main(): Promise<void> {
 
   // Depois do `start`: o guard pausa e retoma o observador durante a escrita
   // (04-arquitetura.md secao 3.2), e nao teria o que pausar antes disto.
+  //
+  // Nenhum `queuePath` e passado aqui de proposito. O guard e `registerEditsRoutes`
+  // tem pontos de injecao independentes, que so coincidem pelo mesmo default:
+  // divergi-los faria o guard arquivar um arquivo que as rotas nao escrevem, e a
+  // fila do operador ficaria para tras a cada aplicacao. Enquanto os dois usarem
+  // o default nao ha como divergirem — e passar um so aqui seria exatamente o
+  // jeito de quebrar isso.
   initWriteGuard({ config, watcher, logger })
 
   const shutdown = (): void => {

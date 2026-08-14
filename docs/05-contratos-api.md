@@ -55,7 +55,7 @@ Parâmetro com valor fora do domínio → `400 FILTRO_INVALIDO`.
 | `EDICAO_NAO_ENCONTRADA` | 404 | `id` de edição inexistente na fila |
 | `EXCEL_ABERTO` | 409 | Existe `~$<arquivo>.xlsx` |
 | `ARQUIVO_MUDOU` | 409 | Hash difere do da última leitura |
-| `EDICAO_OBSOLETA` | 409 | Hash **confere**, mas o valor que a edição sobrescreveria já mudou |
+| `EDICAO_OBSOLETA` | 409 | Hash **confere**, mas o que a edição sobrescreveria mudou — o valor, ou a própria linha, que pode ter sumido |
 | `NADA_A_APLICAR` | 409 | Fila de edições vazia |
 | `ESCRITA_EM_ANDAMENTO` | 409 | Já existe uma aplicação em curso |
 | `ARQUIVO_INDISPONIVEL` | 503 | Aplicação em estado `Degradado`, ou arquivo ilegível na hora de gravar |
@@ -503,6 +503,14 @@ Enfileira uma edição. **Não toca no `.xlsx`.**
 | 201 | Enfileirada |
 | 400 | `CORPO_INVALIDO`, `CAMPO_NAO_EDITAVEL` |
 | 404 | `PROCESSO_NAO_ENCONTRADO` |
+| 409 | `ESCRITA_EM_ANDAMENTO` — uma aplicação está em curso |
+| 503 | `ARQUIVO_INDISPONIVEL` — nunca houve leitura, não há processo a editar |
+
+> As tres rotas que ESCREVEM na fila recusam com `409 ESCRITA_EM_ANDAMENTO`
+> enquanto uma aplicacao estiver em curso. Mexer na fila nesse intervalo a
+> faria sumir sem ser gravada: o `write-guard` tira o instantaneo do que vai
+> gravar no inicio e arquiva o arquivo inteiro no fim. `GET /api/edits`
+> continua servindo — ler nao mexe na fila.
 
 ---
 
@@ -549,6 +557,7 @@ Descarta uma edição enfileirada.
 |---|---|
 | 204 | Descartada |
 | 404 | `EDICAO_NAO_ENCONTRADA` |
+| 409 | `ESCRITA_EM_ANDAMENTO` |
 
 ---
 
@@ -560,15 +569,20 @@ Descarta **todas** as edições enfileiradas.
 { "discarded": 0 }
 ```
 
+| Código | Situação |
+|---|---|
+| 200 | Descartadas |
+| 409 | `ESCRITA_EM_ANDAMENTO` |
+
 ---
 
 ### `POST /api/edits/apply`
 
-> **Pendente de `H-26`.** Documentada, ainda **não registrada** no
-> servidor. `tests/repo/contratos.test.ts` cobra a existência assim que a
-> história for concluída no backlog.
-
 Grava a fila no `.xlsx`, executando a sequência de defesas de `04-arquitetura.md §3.2`.
+
+A rota **só traduz** `WriteResult` em código HTTP: não lê a planilha, não mexe
+na fila e não decide se pode gravar. Toda a decisão vive em
+`src/app/write-guard.ts` (regra inviolável 6).
 
 Corpo: vazio.
 
@@ -579,10 +593,25 @@ Corpo: vazio.
   "applied": 0,
   "cellsWritten": 0,
   "backupPath": "data/backups/planilha-20260803-143512.xlsx",
+  "archivedQueuePath": "data/applied/pending-edits-20260803-143512.jsonl",
   "durationMs": 0,
   "validated": true
 }
 ```
+
+> `archivedQueuePath` entrou em `H-26`, fora do contrato fixado de `H-25`, junto
+> com `expectedHash` e `actualHash`. **`null` no 200 significa que a planilha foi
+> gravada e validada, mas a fila não foi arquivada** — por falha ao movê-la
+> (qualquer erro de `mkdir`, `rename` ou `write`; no Windows, tipicamente o
+> `.jsonl` segurado pelo OneDrive ou pelo antivírus), ou porque o arquivo de
+> fila já não existia. A escrita não é desfeita em nenhum dos dois: o arquivo em
+> disco está correto, e mandar o operador restaurar um backup já obsoleto seria
+> pior. A interface avisa que a fila pode ter ficado para trás e precisa ser
+> conferida. O log distingue os dois casos em `queue.archived`; a resposta, não.
+>
+> `validated` **não** existirá em `WriteResult`: a rota vai derivá-lo de
+> `ok === true`. Se a resposta é 200, a validação passou, e um segundo campo
+> dizendo o mesmo é ruído.
 
 **409 `ARQUIVO_MUDOU` — corpo com o conflito:**
 
@@ -636,21 +665,54 @@ Corpo: vazio.
 Sem essa marca, `valueNow: ""` afirmaria que a célula está vazia, quando a linha
 inteira desapareceu (regra inviolável 3).
 
+> **A linha que sumiu chega pelos dois códigos.** Se uma releitura já pousou
+> quando o operador aplica, o hash confere e a recusa é `EDICAO_OBSOLETA`; se
+> não pousou, o hash diverge e é `ARQUIVO_MUDOU`. O mesmo fato físico, dois
+> códigos, conforme o instante.
+>
+> **A interface decide em duas etapas, nesta ordem.** Primeiro por
+> `conflicts.length`: **vazio não é diálogo de conflito**, é a mensagem do
+> código. Abrir a tabela sem linhas deixaria o operador com um diálogo em
+> branco.
+>
+> `ARQUIVO_MUDOU` sai com `conflicts: []` sempre que a mudança não alcançou
+> nenhuma célula da fila — inclusive no caso mais comum de todos, o de alguém
+> ter salvado a planilha entre a última leitura e a aplicação. **A resposta não
+> diz qual das duas conferências de hash recusou, e não precisa:** a instrução
+> ao operador é a mesma, releia a planilha.
+>
+> Só depois, com `conflicts` preenchido, cada linha decide por `refMissing` —
+> **nunca pelo código**, que não distingue linha removida de valor alterado.
+
 A fila **não** é descartada em nenhum caminho de erro. O operador relê e decide.
 
 | Código | Situação |
 |---|---|
 | 200 | Gravado e validado |
 | 409 | `EXCEL_ABERTO` · `ARQUIVO_MUDOU` · `EDICAO_OBSOLETA` · `NADA_A_APLICAR` · `ESCRITA_EM_ANDAMENTO` |
-| 500 | `ESCRITA_INVALIDA` — backup restaurado **quando a validação pós-escrita falha** |
+| 500 | `ESCRITA_INVALIDA` — três desfechos, distinguidos pelo `detail`; ver a nota abaixo |
 | 503 | `ARQUIVO_INDISPONIVEL` |
 
-> `ESCRITA_INVALIDA` cobre mais de uma falha, e só uma delas restaura o backup.
-> A resposta distingue pelos dois campos: `restored: true` com `backupPath` é a
-> validação pós-escrita; `restored: false` significa que **nada foi gravado** —
-> arquivo somente-leitura, aba resolvida diferente da lida, entrada de fila
-> inadmissível, backup que falhou, ou cirurgia que abortou. `backupPath: null`
-> nesse conjunto indica que a recusa veio antes mesmo da cópia de segurança.
+> `ESCRITA_INVALIDA` cobre desfechos **opostos**, e a presença de `backupPath` no
+> `detail` é o que os separa:
+>
+> | `detail` | O que aconteceu com o arquivo | O que o operador faz |
+> |---|---|---|
+> | ausente | Nada foi gravado — somente-leitura, aba diferente da lida, fila inadmissível, backup que falhou, ou cirurgia que abortou | Corrige a causa e aplica de novo |
+> | `restored: true` + `backupPath` | Gravou, a conferência reprovou, e o backup **foi reposto** | Nada; a planilha está como antes |
+> | `restored: false` + `backupPath` | Gravou, a conferência reprovou, e a restauração **também falhou** | **Repõe o arquivo à mão** a partir do backup |
+>
+> A terceira linha é a mais grave e a menos óbvia: `restored: false` aparece
+> **também** quando nada foi gravado, e a rota não consegue distinguir os dois
+> casos por ele. Quem decide é o guard, por `WriteResult.fileState`
+> (`intacto` · `gravado` · `restaurado` · `incerto`) — inferir o estado do arquivo na rota
+> seria decidir sobre a planilha fora do write-guard (regra inviolável 6).
+> Levantado pelo `revisor-xml` em `H-26`, sobre uma primeira versão que omitia o
+> caminho do backup exatamente no desfecho em que ele é a única saída.
+>
+> **A interface nunca afirma o que não sabe.** Quando o `fetch` rejeita, o
+> cliente não tem como saber se a gravação chegou a acontecer, e a mensagem diz
+> isso em vez de garantir que nada foi gravado (regra inviolável 3).
 
 ---
 
