@@ -306,6 +306,25 @@ export async function reload(): Promise<void> {
 }
 
 /**
+ * Espera a releitura em voo terminar. Resolve na hora quando nao ha nenhuma.
+ *
+ * `watcher.pause()` cancela o AGENDAMENTO, nao uma leitura ja iniciada — o
+ * write-guard precisa disto para nao gravar sob os pes de quem esta lendo. E o
+ * caso-limite de H-26: "aplicacao disparada durante uma releitura aguarda a
+ * releitura terminar".
+ *
+ * **Nao tem timeout, e propaga o que `inFlight` rejeitar.** `reload` transforma
+ * falha de LEITURA em estado 'degradado', mas uma rejeicao vinda do `finally`
+ * ou do logger escaparia por aqui; quem chama e o write-guard, que a contem no
+ * proprio `catch`. Leitura que nunca resolve — caminho de rede, placeholder do
+ * OneDrive — prende a escrita ate reiniciar, limite que a leitura canonica ja
+ * tinha e que este passo herda.
+ */
+export async function settle(): Promise<void> {
+  if (inFlight) await inFlight
+}
+
+/**
  * Recompoe processos a partir de linhas cruas, com o MESMO mapa de cor e os
  * mesmos aliases da leitura corrente.
  *
