@@ -434,6 +434,113 @@ describe('applyCellEdits — achados da revisão adversarial', () => {
     expect(cadeia).toContain('<c r="A1" i="1"/>')
   })
 
+  /**
+   * O mesmo caso sobre um `.xlsx` COMPLETO: `formulas.xlsx` traz a cadeia
+   * declarada em `[Content_Types].xml` e relacionada em
+   * `xl/_rels/workbook.xml.rels`, gerada por `--formulas` a partir de
+   * `basico.xlsx`. Os testes acima montam a entrada dentro do próprio teste, o
+   * que provava o algoritmo contra o entendimento de quem o escreveu.
+   *
+   * A entrada seguinte carrega `l="1"`. O Excel emite `l`, `s`, `t` e `a` nas
+   * entradas de `calcChain`, e a primeira versão desta fixture usava só `r` —
+   * a mesma forma do teste sintético que ela deveria superar. Com isso o
+   * defeito passava: o repasse do `i` casava apenas `<c r="…"/>`, e a cadeia
+   * inteira ficava sem índice de aba em todo arquivo produzido pelo Excel.
+   * Achado do `revisor-xml`.
+   */
+  it('repassa o `i` mesmo quando a entrada seguinte tem outros atributos', () => {
+    const original = fixture('formulas.xlsx')
+    expect(textOf(original, CALC_CHAIN_PATH)).toContain('<c r="I2" i="1"/>')
+    expect(textOf(original, CALC_CHAIN_PATH)).toContain('<c r="I3" l="1"/>')
+
+    const { buffer } = applyCellEdits(
+      original,
+      [{ sourceRow: 2, column: 'I', value: new Date(Date.UTC(2026, 8, 15)) }],
+      SHEET_PATH,
+    )
+
+    const cadeia = textOf(buffer, CALC_CHAIN_PATH)
+    expect(cadeia).not.toContain('r="I2"')
+    expect(cadeia).toContain('<c r="I3" l="1" i="1"/>')
+    expect(cadeia).toContain('<c r="I4"/>')
+
+    // A fórmula saiu e o estilo de data ficou: sem ele o Excel mostraria o
+    // serial cru, que é A-56.
+    const celula = cellOf(sheetOf(buffer), 'I2') ?? ''
+    expect(celula).not.toContain('<f>')
+    expect(celula).toContain('s="167"')
+  })
+
+  // Cadeia que passou por um formatador de XML, ou por outro produtor. As duas
+  // formas são XML legal, e casar só a compacta e adjacente fazia a cadeia
+  // inteira perder o índice de aba. Achado do `revisor-xml`.
+  it.each([
+    [
+      'espaço entre as entradas',
+      '<c r="N9" i="1"/>\n  <c r="A1" l="1"/>',
+      '<c r="A1" l="1" i="1"/>',
+    ],
+    ['fechamento por tag', '<c r="N9" i="1"/><c r="A1" l="1"></c>', '<c r="A1" l="1" i="1"></c>'],
+  ])('repassa o `i` com %s', (_titulo, entradas, esperado) => {
+    const comCadeia = withEntry(
+      fixture('formatado.xlsx'),
+      CALC_CHAIN_PATH,
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        `<calcChain xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${entradas}</calcChain>`,
+    )
+
+    const { buffer } = applyCellEdits(
+      comCadeia,
+      [{ sourceRow: 9, column: 'N', value: 'VALOR FIXO' }],
+      SHEET_PATH,
+    )
+
+    expect(textOf(buffer, CALC_CHAIN_PATH)).toContain(esperado)
+  })
+
+  // As duas formas de fechamento valem nos dois lados. Com a remoção aceitando
+  // só `/>`, duas edições na mesma cadeia deixavam órfã a entrada que a
+  // primeira edição tinha acabado de reescrever. Achado do `revisor-xml`.
+  it('remove a entrada fechada por tag, e não só a auto-fechada', () => {
+    const comCadeia = withEntry(
+      fixture('formatado.xlsx'),
+      CALC_CHAIN_PATH,
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<calcChain xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+        '<c r="N9" i="1"></c><c r="A1" l="1"/></calcChain>',
+    )
+
+    const { buffer } = applyCellEdits(
+      comCadeia,
+      [{ sourceRow: 9, column: 'N', value: 'VALOR FIXO' }],
+      SHEET_PATH,
+    )
+
+    const cadeia = textOf(buffer, CALC_CHAIN_PATH)
+    expect(cadeia).not.toContain('r="N9"')
+    expect(cadeia).toContain('<c r="A1" l="1" i="1"/>')
+  })
+
+  // A seguinte com `i` proprio nao herda nada: sobrescreve-lo trocaria a aba
+  // dela, que e o mesmo defeito na direcao oposta.
+  it('não sobrescreve o `i` próprio da entrada seguinte', () => {
+    const comCadeia = withEntry(
+      fixture('formatado.xlsx'),
+      CALC_CHAIN_PATH,
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        '<calcChain xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+        '<c r="N9" i="1"/><c r="A1" i="3"/></calcChain>',
+    )
+
+    const { buffer } = applyCellEdits(
+      comCadeia,
+      [{ sourceRow: 9, column: 'N', value: 'VALOR FIXO' }],
+      SHEET_PATH,
+    )
+
+    expect(textOf(buffer, CALC_CHAIN_PATH)).toContain('<c r="A1" i="3"/>')
+  })
+
   it('não toca a cadeia de cálculo quando nenhuma fórmula é removida', () => {
     const cadeiaOriginal =
       '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
