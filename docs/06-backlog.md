@@ -2042,6 +2042,42 @@ export function discardAll(): number
 > `29/ago` nos três casos, cores, autofiltro, validação e coluna oculta
 > intactos. Abriu **PD-04** (célula ausente herda `fillId=0` da coluna) e
 > **PD-05** (`calcChain` só tem teste sintético).
+>
+> > **`PD-05` continua aberta — e a tentativa de fechá-la, em 13 e 14/08/2026,
+> > encontrou um defeito real.** Fica registrada aqui porque é o melhor exemplo
+> > que o projeto tem de prova que não prova.
+> >
+> > Faltava uma fixture com cadeia de cálculo: `tools/build_fixtures.py
+> > --formulas` passou a gerar `tests/fixtures/formulas.xlsx` de `basico.xlsx`,
+> > com três fórmulas encadeadas na coluna `I` e `xl/calcChain.xml` declarada em
+> > `[Content_Types].xml` e relacionada em `xl/_rels/workbook.xml.rels`. Editar
+> > a célula da primeira entrada mudou **duas** entradas do zip — a aba e a
+> > cadeia. **Aberta no Excel real: sem aviso de reparo, e o recálculo produziu
+> > as datas dependentes da célula editada.**
+> >
+> > **O `revisor-xml` reprovou assim mesmo, e estava certo.** A primeira versão
+> > da fixture usava entradas só com `r` — a **mesma forma** do teste sintético
+> > que ela deveria superar. O que ela acrescentava era embalagem, não
+> > cobertura. E era justamente a forma não coberta que escondia o defeito: o
+> > repasse do `i` casava apenas `<c r="…"/>`, e o Excel emite também `l`, `s`,
+> > `t` e `a` nessas entradas. Em toda cadeia produzida pelo Excel de verdade o
+> > `i` era **perdido**, deixando a cadeia sem índice de aba — a entrada órfã
+> > que a própria `PD-05` chama de hipótese mais provável de aviso de reparo.
+> > Corrigido, com a segunda entrada da fixture levando `l="1"` e um teste que
+> > **reprova o código anterior**, conferido revertendo-o.
+> >
+> > O critério da pendência tinha sido reescrito no ato de fechá-la — ela pede
+> > arquivo "produzido pelo próprio Excel", e o entregue foi produzido por nós e
+> > apenas **aberto** no Excel. A diferença não era formal: era exatamente a
+> > forma de cadeia do defeito. `PD-05` segue aberta, com o critério original.
+> >
+> > **Achado junto:** o cache de valor das células **dependentes** não é
+> > invalidado — não se marca `fullCalcOnLoad` em `<calcPr>` —, e elas exibiram
+> > o valor antigo até um recálculo manual. Não é corrupção, é o cache do Excel
+> > funcionando como projetado, mas é enganoso. Inalcançável na planilha real:
+> > medido em 13/08/2026, lendo o arquivo em memória, a aba `2026` tem **zero**
+> > células com fórmula e nenhuma `calcChain` no zip. Registrado no cabeçalho de
+> > `src/io/xlsx-surgeon.ts` em vez de virar pendência sem gatilho.
 
 **Objetivo:** trocar o valor de células específicas sem reserializar o
 workbook, mantendo cores, filtros, comentários, validações e larguras.

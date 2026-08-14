@@ -528,6 +528,176 @@ if len(sys.argv) > 1 and sys.argv[1] == '--enriquecer':
                          else 'tests/fixtures/formatado.xlsx')
     raise SystemExit(0)
 
+
+# --- Fixture da cadeia de calculo -------------------------------------------
+#
+# PD-05: a remocao de entrada em xl/calcChain.xml — incluindo o repasse do
+# atributo `i` — so tinha teste sobre XML montado a mao DENTRO do teste. Nenhuma
+# fixture trazia a cadeia: o [Content_Types].xml nao a declarava, e sem a
+# declaracao o arquivo nem chega a ser um .xlsx valido com cadeia.
+#
+# Esta fixture fecha metade da lacuna — a cirurgia passa a ser exercida sobre um
+# zip COMPLETO, com a cadeia declarada e relacionada. A outra metade ela NAO
+# fecha, e a distincao custou caro: PD-05 pede um arquivo com formula SALVO PELO
+# PROPRIO EXCEL, e este e montado por nos. Abri-lo no Excel prova que ele e
+# valido, nao que reproduz o que o Excel emite — e foi justamente uma forma de
+# cadeia ausente daqui que escondeu um defeito real (ver o bloco de H-24 em
+# docs/06-backlog.md). A pendencia segue aberta.
+#
+# Deriva de basico.xlsx, ja versionada, e por isso NAO exige o arquivo real:
+#   python3 tools/build_fixtures.py --formulas
+#
+# As formulas vao nas celulas de DATA da coluna I, que sao numericas: trocar
+# celula de texto exigiria mexer no `count` de sharedStrings, que conta
+# REFERENCIAS, e o assunto desta fixture e a cadeia, nao o pool de strings.
+# Cada formula devolve exatamente o serial que ja estava la, entao a planilha
+# abre no Excel mostrando as mesmas datas de antes.
+
+CALC_CHAIN_PATH = 'xl/calcChain.xml'
+CALC_CHAIN_TYPE = ('application/vnd.openxmlformats-officedocument.'
+                   'spreadsheetml.calcChain+xml')
+CALC_CHAIN_REL = ('http://schemas.openxmlformats.org/officeDocument/2006/'
+                  'relationships/calcChain')
+# sheetId da aba 2026 no workbook real, de onde as fixtures derivam.
+SHEET_ID_2026 = 1
+
+# (celula, celula de referencia, atributos extras na entrada da cadeia). A ordem
+# e a da cadeia, e so a PRIMEIRA entrada carrega o atributo `i`: as seguintes o
+# herdam. E exatamente esse repasse que o codigo de H-24 precisa fazer ao
+# remover a primeira.
+#
+# A segunda entrada leva `l="1"` de proposito. O Excel emite `l`, `s`, `t` e `a`
+# nessas entradas, e a primeira versao desta fixture usava so `r` — a MESMA
+# forma do teste sintetico que ela deveria superar. Com isso ela nao alcancava o
+# defeito que o revisor-xml encontrou: o repasse do `i` casava apenas a forma
+# minima, e a perdia em toda cadeia produzida pelo Excel de verdade.
+#
+# O DESLOCAMENTO de cada formula e calculado dos seriais que estao nas celulas,
+# nunca escrito a mao: `I2+9` codificado presumia as datas literais de
+# FIXTURES['basico.xlsx'], e mudar uma delas deixaria a formula contradizendo o
+# proprio cache — estado que o Excel nunca emite, numa fixture cuja unica razao
+# de existir e ser substituta fiel de um arquivo dele. Nada ficaria vermelho:
+# nenhuma assercao da suite le esses <v>. Achado do revisor-xml.
+FORMULAS = [('I2', 'K2', ''), ('I3', 'I2', ' l="1"'), ('I4', 'I3', '')]
+
+
+def _proxima_rel_id(rels):
+    usados = [int(m) for m in re.findall(r'Id="rId(\d+)"', rels)]
+    return 'rId%d' % (max(usados) + 1 if usados else 1)
+
+
+def gerar_formulas(origem='tests/fixtures/basico.xlsx',
+                   destino='tests/fixtures/formulas.xlsx'):
+    """Cria uma fixture com formulas E a cadeia de calculo que as indexa."""
+    with zipfile.ZipFile(origem) as src:
+        entradas = [(i, src.read(i.filename)) for i in src.infolist()]
+
+    saida = []
+    for info, data in entradas:
+        nome = info.filename
+
+        if nome == SHEET:
+            d = data.decode('utf-8')
+
+            def celula(xml, referencia):
+                achado = re.search(r'<c r="%s"[^>]*?(?:/>|>.*?</c>)' % referencia, xml)
+                if not achado:
+                    raise SystemExit('celula %s ausente da aba' % referencia)
+                return achado
+
+            # Os seriais sao lidos ANTES de qualquer substituicao: `I3` referencia
+            # `I2`, que nesse ponto ja teria virado formula, e o <v> continuaria
+            # la — mas ler tudo de uma vez torna a ordem irrelevante.
+            def serial_de(referencia):
+                bruto = celula(d, referencia).group(0)
+                # Celula numerica nao declara `t=`: o tipo padrao ja e numero.
+                # Qualquer `t=` presente significa outra coisa — `s` guarda o
+                # INDICE do pool de strings em <v>, e somar deslocamento a ele
+                # daria #VALUE! no Excel com o int() engolindo o indice sem
+                # reclamar; `b`, `str` e `e` quebram de outros jeitos.
+                if re.search(r'\st="', bruto):
+                    raise SystemExit('celula %s nao e numerica' % referencia)
+                valor = re.search(r'<v>([^<]*)</v>', bruto)
+                if not valor or not re.fullmatch(r'-?\d+', valor.group(1)):
+                    raise SystemExit('celula %s nao guarda um serial inteiro' % referencia)
+                return int(valor.group(1))
+
+            for ref, base, _ in FORMULAS:
+                if ref == base:
+                    raise SystemExit('%s referenciaria a si mesma' % ref)
+
+            seriais = {ref: serial_de(ref) for ref, _, _ in FORMULAS}
+            seriais.update({base: serial_de(base) for _, base, _ in FORMULAS})
+
+            for referencia, base, _ in FORMULAS:
+                alvo = celula(d, referencia)
+                bruto = alvo.group(0)
+                if '<f' in bruto:
+                    print('  %s ja tem formula, nada a fazer'
+                          % os.path.basename(destino))
+                    return
+                estilo = re.search(r's="(\d+)"', bruto)
+                delta = seriais[referencia] - seriais[base]
+                d = d[:alvo.start()] + '<c r="%s"%s><f>%s%+d</f><v>%d</v></c>' % (
+                    referencia,
+                    ' s="%s"' % estilo.group(1) if estilo else '',
+                    base,
+                    delta,
+                    seriais[referencia],
+                ) + d[alvo.end():]
+            saida.append((info, d.encode('utf-8')))
+            continue
+
+        if nome == '[Content_Types].xml':
+            d = data.decode('utf-8')
+            if 'calcChain' not in d:
+                d = d.replace('</Types>', '<Override PartName="/%s"'
+                              ' ContentType="%s"/></Types>'
+                              % (CALC_CHAIN_PATH, CALC_CHAIN_TYPE))
+            saida.append((info, d.encode('utf-8')))
+            continue
+
+        if nome == 'xl/_rels/workbook.xml.rels':
+            d = data.decode('utf-8')
+            if 'calcChain' not in d:
+                d = d.replace('</Relationships>', '<Relationship Id="%s"'
+                              ' Type="%s" Target="calcChain.xml"/></Relationships>'
+                              % (_proxima_rel_id(d), CALC_CHAIN_REL))
+            saida.append((info, d.encode('utf-8')))
+            continue
+
+        saida.append((info, data))
+
+    cadeia = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n' \
+             '<calcChain xmlns="http://schemas.openxmlformats.org/' \
+             'spreadsheetml/2006/main">%s</calcChain>' % ''.join(
+                 '<c r="%s"%s%s/>' % (
+                     ref, ' i="%d"' % SHEET_ID_2026 if n == 0 else '', extras)
+                 for n, (ref, _, extras) in enumerate(FORMULAS))
+
+    # `writestr` com nome em str carimba a hora de parede, e a fixture deixaria
+    # de ser byte-reproduzivel: regenerar produziria diff binario integral no
+    # git, sem uma unica mudanca de conteudo. As outras entradas carregam o
+    # ZipInfo copiado da origem; esta precisa de um explicito, com a mesma data
+    # que o zipfile usa por padrao. Achado do revisor-xml.
+    entrada_cadeia = zipfile.ZipInfo(CALC_CHAIN_PATH, date_time=(1980, 1, 1, 0, 0, 0))
+    entrada_cadeia.compress_type = zipfile.ZIP_DEFLATED
+    entrada_cadeia.external_attr = 0o600 << 16
+
+    os.makedirs(os.path.dirname(destino), exist_ok=True)
+    with zipfile.ZipFile(destino, 'w', zipfile.ZIP_DEFLATED) as out:
+        for info, data in saida:
+            out.writestr(info, data)
+        out.writestr(entrada_cadeia, cadeia)
+
+    print('  %-34s %d formulas, cadeia declarada e relacionada'
+          % (os.path.basename(destino), len(FORMULAS)))
+
+
+if len(sys.argv) > 1 and sys.argv[1] == '--formulas':
+    gerar_formulas(*sys.argv[2:4])
+    raise SystemExit(0)
+
 print('Gerando fixtures a partir de %r\n' % SRC)
 _src = zipfile.ZipFile(SRC)
 load_row_styles(_src)
@@ -538,4 +708,10 @@ assert_general_styles(_src)
 print()
 for name, (rows, note) in FIXTURES.items():
     write_fixture(os.path.join(OUT, name), rows, note)
+
+# Derivada, e nao gerada do arquivo real: precisa vir DEPOIS de basico.xlsx, e
+# no caminho padrao. Fora dele, regenerar as fixtures deixaria formulas.xlsx
+# apontando para uma basico.xlsx que nao existe mais — e os seriais que ela
+# copia para o cache das formulas silenciosamente errados.
+gerar_formulas(os.path.join(OUT, 'basico.xlsx'), os.path.join(OUT, 'formulas.xlsx'))
 print('\nOK -> %s/' % OUT)
