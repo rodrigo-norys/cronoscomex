@@ -17,8 +17,26 @@ import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
  * xl/calcChain.xml, ao remover formula, para nao deixar entrada orfa apontando
  * para celula que nao calcula mais.
  *
- * DOIS LIMITES conhecidos, nenhum alcancavel pelas fixtures nem pela planilha
- * real, ambos levantados pelo revisor-xml em H-24:
+ * A remocao na cadeia repassa o atributo `i` — o indice da aba — para a entrada
+ * seguinte, com qualquer conjunto de atributos (o Excel emite tambem `l`, `s`,
+ * `t` e `a`), nas duas formas de fechamento e com espaco entre as entradas.
+ * Entrada que ja declara `i` proprio nao herda nada e nao e tocada. **A
+ * seguinte precisa ser a proxima entrada da cadeia**: comentario ou elemento
+ * estranho entre as duas faz o `i` se perder, e nenhum produtor conformante os
+ * emite ali.
+ *
+ * O QUE NAO SE FAZ, e a consequencia: o cache de valor das celulas que
+ * DEPENDEM da formula removida nao e invalidado — nao se marca
+ * fullCalcOnLoad em <calcPr>. As dependentes exibem o valor antigo ate um
+ * recalculo manual. Nao e corrupcao, e o cache do Excel funcionando como
+ * projetado, mas e enganoso quando existe formula dependente da celula editada.
+ * Marcar fullCalcOnLoad e a saida se isso passar a importar. Hoje nao importa:
+ * a aba 2026 nao tem formula alguma — ver o bloco de H-24 em
+ * docs/06-backlog.md, onde a medicao e a data estao registradas.
+ *
+ * QUATRO LIMITES conhecidos, nenhum alcancavel pelas fixtures nem pela planilha
+ * real. Os dois primeiros vieram do revisor-xml em H-24; os dois ultimos, dele
+ * tambem, ao revisar a fixture de cadeia (ver PD-05):
  *
  * 1. Se xl/sharedStrings.xml NAO existir no zip, gravar texto cria a entrada
  *    sem declara-la em [Content_Types].xml nem em xl/_rels/workbook.xml.rels,
@@ -29,6 +47,15 @@ import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
  *    produziria XML corrompido. Hoje e inalcancavel porque ensureDateFormat
  *    sai antes quando a tabela esta vazia: protecao ACIDENTAL, nao deliberada,
  *    e por isso anotada aqui em vez de silenciada.
+ * 3. removeFromCalcChain casa a entrada por `r=` e NAO desambigua a aba. Duas
+ *    abas com formula na mesma coordenada fariam a remocao acertar a entrada
+ *    da aba errada, deixando orfa a da aba alvo. Desambiguar exigiria resolver
+ *    o sheetId aqui dentro, cruzando xl/workbook.xml com os rels — o que este
+ *    modulo nao faz e nao precisa fazer enquanto a planilha nao tiver formula.
+ * 4. Remover a ULTIMA formula esvazia a cadeia, e <calcChain/> sem nenhum <c>
+ *    viola o schema (CT_CalcChain exige minOccurs="1"). O Excel, nessa
+ *    situacao, apaga a parte inteira e a declaracao dela. Alcancavel so num
+ *    arquivo cujas formulas sejam TODAS editadas de uma vez.
  *
  * Nao foram tratados por escolha: cobri-los exigiria fixture que o gerador nao
  * produz, e o codigo nao verificado por teste e o que engana. H-25 tem o
@@ -212,16 +239,38 @@ function assertNotSharedFormulaMaster(cell: string, reference: string): void {
 // A entrada da cadeia de calculo herda `i` — o indice da aba — da anterior.
 // Remover quem o declara sem repassa-lo mudaria a aba das entradas seguintes,
 // e o Excel abriria pedindo reparo.
+//
+// A seguinte e casada por `<c` e QUALQUER atributo, nao por `<c r="…"/>`: o
+// Excel emite tambem `l`, `s`, `t` e `a` nessas entradas, e casar so a forma
+// minima perdia o `i` justamente nas cadeias que o Excel produz — deixando a
+// cadeia inteira sem indice de aba, que e a entrada orfa que esta funcao existe
+// para evitar. Achado do revisor-xml ao fechar PD-05.
+//
+// As DUAS formas de fechamento valem nos DOIS lados. Ampliar so o repasse
+// deixava a funcao capaz de produzir `<c …></c>` e incapaz de remove-la depois:
+// duas edicoes na mesma cadeia geravam a orfa que a primeira tinha acabado de
+// evitar.
 function removeFromCalcChain(calcChainXml: string, reference: string): string {
-  const match = new RegExp(`<c r="${reference}"(?:\\s[^>]*?)?/>`).exec(calcChainXml)
+  const match = new RegExp(`<c r="${reference}"(?:\\s[^>]*?)?(?:/>|></c>)`).exec(calcChainXml)
   if (!match) return calcChainXml
 
   const inheritedIndex = readAttribute(match[0], 'i')
   const rest = calcChainXml.slice(match.index + match[0].length)
   const patched =
-    inheritedIndex !== null && /^<c r="[^"]*"\/>/.test(rest)
-      ? rest.replace(/^<c r="([^"]*)"\/>/, `<c r="$1" i="${inheritedIndex}"/>`)
-      : rest
+    inheritedIndex === null
+      ? rest
+      : // O espaco inicial e a forma `<c ...></c>` sao tolerados porque XML
+        // legal os permite: uma cadeia que tenha passado por um formatador
+        // perderia o indice de aba inteiro se so a forma compacta casasse.
+        // Entrada seguinte que ja declara `i` proprio nao herda nada, e
+        // sobrescreve-lo trocaria a aba dela.
+        rest.replace(
+          /^(\s*)<c\b([^>]*?)(\/>|><\/c>)/,
+          (whole, spacing: string, attributes: string, closing: string) =>
+            readAttribute(whole, 'i') === null
+              ? `${spacing}<c${attributes} i="${inheritedIndex}"${closing}`
+              : whole,
+        )
 
   return calcChainXml.slice(0, match.index) + patched
 }
