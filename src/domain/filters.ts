@@ -229,6 +229,31 @@ export function parseFilters(query: Record<string, unknown>): FilterSet {
   }
 }
 
+/**
+ * Se algum dos onze filtros esta ativo.
+ *
+ * A serie mensal de `H-28` precisa distinguir "sem filtro" de "filtro que casa
+ * tudo": sem filtro ela sai inteira do arquivo, e com filtro e restrita aos REF
+ * que casam hoje. Tratar os dois casos igual faria uma linha removida da
+ * planilha apagar o passado dela da serie.
+ */
+export function hasAnyFilter(filters: FilterSet): boolean {
+  return (
+    filters.etaFrom !== null ||
+    filters.etaTo !== null ||
+    filters.importerOutsideRj !== null ||
+    filters.client.length > 0 ||
+    filters.importer.length > 0 ||
+    filters.vessel.length > 0 ||
+    filters.agent.length > 0 ||
+    filters.goods.length > 0 ||
+    filters.category.length > 0 ||
+    filters.responsible.length > 0 ||
+    filters.channel.length > 0 ||
+    filters.port.length > 0
+  )
+}
+
 /** Um valor disponivel num filtro, com a grafia de origem e quantos o usam. */
 export interface FilterOption {
   key: string

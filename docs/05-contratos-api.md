@@ -353,15 +353,12 @@ por processo na exibição** (A-60).
 
 ### `GET /api/history/monthly` **[F]**
 
-> **Pendente de `H-21`.** Documentada, ainda **não registrada** no
-> servidor. `tests/repo/contratos.test.ts` cobra a existência assim que a
-> história for concluída no backlog.
-
-Série mensal da Página Histórico, derivada de `data/history.jsonl`.
+Série mensal da Página Histórico, derivada de `data/history.jsonl`. Servida
+desde `H-28`; a tela que a consome é `H-21`.
 
 | Parâmetro | Tipo | Padrão |
 |---|---|---|
-| `months` | `number` | `12`. De 1 a 60 |
+| `months` | `number` | `12`. De 1 a 60. Fora da faixa devolve `400 FILTRO_INVALIDO` |
 
 ```jsonc
 {
@@ -373,8 +370,22 @@ Série mensal da Página Histórico, derivada de `data/history.jsonl`.
 }
 ```
 
+Cada ponto é o **estado ao fim do mês**, não a contagem de eventos dele: um mês
+sem evento algum repete os valores do anterior, porque ausência de mudança não é
+ausência de processos.
+
 `truncated: true` indica que a janela pedida excede o histórico existente — a
-série começa quando a aplicação começou, não antes.
+série começa quando a aplicação começou, não antes. Sem histórico algum,
+`series` é `[]` e `historyStartedAt` é `null`: a Página Histórico precisa
+distinguir "ainda não há dado" de "há dado, e ele é zero" (A-43).
+
+**Limite do recorte por filtro.** A rota é marcada **[F]**, mas o evento gravado
+carrega apenas `ref` — cliente, navio, agente e ETA vivem na planilha, não no
+histórico. Com filtro ativo, os REF são resolvidos contra a **leitura atual**,
+então a série recortada descreve o passado dos processos que casam hoje; um
+processo cujo navio mudou aparece sob o navio de agora, e um que saiu da planilha
+não aparece sob filtro algum. **Sem filtro a série sai inteira do arquivo**, e é
+essa forma que é estável no tempo.
 
 ---
 

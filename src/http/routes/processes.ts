@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
+import type { AppConfig } from '../../app/config.ts'
 import { store as defaultStore, type StoreAccess } from '../../app/process-store.ts'
-import { toIsoDay } from '../../domain/date-window.ts'
+import { today as currentDay, toIsoDay } from '../../domain/date-window.ts'
 import { normKey } from '../../domain/normalizer.ts'
 import { describeAnomaly } from '../../domain/process-builder.ts'
 import {
@@ -22,6 +23,7 @@ import type {
   StatusCategory,
 } from '../../domain/types.ts'
 import type { PendingEdit } from '../../io/edit-queue.ts'
+import { daysInCurrentCategory, eventsOf } from '../../io/history-store.ts'
 import { apiError } from '../errors.ts'
 import { filteredProcesses } from '../filter-request.ts'
 
@@ -77,7 +79,14 @@ export interface AnomalyDetail {
   detail: string
 }
 
-/** Vazio ate `H-28`, que e quem grava historico. A forma vem do contrato. */
+/**
+ * Uma mudanca de categoria, para o detalhe (`H-28`).
+ *
+ * `from` nao e anulavel de proposito, e por isso o detalhe **descarta** a
+ * primeira aparicao do REF — que no arquivo tem `from: null`. Ela e o marco
+ * inicial da serie, nao uma transicao; exibi-la escreveria "— para Em
+ * andamento" nos 649 processos no primeiro dia de uso.
+ */
 export interface StatusChangeDto {
   ts: string
   from: StatusCategory
@@ -90,12 +99,11 @@ export interface ProcessDetailResponse {
   pendingEdits: PendingEdit[]
   statusHistory: StatusChangeDto[]
   /**
-   * `null` enquanto nao ha historico gravado (`H-28`).
+   * `null` quando o REF ainda nao tem evento algum.
    *
    * O contrato documentado trazia `0`, e zero aqui **afirma** que a categoria
-   * mudou hoje — indistinguivel de "nao ha como saber". Sem historico seria
-   * sempre zero, mentindo em 649 processos. Mesmo argumento de `averageDays`
-   * em IND-22 e do traco de ALE-06.
+   * mudou hoje — indistinguivel de "nao ha como saber". Mesmo argumento de
+   * `averageDays` em IND-22 e do traco de ALE-06.
    */
   daysInCurrentCategory: number | null
 }
@@ -189,7 +197,9 @@ function parseInteger(raw: string | undefined, field: string, min: number, max: 
  */
 export function registerProcessesRoute(
   app: FastifyInstance,
+  config: AppConfig,
   store: StoreAccess = defaultStore,
+  historyPath?: string,
 ): void {
   /**
    * `GET /api/processes/:ref` — o detalhe de UM processo (`H-22`).
@@ -238,12 +248,20 @@ export function registerProcessesRoute(
         code,
         detail: describeAnomaly(code, process),
       })),
-      // Os tres campos abaixo ficam vazios ate H-23 e H-28. Vazio de verdade,
-      // nunca preenchido com placeholder: a tela precisa poder dizer que o
-      // historico ainda nao comecou, e nao que o processo nunca mudou.
       pendingEdits: pendingForRef,
-      statusHistory: [],
-      daysInCurrentCategory: null,
+      // So as mudancas de CATEGORIA: a primeira aparicao do REF (`from: null`)
+      // nao e mudanca, e o evento so de canal tem `from` igual a `to`. Ambos
+      // existem no arquivo e sao insumo da serie; nenhum dos dois e uma linha
+      // de "mudou de X para Y" que o operador possa ler.
+      statusHistory: eventsOf(process.ref, { path: historyPath })
+        .filter((event) => event.from !== null && event.from !== event.to)
+        .map((event) => ({ ts: event.ts, from: event.from as StatusCategory, to: event.to })),
+      daysInCurrentCategory: daysInCurrentCategory(
+        process.ref,
+        currentDay(config.timezone),
+        config.timezone,
+        { path: historyPath },
+      ),
     }
     return reply.code(200).send(body)
   })
