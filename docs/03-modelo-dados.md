@@ -362,11 +362,11 @@ dado de negócio.
 ### 3.1. `data/history.jsonl` — histórico de mudanças de categoria
 
 Append-only, uma linha JSON por evento. Escrito ao final de cada leitura, para
-os processos cuja categoria diferiu da última conhecida.
+os processos cuja categoria **ou canal** diferiram do último estado conhecido.
 
 ```jsonc
-{"ts":"2026-08-03T14:22:31.004Z","ref":"FT498.26","from":"em_andamento","to":"desembaracado","sourceRow":475}
-{"ts":"2026-08-03T14:22:31.004Z","ref":"FT533.26","from":null,"to":"em_desembaraco","sourceRow":483}
+{"ts":"2026-08-03T14:22:31.004Z","ref":"FT498.26","from":"em_andamento","to":"desembaracado","channel":"nenhum","sourceRow":475}
+{"ts":"2026-08-03T14:22:31.004Z","ref":"FT533.26","from":null,"to":"em_desembaraco","channel":"vermelho","sourceRow":483}
 ```
 
 | Campo | Tipo | Significado |
@@ -375,7 +375,19 @@ os processos cuja categoria diferiu da última conhecida.
 | `ref` | string | REF do processo |
 | `from` | `StatusCategory \| null` | Categoria anterior. `null` na primeira vez que o REF é visto |
 | `to` | `StatusCategory` | Categoria nova |
+| `channel` | `CustomsChannel` | Canal no instante do evento |
 | `sourceRow` | number | Linha na planilha no momento do evento |
+
+**Por que `channel` está aqui**, decidido em `H-28`: a Página Histórico pede
+evolução mensal de Canal Vermelho (RF-14, A-43), e o canal vem da **cor da
+linha** (IND-06), nunca do STATUS — nenhuma agregação de `from`/`to` o produz.
+Sem gravá-lo, a terceira medida da série seria inderivável, e o arquivo é
+append-only: mês que passa sem registro não se recupera depois.
+
+**Um evento pode ter `from` igual a `to`**: é o caso em que só o canal mudou. A
+contagem de dias parados (ALE-06) considera apenas os eventos em que a categoria
+de fato mudou — se considerasse todos, trocar a cor de uma linha zeraria o
+contador e o alerta deixaria de disparar.
 
 **Destrava:** ALE-06 ("Processos parados", via `ts` do último evento de cada
 REF) e a Página Histórico (série mensal por agregação dos eventos). Resolve

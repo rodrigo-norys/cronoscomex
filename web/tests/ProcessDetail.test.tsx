@@ -55,7 +55,7 @@ describe('status original ao lado da categoria', () => {
     ).toBeTruthy()
   })
 
-  // `daysInCurrentCategory` e `null` ate H-28: zero afirmaria mudanca hoje.
+  // `null` e REF sem evento no historico; zero afirmaria que mudou hoje.
   it('exibe traco em dias na categoria, e nao zero', async () => {
     api.serveProcessDetail(processDetailFixture({ daysInCurrentCategory: null }))
     renderPage()
@@ -124,19 +124,35 @@ describe('anomalias com a explicacao', () => {
 
 describe('historico de categoria', () => {
   /**
-   * Duas ausências diferentes. Até `H-28` a lista está vazia **porque não há
-   * histórico**, não porque o processo nunca mudou — dizer a segunda afirmaria
-   * estabilidade que ninguém mediu.
+   * Duas ausências diferentes, e `daysInCurrentCategory` é o que as separa.
+   * Sem evento algum a lista está vazia **porque o histórico não conhece o
+   * processo** — dizer "nunca mudou" afirmaria estabilidade que ninguém mediu.
    */
-  it('explica que o historico ainda nao e gravado, sem afirmar estabilidade', async () => {
-    api.serveProcessDetail(processDetailFixture({ statusHistory: [] }))
+  it('diz que nao ha evento algum quando o historico nao conhece o processo', async () => {
+    api.serveProcessDetail(processDetailFixture({ statusHistory: [], daysInCurrentCategory: null }))
     renderPage()
 
     const historico = await bloco('Histórico de categoria')
 
-    expect(within(historico).getByText(/começa em/)).toBeTruthy()
-    expect(within(historico).getByText(/não haverá retroatividade/)).toBeTruthy()
-    expect(within(historico).queryByText(/nunca mudou de categoria\./)).toBeNull()
+    expect(within(historico).getByText(/Nenhum evento registrado/)).toBeTruthy()
+    expect(within(historico).getByText(/não há retroatividade/)).toBeTruthy()
+    expect(within(historico).queryByText(/Nenhuma mudança de categoria desde/)).toBeNull()
+  })
+
+  /**
+   * O processo é conhecido e não mudou. Aqui "nenhuma mudança" é medido, e
+   * declarar o que **não** entra na lista evita que o operador leia a ausência
+   * como defeito quando trocou a cor da linha e nada apareceu.
+   */
+  it('diz que nao houve mudanca quando o processo e conhecido e estavel', async () => {
+    api.serveProcessDetail(processDetailFixture({ statusHistory: [], daysInCurrentCategory: 9 }))
+    renderPage()
+
+    const historico = await bloco('Histórico de categoria')
+
+    expect(within(historico).getByText(/Nenhuma mudança de categoria desde/)).toBeTruthy()
+    expect(within(historico).getByText(/trocas de cor da linha não aparecem/)).toBeTruthy()
+    expect(within(historico).queryByText(/Nenhum evento registrado/)).toBeNull()
   })
 
   it('exibe os eventos em ordem cronologica quando existirem', async () => {
