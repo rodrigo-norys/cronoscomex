@@ -2502,6 +2502,81 @@ o painel relê.
 
 ### H-27 — Editar os campos codificados em cor
 
+> ✅ **CONCLUÍDA em 17/08/2026.** 80 testes próprios — 23 em
+> `tests/io/xlsx-surgeon-style.test.ts`, 13 em `tests/http/process-color.test.ts`,
+> 12 em `web/tests/ColorFieldsForm.test.tsx`, mais 32 acrescentados a
+> `write-guard`, `color-mapper`, `edit-queue`, `color-map-loader` e
+> `AplicarAlteracoes`; suíte total em **1040**. Oito divergências do plano
+> resolvidas na abertura, **duas bloqueantes**.
+>
+> **A primeira bloqueante: a fila não comportava edição de cor.** `EditCommand`
+> era tipado `field: EditableField`, e nenhum dos três campos está em
+> `EDITABLE_FIELDS` — a admissibilidade de `H-25` recusaria a fila **inteira**
+> com `ESCRITA_INVALIDA`, inclusive as edições de texto legítimas. Resolvido com
+> registro discriminado por `kind` na mesma fila; `kind` ausente vale `'field'`,
+> então o `.jsonl` gravado antes desta história segue válido sem migração. Mesma
+> fila, e não uma segunda, porque a aplicação é atômica: um backup, uma
+> gravação, uma validação, uma rotação.
+>
+> **A segunda: "exatamente uma entrada do mapa" era impossível de satisfazer.**
+> O mapa real tem **9 entradas para 6 combinações** — `indefinido/nenhum/false`
+> casa com verde tom A, verde tom B e branco; `colaborador2/nenhum/false`, com
+> os dois roxos (A-48). A regra literal recusaria 3 das 9, entre elas o verde,
+> que cobre 477 das 649 linhas. Passou a ser **"pelo menos uma, e a primeira na
+> ordem do arquivo vence"** — o tom canônico, o mesmo critério que o caso-limite
+> do verde tom B já pressupunha. **Consequência aceita pelo usuário:** a
+> interface oferece as **6** combinações representáveis, rotuladas pela cor que
+> será gravada; branco e os tons B ficam legíveis e **não graváveis**.
+>
+> `GET /api/color-options` nasceu daí, fora do contrato fixado: sem ela a
+> interface carregaria uma cópia das combinações, que divergiria de
+> `config/color-map.json` no primeiro ajuste — oferecendo cor que a escrita não
+> grava. `rowsRepainted` entrou em `WriteResult` pelo mesmo motivo de honestidade:
+> uma troca de cor toca 12 células (A-44) sem gravar valor, e somá-la a
+> `cellsWritten` diria ao operador que ele gravou doze coisas.
+>
+> **O `revisor-xml` foi invocado quatro vezes e reprovou três.** Cinco defeitos
+> reais, **um deles herdado de `H-24`**, e nenhum pego pela suíte.
+>
+> (1) **A leitura de `s=` varria o elemento inteiro, não a tag de abertura.**
+> Numa célula de texto inline cujo conteúdo contenha ` s="`, `readAttribute`
+> casava o valor de dentro do **texto**, e a repintura partia do estilo errado —
+> trocando fonte e borda, que é a classe de dano de A-49. Eu havia protegido a
+> escrita (`withStyleAttribute`) e esquecido a leitura. **O mesmo defeito existia
+> em `writeCell` desde `H-24`**, silencioso; os dois passaram a usar `openTagOf`.
+>
+> (2) **A aplicação reescrevia a planilha inteira sem mudar um byte.** O
+> operador reconfirma a cor que a linha já tem — o caminho **mais provável**,
+> porque o formulário chega na combinação corrente — e o guard gravava assim
+> mesmo: mesmo XML recomprimido, ~2% maior, hash e `mtime` novos, um slot de
+> backup gasto, OneDrive reenviando o arquivo e o observador relendo. A promessa
+> "nada é gravado" era **emenda minha ao backlog que não estava no código**.
+> Resolvido invertendo cirurgia e backup — ela é pura, opera em memória —, com
+> ramo que devolve sucesso, `fileState: 'intacto'` e `backupPath: null`.
+> `docs/04-arquitetura.md §3.2` traz a emenda do diagrama.
+>
+> (3) **Criar célula ausente produzia linha colorida sem bordas.** A célula
+> criada herdaria `<col style="162">`, com `borderId="0"`. Medido antes de
+> decidir: **744 linhas de dados, zero células ausentes em A–L** — o ramo era
+> inalcançável em produção e danoso quando alcançável. Deixou de criar.
+>
+> (4) `rowsRepainted` contava linhas **pedidas**, não pintadas. (5) `hasFill`
+> contava `<fill>` no arquivo inteiro, e `<dxf>` inflaria o limite. Ambos com
+> teste.
+>
+> **Quatro pontos do plano estavam errados e foram emendados**, cada um com a
+> medição e a data (regra inviolável 1): a herança de estilo — que é
+> célula → linha com `customFormat` → **coluna** → `cellXfs[0]`, e não
+> "`styleId 0`" —, a combinação já vigente que **não** grava, a célula ausente
+> que não é criada, e o `400 CORPO_INVALIDO` para entrada sem `fillId`, que é
+> **inalcançável**: `loadColorMap` derruba a partida antes.
+>
+> **Conferido contra a planilha real, sobre cópia:** 30 entradas no zip, **28
+> idênticas** — só `sheet1.xml` e `styles.xml` mudam, e as três abas fora de
+> escopo saem byte a byte iguais. `styleId 165` → 290 novo, com `fillId` 2 → 8 e
+> **borda 5 e fonte 1 preservadas**; `cellXfs` 290 → 294, `count` conferindo e
+> todos os anteriores intactos; M a P inalteradas (A-44).
+
 **Objetivo:** alterar responsável, canal e localização do importador, gravando a
 mudança como troca de estilo da linha.
 
@@ -2570,18 +2645,50 @@ preenchimento próprio e **não** são alteradas.
   novo.
 
 **Casos-limite:**
-- Célula sem atributo `s=` → tratada como `styleId 0`; o atributo é
-  acrescentado com o `xf` resultante.
-- Combinação que já é a atual → aceita e gravada; o resultado é idêntico, e
-  nenhum `xf` novo é criado.
+- Célula sem atributo `s=` → o atributo é acrescentado com o `xf` resultante,
+  partindo do estilo que **já governa a célula**: célula → linha com
+  `customFormat="1"` → **coluna** → `cellXfs[0]`.
+
+  > **Emenda de `H-27` (17/08/2026).** Esta linha dizia "tratada como
+  > `styleId 0`", e isso está **errado** — a precedência acima é a do OOXML, e é
+  > a que o Excel aplica. Medido em `tests/fixtures/cores.xlsx`: `cellXfs[0]` é
+  > `(numFmt 0, font 0, fill 0, border 0)` sem alinhamento, enquanto as 16
+  > `<col>` declaram `style="162"` = `fontId 1` + `alignment center`. Partir do
+  > `xf` zero trocaria **fonte e alinhamento** de uma célula que só deveria
+  > mudar de preenchimento — a classe de dano que A-49 existe para impedir. É a
+  > mesma herança que `writeCell` usa desde `H-24`.
+- Combinação que já é a atual → aceita, e **nada é gravado**: nenhum `xf` novo,
+  nenhum byte alterado, `rowsRepainted` zero.
+
+  > **Emenda de `H-27` (17/08/2026).** Dizia "aceita e **gravada**; o resultado
+  > é idêntico". Gravar produziria backup, mudança de hash e disparo do
+  > observador para uma alteração que não altera nada. A aplicação aceita a
+  > edição — não é erro pedi-la — e a cirurgia não escreve.
+- **Célula ausente em A–L → não é criada.** Ela já é governada pelo estilo da
+  coluna, cujo `borderId` é zero: criá-la com o preenchimento novo deixaria a
+  linha colorida e **sem as bordas da tabela** nessas colunas. Medido em
+  17/08/2026 sobre a planilha real: **744 linhas de dados, zero células ausentes
+  em A–L** — nenhuma coluna fica sem pintar no uso real.
+- Linha auto-fechada (`<row r="N" .../>`) → não é expandida: não tem célula, a
+  repintura não cria nenhuma, e abri-la produziria diferença no arquivo sem uma
+  única célula pintada.
+- `fillId` além de `<fills>`, ou `s=` além de `cellXfs` → **recusa antes de
+  gravar**. Índice pendurado faz o Excel pedir reparo, e silêncio aqui só seria
+  pego pela validação pós-escrita, ao preço de restaurar o backup.
 - Duas células da mesma linha com `styleId` diferentes (caso real: borda de
   fim de bloco) → cada uma resolve seu próprio `xf` alvo; a linha pode terminar
   com dois `styleId` distintos, e isso é **correto**.
 - Pintar de verde uma linha que já é verde do tom B (`fillId 12`) → o alvo do
   mapa é o tom A (`fillId 2`); a gravação ocorre e unifica o tom. Comportamento
   aceito: a aplicação escreve o tom canônico do mapa.
-- `color-map.json` sem `fillId` na entrada escolhida → `400 CORPO_INVALIDO`,
-  indicando que o mapa precisa do `fillId` obtido em `H-01`.
+- `color-map.json` sem `fillId` na entrada escolhida → **não chega à rota**:
+  `loadColorMap` a rejeita na **partida**, e o processo não sobe.
+
+  > **Emenda de `H-27` (17/08/2026).** Esta linha prescrevia `400
+  > CORPO_INVALIDO`. A guarda anterior é mais estrita e mais cedo — a validação
+  > de `H-04` já exige `fillId` inteiro não negativo em toda entrada —, então o
+  > `400` é inalcançável. Documentá-lo no contrato seria afirmar resposta que o
+  > servidor não produz; `docs/05-contratos-api.md` registra a ausência.
 
 **Dependências:** H-26, H-04
 **Tamanho:** M
