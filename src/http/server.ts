@@ -12,6 +12,7 @@ import { registerApplyRoute } from './routes/apply.ts'
 import { registerEditsRoutes } from './routes/edits.ts'
 import { registerFilterOptionsRoute } from './routes/filter-options.ts'
 import { registerHealthRoute } from './routes/health.ts'
+import { registerHistoryRoute } from './routes/history.ts'
 import { registerIndicatorsRoute } from './routes/indicators.ts'
 import { registerProcessColorRoute } from './routes/process-color.ts'
 import { registerProcessesRoute } from './routes/processes.ts'
@@ -32,6 +33,10 @@ export function buildServer(
   // passa o MESMO mapa que o store e o guard receberam: ler tres vezes
   // permitiria servir, projetar e gravar por mapas diferentes.
   colorMap: readonly ColorMapEntry[] = loadColorMap(),
+  // Sem valor aqui: `history-store` resolve o padrao, e RECUSA o padrao sob
+  // teste. Um default nesta assinatura anularia essa guarda em todo teste que
+  // monta o servidor.
+  historyPath?: string,
 ): FastifyInstance {
   // Silencioso sob teste: a saida do Vitest e o relatorio, nao o log do servidor.
   const app = Fastify({
@@ -42,9 +47,10 @@ export function buildServer(
   registerQuarantineRoute(app)
   registerReloadRoute(app, store)
   registerIndicatorsRoute(app, config, store)
-  registerAlertsRoute(app, config, store)
+  registerAlertsRoute(app, config, store, historyPath)
   registerFilterOptionsRoute(app, store)
-  registerProcessesRoute(app, store)
+  registerProcessesRoute(app, config, store, historyPath)
+  registerHistoryRoute(app, config, store, historyPath)
   registerEditsRoutes(app, store)
   registerProcessColorRoute(app, store, colorMap)
   registerApplyRoute(app)

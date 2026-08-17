@@ -178,7 +178,13 @@ describe('GET /api/alerts', () => {
    * A-61: nao ha historico antes de `H-28`, e inventar a data afirmaria
    * retroatividade inexistente — exatamente o que A-43 quer evitar.
    */
-  it('devolve historyStartedAt nulo ate H-28', async () => {
+  /**
+   * Sem historico gravado, `historyStartedAt` segue nulo e ALE-06 fica em zero
+   * — zero **medido** sobre um conjunto sem base, que `H-20` exibe como traco.
+   * Os casos com historico vivem em `history-store.test.ts`, que controla o
+   * arquivo; aqui o que se fixa e o contrato da rota.
+   */
+  it('devolve historyStartedAt nulo enquanto o historico esta vazio', async () => {
     const app = buildServer(config, fakeStore(state()))
 
     const body = (await app.inject({ method: 'GET', url: '/api/alerts' })).json()

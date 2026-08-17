@@ -3,6 +3,7 @@ import type { AppConfig } from '../../app/config.ts'
 import { store as defaultStore, type StoreAccess } from '../../app/process-store.ts'
 import { type Alert, type AlertCounts, buildAlerts, countByType } from '../../domain/alerts.ts'
 import { today as currentDay } from '../../domain/date-window.ts'
+import { historyStartedAt, stalledDaysByRef } from '../../io/history-store.ts'
 import { apiError } from '../errors.ts'
 import { filteredProcesses } from '../filter-request.ts'
 
@@ -17,20 +18,18 @@ export interface AlertsResponse {
   countsByType: AlertCounts
   stalledThresholdDays: number
   /**
-   * `null` ate `H-28` gravar a primeira leitura (A-61). Nao ha data a informar
-   * antes disso, e inventa-la afirmaria historico inexistente — o oposto do que
-   * A-43 pede.
+   * Instante da primeira leitura registrada (A-61). Continua `null` enquanto o
+   * historico estiver vazio: inventar a data afirmaria historico inexistente,
+   * o oposto do que A-43 pede.
    */
   historyStartedAt: string | null
 }
-
-/** Vazio ate `H-28`. ALE-06 fica em zero, que e diferente de ausente. */
-const NO_HISTORY: ReadonlyMap<string, number> = new Map()
 
 export function registerAlertsRoute(
   app: FastifyInstance,
   config: AppConfig,
   store: StoreAccess = defaultStore,
+  historyPath?: string,
 ): void {
   app.get('/api/alerts', (request, reply) => {
     const state = store.getState()
@@ -55,13 +54,17 @@ export function registerAlertsRoute(
     const processes = filteredProcesses(request, reply, state.processes)
     if (processes === null) return reply
 
-    const items = buildAlerts(processes, day, NO_HISTORY, config.stalledDaysThreshold)
+    // O mapa e montado sobre o conjunto JA filtrado: `stalledDaysByRef` so
+    // consulta o indice, e resolve-lo para 649 REF quando a tela pede 12 seria
+    // trabalho jogado fora.
+    const stalled = stalledDaysByRef(processes, day, config.timezone, { path: historyPath })
+    const items = buildAlerts(processes, day, stalled, config.stalledDaysThreshold)
 
     const body: AlertsResponse = {
       items,
       countsByType: countByType(items),
       stalledThresholdDays: config.stalledDaysThreshold,
-      historyStartedAt: null,
+      historyStartedAt: historyStartedAt({ path: historyPath }),
     }
     return reply.code(200).send(body)
   })
