@@ -2699,6 +2699,67 @@ preenchimento próprio e **não** são alteradas.
 
 ### H-28 — Registrar as mudanças de categoria a cada leitura
 
+> ✅ **CONCLUÍDA em 17/08/2026.** 66 testes próprios — 20 em
+> `tests/domain/history.test.ts`, 24 em `tests/io/history-store.test.ts`, 17 em
+> `tests/http/history.test.ts`, 3 no detalhe de `tests/http/processes.test.ts` e
+> 2 em `web/tests/ProcessDetail.test.tsx`; suíte total em **1105**. Nove
+> divergências do plano resolvidas na abertura, **uma bloqueante**.
+>
+> **A bloqueante: `canalVermelho` não era derivável do arquivo.** O contrato de
+> `GET /api/history/monthly` serve três medidas por mês, e o ADR-0005 afirmava
+> que o histórico destravava as três — mas o `StatusEvent` de §3.1 carregava só
+> `from` e `to`, ambos `StatusCategory`. O canal vem da **cor da linha**
+> (IND-06) e é campo independente do status (regra inviolável 4): nenhuma
+> agregação daqueles dois campos o produz, e servir `0` afirmaria ausência de
+> Canal Vermelho sobre dado que ninguém registrou.
+>
+> **Era a única divergência desta fatia cujo custo de adiar não é retrabalho, e
+> sim dado perdido:** o arquivo é append-only e sem retroatividade, então cada
+> mês rodando sem gravar o canal seria um mês que a série nunca teria. Resolvido
+> acrescentando `channel` ao evento e emitindo evento quando a categoria **ou** o
+> canal mudam — emenda registrada no ADR-0005 e em §3.1.
+>
+> **A consequência que a emenda obriga, e que é o defeito silencioso que ela
+> quase introduziu:** um evento pode ter `from` igual a `to` (mudou só o canal),
+> e `daysInCategory` conta **apenas** as mudanças de categoria. Se contasse
+> todas, trocar a cor de uma linha reiniciaria o contador e ALE-06 deixaria de
+> disparar — falha na direção de silenciar o alerta, que é a pior das duas.
+> `LastSeen.categoryChangedAt` existe só para isso.
+>
+> **A suíte passou a escrever em `data/` real, e ninguém teria notado.** O
+> `process-store` grava o histórico a cada leitura, e o caminho padrão caía em
+> `data/history.jsonl`: na primeira execução, `tests/http/processes.test.ts`
+> reprovou por histórico que a própria suíte acabara de criar. Duas defesas, e a
+> segunda é a que dura: `tests/setup.ts` dá um diretório temporário por arquivo
+> de teste, e `resolvePath` **recusa o padrão** sob `NODE_ENV=test`, para que
+> esquecer as duas coisas falhe alto em vez de contaminar a máquina do operador.
+> Fora de teste a variável não é sequer consultada.
+>
+> **Onde a regra ficou.** `monthlySeries` e `daysInCurrentCategory` agregam, e a
+> regra inviolável 6 vale: o cálculo puro foi para `src/domain/history.ts` e
+> `src/io/history-store.ts` ficou com persistência e índice. O precedente de
+> `quarantine-reporter` — `buildReport` ao lado de `writeReport` — não estica
+> até uma agregação deste tamanho.
+>
+> **A rota é [F], e o recorte por filtro tem limite declarado.** O evento carrega
+> só `ref`; cliente, navio e agente vivem na planilha. Com filtro ativo os REF
+> são resolvidos contra a leitura **atual**, então a série recortada descreve o
+> passado de quem casa hoje. Sem filtro ela sai inteira do arquivo — e é por isso
+> que `hasAnyFilter` existe: tratar "sem filtro" como "filtro que casa tudo"
+> faria uma linha removida da planilha apagar o próprio passado da série.
+>
+> **A agregação lê em blocos e não materializa lista de eventos.** `eachLine` é
+> generator, não callback, justamente para `aggregateMonthly` consumir um
+> iterável — a primeira versão acumulava tudo num array antes de agregar, que é
+> exatamente o que o caso-limite das 100 mil linhas proíbe.
+>
+> **Conferido contra a planilha real:** 649 processos → **649 eventos** na
+> primeira leitura, todos com `from: null`; **zero** na releitura sem mudança.
+> Alterando duas linhas, 2 eventos — 1 de categoria e 1 só de canal, separados
+> corretamente. A série reproduz a leitura: **481** desembaraçados e **6** de
+> Canal Vermelho, contra os mesmos 481 e 6 medidos nos processos, com
+> `truncated: true` para a janela de 12 meses sobre 1 mês de histórico.
+
 **Objetivo:** acumular a série de eventos que destrava o alerta de processos
 parados e a Página Histórico.
 
