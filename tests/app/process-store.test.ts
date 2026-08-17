@@ -30,6 +30,7 @@ const COLOR_MAP: ColorMapEntry[] = [
 let dir: string
 let workbookPath: string
 let quarantinePath: string
+let historyPath: string
 
 function config(overrides: Partial<AppConfig> = {}): AppConfig {
   return {
@@ -51,6 +52,7 @@ function start(overrides: Partial<Parameters<typeof initStore>[0]> = {}): void {
     colorMap: COLOR_MAP,
     statusAliases: ['DESEMBARACADA', 'DESEMBARCADA'],
     quarantinePath,
+    historyPath,
     ...overrides,
   })
 }
@@ -72,6 +74,7 @@ beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'cronos-store-'))
   workbookPath = join(dir, 'planilha.xlsx')
   quarantinePath = join(dir, 'quarantine.json')
+  historyPath = join(dir, 'history.jsonl')
   copyFileSync('tests/fixtures/basico.xlsx', workbookPath)
 })
 

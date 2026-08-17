@@ -35,6 +35,7 @@ export default defineConfig({
           environment: 'node',
           env: { NODE_ENV: 'test' },
           include: ['tests/**/*.test.ts'],
+          setupFiles: ['tests/setup.ts'],
         },
       },
       {

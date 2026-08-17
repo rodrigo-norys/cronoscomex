@@ -112,7 +112,7 @@ export function ProcessDetail({ processRef, dataVersion }: ProcessDetailProps) {
       <Fields process={process} />
       <OutOfScope process={process} />
       <Anomalies items={anomalies} />
-      <StatusHistory events={statusHistory} />
+      <StatusHistory events={statusHistory} daysInCurrentCategory={daysInCurrentCategory} />
     </div>
   )
 }
@@ -237,12 +237,23 @@ function Anomalies({ items }: { items: ProcessDetailResponse['anomalies'] }) {
 /**
  * Duas ausências diferentes, e a tela precisa dizer qual.
  *
- * Até `H-28` gravar o primeiro evento, a lista está vazia **porque não há
- * histórico**, não porque o processo nunca mudou de categoria. Exibir "nenhuma
- * mudança" seria afirmar estabilidade que ninguém mediu (regra inviolável 3), e
- * A-43 acrescenta que nem depois haverá retroatividade.
+ * `daysInCurrentCategory` é o que as separa: `null` significa que o histórico
+ * não conhece este processo — nenhum evento foi gravado para ele —, e um número
+ * significa que conhece, e que nada mudou desde então. Sem essa distinção,
+ * "nenhuma mudança" afirmaria estabilidade que ninguém mediu (regra inviolável
+ * 3) exatamente no primeiro dia de uso, quando ela é falsa em 649 processos.
+ *
+ * A lista traz só mudanças de categoria: a primeira observação do processo e as
+ * trocas de cor são gravadas e alimentam a série mensal, mas não são transições
+ * que o operador possa ler como "mudou de X para Y".
  */
-function StatusHistory({ events }: { events: ProcessDetailResponse['statusHistory'] }) {
+function StatusHistory({
+  events,
+  daysInCurrentCategory,
+}: {
+  events: ProcessDetailResponse['statusHistory']
+  daysInCurrentCategory: number | null
+}) {
   return (
     <section
       aria-label="Histórico de categoria"
@@ -250,11 +261,16 @@ function StatusHistory({ events }: { events: ProcessDetailResponse['statusHistor
     >
       <h2 className="text-sm font-semibold text-slate-700">Histórico de categoria</h2>
 
-      {events.length === 0 ? (
+      {events.length === 0 && daysInCurrentCategory === null ? (
         <p className="mt-2 text-sm text-slate-600">
-          O histórico de mudanças ainda não é gravado — ele começa em <strong>H-28</strong>. Vazio
-          aqui <strong>não</strong> significa que o processo nunca mudou de categoria; e quando o
-          registro começar, não haverá retroatividade (A-43).
+          Nenhum evento registrado para este processo. O histórico começa quando a aplicação passa a
+          acompanhar a planilha, e não há retroatividade anterior a isso (A-43) — vazio aqui{' '}
+          <strong>não</strong> significa que o processo nunca mudou de categoria.
+        </p>
+      ) : events.length === 0 ? (
+        <p className="mt-2 text-sm text-slate-600">
+          Nenhuma mudança de categoria desde que o registro começou. A primeira observação do
+          processo e as trocas de cor da linha não aparecem aqui.
         </p>
       ) : (
         <ol className="mt-3 flex flex-col gap-1">

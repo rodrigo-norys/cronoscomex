@@ -8,6 +8,7 @@ import {
   isColorEdit,
   type PendingEdit,
 } from '../io/edit-queue.ts'
+import { DEFAULT_HISTORY_PATH, recordChanges } from '../io/history-store.ts'
 import { detectInterference } from '../io/interference-detector.ts'
 import { buildReport, DEFAULT_QUARANTINE_PATH, writeReport } from '../io/quarantine-reporter.ts'
 import { type ReadResult, readWorkbook } from '../io/xlsx-reader.ts'
@@ -72,6 +73,8 @@ export interface StoreOptions {
   colorMap: readonly ColorMapEntry[]
   statusAliases: readonly string[]
   quarantinePath?: string
+  /** Ponto de injecao para teste; em producao, `data/history.jsonl`. */
+  historyPath?: string
   /** Ponto de injecao para teste; em producao, `data/pending-edits.jsonl`. */
   queuePath?: string
   /** Ausente, nada e registrado — util em teste e no uso do store como biblioteca. */
@@ -200,6 +203,29 @@ function persistReport(
 }
 
 /**
+ * Grava as mudancas de categoria e de canal desta leitura (`H-28`).
+ *
+ * Recebe `result.processes` — o que a planilha diz —, nunca o estado projetado
+ * de `getState`: projetar a fila aqui registraria como observado o valor que o
+ * operador ainda nao aplicou, e o historico deixaria de descrever o arquivo.
+ *
+ * Falhar degrada a serie e ALE-06, nao o painel: a leitura ja foi bem-sucedida
+ * e o estado permanece 'pronto'. Mesma politica do relatorio de quarentena.
+ */
+function persistHistory(
+  processes: readonly Process[],
+  readAt: Date,
+  path: string,
+  logger: Logger,
+): void {
+  try {
+    recordChanges(processes, { path, now: readAt, logger })
+  } catch {
+    // Perder o evento custa a serie, nao a operacao.
+  }
+}
+
+/**
  * Uma releitura ja em voo nao pode apagar o estado 'escrevendo'. O watcher e
  * pausado pelo write-guard, mas a pausa cancela o agendamento — nao uma leitura
  * que ja comecou. Sem isto, `finishWriting` sairia pelo early-return e
@@ -289,6 +315,8 @@ async function runReload(deps: StoreOptions): Promise<void> {
       deps.quarantinePath ?? DEFAULT_QUARANTINE_PATH,
       logger,
     )
+
+    persistHistory(result.processes, read.readAt, deps.historyPath ?? DEFAULT_HISTORY_PATH, logger)
   } catch (error) {
     current = {
       ...current,

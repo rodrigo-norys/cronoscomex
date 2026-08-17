@@ -24,8 +24,12 @@ antes de decidir.
 5. **`src/domain/` não importa `src/io/`, `src/app/`, `src/http/` nem `web/`.**
    O lint verifica e quebra a build.
 6. **Nenhuma regra de negócio no cliente ou nas rotas.** Só em `src/domain/`.
-7. **Nenhum teste toca a planilha real.** A suíte roda sobre
-   `tests/fixtures/*.xlsx`, versionadas.
+7. **Nenhum teste toca estado real** — nem a planilha, nem `data/`. A suíte roda
+   sobre `tests/fixtures/*.xlsx`, versionadas, e sobre diretório temporário para
+   tudo que a aplicação grava. Todo caminho de `data/` é ponto de injeção, e
+   `data/history.jsonl` vai além: `history-store` **recusa** o padrão sob
+   `NODE_ENV=test`. Medido em `H-28` — sem a recusa, a suíte gravou 649 eventos
+   no arquivo do operador, e um teste passou a reprovar pelo estado da máquina.
 8. **Nenhum dado pessoal em log.** Processos são referenciados por `ref` e
    `sourceRow` — nunca por nome de cliente, importador ou mercadoria.
 9. **Nunca use `workbook.xlsx.writeFile()` do ExcelJS.** Ele perde formatação
@@ -122,12 +126,13 @@ porque era dependência declarada de `H-15` e não existia, **`H-15`, que abriu 
 épico E4, `H-16`, a primeira página de dado, `H-17`, que entrega também
 `GET /api/processes`, `H-18`, os três rankings, `H-19`, que fecha as duas
 últimas regras sem tela, `H-20`, a fila de trabalho, e `H-22`, o detalhe.**
-Restam de interface só a `H-21`, que depende do histórico de `H-28`. **A Fase 3
-fechou inteira** — `H-23`, a fila de edições, `H-24`, a escrita cirúrgica no
-`.xlsx`, `H-25`, as seis defesas de integridade, e `H-26`, o comando de
-aplicação —, **e a Fase 4 também, com `H-27`, sua única história: os campos
-codificados em cor, que fecha o caminho crítico.** Próximo passo: **`H-28`**, o
-histórico, que destrava `H-21` e `H-29`. As fases estão em
+**A Fase 3 fechou inteira** — `H-23`, a fila de edições, `H-24`, a escrita
+cirúrgica no `.xlsx`, `H-25`, as seis defesas de integridade, e `H-26`, o
+comando de aplicação —, **e a Fase 4 também, com `H-27`, sua única história: os
+campos codificados em cor, que fecha o caminho crítico.** **`H-28` fechou o
+histórico**, destravando as duas que faltam. Próximo passo: **`H-29`**, o alerta
+de processos parados, ou **`H-21`**, a Página Histórico — são independentes
+entre si, e `H-21` é a última de interface. As fases estão em
 `docs/07-plano-entrega.md`.
 
 > **A escrita é o ponto onde errar custa a planilha da empresa.** O subagent

@@ -1,4 +1,8 @@
-import { describe, expect, it } from 'vitest'
+import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { loadColorMap } from '../../src/app/color-map-loader.ts'
 import type { AppConfig } from '../../src/app/config.ts'
 import type { StoreAccess, StoreState } from '../../src/app/process-store.ts'
 import type { Process, StatusCategory } from '../../src/domain/types.ts'
@@ -480,7 +484,11 @@ describe('GET /api/processes/:ref — detalhe', () => {
    * `daysInCurrentCategory` e `null`, nao `0`: zero afirmaria que a categoria
    * mudou hoje, indistinguivel de "nao ha como saber".
    */
-  it('devolve historico e edicoes vazios ate H-23 e H-28, e dias nulo', async () => {
+  /**
+   * Sem evento algum para a REF os tres campos saem vazios — e `null` em vez de
+   * zero, porque zero afirmaria que a categoria mudou hoje.
+   */
+  it('devolve historico e edicoes vazios quando nao ha evento, e dias nulo', async () => {
     const app = buildServer(config, fakeStore(umProcesso()))
 
     const body = (await app.inject({ method: 'GET', url: '/api/processes/FT002.26' })).json()
@@ -488,6 +496,91 @@ describe('GET /api/processes/:ref — detalhe', () => {
     expect(body.pendingEdits).toEqual([])
     expect(body.statusHistory).toEqual([])
     expect(body.daysInCurrentCategory).toBeNull()
+
+    await app.close()
+  })
+})
+
+/**
+ * O detalhe consumindo o historico de `H-28`, com o arquivo sob controle.
+ *
+ * Os dois casos que o resto da suite nao alcanca: a primeira aparicao do REF
+ * (`from: null`) e o evento so de canal (`from === to`) existem no arquivo,
+ * sao insumo da serie mensal, e **nao** sao linhas de mudanca que o operador
+ * possa ler — nenhum dos dois aparece aqui.
+ */
+describe('GET /api/processes/:ref — historico no detalhe', () => {
+  let dir: string
+  let historyPath: string
+
+  function event(ts: string, to: StatusCategory, from: StatusCategory | null, channel = 'nenhum') {
+    return JSON.stringify({ ts, ref: 'FT002.26', from, to, channel, sourceRow: 2 })
+  }
+
+  beforeEach(() => {
+    dir = mkdtempSync(join(tmpdir(), 'cronos-detalhe-historico-'))
+    historyPath = join(dir, 'history.jsonl')
+  })
+
+  afterEach(() => {
+    rmSync(dir, { recursive: true, force: true })
+  })
+
+  function server() {
+    return buildServer(
+      config,
+      fakeStore(state({ processes: [process(2)] })),
+      loadColorMap(),
+      historyPath,
+    )
+  }
+
+  it('serializa as mudancas de categoria, descartando a primeira aparicao', async () => {
+    writeFileSync(
+      historyPath,
+      `${[
+        event('2026-08-01T12:00:00.000Z', 'em_andamento', null),
+        event('2026-08-10T12:00:00.000Z', 'desembaracado', 'em_andamento'),
+      ].join('\n')}\n`,
+      'utf-8',
+    )
+    const app = server()
+
+    const body = (await app.inject({ method: 'GET', url: '/api/processes/FT002.26' })).json()
+
+    expect(body.statusHistory).toEqual([
+      { ts: '2026-08-10T12:00:00.000Z', from: 'em_andamento', to: 'desembaracado' },
+    ])
+
+    await app.close()
+  })
+
+  it('nao mostra o evento que so trocou o canal como mudanca de categoria', async () => {
+    writeFileSync(
+      historyPath,
+      `${[
+        event('2026-08-01T12:00:00.000Z', 'em_andamento', null),
+        event('2026-08-10T12:00:00.000Z', 'em_andamento', 'em_andamento', 'vermelho'),
+      ].join('\n')}\n`,
+      'utf-8',
+    )
+    const app = server()
+
+    const body = (await app.inject({ method: 'GET', url: '/api/processes/FT002.26' })).json()
+
+    expect(body.statusHistory).toEqual([])
+
+    await app.close()
+  })
+
+  it('devolve daysInCurrentCategory contado desde a ultima mudanca de categoria', async () => {
+    const umDiaAtras = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    writeFileSync(historyPath, `${event(umDiaAtras, 'em_andamento', null)}\n`, 'utf-8')
+    const app = server()
+
+    const body = (await app.inject({ method: 'GET', url: '/api/processes/FT002.26' })).json()
+
+    expect(body.daysInCurrentCategory).toBe(1)
 
     await app.close()
   })

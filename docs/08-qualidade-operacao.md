@@ -219,7 +219,7 @@ abaixo — não há por onde vazar nome de cliente ou conteúdo de célula.
 | `write.done` | `durationMs`, `cellsWritten`, `backupPath` |
 | `write.restored` | `backupPath` |
 | `queue.archived` | `archivedQueuePath` quando arquivou; `errorCode` quando não |
-| `history.appended` | quantidade de eventos |
+| `history.appended` | `events` quando gravou; `errorCode` e `skippedLines` quando descartou linha ilegível |
 | `quarantine.reported` | `rowsQuarantined`, `quarantineRate` |
 
 > `queue.archived` entrou em `H-26`, fora do catálogo fechado que `H-31` fixou.
@@ -229,6 +229,13 @@ abaixo — não há por onde vazar nome de cliente ou conteúdo de célula.
 > **duas** linhas `write.done`, uma delas parecendo erro de escrita — o inverso
 > do que `H-25` corrigiu ao separar `ERRO_INTERNO` de recusa. Levantado pelo
 > `revisor-xml`.
+>
+> `history.appended` ganhou dois campos em `H-28`, `events` e `skippedLines`, e
+> ambos são **contagem**. A linha de `data/history.jsonl` que não pôde ser
+> interpretada **não** vai para o log: ela pode ser qualquer coisa, inclusive
+> metade de um evento legível, e registrar o texto cru é exatamente a porta que
+> RNF-33 fecha. A emissão de descarte usa nível `warn` e `errorCode`
+> `LINHA_INVALIDA`.
 >
 > `archivedQueuePath` é relativo e derivado do nome do arquivo de fila
 > (`data/applied/pending-edits-<AAAAMMDD-HHmmss>.jsonl`): não carrega `ref` nem

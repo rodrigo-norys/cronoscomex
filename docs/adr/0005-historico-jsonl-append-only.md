@@ -30,7 +30,7 @@ e gravar as diferenças em `data/history.jsonl`, um arquivo append-only.**
 Uma linha JSON por evento:
 
 ```jsonc
-{"ts":"2026-08-03T14:22:31.004Z","ref":"FT498.26","from":"em_andamento","to":"desembaracado","sourceRow":475}
+{"ts":"2026-08-03T14:22:31.004Z","ref":"FT498.26","from":"em_andamento","to":"desembaracado","channel":"nenhum","sourceRow":475}
 ```
 
 - `from: null` na primeira vez que um REF é visto.
@@ -38,6 +38,23 @@ Uma linha JSON por evento:
   não por leitura.
 - A ausência de um REF numa leitura **não** gera evento: sumir da planilha não
   é uma mudança de categoria.
+
+> **Emenda de `H-28` (17/08/2026): o evento grava também o canal, e é emitido
+> quando a categoria _ou_ o canal mudam.**
+>
+> A redação original prometia que o histórico destravava "volume, desembaraçados
+> e Canal Vermelho por mês", mas o evento que ela especificava carregava apenas
+> `from` e `to` — ambos `StatusCategory`. O canal vem da cor da linha (IND-06) e
+> é campo independente do status (regra inviolável 4), então nenhuma agregação
+> daqueles dois campos o produz: a terceira medida da série era inderivável.
+>
+> Corrigido antes da primeira linha de código, no protocolo de fatia. O custo de
+> adiar não seria retrabalho e sim **dado perdido**: sem retroatividade, cada mês
+> rodando sem gravar o canal é um mês que a série nunca terá.
+>
+> Consequência que a emenda obriga: um evento pode ter `from` igual a `to`
+> (mudou só o canal), e a contagem de dias parados ignora esses — senão trocar a
+> cor de uma linha reiniciaria o contador e ALE-06 deixaria de alertar.
 
 ### O que isso destrava
 
