@@ -1,4 +1,5 @@
 import type { ProcessDetailResponse, ProcessDto } from '../api-client.ts'
+import { ColorFieldsForm } from '../components/ColorFieldsForm.tsx'
 import { EditProcessForm } from '../components/EditProcessForm.tsx'
 import { PendingEditsPanel } from '../components/PendingEditsPanel.tsx'
 import { useProcessDetail } from '../hooks/useProcessDetail.ts'
@@ -91,6 +92,21 @@ export function ProcessDetail({ processRef, dataVersion }: ProcessDetailProps) {
     <div className="flex flex-col gap-4">
       <Identification process={process} />
       <EditProcessForm processRef={process.ref} onEnqueued={refresh} />
+      {/* `importerOutsideRj: null` significa cor NAO reconhecida pelo mapa, e
+          nao "dentro do RJ": o formulario recebe `null` e diz isso. */}
+      <ColorFieldsForm
+        processRef={process.ref}
+        current={
+          process.importerOutsideRj === null
+            ? null
+            : {
+                responsible: process.responsible,
+                customsChannel: process.customsChannel,
+                importerOutsideRj: process.importerOutsideRj,
+              }
+        }
+        onEnqueued={refresh}
+      />
       <PendingEditsPanel edits={pendingEdits} onChanged={refresh} />
       <StatusBlock process={process} daysInCurrentCategory={daysInCurrentCategory} />
       <Fields process={process} />
