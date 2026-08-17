@@ -77,6 +77,18 @@ export interface LogEntry {
   ref?: string
   sourceRow?: number
   errorCode?: string
+  /**
+   * Quantidade de eventos gravados, exigida de `history.appended` por
+   * 08-qualidade-operacao.md secao 3.1. Contagem, nunca os eventos: `ref` e
+   * `sourceRow` de cada um ja tem campo proprio e sao usados um por linha.
+   */
+  events?: number
+  /**
+   * Linhas de `data/history.jsonl` descartadas por nao serem interpretaveis
+   * (`H-28`). E contagem tambem: a linha corrompida NAO vai para o log, porque
+   * pode ser qualquer coisa — inclusive metade de um evento legivel (RNF-33).
+   */
+  skippedLines?: number
 }
 
 export type LogInput = Omit<LogEntry, 'ts'>
@@ -101,6 +113,8 @@ const SERIALIZED_FIELDS: readonly (keyof LogEntry)[] = [
   'ref',
   'sourceRow',
   'errorCode',
+  'events',
+  'skippedLines',
 ]
 
 export interface Logger {
