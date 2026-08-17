@@ -2,8 +2,10 @@ import { describe, expect, it } from 'vitest'
 import {
   type ColorMapEntry,
   indexColorMap,
+  representableTargets,
   resolveColor,
   resolveColorIndexed,
+  resolveFillTarget,
 } from '../../src/domain/color-mapper.ts'
 
 /** As 9 entradas reais, medidas por H-01 sobre a aba 2026. */
@@ -200,5 +202,93 @@ describe('resolveColorIndexed', () => {
     const index = indexColorMap(MAPA)
 
     expect(resolveColorIndexed('argb:FFABCDEF', index)).toEqual(resolveColor('argb:FFABCDEF', MAPA))
+  })
+})
+
+/**
+ * A volta — da combinacao para a cor que a escrita grava (`H-27`).
+ *
+ * O mapa real NAO e uma bijecao: tres entradas casam com
+ * `indefinido/nenhum/false` e duas com `colaborador2/nenhum/false` (A-48).
+ * Exigir correspondencia unica, como o contrato dizia ate `H-27`, recusaria o
+ * verde — 477 das 649 linhas (medido em `H-01`, 03/08/2026).
+ */
+describe('resolveFillTarget', () => {
+  it('devolve a entrada da combinacao com uma cor so', () => {
+    const alvo = resolveFillTarget(
+      { responsible: 'colaborador1', customsChannel: 'nenhum', importerOutsideRj: false },
+      MAPA,
+    )
+
+    expect(alvo?.fillId).toBe(8)
+    expect(alvo?.label).toBe('Azul')
+  })
+
+  it('devolve a PRIMEIRA entrada quando mais de uma casa — o tom canonico', () => {
+    const roxo = resolveFillTarget(
+      { responsible: 'colaborador2', customsChannel: 'nenhum', importerOutsideRj: false },
+      MAPA,
+    )
+    const verde = resolveFillTarget(
+      { responsible: 'indefinido', customsChannel: 'nenhum', importerOutsideRj: false },
+      MAPA,
+    )
+
+    expect(roxo?.fillId).toBe(27)
+    expect(verde?.fillId).toBe(2)
+  })
+
+  it('devolve null para combinacao que o mapa nao representa (A-31)', () => {
+    expect(
+      resolveFillTarget(
+        { responsible: 'colaborador1', customsChannel: 'vermelho', importerOutsideRj: false },
+        MAPA,
+      ),
+    ).toBeNull()
+  })
+
+  it('devolve null com mapa vazio, sem lancar erro', () => {
+    expect(
+      resolveFillTarget(
+        { responsible: 'indefinido', customsChannel: 'nenhum', importerOutsideRj: false },
+        [],
+      ),
+    ).toBeNull()
+  })
+})
+
+describe('representableTargets', () => {
+  it('reduz as 9 entradas reais as 6 combinacoes distintas', () => {
+    expect(representableTargets(MAPA).map((entry) => entry.label)).toEqual([
+      'Verde (tom A)',
+      'Azul',
+      'Roxo (tom A)',
+      'Bege',
+      'Vermelho',
+      'Amarelo forte',
+    ])
+  })
+
+  /**
+   * Branco tem a mesma combinacao do verde e fica de fora: a aplicacao grava o
+   * tom canonico, e oferecer "Branco" na tela para gravar verde seria dizer o
+   * que o codigo nao faz.
+   */
+  it('deixa de fora os tons que a escrita nao produz', () => {
+    const rotulos = representableTargets(MAPA).map((entry) => entry.label)
+
+    expect(rotulos).not.toContain('Branco (do tema)')
+    expect(rotulos).not.toContain('Verde (tom B)')
+    expect(rotulos).not.toContain('Roxo (tom B)')
+  })
+
+  it('so devolve entradas que `resolveFillTarget` reencontra', () => {
+    for (const entry of representableTargets(MAPA)) {
+      expect(resolveFillTarget(entry, MAPA)).toBe(entry)
+    }
+  })
+
+  it('devolve lista vazia com mapa vazio', () => {
+    expect(representableTargets([])).toEqual([])
   })
 })
