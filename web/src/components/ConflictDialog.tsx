@@ -22,6 +22,9 @@ const NOME_DA_COLUNA: Record<string, string> = {
   paymentRaw: 'R$ ENVIADO',
   docsSentDate: 'DOCS ENVIADOS',
   columnPRaw: 'Coluna1',
+  // Nao e coluna: e a cor da linha inteira (H-27). Entra aqui porque a coluna
+  // "Campo" precisa dizer o que mudou, e "cor" sozinho nao diz.
+  cor: 'Cor da linha',
 }
 
 interface ConflictDialogProps {
