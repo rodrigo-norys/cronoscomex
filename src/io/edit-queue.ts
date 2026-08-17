@@ -8,6 +8,7 @@ import {
   writeFileSync,
 } from 'node:fs'
 import { basename, dirname, join } from 'node:path'
+import type { ColorTarget } from '../domain/color-mapper.ts'
 import type { EditableField } from '../domain/editable-fields.ts'
 import { normKey } from '../domain/normalizer.ts'
 
@@ -27,7 +28,13 @@ import { normKey } from '../domain/normalizer.ts'
  * no arquivo e `H-24` a `H-26`, atras das defesas de `write-guard`.
  */
 
-export interface EditCommand {
+export interface FieldEditCommand {
+  /**
+   * Ausente vale `'field'`: a fila e append-only em disco e sobrevive ao
+   * reinicio, entao os registros gravados antes de H-27 seguem validos sem
+   * migracao.
+   */
+  kind?: 'field'
   ref: string
   sourceRow: number
   field: EditableField
@@ -37,10 +44,47 @@ export interface EditCommand {
   previous: string
 }
 
-export interface PendingEdit extends EditCommand {
+/**
+ * A troca de cor da linha (`H-27`). Nao tem `field` nem `value`: os tres campos
+ * codificados em cor nao tem coluna, e o que muda e o estilo, nao o valor.
+ *
+ * Guarda a COMBINACAO, e nao o `fillId` ja resolvido: o mapa e a fonte, e
+ * congelar o alvo aqui faria uma fila enfileirada antes de um ajuste em
+ * `config/color-map.json` gravar a cor antiga.
+ */
+export interface ColorEditCommand {
+  kind: 'color'
+  ref: string
+  sourceRow: number
+  target: ColorTarget
+  /** Rotulo da entrada alvo, para a tela e o conflito falarem em cor. */
+  label: string
+  /** A cor que a linha tinha quando o operador escolheu — o `previous` da cor. */
+  previousStyleKey: string
+  previousLabel: string
+}
+
+export type EditCommand = FieldEditCommand | ColorEditCommand
+
+interface Identity {
   id: string
   /** ISO 8601 UTC. */
   ts: string
+}
+
+export type PendingFieldEdit = FieldEditCommand & Identity
+export type PendingColorEdit = ColorEditCommand & Identity
+export type PendingEdit = PendingFieldEdit | PendingColorEdit
+
+/**
+ * Generica para estreitar tanto `EditCommand` quanto `PendingEdit`: uma
+ * assinatura fixa em `ColorEditCommand` faria quem tem `PendingEdit` perder o
+ * `id` e o `ts` no estreitamento, e voltar a precisar de `as`.
+ */
+export function isColorEdit<T extends { kind?: 'field' | 'color' }>(
+  edit: T,
+): edit is T & ColorEditCommand {
+  return edit.kind === 'color'
 }
 
 /**
@@ -90,14 +134,33 @@ function append(path: string, record: QueueRecord): void {
   appendFileSync(path, `${JSON.stringify(record)}\n`, 'utf-8')
 }
 
-export function enqueue(command: EditCommand, path: string = DEFAULT_QUEUE_PATH): PendingEdit {
-  const edit: PendingEdit = { ...command, id: randomUUID(), ts: new Date().toISOString() }
+/**
+ * Generica para devolver o MESMO ramo que recebeu: com `PendingEdit` fixo, quem
+ * enfileira uma cor recebe a uniao de volta e precisa de `as` para ler o que
+ * acabou de escrever.
+ */
+export function enqueue<T extends EditCommand>(
+  command: T,
+  path: string = DEFAULT_QUEUE_PATH,
+): T & Identity {
+  const edit = { ...command, id: randomUUID(), ts: new Date().toISOString() }
   append(path, edit)
   return edit
 }
 
 /**
- * A projecao corrente: a **ultima** entrada por par `(ref, field)`, descontadas
+ * A cor e consolidada por REF, e nao por `(ref, campo)`: a linha tem uma cor so,
+ * entao a ultima escolha vence. O sufixo nao colide com nome de campo — nenhum
+ * `EditableField` se chama assim.
+ */
+const COLOR_PAIR = 'cor'
+
+function pairOf(edit: PendingEdit): string {
+  return `${normKey(edit.ref)}|${isColorEdit(edit) ? COLOR_PAIR : edit.field}`
+}
+
+/**
+ * A projecao corrente: a **ultima** entrada por par `(ref, campo)`, descontadas
  * as lapides.
  *
  * A ordem de saida e a da primeira aparicao do par, nao a do arquivo: reordenar
@@ -126,7 +189,7 @@ export function consolidated(path: string = DEFAULT_QUEUE_PATH): PendingEdit[] {
     // cima da primeira, e a validacao pos-escrita condena a escrita — o
     // operador ouve "arquivo corrompido, backup restaurado" por uma fila que a
     // aplicacao aceitou. Achado do revisor-xml em H-25.
-    byPair.set(`${normKey(record.ref)}|${record.field}`, record)
+    byPair.set(pairOf(record), record)
   }
 
   return [...byPair.values()]

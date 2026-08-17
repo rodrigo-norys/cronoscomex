@@ -30,6 +30,26 @@ const FIELD_LABELS: Readonly<Record<string, string>> = {
   columnPRaw: 'Coluna P',
 }
 
+/**
+ * A troca de cor nao tem campo nem valor: o que muda e o estilo da linha. As
+ * tres funcoes abaixo dao a ela a mesma forma "de → para" das demais, sem
+ * inventar um valor de celula que nao existe.
+ */
+function labelOf(edit: PendingEdit): string {
+  if (edit.kind === 'color') return 'Cor da linha'
+  return FIELD_LABELS[edit.field] ?? edit.field
+}
+
+function previousOf(edit: PendingEdit): string {
+  if (edit.kind === 'color') return edit.previousLabel
+  return edit.previous === '' ? '(vazio)' : edit.previous
+}
+
+function nextOf(edit: PendingEdit): string {
+  if (edit.kind === 'color') return edit.label
+  return edit.value === null || edit.value === '' ? '(vazio)' : edit.value
+}
+
 export function PendingEditsPanel({
   edits,
   onChanged,
@@ -65,12 +85,10 @@ export function PendingEditsPanel({
           <ul className="mt-3 flex flex-col gap-2">
             {edits.map((edit) => (
               <li key={edit.id} className="flex flex-wrap items-baseline gap-2 text-sm">
-                <strong className="text-amber-900">{FIELD_LABELS[edit.field] ?? edit.field}</strong>
+                <strong className="text-amber-900">{labelOf(edit)}</strong>
                 <span className="text-amber-900">
-                  <span className="line-through opacity-60">
-                    {edit.previous === '' ? '(vazio)' : edit.previous}
-                  </span>{' '}
-                  → <strong>{edit.value === null ? '(vazio)' : edit.value}</strong>
+                  <span className="line-through opacity-60">{previousOf(edit)}</span> →{' '}
+                  <strong>{nextOf(edit)}</strong>
                 </span>
                 <button
                   type="button"
@@ -85,8 +103,8 @@ export function PendingEditsPanel({
           </ul>
 
           <p className="mt-3 text-xs text-amber-900">
-            Nada foi gravado na planilha. Gravar é um passo separado, que chega em{' '}
-            <strong>H-26</strong>.
+            Nada foi gravado na planilha. Gravar é um passo separado, pelo botão{' '}
+            <strong>Aplicar alterações</strong>.
           </p>
         </>
       )}

@@ -5,6 +5,7 @@ import { createLogger, type Logger } from '../app/logger.ts'
 import { store as defaultStore, initStore, reload, type StoreAccess } from '../app/process-store.ts'
 import { loadStatusAliases, StatusAliasesError } from '../app/status-aliases-loader.ts'
 import { initWriteGuard } from '../app/write-guard.ts'
+import type { ColorMapEntry } from '../domain/color-mapper.ts'
 import { createWatcher, DEFAULT_DEBOUNCE_MS } from '../io/watcher.ts'
 import { registerAlertsRoute } from './routes/alerts.ts'
 import { registerApplyRoute } from './routes/apply.ts'
@@ -12,6 +13,7 @@ import { registerEditsRoutes } from './routes/edits.ts'
 import { registerFilterOptionsRoute } from './routes/filter-options.ts'
 import { registerHealthRoute } from './routes/health.ts'
 import { registerIndicatorsRoute } from './routes/indicators.ts'
+import { registerProcessColorRoute } from './routes/process-color.ts'
 import { registerProcessesRoute } from './routes/processes.ts'
 import { registerQuarantineRoute } from './routes/quarantine.ts'
 import { registerReloadRoute } from './routes/reload.ts'
@@ -23,7 +25,14 @@ import { registerReloadRoute } from './routes/reload.ts'
  */
 export const LOOPBACK = '127.0.0.1'
 
-export function buildServer(config: AppConfig, store: StoreAccess = defaultStore): FastifyInstance {
+export function buildServer(
+  config: AppConfig,
+  store: StoreAccess = defaultStore,
+  // Carregado aqui so quando quem chama nao o tem em maos. Em producao `main`
+  // passa o MESMO mapa que o store e o guard receberam: ler tres vezes
+  // permitiria servir, projetar e gravar por mapas diferentes.
+  colorMap: readonly ColorMapEntry[] = loadColorMap(),
+): FastifyInstance {
   // Silencioso sob teste: a saida do Vitest e o relatorio, nao o log do servidor.
   const app = Fastify({
     logger: process.env.NODE_ENV === 'test' ? false : { level: process.env.LOG_LEVEL ?? 'info' },
@@ -37,6 +46,7 @@ export function buildServer(config: AppConfig, store: StoreAccess = defaultStore
   registerFilterOptionsRoute(app, store)
   registerProcessesRoute(app, store)
   registerEditsRoutes(app, store)
+  registerProcessColorRoute(app, store, colorMap)
   registerApplyRoute(app)
 
   return app
@@ -48,6 +58,7 @@ async function main(): Promise<void> {
   let config: AppConfig
   // Fora do `try` porque o write-guard, la embaixo, tambem registra nele.
   let logger: Logger
+  let colorMap: readonly ColorMapEntry[]
   try {
     config = loadConfig()
     logger = createLogger({ timezone: config.timezone })
@@ -55,9 +66,14 @@ async function main(): Promise<void> {
     // de execucao numa aplicacao que o operador liga e desliga (RNF-18).
     logger.purgeExpired()
 
+    // Carregado UMA vez e passado aos dois: o store deriva os campos de cor na
+    // leitura e o guard resolve o `fillId` na escrita. Dois carregamentos
+    // permitiriam ler e gravar por mapas diferentes se o arquivo mudasse entre
+    // eles.
+    colorMap = loadColorMap()
     initStore({
       config,
-      colorMap: loadColorMap(),
+      colorMap,
       statusAliases: loadStatusAliases(),
       logger,
     })
@@ -74,7 +90,7 @@ async function main(): Promise<void> {
   // processo — `POST /api/reload` continua disponivel para nova tentativa.
   await reload()
 
-  const app = buildServer(config)
+  const app = buildServer(config, defaultStore, colorMap)
 
   try {
     await app.listen({ host: LOOPBACK, port: config.port })
@@ -103,7 +119,7 @@ async function main(): Promise<void> {
   // fila do operador ficaria para tras a cada aplicacao. Enquanto os dois usarem
   // o default nao ha como divergirem — e passar um so aqui seria exatamente o
   // jeito de quebrar isso.
-  initWriteGuard({ config, watcher, logger })
+  initWriteGuard({ config, colorMap, watcher, logger })
 
   const shutdown = (): void => {
     watcher.stop()
