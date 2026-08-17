@@ -44,9 +44,14 @@ Casos reais que essas perguntas teriam pego:
 - `H-32`: faltava `tests/http/health.test.ts`, e três fábricas de estado
   quebraram no `typecheck` ao ganhar campo obrigatório
 
+**A lista completa não basta quando a história serve rota.** Estas perguntas
+conferem os *arquivos*; a conferência do *contrato* — cada campo da resposta
+contra a fonte que a história cria — está duas seções abaixo, e é ela que pega
+o campo que nenhum arquivo da lista sabe produzir.
+
 ## Identificadores que o contrato cita e o código ainda não tem
 
-!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); sed -n "/^### ${H:?informe H-NN} /,/^### H-/p" docs/06-backlog.md | head -n -1 | grep -oE '`[A-Za-z_][A-Za-z0-9_]{3,}`|\b[a-z]+[A-Z][A-Za-z0-9]*\b' | tr -d '`' | sort -u | while read -r id; do grep -rqF -- "$id" src/ 2>/dev/null || echo "  $id"; done`
+!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); sed -n "/^### ${H:?informe H-NN} /,/^### H-/p" docs/06-backlog.md | head -n -1 | grep -oP '\x60[A-Za-z_][A-Za-z0-9_]{3,}\x60|\b[a-z]+[A-Z][A-Za-z0-9]*\b' | sed 's/\x60//g' | sort -u | while read -r id; do grep -rqF -- "$id" src/ 2>/dev/null || echo "  $id"; done`
 
 Cada nome acima é **uma de duas coisas**, e a diferença decide a fatia:
 
@@ -64,6 +69,29 @@ com a implementação pronta.
 **A lista tem ruído, e isso é aceitável:** ela existe para você julgar item a
 item, não para reprovar nada. Nome em prosa que passe pelo filtro custa uma
 linha de leitura; identificador ausente que passe despercebido custa a fatia.
+
+## O contrato da ROTA que esta história serve
+
+!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); B=$(sed -n "/^### ${H:?informe H-NN} /,/^### H-/p" docs/06-backlog.md | head -n -1); { printf '%s' "$B" | grep -oE '/api/[a-z0-9/:-]+'; printf '%s' "$B" | grep -oE 'src/http/routes/[a-z-]+\.ts' | sed 's|.*/|/api/|; s|\.ts$||'; } | sed 's|^\(/api/[a-z0-9-]*\).*|\1|' | sort -u | while read -r r; do awk -v r="$r" '/^##/ { on = index($0, r) } on' docs/05-contratos-api.md; done`
+
+**Confira campo a campo: cada um é derivável do que esta história cria?**
+
+O bloco do backlog traz o contrato da **função**; este traz o da **resposta**.
+Eles divergem, e é no segundo que mora o campo que ninguém sabe de onde tirar.
+
+Em `H-28` isto teria trazido `canalVermelho`. O contrato da rota servia três
+medidas por mês; o evento que o backlog mandava gravar tinha `from` e `to`,
+ambos `StatusCategory`. O canal vem da **cor** (IND-06), campo independente do
+status (regra inviolável 4) — nenhuma agregação daqueles dois o produz. A
+divergência apareceu **depois** do checklist, por leitura manual, e o custo de
+perdê-la não seria retrabalho: o histórico é append-only e sem retroatividade,
+então mês não gravado não se recupera.
+
+O casamento é por prefixo `/api/<primeiro-segmento>`, vindo do texto da história
+e do nome do arquivo de rota. Traz seções vizinhas — `H-27` recebe também
+`GET /api/processes`, que ela não altera. Mesmo ruído aceitável da lista acima.
+**Erra para menos quando o arquivo não é nomeado pelo caminho**: `filter-options.ts`
+serve `/api/filters/options`, e só aparece se a própria história citar a rota.
 
 ## Despacho — qual skill conduz esta história
 
