@@ -1,6 +1,12 @@
 import { constants } from 'node:fs'
 import { access, open, readFile, rename, rm } from 'node:fs/promises'
 import {
+  type ColorMapEntry,
+  resolveColor,
+  resolveFillTarget,
+  STYLED_COLUMNS,
+} from '../domain/color-mapper.ts'
+import {
   currentValue,
   EDITABLE_FIELDS,
   type EditableField,
@@ -21,13 +27,19 @@ import {
   consolidated,
   DEFAULT_APPLIED_DIR,
   DEFAULT_QUEUE_PATH,
+  isColorEdit,
   type PendingEdit,
   rotate,
 } from '../io/edit-queue.ts'
 import { detectInterference } from '../io/interference-detector.ts'
 import type { Watcher } from '../io/watcher.ts'
 import { hashBytes, type ReadResult, readWorkbook } from '../io/xlsx-reader.ts'
-import { applyCellEdits, type CellEdit } from '../io/xlsx-surgeon.ts'
+import {
+  applyCellEdits,
+  applyRowFill,
+  type CellEdit,
+  type RowFillEdit,
+} from '../io/xlsx-surgeon.ts'
 import type { AppConfig } from './config.ts'
 import { type Logger, NULL_LOGGER } from './logger.ts'
 import {
@@ -42,10 +54,18 @@ import {
 /**
  * As seis defesas de integridade, na ordem de 04-arquitetura.md secao 3.2:
  * pausar watcher, ESPERAR a releitura em voo, verificar lock, conferir hash,
- * backup, cirurgia, gravacao atomica, validacao, arquivar a fila, retomar
+ * **cirurgia, backup**, gravacao atomica, validacao, arquivar a fila, retomar
  * watcher. A espera nao esta no diagrama: `pause` cancela o agendamento, nao a
  * leitura ja iniciada, e sem ela a leitura canonica competiria com uma
  * releitura em curso.
+ *
+ * **A cirurgia vem antes do backup desde H-27**, invertendo o diagrama — que
+ * traz a emenda de 17/08/2026 registrando a troca. Ela e pura: opera sobre o
+ * buffer em memoria e nao toca o disco, entao adia-la nao muda o que o backup
+ * guarda. O que a inversao compra e nao gastar backup, nem reescrever o
+ * arquivo, quando a fila resolve para o que a planilha ja tem. A invariante
+ * segue de pe: o backup sai do MESMO buffer conferido por hash, e nada e
+ * gravado antes dele.
  *
  * A invariante que rege o modulo: **ao primeiro sinal de risco a escrita e
  * recusada, e a fila nunca e perdida**. Em qualquer recusa ela fica intacta; no
@@ -67,6 +87,12 @@ import {
  * para impedir. Por isso a linha vem da leitura do arquivo, casada por REF, e
  * o `previous` de cada edicao e conferido contra o valor atual SEMPRE, e nao
  * apenas quando o hash diverge.
+ *
+ * **A fila tem dois tipos de edicao** desde H-27, e as duas percorrem as mesmas
+ * defesas: campo, que grava valor de celula, e cor, que troca o `fillId` das
+ * colunas A a L. Uma so cirurgia por aplicacao seria mais simples, mas o
+ * contrato de H-27 fixa `applyRowFill` a parte — entao as duas sao encadeadas
+ * sobre o mesmo buffer, dentro do mesmo backup e da mesma validacao.
  *
  * O ponto sem volta e a renomeacao. Tudo antes dela pode falhar deixando o
  * original intacto; da validacao em diante, a unica saida e restaurar o backup.
@@ -104,7 +130,12 @@ export type WriteRefusal =
 /** As cinco chaves de 05-contratos-api.md secao 3, mais a sexta de H-25. */
 export interface Conflict {
   ref: string
-  field: EditableField
+  /**
+   * `'cor'` para a troca de estilo de H-27. Os tres valores abaixo passam a ser
+   * o ROTULO da cor — "Verde (tom A)" —, porque a troca nao altera valor nenhum
+   * e descreve-la como valor mentiria sobre o que mudou.
+   */
+  field: EditableField | 'cor'
   /** O valor que estava na celula quando o operador editou. */
   valueWhenEdited: string
   /** O valor que esta na celula agora. Vazio tambem quando a linha sumiu. */
@@ -121,8 +152,16 @@ export interface Conflict {
 export interface WriteResult {
   ok: boolean
   refusal: WriteRefusal | null
+  /** Edicoes da fila aplicadas — campos e cores, uma cada. */
   applied: number
+  /** Celulas que receberam VALOR. Nao conta as repintadas. */
   cellsWritten: number
+  /**
+   * Linhas repintadas (`H-27`). Separado de `cellsWritten` porque uma troca de
+   * cor toca 12 celulas (A-44) sem gravar valor algum: soma-las diria ao
+   * operador que ele gravou doze coisas quando ele mudou uma.
+   */
+  rowsRepainted: number
   backupPath: string | null
   conflicts: Conflict[]
   restored: boolean
@@ -177,6 +216,12 @@ export interface WriteGuardStore {
 export interface WriteGuardOptions {
   config: AppConfig
   /**
+   * O mesmo mapa que o store recebe. O guard precisa dele para resolver a
+   * combinacao de cada edicao de cor no `fillId` que a cirurgia grava, e para
+   * nomear a cor nos conflitos — o `Process` carrega a `styleKey`, nao o rotulo.
+   */
+  colorMap: readonly ColorMapEntry[]
+  /**
    * `Pick` em vez de `Watcher`: o guard pausa e retoma, nunca para nem inicia.
    * Derrubar o observador aqui deixaria o painel congelado ate o operador
    * reiniciar a aplicacao.
@@ -197,6 +242,7 @@ export class WriteGuardNotInitializedError extends Error {
 
 interface ResolvedOptions {
   config: AppConfig
+  colorMap: readonly ColorMapEntry[]
   watcher: Pick<Watcher, 'pause' | 'resume'>
   store: WriteGuardStore
   logger: Logger
@@ -220,6 +266,7 @@ let writing = false
 export function initWriteGuard(next: WriteGuardOptions): void {
   options = {
     config: next.config,
+    colorMap: next.colorMap,
     watcher: next.watcher,
     store: next.store ?? DEFAULT_STORE,
     logger: next.logger ?? NULL_LOGGER,
@@ -241,6 +288,7 @@ function refuse(
     refusal,
     applied: 0,
     cellsWritten: 0,
+    rowsRepainted: 0,
     backupPath: null,
     conflicts: [],
     restored: false,
@@ -255,6 +303,7 @@ function refuse(
 
 interface Resolution {
   targets: CellEdit[]
+  fills: RowFillEdit[]
   conflicts: Conflict[]
 }
 
@@ -289,17 +338,29 @@ function toCellValue(field: EditableField, value: string | null): CellEdit['valu
  * fecha o segundo caminho do defeito de endereco: alteracao de terceiro seguida
  * de releitura deixa o hash conferindo, e a gravacao passaria por cima dela.
  */
-function resolve(pending: PendingEdit[], processes: readonly Process[]): Resolution {
+function resolve(
+  pending: PendingEdit[],
+  processes: readonly Process[],
+  colorMap: readonly ColorMapEntry[],
+): Resolution {
   const targets: CellEdit[] = []
+  const fills: RowFillEdit[] = []
   const conflicts: Conflict[] = []
 
   for (const edit of pending) {
-    const base = {
-      ref: edit.ref,
-      field: edit.field,
-      valueWhenEdited: edit.previous,
-      yourValue: edit.value ?? '',
-    }
+    const base = isColorEdit(edit)
+      ? {
+          ref: edit.ref,
+          field: 'cor' as const,
+          valueWhenEdited: edit.previousLabel,
+          yourValue: edit.label,
+        }
+      : {
+          ref: edit.ref,
+          field: edit.field,
+          valueWhenEdited: edit.previous,
+          yourValue: edit.value ?? '',
+        }
 
     // `normKey`, como TD-06 define a identidade e como a rota resolve a REF:
     // trocar a caixa da REF no Excel nao pode virar "esta linha sumiu".
@@ -307,6 +368,28 @@ function resolve(pending: PendingEdit[], processes: readonly Process[]): Resolut
     const process = processes.find((candidate) => normKey(candidate.ref) === wanted)
     if (!process) {
       conflicts.push({ ...base, valueNow: '', refMissing: true })
+      continue
+    }
+
+    if (isColorEdit(edit)) {
+      // A cor envelhece pelo mesmo motivo que o valor: alguem repintou a linha
+      // no Excel desde a escolha do operador. Repintar por cima apagaria uma
+      // decisao que ele nao viu.
+      if (process.styleKey !== edit.previousStyleKey) {
+        conflicts.push({ ...base, valueNow: resolveColor(process.styleKey, colorMap).label })
+        continue
+      }
+
+      // `null` nao chega aqui: a admissibilidade recusa a fila inteira antes.
+      // O `continue` existe para o tipo, nao para um caso possivel.
+      const entry = resolveFillTarget(edit.target, colorMap)
+      if (entry === null) continue
+
+      fills.push({
+        sourceRow: process.sourceRow,
+        fillId: entry.fillId,
+        columns: [...STYLED_COLUMNS],
+      })
       continue
     }
 
@@ -323,7 +406,7 @@ function resolve(pending: PendingEdit[], processes: readonly Process[]): Resolut
     })
   }
 
-  return { targets, conflicts }
+  return { targets, fills, conflicts }
 }
 
 /** Comparacao exata: espaco nas pontas e diferenca, e a cirurgia o preserva. */
@@ -337,10 +420,14 @@ function wrote(cell: RawCell | undefined, expected: CellEdit['value']): boolean 
 }
 
 /**
- * Confere que o arquivo continua legivel E que as celulas alteradas guardam o
- * valor pretendido. So estas duas coisas: uma validacao mais ampla reprovaria
- * escrita correta, e o preco de reprovar e restaurar o backup, jogando fora um
- * trabalho valido do operador.
+ * Confere que o arquivo continua legivel, que as celulas alteradas guardam o
+ * valor pretendido E que as linhas repintadas tem a cor pedida. So estas
+ * coisas: uma validacao mais ampla reprovaria escrita correta, e o preco de
+ * reprovar e restaurar o backup, jogando fora um trabalho valido do operador.
+ *
+ * A repintura precisa de conferencia PROPRIA porque nao muda valor nenhum: sem
+ * ela, uma aplicacao so de cores passaria por uma validacao vazia e diria
+ * "gravado e validado" tendo conferido nada.
  *
  * Uma repeticao pelo mesmo motivo: no Windows, o OneDrive e o antivirus tocam o
  * arquivo recem-renomeado, e uma falha de leitura transitoria condenaria uma
@@ -349,13 +436,32 @@ function wrote(cell: RawCell | undefined, expected: CellEdit['value']): boolean 
  */
 const VALIDATION_RETRY_MS = 250
 
-async function validate(deps: ResolvedOptions, edits: CellEdit[]): Promise<boolean> {
+async function validate(
+  deps: ResolvedOptions,
+  edits: CellEdit[],
+  fills: RowFillEdit[],
+): Promise<boolean> {
+  // A chave de estilo que cada `fillId` deve produzir na releitura. O leitor
+  // devolve `styleKey`, nao `fillId`, e as duas sao a mesma entrada do mapa.
+  const expectedKeys = new Map(
+    fills.map((fill) => [
+      fill.sourceRow,
+      deps.colorMap.find((entry) => entry.fillId === fill.fillId)?.styleKey ?? null,
+    ]),
+  )
+
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
       const { rows } = await deps.readWorkbookFn(deps.config)
-      return edits.every((edit) => {
+      const values = edits.every((edit) => {
         const row = rows.find((candidate) => candidate.sourceRow === edit.sourceRow)
         return row !== undefined && wrote(row.cells[edit.column], edit.value)
+      })
+      if (!values) return false
+
+      return [...expectedKeys].every(([sourceRow, styleKey]) => {
+        const row = rows.find((candidate) => candidate.sourceRow === sourceRow)
+        return styleKey !== null && row?.styleKey === styleKey
       })
     } catch {
       if (attempt === 1) return false
@@ -462,8 +568,15 @@ async function guardedWrite(
     // fora de `EDITABLE_FIELDS` derrubaria `resolve` com TypeError, e data
     // impossivel viraria serial NaN na celula — a regra inviolavel 3 proibe
     // adivinhar o que o operador queria. Achado do revisor-xml.
-    const inadmissible = pending.some(
-      (edit) => !isEditableField(edit.field) || validateEdit(edit.field, edit.value) !== null,
+    //
+    // Para a cor, o inadmissivel e a combinacao que o mapa nao representa. Ela
+    // passa pela rota, entao so chega aqui se `config/color-map.json` mudou
+    // depois do enfileiramento — e gravar a cor "mais proxima" e exatamente o
+    // que a regra inviolavel 3 proibe.
+    const inadmissible = pending.some((edit) =>
+      isColorEdit(edit)
+        ? resolveFillTarget(edit.target, deps.colorMap) === null
+        : !isEditableField(edit.field) || validateEdit(edit.field, edit.value) !== null,
     )
     if (inadmissible) return refused('ESCRITA_INVALIDA')
 
@@ -492,7 +605,7 @@ async function guardedWrite(
     const knownHash = store.getState().fileHash
     if (knownHash === null || read.fileHash !== knownHash) {
       return refused('ARQUIVO_MUDOU', {
-        conflicts: resolve(pending, fromFile).conflicts,
+        conflicts: resolve(pending, fromFile, deps.colorMap).conflicts,
         expectedHash: knownHash,
         actualHash: read.fileHash,
       })
@@ -504,7 +617,7 @@ async function guardedWrite(
     // inserida antes da `2026` mudaria o alvo sem mudar a configuracao.
     if (read.sheetName !== store.getState().sheetName) return refused('ESCRITA_INVALIDA')
 
-    const { targets, conflicts } = resolve(pending, fromFile)
+    const { targets, fills, conflicts } = resolve(pending, fromFile, deps.colorMap)
     if (conflicts.length > 0) {
       return refused('EDICAO_OBSOLETA', {
         conflicts,
@@ -534,6 +647,81 @@ async function guardedWrite(
       return refused('ARQUIVO_MUDOU', { expectedHash: knownHash, actualHash })
     }
 
+    /**
+     * A cirurgia acontece ANTES do backup porque ela e pura — opera sobre o
+     * buffer em memoria e nao toca o disco. So depois de saber se algum byte
+     * mudaria e que se decide gravar. A invariante de H-25 fica de pe: o backup
+     * continua saindo do MESMO buffer que a cirurgia recebeu, e continua sendo
+     * gravado antes de qualquer modificacao do arquivo.
+     *
+     * Com o backup antes, uma aplicacao que nao muda nada — o operador
+     * reconfirma a cor que a linha ja tem — consumia um slot de
+     * `DEFAULT_KEEP_COUNT`, e uma cirurgia que lanca deixava backup de rastro
+     * sem nunca ter gravado. Achado do revisor-xml.
+     */
+    let cellsWritten: number
+    let rowsRepainted: number
+    let buffer: Uint8Array
+    try {
+      // Valores primeiro, cor depois: a repintura precisa enxergar as celulas
+      // que a primeira cirurgia acabou de criar, senao uma coluna recem-
+      // preenchida ficaria sem pintar. A ordem inversa tambem funcionaria, mas
+      // esta e a que nao depende de `applyCellEdits` preservar cor — ela
+      // preserva, e nao ha por que apostar nisso.
+      //
+      // CONSEQUENCIA da ordem, anotada porque nao e obvia: gravar valor numa
+      // celula de A a L que nao existia no XML a cria herdando o estilo da
+      // COLUNA, sem borda, e a repintura seguinte lhe da a cor — celula
+      // colorida sem a borda das irmas. Nasce da criacao de celula de H-24, nao
+      // da repintura, que nao cria nenhuma. Inalcancavel pelo arquivo real:
+      // H-25 mediu A a N nunca ausentes, e H-27 remediu A a L em 744 linhas,
+      // zero ausencias. Achado do revisor-xml.
+      const written = applyCellEdits(original, targets, read.sheetPath)
+      const painted = applyRowFill(written.buffer, fills, read.sheetPath)
+      cellsWritten = written.cellsWritten
+      // O que a cirurgia MEDIU, e nao `fills.length`: uma linha que ja estivesse
+      // na cor pedida nao muda byte algum, e anuncia-la como repintada diria ao
+      // operador que houve gravacao onde nao houve. Achado do revisor-xml.
+      rowsRepainted = painted.rowsPainted
+      buffer = painted.buffer
+    } catch {
+      // Nada foi gravado: o original esta intacto, e nao ha backup a indicar
+      // porque nao houve o que desfazer.
+      return refused('ESCRITA_INVALIDA')
+    }
+
+    /**
+     * NADA MUDOU: a fila resolvia para o que o arquivo ja tem. Gravar aqui
+     * substituiria a planilha por uma copia recomprimida — mesmo XML, hash e
+     * mtime novos —, forcando o OneDrive a reenviar o arquivo e o observador a
+     * reler, por uma alteracao que nao altera. Achado do revisor-xml.
+     *
+     * E sucesso, e nao recusa: o operador pediu um estado, e o estado e esse. A
+     * fila e arquivada como em qualquer aplicacao bem-sucedida — deixa-la para
+     * tras faria a proxima tentativa repetir o mesmo nada.
+     */
+    if (cellsWritten === 0 && rowsRepainted === 0) {
+      const archived = archiveQueue(deps)
+      const durationMs = Math.round(performance.now() - startedAt)
+      logger.log({ level: 'info', event: 'write.done', durationMs, cellsWritten: 0 })
+
+      return {
+        ok: true,
+        refusal: null,
+        applied: targets.length + fills.length,
+        cellsWritten: 0,
+        rowsRepainted: 0,
+        backupPath: null,
+        conflicts: [],
+        restored: false,
+        durationMs,
+        expectedHash: null,
+        actualHash: null,
+        fileState: 'intacto',
+        archivedQueuePath: archived,
+      }
+    }
+
     let backupPath: string
     try {
       backupPath = await backupFrom(original, deps.backupDir)
@@ -541,18 +729,15 @@ async function guardedWrite(
       return refused('ESCRITA_INVALIDA')
     }
 
-    let cellsWritten: number
     try {
-      const surgery = applyCellEdits(original, targets, read.sheetPath)
-      await writeAtomic(filePath, surgery.buffer)
-      cellsWritten = surgery.cellsWritten
+      await writeAtomic(filePath, buffer)
     } catch {
       // Nada foi renomeado sobre o original: a recusa nao restaura porque nao
       // ha o que desfazer, e o backup fica como testemunha do estado de antes.
       return refused('ESCRITA_INVALIDA', { backupPath })
     }
 
-    if (!(await validate(deps, targets))) {
+    if (!(await validate(deps, targets, fills))) {
       const restored = await restoreQuietly(backupPath, filePath, logger)
       return refused('ESCRITA_INVALIDA', {
         backupPath,
@@ -564,35 +749,7 @@ async function guardedWrite(
       })
     }
 
-    // Arquivada AQUI, e nao pela rota, por causa da janela: `finishWriting` no
-    // `finally` devolve o estado a 'pronto', e `POST /api/edits` volta a
-    // aceitar. Rotacionar depois disso arquivaria — e faria sumir — a edicao
-    // que o operador digitou nesse intervalo, sem que ela tivesse sido gravada.
-    // Achado do revisor-xml, reproduzido.
-    //
-    // Falhar aqui NAO invalida a escrita: o .xlsx ja esta correto e validado em
-    // disco, e devolver ESCRITA_INVALIDA mandaria o operador procurar um backup
-    // obsoleto. `archivedQueuePath: null` cobre os DOIS desfechos sem
-    // arquivamento — a rotacao falhou, e ai a fila ficou para tras, ou o
-    // arquivo de fila ja nao existia. Quem os distingue e o log.
-    let archivedQueuePath: string | null = null
-    try {
-      archivedQueuePath = rotate(deps.queuePath, deps.appliedDir)
-      logger.log(
-        archivedQueuePath === null
-          ? // `rotate` devolve null SEM lancar quando o arquivo de fila ja nao
-            // esta la — alguem o apagou por fora durante a escrita. Nada se
-            // perdeu, ja gravamos; mas o silencio faria a resposta e o log
-            // dizerem que a fila continua no lugar, e ela nao esta.
-            { level: 'warn', event: 'queue.archived', errorCode: 'FILA_AUSENTE' }
-          : { level: 'info', event: 'queue.archived', archivedQueuePath },
-      )
-    } catch {
-      // Evento proprio, e nao `write.done`: a planilha FOI gravada e validada,
-      // e emitir o evento de escrita como erro faria uma aplicacao
-      // bem-sucedida contar duas vezes no log e parecer falha de escrita.
-      logger.log({ level: 'error', event: 'queue.archived', errorCode: 'ERRO_INTERNO' })
-    }
+    const archivedQueuePath = archiveQueue(deps)
 
     const durationMs = Math.round(performance.now() - startedAt)
     logger.log({ level: 'info', event: 'write.done', durationMs, cellsWritten, backupPath })
@@ -601,8 +758,9 @@ async function guardedWrite(
     return {
       ok: true,
       refusal: null,
-      applied: targets.length,
+      applied: targets.length + fills.length,
       cellsWritten,
+      rowsRepainted,
       backupPath,
       conflicts: [],
       restored: false,
@@ -633,6 +791,41 @@ async function guardedWrite(
     } finally {
       store.finishWriting()
     }
+  }
+}
+
+/**
+ * Arquiva a fila em `data/applied/` — AQUI, e nao na rota, por causa da janela:
+ * `finishWriting` no `finally` devolve o estado a 'pronto' e `POST /api/edits`
+ * volta a aceitar. Rotacionar depois disso arquivaria — e faria sumir — a
+ * edicao que o operador digitou nesse intervalo, sem que ela tivesse sido
+ * gravada. Achado do revisor-xml, reproduzido.
+ *
+ * Falhar aqui NAO invalida a escrita: o .xlsx ja esta correto e validado em
+ * disco, e devolver ESCRITA_INVALIDA mandaria o operador procurar um backup
+ * obsoleto. `null` cobre os DOIS desfechos sem arquivamento — a rotacao falhou,
+ * e ai a fila ficou para tras, ou o arquivo de fila ja nao existia. Quem os
+ * distingue e o log.
+ */
+function archiveQueue(deps: ResolvedOptions): string | null {
+  try {
+    const archivedQueuePath = rotate(deps.queuePath, deps.appliedDir)
+    deps.logger.log(
+      archivedQueuePath === null
+        ? // `rotate` devolve null SEM lancar quando o arquivo de fila ja nao
+          // esta la — alguem o apagou por fora durante a escrita. Nada se
+          // perdeu, ja gravamos; mas o silencio faria a resposta e o log
+          // dizerem que a fila continua no lugar, e ela nao esta.
+          { level: 'warn', event: 'queue.archived', errorCode: 'FILA_AUSENTE' }
+        : { level: 'info', event: 'queue.archived', archivedQueuePath },
+    )
+    return archivedQueuePath
+  } catch {
+    // Evento proprio, e nao `write.done`: a planilha FOI gravada e validada, e
+    // emitir o evento de escrita como erro faria uma aplicacao bem-sucedida
+    // contar duas vezes no log e parecer falha de escrita.
+    deps.logger.log({ level: 'error', event: 'queue.archived', errorCode: 'ERRO_INTERNO' })
+    return null
   }
 }
 
