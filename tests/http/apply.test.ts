@@ -25,6 +25,7 @@ function result(overrides: Partial<WriteResult> = {}): WriteResult {
     refusal: null,
     applied: 0,
     cellsWritten: 0,
+    rowsRepainted: 0,
     backupPath: null,
     conflicts: [],
     restored: false,
@@ -67,6 +68,9 @@ describe('POST /api/edits/apply — sucesso', () => {
     expect(response.json()).toEqual({
       applied: 3,
       cellsWritten: 3,
+      // `H-27`: separado de `cellsWritten` porque uma troca de cor toca 12
+      // celulas sem gravar valor algum.
+      rowsRepainted: 0,
       backupPath: 'data/backups/planilha-20260814-143512.xlsx',
       archivedQueuePath: 'data/applied/pending-edits-20260814-143512.jsonl',
       durationMs: 284,

@@ -66,6 +66,40 @@ describe('o comando de aplicacao', () => {
     expect(api.calls).toContain('POST /api/edits/apply')
   })
 
+  /**
+   * A troca de cor toca 12 células (A-44) sem gravar valor algum. Somar as duas
+   * grandezas diria que o operador gravou doze coisas quando ele mudou a cor de
+   * uma linha.
+   */
+  it('conta as linhas repintadas à parte das células gravadas', async () => {
+    api.serveApply({ applied: 2, cellsWritten: 1, rowsRepainted: 1 })
+    render(<App />)
+    await waitFor(() => expect((botao() as HTMLButtonElement).disabled).toBe(false))
+
+    fireEvent.click(botao())
+
+    expect((await screen.findByRole('status')).textContent).toContain(
+      '1 célula gravada · 1 linha repintada na planilha',
+    )
+  })
+
+  /**
+   * Sucesso com zero em ambas é desfecho válido: a fila resolvia para o que a
+   * planilha já tinha, e o guard não gravou byte algum. Dizer "gravadas" ali
+   * afirmaria uma escrita que não aconteceu. Achado do revisor-xml.
+   */
+  it('não afirma gravação quando nada precisou ser gravado', async () => {
+    api.serveApply({ applied: 1, cellsWritten: 0, rowsRepainted: 0 })
+    render(<App />)
+    await waitFor(() => expect((botao() as HTMLButtonElement).disabled).toBe(false))
+
+    fireEvent.click(botao())
+
+    const aviso = (await screen.findByRole('status')).textContent
+    expect(aviso).toContain('nada precisou ser gravado')
+    expect(aviso).not.toContain('gravadas na planilha')
+  })
+
   // Criterio de aceite: "Dado a escrita concluida, entao o watcher retoma e uma
   // releitura ocorre, deixando o painel coerente com o arquivo". Do lado da
   // tela, o equivalente e o painel se refazer.

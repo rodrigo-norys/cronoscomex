@@ -475,8 +475,9 @@ outro processo, o que a aplicação não faz — criação de linha nova está f
 escopo (§3.2 de `00-visao-escopo.md`).
 
 Os campos derivados de cor (`responsible`, `customsChannel`,
-`importerOutsideRj`) tornam-se editáveis na Fase 4, por `H-27`, através da
-rota dedicada abaixo.
+`importerOutsideRj`) são editáveis pela rota dedicada abaixo, e **não** por
+`POST /api/edits`: eles não têm coluna própria, e a gravação é troca de estilo
+da linha, não de valor de célula (`H-27`).
 
 ---
 
@@ -506,7 +507,9 @@ Enfileira uma edição. **Não toca no `.xlsx`.**
 | 409 | `ESCRITA_EM_ANDAMENTO` — uma aplicação está em curso |
 | 503 | `ARQUIVO_INDISPONIVEL` — nunca houve leitura, não há processo a editar |
 
-> As tres rotas que ESCREVEM na fila recusam com `409 ESCRITA_EM_ANDAMENTO`
+> As quatro rotas que ESCREVEM na fila — `POST /api/edits`,
+> `DELETE /api/edits/:id`, `DELETE /api/edits` e
+> `PATCH /api/processes/:ref/color` — recusam com `409 ESCRITA_EM_ANDAMENTO`
 > enquanto uma aplicacao estiver em curso. Mexer na fila nesse intervalo a
 > faria sumir sem ser gravada: o `write-guard` tira o instantaneo do que vai
 > gravar no inicio e arquiva o arquivo inteiro no fim. `GET /api/edits`
@@ -514,38 +517,105 @@ Enfileira uma edição. **Não toca no `.xlsx`.**
 
 ---
 
+### `GET /api/color-options`
+
+As combinações que a aplicação sabe **gravar**, na ordem do mapa. É o menu do
+formulário de cor.
+
+```jsonc
+{ "options": [
+    { "label": "Verde (tom A)", "responsible": "indefinido",
+      "customsChannel": "nenhum", "importerOutsideRj": false }
+] }
+```
+
+Existe porque a alternativa é a interface carregar uma cópia das combinações —
+e uma segunda lista diverge de `config/color-map.json` no primeiro ajuste,
+oferecendo ao operador uma cor que a escrita não grava. Sempre `200`: mapa vazio
+devolve `options: []`, e o formulário diz que não há cor configurada.
+
+---
+
 ### `PATCH /api/processes/:ref/color`
 
-> **Pendente de `H-27`.** Documentada, ainda **não registrada** no
-> servidor. `tests/repo/contratos.test.ts` cobra a existência assim que a
-> história for concluída no backlog.
-
-Enfileira alteração dos campos codificados em cor. Disponível a partir da
-Fase 4 (`H-27`). Os três são gravados como **uma única** mudança de estilo da
-linha, porque compartilham a mesma célula-âncora.
+Enfileira alteração dos campos codificados em cor. Os três são gravados como
+**uma única** mudança de estilo da linha, porque compartilham a mesma
+célula-âncora.
 
 ```jsonc
 { "responsible": "colaborador2", "customsChannel": "nenhum", "importerOutsideRj": false }
 ```
 
-A combinação enviada precisa corresponder a exatamente uma entrada de
-`color-map.json`; caso contrário → `400 CORPO_INVALIDO` com a lista de
-combinações válidas. Isso decorre de A-31: a cor codifica dimensões
+A combinação enviada precisa corresponder a **pelo menos uma** entrada de
+`config/color-map.json`; caso contrário → `400 CORPO_INVALIDO` com a lista de
+combinações representáveis. Isso decorre de A-31: a cor codifica dimensões
 concorrentes, e nem toda combinação é representável.
+
+**Quando mais de uma entrada casa, o alvo é a primeira na ordem do arquivo** —
+o tom canônico. As entradas do mapa real (medido em `H-01`, 03/08/2026) não são
+uma bijeção com as combinações: `indefinido/nenhum/false` casa com verde tom A,
+verde tom B e branco; `colaborador2/nenhum/false` casa com os dois roxos.
+Exigir correspondência única recusaria três das nove entradas, entre elas o
+verde, que cobre 477 das 649 linhas. A regra do tom canônico é a mesma que o
+caso-limite de `H-27` já fixa para a linha verde tom B repintada de verde.
+
+**Consequência, e ela é visível ao operador:** as combinações representáveis são
+**seis**, e cada uma grava uma cor só. Branco e os tons B são **legíveis, não
+graváveis** — a interface oferece as seis, rotuladas pela cor que de fato será
+gravada, em vez de deixar o operador escolher um alvo que a aplicação não
+escreve.
+
+| `responsible` | `customsChannel` | `importerOutsideRj` | Cor gravada | `fillId` |
+|---|---|---|---|---|
+| `indefinido` | `nenhum` | `false` | Verde (tom A) | 2 |
+| `colaborador1` | `nenhum` | `false` | Azul | 8 |
+| `colaborador2` | `nenhum` | `false` | Roxo (tom A) | 27 |
+| `colaborador1_outros_clientes` | `nenhum` | `false` | Bege | 9 |
+| `indefinido` | `vermelho` | `false` | Vermelho | 7 |
+| `indefinido` | `nenhum` | `true` | Amarelo forte | 10 |
+
+A tabela é **derivada** de `config/color-map.json`, não uma segunda fonte: o
+`fillId` vem da entrada, e mudar o mapa muda o que a rota aceita.
+
+> **Entrada do mapa sem `fillId` não chega a esta rota.** O backlog previa `400`
+> para esse caso; `loadColorMap` o rejeita na **partida** — `fillId` obrigatório,
+> inteiro, não negativo —, e o processo não sobe. Documentar aqui um `400` que o
+> servidor não emite seria afirmar resposta que o código não produz.
 
 | Código | Situação |
 |---|---|
 | 201 | Enfileirada |
 | 400 | `CORPO_INVALIDO` — combinação sem cor correspondente |
 | 404 | `PROCESSO_NAO_ENCONTRADO` |
+| 409 | `ESCRITA_EM_ANDAMENTO` — uma aplicação está em curso |
+| 503 | `ARQUIVO_INDISPONIVEL` — nunca houve leitura, não há processo a editar |
 
 ---
 
 ### `GET /api/edits`
 
 ```jsonc
-{ "items": [ /* edições consolidadas, uma por (ref, field) */ ], "count": 0 }
+{ "items": [ /* edições consolidadas */ ], "count": 0 }
 ```
+
+A fila tem **dois** tipos de item, distinguidos por `kind`. Uma edição de campo
+é consolidada por `(ref, field)`; uma de cor, por `ref` — a linha tem uma cor
+só, então a última escolha vence.
+
+```jsonc
+{ "kind": "field", "id": "…", "ref": "FT533.26", "sourceRow": 483,
+  "field": "eta2", "value": "2026-08-06", "previous": "2026-08-04", "ts": "…" }
+
+{ "kind": "color", "id": "…", "ref": "FT533.26", "sourceRow": 483,
+  "target": { "responsible": "colaborador2", "customsChannel": "nenhum",
+              "importerOutsideRj": false },
+  "label": "Roxo (tom A)", "previousLabel": "Verde (tom A)",
+  "previousStyleKey": "argb:FF00FF00", "ts": "…" }
+```
+
+`kind` ausente vale `"field"`: a fila é append-only em disco e sobrevive ao
+reinício, então os registros gravados antes de `H-27` continuam válidos sem
+migração.
 
 ---
 
@@ -592,12 +662,26 @@ Corpo: vazio.
 {
   "applied": 0,
   "cellsWritten": 0,
+  "rowsRepainted": 0,
   "backupPath": "data/backups/planilha-20260803-143512.xlsx",
   "archivedQueuePath": "data/applied/pending-edits-20260803-143512.jsonl",
   "durationMs": 0,
   "validated": true
 }
 ```
+
+> **`rowsRepainted` entrou em `H-27`** e é contado **à parte** de
+> `cellsWritten`, nunca somado a ele: uma troca de cor toca 12 células (A-44)
+> sem gravar valor algum, e somá-las diria ao operador que ele gravou doze
+> coisas quando mudou a cor de uma linha. `cellsWritten` conta células que
+> receberam **valor**; `rowsRepainted`, linhas em que ao menos uma célula mudou
+> de estilo — **medido pela cirurgia**, não pedido pela fila.
+>
+> **`applied` maior que zero com as duas contagens em zero é desfecho válido**,
+> e não erro: a fila resolvia para o que a planilha já tinha. Nesse caso
+> `backupPath` é `null` e nada foi gravado — ver a emenda de `H-27` em
+> `04-arquitetura.md §3.2`. A interface diz "a planilha já estava assim", em vez
+> de afirmar uma gravação que não houve.
 
 > `archivedQueuePath` entrou em `H-26`, fora do contrato fixado de `H-25`, junto
 > com `expectedHash` e `actualHash`. **`null` no 200 significa que a planilha foi
@@ -609,9 +693,16 @@ Corpo: vazio.
 > pior. A interface avisa que a fila pode ter ficado para trás e precisa ser
 > conferida. O log distingue os dois casos em `queue.archived`; a resposta, não.
 >
-> `validated` **não** existirá em `WriteResult`: a rota vai derivá-lo de
-> `ok === true`. Se a resposta é 200, a validação passou, e um segundo campo
-> dizendo o mesmo é ruído.
+> `validated` **não** existe em `WriteResult`: a rota o deriva de `ok === true`.
+> Um segundo campo dizendo o mesmo seria ruído que pode divergir.
+>
+> **Emenda de `H-27` (17/08/2026).** Esta nota dizia "se a resposta é 200, a
+> validação passou". Deixou de ser exata no ramo em que nada foi gravado: não se
+> valida o que não se escreveu, e ali `validated: true` afirma que **o arquivo
+> em disco corresponde ao que a fila pedia** — que é verdade, e é o que o campo
+> sempre significou para o operador. O que ele não afirma mais é que houve uma
+> releitura de conferência. `backupPath: null` e `cellsWritten` e
+> `rowsRepainted` em zero distinguem o caso.
 
 **409 `ARQUIVO_MUDOU` — corpo com o conflito:**
 
@@ -664,6 +755,17 @@ Corpo: vazio.
 `conflicts` ganha `"refMissing": true` quando a `ref` não está mais no arquivo.
 Sem essa marca, `valueNow: ""` afirmaria que a célula está vazia, quando a linha
 inteira desapareceu (regra inviolável 3).
+
+**Conflito de cor** sai com `"field": "cor"`, e os três valores são o **rótulo**
+da cor, não conteúdo de célula — `"Verde (tom A)"`, `"Roxo (tom A)"`. A troca de
+cor não altera valor nenhum, então descrevê-la como valor mentiria sobre o que
+mudou. Ela envelhece pelo mesmo motivo que a de campo: alguém repintou a linha no
+Excel desde que o operador escolheu.
+
+```jsonc
+{ "ref": "FT533.26", "field": "cor",
+  "valueWhenEdited": "Verde (tom A)", "valueNow": "Vermelho", "yourValue": "Roxo (tom A)" }
+```
 
 > **A linha que sumiu chega pelos dois códigos.** Se uma releitura já pousou
 > quando o operador aplica, o hash confere e a recusa é `EDICAO_OBSOLETA`; se
@@ -744,7 +846,7 @@ direta de URL.
 | `GET /api/quarantine` | H-07 |
 | `POST /api/reload` | H-08 |
 | `POST /api/edits`, `GET`, `DELETE` | H-23 |
-| `PATCH /api/processes/:ref/color` | H-27 |
+| `GET /api/color-options`, `PATCH /api/processes/:ref/color` | H-27 |
 | `POST /api/edits/apply` | H-26 |
 | `GET /*` (rota estática) | H-30 |
 

@@ -1,8 +1,9 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { ColorMapError, loadColorMap } from '../../src/app/color-map-loader.ts'
+import { STYLED_COLUMNS } from '../../src/domain/color-mapper.ts'
 
 let dir: string
 
@@ -102,5 +103,29 @@ describe('loadColorMap', () => {
     const invalido = { ...entradaValida, importerOutsideRj: 'sim' }
 
     expect(() => loadColorMap(escrever({ entries: [invalido] }))).toThrow(/true ou false/)
+  })
+})
+
+/**
+ * `STYLED_COLUMNS` vive no dominio e `styledColumns` vive no arquivo, e as duas
+ * precisam dizer a mesma coisa. `loadColorMap` devolve so as entradas — alargar
+ * a assinatura dele alcancaria `process-store` e as fabricas de estado dos
+ * testes —, entao quem impede a divergencia e esta assercao.
+ *
+ * Se ela reprovar, a escolha e uma so: alinhar os dois. Nao ha "qual vence".
+ */
+describe('as colunas repintadas por H-27', () => {
+  it('batem com styledColumns de config/color-map.json', () => {
+    const arquivo = JSON.parse(readFileSync('config/color-map.json', 'utf-8')) as {
+      styledColumns: string[]
+    }
+
+    expect(arquivo.styledColumns).toEqual([...STYLED_COLUMNS])
+  })
+
+  it('cobrem A a L, e nenhuma das que tem preenchimento proprio (A-44)', () => {
+    expect(STYLED_COLUMNS).toHaveLength(12)
+    expect(STYLED_COLUMNS).not.toContain('M')
+    expect(STYLED_COLUMNS).not.toContain('P')
   })
 })

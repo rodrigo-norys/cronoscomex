@@ -1,8 +1,13 @@
-import { type ColorMapEntry, indexColorMap } from '../domain/color-mapper.ts'
+import { type ColorMapEntry, indexColorMap, resolveFillTarget } from '../domain/color-mapper.ts'
 import { type BuildResult, buildProcesses, quarantineRate } from '../domain/process-builder.ts'
-import { applyEdits } from '../domain/process-projection.ts'
+import { applyEdits, type ProjectedEdit } from '../domain/process-projection.ts'
 import type { Process, RawRow } from '../domain/types.ts'
-import { consolidated, DEFAULT_QUEUE_PATH, type PendingEdit } from '../io/edit-queue.ts'
+import {
+  consolidated,
+  DEFAULT_QUEUE_PATH,
+  isColorEdit,
+  type PendingEdit,
+} from '../io/edit-queue.ts'
 import { detectInterference } from '../io/interference-detector.ts'
 import { buildReport, DEFAULT_QUARANTINE_PATH, writeReport } from '../io/quarantine-reporter.ts'
 import { type ReadResult, readWorkbook } from '../io/xlsx-reader.ts'
@@ -129,12 +134,31 @@ export function getState(): StoreState {
   const edits = consolidated(options.queuePath ?? DEFAULT_QUEUE_PATH)
   if (edits.length === 0) return { ...current }
 
-  const { processes } = applyEdits(current.processes, edits, {
+  const { processes } = applyEdits(current.processes, toProjected(edits, options.colorMap), {
     colorMap: colorMapIndex,
     statusAliases: options.statusAliases,
   })
 
   return { ...current, processes, pendingEdits: edits }
+}
+
+/**
+ * Resolve a combinacao de cada edicao de cor contra o mapa, porque a projecao
+ * recebe a chave de estilo alvo.
+ *
+ * Combinacao sem entrada e DESCARTADA da projecao: a rota so enfileira o que o
+ * mapa representa, entao isto so acontece se `config/color-map.json` tiver
+ * mudado depois do enfileiramento. Projetar o que a escrita nao sabe gravar
+ * mostraria ao operador uma cor que a aplicacao nao produz — e o `write-guard`
+ * recusa a mesma fila com `ESCRITA_INVALIDA`.
+ */
+function toProjected(edits: PendingEdit[], colorMap: readonly ColorMapEntry[]): ProjectedEdit[] {
+  return edits.flatMap<ProjectedEdit>((edit) => {
+    if (!isColorEdit(edit)) return [edit]
+
+    const entry = resolveFillTarget(edit.target, colorMap)
+    return entry === null ? [] : [{ kind: 'color', ref: edit.ref, styleKey: entry.styleKey }]
+  })
 }
 
 function describeFailure(error: unknown, workbookPath: string): string {

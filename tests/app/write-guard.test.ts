@@ -20,9 +20,13 @@ import {
   initWriteGuard,
   type WriteGuardStore,
 } from '../../src/app/write-guard.ts'
-import { type ColorMapEntry, indexColorMap } from '../../src/domain/color-mapper.ts'
+import {
+  type ColorMapEntry,
+  type ColorTarget,
+  indexColorMap,
+} from '../../src/domain/color-mapper.ts'
 import { buildProcesses } from '../../src/domain/process-builder.ts'
-import { enqueue } from '../../src/io/edit-queue.ts'
+import { consolidated, enqueue } from '../../src/io/edit-queue.ts'
 import { hashFile, type ReadResult, readWorkbook } from '../../src/io/xlsx-reader.ts'
 
 /**
@@ -39,7 +43,12 @@ const REF = 'FT001.26'
 const SOURCE_ROW = 2
 const HASH_FALSO = `sha256:${'0'.repeat(64)}`
 
-/** Minimo para compor: cor fora do mapa nao manda a linha para quarentena. */
+/**
+ * As chaves que `basico.xlsx` de fato tem na coluna A, com os `fillId` medidos
+ * em `H-01`: a linha 2 e verde tom A e a 4 e azul. Mapa desalinhado com a
+ * fixture faria a repintura de `H-27` cair em `ESCRITA_INVALIDA` por
+ * combinacao inexistente, e nao pelo que o teste quer provar.
+ */
 const COLOR_MAP: ColorMapEntry[] = [
   {
     styleKey: 'none',
@@ -49,7 +58,29 @@ const COLOR_MAP: ColorMapEntry[] = [
     customsChannel: 'nenhum',
     importerOutsideRj: false,
   },
+  {
+    styleKey: 'argb:FF00FF00',
+    fillId: 2,
+    label: 'Verde (tom A)',
+    responsible: 'indefinido',
+    customsChannel: 'nenhum',
+    importerOutsideRj: false,
+  },
+  {
+    styleKey: 'argb:FF5B9BD5',
+    fillId: 8,
+    label: 'Azul',
+    responsible: 'colaborador1',
+    customsChannel: 'nenhum',
+    importerOutsideRj: false,
+  },
 ]
+
+const AZUL: ColorTarget = {
+  responsible: 'colaborador1',
+  customsChannel: 'nenhum',
+  importerOutsideRj: false,
+}
 const STATUS_ALIASES = ['DESEMBARACADA', 'DESEMBARCADA']
 
 let directory: string
@@ -98,6 +129,7 @@ async function setup(overrides: Partial<Parameters<typeof initWriteGuard>[0]> = 
   state.fileHash = await hashFile(workbook)
   initWriteGuard({
     config: config(),
+    colorMap: COLOR_MAP,
     watcher,
     store,
     queuePath,
@@ -125,6 +157,28 @@ function queueTextEdit(previous = 'CLIENTE A', sourceRow = SOURCE_ROW): void {
     { ref: REF, sourceRow, field: 'clientRaw', value: 'CLIENTE ALTERADO', previous },
     queuePath,
   )
+}
+
+function queueColorEdit(previousStyleKey = 'argb:FF00FF00'): void {
+  enqueue(
+    {
+      kind: 'color',
+      ref: REF,
+      sourceRow: SOURCE_ROW,
+      target: AZUL,
+      label: 'Azul',
+      previousStyleKey,
+      previousLabel: 'Verde (tom A)',
+    },
+    queuePath,
+  )
+}
+
+async function styleKeyOf(row: number): Promise<string> {
+  const read = await readWorkbook(config())
+  const found = read.rows.find((candidate) => candidate.sourceRow === row)
+  if (!found) throw new Error(`linha ${row} ausente do arquivo`)
+  return found.styleKey
 }
 
 function queueDateEdit(): void {
@@ -868,5 +922,264 @@ describe('ESCRITA_EM_ANDAMENTO', () => {
     const depois = await applyPendingEdits()
 
     expect(depois.refusal).not.toBe('ESCRITA_EM_ANDAMENTO')
+  })
+})
+
+/**
+ * A repintura de linha (`H-27`) percorre as MESMAS defesas da edicao de campo:
+ * um backup, uma gravacao atomica, uma validacao, um arquivamento.
+ */
+describe('escrita de cor', () => {
+  it('grava a cor nova e a releitura a confirma', async () => {
+    queueColorEdit()
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.ok).toBe(true)
+    expect(result.applied).toBe(1)
+    expect(await styleKeyOf(SOURCE_ROW)).toBe('argb:FF5B9BD5')
+  })
+
+  /**
+   * `cellsWritten` conta celulas com VALOR gravado, e a repintura nao grava
+   * nenhum. Soma-las diria ao operador que ele gravou doze coisas quando ele
+   * mudou a cor de uma linha.
+   */
+  it('conta a linha repintada a parte das celulas gravadas', async () => {
+    queueColorEdit()
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.cellsWritten).toBe(0)
+    expect(result.rowsRepainted).toBe(1)
+  })
+
+  it('nao altera o valor de nenhuma celula da linha', async () => {
+    const antes = await cellsOf(SOURCE_ROW)
+    queueColorEdit()
+    await setup()
+
+    await applyPendingEdits()
+
+    expect(await cellsOf(SOURCE_ROW)).toEqual(antes)
+  })
+
+  it('aplica cor e campo na mesma escrita, com um backup so', async () => {
+    queueTextEdit()
+    queueColorEdit()
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.ok).toBe(true)
+    expect(result.applied).toBe(2)
+    expect(result.cellsWritten).toBe(1)
+    expect(result.rowsRepainted).toBe(1)
+    expect(backupNames()).toHaveLength(1)
+    expect((await cellsOf(SOURCE_ROW)).B).toBe('CLIENTE ALTERADO')
+    expect(await styleKeyOf(SOURCE_ROW)).toBe('argb:FF5B9BD5')
+  })
+
+  /**
+   * Alguem repintou a linha no Excel depois que o operador escolheu. Repintar
+   * por cima apagaria uma decisao que ele nao viu — mesma regra que vale para
+   * valor (`H-25`).
+   */
+  it('recusa quando a cor mudou desde a escolha, e nao grava nada', async () => {
+    queueColorEdit('argb:FFFF0000')
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.refusal).toBe('EDICAO_OBSOLETA')
+    expect(result.conflicts).toHaveLength(1)
+    expect(result.conflicts[0]?.field).toBe('cor')
+    expect(await styleKeyOf(SOURCE_ROW)).toBe('argb:FF00FF00')
+  })
+
+  // O conflito de cor fala em ROTULO, nao em valor de celula: a troca nao
+  // altera valor nenhum, e descreve-la como valor mentiria sobre o que mudou.
+  it('descreve o conflito de cor pelos rotulos das cores', async () => {
+    queueColorEdit('argb:FFFF0000')
+    await setup()
+
+    const conflito = (await applyPendingEdits()).conflicts[0]
+
+    expect(conflito?.valueNow).toBe('Verde (tom A)')
+    expect(conflito?.yourValue).toBe('Azul')
+  })
+
+  it('marca refMissing quando a REF sumiu do arquivo', async () => {
+    enqueue(
+      {
+        kind: 'color',
+        ref: 'FT999.99',
+        sourceRow: 99,
+        target: AZUL,
+        label: 'Azul',
+        previousStyleKey: 'argb:FF00FF00',
+        previousLabel: 'Verde (tom A)',
+      },
+      queuePath,
+    )
+    await setup()
+
+    const conflito = (await applyPendingEdits()).conflicts[0]
+
+    expect(conflito?.refMissing).toBe(true)
+    expect(conflito?.field).toBe('cor')
+  })
+
+  /**
+   * A combinacao passa pela rota, entao so chega aqui se `color-map.json` mudou
+   * depois do enfileiramento. Gravar a cor "mais proxima" e o que a regra
+   * inviolavel 3 proibe.
+   */
+  it('recusa combinacao que o mapa nao representa, sem tocar no arquivo', async () => {
+    enqueue(
+      {
+        kind: 'color',
+        ref: REF,
+        sourceRow: SOURCE_ROW,
+        target: {
+          responsible: 'colaborador2',
+          customsChannel: 'vermelho',
+          importerOutsideRj: true,
+        },
+        label: 'Combinacao que sumiu do mapa',
+        previousStyleKey: 'argb:FF00FF00',
+        previousLabel: 'Verde (tom A)',
+      },
+      queuePath,
+    )
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.refusal).toBe('ESCRITA_INVALIDA')
+    expect(readFileSync(workbook)).toEqual(originalBytes)
+  })
+
+  // Uma edicao de cor inadmissivel recusa a fila INTEIRA: aplicacao parcial
+  // deixaria o operador sem saber o que foi gravado.
+  it('a cor inadmissivel impede tambem a edicao de campo da mesma fila', async () => {
+    queueTextEdit()
+    enqueue(
+      {
+        kind: 'color',
+        ref: REF,
+        sourceRow: SOURCE_ROW,
+        target: {
+          responsible: 'colaborador2',
+          customsChannel: 'vermelho',
+          importerOutsideRj: true,
+        },
+        label: 'Combinacao que sumiu do mapa',
+        previousStyleKey: 'argb:FF00FF00',
+        previousLabel: 'Verde (tom A)',
+      },
+      queuePath,
+    )
+    await setup()
+
+    expect((await applyPendingEdits()).refusal).toBe('ESCRITA_INVALIDA')
+    expect(readFileSync(workbook)).toEqual(originalBytes)
+  })
+
+  /**
+   * A repintura nao muda valor, entao a validacao de valores passaria vazia. Sem
+   * conferencia propria da cor, uma aplicacao so de cores diria "gravado e
+   * validado" tendo conferido nada.
+   */
+  it('restaura o backup quando a releitura nao confirma a cor', async () => {
+    queueColorEdit()
+    await setup({
+      readWorkbookFn: readThenFail(async () => {
+        const read = await readWorkbook(config())
+        return {
+          ...read,
+          rows: read.rows.map((row) =>
+            row.sourceRow === SOURCE_ROW ? { ...row, styleKey: 'argb:FF00FF00' } : row,
+          ),
+        }
+      }),
+    })
+
+    const result = await applyPendingEdits()
+
+    expect(result.refusal).toBe('ESCRITA_INVALIDA')
+    expect(result.fileState).toBe('restaurado')
+    expect(readFileSync(workbook)).toEqual(originalBytes)
+  })
+})
+
+/**
+ * A fila resolvia para o que o arquivo ja tem — o operador reconfirmou a cor
+ * corrente. Gravar substituiria a planilha por uma copia recomprimida: mesmo
+ * XML, hash e mtime novos, OneDrive reenviando o arquivo e o observador
+ * relendo, por uma alteracao que nao altera. Achado do revisor-xml.
+ */
+describe('aplicacao que nao muda nada', () => {
+  /** A linha 4 de `basico.xlsx` ja e azul — a mesma cor que a edicao pede. */
+  const LINHA_AZUL = 4
+
+  function queueColorAlreadyApplied(): void {
+    enqueue(
+      {
+        kind: 'color',
+        ref: 'FT003.26',
+        sourceRow: LINHA_AZUL,
+        target: AZUL,
+        label: 'Azul',
+        previousStyleKey: 'argb:FF5B9BD5',
+        previousLabel: 'Azul',
+      },
+      queuePath,
+    )
+  }
+
+  it('devolve sucesso sem tocar um byte do arquivo', async () => {
+    queueColorAlreadyApplied()
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.ok).toBe(true)
+    expect(result.cellsWritten).toBe(0)
+    expect(result.rowsRepainted).toBe(0)
+    expect(readFileSync(workbook)).toEqual(originalBytes)
+  })
+
+  // Backup de uma escrita que nao aconteceu consumiria um slot de retencao e
+  // faria o operador procurar diferenca entre duas copias identicas.
+  it('nao gasta backup', async () => {
+    queueColorAlreadyApplied()
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.backupPath).toBeNull()
+    expect(backupNames()).toEqual([])
+  })
+
+  it('declara o arquivo intacto, e nao gravado', async () => {
+    queueColorAlreadyApplied()
+    await setup()
+
+    expect((await applyPendingEdits()).fileState).toBe('intacto')
+  })
+
+  // A fila e arquivada como em qualquer sucesso: deixa-la para tras faria a
+  // proxima tentativa repetir o mesmo nada, para sempre.
+  it('arquiva a fila assim mesmo', async () => {
+    queueColorAlreadyApplied()
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.archivedQueuePath).not.toBeNull()
+    expect(consolidated(queuePath)).toEqual([])
   })
 })

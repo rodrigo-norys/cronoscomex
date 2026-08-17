@@ -17,6 +17,8 @@ import { apiError } from '../errors.ts'
 export interface ApplyResponse {
   applied: number
   cellsWritten: number
+  /** Linhas repintadas (`H-27`). Nao entra em `cellsWritten` — ver `WriteResult`. */
+  rowsRepainted: number
   backupPath: string | null
   /** `null` quando a fila nao foi arquivada. Ver o aviso em §3 do contrato. */
   archivedQueuePath: string | null
@@ -116,6 +118,7 @@ export function registerApplyRoute(
     const body: ApplyResponse = {
       applied: result.applied,
       cellsWritten: result.cellsWritten,
+      rowsRepainted: result.rowsRepainted,
       backupPath: result.backupPath,
       archivedQueuePath: result.archivedQueuePath,
       durationMs: result.durationMs,
