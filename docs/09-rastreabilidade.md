@@ -123,11 +123,11 @@ especificação são rastreados aqui, para que **nenhum** fique fora.
 
 | Cor | Significado | Campo derivado | Histórias | Status |
 |---|---|---|---|---|
-| Azul | Colaborador 1 | `responsible = colaborador1` | H-04, H-27 | ✅ Implementável (P-06 mapeada) |
-| Roxo | Colaborador 2 | `responsible = colaborador2` | H-04, H-27 | ✅ Implementável (P-06 mapeada) |
-| Bege | Colaborador 1, outros clientes | `responsible = colaborador1_outros_clientes` | H-04, H-27 | ✅ Implementável (P-06 mapeada) (A-18) |
-| Vermelho | Canal Vermelho | `customsChannel = vermelho` | H-04, H-27 | ✅ Implementável (P-06 mapeada) |
-| Amarelo forte | Importador fora do RJ | `importerOutsideRj = true` | H-04, H-27 | ✅ Implementável (P-06 mapeada). Decisão do usuário sobre A-38 |
+| Azul | Colaborador 1 | `responsible = colaborador1` | H-04, H-27 | ✅ **Entregue em `H-27`** — a combinação vira `fillId`, e a repintura troca só o `fillId` do `cellXf` de A a L, preservando fonte, borda e formato de cada célula (TD-05.1) |
+| Roxo | Colaborador 2 | `responsible = colaborador2` | H-04, H-27 | ✅ **Entregue em `H-27`** — a combinação vira `fillId`, e a repintura troca só o `fillId` do `cellXf` de A a L, preservando fonte, borda e formato de cada célula (TD-05.1). **Os dois tons roxos casam a mesma combinação**; a gravação usa o tom A (A-48) |
+| Bege | Colaborador 1, outros clientes | `responsible = colaborador1_outros_clientes` | H-04, H-27 | ✅ **Entregue em `H-27`** — a combinação vira `fillId`, e a repintura troca só o `fillId` do `cellXf` de A a L, preservando fonte, borda e formato de cada célula (TD-05.1) (A-18) |
+| Vermelho | Canal Vermelho | `customsChannel = vermelho` | H-04, H-27 | ✅ **Entregue em `H-27`** — a combinação vira `fillId`, e a repintura troca só o `fillId` do `cellXf` de A a L, preservando fonte, borda e formato de cada célula (TD-05.1) |
+| Amarelo forte | Importador fora do RJ | `importerOutsideRj = true` | H-04, H-27 | ✅ **Entregue em `H-27`** — a combinação vira `fillId`, e a repintura troca só o `fillId` do `cellXf` de A a L, preservando fonte, borda e formato de cada célula (TD-05.1). Decisão do usuário sobre A-38 |
 | Verde | Desembaraçado | **Nenhum** — confirmação visual apenas | H-04 | Por decisão de A-04, a cor nunca infere status |
 | Branco | Em desembaraçamento | **Nenhum** — idem | H-04 | Idem. A foto 2 refuta a coerência afirmada (A-04) |
 
@@ -206,7 +206,7 @@ virada de escopo (edição) ou por necessidade operacional.
 | RF-21 · Aplicar sob comando explícito | Decisão do usuário (D7) | H-26 | ✅ **Entregue.** `POST /api/edits/apply` traduzindo as sete recusas, botão no cabeçalho com a contagem, e diálogo que decide por `conflicts.length` antes de `refMissing`. RNF-15 medido: 100 células em 380–430 ms contra o limite de 15 s |
 | RF-22 · Preservar formatação na escrita | ADR-0004 | H-24 | ✅ **Entregue.** Formatação condicional, validação de dados, autofiltro, coluna oculta e comentários sobrevivem à edição, conferido por hash entrada a entrada e aberto no Excel real sem aviso de reparo. `PD-05` registra que a cadeia de cálculo só tem teste sintético |
 | RF-23 a RF-26 · Defesas de integridade | D7 | H-25 | ✅ **Entregue.** Lock, hash, backup antes de qualquer modificação, gravação atômica com `fsync`, validação pós-escrita com restauração automática, e expurgo por RNF-21. Sete recusas contra as cinco do contrato fixado — `ARQUIVO_INDISPONIVEL` e `EDICAO_OBSOLETA`, ambas justificadas no bloco da história |
-| RF-27 · Editar campos de cor | Decorrência de RF-20 | H-27 | ✅ Implementável (P-06 mapeada) |
+| RF-27 · Editar campos de cor | Decorrência de RF-20 | H-27 | ✅ **Entregue.** `PATCH /api/processes/:ref/color` enfileira, e a aplicação repinta A–L trocando o `fillId` (A-49). A interface oferece as **6 combinações representáveis** contra as 9 entradas do mapa: branco e os tons B são legíveis e não graváveis, porque a escrita usa o tom canônico |
 | Empacotamento e execução | Necessidade operacional | H-30 | Implementável |
 
 ---
@@ -234,7 +234,7 @@ sete premissas que condicionavam 16 itens desta matriz. O saldo:
 | P-01 · coluna E | IND-17 sem fonte | ✅ confirmada — `AGENTE`, 576 valores |
 | P-06 · cores | `color-map.json` era esqueleto | ✅ 9 chaves reais, cobertura **100%** das 649 linhas |
 | P-04 · uma aba | assumida | ❌ refutada — 4 abas; escopo fixado na `2026` |
-| A-49 · escrita de cor | `H-27` trocava `styleId` | ✅ corrigida para trocar `fillId` — a versão anterior destruiria bordas |
+| A-49 · escrita de cor | `H-27` trocava `styleId` | ✅ corrigida para trocar `fillId` — a versão anterior destruiria bordas. **Verificado em `H-27`** contra a planilha real: `styleId 165` → `xf` novo com `fillId` 8 e a **borda 5 preservada** |
 
 **O único item bloqueado continua sendo IND-21**, por ausência da data de
 presença de carga — lacuna de origem, não de plano.

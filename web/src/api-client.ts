@@ -1,10 +1,16 @@
 import type { Conflict, WriteRefusal } from '../../src/app/write-guard.ts'
+import type { ColorTarget } from '../../src/domain/color-mapper.ts'
 import type { AlertsResponse } from '../../src/http/routes/alerts.ts'
 import type { ApplyResponse } from '../../src/http/routes/apply.ts'
 import type { EditsListResponse, EnqueuedEditResponse } from '../../src/http/routes/edits.ts'
 import type { FilterOptionsResponse } from '../../src/http/routes/filter-options.ts'
 import type { HealthResponse } from '../../src/http/routes/health.ts'
 import type { IndicatorsResponse } from '../../src/http/routes/indicators.ts'
+import type {
+  ColorOption,
+  ColorOptionsResponse,
+  EnqueuedColorResponse,
+} from '../../src/http/routes/process-color.ts'
 import type {
   ProcessDetailResponse,
   ProcessDto,
@@ -25,8 +31,12 @@ import type { QuarantineResponse } from '../../src/http/routes/quarantine.ts'
 export type {
   AlertsResponse,
   ApplyResponse,
+  ColorOption,
+  ColorOptionsResponse,
+  ColorTarget,
   Conflict,
   EditsListResponse,
+  EnqueuedColorResponse,
   EnqueuedEditResponse,
   FilterOptionsResponse,
   HealthResponse,
@@ -182,6 +192,40 @@ export async function enqueueEdit(
 
   const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null
   throw new Error(body?.error?.message ?? `POST /api/edits respondeu ${response.status}`)
+}
+
+/** As combinacoes que a aplicacao sabe gravar. Fonte: `config/color-map.json`. */
+export async function getColorOptions(signal?: AbortSignal): Promise<ColorOptionsResponse> {
+  const response = await fetch('/api/color-options', signal ? { signal } : undefined)
+  if (!response.ok) throw new Error(`GET /api/color-options respondeu ${response.status}`)
+
+  return (await response.json()) as ColorOptionsResponse
+}
+
+/**
+ * Enfileira a troca dos campos codificados em cor (`H-27`). **Nao grava no
+ * `.xlsx`** — a gravacao continua sendo o comando de aplicacao.
+ *
+ * A combinacao precisa existir em `config/color-map.json`; o `400` traz a
+ * mensagem do servidor com as que existem.
+ */
+export async function enqueueColor(
+  ref: string,
+  target: ColorTarget,
+  signal?: AbortSignal,
+): Promise<EnqueuedColorResponse> {
+  const response = await fetch(`/api/processes/${encodeURIComponent(ref)}/color`, {
+    method: 'PATCH',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(target),
+    ...(signal ? { signal } : {}),
+  })
+  if (response.ok) return (await response.json()) as EnqueuedColorResponse
+
+  const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null
+  throw new Error(
+    body?.error?.message ?? `PATCH /api/processes/:ref/color respondeu ${response.status}`,
+  )
 }
 
 export async function getEdits(signal?: AbortSignal): Promise<EditsListResponse> {

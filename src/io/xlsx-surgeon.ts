@@ -5,6 +5,9 @@ import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
  * reserializar o workbook (ADR-0004). Tudo que a aplicacao nao entende, ela
  * nao toca.
  *
+ * Duas cirurgias, e elas nao se cruzam: `applyCellEdits` grava VALOR e preserva
+ * o estilo; `applyRowFill` troca o `fillId` do estilo e nao encosta em valor.
+ *
  * "Byte a byte identicas" vale sobre o CONTEUDO DESCOMPRIMIDO de cada entrada
  * do zip, nao sobre os bytes comprimidos: recompactar reproduz o conteudo, nao
  * o fluxo deflate do Excel. E o conteudo que carrega formatacao condicional,
@@ -34,9 +37,10 @@ import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
  * a aba 2026 nao tem formula alguma — ver o bloco de H-24 em
  * docs/06-backlog.md, onde a medicao e a data estao registradas.
  *
- * QUATRO LIMITES conhecidos, nenhum alcancavel pelas fixtures nem pela planilha
- * real. Os dois primeiros vieram do revisor-xml em H-24; os dois ultimos, dele
- * tambem, ao revisar a fixture de cadeia (ver PD-05):
+ * CINCO LIMITES conhecidos, nenhum alcancavel pelas fixtures nem pela planilha
+ * real. Os dois primeiros vieram do revisor-xml em H-24; o terceiro e o quarto,
+ * dele tambem, ao revisar a fixture de cadeia (ver PD-05); o quinto, dele em
+ * H-27, quando a repintura multiplicou por doze a exposicao a ele:
  *
  * 1. Se xl/sharedStrings.xml NAO existir no zip, gravar texto cria a entrada
  *    sem declara-la em [Content_Types].xml nem em xl/_rels/workbook.xml.rels,
@@ -56,6 +60,14 @@ import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
  *    viola o schema (CT_CalcChain exige minOccurs="1"). O Excel, nessa
  *    situacao, apaga a parte inteira e a declaracao dela. Alcancavel so num
  *    arquivo cujas formulas sejam TODAS editadas de uma vez.
+ * 5. findCell e findRow casam `<c r="…"` e `<row r="…"`, com o `r` na PRIMEIRA
+ *    posicao — e a saida antecipada da linha auto-fechada, em paintRow, tem a
+ *    mesma restricao. Celula ou linha com `r` depois de outro atributo e lida
+ *    como ausente. Ao gravar valor isso vale para 1 celula por edicao; ao
+ *    repintar, para 12 por linha — e o desfecho e o oposto nos dois casos: a
+ *    gravacao inseriria uma segunda <c> para a mesma coordenada, a repintura
+ *    apenas nao pinta. Nenhum produtor conformante emite `r` fora da primeira
+ *    posicao; o Excel sempre o emite primeiro.
  *
  * Nao foram tratados por escolha: cobri-los exigiria fixture que o gerador nao
  * produz, e o codigo nao verificado por teste e o que engana. H-25 tem o
@@ -68,10 +80,26 @@ export interface CellEdit {
   value: string | number | Date | null
 }
 
+/** Uma linha repintada: o `fillId` alvo e as colunas que acompanham a cor. */
+export interface RowFillEdit {
+  sourceRow: number
+  fillId: number
+  columns: string[]
+}
+
 export interface SurgeryResult {
   buffer: Uint8Array
   cellsWritten: number
   entriesPreserved: number
+}
+
+export interface RowFillResult extends SurgeryResult {
+  /**
+   * Linhas em que ao menos uma celula mudou de estilo — MEDIDO, nao pedido.
+   * Uma linha cujas celulas ja estejam na cor alvo nao entra na conta, e e
+   * este numero que a aplicacao mostra ao operador.
+   */
+  rowsPainted: number
 }
 
 const SHARED_STRINGS_PATH = 'xl/sharedStrings.xml'
@@ -138,6 +166,179 @@ export function applyCellEdits(
   return { buffer: zipSync(rebuilt), cellsWritten, entriesPreserved }
 }
 
+/**
+ * Repinta linhas trocando o `fillId` do cellXf de cada celula, nunca o
+ * `styleId` inteiro (TD-05.1, achado A-49). VALOR NENHUM e tocado, e nenhuma
+ * celula e criada: so o atributo `s=` das celulas que ja existem muda.
+ *
+ * Separada de `applyCellEdits`, e nao um parametro dela, porque o contrato de
+ * H-27 a fixa assim. Quem tem os dois tipos de edicao encadeia as duas sobre o
+ * buffer — o custo e um unzip/zip a mais, e so quando ha cor na fila.
+ *
+ * Consequencia do encadeamento: `entriesPreserved` da SEGUNDA passagem compara
+ * com o buffer que a primeira produziu, nao com o arquivo original. Quem
+ * precisa do numero contra o original compara os dois zips.
+ */
+export function applyRowFill(
+  original: Uint8Array,
+  edits: RowFillEdit[],
+  sheetPath: string,
+): RowFillResult {
+  const entries = unzipSync(original)
+
+  if (edits.length === 0) {
+    return {
+      buffer: original,
+      cellsWritten: 0,
+      rowsPainted: 0,
+      entriesPreserved: Object.keys(entries).length,
+    }
+  }
+
+  const sheetEntry = entries[sheetPath]
+  if (!sheetEntry) throw new Error(`aba nao encontrada no zip: ${sheetPath}`)
+
+  const stylesEntry = entries[STYLES_PATH]
+  const styles = new StyleTable(stylesEntry ? strFromU8(stylesEntry) : null)
+
+  let sheetXml = strFromU8(sheetEntry)
+  let cellsWritten = 0
+  let rowsPainted = 0
+
+  for (const edit of edits) {
+    // Antes de tocar em qualquer celula: `fillId` fora de `<fills>` produziria
+    // um xf com indice pendurado, e o Excel abriria pedindo reparo. Recusar aqui
+    // deixa o arquivo intacto; deixar passar custaria a restauracao do backup.
+    if (!styles.hasFill(edit.fillId)) {
+      throw new Error(`fillId ${edit.fillId} nao existe em xl/styles.xml`)
+    }
+    const painted = paintRow(sheetXml, edit, styles)
+    sheetXml = painted.xml
+    cellsWritten += painted.cells
+    if (painted.cells > 0) rowsPainted += 1
+  }
+
+  const rebuilt: Record<string, Uint8Array> = { ...entries }
+  rebuilt[sheetPath] = strToU8(sheetXml)
+  if (styles.changed) rebuilt[STYLES_PATH] = strToU8(styles.serialize())
+
+  let entriesPreserved = 0
+  for (const [path, content] of Object.entries(rebuilt)) {
+    if (sameBytes(content, entries[path])) entriesPreserved += 1
+  }
+
+  return { buffer: zipSync(rebuilt), cellsWritten, rowsPainted, entriesPreserved }
+}
+
+/**
+ * Uma passagem por LINHA, e nao por celula: `expandSelfClosingRow` e `findRow`
+ * varrem a aba inteira, e refaze-los doze vezes por linha multiplicaria por
+ * doze o custo de uma aplicacao grande (RNF-15 da 15 s para 100 celulas).
+ *
+ * As celulas sao resolvidas uma a uma sobre o `inner` ja atualizado, porque os
+ * indices de `findCell` sao relativos a ele.
+ */
+function paintRow(
+  sheetXml: string,
+  edit: RowFillEdit,
+  styles: StyleTable,
+): { xml: string; cells: number } {
+  // A linha auto-fechada NAO e expandida aqui, ao contrario do que acontece ao
+  // gravar valor: `<row .../>` nao tem celula alguma, a repintura nao cria
+  // nenhuma, e abri-la para `<row ...></row>` produziria diferenca no arquivo
+  // sem uma unica celula pintada.
+  if (new RegExp(`<row r="${edit.sourceRow}"(?:\\s[^>]*?)?/>`).test(sheetXml)) {
+    return { xml: sheetXml, cells: 0 }
+  }
+
+  const row = findRow(sheetXml, edit.sourceRow)
+  if (!row) throw new Error(`linha ${edit.sourceRow} nao encontrada na aba`)
+
+  let inner = row.inner
+  let cells = 0
+
+  for (const column of edit.columns) {
+    const reference = `${column}${edit.sourceRow}`
+    const existing = findCell(inner, reference)
+
+    // CELULA AUSENTE NAO E CRIADA. Ela ja e governada pelo estilo da coluna, e
+    // criar uma com o preenchimento novo lhe daria o borderId da coluna — zero
+    // na planilha real —, deixando a linha colorida e SEM as bordas da tabela
+    // justamente nas colunas vazias. Buraco visivel e melhor que aparencia
+    // inventada (regra inviolavel 3), e o criterio de aceite de H-27 diz que
+    // apenas o atributo `s=` muda.
+    //
+    // Medido em 17/08/2026 sobre a planilha real: 744 linhas de dados, ZERO
+    // celulas ausentes em A a L. O ramo nao e alcancavel pelo arquivo de
+    // producao; existe para nao inventar aparencia num arquivo atipico.
+    if (!existing) continue
+
+    const currentStyle = readAttribute(openTagOf(existing.text), 's')
+
+    // A mesma heranca do Excel usada ao gravar valor: celula, depois linha,
+    // depois coluna. Celula presente SEM `s=` herda o estilo da coluna, e nao
+    // cellXfs[0]: e a coluna que o Excel aplica nela, e partir do xf zero
+    // trocaria a fonte e o alinhamento que ela ja exibe.
+    const inherited = currentStyle ?? rowStyleOf(row.openTag) ?? columnStyleOf(sheetXml, column)
+
+    const resolved = styles.ensureFill(inherited, edit.fillId)
+
+    // A celula ja EXIBE o estilo alvo: reescreve-la nao mudaria a aparencia e
+    // contaria uma repintura que nao aconteceu. Comparado contra o estilo
+    // herdado, e nao so contra o `s=` proprio — celula sem `s=` cuja coluna ja
+    // carrega o `fillId` alvo receberia um `s=` explicito redundante, alterando
+    // bytes numa linha que ja esta na cor pedida. Achado do revisor-xml.
+    //
+    // A igualdade so acontece quando o xf herdado ja tem o `fillId` alvo E ja
+    // tem applyFill="1": com applyFill="0" a celula NAO exibe aquele
+    // preenchimento, e a repintura ocorre — corretamente. Com `inherited` nulo,
+    // `ensureFill` devolve "0", que difere de `null`, e a celula e reescrita;
+    // so alcancavel com `fillId` alvo zero, que nenhuma entrada do mapa tem.
+    if (resolved === inherited) continue
+
+    inner =
+      inner.slice(0, existing.start) +
+      withStyleAttribute(existing.text, resolved) +
+      inner.slice(existing.end)
+    cells += 1
+  }
+
+  return { xml: sheetXml.slice(0, row.innerStart) + inner + sheetXml.slice(row.innerEnd), cells }
+}
+
+/**
+ * A tag de abertura da celula, sem o conteudo.
+ *
+ * Ler atributo do elemento INTEIRO e um vetor real: uma celula de texto inline
+ * — `<c r="A22" t="inlineStr"><is><t>… s="7" …</t></is></c>` — faz `readAttribute`
+ * casar o ` s="7"` de dentro do TEXTO, e a repintura parte do estilo errado,
+ * trocando fonte e borda de uma celula que so deveria mudar de preenchimento.
+ * Achado do revisor-xml na segunda revisao de H-27.
+ */
+function openTagOf(cell: string): string {
+  const end = cell.indexOf('>')
+  return end === -1 ? cell : cell.slice(0, end)
+}
+
+/**
+ * Troca `s=` sem tocar em mais nada da celula — valor, `t=`, formula.
+ *
+ * A substituicao acontece so na TAG DE ABERTURA: uma celula de texto cujo valor
+ * contenha ` s="` teria o conteudo corrompido por um replace sobre o elemento
+ * inteiro.
+ */
+function withStyleAttribute(cell: string, styleId: string): string {
+  const openTagEnd = cell.indexOf('>')
+  const head = cell.slice(0, openTagEnd)
+  const tail = cell.slice(openTagEnd)
+
+  if (readAttribute(head, 's') !== null) {
+    return head.replace(/\ss="[^"]*"/, ` s="${styleId}"`) + tail
+  }
+  // Depois de `r=`, na ordem em que o proprio Excel emite os atributos.
+  return head.replace(/^(<c\s+r="[^"]*")/, `$1 s="${styleId}"`) + tail
+}
+
 function writeCell(
   sheetXml: string,
   edit: CellEdit,
@@ -160,8 +361,13 @@ function writeCell(
   // em cellXfs[0] (Geral): data viraria o serial cru na tela, que e o defeito
   // de A-56 no caso mais provavel — coluna O, 79,3% vazia no arquivo real.
   // A herança segue a do proprio Excel: celula, depois linha, depois coluna.
+  //
+  // `openTagOf` protege as duas leituras: sem ele, texto inline contendo ` s="`
+  // ou ` t="` faz `readAttribute` casar o conteudo da celula. Achado do
+  // revisor-xml em H-27, e o mesmo defeito valia aqui desde H-24.
+  const openTag = existing ? openTagOf(existing.text) : null
   const inheritedStyle =
-    (existing ? readAttribute(existing.text, 's') : null) ??
+    (openTag === null ? null : readAttribute(openTag, 's')) ??
     rowStyleOf(row.openTag) ??
     columnStyleOf(expanded, edit.column)
 
@@ -170,7 +376,7 @@ function writeCell(
 
   sharedStrings.adjustReferences(
     (typeof edit.value === 'string' ? 1 : 0) -
-      (existing && readAttribute(existing.text, 't') === 's' ? 1 : 0),
+      (openTag !== null && readAttribute(openTag, 't') === 's' ? 1 : 0),
   )
 
   const cellXml = renderCell(reference, resolvedStyle, edit.value, sharedStrings)
@@ -382,6 +588,7 @@ class StyleTable {
   private readonly dateNumFmtId: number
   private readonly sectionStart: number
   private readonly sectionEnd: number
+  private readonly fillCount: number
 
   constructor(xml: string | null) {
     this.xml = xml ?? ''
@@ -391,6 +598,23 @@ class StyleTable {
     this.sectionEnd = section ? section.index + section[0].length : -1
     this.dateFormatIds = collectDateFormatIds(this.xml)
     this.dateNumFmtId = prevailingDateNumFmtId(this.entries, this.dateFormatIds)
+    // Contado DENTRO de <fills>, e nao no arquivo inteiro: <dxf> — os formatos
+    // da formatacao condicional — PODE carregar <fill> pelo schema, e conta-los
+    // inflaria o limite, deixando passar o `fillId` pendurado que esta
+    // conferencia existe para recusar. Nas fixtures os dois numeros coincidem
+    // (31 e 31, com <dxfs count="18">), entao a restricao esta correta por
+    // construcao e nao por medicao. Achado do revisor-xml.
+    const fills = /<fills count="\d+">([\s\S]*?)<\/fills>/.exec(this.xml)
+    this.fillCount = (fills?.[1]?.match(/<fill>|<fill\/>/g) ?? []).length
+  }
+
+  /**
+   * Se `fillId` existe em `<fills>`. Um indice alem do fim faz o Excel abrir
+   * pedindo reparo, e sem esta conferencia o erro so apareceria depois de
+   * gravar, na validacao pos-escrita, ao preco de restaurar o backup.
+   */
+  hasFill(fillId: number): boolean {
+    return fillId >= 0 && fillId < this.fillCount
   }
 
   ensureDateFormat(styleId: string | null): string | null {
@@ -405,6 +629,42 @@ class StyleTable {
     if (styleId !== null && this.dateFormatIds.has(current)) return styleId
 
     const target = withDateNumberFormat(base, this.dateNumFmtId)
+    const existing = this.entries.findIndex((xf) => canonicalXf(xf) === canonicalXf(target))
+    if (existing !== -1) return String(existing)
+
+    this.entries.push(target)
+    this.changed = true
+    return String(this.entries.length - 1)
+  }
+
+  /**
+   * TD-05.1 aplicado ao `fillId`: preserva fonte, borda e formato numerico do
+   * cellXf original. Trocar o estilo inteiro destruiria a borda — medido em
+   * A-49: argb:FF00FF00 vem dos styleIds 199, 165 e 189, que compartilham o
+   * mesmo preenchimento e diferem nas bordas 34, 5 e 48.
+   *
+   * LANCA em vez de devolver o estilo recebido, ao contrario de
+   * `ensureDateFormat`: uma repintura que nao repinta e silenciosa, e quem a
+   * pegaria e a validacao pos-escrita, ao preco de restaurar o backup. Falhar
+   * aqui deixa o arquivo intacto. Achado do revisor-xml.
+   */
+  ensureFill(styleId: string | null, fillId: number): string {
+    if (this.sectionStart === -1 || this.entries.length === 0) {
+      throw new Error('xl/styles.xml nao tem <cellXfs> utilizavel')
+    }
+
+    // Sem estilo herdado a base e cellXfs[0], como em `ensureDateFormat`: e
+    // preciso um xf de partida sobre o qual trocar o fillId.
+    const baseIndex = styleId === null ? 0 : Number(styleId)
+    const base = this.entries[baseIndex]
+    if (!base) throw new Error(`styleId ${styleId} nao existe em cellXfs`)
+
+    const target = withFill(base, fillId)
+    // A cor ja e a pedida: o `s=` fica como esta, e styles.xml intacto. Procurar
+    // um equivalente aqui trocaria o styleId por outro de aparencia identica,
+    // mexendo no arquivo sem motivo.
+    if (canonicalXf(base) === canonicalXf(target)) return String(baseIndex)
+
     const existing = this.entries.findIndex((xf) => canonicalXf(xf) === canonicalXf(target))
     if (existing !== -1) return String(existing)
 
@@ -459,6 +719,20 @@ function withDateNumberFormat(xf: string, numFmtId: number): string {
     return withFormat.replace('applyNumberFormat="0"', 'applyNumberFormat="1"')
   }
   return withFormat.replace(/^<xf /, '<xf applyNumberFormat="1" ')
+}
+
+function withFill(xf: string, fillId: number): string {
+  const withPattern = /\sfillId="\d+"/.test(xf)
+    ? xf.replace(/\sfillId="\d+"/, ` fillId="${fillId}"`)
+    : xf.replace(/^<xf /, `<xf fillId="${fillId}" `)
+
+  // Pelo mesmo motivo de `applyNumberFormat` em `withDateNumberFormat`: sem
+  // applyFill="1" o Excel ignora o fill do cellXf e a repintura nao aparece.
+  if (withPattern.includes('applyFill="1"')) return withPattern
+  if (withPattern.includes('applyFill="0"')) {
+    return withPattern.replace('applyFill="0"', 'applyFill="1"')
+  }
+  return withPattern.replace(/^<xf /, '<xf applyFill="1" ')
 }
 
 function canonicalXf(xf: string): string {

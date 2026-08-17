@@ -25,6 +25,25 @@ interface ApplyChangesButtonProps {
  * aplicacao corre. A contagem no rotulo existe para o clique nunca ser as
  * cegas: o que vai para a planilha e sempre um numero que ele viu antes.
  */
+/**
+ * As duas grandezas ficam separadas porque uma troca de cor toca 12 celulas
+ * (A-44) sem gravar valor algum: soma-las diria ao operador que ele gravou doze
+ * coisas quando ele mudou a cor de uma linha.
+ *
+ * Zero em ambas E um desfecho valido, e nao o inesperado: a fila resolvia para
+ * o que a planilha ja tinha — o operador reconfirmou a cor corrente —, e o
+ * guard nao gravou byte algum. Dizer "gravadas" ali afirmaria uma escrita que
+ * nao aconteceu. Achado do revisor-xml.
+ */
+function describeWritten(cells: number, rows: number): string {
+  const parts: string[] = []
+  if (cells > 0) parts.push(cells === 1 ? '1 célula gravada' : `${cells} células gravadas`)
+  if (rows > 0) parts.push(rows === 1 ? '1 linha repintada' : `${rows} linhas repintadas`)
+
+  if (parts.length === 0) return 'A planilha já estava assim — nada precisou ser gravado'
+  return `${parts.join(' · ')} na planilha`
+}
+
 export function ApplyChangesButton({
   pendingCount,
   onApplied,
@@ -68,9 +87,7 @@ export function ApplyChangesButton({
     <div className="flex items-center gap-2">
       {done !== null && (
         <span role="status" className="text-sm text-emerald-700">
-          {done.cellsWritten === 1
-            ? '1 célula gravada na planilha'
-            : `${done.cellsWritten} células gravadas na planilha`}
+          {describeWritten(done.cellsWritten, done.rowsRepainted)}
           {/* A fila ficou para tras: sem isto o operador aplicaria de novo e
               receberia uma recusa que ele nao tem como explicar. */}
           {done.archivedQueuePath === null && ' — confira a fila, ela não foi arquivada'}

@@ -4,6 +4,7 @@ import type { ApplyResponse } from '../../../src/http/routes/apply.ts'
 import type { FilterOptionsResponse } from '../../../src/http/routes/filter-options.ts'
 import type { HealthResponse } from '../../../src/http/routes/health.ts'
 import type { IndicatorsResponse } from '../../../src/http/routes/indicators.ts'
+import type { ColorOption } from '../../../src/http/routes/process-color.ts'
 import type {
   ProcessDetailResponse,
   ProcessDto,
@@ -225,6 +226,12 @@ export interface ApiStub {
   serveProcessDetail(detail: ProcessDetailResponse): void
   /** `POST /api/edits` passa a recusar com esta mensagem. */
   failEnqueueEdit(message: string): void
+  /** `GET /api/color-options` passa a servir estas combinacoes. */
+  serveColorOptions(options: ColorOption[]): void
+  /** `GET /api/color-options` passa a falhar. */
+  failColorOptions(): void
+  /** `PATCH /api/processes/:ref/color` passa a recusar com esta mensagem. */
+  failEnqueueColor(message: string): void
   /** `POST /api/edits/apply` passa a responder 200 com este corpo. */
   serveApply(response: Partial<ApplyResponse>): void
   /** `POST /api/edits/apply` passa a recusar, com o corpo do envelope de erro. */
@@ -263,9 +270,26 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
   let detail = processDetailFixture()
   let detailStatus = 200
   let enqueueFailure: string | null = null
+  let colorOptions: ColorOption[] = [
+    {
+      label: 'Verde (tom A)',
+      responsible: 'indefinido',
+      customsChannel: 'nenhum',
+      importerOutsideRj: false,
+    },
+    {
+      label: 'Azul',
+      responsible: 'colaborador1',
+      customsChannel: 'nenhum',
+      importerOutsideRj: false,
+    },
+  ]
+  let colorOptionsFails = false
+  let colorFailure: string | null = null
   let apply: ApplyResponse = {
     applied: 1,
     cellsWritten: 1,
+    rowsRepainted: 0,
     backupPath: 'data/backups/planilha-20260814-143512.xlsx',
     archivedQueuePath: 'data/applied/pending-edits-20260814-143512.jsonl',
     durationMs: 210,
@@ -340,6 +364,31 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
           ok: true,
           status: 204,
           json: () => Promise.resolve({}),
+        } as Response)
+      }
+
+      if (path === '/api/color-options') {
+        return Promise.resolve({
+          ok: !colorOptionsFails,
+          status: colorOptionsFails ? 500 : 200,
+          json: () => Promise.resolve({ options: colorOptions }),
+        } as Response)
+      }
+
+      // Antes do `startsWith` abaixo, que devolveria o detalhe para esta rota.
+      if (path.endsWith('/color') && init?.method === 'PATCH') {
+        if (colorFailure !== null) {
+          const message = colorFailure
+          return Promise.resolve({
+            ok: false,
+            status: 400,
+            json: () => Promise.resolve({ error: { code: 'CORPO_INVALIDO', message } }),
+          } as Response)
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 201,
+          json: () => Promise.resolve({ pendingEditsCount: 1 }),
         } as Response)
       }
 
@@ -453,6 +502,15 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
     },
     failEnqueueEdit: (message) => {
       enqueueFailure = message
+    },
+    serveColorOptions: (next) => {
+      colorOptions = next
+    },
+    failColorOptions: () => {
+      colorOptionsFails = true
+    },
+    failEnqueueColor: (message) => {
+      colorFailure = message
     },
     processDetailNotFound: () => {
       detailStatus = 404

@@ -8,7 +8,9 @@ import {
   discard,
   discardAll,
   enqueue,
+  isColorEdit,
   type PendingEdit,
+  type PendingFieldEdit,
 } from '../../io/edit-queue.ts'
 import { apiError } from '../errors.ts'
 
@@ -23,7 +25,8 @@ import { apiError } from '../errors.ts'
  * (regra inviolavel 6).
  */
 
-export interface EnqueuedEditResponse extends PendingEdit {
+/** Interseccao, e nao `extends`: `PendingEdit` e uma uniao desde `H-27`. */
+export type EnqueuedEditResponse = PendingEdit & {
   /** Quantas edicoes ficaram na fila depois desta. */
   pendingEditsCount: number
 }
@@ -43,36 +46,41 @@ interface EditRequestBody {
   value?: unknown
 }
 
+/**
+ * Mexer na fila durante a aplicacao a faz sumir sem ser gravada: o
+ * `write-guard` tira o instantaneo do que vai gravar no inicio e arquiva o
+ * arquivo INTEIRO no fim, entao o que entra no meio e arquivado sem ter
+ * chegado ao `.xlsx` — e o painel passa a mostrar zero pendencias. Vale
+ * tambem para o descarte: a lapide seria arquivada como se tivesse sido
+ * honrada, com a edicao gravada assim mesmo. Achado do revisor-xml em H-26.
+ *
+ * A janela sao as centenas de milissegundos de uma aplicacao. Recusar e o
+ * mesmo que `POST /api/reload` ja faz, e devolve ao operador um erro que ele
+ * resolve tentando de novo — em vez de perder o que digitou.
+ *
+ * Exportada porque `PATCH /api/processes/:ref/color` (`H-27`) e a quarta rota
+ * que escreve na fila: uma segunda copia da regra divergiria da primeira.
+ */
+export function refuseDuringWrite(store: StoreAccess, reply: FastifyReply): boolean {
+  if (store.getState().state !== 'escrevendo') return false
+
+  reply
+    .code(409)
+    .send(
+      apiError(
+        'ESCRITA_EM_ANDAMENTO',
+        'As alteracoes estao sendo gravadas na planilha. Tente de novo em instantes.',
+      ),
+    )
+  return true
+}
+
 export function registerEditsRoutes(
   app: FastifyInstance,
   store: StoreAccess = defaultStore,
   queuePath: string = DEFAULT_QUEUE_PATH,
 ): void {
-  /**
-   * Mexer na fila durante a aplicacao a faz sumir sem ser gravada: o
-   * `write-guard` tira o instantaneo do que vai gravar no inicio e arquiva o
-   * arquivo INTEIRO no fim, entao o que entra no meio e arquivado sem ter
-   * chegado ao `.xlsx` — e o painel passa a mostrar zero pendencias. Vale
-   * tambem para o descarte: a lapide seria arquivada como se tivesse sido
-   * honrada, com a edicao gravada assim mesmo. Achado do revisor-xml em H-26.
-   *
-   * A janela sao as centenas de milissegundos de uma aplicacao. Recusar e o
-   * mesmo que `POST /api/reload` ja faz, e devolve ao operador um erro que ele
-   * resolve tentando de novo — em vez de perder o que digitou.
-   */
-  const recusaDuranteEscrita = (reply: FastifyReply): boolean => {
-    if (store.getState().state !== 'escrevendo') return false
-
-    reply
-      .code(409)
-      .send(
-        apiError(
-          'ESCRITA_EM_ANDAMENTO',
-          'As alteracoes estao sendo gravadas na planilha. Tente de novo em instantes.',
-        ),
-      )
-    return true
-  }
+  const recusaDuranteEscrita = (reply: FastifyReply): boolean => refuseDuringWrite(store, reply)
 
   app.post('/api/edits', (request, reply) => {
     if (recusaDuranteEscrita(reply)) return reply
@@ -134,8 +142,9 @@ export function registerEditsRoutes(
     // calculada sobre o arquivo; as seguintes herdam o valor dela.
     // Achado do revisor-xml em H-25.
     const pending = consolidated(queuePath).find(
-      (candidate) => candidate.ref === process.ref && candidate.field === field,
-    )
+      (candidate) =>
+        !isColorEdit(candidate) && candidate.ref === process.ref && candidate.field === field,
+    ) as PendingFieldEdit | undefined
 
     const edit = enqueue(
       {

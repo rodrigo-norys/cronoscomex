@@ -224,23 +224,47 @@ sequenceDiagram
             G->>W: retomar
             G-->>U: 409 ARQUIVO_MUDOU + diferenças
         else confere
-            G->>B: copiar para data/backups/
-            G->>S: aplicar CellEdit[] no buffer
-            S->>F: gravar .tmp e renomear
-            G->>S: reabrir e conferir as células alteradas
-            alt validação falhou
-                G->>B: restaurar backup
-                G->>W: retomar
-                G-->>U: 500 ESCRITA_INVALIDA (arquivo restaurado)
-            else validação passou
+            G->>S: aplicar CellEdit[] e RowFillEdit[] no buffer
+            alt nenhum byte mudaria
                 G->>Q: arquivar fila em data/applied/
                 G->>W: retomar
-                G-->>U: 200 + resumo
-                W->>API: fileChanged → releitura
+                G-->>U: 200 + resumo (arquivo intacto)
+            else há o que gravar
+                G->>B: copiar para data/backups/
+                S->>F: gravar .tmp e renomear
+                G->>S: reabrir e conferir células e cores alteradas
+                alt validação falhou
+                    G->>B: restaurar backup
+                    G->>W: retomar
+                    G-->>U: 500 ESCRITA_INVALIDA (arquivo restaurado)
+                else validação passou
+                    G->>Q: arquivar fila em data/applied/
+                    G->>W: retomar
+                    G-->>U: 200 + resumo
+                    W->>API: fileChanged → releitura
+                end
             end
         end
     end
 ```
+
+> **Emenda de `H-27` (17/08/2026): a cirurgia passou a vir ANTES do backup**, e
+> um ramo novo devolve sucesso sem gravar. O diagrama trazia backup → cirurgia
+> desde `H-25`.
+>
+> A cirurgia é **pura** — opera sobre o buffer em memória e não toca o disco —,
+> então adiá-la não muda o que o backup guarda: ele continua saindo do mesmo
+> buffer conferido por hash, e nada é gravado antes dele. O que a inversão
+> compra é o caso em que a fila resolve para o que a planilha **já tem**: o
+> operador reconfirma a cor corrente, e gravar substituiria o arquivo por uma
+> cópia recomprimida — mesmo XML, hash e `mtime` novos —, gastando um slot de
+> retenção de backup, forçando o OneDrive a reenviar a planilha e o observador a
+> reler. Reproduzido pelo `revisor-xml` em `H-27`.
+>
+> Nesse ramo não há backup, não há gravação e **não há validação** — não se
+> valida o que não se escreveu. A resposta sai com `fileState: 'intacto'` e
+> `backupPath: null`, e a fila é arquivada assim mesmo: deixá-la para trás faria
+> a próxima tentativa repetir o mesmo nada.
 
 ---
 

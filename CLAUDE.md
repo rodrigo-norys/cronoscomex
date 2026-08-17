@@ -123,18 +123,25 @@ porque era dependência declarada de `H-15` e não existia, **`H-15`, que abriu 
 `GET /api/processes`, `H-18`, os três rankings, `H-19`, que fecha as duas
 últimas regras sem tela, `H-20`, a fila de trabalho, e `H-22`, o detalhe.**
 Restam de interface só a `H-21`, que depende do histórico de `H-28`. **A Fase 3
-abriu com `H-23`, a fila de edições, `H-24`, a escrita cirúrgica no `.xlsx`,
-`H-25`, as seis defesas de integridade, e `H-26`, o comando de aplicação — a
-primeira escrita que o operador dispara.** Próximo passo: **`H-27`**, os campos
-codificados em cor. As fases estão em `docs/07-plano-entrega.md`.
+fechou inteira** — `H-23`, a fila de edições, `H-24`, a escrita cirúrgica no
+`.xlsx`, `H-25`, as seis defesas de integridade, e `H-26`, o comando de
+aplicação —, **e a Fase 4 também, com `H-27`, sua única história: os campos
+codificados em cor, que fecha o caminho crítico.** Próximo passo: **`H-28`**, o
+histórico, que destrava `H-21` e `H-29`. As fases estão em
+`docs/07-plano-entrega.md`.
 
 > **A escrita é o ponto onde errar custa a planilha da empresa.** O subagent
 > `revisor-xml` existe desde 11/08/2026 — invoque-o antes de commitar qualquer
 > mudança em `src/io/xlsx-surgeon.ts`, em `src/app/write-guard.ts` ou em código
 > que reescreva bytes do `.xlsx`. Em `H-24` ele reprovou na primeira invocação;
-> em `H-25`, **três das quatro**; em `H-26`, **seis das sete**. Vários defeitos
-> foram introduzidos pelas correções dos anteriores. **Reinvoque-o depois de
-> corrigir**, não só antes de commitar.
+> em `H-25`, **três das quatro**; em `H-26`, **seis das sete**; em `H-27`, **três
+> das quatro**. Vários defeitos foram introduzidos pelas correções dos
+> anteriores. **Reinvoque-o depois de corrigir**, não só antes de commitar.
+>
+> **Ele acha defeito em código já commitado.** Em `H-27` pegou uma leitura de
+> atributo que varria o elemento inteiro em vez da tag de abertura — defeito
+> silencioso em `writeCell` desde `H-24`. Mande o módulo inteiro, não só o
+> trecho novo.
 >
 > **Ele revisa a interface também.** Quatro dos seis defeitos de `H-26` estavam
 > na tela: mensagens que afirmavam o que o código não sabia. Ao mudar o que a
@@ -150,7 +157,7 @@ Não bloqueiam a implementação. Fechar antes da entrega ao operador.
 | # | Pendência | Quando fechar |
 |---|---|---|
 | **PD-01** | `config/app.json` aponta para `CONTROLE DOS EMBARQUE.xlsx` na **raiz do projeto**, usado para validar a partida em `H-02`. Na máquina Windows precisa do caminho real da pasta sincronizada (`C:\Users\...\OneDrive - <org>\...`). O arquivo está no `.gitignore`, então o caminho de desenvolvimento não vaza. **`H-34` dá a saída definitiva**: o caminho passa a ser configurável pela tela, e o operador nunca edita JSON | Ao instalar na máquina do operador (`H-30`), com `H-34` tornando-a indolor |
-| **PD-05** | A remoção de entrada em `xl/calcChain.xml` ganhou fixture com cadeia declarada — `tests/fixtures/formulas.xlsx` —, e a saída foi **aberta no Excel real em 13/08/2026**: sem aviso de reparo, com o recálculo produzindo as datas dependentes. **Falta a cadeia produzida pelo próprio Excel.** A fixture é montada por nós, e foi exatamente uma forma que ela não cobria — entrada seguinte com atributo além de `r` — que escondeu um defeito real até 14/08/2026: o `i` era perdido em toda cadeia que o Excel de fato produz. Corrigido, mas a lição é que fixture nossa não substitui arquivo do Excel | Quando existir um `.xlsx` com fórmula **salvo pelo próprio Excel**. Deixou de ser tarefa de história em 14/08/2026: `H-26` fechou sem que o arquivo existisse |
+| **PD-05** | A remoção de entrada em `xl/calcChain.xml` ganhou fixture com cadeia declarada — `tests/fixtures/formulas.xlsx` —, e a saída foi **aberta no Excel real em 13/08/2026**: sem aviso de reparo, com o recálculo produzindo as datas dependentes. **Falta a cadeia produzida pelo próprio Excel.** A fixture é montada por nós, e foi exatamente uma forma que ela não cobria — entrada seguinte com atributo além de `r` — que escondeu um defeito real até 14/08/2026: o `i` era perdido em toda cadeia que o Excel de fato produz. Corrigido, mas a lição é que fixture nossa não substitui arquivo do Excel. **Medido em 17/08/2026: a planilha real não tem `xl/calcChain.xml`** — o Excel só emite a parte quando há fórmula, então nenhuma das quatro abas tem uma, e o código é hoje inalcançável em produção | **`H-30`**, na máquina Windows do operador: planilha nova, uma fórmula, salvar, copiar para `tests/fixtures/`. O gatilho era "quando existir um `.xlsx` salvo pelo Excel" — passivo, e sem dono desde 14/08/2026, quando `H-26` fechou sem o arquivo. Fechar antes é possível a qualquer momento com um Excel à mão; se a via for o Excel Online, **confira a forma da cadeia** antes de tratar a fixture como representativa — é a lição desta pendência |
 | **PD-03** | `data/` passou a ser criado em execução por `H-08`, na primeira releitura que grava `quarantine.json` (`H-28` acrescenta o histórico). Está no `.gitignore`. Falta o `README.md` da raiz instruir a criá-lo **fora** da pasta sincronizada do OneDrive, para não replicar backups na nuvem | `H-30` |
 
 Ao fechar uma pendência, remova a linha.
