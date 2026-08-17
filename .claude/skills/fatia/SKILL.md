@@ -46,7 +46,7 @@ Casos reais que essas perguntas teriam pego:
 
 ## Identificadores que o contrato cita e o código ainda não tem
 
-!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); sed -n "/^### ${H:?informe H-NN} /,/^### H-/p" docs/06-backlog.md | head -n -1 | grep -oE '`[A-Za-z_][A-Za-z0-9_]{3,}`|\b[a-z]+[A-Z][A-Za-z0-9]*\b' | tr -d '`' | sort -u | while read -r id; do grep -rqF -- "$id" src/ 2>/dev/null || echo "  $id"; done`
+!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); sed -n "/^### ${H:?informe H-NN} /,/^### H-/p" docs/06-backlog.md | head -n -1 | grep -oP '\x60[A-Za-z_][A-Za-z0-9_]{3,}\x60|\b[a-z]+[A-Z][A-Za-z0-9]*\b' | sed 's/\x60//g' | sort -u | while read -r id; do grep -rqF -- "$id" src/ 2>/dev/null || echo "  $id"; done`
 
 Cada nome acima é **uma de duas coisas**, e a diferença decide a fatia:
 
