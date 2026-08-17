@@ -7,7 +7,7 @@ argument-hint: '[H-NN]'
 
 ## A história, direto do backlog
 
-!`sed -n "/^### $ARGUMENTS /,/^### H-/p" docs/06-backlog.md | head -n -1`
+!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); sed -n "/^### ${H:?informe H-NN} /,/^### H-/p" docs/06-backlog.md | head -n -1`
 
 ## Casos-limite obrigatórios atribuídos a esta história
 
@@ -15,11 +15,11 @@ Extraídos de `docs/08-qualidade-operacao.md` §1.3 — os 43 casos obrigatório
 projeto. Cada linha abaixo precisa virar um teste com o **valor concreto** que
 aparece nela.
 
-!`grep -F "| $ARGUMENTS |" docs/08-qualidade-operacao.md || echo "NENHUM caso obrigatório atribuído a esta história em §1.3 — os 43 casos cobrem 11 das 33 histórias, e a ausência aqui é esperada, não defeito. Os casos-limite do backlog continuam obrigatórios."`
+!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); grep -F "| ${H:?informe H-NN} |" docs/08-qualidade-operacao.md || echo "NENHUM caso obrigatório atribuído a esta história em §1.3 — os 43 casos cobrem 11 das 33 histórias, e a ausência aqui é esperada, não defeito. Os casos-limite do backlog continuam obrigatórios."`
 
 ## Linhas da matriz de rastreabilidade que citam esta história
 
-!`grep -F "$ARGUMENTS" docs/09-rastreabilidade.md`
+!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); grep -F "${H:?informe H-NN}" docs/09-rastreabilidade.md`
 
 ## Confira a lista de arquivos ANTES de aceitá-la
 
@@ -43,6 +43,27 @@ Casos reais que essas perguntas teriam pego:
   ninguém registra não existe
 - `H-32`: faltava `tests/http/health.test.ts`, e três fábricas de estado
   quebraram no `typecheck` ao ganhar campo obrigatório
+
+## Identificadores que o contrato cita e o código ainda não tem
+
+!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); sed -n "/^### ${H:?informe H-NN} /,/^### H-/p" docs/06-backlog.md | head -n -1 | grep -oE '`[A-Za-z_][A-Za-z0-9_]{3,}`|\b[a-z]+[A-Z][A-Za-z0-9]*\b' | tr -d '`' | sort -u | while read -r id; do grep -rqF -- "$id" src/ 2>/dev/null || echo "  $id"; done`
+
+Cada nome acima é **uma de duas coisas**, e a diferença decide a fatia:
+
+- **coisa a criar** — a história existe para trazê-lo. Siga.
+- **divergência** — o contrato supõe que já existe, e não existe. **Pare e
+  reporte**, como manda o protocolo.
+
+Em `H-27` a lista teria trazido `responsible`, `customsChannel` e
+`importerOutsideRj`: o contrato mandava enfileirá-los, e `EDITABLE_FIELDS` não
+os tinha — o `write-guard` recusaria a fila **inteira**, inclusive as edições de
+texto do operador. Quem pegou foi o usuário, à mão, na abertura. É a divergência
+mais cara que uma fatia já encontrou, e o custo de perdê-la seria descobri-la
+com a implementação pronta.
+
+**A lista tem ruído, e isso é aceitável:** ela existe para você julgar item a
+item, não para reprovar nada. Nome em prosa que passe pelo filtro custa uma
+linha de leitura; identificador ausente que passe despercebido custa a fatia.
 
 ## Despacho — qual skill conduz esta história
 
