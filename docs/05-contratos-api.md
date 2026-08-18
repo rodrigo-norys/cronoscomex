@@ -326,18 +326,30 @@ depois por ETA2 ascendente com nulos por último.
     "processos_parados": 0       // ALE-06
   },
   "stalledThresholdDays": 15,
-  "historyStartedAt": null
+  "historyStartedAt": "2026-08-17T12:00:00.000Z",
+  "stalledCoverageDays": 1,
+  "stalledMeasurable": false
 }
 ```
 
-Os cinco alertas implementáveis exigem `category ≠ 'desembaracado'` (A-59). A
-condição está explícita apenas em ALE-01 e ALE-02 na especificação, mas vale nos
-cinco: a página é **fila de trabalho**, e processo concluído não pede ação.
+Os seis alertas exigem `category ≠ 'desembaracado'` (A-59). A condição está
+explícita apenas em ALE-01 e ALE-02 na especificação, mas vale nos seis: a
+página é **fila de trabalho**, e processo concluído não pede ação.
 
 `historyStartedAt` informa desde quando existe histórico, para que a interface
-não sugira retroatividade inexistente (A-43). É `string | null`, e vale **`null`
-até `H-28`** gravar a primeira leitura — não há data a informar antes disso, e
-inventá-la afirmaria histórico inexistente (A-61).
+não sugira retroatividade inexistente (A-43). É `string | null` — **instante ISO
+completo**, o `ts` do primeiro evento, não `AAAA-MM-DD` —, e vale `null` até a
+primeira leitura ser gravada: não há data a informar antes disso, e inventá-la
+afirmaria histórico inexistente (A-61).
+
+`stalledCoverageDays` e `stalledMeasurable` existem porque o zero de
+`processos_parados` tem dois sentidos opostos, e a interface não pode escolher
+entre eles (regra inviolável 6). Com histórico de 3 dias e limiar de 15, nenhum
+processo teve tempo de disparar, e exibir `0` afirmaria ausência de problema que
+ninguém mediu — `stalledMeasurable` é `false`, e `H-20` exibe **traço**;
+`stalledCoverageDays` dá o número que a ressalva da tela cita (A-43).
+`stalledMeasurable` vira `true` quando a cobertura alcança o limiar. Servidos
+desde `H-29`.
 
 Um processo aparece em `items` uma vez **por tipo** que satisfaz, e ALE-04 está
 contido em ALE-05 por construção. O achatamento é do contrato; **`H-20` agrupa
