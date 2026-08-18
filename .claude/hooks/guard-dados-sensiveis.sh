@@ -67,6 +67,19 @@ check_git_add() {
       tests/fixtures/*.xlsx) continue ;;
     esac
 
+    # Mesma razao da excecao acima, e mesmo modo de falha: `config/app.json.exemplo`
+    # e VERSIONADO desde o primeiro commit — quem carrega caminho local e
+    # `config/app.json`, que o `.gitignore` cobre. O glob abaixo tem `*` nas duas
+    # pontas, entao o exemplo casava e o guard recusava `git add` de arquivo que o
+    # repositorio ja rastreia. Medido em `H-30`, ao atualizar o exemplo.
+    #
+    # De novo era ESTA a camada divergente: verifica-dados-sensiveis.sh casa
+    # `config/app.json` com `grep -xE`, exato, e nunca barrou o exemplo. O guard
+    # que bloqueia sozinho e o guard que nao vale — o CI e quem roda em todo commit.
+    case "$path" in
+      config/app.json.exemplo) continue ;;
+    esac
+
     case "$path" in
       *.xlsx*|*.jpeg*|*"config/app.json"*|*"data/"*)
         block "'git add' apontando para artefato com dado real ou configuracao local: $path" ;;
