@@ -68,6 +68,17 @@ blocks 'git add tests/fixtures/data-vazia.xlsx config/app.json'
 # Travessia anula a excecao: em `case`, `*` atravessa `/`.
 blocks 'git add tests/fixtures/../CONTROLE.xlsx'
 
+# --- o exemplo de configuracao: versionado, e o guard o barrava --------------
+# Mesmo defeito da fixture acima, encontrado em H-30 ao atualizar o arquivo. O
+# glob `*"config/app.json"*` tem `*` nas duas pontas, entao o sufixo `.exemplo`
+# casava. O que carrega caminho local e `config/app.json`, e ele segue bloqueado.
+allows 'git add config/app.json.exemplo'
+allows 'git add README.md config/app.json.exemplo'
+blocks 'git add config/app.json.exemplo config/app.json'
+# A excecao e do nome exato: nada mais sob esse prefixo passa.
+blocks 'git add config/app.json.local'
+blocks 'git add config/app.json.exemplo.bak'
+
 # --- redirecionamento para caminho protegido -------------------------------
 blocks 'echo x > config/app.json'
 blocks 'cat foo >> data/quarantine.json'
