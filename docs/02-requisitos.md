@@ -218,7 +218,6 @@ memória.
 | Node.js | 22.x LTS | — |
 | TypeScript | 7.0.2 (`latest`); fallback 5.9.3 | registro npm, `dist-tags` |
 | Fastify | 5.11.2 | registro npm |
-| ExcelJS | 4.4.0 | registro npm |
 | fflate | 0.8.3 | registro npm |
 | chokidar | 5.0.0 (exige Node ≥ 20.19.0) | registro npm |
 | React | 19.2.8 | registro npm |
@@ -233,6 +232,13 @@ memória.
 | ExcelJS pode gerar arquivo corrompido ao combinar validação e formatação condicional | Sim | [issue #1118](https://github.com/exceljs/exceljs/issues/1118), [#1305](https://github.com/exceljs/exceljs/issues/1305) |
 | SheetJS Community não lê estilos de célula de forma confiável | Sim — recurso de estilos é da edição Pro | [issue #3214](https://git.sheetjs.com/sheetjs/sheetjs/issues/3214) |
 | CSV não preserva formatação de célula | Sim — formato texto puro, sem estilos | [README oficial do ExcelJS](https://github.com/exceljs/exceljs/blob/master/README.md) |
+
+> **As cinco linhas sobre o ExcelJS são registro histórico, não stack.** Ele foi
+> a biblioteca de leitura até `H-33` (18/08/2026), quando o leitor passou a
+> interpretar o XML direto com `fflate` e a dependência saiu do projeto. As
+> linhas ficam porque são a evidência que sustenta o ADR-0004 e a regra
+> inviolável 9: reserializar a planilha com uma biblioteca de `.xlsx` perde
+> formatação condicional e validações.
 
 > **Consequência registrada em voz alta:** qualquer fonte que perca formatação
 > — CSV, export simplificado, cópia como texto — **invalida** a extração de

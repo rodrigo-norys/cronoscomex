@@ -249,7 +249,7 @@ materializando.
 | **Mitigação preventiva** | Nada é descartado em silêncio (RF-06); a normalização determinística absorve caixa, acento e espaço; o relatório de divergências lista o que precisa de decisão humana |
 | **Contingência** | Acrescentar entradas a `status-aliases.json` e a `color-map.json` — configuração, sem recompilar. A limpeza da planilha em si é decisão do operador, com a lista de linhas em mãos |
 
-### R-05 · Cores de tema não resolvidas pelo ExcelJS — score 12
+### R-05 · Cores de tema não resolvidas para RGB — score 12
 
 | | |
 |---|---|
@@ -259,6 +259,7 @@ materializando.
 | **MEDIDO em 03/08/2026** | **Praticamente não ocorre.** Das 9 chaves da aba `2026`, **8 são `argb` explícito** e apenas 1 é de tema (`theme:0\|tint:0.0000`, 1 linha). Nenhuma tem `tint` diferente de zero. **Score efetivo cai de 12 para 4** |
 | **Mitigação preventiva** | **A arquitetura já neutraliza o defeito**: a chave de estilo é usada literalmente, sem conversão para RGB (ADR-0003). Uma chave `theme:4\|tint:-0.2500` é tão mapeável quanto `argb:FF00B050`, desde que esteja em `color-map.json` |
 | **Contingência** | Acrescentar a chave ao mapa — configuração, não código. É por isso que este risco tem impacto 4 e não 5 |
+| **REFORMULADO em 18/08/2026** | `H-33` tirou o ExcelJS do caminho de leitura, e com ele o defeito #1690 que dava nome ao risco. O que sobra não é defeito de biblioteca: `theme` mais `tint` é como o OOXML **guarda** a cor de tema, e não resolvê-la para RGB é a decisão do ADR-0003, não uma limitação. O risco residual — cor de tema nova, ausente do mapa — é o mesmo de qualquer cor nova, e a contingência acima continua sendo a resposta |
 
 ### R-06 · Conflito de sincronização do OneDrive durante a gravação — score 12
 
@@ -291,10 +292,10 @@ materializando.
 | **Probabilidade** | 2 — três defesas independentes precisariam falhar juntas |
 | **Impacto** | 5 — perda da planilha de trabalho da empresa |
 | **Gatilho observável** | `write.restored` nos logs; Excel exibindo aviso de reparo ao abrir |
-| **Mitigação preventiva** | Nunca reserializar com ExcelJS (ADR-0004, três defeitos citados); gravação atômica; backup antes; validação por releitura após |
+| **Mitigação preventiva** | Nunca reserializar a planilha com uma biblioteca de `.xlsx` (ADR-0004, três defeitos citados); gravação atômica; backup antes; validação por releitura após |
 | **Contingência** | Restauração automática do backup (H-25), com o caminho informado ao operador. `data/backups/` mantém 30 cópias ou 90 dias (RNF-21) |
 
-### R-09 · ExcelJS sem manutenção ativa — score 9
+### R-09 · ExcelJS sem manutenção ativa — score 9 · ✅ FECHADO
 
 | | |
 |---|---|
@@ -303,6 +304,7 @@ materializando.
 | **Gatilho observável** | Falha de leitura em arquivo que o Excel abre normalmente |
 | **Mitigação preventiva** | ExcelJS é usado **apenas para leitura**; a escrita não depende dele (ADR-0004). A superfície exposta ao risco é pequena e está isolada em `src/io/xlsx-reader.ts` |
 | **Contingência** | Substituir apenas o leitor, mantendo o contrato `readWorkbook`. SheetJS Community está descartado por não ler estilos ([issue #3214](https://git.sheetjs.com/sheetjs/sheetjs/issues/3214)); a alternativa seria leitura direta do XML com `fflate`, que já é dependência do projeto pela escrita |
+| **FECHADO em 18/08/2026** | A contingência virou o caminho principal. `H-33` trocou o leitor por leitura direta do XML com `fflate`, o contrato `readWorkbook` ficou intacto, e o `exceljs` saiu de `package.json` — 1.084 linhas a menos em `package-lock.json`. Não há mais superfície exposta: nenhum arquivo de `src/` o importa |
 
 ### R-10 · Volume acima do que a estratégia em memória comporta — score 6
 
@@ -313,7 +315,7 @@ materializando.
 | **Gatilho observável** | Tempo de parse acima de 10 s (RNF-13) ou memória do processo acima de 512 MB (RNF-16), ambos registrados em `read.done` pelos logs de `H-31` |
 | **Mitigação preventiva** | `H-01` mede o volume antes de qualquer implementação |
 | **MEDIDO em 03/08/2026** | **649 linhas × 16 colunas, arquivo de 293 KB.** Ordens de magnitude abaixo de qualquer limiar de preocupação. **Score efetivo cai de 6 para 1.** O ADR-0006 fica confortável mesmo se o arquivo quintuplicar |
-| **Contingência** | Leitura em fluxo com a API de streaming do ExcelJS e cálculo incremental dos indicadores. Isso alteraria o ADR-0006 e é a única contingência do plano que exigiria revisão de decisão estrutural |
+| **Contingência** | Leitura em fluxo do XML da aba e cálculo incremental dos indicadores. Isso alteraria o ADR-0006 e é a única contingência do plano que exigiria revisão de decisão estrutural |
 
 ### R-11 · Coluna E ou coluna P diferentes do suposto — score 6
 
@@ -378,11 +380,11 @@ Scores revistos após `H-01` (03/08/2026).
 | 12 | R-06 Conflito de sincronização do OneDrive | inalterado |
 | 12 | R-13 Credenciais na aba CNPJ | **novo** |
 | 10 | R-08 Corrupção na gravação | inalterado |
-| 9 | R-09 ExcelJS sem manutenção | inalterado |
+| — | R-09 ExcelJS sem manutenção | **fechado por `H-33`** — a dependência saiu do projeto |
 | 9 | R-14 Virada de ano | **novo** |
 | 8 | R-07 Painel não adotado para edição | inalterado — aceitável por desenho |
 | 6 | R-15 `xf` novo em `styles.xml` | **novo** |
-| **4** | R-05 Cores de tema não resolvidas | **reduzido de 12** — 8 das 9 chaves são `argb` explícito |
+| **4** | R-05 Cores de tema não resolvidas | **reduzido de 12** — 8 das 9 chaves são `argb` explícito; reformulado por `H-33`, que tirou o defeito de biblioteca da conta |
 | 4 | R-12 TypeScript 7 incompatível | inalterado |
 | **1** | R-10 Volume acima do previsto | **reduzido de 6** — 649 linhas, 293 KB |
 | — | ~~R-03 Datas como texto~~ | **ENCERRADO** — 1.201 datas reais, zero texto sem ano |

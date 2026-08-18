@@ -1,6 +1,26 @@
 # ADR-0003 — Extrair a cor como chave de estilo literal, sem resolver RGB
 
-**Status:** Aceito · 03/08/2026
+**Status:** Aceito · 03/08/2026 · atualizado em 18/08/2026 por `H-33`
+
+## Atualização — 18/08/2026 (`H-33`)
+
+**A decisão não muda; a razão da primeira metade do contexto, sim.** `H-33`
+tirou o ExcelJS do caminho de leitura, e o leitor passou a interpretar
+`xl/styles.xml` direto. O defeito
+[#1690](https://github.com/exceljs/exceljs/issues/1690) deixou de existir para
+este projeto — e com ele some a leitura de que `theme` mais `tint` seria um
+**defeito de biblioteca**. Não é: é como o OOXML **guarda** a cor de tema. Nada
+de biblioteca a "resolveria" sem a cadeia de conversão que A1 descarta.
+
+A chave literal continua sendo a decisão, e pelos motivos de sempre: a
+alternativa é reimplementar a modulação de luminância do OOXML sobre a paleta de
+`xl/theme/theme1.xml` para produzir uma chave que já se tinha.
+
+**Conferido contra a planilha real em 18/08/2026**, com os dois leitores lado a
+lado: as 649 linhas de dados produzem as **mesmas 9 chaves**, com as mesmas
+contagens medidas por `H-01` — 258, 219, 120, 31, 9, 5, 5, 1 e 1. Zero
+divergência de valor, de tipo, de chave de estilo ou de hash, também sobre as
+9 fixtures.
 
 ## Contexto
 
@@ -20,11 +40,12 @@ nenhuma coluna de texto** — existem apenas como cor de preenchimento da linha:
 Ler essa formatação é condição de existência do produto — é o critério
 eliminatório do ADR-0002. Duas descobertas moldam esta decisão:
 
-**Primeira: a biblioteca nem sempre devolve a cor resolvida.** ExcelJS retorna
-`fgColor` ora como `{ argb: 'FF92D050' }`, ora como
-`{ theme: 4, tint: -0.249977111117893 }`, dependendo de como a cor foi aplicada
-na planilha. O defeito está aberto desde 27/04/2021
-([issue #1690](https://github.com/exceljs/exceljs/issues/1690)). Converter
+**Primeira: a cor nem sempre vem resolvida.** O `fgColor` da célula aparece ora
+como `{ argb: 'FF92D050' }`, ora como `{ theme: 4, tint: -0.249977111117893 }`,
+dependendo de como a cor foi aplicada na planilha. À época este ADR o
+descreveu como defeito do ExcelJS, aberto desde 27/04/2021
+([issue #1690](https://github.com/exceljs/exceljs/issues/1690)) — ver a
+atualização de `H-33` no topo: a forma é do formato, não da biblioteca. Converter
 `theme + tint` em RGB exigiria reimplementar o algoritmo de modulação de
 luminância do OOXML e resolver a paleta do tema em `xl/theme/theme1.xml` — uma
 cadeia de conversão com muitas oportunidades de errar por pouco.
@@ -38,10 +59,10 @@ Ler a cor de uma coluna arbitrária produziria o valor errado (achado A-44).
 
 ### 1. A chave de estilo é literal, e nunca convertida em RGB
 
-Qualquer que seja a forma devolvida pela biblioteca, ela é **serializada como
-está** e usada como chave opaca:
+Qualquer que seja a forma em que a cor esteja no arquivo, ela é **serializada
+como está** e usada como chave opaca:
 
-| Forma devolvida | Chave gerada |
+| Forma no `xl/styles.xml` | Chave gerada |
 |---|---|
 | `{ argb: 'FF00B050' }` | `argb:FF00B050` |
 | `{ theme: 4, tint: -0.249977111117893 }` | `theme:4\|tint:-0.2500` |
@@ -102,7 +123,7 @@ destruiria bordas — ver TD-05.1 e o achado A-49.
 
 ### Positivas
 
-- **O defeito #1690 do ExcelJS deixa de importar.** Uma chave
+- **A forma em que a cor vem deixa de importar.** Uma chave
   `theme:4|tint:-0.2500` é tão mapeável quanto `argb:FF00B050`. O que seria um
   bloqueio vira uma linha de configuração. É por isso que R-05 tem impacto 4 e
   não 5.

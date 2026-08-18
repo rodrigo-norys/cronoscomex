@@ -179,7 +179,7 @@ seja convertido em "desembaraçado" por adivinhação.
 
 ### TD-03 — Conversão de célula em data
 
-| # | Tipo devolvido pelo ExcelJS | Ação | Resultado |
+| # | Tipo devolvido pelo leitor | Ação | Resultado |
 |---|---|---|---|
 | 1 | `Date` | Usar direto, truncando a hora. **Data civil, ancorada em UTC — nunca converter fuso** | `Date` |
 | 2 | `number` (serial do Excel) | Converter pelo epoch 1900 do Excel, **respeitando o bug do ano bissexto de 1900** (serial 60 não existe) | `Date` |
@@ -206,7 +206,7 @@ seja convertido em "desembaraçado" por adivinhação.
 | `"N/A"` | `null` | `DATA_SEM_ANO` |
 
 > **Sobre fuso horário (corrigido em `H-05`):** o Excel **não armazena fuso** —
-> `01/ago` é 01/ago em qualquer lugar do mundo. O ExcelJS interpreta o serial
+> `01/ago` é 01/ago em qualquer lugar do mundo. O leitor interpreta o serial
 > como meia-noite **UTC**; converter para `America/Sao_Paulo` (UTC−3) empurra a
 > data para o **dia anterior**. Medido: `2026-08-01T00:00:00Z` devolve `31` em
 > `getDate()`. As datas da planilha são portanto **datas civis sem fuso**,
