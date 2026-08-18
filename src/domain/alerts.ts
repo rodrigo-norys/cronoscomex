@@ -1,4 +1,5 @@
 import { addDays, diffDays, isWithin, toIsoDay } from './date-window.ts'
+import { daysSince } from './history.ts'
 import { hasPendingDocs, isOverdue } from './indicators.ts'
 import type { Process } from './types.ts'
 
@@ -7,10 +8,10 @@ import type { Process } from './types.ts'
  *
  * A pagina de alertas e **fila de trabalho**, nao panorama: cada entrada existe
  * para pedir uma acao, e por isso processo `desembaracado` fica de fora dos
- * CINCO tipos (A-59) — a especificacao so era explicita em ALE-01 e ALE-02.
- * Medido na planilha real: sao **480 de 649** processos ja desembaracados, e
- * sem o filtro 5 de 14 alertas seriam sobre processos ja encerrados — em Canal
- * Vermelho, a maioria.
+ * SEIS tipos (A-59) — a especificacao so era explicita em ALE-01 e ALE-02, e os
+ * cinco de `H-14` viraram seis quando `H-29` ligou ALE-06. Medido na planilha
+ * real: sao **480 de 649** processos ja desembaracados, e sem o filtro 5 de 14
+ * alertas seriam sobre processos ja encerrados — em Canal Vermelho, a maioria.
  */
 
 export type AlertType =
@@ -105,9 +106,10 @@ function days(count: number): string {
  * que precisa dele para contar por tipo; a Pagina Alertas agrupa por processo na
  * exibicao (A-60). Medido no arquivo real: 40 linhas para 25 processos.
  *
- * `stalledDays` e `threshold` alimentam ALE-06, entregue em `H-29`. Com o mapa
- * vazio nenhum alerta desse tipo e gerado, e a chave fica em zero — que e
- * diferente de ausente: a contagem existe desde ja, so nao tem o que contar.
+ * `stalledDays` traz os dias parados por REF, e REF **ausente** do mapa nao e o
+ * mesmo que zero: ausente e "sem base para contar" — processo que o historico
+ * nunca viu —, zero e "mudou de categoria hoje". Quem monta o mapa e
+ * `stalledDaysByRef`, em `src/io/history-store.ts`.
  */
 export function buildAlerts(
   processes: readonly Process[],
@@ -163,6 +165,39 @@ export function buildAlerts(
   }
 
   return sortAlerts(alerts)
+}
+
+/** Quanto do limiar de ALE-06 o historico ja consegue cobrir. */
+export interface StalledCoverage {
+  /** Dias corridos desde o primeiro evento. `null` sem historico algum. */
+  days: number | null
+  /**
+   * O zero de `processos_parados` e conclusivo? So quando o historico ja e mais
+   * velho que o limiar — antes disso nenhum processo teve tempo de atingi-lo.
+   */
+  measurable: boolean
+}
+
+/**
+ * Decide se a contagem de ALE-06 ja significa alguma coisa.
+ *
+ * Existe porque zero tem dois sentidos opostos aqui, e a interface nao pode
+ * escolher entre eles: "nenhum processo esta parado" e "o historico ainda e
+ * novo demais para que algum estivesse". Com o historico de 3 dias e limiar de
+ * 15, nenhum processo pode disparar — exibir `0` afirmaria ausencia de
+ * problema que ninguem mediu, que e o que a regra inviolavel 3 proibe (A-43).
+ *
+ * Fica no dominio, e nao na tela, porque compara instante com dia civil no fuso
+ * da aplicacao — e o cliente nao conhece fuso nenhum (regra inviolavel 6).
+ */
+export function stalledCoverage(
+  historyStartedAt: string | null,
+  today: Date,
+  timezone: string,
+  threshold: number,
+): StalledCoverage {
+  const days = daysSince(historyStartedAt, today, timezone)
+  return { days, measurable: days !== null && days >= threshold }
 }
 
 /**
