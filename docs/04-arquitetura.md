@@ -101,6 +101,7 @@ saudável e não é.
 graph TB
     WATCH["watcher"]
     READER["xlsx-reader"]
+    PARTS["xlsx-parts"]
     STYLE["style-extractor"]
     COLOR["color-mapper"]
     NORM["normalizer"]
@@ -114,8 +115,9 @@ graph TB
     API["http-api"]
 
     WATCH -->|"caminho do arquivo"| READER
-    READER -->|"RawRow[]"| BUILD
-    READER -->|"célula A de cada linha"| STYLE
+    READER -->|"XML das partes em escopo"| PARTS
+    PARTS -->|"RawRow[]"| BUILD
+    PARTS -->|"preenchimento da célula A"| STYLE
     STYLE -->|"styleKey"| COLOR
     COLOR -->|"campos derivados de cor"| BUILD
     NORM -->|"normKey, parseDate"| BUILD
@@ -136,7 +138,7 @@ graph TB
     classDef puro fill:#1f6feb,stroke:#0d419d,color:#fff
     classDef borda fill:#238636,stroke:#1a7f37,color:#fff
     class WATCH,READER,HIST,QUAR io
-    class STYLE,COLOR,NORM,CLASS,BUILD,IND,ALERT puro
+    class PARTS,STYLE,COLOR,NORM,CLASS,BUILD,IND,ALERT puro
     class STORE,API borda
 ```
 
@@ -146,8 +148,9 @@ efeito colateral em disco. Verde = fronteira.
 | Componente | Responsabilidade (uma frase) | Entrada | Saída |
 |---|---|---|---|
 | `watcher` | Detectar alteração do `.xlsx` e disparar reprocessamento com debounce | Caminho do arquivo, sinal de pausa | Evento `fileChanged` |
-| `xlsx-reader` | Abrir o arquivo e devolver as linhas cruas e a célula-âncora de estilo de cada uma | Caminho do arquivo | `RawRow[]`, hash SHA-256 do arquivo |
-| `style-extractor` | Converter `cell.fill` na chave de estilo literal, sem resolver cor | `Cell` | `styleKey: string` |
+| `xlsx-reader` | Abrir o arquivo, resolver qual aba está em escopo e descomprimir **somente** as partes dela — as demais abas nunca são infladas (regra inviolável 10) | Caminho do arquivo | `RawRow[]`, hash SHA-256 do arquivo |
+| `xlsx-parts` | Interpretar as partes XML — pool de texto, estilos e `sheetData` — em célula, tipo e chave de estilo. Puro: recebe string, devolve dado | XML de `sharedStrings`, `styles` e da aba | `RawRow[]` |
+| `style-extractor` | Converter o preenchimento da célula na chave de estilo literal, sem resolver cor | `fgColor` de `xl/styles.xml` | `styleKey: string` |
 | `color-mapper` | Traduzir a chave de estilo em responsável, canal e localização do importador | `styleKey`, `color-map.json` | `{ responsible, customsChannel, importerOutsideRj }` ou não-mapeado |
 | `normalizer` | Normalizar texto para agrupamento e converter célula em data | `string \| number \| Date` | `string` normalizada, `Date \| null`, anomalias |
 | `status-classifier` | Aplicar TD-01 e devolver a categoria canônica | `RawRow`, `status-aliases.json` | `StatusCategory`, anomalias |
@@ -289,40 +292,64 @@ cronoscomex/
 │  │  ├─ status-classifier.ts
 │  │  ├─ color-mapper.ts
 │  │  ├─ process-builder.ts
+│  │  ├─ process-projection.ts
+│  │  ├─ process-query.ts
 │  │  ├─ indicators.ts
 │  │  ├─ alerts.ts
+│  │  ├─ history.ts
+│  │  ├─ date-window.ts
+│  │  ├─ editable-fields.ts
 │  │  └─ filters.ts
 │  ├─ io/
 │  │  ├─ xlsx-reader.ts
+│  │  ├─ xlsx-parts.ts
 │  │  ├─ style-extractor.ts
 │  │  ├─ xlsx-surgeon.ts
 │  │  ├─ backup-manager.ts
 │  │  ├─ watcher.ts
+│  │  ├─ interference-detector.ts
 │  │  ├─ history-store.ts
 │  │  ├─ edit-queue.ts
 │  │  └─ quarantine-reporter.ts
 │  ├─ app/
 │  │  ├─ process-store.ts
 │  │  ├─ write-guard.ts
+│  │  ├─ color-map-loader.ts
+│  │  ├─ status-aliases-loader.ts
+│  │  ├─ logger.ts
 │  │  └─ config.ts
-│  ├─ http/
-│  │  ├─ server.ts
-│  │  └─ routes/
-│  └─ profiling/
-│     └─ profile-workbook.ts  # H-01
+│  └─ http/
+│     ├─ server.ts
+│     ├─ errors.ts
+│     ├─ filter-request.ts
+│     └─ routes/              # 12 rotas — ver 05-contratos-api.md
 ├─ web/
 │  ├─ src/
-│  │  ├─ pages/
+│  │  ├─ pages/               # 8 arquivos: as 7 páginas + Placeholders.tsx
 │  │  ├─ components/
 │  │  ├─ hooks/
+│  │  ├─ App.tsx
+│  │  ├─ router.ts
+│  │  ├─ index.css
 │  │  └─ api-client.ts
 │  └─ index.html
-├─ tests/
-│  ├─ domain/
-│  ├─ io/
-│  └─ fixtures/               # .xlsx versionados — nunca a planilha real
+├─ tests/                     # projeto `servidor`, ambiente node
+│  ├─ domain/ · io/ · app/ · http/ · repo/
+│  └─ fixtures/               # 9 .xlsx versionados — nunca a planilha real
+├─ web/tests/                 # projeto `interface`, ambiente jsdom
+├─ tools/                     # perfilador, gerador de fixtures e conferências
+├─ scripts/
+│  ├─ iniciar.cmd             # atalho do operador, Windows (H-30, RNF-26)
+│  ├─ dev.mjs
+│  └─ porta.mjs
+├─ config/                    # app.json não é versionado; há um .exemplo
 └─ package.json
 ```
+
+> **A árvore é conferível:** `ls src/domain src/io src/app src/http` devolve
+> exatamente os arquivos acima. A pasta `src/profiling/`, que este documento
+> listou até 18/08/2026, **nunca existiu** — o perfilador de `H-01` é Python e
+> mora em `tools/`.
 
 **Regra de dependência:** `domain/` não importa nada de `io/`, `app/`, `http/`
 ou `web/`. A seta aponta sempre para dentro. Isso é o que torna os testes de
