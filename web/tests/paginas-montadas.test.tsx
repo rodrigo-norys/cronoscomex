@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs'
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, waitForElementToBeRemoved } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from '../src/App.tsx'
 import { NAV_PAGES, PROCESS_DETAIL_PAGE } from '../src/router.ts'
@@ -74,9 +74,16 @@ describe('história concluída exige página montada', () => {
     expect(CLOSED.has('H-16')).toBe(true)
   })
 
-  it.each(PAGES)('%s (%s) — %s', (_label, path, story) => {
+  it.each(PAGES)('%s (%s) — %s', async (_label, path, story) => {
     window.history.replaceState(null, '', path)
     render(<App />)
+
+    // A Página Histórico é carregada sob demanda desde 17/08/2026 — o Recharts
+    // responde por 374 dos 634 kB do pacote. Sem esperar o módulo chegar, a
+    // consulta abaixo aconteceria com o fallback do `Suspense` na tela, e a
+    // guarda passaria **sem nunca ter renderizado a página**.
+    const fallback = () => screen.queryByText('Carregando página…')
+    if (fallback() !== null) await waitForElementToBeRemoved(fallback)
 
     const placeholder = screen.queryByText(/Página ainda não implementada/)
 
