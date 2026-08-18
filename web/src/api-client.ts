@@ -5,6 +5,7 @@ import type { ApplyResponse } from '../../src/http/routes/apply.ts'
 import type { EditsListResponse, EnqueuedEditResponse } from '../../src/http/routes/edits.ts'
 import type { FilterOptionsResponse } from '../../src/http/routes/filter-options.ts'
 import type { HealthResponse } from '../../src/http/routes/health.ts'
+import type { MonthlyHistoryResponse } from '../../src/http/routes/history.ts'
 import type { IndicatorsResponse } from '../../src/http/routes/indicators.ts'
 import type {
   ColorOption,
@@ -41,6 +42,7 @@ export type {
   FilterOptionsResponse,
   HealthResponse,
   IndicatorsResponse,
+  MonthlyHistoryResponse,
   ProcessDetailResponse,
   ProcessDto,
   ProcessesResponse,
@@ -145,6 +147,33 @@ export async function getAlerts(
   if (!response.ok) throw new Error(`GET /api/alerts respondeu ${response.status}`)
 
   return (await response.json()) as AlertsResponse
+}
+
+/**
+ * A serie mensal do historico (RF-14), recortada pelos filtros globais.
+ *
+ * `months` nao e filtro global: ele vive no estado local da Pagina Historico, e
+ * por isso e anexado aqui, depois da `queryString` que ja vem pronta. O
+ * separador depende de haver recorte ativo — sem filtro a query esta vazia.
+ *
+ * Mesmo `503` de `getIndicators`. Serie vazia, ao contrario, e resposta
+ * legitima: significa que a planilha foi lida e o historico ainda nao tem
+ * evento nenhum (A-43), o que a tela precisa distinguir de "ainda nao se sabe".
+ */
+export async function getMonthlyHistory(
+  queryString: string,
+  months: number,
+  signal?: AbortSignal,
+): Promise<MonthlyHistoryResponse> {
+  const separator = queryString === '' ? '?' : '&'
+  const response = await fetch(
+    `/api/history/monthly${queryString}${separator}months=${months}`,
+    signal ? { signal } : undefined,
+  )
+  if (response.status === 503) throw new NoReadYetError('GET /api/history/monthly')
+  if (!response.ok) throw new Error(`GET /api/history/monthly respondeu ${response.status}`)
+
+  return (await response.json()) as MonthlyHistoryResponse
 }
 
 /**
