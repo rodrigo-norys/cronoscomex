@@ -113,24 +113,32 @@ export function nextSeen(previous: LastSeen | undefined, event: StatusEvent): La
 }
 
 /**
- * Dias corridos desde a ultima mudanca de categoria. `null` quando o REF nunca
- * foi visto — contagem sem base nao vira alerta (ADR-0005).
+ * Dias corridos desde um instante do historico. `null` quando nao ha instante,
+ * ou quando ele nao e uma data valida — contagem sem base nao vira numero.
  *
  * Os dois lados sao reduzidos ao dia civil no fuso da aplicacao antes de
  * subtrair. O `ts` e um instante UTC, e comparar instante com dia civil erraria
  * por um dia toda leitura feita depois das 21h em Sao Paulo.
+ */
+export function daysSince(instant: string | null, today: Date, timezone: string): number | null {
+  if (instant === null) return null
+
+  const moment = new Date(instant)
+  if (Number.isNaN(moment.getTime())) return null
+
+  return Math.max(0, Math.round(diffDays(civilDay(timezone, moment), today)))
+}
+
+/**
+ * Dias corridos desde a ultima mudanca de categoria. `null` quando o REF nunca
+ * foi visto — contagem sem base nao vira alerta (ADR-0005).
  */
 export function daysInCategory(
   seen: LastSeen | undefined,
   today: Date,
   timezone: string,
 ): number | null {
-  if (seen === undefined) return null
-
-  const changedAt = new Date(seen.categoryChangedAt)
-  if (Number.isNaN(changedAt.getTime())) return null
-
-  return Math.max(0, Math.round(diffDays(civilDay(timezone, changedAt), today)))
+  return daysSince(seen?.categoryChangedAt ?? null, today, timezone)
 }
 
 /** `AAAA-MM` do instante, no fuso da aplicacao. */
