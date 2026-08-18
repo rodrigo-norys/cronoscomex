@@ -326,7 +326,13 @@ const COMMENT_LINE = /^\s*(\/\/|\*|\/\*)/
  */
 const PLAN_ID =
   /\b(?:ADR-\d{4}|RNF-\d{2}|IND-\d{2}|ALE-\d{2}|TD-\d{2}(?:\.\d)?|RF-\d{2}|H-\d{2}|A-\d{2}|D-\d{2}|P-\d{2}|R-\d{2})\b/g
-const REPO_PATH = /\b(?:docs|config|tools|tests)\/[A-Za-z0-9._/-]+/g
+/**
+ * `src/` e `web/` entraram em `H-21`: sem eles, `\b` casava o `tests` de
+ * `web/tests/paginas-montadas.test.tsx` no meio da palavra e a guarda cobrava
+ * um `tests/paginas-montadas.test.tsx` que nunca existiu — falso positivo em
+ * caminho certo, e cegueira nos dois diretorios onde o codigo vive.
+ */
+const REPO_PATH = /\b(?:web\/)?(?:docs|config|tools|tests|src|web)\/[A-Za-z0-9._/-]+/g
 const BACKTICKED = /`([^`]+)`/g
 
 /**
@@ -419,11 +425,12 @@ const DEFINED = definedIds()
 
 describe('toda âncora citada em comentário ainda existe', () => {
   it('encontra citações — âncora contra guarda verde por vacuidade', () => {
-    // Medido em 12/08/2026, contando só linhas de comentário de `src/` e
-    // `web/src`: 331 IDs e 18 caminhos. O piso é folgado de propósito — o que
-    // ele pega é a regex que parou de casar, não a variação normal de refatorar.
+    // Medido em 17/08/2026, contando só linhas de comentário de `src/` e
+    // `web/src`: 331 IDs e 54 caminhos — eram 18 antes de `H-21` alcançar
+    // `src/` e `web/`. O piso é folgado de propósito: o que ele pega é a regex
+    // que parou de casar, não a variação normal de refatorar.
     expect(CITATIONS.ids.length).toBeGreaterThan(200)
-    expect(CITATIONS.paths.length).toBeGreaterThan(5)
+    expect(CITATIONS.paths.length).toBeGreaterThan(30)
   })
 
   it('todo ID citado é DEFINIDO em docs/, não apenas citado lá também', () => {
