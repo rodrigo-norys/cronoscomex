@@ -60,7 +60,8 @@ const SEM_ANO: DateParse = { date: null, anomaly: 'DATA_SEM_ANO' }
  * Monta uma data CIVIL, sem fuso.
  *
  * O Excel nao armazena fuso: "01/ago" e 01/ago em qualquer lugar do mundo. O
- * ExcelJS interpreta o serial como meia-noite UTC, entao converter para
+ * leitor de src/io/xlsx-parts.ts interpreta o serial como meia-noite UTC,
+ * entao converter para
  * America/Sao_Paulo (UTC-3) empurraria a data para o dia ANTERIOR — medido:
  * 2026-08-01T00:00:00Z vira dia 31 em getDate(). Por isso ancoramos em UTC e
  * nunca convertemos. O fuso da configuracao vale apenas para determinar o que
@@ -105,7 +106,7 @@ export function parseCellDate(raw: RawCell): DateParse {
 
   if (value === null || value === undefined) return VAZIO
 
-  // 1. Date do ExcelJS: ancorada em UTC, apenas truncamos a hora.
+  // 1. Date vinda do leitor: ancorada em UTC, apenas truncamos a hora.
   if (value instanceof Date) {
     if (Number.isNaN(value.getTime())) return SEM_ANO
     const civil = civilDate(value.getUTCFullYear(), value.getUTCMonth() + 1, value.getUTCDate())

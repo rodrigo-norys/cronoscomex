@@ -1,11 +1,14 @@
 /**
  * Extracao da chave de estilo — TD-05 e ADR-0003.
  *
- * A chave e LITERAL: a forma devolvida pela biblioteca e serializada como
- * esta, sem nunca converter para RGB. Isso neutraliza o defeito #1690 do
- * ExcelJS, que devolve `{theme, tint}` em vez de `argb` para cores de tema.
- * Uma chave `theme:4|tint:-0.2500` e tao mapeavel quanto `argb:FF00B050`,
- * desde que esteja em config/color-map.json.
+ * A chave e LITERAL: a forma que o preenchimento tem no XML e serializada como
+ * esta, sem nunca converter para RGB. O <fgColor> de xl/styles.xml traz `rgb`,
+ * `theme` mais `tint` ou `indexed`, conforme como a cor foi aplicada na
+ * planilha, e resolver as duas ultimas exigiria reimplementar a modulacao de
+ * luminancia do OOXML sobre a paleta de xl/theme/theme1.xml — cadeia de
+ * conversao inteira para produzir uma chave que ja se tinha. Uma chave
+ * `theme:4|tint:-0.2500` e tao mapeavel quanto `argb:FF00B050`, desde que
+ * esteja em config/color-map.json.
  *
  * NAO ha tolerancia nem aproximacao por proximidade de cor. Medido em H-01:
  * o arquivo real tem dois verdes (FF00FF00 e FF00FF0D) e dois roxos
@@ -15,7 +18,7 @@
 
 export const NO_FILL = 'none'
 
-/** Forma minima do `cell.fill` do ExcelJS que nos interessa. */
+/** Forma minima do preenchimento que nos interessa. Ver `parseFill`. */
 interface PatternFillLike {
   type?: string
   pattern?: string
@@ -37,9 +40,9 @@ function asPatternFill(fill: unknown): PatternFillLike | null {
 
 /**
  * Arredonda o tint a 4 casas para que a chave seja estavel entre leituras.
- * `tint` ausente vale ZERO: o ExcelJS omite o campo quando e zero, mas o
+ * `tint` ausente vale ZERO: o Excel omite o atributo quando e zero, mas o
  * perfilador o escreve explicitamente. Sem esta normalizacao, a linha branca
- * do arquivo real (theme 0, sem tint) cairia em COR_NAO_MAPEADA.
+ * do arquivo real — <fgColor theme="0"/>, sem tint — cairia em COR_NAO_MAPEADA.
  */
 function formatTint(tint: number | undefined): string {
   return (tint ?? 0).toFixed(4)

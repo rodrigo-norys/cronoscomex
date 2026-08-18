@@ -72,7 +72,7 @@ describe('levenshtein', () => {
 })
 
 describe('parseCellDate — TD-03', () => {
-  it('regra 1: Date do ExcelJS vira data civil, com a hora truncada', () => {
+  it('regra 1: Date do leitor vira data civil, com a hora truncada', () => {
     const r = parseCellDate(data(new Date('2026-07-29T00:00:00.000Z')))
 
     expect(r.date?.toISOString()).toBe('2026-07-29T00:00:00.000Z')

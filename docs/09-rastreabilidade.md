@@ -188,7 +188,7 @@ As 33 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
 | H-30 | §5 abaixo (operação), `GET /*` | ⚠️ **Entregue, com verificação pendente.** Serve `GET /*`, a última rota documentada sem dono (A-63), registrada **sempre** e consultando `dist/web` por requisição — o portão roda `test` antes de `build`, e condicionar o registro à pasta reprovaria a guarda no CI. O `iniciar.cmd` não foi executado: só a instalação em Windows o exerce |
 | H-31 | §5 abaixo (RF-16, observabilidade) | ✅ **Concluída.** Logs e métricas. Fecha a Fase 1 |
 | H-32 | §5 abaixo (RF-16, observabilidade) | ✅ **Concluída.** Sinal de interferência externa no arquivo (A-58). Antecipada para destravar `H-15`. Sinal, nunca ação: a leitura acontece igual |
-| H-33 | Cadeia base | Troca o leitor de `.xlsx` para `fflate`: elimina os temporários em `/tmp` e o erro não determinístico do portão |
+| H-33 | Cadeia base | ✅ **Concluída.** Leitor sobre `fflate`: nenhuma aba fora de escopo é descomprimida, `/tmp` fica intocado e o `exceljs` saiu do projeto. O erro não determinístico do portão já tinha sido corrigido fora dela, em 06/08/2026 |
 
 ---
 

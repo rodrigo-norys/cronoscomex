@@ -85,8 +85,7 @@ Não re-derive isto; está medido.
 | Node | **22.23.2** LTS — fixado em `.nvmrc` e `engines` |
 | TypeScript | 7.0.2 (fallback declarado: 5.9.3, se a build falhar) |
 | Fastify | 5.11.2 |
-| ExcelJS | 4.4.0 — **somente leitura** |
-| fflate | 0.8.3 — escrita cirúrgica no zip |
+| fflate | 0.8.3 — leitura e escrita cirúrgica no zip |
 | chokidar | 5.0.0 |
 | React · Vite | 19.2.8 · 8.2.0 |
 | Tailwind | 4.3.3 |
@@ -139,10 +138,10 @@ Fase 2 e, com ela, o plano original** — entrega o atalho de execução e serve
 com verificação pendente:** o `iniciar.cmd` só é exercível na máquina Windows do
 operador, e `PD-06` guarda a lista do que falta conferir lá.
 
-Restam **`H-33`** — trocar o leitor de `.xlsx` para `fflate` — e **`H-34`**, o
-caminho da planilha configurável pela tela, ambas acrescentadas depois do plano
-e sem fase atribuída. Nenhuma bloqueia a instalação. As fases estão em
-`docs/07-plano-entrega.md`.
+**`H-33` trocou o leitor de `.xlsx` para `fflate`**, e com ele o `exceljs` saiu
+do projeto. Resta **`H-34`**, o caminho da planilha configurável pela tela,
+acrescentada depois do plano e sem fase atribuída. Não bloqueia a instalação. As
+fases estão em `docs/07-plano-entrega.md`.
 
 > **A escrita é o ponto onde errar custa a planilha da empresa.** O subagent
 > `revisor-xml` existe desde 11/08/2026 — invoque-o antes de commitar qualquer

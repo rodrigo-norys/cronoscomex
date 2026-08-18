@@ -64,7 +64,7 @@ Listados **após** os critérios acima estarem fechados.
 
 | Candidato | Atende C0? | Evidência |
 |---|---|---|
-| K1 | **Sim** | ExcelJS expõe `cell.fill` com `type: 'pattern'` e `fgColor` ([README oficial](https://github.com/exceljs/exceljs/blob/master/README.md)) |
+| K1 | **Sim** | O `.xlsx` guarda o preenchimento em `xl/styles.xml`, e o `cellXf` da célula aponta o `fillId`. À época a evidência era o ExcelJS expondo `cell.fill` ([README oficial](https://github.com/exceljs/exceljs/blob/master/README.md)); desde `H-33` a leitura é direta do XML, e o critério continua atendido |
 | K2 | **Sim** | O agente local usaria a mesma biblioteca |
 | K3 | **Sim** | Idem |
 | K4 | **Não — ELIMINADO** | Power Query lê apenas valores, não formatação. Confirmado por funcionário da Microsoft na comunidade oficial: *"the data connect only read the metadata and raw, it can't get the cell background color and the color can't be imported into query editor"* ([Fabric Community](https://community.fabric.microsoft.com/t5/Desktop/How-to-translate-read-color-blank-cell-from-excel-in-power-bi/td-p/1697976), consultado 03/08/2026) |
@@ -150,8 +150,7 @@ Versões verificadas no registro npm em 03/08/2026.
 | Runtime | Node LTS | 22.23.2 |
 | Linguagem | TypeScript | 7.0.2 · fallback declarado 5.9.3 |
 | Servidor HTTP | Fastify | 5.11.2 |
-| Leitura `.xlsx` | ExcelJS | 4.4.0 |
-| Escrita `.xlsx` | fflate | 0.8.3 |
+| Leitura e escrita `.xlsx` | fflate | 0.8.3 |
 | Observação de arquivo | chokidar | 5.0.0 |
 | Interface | React · Vite | 19.2.8 · 8.2.0 |
 | Estilo | Tailwind CSS | 4.3.3 |

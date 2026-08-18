@@ -1,4 +1,5 @@
-import { readFileSync } from 'node:fs'
+import { readdirSync, readFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { describe, expect, it } from 'vitest'
 import type { AppConfig } from '../../src/app/config.ts'
 import { readWorkbook, WorkbookReadError } from '../../src/io/xlsx-reader.ts'
@@ -88,6 +89,30 @@ describe('readWorkbook', () => {
     // as fixtures tem 2025, 2024 e CNPJ com sheetData vazio; ainda assim a
     // asserção vale como regressao: so a aba em escopo produz linhas.
     expect(result.rows.every((r) => r.sourceRow >= 2 && r.sourceRow <= 10)).toBe(true)
+  })
+
+  /**
+   * H-33. Ate a troca do leitor, ler esta fixture deixava 4 arquivos em /tmp e
+   * 5 FSReqCallback mais 1 PipeWrap vivos depois da promise resolver: o ExcelJS
+   * despejava cada aba num temporario antes de emiti-la, e as abas fora de
+   * escopo — puladas pela regra inviolavel 10 — nunca fechavam o descritor.
+   *
+   * A conferencia de /tmp filtra pelo prefixo do pacote `tmp`, e nao compara o
+   * diretorio inteiro: ele e compartilhado com os outros processos da maquina, e
+   * uma comparacao total reprovaria por arquivo que nao e nosso.
+   */
+  it('nao deixa temporario em /tmp nem trabalho pendente depois de resolver', async () => {
+    const pendentes = () =>
+      process.getActiveResourcesInfo().filter((tipo) => tipo === 'FSReqCallback').length
+    const temporarios = () => readdirSync(tmpdir()).filter((entrada) => entrada.startsWith('tmp-'))
+
+    const antes = temporarios()
+    const pendentesAntes = pendentes()
+
+    await readWorkbook(config('formatado.xlsx'))
+
+    expect(temporarios().filter((entrada) => !antes.includes(entrada))).toEqual([])
+    expect(pendentes()).toBeLessThanOrEqual(pendentesAntes)
   })
 
   it('devolve conjunto vazio para planilha so com cabecalho', async () => {

@@ -28,9 +28,8 @@ Três restrições moldam todo o resto:
 
 ## Stack
 
-Node 22 · TypeScript · Fastify · ExcelJS (somente leitura) · fflate (escrita
-cirúrgica no zip) · chokidar · React · Vite · Tailwind · Recharts · Vitest ·
-Biome
+Node 22 · TypeScript · Fastify · fflate (leitura e escrita cirúrgica no zip) ·
+chokidar · React · Vite · Tailwind · Recharts · Vitest · Biome
 
 ---
 
@@ -185,9 +184,10 @@ testável sem servidor e sem arquivo.
 
 ## Escrita no arquivo
 
-`workbook.xlsx.writeFile()` do ExcelJS perde formatação condicional e validações
-de dados silenciosamente. Por isso a escrita é **cirúrgica no XML**, entrada por
-entrada do zip — ver [ADR-0004](docs/adr/0004-escrita-cirurgica-xlsx.md).
+Reserializar a planilha com uma biblioteca de `.xlsx` perde formatação
+condicional e validações de dados silenciosamente. Por isso a escrita é
+**cirúrgica no XML**, entrada por entrada do zip — ver
+[ADR-0004](docs/adr/0004-escrita-cirurgica-xlsx.md).
 
 Medido: alterar uma célula deixa **28 das 30 entradas do arquivo byte a byte
 idênticas**, incluindo as abas fora de escopo.

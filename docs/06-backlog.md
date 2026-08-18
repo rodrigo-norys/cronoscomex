@@ -3289,6 +3289,60 @@ com `409 EXCEL_ABERTO` é de `H-25`. Esta história produz o sinal, não a reaç
 
 ### H-33 — Trocar o leitor de `.xlsx` do ExcelJS para `fflate`
 
+> ✅ **CONCLUÍDA em 18/08/2026.** 25 testes próprios — 24 em
+> `tests/io/xlsx-parts.test.ts`, 1 em `tests/io/xlsx-reader.test.ts`; suíte
+> total em **1183**. Seis divergências resolvidas na abertura, e o `exceljs`
+> saiu do projeto.
+>
+> **O que era conjectura virou medição.** O leitor antigo, sobre
+> `formatado.xlsx`: **4 arquivos em `/tmp`** (`tmp-<pid>-*`) e **5
+> `FSReqCallback` mais 2 `PipeWrap`** vivos depois da promise resolver. O novo,
+> no mesmo arquivo: **zero e zero**. O filtro nominal do `unzipSync` inflaciona
+> só o workbook, os rels, o pool de texto, os estilos e a **única** aba em
+> escopo — as três de fora não são descomprimidas, e a regra inviolável 10
+> passa a valer por construção.
+>
+> **A troca foi provada por comparação, não por argumento.** Os dois leitores
+> rodaram lado a lado, com o `exceljs` ainda instalado, sobre as 9 fixtures e
+> sobre a planilha real. Serialização idêntica — valor, tipo, chave de estilo,
+> `sheetPath` e hash — em 8 das 9 fixtures, e na planilha real: **744 linhas
+> cruas, 649 processos compostos, 9 chaves de cor com as contagens exatas de
+> `H-01`** (258, 219, 120, 31, 9, 5, 5, 1, 1). Zero divergência.
+>
+> **A nona fixture achou um defeito do leitor antigo.** Em `formulas.xlsx` as
+> três células de fórmula com formato de data saíam como `number`, e agora saem
+> como `date`. O leitor **em fluxo** do ExcelJS nunca convertia resultado de
+> fórmula: a conversão mora em `cell-xform.js`, e o caminho de streaming tem um
+> ramo próprio que só chama `parseFloat`. Uma célula sem fórmula, com o mesmo
+> formato, virava `Date`. **A diferença não atravessa o domínio** — TD-03 trata
+> serial pela regra 2 e `Date` pela regra 1, com o mesmo resultado —, e isso foi
+> conferido: `buildProcesses` devolve saída byte a byte igual com os dois
+> leitores.
+>
+> **O critério de "formato de data" NÃO foi unificado com o da escrita, de
+> propósito.** `collectDateFormatIds`, em `src/io/xlsx-surgeon.ts`, casa
+> `/[dy]/i` sobre o `formatCode` para **escolher** um formato ao gravar;
+> `DATE_FORMAT_TOKEN`, no leitor, casa `/[ymdhMsb]/` para **classificar** o que
+> já está no arquivo. Compartilhar faria `prevailingDateNumFmtId` eleger um
+> formato de **hora** para gravar data. Dois critérios corretos, em lugares
+> diferentes.
+>
+> **`date1904` entrou sem estar no plano.** O ExcelJS o honrava, e ignorá-lo
+> erraria toda data por 4 anos e 1 dia num arquivo salvo pelo Excel para Mac
+> antigo. O dado está em `<workbookPr>`, no mesmo XML que já era aberto para
+> resolver o `sheetPath` — ler não é adivinhar.
+>
+> **`exceljs` saiu de `package.json`**, com **1.084 linhas a menos** em
+> `package-lock.json`, e com ele as transitivas `archiver`, `unzipper` e
+> `jszip`. **R-09 fechou**; **R-05 foi reformulado**: `theme` mais `tint` é como
+> o OOXML guarda a cor de tema, não defeito de biblioteca. Oito documentos
+> acompanharam, incluindo uma nota de atualização no ADR-0003.
+>
+> **A regra inviolável 9 do `CLAUDE.md` ficou citando um pacote que não existe
+> mais** — `workbook.xlsx.writeFile()` do ExcelJS. A substância continua válida
+> para qualquer biblioteca que reserialize a planilha, e reescrever regra
+> inviolável não é decisão de história. Fica registrado aqui.
+
 **Objetivo:** eliminar os arquivos temporários que a leitura deixa em `/tmp`.
 
 > ⚠️ **O motivador mudou em 06/08/2026, e a história encolheu.** O erro não

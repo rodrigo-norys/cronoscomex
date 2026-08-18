@@ -35,8 +35,10 @@ Perder a planilha de trabalho da empresa é o risco de maior impacto do projeto
 **A escrita altera apenas os nós XML das células modificadas, dentro do zip,
 preservando todas as demais entradas byte a byte.**
 
-`workbook.xlsx.writeFile()` **não é usado em nenhuma circunstância.** ExcelJS
-fica restrito à leitura.
+`workbook.xlsx.writeFile()` **não é usado em nenhuma circunstância.** À época
+desta decisão isso restringia o ExcelJS à leitura; desde `H-33` ele não está
+mais no projeto, e a proibição vale para qualquer biblioteca que reserialize a
+planilha inteira.
 
 ### Procedimento
 
@@ -83,8 +85,9 @@ destroem.
   criou.
 - **Neutraliza os quatro defeitos citados**, sem depender de correção upstream
   de um projeto inativo.
-- **Reduz a superfície de risco do ExcelJS à leitura** (R-09): se um dia for
-  preciso substituí-lo, a troca fica confinada a `src/io/xlsx-reader.ts`.
+- **Reduziu a superfície de risco do ExcelJS à leitura** (R-09), e essa
+  superfície acabou indo a zero: `H-33` substituiu o leitor por leitura direta
+  do XML, e a troca ficou confinada a `src/io/xlsx-reader.ts`, como previsto.
 - **A verificação é objetiva.** "Preservou o arquivo" vira uma comparação de
   hashes, não uma opinião.
 - **A gravação é atômica**: falha no meio deixa o original intacto, porque a
