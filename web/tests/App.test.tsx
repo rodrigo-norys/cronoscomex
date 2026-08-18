@@ -7,8 +7,8 @@ import { type ApiStub, healthFixture, stubApi } from './support/api-stub.ts'
  * A casca de `H-15`: navegacao entre as sete paginas, a faixa de estado que
  * A-57 exige em todas elas, e o botao de A-62.
  *
- * As paginas em si chegam de `H-16` a `H-22`; aqui elas sao marcadores
- * explicitos, e e isso que os testes de conteudo verificam.
+ * As paginas em si chegaram de `H-16` a `H-22`; aqui o que se verifica e que a
+ * casca hospeda cada uma na rota certa, e nao o conteudo delas.
  */
 
 let api: ApiStub
@@ -47,13 +47,15 @@ describe('casca', () => {
     expect(await screen.findByRole('region', { name: 'Cartões-resumo' })).toBeTruthy()
   })
 
-  // As restantes chegam de `H-21` e `H-22`; ate la o marcador diz qual.
-  it('hospeda o marcador nas paginas ainda nao implementadas', () => {
+  // `H-21` fechou a ultima pagina do menu, e nao sobrou marcador nenhum para
+  // esta assercao usar de exemplo. Quem cobre o caminho do `PendingPage` a
+  // partir daqui e `paginas-montadas.test.tsx`, cruzando o backlog com o
+  // `story:` de cada rota — sem lista fixa, e sem depender de haver pendente.
+  it('hospeda a Pagina Historico, entregue por H-21', async () => {
     window.history.replaceState(null, '', '/historico')
     render(<App />)
 
-    expect(screen.getByText(/Página ainda não implementada/)).toBeTruthy()
-    expect(screen.getByText('H-21')).toBeTruthy()
+    expect(await screen.findByRole('region', { name: 'Evolução mensal' })).toBeTruthy()
   })
 
   it('hospeda a Pagina Operacional, entregue por H-17', async () => {
@@ -72,7 +74,7 @@ describe('casca', () => {
 })
 
 describe('navegacao', () => {
-  it('troca de pagina sem recarregar, preservando os filtros da query', () => {
+  it('troca de pagina sem recarregar, preservando os filtros da query', async () => {
     window.history.replaceState(null, '', '/?client=ACME')
     render(<App />)
 
@@ -80,13 +82,13 @@ describe('navegacao', () => {
 
     expect(window.location.pathname).toBe('/historico')
     expect(window.location.search).toBe('?client=ACME')
-    expect(screen.getByText('H-21')).toBeTruthy()
+    expect(await screen.findByRole('region', { name: 'Evolução mensal' })).toBeTruthy()
   })
 
   it('responde ao botao voltar do navegador', async () => {
     render(<App />)
     fireEvent.click(within(nav()).getByRole('link', { name: 'Histórico' }))
-    expect(screen.getByText('H-21')).toBeTruthy()
+    expect(await screen.findByRole('region', { name: 'Evolução mensal' })).toBeTruthy()
 
     window.history.back()
 
