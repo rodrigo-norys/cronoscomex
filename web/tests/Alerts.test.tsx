@@ -157,12 +157,12 @@ describe('cabecalho de contagens', () => {
   })
 
   /**
-   * Os dois zeros da planilha real significam coisas opostas: `chegadas_hoje` é
-   * zero **medido**, `processos_parados` é zero **não mensurável** — a rota
-   * passa histórico vazio até `H-28`. Exibi-los igual é o que a regra 3 proíbe.
+   * Os dois zeros significam coisas opostas: `chegadas_hoje` é zero **medido**,
+   * `processos_parados` é zero **não mensurável** enquanto o histórico for mais
+   * novo que o limiar. Exibi-los igual é o que a regra 3 proíbe.
    */
   it('distingue o zero medido do zero nao mensuravel', async () => {
-    serve()
+    serve({ stalledMeasurable: false })
     renderPage()
 
     const cabecalho = await screen.findByRole('region', { name: 'Alertas por tipo' })
@@ -173,6 +173,34 @@ describe('cabecalho de contagens', () => {
     expect(within(parados).getByText('—')).toBeTruthy()
     expect(within(parados).queryByText('0')).toBeNull()
   })
+
+  // O traço deixa de ser permanente em `H-29`: assim que o histórico cobre o
+  // limiar, o zero passa a ser medido como os outros cinco.
+  it('exibe a contagem de parados quando o historico ja cobre o limiar', async () => {
+    serve({
+      stalledMeasurable: true,
+      stalledCoverageDays: 30,
+      countsByType: { ...alertsFixture().countsByType, processos_parados: 4 },
+    })
+    renderPage()
+
+    const cabecalho = await screen.findByRole('region', { name: 'Alertas por tipo' })
+    const parados = within(cabecalho).getByRole('article', { name: /Processo parado/ })
+
+    expect(within(parados).getByText('4')).toBeTruthy()
+    expect(within(parados).queryByText('—')).toBeNull()
+  })
+
+  it('exibe zero medido em parados quando o historico cobre e nada esta parado', async () => {
+    serve({ stalledMeasurable: true, stalledCoverageDays: 30 })
+    renderPage()
+
+    const cabecalho = await screen.findByRole('region', { name: 'Alertas por tipo' })
+    const parados = within(cabecalho).getByRole('article', { name: /Processo parado/ })
+
+    expect(within(parados).getByText('0')).toBeTruthy()
+    expect(within(parados).queryByText('—')).toBeNull()
+  })
 })
 
 describe('ressalvas de ALE-06', () => {
@@ -182,24 +210,56 @@ describe('ressalvas de ALE-06', () => {
 
     const nota = await screen.findByRole('region', { name: 'Processos parados' })
 
-    expect(within(nota).getByText(/15 dias/)).toBeTruthy()
+    // Ancorado no paragrafo do limiar: desde `H-29` a explicacao acima tambem
+    // cita o valor, e um `/15 dias/` solto casaria com os dois.
+    expect(within(nota).getByText(/Limiar em uso/).textContent).toContain('15 dias')
     expect(within(nota).getByText(/premissa/)).toBeTruthy()
   })
 
   it('diz que o historico ainda nao comecou quando e null (A-61)', async () => {
-    serve({ historyStartedAt: null })
+    serve({ historyStartedAt: null, stalledCoverageDays: null, stalledMeasurable: false })
     renderPage()
 
     const nota = await screen.findByRole('region', { name: 'Processos parados' })
 
     expect(within(nota).getByText(/histórico ainda não começou/)).toBeTruthy()
+    expect(within(nota).getByText(/nenhuma leitura foi registrada ainda/)).toBeTruthy()
     expect(within(nota).getByText(/não haverá retroatividade/)).toBeTruthy()
   })
 
-  // A-43: exibir a data impede que o operador leia a fila como se cobrisse
-  // todo o passado.
-  it('exibe a data de inicio do historico quando existe', async () => {
-    serve({ historyStartedAt: '2026-08-01' })
+  /**
+   * O critério de aceite de `H-29`: com 3 dias de histórico e limiar de 15, o
+   * zero é inevitável, e dizer só "não é medido" deixaria o operador sem saber
+   * quando passará a ser. A tela nomeia os dois números (A-43).
+   */
+  it('explica que o historico e novo demais para o limiar', async () => {
+    serve({ stalledCoverageDays: 3, stalledThresholdDays: 15, stalledMeasurable: false })
+    renderPage()
+
+    const nota = await screen.findByRole('region', { name: 'Processos parados' })
+
+    expect(within(nota).getByText(/O histórico tem 3 dias e o limiar é de 15 dias/)).toBeTruthy()
+    expect(within(nota).getByText(/não que nenhum processo esteja parado/)).toBeTruthy()
+  })
+
+  it('afirma que parados esta medido quando o historico cobre o limiar', async () => {
+    serve({ stalledCoverageDays: 20, stalledThresholdDays: 15, stalledMeasurable: true })
+    renderPage()
+
+    const nota = await screen.findByRole('region', { name: 'Processos parados' })
+
+    expect(within(nota).getByText(/Processos parados está medido/)).toBeTruthy()
+    expect(within(nota).queryByText(/não é medido/)).toBeNull()
+  })
+
+  /**
+   * A-43: exibir a data impede que o operador leia a fila como se cobrisse todo
+   * o passado. O valor é **instante ISO completo**, como a rota devolve — até
+   * `H-29` este teste servia data pura, e a tela renderizava
+   * `01T12:00:00.000Z/08/2026` contra o servidor real.
+   */
+  it('formata a data de inicio a partir do instante ISO completo', async () => {
+    serve({ historyStartedAt: '2026-08-01T12:00:00.000Z' })
     renderPage()
 
     const nota = await screen.findByRole('region', { name: 'Processos parados' })
