@@ -6,6 +6,7 @@ import {
   buildAlerts,
   countByType,
   emptyAlertCounts,
+  stalledCoverage,
 } from '../../src/domain/alerts.ts'
 import type { CustomsChannel, Process, StatusCategory } from '../../src/domain/types.ts'
 
@@ -261,14 +262,15 @@ describe('buildAlerts — chegadas nos proximos 7 dias', () => {
   })
 })
 
-describe('buildAlerts — ALE-06 fica zerado ate H-29', () => {
+describe('buildAlerts — ALE-06, processos parados (H-29)', () => {
   it('nao gera processos_parados com o mapa vazio', () => {
     const conjunto = [process({ eta2: '2026-07-20', docsSent: '2026-07-01' })]
 
     expect(types(build(conjunto))).not.toContain('processos_parados')
   })
 
-  // O parametro ja existe e funciona; o que falta e o historico que o alimenta.
+  // Caso-limite obrigatorio de 08-qualidade-operacao.md §1.3: a comparacao e
+  // `>=`, entao o dia do limiar ja gera.
   it('gera processos_parados quando o mapa traz o processo no limiar', () => {
     const parado = process({ ref: 'FT999.26' })
     const parados = new Map([['FT999.26', 15]])
@@ -281,10 +283,104 @@ describe('buildAlerts — ALE-06 fica zerado ate H-29', () => {
     expect(alertas[0]?.message).toBe('Parado ha 15 dias')
   })
 
+  // O outro caso-limite obrigatorio do §1.3.
   it('nao gera abaixo do limiar', () => {
     const parado = process({ ref: 'FT998.26' })
 
     expect(buildAlerts([parado], HOJE, new Map([['FT998.26', 14]]), LIMIAR)).toEqual([])
+  })
+
+  it('leva daysOverdue e mensagem os dias reais acima do limiar', () => {
+    const parado = process({ ref: 'FT997.26' })
+
+    const alertas = buildAlerts([parado], HOJE, new Map([['FT997.26', 20]]), LIMIAR)
+
+    expect(alertas[0]?.daysOverdue).toBe(20)
+    expect(alertas[0]?.message).toBe('Parado ha 20 dias')
+  })
+
+  // A-59: processo concluido nao esta parado, esta pronto.
+  it('nao gera para processo desembaracado, por mais dias que tenha', () => {
+    const concluido = process({ ref: 'FT996.26', statusCategory: 'desembaracado' })
+
+    expect(buildAlerts([concluido], HOJE, new Map([['FT996.26', 90]]), LIMIAR)).toEqual([])
+  })
+
+  // A-32: o limiar vem de config/app.json, e nada no dominio o fixa.
+  it('responde ao limiar recebido, sem constante propria', () => {
+    const parado = process({ ref: 'FT995.26' })
+    const parados = new Map([['FT995.26', 8]])
+
+    expect(buildAlerts([parado], HOJE, parados, 15)).toEqual([])
+    expect(buildAlerts([parado], HOJE, parados, 7)).toHaveLength(1)
+  })
+
+  it('gera para todo processo com base quando o limiar e zero', () => {
+    const mudouHoje = process({ ref: 'FT994.26' })
+
+    const alertas = buildAlerts([mudouHoje], HOJE, new Map([['FT994.26', 0]]), 0)
+
+    expect(alertas[0]?.type).toBe('processos_parados')
+    expect(alertas[0]?.message).toBe('Parado ha 0 dias')
+  })
+
+  /**
+   * REF ausente do mapa e diferente de REF com zero: sem base para contar, e
+   * contagem sem base nao vira alerta (ADR-0005). Com limiar zero a diferenca
+   * fica visivel — `0 >= 0` geraria se o ausente virasse zero.
+   */
+  it('nao gera para REF fora do mapa nem com limiar zero', () => {
+    const semHistorico = process({ ref: 'FT993.26' })
+
+    expect(buildAlerts([semHistorico], HOJE, new Map(), 0)).toEqual([])
+  })
+
+  it('convive com os outros tipos no mesmo processo', () => {
+    const critico = process({ ref: 'FT992.26', eta2: '2026-07-20', customsChannel: 'vermelho' })
+
+    const alertas = buildAlerts([critico], HOJE, new Map([['FT992.26', 30]]), LIMIAR)
+
+    expect(types(alertas)).toEqual([
+      'eta_vencida',
+      'canal_vermelho',
+      'documentacao_pendente',
+      'processos_parados',
+    ])
+  })
+})
+
+describe('stalledCoverage — o zero de ALE-06 ja significa alguma coisa? (A-43)', () => {
+  const TZ = 'America/Sao_Paulo'
+
+  it('nao e mensuravel sem historico algum', () => {
+    expect(stalledCoverage(null, HOJE, TZ, LIMIAR)).toEqual({ days: null, measurable: false })
+  })
+
+  // O criterio de aceite de H-29: 3 dias de historico contra limiar de 15.
+  it('conta os dias mas nao e mensuravel com historico mais novo que o limiar', () => {
+    const comecou = '2026-07-31T12:00:00.000Z'
+
+    expect(stalledCoverage(comecou, HOJE, TZ, LIMIAR)).toEqual({ days: 3, measurable: false })
+  })
+
+  it('passa a ser mensuravel no dia em que o historico alcanca o limiar', () => {
+    const comecou = '2026-07-19T12:00:00.000Z'
+
+    expect(stalledCoverage(comecou, HOJE, TZ, LIMIAR)).toEqual({ days: 15, measurable: true })
+  })
+
+  it('e mensuravel de imediato quando o limiar e zero', () => {
+    const comecou = '2026-08-03T12:00:00.000Z'
+
+    expect(stalledCoverage(comecou, HOJE, TZ, 0)).toEqual({ days: 0, measurable: true })
+  })
+
+  // Linha corrompida nao pode virar contagem inventada (regra inviolavel 3).
+  it('trata instante ilegivel como ausencia de base', () => {
+    expect(stalledCoverage('nao e data', HOJE, TZ, LIMIAR)).toEqual({
+      days: null,
+      measurable: false,
+    })
   })
 })
 
