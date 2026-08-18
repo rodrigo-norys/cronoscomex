@@ -2972,14 +2972,84 @@ vindo de `config/app.json` (`stalledDaysThreshold`, padrão **15**, A-32).
 
 ### H-30 — Entregar a aplicação empacotada com atalho de execução
 
+> ✅ **CONCLUÍDA em 18/08/2026, com uma ressalva declarada abaixo — leia-a
+> antes de tratar a história como encerrada.** 11 testes próprios em
+> `tests/http/static.test.ts`; suíte total em **1157**. Seis divergências
+> resolvidas na abertura, mais uma descoberta durante a implementação.
+>
+> **A ressalva: o `iniciar.cmd` nunca foi executado.** É batch do Windows
+> (RNF-26) e o desenvolvimento acontece em Linux. Quatro dos seis critérios de
+> aceite — duplo clique, Node ausente, `app.json` ausente, janela fechada sem
+> processo órfão — e três casos-limite — porta ocupada, segunda execução,
+> caminho com espaços e acentos — **não foram exercidos**, só revisados por
+> inspeção. O que foi testado de verdade está listado adiante. **Esta história
+> só está encerrada de fato depois da primeira instalação na máquina do
+> operador**, e é lá que as duas pendências restantes fecham.
+>
+> **`GET /*` entregue e conferida contra o build real.** Sete casos pelo
+> servidor inteiro, com as rotas de API registradas antes do catch-all: `/`,
+> `/alertas`, `/processo/FT001.26` e `/relatorios` devolvem o mesmo
+> `index.html` de 397 bytes; `/assets/History-D6QRrgof.js` devolve os 372 KB do
+> chunk real com `application/javascript`; `/api/health` responde `200` JSON e
+> `/api/inexistente` responde `404` — nenhum dos dois capturado pelo `/*`.
+>
+> **O registro não pode depender da pasta existir, e é isso que quase quebrou o
+> CI.** `npm run verify` roda `test` **antes** de `build`, e no CI o checkout é
+> limpo: `dist/web` não existe no instante em que `tests/repo/contratos.test.ts`
+> monta o servidor e exige a rota. `@fastify/static` lança no registro quando o
+> `root` não existe. Resolvido registrando `GET /*` sempre e consultando a pasta
+> por requisição — o que também faz o `build` rodado com o servidor no ar valer
+> sem reiniciar, e dá o caso-limite do backlog de graça: sem `dist/web`, a
+> resposta é `503` com **página HTML em pt-br** dizendo o que falta, e não o
+> envelope JSON de erro, que numa janela de navegador seria tela em branco.
+>
+> **A divergência que só apareceu implementando: `H-30` era a última rota
+> pendente, e a guarda não previa o fim do plano.** `contratos.test.ts` tinha
+> como âncora anti-vacuidade `DOCUMENTED.some(route => route.pendingStory !==
+> null)` — retirar o último marcador `Pendente de` reprovou a suíte por o plano
+> ter terminado, que é o oposto do que a âncora existe para detectar. O parser
+> do marcador foi extraído para `pendingStoryOf` e passou a ser exercido com
+> entrada sintética.
+>
+> **O servidor compilado não existe, e não deveria.** O contrato pedia `dist/`
+> com o servidor compilado; a aplicação roda com `--experimental-strip-types`, e
+> `npm run test:strip` está no portão exatamente para garantir isso. Compilar
+> criaria um segundo modo de execução, e o que roda na máquina do operador
+> deixaria de ser o que os testes exercitam. `scripts/build.mjs` **não foi
+> criado**: `npm run build` já produz o necessário. Uma peça a menos.
+>
+> **`scripts/porta.mjs` nasceu de uma limitação do CMD, não de lógica.** Dentro
+> de `for /f`, parênteses e aspas simples no comando quebram o parser — e um
+> `node -p` com `JSON.parse` e `readFileSync` tem os dois. Chamar um arquivo pelo
+> nome não tem nenhum. Os quatro cenários foram conferidos à mão: porta
+> declarada devolve o valor, campo ausente devolve `5173`, JSON inválido sai com
+> código `1`, arquivo ausente devolve `5173`. A porta continua com **uma** fonte.
+>
+> **O documento dizia `web/dist`; o Vite escreve em `dist/web`.** Invertido em
+> `05-contratos-api.md §4` desde o início. Nada dependia da frase enquanto a
+> rota não existia.
+>
+> **O `README.md` afirmava "12 de 32 histórias concluídas · 279 testes".**
+> Medido no fechamento: 34 histórias no backlog, 32 concluídas, 1157 testes.
+> Reescrito com a seção **Instalação** que a história pedia, e é ela que fecha
+> **PD-03**: o projeto vai **fora** da pasta sincronizada, porque `data/` é
+> relativo à raiz dele e `data/backups/` guarda cópias integrais do `.xlsx` —
+> dentro do OneDrive, a pasta de segurança local replicaria na nuvem exatamente
+> o dado que existe para proteger.
+
 **Objetivo:** o operador iniciar a aplicação sem linha de comando.
 
 **Arquivos:**
 - `scripts/iniciar.cmd`
-- `scripts/build.mjs`
+- `scripts/porta.mjs` — a porta, sem parênteses no comando *(divergência 7)*
+- ~~`scripts/build.mjs`~~ — **não criado** *(divergência 1)*
 - `README.md` (raiz do repositório)
 - `config/app.json.exemplo`
-- `src/http/server.ts` — a rota estática `GET /*`, acrescentada por A-63
+- `src/http/routes/static.ts` — a rota `GET /*` *(divergência 4)*
+- `src/http/server.ts` — o registro
+- `tests/http/static.test.ts` — obrigatório pela guarda rota↔teste *(divergência 4)*
+- `tests/repo/contratos.test.ts` — a âncora que supunha o plano inacabado *(divergência 7)*
+- `docs/05-contratos-api.md` — marcador retirado, caminho corrigido *(divergências 2 e 4)*
 
 **Contrato fixado:** `npm run build` produz `dist/` com o servidor compilado e
 a SPA. `scripts/iniciar.cmd` verifica a presença do Node, sobe o servidor e

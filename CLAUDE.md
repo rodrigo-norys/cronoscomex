@@ -120,8 +120,9 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 ## Estado
 
-**Fases 0 e 1 concluídas. Fase 2 em andamento: `H-09` a `H-14` fechadas** — o
-épico E3 (indicadores e alertas) está inteiro —, **mais `H-32`, antecipada**
+**Todas as fases do plano estão concluídas.** Fases 0 e 1 fecharam primeiro;
+na Fase 2, **`H-09` a `H-14`** — o épico E3 (indicadores e alertas) inteiro —,
+**mais `H-32`, antecipada**
 porque era dependência declarada de `H-15` e não existia, **`H-15`, que abriu o
 épico E4, `H-16`, a primeira página de dado, `H-17`, que entrega também
 `GET /api/processes`, `H-18`, os três rankings, `H-19`, que fecha as duas
@@ -132,9 +133,16 @@ comando de aplicação —, **e a Fase 4 também, com `H-27`, sua única histór
 campos codificados em cor, que fecha o caminho crítico.** **`H-28` fechou o
 histórico**, destravando as duas que faltavam, **`H-21` fechou a Página
 Histórico — a última de interface: as sete páginas estão montadas** — e
-**`H-29` fechou ALE-06, o alerta de processos parados.** Próximo passo:
-**`H-30`**, o empacotamento com atalho de execução, a única história que falta
-na Fase 2. As fases estão em `docs/07-plano-entrega.md`.
+**`H-29` fechou ALE-06, o alerta de processos parados.** **`H-30` fechou a
+Fase 2 e, com ela, o plano original** — entrega o atalho de execução e serve
+`GET /*`, a última rota documentada sem dono. **Ela é a única história fechada
+com verificação pendente:** o `iniciar.cmd` só é exercível na máquina Windows do
+operador, e `PD-06` guarda a lista do que falta conferir lá.
+
+Restam **`H-33`** — trocar o leitor de `.xlsx` para `fflate` — e **`H-34`**, o
+caminho da planilha configurável pela tela, ambas acrescentadas depois do plano
+e sem fase atribuída. Nenhuma bloqueia a instalação. As fases estão em
+`docs/07-plano-entrega.md`.
 
 > **A escrita é o ponto onde errar custa a planilha da empresa.** O subagent
 > `revisor-xml` existe desde 11/08/2026 — invoque-o antes de commitar qualquer
@@ -160,11 +168,19 @@ status de `docs/09-rastreabilidade.md` mudou.
 
 Não bloqueiam a implementação. Fechar antes da entrega ao operador.
 
+> **`H-30` fechou sem elas, e o gatilho passou a ser a instalação — evento, não
+> história.** Nenhuma história futura as carrega: `H-33` e `H-34` não tocam
+> Windows nem o Excel real. Deixá-las apontando para uma história fechada
+> repetiria o que aconteceu com `PD-05` entre 14 e 17/08/2026, quando ficou sem
+> dono por `H-26` ter fechado sem o arquivo. **A primeira instalação na máquina
+> do operador é o momento em que as três linhas abaixo se resolvem juntas** —
+> incluindo a verificação do `iniciar.cmd`, que `H-30` não pôde exercer.
+
 | # | Pendência | Quando fechar |
 |---|---|---|
-| **PD-01** | `config/app.json` aponta para `CONTROLE DOS EMBARQUE.xlsx` na **raiz do projeto**, usado para validar a partida em `H-02`. Na máquina Windows precisa do caminho real da pasta sincronizada (`C:\Users\...\OneDrive - <org>\...`). O arquivo está no `.gitignore`, então o caminho de desenvolvimento não vaza. **`H-34` dá a saída definitiva**: o caminho passa a ser configurável pela tela, e o operador nunca edita JSON | Ao instalar na máquina do operador (`H-30`), com `H-34` tornando-a indolor |
-| **PD-05** | A remoção de entrada em `xl/calcChain.xml` ganhou fixture com cadeia declarada — `tests/fixtures/formulas.xlsx` —, e a saída foi **aberta no Excel real em 13/08/2026**: sem aviso de reparo, com o recálculo produzindo as datas dependentes. **Falta a cadeia produzida pelo próprio Excel.** A fixture é montada por nós, e foi exatamente uma forma que ela não cobria — entrada seguinte com atributo além de `r` — que escondeu um defeito real até 14/08/2026: o `i` era perdido em toda cadeia que o Excel de fato produz. Corrigido, mas a lição é que fixture nossa não substitui arquivo do Excel. **Medido em 17/08/2026: a planilha real não tem `xl/calcChain.xml`** — o Excel só emite a parte quando há fórmula, então nenhuma das quatro abas tem uma, e o código é hoje inalcançável em produção | **`H-30`**, na máquina Windows do operador: planilha nova, uma fórmula, salvar, copiar para `tests/fixtures/`. O gatilho era "quando existir um `.xlsx` salvo pelo Excel" — passivo, e sem dono desde 14/08/2026, quando `H-26` fechou sem o arquivo. Fechar antes é possível a qualquer momento com um Excel à mão; se a via for o Excel Online, **confira a forma da cadeia** antes de tratar a fixture como representativa — é a lição desta pendência |
-| **PD-03** | `data/` passou a ser criado em execução por `H-08`, na primeira releitura que grava `quarantine.json` (`H-28` acrescenta o histórico). Está no `.gitignore`. Falta o `README.md` da raiz instruir a criá-lo **fora** da pasta sincronizada do OneDrive, para não replicar backups na nuvem | `H-30` |
+| **PD-06** | `scripts/iniciar.cmd` foi entregue por `H-30` e **nunca executado**: é batch do Windows (RNF-26) e o desenvolvimento é em Linux. Sem verificação: duplo clique, Node ausente, `config/app.json` ausente, janela fechada sem processo órfão, porta ocupada, segunda execução com a aplicação no ar, e caminho com espaços e acentos. A parte servidor está testada — `GET /*` tem 11 casos e foi conferida contra o `dist/web` real | **Primeira instalação na máquina do operador.** Percorra os sete itens; cada falha é correção no `.cmd`, não história nova |
+| **PD-01** | `config/app.json` aponta para `CONTROLE DOS EMBARQUE.xlsx` na **raiz do projeto**, usado para validar a partida em `H-02`. Na máquina Windows precisa do caminho real da pasta sincronizada (`C:\Users\...\OneDrive - <org>\...`). O arquivo está no `.gitignore`, então o caminho de desenvolvimento não vaza. **`H-34` dá a saída definitiva**: o caminho passa a ser configurável pela tela, e o operador nunca edita JSON | **Primeira instalação na máquina do operador**, pelo passo 4 do `README.md`. `H-34` a torna indolor, mas não é pré-requisito |
+| **PD-05** | A remoção de entrada em `xl/calcChain.xml` ganhou fixture com cadeia declarada — `tests/fixtures/formulas.xlsx` —, e a saída foi **aberta no Excel real em 13/08/2026**: sem aviso de reparo, com o recálculo produzindo as datas dependentes. **Falta a cadeia produzida pelo próprio Excel.** A fixture é montada por nós, e foi exatamente uma forma que ela não cobria — entrada seguinte com atributo além de `r` — que escondeu um defeito real até 14/08/2026: o `i` era perdido em toda cadeia que o Excel de fato produz. Corrigido, mas a lição é que fixture nossa não substitui arquivo do Excel. **Medido em 17/08/2026: a planilha real não tem `xl/calcChain.xml`** — o Excel só emite a parte quando há fórmula, então nenhuma das quatro abas tem uma, e o código é hoje inalcançável em produção | **Primeira instalação na máquina do operador**: planilha nova, uma fórmula, salvar, copiar para `tests/fixtures/`. O gatilho foi `H-30` até 18/08/2026, e antes disso era "quando existir um `.xlsx` salvo pelo Excel" — passivo, e sem dono desde 14/08/2026, quando `H-26` fechou sem o arquivo. Fechar antes é possível a qualquer momento com um Excel à mão; se a via for o Excel Online, **confira a forma da cadeia** antes de tratar a fixture como representativa — é a lição desta pendência |
 
 Ao fechar uma pendência, remova a linha.
 
