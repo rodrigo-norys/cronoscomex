@@ -49,7 +49,14 @@ import { buildServer } from '../../src/http/server.ts'
  * 6. **todo identificador em camelCase citado entre crases num comentário
  *    ainda existe.** O modo de falha é o *rename symbol* do editor: ele
  *    atualiza o código e deixa a prosa para trás, em silêncio. Medido em
- *    12/08/2026: 120 citações, 70 identificadores distintos, zero ausentes.
+ *    12/08/2026: 120 citações, 70 identificadores distintos, zero ausentes;
+ * 7. **todo gatilho de reavaliação que `D-16` declara foi observado.** A
+ *    decisão registra quatro, e dois estavam atingidos sem que ninguém tivesse
+ *    notado — o `router.ts` acima de ~100 linhas, e o carregamento por rota que
+ *    `H-21` trouxe. Os limiares saem do texto da própria decisão, então mudá-la
+ *    muda a expectativa. O que a asserção defende não é a conclusão, é a
+ *    observação: gatilho declarado e nunca conferido dá a impressão de que a
+ *    decisão está sendo revisitada quando não está.
  *
  * Provado que morde, nas duas direções: bloco que a rota serve e o documento não
  * declara reprova, e campo que o documento promete e a rota não serve também.
@@ -531,6 +538,120 @@ describe('o CLAUDE.md menciona toda peça de .claude/', () => {
     expect(
       claudeMd.includes(piece),
       `${piece} existe em .claude/ e o CLAUDE.md não a menciona — atualize o bloco ## Infraestrutura de agente`,
+    ).toBe(true)
+  })
+})
+
+/**
+ * Os limiares que `D-16` declara, lidos do próprio texto da decisão: mudar a
+ * decisão muda a expectativa, sem lista fixa aqui.
+ */
+function decisionD16(): string {
+  const governance = readFileSync('docs/10-governanca.md', 'utf-8')
+  const line = governance.split('\n').find((candidate) => candidate.startsWith('| D-16 |'))
+
+  if (line === undefined) throw new Error('D-16 não está em docs/10-governanca.md')
+  return line
+}
+
+function thresholdOf(decision: string, pattern: RegExp): number {
+  const found = decision.match(pattern)?.[1]
+  if (found === undefined) throw new Error(`limiar não encontrado em D-16: ${pattern}`)
+  return Number(found)
+}
+
+const OBSERVED = 'Gatilhos observados'
+
+/**
+ * Linhas que executam algo: sem vazias, sem `//`, sem bloco `/** *\/`. Contar o
+ * arquivo inteiro faria o comentário de porquê — obrigatório pela régua de
+ * `.claude/rules/comentarios.md` — empurrar o gatilho sozinho.
+ */
+function codeLines(path: string): number {
+  let inBlock = false
+  let count = 0
+
+  for (const raw of readFileSync(path, 'utf-8').split('\n')) {
+    const line = raw.trim()
+    if (line === '') continue
+    if (line.startsWith('/*')) inBlock = true
+
+    if (inBlock || line.startsWith('//') || line.startsWith('*')) {
+      if (line.endsWith('*/')) inBlock = false
+      continue
+    }
+    count += 1
+  }
+
+  return count
+}
+
+/**
+ * Uma decisão que declara os próprios gatilhos de reavaliação só serve se
+ * alguém os medir. `D-16` declarou quatro em 06/08/2026, e **dois foram
+ * atingidos sem que ninguém notasse**: `web/src/router.ts` passou de ~100
+ * linhas em algum ponto entre `H-15` e `H-21`, e o carregamento por rota chegou
+ * com a Página Histórico sob demanda, em 17/08/2026 — o próprio gatilho que a
+ * decisão cita como motivo para reconsiderar o `react-router`.
+ *
+ * Nenhum dos dois muda a conclusão, e não é isso que a asserção defende: ela
+ * defende que o gatilho seja **observado e registrado**, com o número medido no
+ * texto. Gatilho declarado e nunca conferido é pior que gatilho nenhum — dá a
+ * impressão de que a decisão está sendo revisitada quando não está.
+ */
+describe('os gatilhos de reavaliação de D-16 foram observados', () => {
+  const decision = decisionD16()
+
+  it('encontra a decisão e seus limiares — âncora contra guarda verde por vacuidade', () => {
+    expect(decision).toContain('react-router')
+    expect(thresholdOf(decision, /páginas passarem de ~(\d+)/)).toBeGreaterThan(0)
+    expect(thresholdOf(decision, /ultrapassar ~(\d+) \*\*linhas de código\*\*/)).toBeGreaterThan(0)
+  })
+
+  /**
+   * **Linhas de código, não linhas de arquivo.** O gatilho contava o arquivo
+   * inteiro até 17/08/2026, e media a coisa errada: comentário de porquê é 24%
+   * de `router.ts` por política deste repositório, então documentar bem
+   * aproximava do limiar sem acrescentar um ramo sequer ao fluxo. Medido:
+   * 132 linhas no total, 79 de código.
+   */
+  it('o tamanho de router.ts está sob o limiar, ou o valor atual está registrado', () => {
+    const limit = thresholdOf(decision, /ultrapassar ~(\d+) \*\*linhas de código\*\*/)
+    const code = codeLines('web/src/router.ts')
+
+    if (code <= limit) return
+
+    expect(
+      decision.includes(OBSERVED) && decision.includes(`${code} de código`),
+      `web/src/router.ts tem ${code} linhas de código, acima das ~${limit} que D-16 declara como ` +
+        'gatilho. Reavalie a decisão e registre o resultado na linha dela, com o número medido.',
+    ).toBe(true)
+  })
+
+  it('o número de páginas está sob o limiar, ou o valor atual está registrado', () => {
+    const limit = thresholdOf(decision, /páginas passarem de ~(\d+)/)
+    const router = readFileSync('web/src/router.ts', 'utf-8')
+    const pages = router.match(/\bid: '/g)?.length ?? 0
+
+    // Âncora: seis do menu e o detalhe. Zero aqui significaria regex quebrada,
+    // e a comparação abaixo passaria sem medir nada.
+    expect(pages).toBeGreaterThanOrEqual(6)
+    if (pages <= limit) return
+
+    expect(
+      decision.includes(OBSERVED) && decision.includes(`${pages} páginas`),
+      `web/src/router.ts declara ${pages} páginas, acima das ~${limit} que D-16 declara como gatilho.`,
+    ).toBe(true)
+  })
+
+  it('carregamento por rota, se existir, está registrado na decisão', () => {
+    const shell = readFileSync('web/src/App.tsx', 'utf-8')
+    if (!shell.includes('lazy(')) return
+
+    expect(
+      decision.includes(OBSERVED) && decision.includes('carregamento por rota'),
+      'web/src/App.tsx carrega página por `lazy`, que é o gatilho de carregamento por rota de ' +
+        'D-16. Reavalie a decisão e registre o resultado na linha dela.',
     ).toBe(true)
   })
 })

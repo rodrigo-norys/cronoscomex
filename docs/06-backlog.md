@@ -1500,6 +1500,11 @@ chegadas por navio.
 > largura para testar o clique — que é o comportamento que importa aqui. A
 > primeira dependência de gráfico de verdade é `H-19`.
 >
+> Desatualizado desde 17/08/2026, e mantido como registro do que se sabia aqui:
+> o Recharts **estreou em `H-21`**, na Página Histórico, com a mesma limitação de
+> `jsdom` contornada por uma tabela acessível ao lado do gráfico. `H-19` acabou
+> usando `div` também.
+>
 > **Divergências resolvidas: três.** A lista de arquivos não tinha
 > `web/src/App.tsx` — página que ninguém monta não existe, o precedente de
 > `H-14` — nem teste algum; e os dois testes da casca que usavam `/clientes`
