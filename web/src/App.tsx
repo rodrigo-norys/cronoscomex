@@ -10,6 +10,7 @@ import { useFilterOptions } from './hooks/useFilterOptions.ts'
 import { useFilters } from './hooks/useFilters.ts'
 import { Alerts } from './pages/Alerts.tsx'
 import { Clients } from './pages/Clients.tsx'
+import { History } from './pages/History.tsx'
 import { Home } from './pages/Home.tsx'
 import { Operational } from './pages/Operational.tsx'
 import { Performance } from './pages/Performance.tsx'
@@ -135,7 +136,9 @@ interface PageOutletProps {
 /**
  * `dataVersion` chega como `key`: quando o dia vira ou a planilha muda, a
  * pagina inteira remonta e refaz as proprias requisicoes, sem que a casca
- * precise conhecer nenhuma delas. So a Pagina Historico (`H-21`) entra aqui.
+ * precise conhecer nenhuma delas. Com `H-21` as sete estao montadas, e o
+ * `PendingPage` do fim vira rede de seguranca: `PageId` novo sem ramo aqui cai
+ * nele, e a guarda de `web/tests/paginas-montadas.test.tsx` reprova.
  *
  * A casca repassa `queryString` em vez de os filtros inteiros: a pagina precisa
  * anexar o recorte as requisicoes, nunca interpreta-lo.
@@ -164,6 +167,10 @@ function PageOutlet({ route, dataVersion, health, queryString }: PageOutletProps
 
   if (route.pageId === 'alerts') {
     return <Alerts key={dataVersion} queryString={queryString} dataVersion={dataVersion} />
+  }
+
+  if (route.pageId === 'history') {
+    return <History key={dataVersion} queryString={queryString} dataVersion={dataVersion} />
   }
 
   // Sem `queryString`: o detalhe e sobre UM processo achado pela REF, e o

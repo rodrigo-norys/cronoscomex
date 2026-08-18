@@ -3,6 +3,7 @@ import type { AlertsResponse } from '../../../src/http/routes/alerts.ts'
 import type { ApplyResponse } from '../../../src/http/routes/apply.ts'
 import type { FilterOptionsResponse } from '../../../src/http/routes/filter-options.ts'
 import type { HealthResponse } from '../../../src/http/routes/health.ts'
+import type { MonthlyHistoryResponse } from '../../../src/http/routes/history.ts'
 import type { IndicatorsResponse } from '../../../src/http/routes/indicators.ts'
 import type { ColorOption } from '../../../src/http/routes/process-color.ts'
 import type {
@@ -90,6 +91,23 @@ export function alertsFixture(overrides: Partial<AlertsResponse> = {}): AlertsRe
     },
     stalledThresholdDays: 15,
     historyStartedAt: null,
+    ...overrides,
+  }
+}
+
+/**
+ * O estado real do historico em 17/08/2026: ele comecou em `H-28`, entao existe
+ * um unico mes, e uma janela de 12 o excede — `truncated` e `true` por
+ * construcao, nao por escolha da fixture. Os tres numeros sao os medidos na
+ * planilha real, os mesmos de `indicatorsFixture`.
+ */
+export function monthlyHistoryFixture(
+  overrides: Partial<MonthlyHistoryResponse> = {},
+): MonthlyHistoryResponse {
+  return {
+    series: [{ month: '2026-08', total: 649, desembaracados: 480, canalVermelho: 5 }],
+    historyStartedAt: '2026-08-03T14:22:31.004Z',
+    truncated: true,
     ...overrides,
   }
 }
@@ -222,6 +240,9 @@ export interface ApiStub {
   serveAlerts(alerts: AlertsResponse): void
   alertsWithoutRead(): void
   failAlerts(): void
+  serveHistory(history: MonthlyHistoryResponse): void
+  historyWithoutRead(): void
+  failHistory(): void
   serveProcesses(page: ProcessesResponse): void
   serveProcessDetail(detail: ProcessDetailResponse): void
   /** `POST /api/edits` passa a recusar com esta mensagem. */
@@ -264,6 +285,8 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
   let indicatorsStatus = 200
   let alerts = alertsFixture()
   let alertsStatus = 200
+  let history = monthlyHistoryFixture()
+  let historyStatus = 200
   let quarantine = quarantineFixture()
   let processes = processesFixture()
   let processesStatus = 200
@@ -320,6 +343,14 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
           ok: alertsStatus === 200,
           status: alertsStatus,
           json: () => Promise.resolve(alerts),
+        } as Response)
+      }
+
+      if (path === '/api/history/monthly') {
+        return Promise.resolve({
+          ok: historyStatus === 200,
+          status: historyStatus,
+          json: () => Promise.resolve(history),
         } as Response)
       }
 
@@ -483,6 +514,15 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
     },
     failAlerts: () => {
       alertsStatus = 500
+    },
+    serveHistory: (next) => {
+      history = next
+    },
+    historyWithoutRead: () => {
+      historyStatus = 503
+    },
+    failHistory: () => {
+      historyStatus = 500
     },
     serveProcesses: (next) => {
       processes = next
