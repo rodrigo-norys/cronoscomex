@@ -47,15 +47,30 @@ describe('casca', () => {
     expect(await screen.findByRole('region', { name: 'Cartões-resumo' })).toBeTruthy()
   })
 
-  // `H-21` fechou a ultima pagina do menu, e nao sobrou marcador nenhum para
-  // esta assercao usar de exemplo. Quem cobre o caminho do `PendingPage` a
-  // partir daqui e `paginas-montadas.test.tsx`, cruzando o backlog com o
-  // `story:` de cada rota — sem lista fixa, e sem depender de haver pendente.
+  /**
+   * `H-21` fechou a ultima pagina do menu, e nao sobrou marcador nenhum para
+   * esta assercao usar de exemplo. Quem cobre o caminho do `PendingPage` a
+   * partir daqui e `paginas-montadas.test.tsx`, cruzando o backlog com o
+   * `story:` de cada rota — sem lista fixa, e sem depender de haver pendente.
+   *
+   * **E o unico ponto da suite que paga o import dinamico.** A Pagina Historico
+   * e a unica carregada com `lazy`, desde que o pacote foi dividido para tirar o
+   * Recharts do carregamento inicial; os outros dois `findByRole` da mesma
+   * regiao, em `navegacao`, encontram o modulo ja resolvido por este — e por
+   * isso seguem no timeout padrao.
+   *
+   * Os 1000 ms padrao ficaram na fronteira: medido em 1103-1150 ms com a
+   * maquina sob carga, contra ~200 ms sem. Descoberto ao percorrer os commits
+   * de `H-30` com o portao em sequencia — tres reprovaram aqui, e nenhum deles
+   * tocava `web/`.
+   */
   it('hospeda a Pagina Historico, entregue por H-21', async () => {
     window.history.replaceState(null, '', '/historico')
     render(<App />)
 
-    expect(await screen.findByRole('region', { name: 'Evolução mensal' })).toBeTruthy()
+    const secao = await screen.findByRole('region', { name: 'Evolução mensal' }, { timeout: 5000 })
+
+    expect(secao).toBeTruthy()
   })
 
   it('hospeda a Pagina Operacional, entregue por H-17', async () => {
