@@ -130,9 +130,9 @@ porque era dependência declarada de `H-15` e não existia, **`H-15`, que abriu 
 cirúrgica no `.xlsx`, `H-25`, as seis defesas de integridade, e `H-26`, o
 comando de aplicação —, **e a Fase 4 também, com `H-27`, sua única história: os
 campos codificados em cor, que fecha o caminho crítico.** **`H-28` fechou o
-histórico**, destravando as duas que faltam. Próximo passo: **`H-29`**, o alerta
-de processos parados, ou **`H-21`**, a Página Histórico — são independentes
-entre si, e `H-21` é a última de interface. As fases estão em
+histórico**, destravando as duas que faltavam, e **`H-21` fechou a Página
+Histórico — a última de interface: as sete páginas estão montadas.** Próximo
+passo: **`H-29`**, o alerta de processos parados. As fases estão em
 `docs/07-plano-entrega.md`.
 
 > **A escrita é o ponto onde errar custa a planilha da empresa.** O subagent
