@@ -845,13 +845,31 @@ A fila **não** é descartada em nenhum caminho de erro. O operador relê e deci
 
 ### `GET /*`
 
-> **Pendente de `H-30`.** Documentada, ainda **não registrada** no
-> servidor. `tests/repo/contratos.test.ts` cobra a existência assim que a
-> história for concluída no backlog.
+Serve a SPA compilada, em **`dist/web`** — o `outDir` declarado em
+`web/vite.config.ts`. Qualquer caminho não iniciado por `/api/` devolve
+`index.html`, para que o roteamento do cliente funcione em recarga direta de
+URL. Servida desde `H-30`.
 
-Serve a SPA compilada (`web/dist`). Qualquer caminho não iniciado por `/api/`
-devolve `index.html`, para que o roteamento do cliente funcione em recarga
-direta de URL.
+> O documento dizia `web/dist` até 18/08/2026, invertido em relação ao que o
+> Vite escreve. Nada dependia da frase enquanto a rota não existia.
+
+**Caminho fora do mapa da casca responde igual** — `/relatorios` recebe o mesmo
+`index.html`, e quem exibe "página não encontrada" é o cliente. O servidor não
+conhece as rotas dele, e passar a conhecê-las duplicaria o mapa de
+`web/src/router.ts`.
+
+`GET /api/…` inexistente **não** cai aqui: segue com o `404` do Fastify. Sem
+essa exceção, um erro de digitação na URL de API devolveria o HTML da casca com
+`200`, e o diagnóstico apontaria para o cliente.
+
+| Código | Situação |
+|---|---|
+| 200 | `index.html`, ou o arquivo pedido quando ele existe em `dist/web` |
+| 503 | `dist/web` inexistente — página em pt-br dizendo que falta rodar o `build`, e não `404` cru |
+
+O `503` é **HTML, não o envelope de erro de §1.2**: quem lê é o operador num
+navegador, e JSON técnico ali seria tela em branco. A pasta é consultada por
+requisição, então rodar o `build` com o servidor no ar dispensa reiniciá-lo.
 
 ---
 

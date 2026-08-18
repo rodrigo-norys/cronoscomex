@@ -134,6 +134,17 @@ interface DocumentedRoute {
   pendingStory: string | null
 }
 
+/**
+ * A história que a seção declara estar esperando, ou `null`.
+ *
+ * Separada da varredura para poder ser exercida com entrada sintética: desde
+ * `H-30` **não há rota pendente no documento**, e a âncora abaixo não pode
+ * depender de o plano ainda ter alguma.
+ */
+function pendingStoryOf(section: string): string | null {
+  return section.match(/^> \*\*Pendente de `(H-\d+)`/m)?.[1] ?? null
+}
+
 function documentedRoutes(): DocumentedRoute[] {
   const document = readFileSync('docs/05-contratos-api.md', 'utf-8')
   const routes: DocumentedRoute[] = []
@@ -142,11 +153,10 @@ function documentedRoutes(): DocumentedRoute[] {
     const heading = section.match(/^`(GET|POST|PUT|PATCH|DELETE) ([^`]+)`/)
     if (heading?.[1] === undefined || heading[2] === undefined) continue
 
-    const pending = section.match(/^> \*\*Pendente de `(H-\d+)`/m)
     routes.push({
       method: heading[1],
       url: heading[2],
-      pendingStory: pending?.[1] ?? null,
+      pendingStory: pendingStoryOf(section),
     })
   }
   return routes
@@ -173,8 +183,16 @@ describe('toda rota documentada existe, ou diz de quem está esperando', () => {
     // formato de um dos dois documentos mudar, isto reprova em vez de deixar as
     // asserções abaixo passarem sem verificar nada.
     expect(DOCUMENTED.length).toBeGreaterThan(8)
-    expect(DOCUMENTED.some((route) => route.pendingStory !== null)).toBe(true)
     expect(CLOSED.size).toBeGreaterThan(0)
+
+    /**
+     * O parser do marcador é exercido com entrada sintética, e não contando as
+     * pendências vivas. `H-30` serviu `GET /*`, a última que faltava, e desde
+     * então o documento não tem nenhuma — a asserção anterior reprovaria por o
+     * plano ter terminado, que é o oposto do que ela existe para detectar.
+     */
+    expect(pendingStoryOf('> **Pendente de `H-99`.** Documentada, não servida.')).toBe('H-99')
+    expect(pendingStoryOf('Serve a SPA compilada, em `dist/web`.')).toBeNull()
   })
 
   /**
