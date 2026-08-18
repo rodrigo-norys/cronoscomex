@@ -32,7 +32,8 @@ suíte roda sobre fixtures versionadas em `tests/fixtures/`.
 
 ### 1.2. Fixtures obrigatórias
 
-**Já geradas**, por `tools/build_fixtures.py`, derivando do arquivo real.
+**Já geradas**, por `tools/build_fixtures.py`, derivando do arquivo real —
+exceto `formulas.xlsx`, que a flag `--formulas` deriva de `basico.xlsx`.
 
 | Arquivo | Linhas | Propósito |
 |---|---|---|
@@ -42,6 +43,8 @@ suíte roda sobre fixtures versionadas em `tests/fixtures/`.
 | `sujeira.xlsx` | 11 | REF duplicada por caixa e espaço, REF ausente com outras colunas preenchidas, linha totalmente vazia, `DESEMBARÇADA`, `DESEMBARAÇADO`, `DESEMBARAÇADA 03/02`, STATUS só com espaços, canal em texto, nomes parecidos |
 | `so-ref.xlsx` | 4 | Linha só com REF; linha com REF e só `boletoRaw`; linha com REF e colunas só com espaços |
 | `formatado.xlsx` | 9 | **Teste de preservação byte a byte** — carrega tema, `styles.xml` completo, comentários encadeados, `vmlDrawing`, `persons` e 3 itens `customXml` do arquivo real |
+| `data-vazia.xlsx` | 4 | Célula de data **vazia e com estilo Geral** (`numFmtId=0`), para `H-27`: gravar data nela tem de exibir `29/ago`, não `46263` — o estilo é composto por TD-05.1, preservando fonte, borda e preenchimento (A-56) |
+| `formulas.xlsx` | 3 | **Cadeia de cálculo declarada** — 3 fórmulas encadeadas na coluna `I`, com `xl/calcChain.xml` em `[Content_Types].xml` e relacionada nos rels. Exercita a remoção de entrada da cadeia em `H-25`. Ver `PD-05`, que continua aberta: **fixture nossa não substitui arquivo salvo pelo Excel** |
 | `vazio.xlsx` | 0 | Cabeçalho sem nenhuma linha de dados |
 
 ### Como foram geradas, e por que assim
