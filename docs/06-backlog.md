@@ -1756,6 +1756,53 @@ export function leadTimeByGroup(p: Process[], key: (x: Process) => string,
 
 ### H-21 — Entregar a Página Histórico
 
+> ✅ **CONCLUÍDA em 17/08/2026.** 18 testes próprios em 1 arquivo; suíte total
+> em **1123**. Última página do menu — as sete estão montadas.
+>
+> **A lista tinha 2 arquivos e a fatia precisou de 6.** Faltava a camada web
+> inteira — `getMonthlyHistory`, `useHistory`, o ramo em `App.tsx`, o teste da
+> página e a rota no stub. E `src/http/routes/history.ts`, que a lista trazia,
+> **não mudou uma linha**: `H-28` a entregou completa, com 14 testes cobrindo os
+> três casos-limite desta história. Resíduo de quando `H-21` vinha antes.
+>
+> **O caso-limite "sem histórico → gráfico com um único ponto" contradizia o
+> contrato**, que serve `series: []` e `historyStartedAt: null` sem histórico
+> algum. São dois estados, não um: arquivo vazio não tem ponto a desenhar e
+> recebe estado vazio afirmativo; um ponto só existe depois da primeira leitura
+> gravar. Ambos com teste.
+>
+> **O volume do histórico não é o total da planilha, e a tela passou a dizer
+> isso.** `aggregateMonthly` acumula os REF observados e nunca remove — sumir da
+> planilha não gera evento (ADR-0005) —, então a diferença cresce com o tempo.
+> Sem a nota, o operador compara com o cartão da Página Inicial e desconfia dos
+> dois números certos. Achado da conferência, não do plano.
+>
+> A conferência de 17/08/2026 mediu 650 no histórico contra 649 na planilha, mas
+> **a REF a mais não é processo removido**: é `FT999.26`, `sourceRow` 11,
+> resíduo de conferência manual no `data/history.jsonl` de desenvolvimento. A
+> divergência que a nota explica é real e o mecanismo é o descrito; o caso que a
+> produziu nesta máquina, não. Quem quiser reconferir precisa de um arquivo
+> limpo — a planilha real não perdeu REF nenhuma até aqui.
+>
+> **Recharts estreou aqui**, fixado na stack desde o plano e nunca usado: as
+> barras de `H-18` e `H-19` são `div`. A paleta passou pelos seis testes de
+> contraste e daltonismo — pior par adjacente com ΔE 13,1 em deuteranopia. O
+> gráfico é `aria-hidden` e a tabela ao lado carrega os mesmos números: o SVG
+> não é legível por leitor de tela, e em `jsdom` o `ResponsiveContainer` mede
+> zero e não desenha — a asserção precisa da tabela de qualquer forma. **O
+> bundle passou de 500 kB** com a dependência; é aplicação local servida do
+> disco, e o aviso do Vite não tem consequência aqui.
+>
+> **A guarda de âncora morta tinha um buraco, e ele apareceu ao ser usado.**
+> `REPO_PATH` não cobria `src/` nem `web/`, e o `\b` casava o `tests` de
+> `web/tests/paginas-montadas.test.tsx` no meio da palavra — cobrava um caminho
+> que nunca existiu. Corrigida: os caminhos conferidos passaram de 18 para 54,
+> sem nenhuma âncora morta nova.
+>
+> **A janela é seletor local de 12, 24 ou 60 meses**, e não filtro global: sem
+> ele o `months` do contrato nunca sairia de 12, e o caso-limite dos 60 meses
+> não teria como ser exercido pela tela.
+
 **Objetivo:** evolução mensal de volume, desembaraçados e Canal Vermelho.
 
 **Arquivos:**
