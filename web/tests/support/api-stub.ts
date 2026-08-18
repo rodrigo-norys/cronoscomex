@@ -74,9 +74,14 @@ export function indicatorsFixture(
  * 25 processos distintos. `items` fica vazio de proposito — cada teste serve o
  * recorte que exercita.
  *
- * `processos_parados` e zero por motivo ESTRUTURAL: a rota passa um historico
- * vazio ate `H-28`. `chegadas_hoje` e zero MEDIDO. Os dois numeros sao iguais e
- * significam coisas opostas, e a pagina precisa distingui-los.
+ * `processos_parados` e zero por motivo ESTRUTURAL: o historico comecou em
+ * `H-28`, e um dia de cobertura nao alcanca o limiar de 15 — `stalledMeasurable`
+ * e falso. `chegadas_hoje` e zero MEDIDO. Os dois numeros sao iguais e
+ * significam coisas opostas, e a pagina precisa distingui-los (`H-29`).
+ *
+ * `historyStartedAt` e **instante ISO completo**, como a rota devolve. Ate
+ * `H-29` este stub servia data pura, e por isso o defeito de formatacao da
+ * Pagina Alertas passou despercebido.
  */
 export function alertsFixture(overrides: Partial<AlertsResponse> = {}): AlertsResponse {
   return {
@@ -90,7 +95,9 @@ export function alertsFixture(overrides: Partial<AlertsResponse> = {}): AlertsRe
       chegadas_7_dias: 7,
     },
     stalledThresholdDays: 15,
-    historyStartedAt: null,
+    historyStartedAt: '2026-08-17T12:00:00.000Z',
+    stalledCoverageDays: 1,
+    stalledMeasurable: false,
     ...overrides,
   }
 }
