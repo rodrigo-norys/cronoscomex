@@ -307,8 +307,19 @@ libera a atenção dela.**
 `--experimental-strip-types`, que é como a aplicação roda de verdade. **Nada de
 `parameter property`, `enum`, `namespace` ou decorator em `src/`.**
 
-**Falta ligar branch protection na `main`**, exigindo os dois checks e PR. É
-configuração do GitHub, não arquivo versionado.
+**A `main` está protegida** pelo ruleset `main protegida`, ativo e com
+`bypass_actors` **vazio** — nem o dono do repositório escapa. Quatro regras:
+`pull_request`, `required_status_checks` (`verify` e `dados-sensiveis`),
+`non_fast_forward` e `deletion`. É configuração do GitHub, não arquivo
+versionado; leia o estado real com
+`gh api repos/<owner>/<repo>/rulesets/<id>` em vez de confiar nesta linha.
+
+> `non_fast_forward` **proíbe reescrever histórico**, e não há como contornar
+> por PR: commits reescritos têm SHA novo, e um PR os somaria em vez de
+> substituir. Reescrita exige desativar o ruleset, empurrar e reativar — e o
+> `PUT` da API **precisa reenviar o objeto inteiro**, porque mandar só
+> `enforcement` zera as regras e deixa a proteção vazia parecendo ativa. Medido
+> em 18/08/2026, ao limpar 12 mensagens de commit.
 
 **Ao acrescentar skill, rule, hook, workflow ou regra de permissão, atualize
 este bloco.** O hook de alinhamento avisa **e a suíte reprova**; quem escreve é
