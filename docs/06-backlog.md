@@ -2882,11 +2882,65 @@ Formato de `data/history.jsonl` conforme `03-modelo-dados.md §3.1`.
 
 ### H-29 — Entregar o alerta de processos parados
 
+> ✅ **CONCLUÍDA em 18/08/2026.** 19 testes próprios — 11 em
+> `tests/domain/alerts.test.ts`, 4 em `tests/http/alerts.test.ts` e 4 em
+> `web/tests/Alerts.test.tsx`, mais 2 reescritos; suíte total em **1146**.
+> Cinco divergências do plano resolvidas na abertura, **uma delas um defeito já
+> em produção**.
+>
+> **A regra já existia; o que faltava era a tela.** `buildAlerts` recebia
+> `stalledDays` e `threshold` desde `H-14`, e a rota já os alimentava com o
+> histórico real desde `H-28`. A lista de arquivos da história não citava
+> `web/src/pages/Alerts.tsx`, onde a decisão estava escrita como
+> `type !== 'processos_parados'` — literal, por tipo. Sem tocá-la, o alerta
+> dispararia na API e a tela exibiria traço para sempre, ainda dizendo ao
+> operador que o histórico "só passa a ser gravado em `H-28`". `AlertRow.tsx`,
+> o único arquivo de interface que a história citava, **não mudou**: já
+> suportava o tipo inteiro desde `H-20`.
+>
+> **O defeito herdado: `historyStartedAt` é instante ISO completo, e a tela o
+> fatiava como `AAAA-MM-DD`.** `formatDay` fazia `split('-')` sobre o `ts` do
+> primeiro evento e renderizava `17T12:00:00.000Z/08/2026`. Passou por `H-28`
+> porque o stub de `web/tests/support/api-stub.ts` servia `null`, e o único caso
+> com data usava `'2026-08-01'` — data pura, que o `split` aceita. **Stub que
+> não imita o formato do servidor não é teste do contrato**, e este custou uma
+> tela errada por um dia inteiro de produção.
+>
+> **O zero de ALE-06 tem dois sentidos opostos, e a interface não podia escolher
+> entre eles.** Com histórico de 3 dias e limiar de 15, nenhum processo teve
+> tempo de disparar: exibir `0` afirmaria ausência de problema que ninguém
+> mediu, que é o que a regra inviolável 3 proíbe. Decidir isso exige comparar
+> instante com dia civil no fuso da aplicação — regra, e o cliente nem conhece
+> fuso (regra 6). Resolvido com `stalledCoverage` no domínio e dois campos
+> aditivos em `GET /api/alerts`: `stalledCoverageDays` e `stalledMeasurable`. A
+> tela passou a ter três estados em vez de um texto fixo, e o do meio é o que
+> A-43 pedia: *"o histórico tem 1 dia e o limiar é de 15 dias — nenhum processo
+> teve tempo de atingi-lo"*.
+>
+> **Medido na planilha real em 18/08/2026:** 649 processos, **todos com base no
+> histórico** — `refSemBase: 0`, porque `H-28` gravou as 649 na primeira
+> leitura. Histórico iniciado em 17/08/2026, cobertura de **1 dia** contra
+> limiar de 15, `stalledMeasurable: false`, e a maior contagem de dias parados é
+> **1**. Nenhum alerta gerado, como o critério de aceite previa. Com o limiar
+> forçado a `0`, **169 dos 169 processos ativos** disparam — os 480
+> desembaraçados ficam de fora (A-59), e é essa simulação que prova a fiação
+> ponta a ponta enquanto o tempo real não passa.
+>
+> `daysSince` foi extraída em `src/domain/history.ts` e `daysInCategory` passou
+> a usá-la: a conversão de instante para dia civil no fuso passa a ter **uma**
+> definição, e não duas que divergiriam na primeira correção.
+
 **Objetivo:** ALE-06, destravado pelo histórico.
 
 **Arquivos:**
 - `src/domain/alerts.ts`
-- `web/src/components/AlertRow.tsx`
+- `src/domain/history.ts` — `daysSince` extraída *(divergência 3)*
+- `src/http/routes/alerts.ts` — os dois campos novos *(divergência 3)*
+- `web/src/pages/Alerts.tsx` — a tela *(divergências 1 e 2)*
+- `web/src/components/AlertRow.tsx` — **não mudou** *(divergência 4)*
+- `docs/05-contratos-api.md` · `tests/domain/alerts.test.ts` ·
+  `tests/http/alerts.test.ts` · `web/tests/Alerts.test.tsx` ·
+  `web/tests/support/api-stub.ts` *(divergências 3 e 5)*
 
 **Contrato fixado:** o tipo `processos_parados` de `buildAlerts`, com limiar
 vindo de `config/app.json` (`stalledDaysThreshold`, padrão **15**, A-32).
