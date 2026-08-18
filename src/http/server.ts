@@ -18,6 +18,7 @@ import { registerProcessColorRoute } from './routes/process-color.ts'
 import { registerProcessesRoute } from './routes/processes.ts'
 import { registerQuarantineRoute } from './routes/quarantine.ts'
 import { registerReloadRoute } from './routes/reload.ts'
+import { registerStaticRoute } from './routes/static.ts'
 
 /**
  * Endereco de escuta. RNF-29: o processo escuta EXCLUSIVAMENTE em loopback.
@@ -54,6 +55,10 @@ export function buildServer(
   registerEditsRoutes(app, store)
   registerProcessColorRoute(app, store, colorMap)
   registerApplyRoute(app)
+
+  // Por ultimo: `GET /*` e o catch-all, e registra-la antes nao mudaria o
+  // roteamento — mas leria como se as rotas de API fossem o caso excepcional.
+  registerStaticRoute(app)
 
   return app
 }
