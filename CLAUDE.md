@@ -252,6 +252,16 @@ invocação, em vez de carregar cópia deles. **`model: opus` fixado, não
 herdado** — herdar faria a revisão de maior consequência do projeto cair de
 nível em silêncio quando a sessão que a invoca estiver em outro modelo.
 
+`revisor-estilo` revisa a estilização das sete páginas contra o corpus
+verificável de `docs/estilizacao/corpus-estilo.md` — 40 regras com identificador
+de norma, sinal sintático e contraexemplo. **Recebe a casca MAIS as sete páginas
+de uma vez**, porque 12 das 40 regras são composicionais: a violação delas não
+existe dentro de um arquivo, é a diferença entre arquivos. Também não tem `Edit`
+nem `Write`, e `model: opus` pelo mesmo motivo do anterior — o eixo de contraste
+exige converter `oklch()` para sRGB e calcular a razão da WCAG com a conta à
+mostra. Devolve achados em formato fixo e um plano de **ondas por dependência
+técnica**, cada uma declarando quantos arquivos toca.
+
 **Rules** (`.claude/rules/`). Instrução com `paths:` no frontmatter, que entra em
 contexto **só quando o Claude lê arquivo que casa o glob** — e por isso não custa
 token nas sessões que não tocam o assunto. `comentarios.md` carrega a régua de
