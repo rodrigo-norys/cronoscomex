@@ -1789,9 +1789,22 @@ export function leadTimeByGroup(p: Process[], key: (x: Process) => string,
 > contraste e daltonismo — pior par adjacente com ΔE 13,1 em deuteranopia. O
 > gráfico é `aria-hidden` e a tabela ao lado carrega os mesmos números: o SVG
 > não é legível por leitor de tela, e em `jsdom` o `ResponsiveContainer` mede
-> zero e não desenha — a asserção precisa da tabela de qualquer forma. **O
-> bundle passou de 500 kB** com a dependência; é aplicação local servida do
-> disco, e o aviso do Vite não tem consequência aqui.
+> zero e não desenha — a asserção precisa da tabela de qualquer forma.
+>
+> **O Recharts responde por 374 dos 634 kB do pacote**, medido comparando a
+> build com e sem ele, e a Página Histórico é a única que o importa. Ela passou
+> a ser carregada sob demanda: o pacote inicial voltou a 262,22 kB (77,99 kB
+> comprimido) e o gráfico virou um segundo arquivo, buscado ao abrir a página. O
+> aviso de 500 kB do Vite sumiu **sem ser silenciado** — o limite continua onde
+> estava, para avisar do próximo salto. Numa aplicação local o ganho de tempo é
+> nulo; o que se ganhou foi o aviso de volta à condição de sinal.
+>
+> **A divisão cegou a guarda de página montada, e isso precisou de conserto
+> junto.** `paginas-montadas.test.tsx` consultava o marcador de forma síncrona,
+> e com a página sob demanda a consulta acontecia com o fallback do `Suspense`
+> na tela — passaria sem nunca tê-la renderizado. Agora espera o módulo chegar.
+> Verificado por mutação: quebrando o ramo de propósito, a guarda reprova com a
+> mensagem certa.
 >
 > **A guarda de âncora morta tinha um buraco, e ele apareceu ao ser usado.**
 > `REPO_PATH` não cobria `src/` nem `web/`, e o `\b` casava o `tests` de
