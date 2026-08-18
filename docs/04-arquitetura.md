@@ -68,7 +68,7 @@ graph TB
 | Container | Responsabilidade | Tecnologia |
 |---|---|---|
 | **Servidor Node** | Ler a planilha, calcular indicadores e alertas, servir a API e a SPA, gravar no `.xlsx` sob comando | Node 22 · Fastify 5.11.2 · TypeScript 7.0.2 |
-| **Interface web** | Apresentar as 6 páginas, os filtros globais e o formulário de edição. **Nenhuma regra de negócio** (RNF-38) | React 19.2.8 · Vite 8.2.0 · Tailwind 4.3.3 · Recharts 3.10.1 |
+| **Interface web** | Apresentar as **sete páginas** — as seis do menu, mais o detalhe do processo, que vive fora dele (`web/src/router.ts`) —, os filtros globais e o formulário de edição. **Nenhuma regra de negócio** (RNF-38) | React 19.2.8 · Vite 8.2.0 · Tailwind 4.3.3 · Recharts 3.10.1 |
 | **planilha.xlsx** | Fonte da verdade. Não pertence ao sistema | Arquivo OOXML |
 | **data/** | Histórico, fila de edições, quarentena e backups. Descartável sem perda de dado de negócio | JSONL, JSON, XLSX |
 | **config/** | Caminho do arquivo, mapa de cores, dicionário de grafias | JSON |

@@ -266,12 +266,14 @@ diferentes. Falha **aberto**. `test-guard.sh` é a regressão do guard e roda
 roda sempre** — o hook é `PreToolUse` e não vê commit feito fora do Claude Code.
 
 **Guarda de contrato:** `tests/repo/contratos.test.ts` e
-`web/tests/paginas-montadas.test.tsx`, no `verify` e no CI. Seis asserções,
-nenhuma com lista fixa: rota sem teste, rota documentada e não servida, contrato
-de `GET /api/indicators` divergindo do documento, história `✅ CONCLUÍDA` sem
-página montada, peça de `.claude/` que o `CLAUDE.md` não menciona, e **âncora
-morta em comentário** — ID do plano, caminho de arquivo ou identificador em
-camelCase — reprovam a suíte. **A guarda não substitui a fatia;
+`web/tests/paginas-montadas.test.tsx`, no `verify` e no CI. Sete asserções,
+nenhuma com lista fixa: rota sem teste, contrato de `GET /api/indicators`
+divergindo do documento, história `✅ CONCLUÍDA` sem página montada, peça de
+`.claude/` que o `CLAUDE.md` não menciona, **âncora morta em comentário** — ID
+do plano, caminho de arquivo ou identificador em camelCase — e **gatilho de
+reavaliação de `D-16` atingido sem registro** reprovam a suíte. **Rota
+documentada e não servida NÃO é coberta** — esta linha afirmou que era até
+17/08/2026, enquanto o cabeçalho do próprio teste dizia o contrário. **A guarda não substitui a fatia;
 libera a atenção dela.**
 
 **`npm run test:strip`** importa os módulos de `src/` sob
