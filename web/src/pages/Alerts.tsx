@@ -60,12 +60,19 @@ export function Alerts({ queryString, dataVersion }: AlertsProps) {
     )
   }
 
-  const { items, countsByType, stalledThresholdDays, historyStartedAt } = state.alerts
+  const {
+    items,
+    countsByType,
+    stalledThresholdDays,
+    historyStartedAt,
+    stalledCoverageDays,
+    stalledMeasurable,
+  } = state.alerts
   const groups = groupByProcess(items)
 
   return (
     <div className="flex flex-col gap-4">
-      <TypeCounts counts={countsByType} />
+      <TypeCounts counts={countsByType} stalledMeasurable={stalledMeasurable} />
 
       <section
         aria-label="Fila de alertas"
@@ -91,7 +98,12 @@ export function Alerts({ queryString, dataVersion }: AlertsProps) {
         )}
       </section>
 
-      <StalledNote thresholdDays={stalledThresholdDays} historyStartedAt={historyStartedAt} />
+      <StalledNote
+        thresholdDays={stalledThresholdDays}
+        historyStartedAt={historyStartedAt}
+        coverageDays={stalledCoverageDays}
+        measurable={stalledMeasurable}
+      />
     </div>
   )
 }
@@ -99,19 +111,26 @@ export function Alerts({ queryString, dataVersion }: AlertsProps) {
 /**
  * As seis contagens, sempre visíveis — inclusive as zeradas.
  *
- * `processos_parados` é o caso especial: o zero dele não é medido, e sim
- * impossível de medir enquanto `H-28` não gravar histórico. Exibi-lo como `0`
- * ao lado de um zero medido diria que nada está parado, quando o que se sabe é
- * que ainda não dá para saber (regra inviolável 3).
+ * `processos_parados` é o caso especial: o zero dele só é medido depois que o
+ * histórico ficar mais velho que o limiar. Antes disso, exibi-lo como `0` ao
+ * lado de um zero medido diria que nada está parado, quando o que se sabe é que
+ * ainda não dá para saber (regra inviolável 3). **Quem decide é o servidor**,
+ * em `stalledMeasurable` — aqui não se recalcula a comparação (regra 6).
  */
-function TypeCounts({ counts }: { counts: AlertsResponse['countsByType'] }) {
+function TypeCounts({
+  counts,
+  stalledMeasurable,
+}: {
+  counts: AlertsResponse['countsByType']
+  stalledMeasurable: boolean
+}) {
   return (
     <section
       aria-label="Alertas por tipo"
       className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6"
     >
       {TYPES_IN_SEVERITY_ORDER.map((type) => {
-        const measurable = type !== 'processos_parados'
+        const measurable = type !== 'processos_parados' || stalledMeasurable
         return (
           <article
             key={type}
@@ -122,7 +141,10 @@ function TypeCounts({ counts }: { counts: AlertsResponse['countsByType'] }) {
             {measurable ? (
               <p className="mt-1 text-2xl font-semibold tabular-nums">{counts[type]}</p>
             ) : (
-              <p className="mt-1 text-2xl font-semibold text-slate-300" title="Sem histórico ainda">
+              <p
+                className="mt-1 text-2xl font-semibold text-slate-300"
+                title="O histórico ainda não cobre o limiar"
+              >
                 —
               </p>
             )}
@@ -137,28 +159,42 @@ function TypeCounts({ counts }: { counts: AlertsResponse['countsByType'] }) {
  * A ressalva de ALE-06, com o limiar declarado como premissa (A-32) e a data de
  * início do histórico (A-43, A-61).
  *
- * `historyStartedAt = null` é o estado corrente e permanece até `H-28`. Exibir
- * uma data vazia sugeriria histórico existente; não exibir nada deixaria o
- * traço da contagem sem explicação.
+ * São três estados, e a diferença entre os dois primeiros é o que A-43 pede que
+ * a tela diga: sem histórico nenhum, histórico mais novo que o limiar — em que
+ * o zero é inevitável e não significa ausência de processo parado — e histórico
+ * já suficiente, em que a contagem passa a valer.
  */
 function StalledNote({
   thresholdDays,
   historyStartedAt,
+  coverageDays,
+  measurable,
 }: {
   thresholdDays: number
   historyStartedAt: string | null
+  coverageDays: number | null
+  measurable: boolean
 }) {
   return (
     <section
       aria-label="Processos parados"
       className="rounded border border-dashed border-slate-300 bg-slate-50 p-4 text-xs text-slate-600"
     >
-      <p>
-        <strong className="font-semibold text-slate-700">Processos parados não é medido.</strong> O
-        alerta compara a data do último evento de mudança com hoje, e o histórico de leituras só
-        passa a ser gravado em <strong>H-28</strong>. O traço acima significa isso — não que nenhum
-        processo esteja parado.
-      </p>
+      {measurable ? (
+        <p>
+          <strong className="font-semibold text-slate-700">Processos parados está medido.</strong> O
+          alerta compara a data do último evento de mudança de categoria com hoje. Trocar apenas a
+          cor de uma linha não reinicia a contagem.
+        </p>
+      ) : (
+        <p>
+          <strong className="font-semibold text-slate-700">Processos parados não é medido.</strong>{' '}
+          {coverageDays === null
+            ? 'O alerta compara a data do último evento de mudança com hoje, e nenhuma leitura foi registrada ainda.'
+            : `O histórico tem ${describeDays(coverageDays)} e o limiar é de ${thresholdDays} dias — nenhum processo teve tempo de atingi-lo.`}{' '}
+          O traço acima significa isso — não que nenhum processo esteja parado.
+        </p>
+      )}
       <p className="mt-2">
         Limiar em uso: <strong className="tabular-nums">{thresholdDays} dias</strong> sem mudança.{' '}
         <em>É premissa</em> — a especificação não define o valor, e ele é configurável (A-32).
@@ -180,7 +216,17 @@ function StalledNote({
   )
 }
 
-function formatDay(isoDay: string): string {
-  const [year, month, day] = isoDay.split('-')
-  return `${day}/${month}/${year}`
+function describeDays(count: number): string {
+  return count === 1 ? '1 dia' : `${count} dias`
+}
+
+/**
+ * `historyStartedAt` é **instante ISO completo**, não `AAAA-MM-DD`: o campo
+ * carrega o `ts` do primeiro evento. Fatiar o texto pelos hifens rendia
+ * `17T12:00:00.000Z/08/2026` na tela — defeito desde `H-28`, invisível porque o
+ * stub do teste servia data pura. A aplicação é local, então o fuso da máquina
+ * é o do operador, e o formatador do navegador dá o dia certo.
+ */
+function formatDay(instant: string): string {
+  return new Date(instant).toLocaleDateString('pt-BR')
 }
