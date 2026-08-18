@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import type { ApplyRefusal, HealthResponse } from './api-client.ts'
 import { ApplyChangesButton } from './components/ApplyChangesButton.tsx'
 import { ConflictDialog } from './components/ConflictDialog.tsx'
@@ -10,13 +10,23 @@ import { useFilterOptions } from './hooks/useFilterOptions.ts'
 import { useFilters } from './hooks/useFilters.ts'
 import { Alerts } from './pages/Alerts.tsx'
 import { Clients } from './pages/Clients.tsx'
-import { History } from './pages/History.tsx'
 import { Home } from './pages/Home.tsx'
 import { Operational } from './pages/Operational.tsx'
 import { Performance } from './pages/Performance.tsx'
 import { NotFoundPage, PendingPage } from './pages/Placeholders.tsx'
 import { ProcessDetail } from './pages/ProcessDetail.tsx'
 import { NAV_PAGES, navigate, pageOf, type Route, useRoute } from './router.ts'
+
+/**
+ * A Pagina Historico e a unica que importa o Recharts, e ele responde por 374
+ * dos 634 kB do pacote — medido em 17/08/2026, comparando a build com e sem
+ * ela. Carregada sob demanda, sai do caminho das outras seis paginas.
+ *
+ * `lazy` exige `default`, e as paginas deste projeto sao exportacoes nomeadas.
+ */
+const History = lazy(() =>
+  import('./pages/History.tsx').then((modulo) => ({ default: modulo.History })),
+)
 
 /**
  * A casca da aplicacao (`H-15`).
@@ -81,16 +91,34 @@ export function App() {
       )}
 
       <main className="px-6 py-6">
-        <PageOutlet
-          route={route}
-          dataVersion={dataVersion}
-          health={health}
-          queryString={filters.queryString}
-        />
+        <Suspense fallback={<PageLoading />}>
+          <PageOutlet
+            route={route}
+            dataVersion={dataVersion}
+            health={health}
+            queryString={filters.queryString}
+          />
+        </Suspense>
       </main>
 
       <ConflictDialog refusal={refusal} onClose={() => setRefusal(null)} />
     </div>
+  )
+}
+
+/**
+ * O intervalo entre o clique e o modulo da pagina chegar. Nao e o estado
+ * `carregando` de nenhuma pagina — aquele espera a resposta da API, este espera
+ * o codigo. Distintos de proposito: um traco aqui nao significa dado ausente.
+ */
+function PageLoading() {
+  return (
+    <p
+      role="status"
+      className="rounded border border-slate-200 bg-white p-6 text-sm text-slate-500"
+    >
+      Carregando página…
+    </p>
   )
 }
 
