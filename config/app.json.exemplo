@@ -1,5 +1,5 @@
 {
-  "_comentario": "Copie para config/app.json e ajuste workbookPath. Este arquivo NAO vai para o controle de versao: o caminho revela estrutura de pastas e nome da organizacao.",
+  "_comentario": "Copie para config/app.json e ajuste workbookPath. Este arquivo NAO vai para o controle de versao: o caminho revela estrutura de pastas e nome da organizacao. O passo a passo esta no README.md da raiz, secao Instalacao.",
 
   "workbookPath": "C:\\Users\\<usuario>\\OneDrive - <organizacao>\\<pasta>\\CONTROLE DOS EMBARQUE.xlsx",
 
@@ -8,6 +8,8 @@
 
   "headerRow": 1,
   "firstDataRow": 2,
+
+  "_comentario_port": "Porta do painel. Se ela ja estiver em uso na maquina, o servidor recusa a partida dizendo isso; altere aqui e inicie de novo. scripts/iniciar.cmd le este mesmo valor para abrir o navegador.",
   "port": 5173,
 
   "_comentario_stalled": "Limiar do alerta Processos parados (ALE-06). A especificacao nunca define o numero (A-32); 15 e premissa.",
