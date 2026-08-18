@@ -43,7 +43,7 @@ Leia nesta ordem. Cada documento pressupõe o anterior.
 | 5 | [04-arquitetura.md](04-arquitetura.md) | Diagramas de contexto, containers e componentes; estrutura de diretórios | H-02 |
 | 6 | [05-contratos-api.md](05-contratos-api.md) | Rotas, schemas, códigos de erro e campos editáveis | Qualquer rota |
 | 7 | [06-backlog.md](06-backlog.md) | **34 histórias executáveis**, com contrato, aceite e casos-limite | — |
-| 8 | [07-plano-entrega.md](07-plano-entrega.md) | 5 fases, grafo de dependências, caminho crítico e **15 riscos** | Planejar a ordem |
+| 8 | [07-plano-entrega.md](07-plano-entrega.md) | 5 fases, grafo de dependências, caminho crítico e **15 riscos** — `R-03` encerrado por `H-01`, `R-09` por `H-33` | Planejar a ordem |
 | 9 | [08-qualidade-operacao.md](08-qualidade-operacao.md) | Testes, ingestão, observabilidade, LGPD e build | Escrever testes |
 | 10 | [09-rastreabilidade.md](09-rastreabilidade.md) | Matriz de 28 linhas: indicador/alerta → história → teste → status | Verificar cobertura |
 | 11 | [10-governanca.md](10-governanca.md) | Quem decide o quê, protocolo de mudança de escopo, ciclo de vida de ADR, *definition of done* e o log de decisões | Mudar escopo ou reabrir um ADR |
@@ -58,6 +58,19 @@ Leia nesta ordem. Cada documento pressupõe o anterior.
 | [0004](adr/0004-escrita-cirurgica-xlsx.md) | Escrita cirúrgica no XML, nunca reserialização |
 | [0005](adr/0005-historico-jsonl-append-only.md) | Histórico em JSONL append-only |
 | [0006](adr/0006-indicadores-em-memoria.md) | Indicadores como funções puras em memória |
+
+### Sobre a configuração do agente
+
+Não descrevem o produto, e por isso ficam fora da ordem de leitura. São
+**diagnósticos datados de 04/08/2026**, escritos sem aplicar nada: nenhum deles
+alterou arquivo de configuração.
+
+| Documento | O que traz |
+|---|---|
+| [auditoria-configuracao-claude.md](auditoria-configuracao-claude.md) | Auditoria de `.claude/` e do `CLAUDE.md`, sob a ótica de **segurança** |
+| [delegacao-configuracao-claude.md](delegacao-configuracao-claude.md) | O mesmo objeto, sob a ótica do **custo de supervisão** |
+| [governance-tooling-claude.md](governance-tooling-claude.md) | O blueprint de governance e tooling que os dois anteriores propõem |
+| [estilizacao/corpus-estilo.md](estilizacao/corpus-estilo.md) | **40 regras de estilização verificáveis**, com identificador de norma, sinal sintático e contraexemplo. É o corpus que o subagente `revisor-estilo` usa |
 
 ### Regras de processo
 
@@ -78,19 +91,39 @@ em `src/`; por que uma guarda existe, no cabeçalho do próprio script ou teste.
 - [perfilamento/perfilamento-20260803.json](perfilamento/perfilamento-20260803.json) — relatório completo, sanitizado
 - `../tools/profile_workbook.py` — o perfilador, para reexecutar na virada de ano
 - `../tools/build_fixtures.py` — gerador das fixtures, derivando do arquivo real
-- `../tests/fixtures/` — **7 fixtures `.xlsx`** já geradas e validadas
+- `../tests/fixtures/` — **9 fixtures `.xlsx`** já geradas e validadas; a tabela com o propósito de cada uma está em [08-qualidade-operacao.md](08-qualidade-operacao.md) §1.2
 - `../config/color-map.json` — **mapa real**, 9 chaves, cobertura 100%
 - `../config/status-aliases.json` — **dicionário real** de grafias de STATUS
 - [assets/color-map.exemplo.json](assets/color-map.exemplo.json) — esqueleto comentado, mantido como referência de estrutura
 
 ---
 
-## Estado atual: Fase 0 concluída
+## Estado atual: as 5 fases concluídas
+
+**Todas as fases do plano fecharam**, e o critério de saída da Fase 1 foi
+atingido com folga: as 649 linhas da aba `2026` são aceitas com **0% de
+quarentena** (`H-07`), contra o limite de 2% de RNF-24.
+
+Restam duas coisas, nenhuma delas do plano original:
+
+- **`H-34`** — o caminho da planilha configurável pela tela. Acrescentada depois
+  do plano, sem fase atribuída, e não bloqueia a instalação.
+- **Três pendências que fecham juntas na primeira instalação na máquina do
+  operador** — `PD-01`, `PD-05` e `PD-06`. Estão no `CLAUDE.md` da raiz, com o
+  gatilho e a lista do que falta conferir em cada uma.
+
+**O que cada história mediu e decidiu está no bloco `✅ CONCLUÍDA` dela**, em
+[06-backlog.md](06-backlog.md) — é lá que o registro técnico vive, não aqui. O
+estado por fase e o caminho crítico estão em
+[07-plano-entrega.md](07-plano-entrega.md).
+
+### O que `H-01` mediu, e continua valendo
 
 **`H-01` (perfilamento) foi executada em 03/08/2026** sobre o arquivo real
 `CONTROLE DOS EMBARQUE.xlsx`. Leia
-[perfilamento/RESULTADO.md](perfilamento/RESULTADO.md) **antes de tudo** — ele
-converteu sete premissas em fato medido e mudou cinco documentos.
+[perfilamento/RESULTADO.md](perfilamento/RESULTADO.md) **antes de mexer em regra
+de leitura** — ele converteu sete premissas em fato medido e mudou cinco
+documentos.
 
 | Premissa | Resultado |
 |---|---|
@@ -98,6 +131,7 @@ converteu sete premissas em fato medido e mudou cinco documentos.
 | P-02 · coluna P | ✅ `Coluna1`, 1 valor em 649 linhas |
 | P-03 · datas têm ano | ✅ **confirmada** — 1.201 datas reais, zero texto sem ano |
 | P-04 · uma aba | ❌ **refutada** — 4 abas; escopo fixado na `2026` |
+| P-05 · coluna A ancora a cor | ✅ confirmada — 649 de 649 linhas com REF têm chave de estilo em A |
 | P-06 · cores | ⚠️ 9 chaves reais, não 7; cobertura 100% |
 | P-07 · volume | ✅ 649 linhas, 293 KB |
 
@@ -105,16 +139,6 @@ converteu sete premissas em fato medido e mudou cinco documentos.
 matriz saíram de "Condicionado" para "Implementável"; `config/color-map.json` e
 `config/status-aliases.json` existem com valores medidos; e **`H-27` foi
 corrigida** — trocava o `styleId` inteiro, o que destruiria bordas.
-
-## Por onde começar a implementar
-
-**Comece pela Fase 1** — `H-02` (esqueleto) e a cadeia de leitura. Siga as
-fases de [07-plano-entrega.md](07-plano-entrega.md): leitura confiável → painel
-completo → edição → edição de cor.
-
-O critério de saída da Fase 1 tem alvo medido: as **649 linhas** da aba `2026`
-devem ser aceitas com **0% de quarentena**, já que o mapa de cores cobre as 9
-chaves e não há REF duplicada nem vazia.
 
 ---
 
@@ -129,16 +153,16 @@ chaves e não há REF duplicada nem vazia.
 3. **A cor nunca infere o status.** Medido: há **66 linhas com STATUS vazio** e
    apenas **1 linha branca** — a coerência que a especificação afirma não existe
    no dado (A-04, A-54).
-8. **A planilha é a referência prioritária**, acima da especificação. Quando o
+4. **A planilha é a referência prioritária**, acima da especificação. Quando o
    documento e o arquivo divergem, o arquivo vence, e a divergência vira achado
    registrado (`00-visao-escopo.md §6.1`).
-4. **Nenhum teste toca a planilha real.** A suíte roda sobre fixtures
+5. **Nenhum teste toca a planilha real.** A suíte roda sobre fixtures
    versionadas.
-5. **`src/domain/` não importa I/O.** A regra é verificada pelo lint e quebra a
+6. **`src/domain/` não importa I/O.** A regra é verificada pelo lint e quebra a
    build.
-6. **Nenhum dado pessoal em log.** Processos são referenciados por `ref` e
+7. **Nenhum dado pessoal em log.** Processos são referenciados por `ref` e
    número de linha.
-7. **Nenhum número sem origem declarada.** Todo valor nos documentos está
+8. **Nenhum número sem origem declarada.** Todo valor nos documentos está
    marcado como medido, informado, premissa, derivado ou verificado com fonte.
 
 ---
@@ -166,7 +190,7 @@ medido —, nunca o original.
 - **Especificação funcional** — documento do cliente. Tratada como fonte da
   verdade para regras de negócio e catálogo de indicadores, e como **superada**
   no que diz respeito a arquitetura de fonte de dados. Auditada integralmente em
-  [01-auditoria-especificacao.md](01-auditoria-especificacao.md), com os 55
+  [01-auditoria-especificacao.md](01-auditoria-especificacao.md), com os 65
   achados citando o trecho de origem — quem lê a auditoria não precisa dela
 - **Fotos das linhas 475–484** da planilha real (colunas A–K e K–R). Evidência
   secundária, usada para confirmar ou contestar a especificação
