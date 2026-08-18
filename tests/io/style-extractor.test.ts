@@ -17,8 +17,10 @@ describe('extractStyleKey — TD-05', () => {
     )
   })
 
-  // ExcelJS OMITE o campo tint quando vale zero; o perfilador o escreve.
-  // Sem esta normalizacao a linha branca do arquivo real cairia em quarentena.
+  // O Excel OMITE o atributo tint quando vale zero — a linha branca do arquivo
+  // real e <fgColor theme="0"/> —, e o perfilador o escreve. Sem esta
+  // normalizacao as duas formas dariam chaves diferentes, e a linha branca
+  // cairia em quarentena.
   it('normaliza tint ausente para 0.0000', () => {
     expect(extractStyleKey(pattern({ theme: 0 }))).toBe('theme:0|tint:0.0000')
     expect(extractStyleKey(pattern({ theme: 0, tint: 0 }))).toBe('theme:0|tint:0.0000')
