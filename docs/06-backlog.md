@@ -3452,6 +3452,63 @@ inviolável 10 passa a valer **por construção**, não por convenção. E o
 
 ### H-34 — Configurar o caminho da planilha pela tela, sem editar JSON
 
+> ✅ **CONCLUÍDA em 18/08/2026.** 39 testes próprios — 13 em
+> `tests/app/config-write.test.ts`, 9 em `tests/http/config.test.ts`, 9 em
+> `web/tests/WorkbookSetup.test.tsx`, 6 acrescentados a
+> `tests/app/process-store.test.ts` e 2 a `web/tests/App.test.tsx`; suíte total
+> em **1224**. Seis divergências resolvidas na abertura, e duas delas paravam a
+> implementação.
+>
+> **A história era impossível como escrita, e a fatia pegou isso antes do
+> código.** `loadConfig` lançava `ConfigError` quando o arquivo de configuração
+> não existia **ou** quando `workbookPath` apontava para arquivo ausente, e
+> `main` respondia com `process.exit(1)`. Como o `app.json` não é versionado,
+> numa instalação nova o processo morria **antes** de servir a tela que existe
+> para consertar o caminho. A partida passou a tolerar exatamente essas duas
+> condições; JSON malformado, `port` fora de faixa e `firstDataRow ≤ headerRow`
+> continuam matando a partida, porque nenhuma delas é consertável pela tela. As
+> três asserções que fixavam o comportamento antigo foram **invertidas, não
+> apagadas**.
+>
+> **O watcher é o único consumidor que guarda cópia do caminho**, e por isso é o
+> único recriado na troca. Todos os demais — store, write-guard, as onze rotas —
+> leem `config.workbookPath` por referência do mesmo objeto, e
+> `reconfigureWorkbook` o **muta**. Trocar o objeto deixaria a rota de saúde
+> respondendo o caminho velho enquanto a leitura usa o novo. O `write-guard`
+> ganhou `retargetWatcher` pelo mesmo motivo: segurando o observador antigo, ele
+> pausaria um watcher que não observa mais nada, e o novo dispararia releitura no
+> meio da gravação.
+>
+> **A serialização mora no store, não na rota**, porque é lá que reconfigurar no
+> meio de uma leitura gravaria o estado do arquivo antigo por cima do novo.
+>
+> **Conferido contra a planilha real:** 649 processos e 0 em quarentena pelo
+> caminho configurado; troca com o processo no ar devolvendo o mesmo hash e os
+> mesmos 649; caminho inválido recusado **antes** da gravação, com o estado
+> seguindo `pronto`; e planilha ilegível produzindo `degradado` com `lastReadAt`
+> nulo, que é exatamente o gatilho da tela.
+>
+> **Um erro de implementação escreveu no arquivo de configuração do operador, e
+> a correção não foi só consertar o erro.** Um caminho de configuração foi
+> passado como sexto argumento de `buildServer`, que só tinha cinco: o argumento
+> foi ignorado em silêncio e o teste gravou no arquivo real. Restaurado — as 8
+> chaves estavam intactas, porque a gravação preserva os demais campos.
+> `saveWorkbookPath` passou a **recusar o caminho padrão sob `NODE_ENV=test`**,
+> como `history-store` faz desde `H-28`: é a regra inviolável 7, e sem a recusa
+> o mesmo engano volta a ser silencioso.
+>
+> **A guarda de âncora de `tests/repo/contratos.test.ts` tinha falso positivo.**
+> Ela lia a URL da rota nova como caminho de repositório, porque o primeiro
+> segmento é homônimo de um diretório real, e cobrava um arquivo que nunca
+> existiria. O `REPO_PATH` passou a excluir o que vem precedido de barra:
+> caminho de repositório é citado relativo, URL não. Sem isso, o nome da rota
+> seria empurrado para fora do comentário que a documenta.
+>
+> **`CONFIG_NAO_GRAVAVEL` entrou no catálogo de erros**, além do
+> `CAMINHO_INVALIDO` que a história nomeia: o caso-limite do arquivo de
+> configuração somente-leitura pede 400, e reaproveitar `CAMINHO_INVALIDO` diria
+> que o problema é o caminho quando ele está correto.
+
 **Objetivo:** o operador apontar a aplicação para a planilha dele — e nunca mais
 precisar apontar de novo.
 
