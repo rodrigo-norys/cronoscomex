@@ -190,6 +190,8 @@ As 33 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
 | H-32 | §5 abaixo (RF-16, observabilidade) | ✅ **Concluída.** Sinal de interferência externa no arquivo (A-58). Antecipada para destravar `H-15`. Sinal, nunca ação: a leitura acontece igual |
 | H-33 | Cadeia base | ✅ **Concluída.** Leitor sobre `fflate`: nenhuma aba fora de escopo é descomprimida, `/tmp` fica intocado e o `exceljs` saiu do projeto. O erro não determinístico do portão já tinha sido corrigido fora dela, em 06/08/2026 |
 | H-34 | Cadeia base | ✅ **Concluída.** Caminho da planilha configurável pela tela, com troca em execução — o operador nunca edita JSON. A partida deixou de exigir planilha válida: sem ela a aplicação sobe e abre na tela de configuração |
+| H-44 | Cadeia base | ✅ **Concluída.** A partida numa máquina limpa chega ao painel: o atalho deixou de barrar por `config/app.json` ausente — ele apenas informa, e a tela cria o arquivo ao salvar o caminho. `GET /api/config/workbook` virou o inventário dos oito campos, com a origem de cada valor. `scripts/iniciar.cmd` **não foi executado**: é batch do Windows, e o que ele passou a fazer está em `PD-06` |
+| H-45 | Cadeia base | ⬜ **Aberta.** O checklist das etapas de partida no painel, o botão de revalidação sem reexecutar o atalho, e o `config/app.json.exemplo` fiel à forma que a aplicação grava. Nasceu do corte de `H-44`, que chegaria a nove arquivos |
 
 ---
 

@@ -60,14 +60,20 @@ A aplicação executa TypeScript diretamente, com `--experimental-strip-types`,
 que só existe a partir do Node 22. Versão anterior falha com `bad option`, que
 não diz o que fazer.
 
-### 3. Instale as dependências e compile a interface
+### 3. Compile a interface — ou deixe o atalho fazer
 
-Na pasta do projeto, uma vez:
+Se você tem um terminal à mão, na pasta do projeto, uma vez:
 
 ```bash
 npm ci
 npm run build
 ```
+
+**Esquecer este passo não trava a instalação.** `dist/` está no `.gitignore`,
+então numa extração nova a interface nunca vem compilada — e por isso o atalho
+do passo 5 **oferece compilar por você**, com confirmação, quando encontra a
+pasta ausente. Ele só baixa as dependências se `node_modules` também faltar, o
+que preserva a máquina que já tem tudo e está sem internet.
 
 ### 4. Aponte para a planilha — pela tela
 
@@ -80,6 +86,16 @@ aberturas seguintes a leitura acontece sozinha.
 Para trocar de arquivo depois — na virada de ano, por exemplo — a mesma tela
 está em `/configuracao`, alcançável pelo painel de saúde da Página Inicial. A
 troca vale de imediato, sem reiniciar.
+
+**`config/app.json` não precisa existir antes.** Ele é criado sozinho quando
+você salva o caminho na tela, já com os demais campos nos valores padrão. O
+atalho avisa que o arquivo ainda não existe e sobe assim mesmo — até `H-44` ele
+parava aqui, mandando copiar um arquivo e editar JSON à mão.
+
+A própria tela mostra **o que está configurado**: os oito campos, o valor em uso
+e a origem de cada um — se veio do arquivo ou se é o padrão aplicado. Para o
+caminho da planilha ela responde quatro coisas separadamente: está informado,
+existe no disco, pode ser lido, e a aba foi encontrada na última leitura.
 
 <details>
 <summary>Se preferir configurar por arquivo</summary>
@@ -98,9 +114,9 @@ da organização.
 
 </details>
 
-Os demais campos têm padrão utilizável, e cada um traz um comentário `_comentario`
-explicando o que é. Eles continuam sendo editados no arquivo — a tela configura
-**apenas** o caminho da planilha. Dois merecem atenção:
+Os demais campos têm padrão utilizável. Eles continuam sendo editados no arquivo
+— a tela configura **apenas** o caminho da planilha, e mostra os outros. Dois
+merecem atenção:
 
 | Campo | O que muda |
 |---|---|
@@ -111,9 +127,21 @@ explicando o que é. Eles continuam sendo editados no arquivo — a tela configu
 
 Duplo clique em **`scripts\iniciar.cmd`**.
 
-Ele confere o Node, a configuração e a interface compilada, sobe o servidor e
-abre o navegador em `http://127.0.0.1:5173`. **Fechar a janela encerra a
-aplicação** — é assim que se desliga.
+Ele confere **três coisas, e só três** — Node instalado, Node 22 ou maior, e a
+interface compilada —, sobe o servidor e abre o navegador em
+`http://127.0.0.1:5173`. **Fechar a janela encerra a aplicação** — é assim que
+se desliga.
+
+São três porque são as únicas anteriores ao navegador por natureza: sem elas não
+há servidor, e sem servidor não há tela para reportar coisa alguma. Tudo o mais
+— o caminho da planilha, o arquivo de configuração, os limiares — é resolvido no
+painel. E cada uma das três traz a receita completa: o que baixar, de onde, o
+que fazer, e que basta executar o atalho de novo depois.
+
+Um caso continua parando a partida de propósito: `config/app.json` **existir e
+estar corrompido**. Aplicar os padrões por cima de uma configuração que existe
+trocaria uma falha visível por uma aplicação se comportando errado em silêncio.
+A mensagem ensina a apagar o arquivo pelo Explorer, e a tela o recria.
 
 O servidor escuta **exclusivamente** em `127.0.0.1` (RNF-29). Nenhuma outra
 máquina da rede alcança o painel, e é isso que torna a ausência de senha uma
