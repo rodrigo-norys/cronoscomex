@@ -228,6 +228,8 @@ export function workbookConfigFixture(
     readable: true,
     sheetPresent: true,
     configFile: { path: 'config/app.json', present: true, parseable: true },
+    // A partida completa: e o estado de quem ja tem o painel na frente (H-36).
+    runtime: { nodeVersion: '22.23.2', webBuilt: true },
     fields: [
       {
         key: 'workbookPath',

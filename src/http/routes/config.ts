@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs'
+import { join } from 'node:path'
 import type { FastifyInstance } from 'fastify'
 import {
   type AppConfig,
@@ -21,6 +23,7 @@ import {
 } from '../../app/process-store.ts'
 import { apiError } from '../errors.ts'
 import { buildHealthResponse, type HealthResponse } from './health.ts'
+import { WEB_DIST } from './static.ts'
 
 /**
  * GET e PUT /api/config/workbook — contrato em docs/05-contratos-api.md.
@@ -62,6 +65,20 @@ export interface WorkbookConfigResponse {
     parseable: boolean
   }
   fields: ConfigFieldReport[]
+  /**
+   * As etapas de partida que o navegador CONSEGUE conferir (H-36).
+   *
+   * As duas primeiras do `scripts/iniciar.cmd` — Node instalado e Node >= 22 —
+   * nao entram: a pagina e servida PELO Node, entao chegar aqui ja e a prova
+   * delas, e reporta-las como pendentes seria impossivel por construcao. O que
+   * sobra e o que muda depois da partida.
+   */
+  runtime: {
+    /** `process.versions.node` real, e nao o de `.nvmrc`: e o que esta rodando. */
+    nodeVersion: string
+    /** `dist/web/index.html` existe AGORA — a SPA em memoria nao prova nada. */
+    webBuilt: boolean
+  }
 }
 
 function sheetPresent(config: AppConfig, state: StoreState): boolean | null {
@@ -103,6 +120,13 @@ export function registerConfigRoutes(
    * teste alcanca — por isso a injecao chega ate aqui, e nao para no modulo.
    */
   openDialog: () => Promise<string | null> = openWorkbookDialog,
+  /**
+   * Onde `vite build` escreve. Ponto de injecao pela regra inviolavel 7: o
+   * portao roda `test` ANTES de `build`, e no CI o checkout e limpo — um teste
+   * que lesse `dist/web` do disco ficaria verde na maquina de quem acabou de
+   * compilar e vermelho no CI, sem nada ter mudado no codigo.
+   */
+  webRoot: string = WEB_DIST,
 ): void {
   app.get('/api/config/workbook', (): WorkbookConfigResponse => {
     const check = checkWorkbookPath(config.workbookPath)
@@ -120,6 +144,12 @@ export function registerConfigRoutes(
         parseable: report.parseable,
       },
       fields: report.fields,
+      runtime: {
+        nodeVersion: process.versions.node,
+        // Consultado a cada requisicao, e nao na partida: e o que faz o botao
+        // Atualizar valer alguma coisa depois de o operador compilar.
+        webBuilt: existsSync(join(webRoot, 'index.html')),
+      },
     }
   })
 

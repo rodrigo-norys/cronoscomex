@@ -59,6 +59,8 @@ export function buildServer(
   configPath?: string,
   /** Abre o seletor do sistema (H-37). Ausente, vale o dialogo do Windows. */
   openDialog?: () => Promise<string | null>,
+  /** Raiz da interface compilada (H-36). Ausente, vale `dist/web`. */
+  webRoot?: string,
 ): FastifyInstance {
   // Silencioso sob teste: a saida do Vitest e o relatorio, nao o log do servidor.
   const app = Fastify({
@@ -66,7 +68,7 @@ export function buildServer(
   })
 
   registerHealthRoute(app, config, store)
-  registerConfigRoutes(app, config, store, applyWorkbookPath, configPath, openDialog)
+  registerConfigRoutes(app, config, store, applyWorkbookPath, configPath, openDialog, webRoot)
   registerQuarantineRoute(app)
   registerReloadRoute(app, store)
   registerIndicatorsRoute(app, config, store)
@@ -80,7 +82,7 @@ export function buildServer(
 
   // Por ultimo: `GET /*` e o catch-all, e registra-la antes nao mudaria o
   // roteamento — mas leria como se as rotas de API fossem o caso excepcional.
-  registerStaticRoute(app)
+  registerStaticRoute(app, webRoot)
 
   return app
 }
