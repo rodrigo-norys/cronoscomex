@@ -195,6 +195,22 @@ describe('process-store — degradacao', () => {
     expect(state.lastReadAt).toEqual(boa.lastReadAt)
   })
 
+  /**
+   * H-35, medido na primeira execucao em Windows. Sem caminho configurado a
+   * leitura falha com ENOENT como qualquer outra, e a frase saia truncada —
+   * "nao foi encontrada em ." —, afirmando que havia um caminho que sumiu.
+   * Ausencia de configuracao nao e arquivo ausente (regra inviolavel 3).
+   */
+  it('sem caminho configurado, a razao fala de configuracao e nao de arquivo', async () => {
+    start({ config: config({ workbookPath: '' }) })
+    await reload()
+    const state = getState()
+
+    expect(state.state).toBe('degradado')
+    expect(state.degradedReason).toBe('Nenhuma planilha configurada ainda.')
+    expect(state.degradedReason).not.toContain('nao foi encontrada')
+  })
+
   it('vira degradado quando o arquivo e ilegivel, preservando a ultima leitura', async () => {
     start()
     await reload()

@@ -12,7 +12,7 @@ import { DEFAULT_HISTORY_PATH, recordChanges } from '../io/history-store.ts'
 import { detectInterference } from '../io/interference-detector.ts'
 import { buildReport, DEFAULT_QUARANTINE_PATH, writeReport } from '../io/quarantine-reporter.ts'
 import { type ReadResult, readWorkbook } from '../io/xlsx-reader.ts'
-import type { AppConfig } from './config.ts'
+import { type AppConfig, WORKBOOK_UNSET } from './config.ts'
 import { type Logger, NULL_LOGGER, type ReadErrorCode } from './logger.ts'
 
 /**
@@ -165,6 +165,15 @@ function toProjected(edits: PendingEdit[], colorMap: readonly ColorMapEntry[]): 
 }
 
 function describeFailure(error: unknown, workbookPath: string): string {
+  // ANTES de interpretar o errno: sem caminho configurado a leitura falha com
+  // ENOENT, e a frase saia como "nao foi encontrada em ." — truncada, e
+  // afirmando que havia um caminho que sumiu. Ausencia de configuracao e
+  // arquivo ausente sao coisas diferentes (regra inviolavel 3), e e a primeira
+  // que o operador ve na primeira execucao. Medido em Windows, H-35.
+  if (workbookPath === WORKBOOK_UNSET) {
+    return 'Nenhuma planilha configurada ainda.'
+  }
+
   const code = (error as NodeJS.ErrnoException).code
   if (code === 'ENOENT') {
     return `A planilha nao foi encontrada em ${workbookPath}. Confira se a pasta do OneDrive esta sincronizada.`
