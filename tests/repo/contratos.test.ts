@@ -56,7 +56,15 @@ import { buildServer } from '../../src/http/server.ts'
  *    `H-21` trouxe. Os limiares saem do texto da própria decisão, então mudá-la
  *    muda a expectativa. O que a asserção defende não é a conclusão, é a
  *    observação: gatilho declarado e nunca conferido dá a impressão de que a
- *    decisão está sendo revisitada quando não está.
+ *    decisão está sendo revisitada quando não está;
+ * 8. **o resumo do backlog concorda com os blocos das histórias.** As marcas por
+ *    história congelaram em 07/08/2026, com `H-17`, e a tabela seguiu afirmando
+ *    que `H-13` estava aberta até 18/08 — contra o bloco `✅ CONCLUÍDA` dela e a
+ *    linha dela em `docs/09-rastreabilidade.md` §4. Foi a **única** coisa no
+ *    repositório dizendo isso, e custou uma pergunta sobre história fechada há
+ *    doze dias. O que a asserção defende não é a marca ✅, que passou a ser por
+ *    épico de propósito: é o **total**, que é computável e por isso não
+ *    envelhece em silêncio.
  *
  * Provado que morde, nas duas direções: bloco que a rota serve e o documento não
  * declara reprova, e campo que o documento promete e a rota não serve também.
@@ -685,5 +693,64 @@ describe('os gatilhos de reavaliação de D-16 foram observados', () => {
       'web/src/App.tsx carrega página por `lazy`, que é o gatilho de carregamento por rota de ' +
         'D-16. Reavalie a decisão e registre o resultado na linha dela.',
     ).toBe(true)
+  })
+})
+
+const BACKLOG = readFileSync('docs/06-backlog.md', 'utf-8')
+
+/** Uma entrada por `### H-NN`, com o tamanho declarado e se há bloco de conclusão. */
+function historiasDoBacklog(): { id: string; tamanho: string; concluida: boolean }[] {
+  return BACKLOG.split(/\n(?=### H-\d+)/).flatMap((bloco) => {
+    const id = /^### (H-\d+)/.exec(bloco)?.[1]
+    if (id === undefined) return []
+
+    return [
+      {
+        id,
+        tamanho: /\*\*Tamanho:\*\*\s*(\w)/.exec(bloco)?.[1] ?? '?',
+        concluida: /✅ \*\*CONCLUÍDA/.test(bloco),
+      },
+    ]
+  })
+}
+
+/**
+ * Os cinco números da linha de Total: o total, quantas estão concluídas, e a
+ * contagem por tamanho. Lê da linha, e não de lista fixa — mudar a tabela muda
+ * a expectativa, como em todas as outras asserções deste arquivo.
+ */
+function totalDeclarado(): { total: number; concluidas: number; p: number; m: number; g: number } {
+  const linha = BACKLOG.split('\n').find((candidata) => candidata.startsWith('| **Total**'))
+  if (linha === undefined) throw new Error('a tabela de resumo não tem linha de Total')
+
+  const numeros = [...linha.matchAll(/\*\*(\d+)\*\*|(\d+) concluídas/g)].map((achado) =>
+    Number(achado[1] ?? achado[2]),
+  )
+  if (numeros.length !== 5) {
+    throw new Error(`a linha de Total traz ${numeros.length} números, e a asserção espera 5`)
+  }
+
+  const [total, concluidas, p, m, g] = numeros as [number, number, number, number, number]
+  return { total, concluidas, p, m, g }
+}
+
+describe('o resumo do backlog concorda com as histórias', () => {
+  /**
+   * Guarda contra guarda verde por vacuidade: se o parse dos blocos quebrar, a
+   * asserção seguinte passaria comparando zero com zero.
+   */
+  it('encontra as histórias — âncora contra guarda verde por vacuidade', () => {
+    expect(historiasDoBacklog().length).toBeGreaterThan(30)
+  })
+
+  it('o total, as concluídas e os tamanhos batem com os blocos', () => {
+    const todas = historiasDoBacklog()
+    const declarado = totalDeclarado()
+
+    expect(declarado.total).toBe(todas.length)
+    expect(declarado.concluidas).toBe(todas.filter((historia) => historia.concluida).length)
+    expect(declarado.p).toBe(todas.filter((historia) => historia.tamanho === 'P').length)
+    expect(declarado.m).toBe(todas.filter((historia) => historia.tamanho === 'M').length)
+    expect(declarado.g).toBe(todas.filter((historia) => historia.tamanho === 'G').length)
   })
 })

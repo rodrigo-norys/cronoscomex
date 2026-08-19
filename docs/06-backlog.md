@@ -4193,9 +4193,9 @@ E qualquer correção de código: os cinco procedimentos produzem registro.
 | E4 — Interface ✅ | H-15 … H-22 | 6 | 2 | 0 |
 | E5 — Edição e escrita ✅ | H-23 … H-27 | 0 | 5 | 0 |
 | E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
-| E7 — Operação | H-30 ✅, H-31 ✅, H-32 ✅, H-33 ✅, **H-34 aberta** | 3 | 2 | 0 |
+| E7 — Operação ✅ | H-30 … H-34 | 3 | 2 | 0 |
 | E8 — Estilização | **H-35 … H-43, todas abertas** | 1 | 8 | 0 |
-| **Total** | **43** — 33 concluídas, 10 abertas | **17** | **26** | **0** |
+| **Total** | **43** — 34 concluídas, 9 abertas | **17** | **26** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até

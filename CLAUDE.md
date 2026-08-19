@@ -24,12 +24,16 @@ antes de decidir.
 5. **`src/domain/` não importa `src/io/`, `src/app/`, `src/http/` nem `web/`.**
    O lint verifica e quebra a build.
 6. **Nenhuma regra de negócio no cliente ou nas rotas.** Só em `src/domain/`.
-7. **Nenhum teste toca estado real** — nem a planilha, nem `data/`. A suíte roda
-   sobre `tests/fixtures/*.xlsx`, versionadas, e sobre diretório temporário para
-   tudo que a aplicação grava. Todo caminho de `data/` é ponto de injeção, e
-   `data/history.jsonl` vai além: `history-store` **recusa** o padrão sob
-   `NODE_ENV=test`. Medido em `H-28` — sem a recusa, a suíte gravou 649 eventos
-   no arquivo do operador, e um teste passou a reprovar pelo estado da máquina.
+7. **Nenhum teste toca estado real** — nem a planilha, nem `data/`, nem
+   `config/app.json`. A suíte roda sobre `tests/fixtures/*.xlsx`, versionadas, e
+   sobre diretório temporário para tudo que a aplicação grava. Todo caminho que a
+   aplicação escreve é ponto de injeção, e **dois recusam o padrão sob
+   `NODE_ENV=test`**: `history-store`, medido em `H-28` — sem a recusa, a suíte
+   gravou 649 eventos no arquivo do operador, e um teste passou a reprovar pelo
+   estado da máquina —, e `saveWorkbookPath`, medido em `H-34`: um ponto de
+   injeção que a assinatura de `buildServer` ainda não tinha fez o teste
+   sobrescrever a configuração do operador **em silêncio**, porque a gravação
+   preserva os demais campos.
 8. **Nenhum dado pessoal em log.** Processos são referenciados por `ref` e
    `sourceRow` — nunca por nome de cliente, importador ou mercadoria.
 9. **Nunca use `workbook.xlsx.writeFile()` do ExcelJS.** Ele perde formatação
