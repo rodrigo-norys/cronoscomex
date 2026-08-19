@@ -4130,15 +4130,27 @@ E qualquer correção de código: os cinco procedimentos produzem registro.
 
 | Épico | Histórias | P | M | G |
 |---|---|---|---|---|
-| E1 — Fundação e perfilamento ✅ | H-01 ✅, H-02 ✅ | 0 | 2 | 0 |
-| E2 — Leitura e normalização ✅ | **H-03 ✅ H-04 ✅ H-05 ✅ H-06 ✅ H-07 ✅ H-08 ✅** | 3 | 3 | 0 |
-| E3 — Indicadores e alertas | **H-09 ✅ H-10 ✅ H-11 ✅ H-12 ✅**, H-13, H-14 | 3 | 3 | 0 |
-| E4 — Interface | **H-15 ✅ H-16 ✅ H-17 ✅**, H-18 … H-22 | 6 | 2 | 0 |
-| E5 — Edição e escrita | H-23 … H-27 | 0 | 5 | 0 |
-| E6 — Histórico | H-28, H-29 | 1 | 1 | 0 |
-| E7 — Operação | H-30, **H-31 ✅**, H-32, H-33, H-34 | 3 | 2 | 0 |
-| E8 — Estilização | H-35 … H-43 | 1 | 8 | 0 |
-| **Total** | **43** | **17** | **26** | **0** |
+| E1 — Fundação e perfilamento ✅ | H-01, H-02 | 0 | 2 | 0 |
+| E2 — Leitura e normalização ✅ | H-03 … H-08 | 3 | 3 | 0 |
+| E3 — Indicadores e alertas ✅ | H-09 … H-14 | 3 | 3 | 0 |
+| E4 — Interface ✅ | H-15 … H-22 | 6 | 2 | 0 |
+| E5 — Edição e escrita ✅ | H-23 … H-27 | 0 | 5 | 0 |
+| E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
+| E7 — Operação | H-30 ✅, H-31 ✅, H-32 ✅, H-33 ✅, **H-34 aberta** | 3 | 2 | 0 |
+| E8 — Estilização | **H-35 … H-43, todas abertas** | 1 | 8 | 0 |
+| **Total** | **43** — 33 concluídas, 10 abertas | **17** | **26** | **0** |
+
+**O ✅ marca o épico, não a história.** As marcas por história congelaram em
+07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até
+18/08/2026 — foi a única coisa no repositório dizendo isso, contra o bloco
+`✅ CONCLUÍDA` da própria história e a linha dela em `09-rastreabilidade.md §4`.
+Com 33 de 43 fechadas, marcar uma a uma é o que envelhece; o que o leitor precisa
+é **onde estão as abertas**. A fonte de verdade do estado de uma história
+continua sendo o bloco dela.
+
+`H-30` conta como concluída **com a ressalva que o bloco dela declara**: o
+`iniciar.cmd` nunca foi executado, e `PD-06` guarda o que falta conferir na
+máquina do operador.
 
 **Nenhuma história é G.** As duas candidatas naturais foram quebradas: a
 escrita no `.xlsx` virou `H-24` (cirurgia), `H-25` (defesas) e `H-26` (comando
