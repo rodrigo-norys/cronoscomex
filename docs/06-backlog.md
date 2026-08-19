@@ -3536,6 +3536,596 @@ conteúdo, **nunca o caminho** — e é o caminho que o watcher precisa.
 
 ---
 
+## Épico E8 — Estilização
+
+Nasce da revisão de `docs/estilizacao/RESULTADO.md` (18/08/2026), que percorreu
+a casca e as sete páginas contra o corpus verificável de
+`docs/estilizacao/corpus-estilo.md` e registrou **21 achados** sobre **25
+arquivos** de `web/src/`. As nove histórias abaixo são as ondas daquele plano
+convertidas em fatias; a ordem entre elas é a dependência técnica que ele
+declara, não a gravidade do achado.
+
+**Duas determinações do passo zero valem para o épico inteiro** e não se
+re-litigam: há roteamento com URIs distintas (`web/src/router.ts:30-45`), logo
+as sete telas são um *set of web pages* e **SC 3.2.3 e SC 3.2.4 incidem** — as
+regras `C04`, `C05`, `C06` e `C10` são normativas aqui, não preferência. E
+`web/src/index.css` tem uma linha (`@import "tailwindcss";`), sem bloco
+`@theme` e sem `color-scheme`: `C01` e `D01` estão violadas por construção, e é
+isso que `H-35` fecha primeiro.
+
+**As 23 regras do corpus avaliadas e dispensadas não geram história, e não
+devem ser reabertas.** Sem achado: `A03` (0 `outline-none`), `A04` (0 `onClick`
+em elemento não interativo), `A05` (os 2 alvos abaixo de 24 px satisfazem a
+exceção *Spacing*), `A08`, `A13` (`web/index.html:2` já declara
+`lang="pt-BR"`), `A14` (é navegação de links, não híbrido de abas — o APG Tabs
+não incide), `A15` (0 `sticky`), `A16` (0 `tabIndex` escrito), `C03` (o único
+`style={{}}` é a largura dinâmica de `RankingBar.tsx:96`), `C06`, `C07`, `C08`
+(um `<h1>` só, nenhum salto de nível), `R02`, `R05`, `D01`. Não aplicáveis:
+`A07`, `A09`, `A10` (0 `animate-*`, 0 `transition-*`) e `D03`–`D07`
+(**0 ocorrências de `dark:` no conjunto**). O `ACHADO 14` foi emitido e
+**dispensado no próprio corpus**: é `[NÃO NORMATIVO]`, e o anel de foco padrão
+do navegador atende `SC 2.4.7` — adotar anel autoral criaria obrigação que hoje
+não existe.
+
+**A onda 6 do plano (modo escuro) não virou história.** Ela existe lá para
+registrar a condicionalidade, e fecha vazia: `D03`–`D07` exigem ao menos uma
+ocorrência de `dark:`, e há zero. O único item de modo escuro com trabalho real
+é `D02` (`color-scheme`), que está em `H-35`. Introduzir a variante `dark:` é
+funcionalidade nova, fora deste épico e fora do plano.
+
+### H-35 — Declarar a camada de tema e migrar a casca
+
+**Objetivo:** existir um vocabulário semântico de cor, com os valores já
+corrigidos para contraste, e a casca inteira consumindo só ele.
+
+> **É a única história do épico que decide vocabulário.** As oito seguintes são
+> substituição mecânica, e só são mecânicas porque os nomes e os valores foram
+> fixados aqui. Token que faltar nesta fatia reabre `web/src/index.css` em todas
+> as outras — o defeito que o plano de ondas existe para evitar.
+>
+> **Os valores dos tokens já embutem as correções de contraste.** `ACHADO 6`
+> mede `border-slate-300` a **1.36:1** contra `bg-slate-100`, para um piso de
+> 3:1 em `SC 1.4.11`; `ACHADO 3` mede `text-slate-400` a **2.63:1** sobre
+> branco, para um piso de 4.5:1 em `SC 1.4.3`. Definir
+> `--color-border-control` e `--color-text-muted` já no valor que passa faz a
+> correção viajar com a substituição, em vez de virar uma segunda passada pelos
+> mesmos 24 arquivos.
+
+**Arquivos:**
+- `web/src/index.css` — o bloco `@theme`, o `color-scheme` e as três `@utility`
+- `web/src/App.tsx` — casca, navegação, faixa de erro; adota `panel-loading`
+- `web/src/components/FilterBar.tsx` — bordas de controle, faixa de erro
+- `web/src/components/StatusBanner.tsx` — severidades erro e aviso
+- `web/src/components/RefreshButton.tsx` — borda de controle
+- `web/src/components/ApplyChangesButton.tsx` — superfícies e estado
+- `web/src/components/ConflictDialog.tsx` — os dois desviantes de severidade
+- `web/src/components/MultiSelect.tsx` — `text-slate-400` e bordas de controle
+
+**Contrato fixado:**
+
+```css
+/* web/src/index.css */
+@theme {
+  --color-surface-base:    /* fundo da aplicacao      — era bg-slate-100 */
+  --color-surface-raised:  /* cartoes e secoes        — era bg-white     */
+  --color-surface-sunken:  /* barra de filtros        — era bg-slate-50  */
+  --color-text-primary:    /* era text-slate-900 */
+  --color-text-secondary:  /* era text-slate-600 */
+  --color-text-muted:      /* ACHADO 3 e 4: substitui slate-400 e slate-300 */
+  --color-border-subtle:   /* era border-slate-200 */
+  --color-border-strong:   /* era border-slate-800 */
+  --color-border-control:  /* ACHADO 6: substitui border-slate-300 */
+  --color-state-error-bg / -border / -fg      /* ACHADO 9  */
+  --color-state-warning-bg / -border / -fg    /* ACHADO 10 */
+  --color-meter-track / --color-meter-fill    /* ACHADO 7  */
+  --color-chart-series-1 / -2 / -3
+  --color-chart-axis / --color-chart-grid     /* ACHADO 8  */
+}
+:root { color-scheme: light; }               /* ACHADO 2 */
+
+@utility panel-loading { }   /* ACHADO 17 (a) */
+@utility panel-error   { }   /* ACHADO 17 (b) */
+@utility panel-no-read { }   /* ACHADO 17 (c) */
+```
+
+`color-scheme` vai em `web/src/index.css`, **não** em `web/index.html`: a camada
+de tema já vive no CSS, e nenhuma outra fatia do épico toca o HTML.
+
+**Critérios de aceite:**
+- **Dado** `web/src/index.css`, **quando** o épico abre, **então** ele contém um
+  bloco `@theme` com os treze grupos de token acima e `:root { color-scheme:
+  light; }` — hoje o arquivo tem uma linha só.
+- **Dado** os oito arquivos desta fatia, **então** `grep -E '(text|bg|border)-(slate|red|amber)-[0-9]'`
+  não encontra ocorrência em nenhum deles.
+- **Dado** `--color-border-control`, **então** sua razão contra
+  `--color-surface-base` é ≥ 3:1, medida pela conta de `SC 1.4.11` — hoje o par
+  `border-slate-300`/`bg-slate-100` está em 1.36:1 (`ACHADO 6`).
+- **Dado** `--color-text-muted`, **então** sua razão contra
+  `--color-surface-raised` é ≥ 4.5:1 — hoje `text-slate-400` sobre branco está
+  em 2.63:1 (`ACHADO 3`).
+- **Dado** `ConflictDialog.tsx:97` e `FilterBar.tsx:63`, **então** ambos usam o
+  mesmo trio `--color-state-error-*` dos outros onze locais de severidade
+  "erro", fechando os dois desviantes que `ACHADO 9` nomeia.
+- **Dado** `npm run verify`, **então** passa inteiro — suíte e build — sem
+  nenhum teste ajustado para acomodar a migração; a aplicação não pode ficar
+  com token declarado e nenhum consumidor.
+
+**Casos-limite:**
+- Token declarado e não consumido por nenhum dos oito arquivos → é vocabulário
+  para as fatias seguintes e **fica**; o critério de "nenhum consumidor" é sobre
+  a camada, não sobre cada token.
+- `@utility` criada aqui e adotada em `App.tsx:118` apenas → as outras seis
+  adoções são de `H-37` e `H-38`, e a `@utility` não pode depender delas.
+- `MultiSelect.tsx:85` usa `opacity-80` sobre dois fundos distintos → o alfa
+  fica como está; `VN-6` o mede, e trocar cor sob alfa sem medir seria inventar
+  número (regra inviolável 3).
+- Utilitário de paleta bruta que sobreviver em arquivo **fora** desta fatia →
+  não é regressão; a guarda automática só entra em `H-38`, quando os 24 já
+  migraram.
+
+**Fora desta história:** introduzir a variante `dark:` — `D03`–`D07` estão
+declaradas não aplicáveis no cabeçalho do épico. Também não entra o anel de
+foco autoral (`ACHADO 14`, `[NÃO NORMATIVO]`), nem `web/index.html`.
+
+**Dependências:** nenhuma.
+**Tamanho:** M (8 arquivos, 0 contrato novo — token de tema é *custom
+property* de build, não rota, campo de resposta nem formato de arquivo)
+
+---
+
+### H-36 — Migrar os componentes de dado
+
+**Objetivo:** os seis componentes que desenham dado passarem a consumir os
+tokens, com os três contrastes reprovados deles corrigidos.
+
+**Arquivos:**
+- `web/src/components/AlertRow.tsx` — `text-slate-400`, badge de urgência
+- `web/src/components/ArrivalCalendar.tsx` — superfícies e bordas
+- `web/src/components/ProcessTable.tsx` — badge `bg-amber-200` desviante
+- `web/src/components/RankingBar.tsx` — trilho e preenchimento da barra
+- `web/src/components/StatCard.tsx` — `text-slate-300` e a variante urgência
+- `web/src/components/IngestionHealth.tsx` — severidade "erro" sem borda
+
+**Critérios de aceite:**
+- **Dado** os seis arquivos, **então** nenhum referencia passo bruto de paleta.
+- **Dado** `RankingBar.tsx:93-95`, **então** o preenchimento usa
+  `--color-meter-fill` e o trilho `--color-meter-track`, com razão ≥ 3:1 entre
+  os dois — hoje o par `bg-slate-400`/`bg-slate-100` está em 2.40:1
+  (`ACHADO 7`), e a barra é o único canal visual da comparação entre linhas.
+- **Dado** `StatCard.tsx:43`, **então** o traço de "sem leitura" usa
+  `--color-text-muted` — hoje `text-slate-300` sobre branco está em 1.49:1 para
+  um piso de 3:1, e é justamente o traço que precisa ser legível (`ACHADO 4`).
+- **Dado** `AlertRow.tsx:78` e `ProcessTable.tsx:92`, **então** ambos usam
+  `--color-state-warning-*`, fechando dois dos quatro desviantes de `ACHADO 10`.
+- **Dado** `IngestionHealth.tsx:54`, **então** recebe a borda que os outros onze
+  locais de severidade "erro" têm (`ACHADO 9`).
+- **Dado** `npm run verify`, **então** passa inteiro.
+
+**Casos-limite:**
+- `AlertRow.tsx:78` distingue urgência **só** por cor → a troca por token não
+  resolve isso; o canal textual é `ACHADO 18`, em `H-41`, e esta fatia não pode
+  fingir que fechou `A11`.
+- `ProcessTable.tsx:45` usa `border-slate-300` como seção vazia, não como
+  controle → vai para `--color-border-subtle` junto com o `ACHADO 15` em
+  `H-41`, e **não** para `--color-border-control`.
+- Componente que não tenha nenhuma cor de estado → migra só superfície, borda e
+  texto; ausência de estado não é omissão.
+
+**Fora desta história:** o rótulo textual da urgência (`ACHADO 18`) e a
+unificação de papel de UI (`ACHADO 15`) — ambos são onda 4, em `H-41`.
+
+**Dependências:** H-35
+**Tamanho:** M (6 arquivos, 0 contrato novo)
+
+---
+
+### H-37 — Migrar a superfície de edição
+
+**Objetivo:** os três formulários da fila de edições e a Página Detalhe
+consumirem os tokens, com as bordas de controle corrigidas.
+
+**Arquivos:**
+- `web/src/components/ColorFieldsForm.tsx` — borda de controle, faixa de erro
+- `web/src/components/EditProcessForm.tsx` — bordas de controle, faixa de erro
+- `web/src/components/PendingEditsPanel.tsx` — severidade "aviso"
+- `web/src/pages/ProcessDetail.tsx` — `text-slate-400`, adota `panel-*`
+
+**Critérios de aceite:**
+- **Dado** os quatro arquivos, **então** nenhum referencia passo bruto de paleta.
+- **Dado** `EditProcessForm.tsx:93` e `:110` e `ColorFieldsForm.tsx:141`,
+  **então** usam `--color-border-control`, fechando três dos treze controles de
+  `ACHADO 6`.
+- **Dado** `ProcessDetail.tsx:298`, **então** o valor ausente usa
+  `--color-text-muted` — terceira e última ocorrência de `ACHADO 3`.
+- **Dado** `ProcessDetail.tsx:49`, `:74` e `:83`, **então** adotam
+  `panel-error`, `panel-no-read` e `panel-loading` (`ACHADO 17`).
+- **Dado** `npm run verify`, **então** passa inteiro, incluindo
+  `web/tests/ProcessDetail.test.tsx` e `web/tests/ColorFieldsForm.test.tsx`
+  **sem alteração** — a migração é de cor, não de comportamento.
+
+**Casos-limite:**
+- `disabled:opacity-40` e `disabled:bg-slate-300` nos botões de enfileirar →
+  **não migram** e não entram na guarda: `SC 1.4.3` e `SC 1.4.11` isentam
+  componente de interface inativo, e o corpus registra a isenção.
+- `PendingEditsPanel.tsx:90` usa `line-through opacity-60` sobre `bg-amber-50` →
+  o alfa fica; `VN-6` mede.
+- `ProcessDetail.tsx:195` é painel `border-dashed` de ressalva, papel distinto
+  do cartão → migra para os tokens, mas **não** é unificado com os cartões.
+
+**Fora desta história:** os três painéis `border-dashed` continuarem distintos
+é decisão do corpus (`ACHADO 15`, nota), e não se re-litiga aqui.
+
+**Dependências:** H-35
+**Tamanho:** M (4 arquivos, 0 contrato novo)
+
+---
+
+### H-38 — Migrar as sete páginas e fechar a guarda de cor
+
+**Objetivo:** encerrar a onda 2 com as páginas migradas e uma guarda automática
+que impeça o passo bruto de voltar.
+
+> **A guarda entra aqui, e não em `H-35`, porque só aqui ela pode passar.**
+> Declarada antes, reprovaria a suíte enquanto `H-36` e `H-37` não tivessem
+> migrado — e uma guarda que nasce vermelha é desligada, não obedecida. Ao fim
+> desta fatia os 24 arquivos consumidores da onda 2 estão migrados, e a asserção
+> passa a valer sobre o conjunto inteiro.
+
+**Arquivos:**
+- `web/src/pages/Home.tsx` — cartões, faixa de erro, adota `panel-*`
+- `web/src/pages/Operational.tsx` — paginação, bordas, adota `panel-*`
+- `web/src/pages/Clients.tsx` — severidade "aviso", adota `panel-*`
+- `web/src/pages/Performance.tsx` — `text-amber-800` desviante, adota `panel-*`
+- `web/src/pages/Alerts.tsx` — `text-slate-300`, adota `panel-*`
+- `web/src/pages/History.tsx` — os seis literais do Recharts, adota `panel-*`
+- `web/src/pages/Placeholders.tsx` — superfícies e bordas
+- `tests/repo/estilo.test.ts` (novo) — a guarda de passo bruto
+
+**Contrato fixado:**
+
+```ts
+// tests/repo/estilo.test.ts — mesma forma das sete guardas de contratos.test.ts
+// Varre web/src/**/*.tsx e reprova se encontrar utilitario de passo bruto de
+// paleta — (text|bg|border|ring|fill|stroke)-(slate|red|amber|green|blue|...)-[0-9]
+// Isenta: disabled:* (SC 1.4.3 isenta componente inativo).
+```
+
+**Critérios de aceite:**
+- **Dado** `tests/repo/estilo.test.ts`, **quando** `npm run verify` roda,
+  **então** ele passa — e **então** nenhum dos 24 arquivos consumidores da onda
+  2 referencia passo bruto de paleta.
+- **Dado** um utilitário de passo bruto reintroduzido em qualquer arquivo de
+  `web/src/`, **então** a suíte reprova, citando arquivo e linha.
+- **Dado** `Operational.tsx:123` e `:134`, **então** usam
+  `--color-text-secondary` — hoje `text-slate-500` resolvido contra o
+  `bg-slate-100` da casca está em 4.35:1 para um piso de 4.5:1 (`ACHADO 5`), e
+  o mesmo utilitário aprova dentro de cartão branco.
+- **Dado** `History.tsx:46-48`, `:179`, `:183`, `:185`, `:189` e `:191`,
+  **então** os seis literais hexadecimais são lidos de `var(--color-chart-*)` —
+  hoje dois dos três literais de grade e eixo já divergem da paleta da 4.3.3
+  (`ACHADO 8`, prova de deriva).
+- **Dado** `Alerts.tsx:145`, **então** o traço usa `--color-text-muted`
+  (`ACHADO 4`, segunda ocorrência).
+- **Dado** as sete páginas, **então** cada uma adota `panel-loading`,
+  `panel-error` e `panel-no-read` onde hoje repete a string literal
+  (`ACHADO 17`); `web/tests/paginas-montadas.test.tsx` continua passando.
+
+**Casos-limite:**
+- `Placeholders.tsx` não aparece em `ACHADO 17` → migra cor e **não** adota as
+  `@utility`; forçá-las ali acoplaria papéis distintos.
+- `History.tsx` é a única página com Recharts, e o gráfico é carregado sob
+  demanda → a guarda varre o arquivo em disco, não a árvore renderizada, e o
+  `lazy` não a afeta.
+- A guarda encontrar passo bruto em arquivo legítimo de teste (`web/tests/`) →
+  o escopo é `web/src/`, declarado no próprio teste.
+- `#e2e8f0` coincide com `slate-200` da 4.3.3 e os outros dois não → todos os
+  seis viram token do mesmo jeito; coincidência não é motivo para manter literal.
+
+**Fora desta história:** a contenção de rolagem da tabela irmã do gráfico
+(`ACHADO 19`) e o `fontSize: 12` dos eixos (`ACHADO 21`) — são onda 5, em
+`H-42`, e entram lá para não abrir `History.tsx` uma vez a mais.
+
+**Dependências:** H-35
+**Tamanho:** M (8 arquivos, 0 contrato novo — o teste de guarda é asserção
+sobre o repositório, não contrato de API)
+
+---
+
+### H-39 — Live regions da casca e dos componentes
+
+**Objetivo:** as regiões de estado da casca existirem no DOM antes de receberem
+mensagem, para que o leitor de tela as anuncie.
+
+> **Um defeito, 23 pontos.** `ACHADO 11` não é uma coleção de descuidos: é o
+> mesmo padrão — `{erro && <p role="alert">{erro}</p>}` — repetido em toda a
+> aplicação. A MDN é explícita: *"Do not try to dynamically add/generate an
+> element with `role='alert'` that is already populated"*. O nó nasce já com o
+> texto, e o leitor de tela não tem o que comparar; a mensagem não é anunciada.
+>
+> **Esta fatia decide onde mora o contêiner que sobrevive.** As sete páginas de
+> `H-40` fazem `return` antecipado no estado de erro, e por isso precisam de uma
+> região que não desmonte junto — ela é criada aqui, em `App.tsx`. Por isso
+> `H-40` depende desta, e não o contrário.
+
+**Arquivos:**
+- `web/src/App.tsx` — a região persistente e a faixa de `healthError`
+- `web/src/components/StatusBanner.tsx` — `role="alert"` condicional
+- `web/src/components/FilterBar.tsx` — erro de opções de filtro
+- `web/src/components/ApplyChangesButton.tsx` — `role="status"` condicional
+- `web/src/components/IngestionHealth.tsx` — `role="alert"` condicional
+- `web/src/components/EditProcessForm.tsx` — erro de enfileiramento
+- `web/src/components/ColorFieldsForm.tsx` — os dois `role` condicionais
+
+**Critérios de aceite:**
+- **Dado** os sete arquivos, **então** nenhum monta um elemento com `role="alert"`
+  ou `role="status"` já populado: a região existe no DOM desde a montagem, e só
+  o texto dentro dela muda.
+- **Dado** a casca sem erro, **quando** `healthError` passa a ter valor,
+  **então** o elemento que recebe o texto **é o mesmo nó** que já estava no DOM
+  — verificável por `web/tests/App.test.tsx` guardando a referência antes e
+  depois.
+- **Dado** `App.tsx:114`, **então** a região persistente para as páginas existe
+  e é alcançável por elas, sem que a casca conheça nenhuma página (a casca não
+  calcula — regra inviolável 6).
+- **Dado** `web/tests/StatusBanner.test.tsx`, `FilterBar.test.tsx`,
+  `IngestionHealth.test.tsx`, `AplicarAlteracoes.test.tsx` e
+  `ColorFieldsForm.test.tsx`, **então** continuam passando.
+
+**Casos-limite:**
+- Região vazia montada permanentemente → não pode ficar com borda, fundo ou
+  espaçamento visíveis quando não há mensagem; o critério é ausência de caixa
+  vazia na tela, não ausência do nó.
+- `Home.tsx:114` acrescenta `role: 'alert'` por *spread* condicional a um nó já
+  populado — variante do mesmo defeito, mas está em `H-40`.
+- Duas mensagens simultâneas na mesma região → a última vence; empilhar
+  anúncios não é requisito de `SC 4.1.3`.
+
+**Fora desta história:** as sete páginas — são `H-40`. E qualquer troca de cor:
+esta fatia é independente de tema e não deve tocar utilitário de cor, mesmo nos
+quatro arquivos que `H-35` já migrou.
+
+**Dependências:** nenhuma — o plano declara a onda 3 paralelizável à onda 1.
+**Tamanho:** M (7 arquivos, 0 contrato novo)
+
+---
+
+### H-40 — Live regions das páginas, gráfico e forced-colors
+
+**Objetivo:** fechar o restante de `ACHADO 11` nas sete páginas e tirar do
+caminho de tabulação o gráfico que a árvore de acessibilidade não expõe.
+
+**Arquivos:**
+- `web/src/pages/Home.tsx` — o `role` por *spread* de `:114`
+- `web/src/pages/Operational.tsx` — `role` no `return` antecipado
+- `web/src/pages/Clients.tsx` — idem
+- `web/src/pages/Performance.tsx` — idem
+- `web/src/pages/Alerts.tsx` — idem
+- `web/src/pages/History.tsx` — idem, mais o gráfico e o seletor de janela
+- `web/src/pages/ProcessDetail.tsx` — idem
+
+**Critérios de aceite:**
+- **Dado** as sete páginas, **então** nenhuma monta `role="alert"` ou
+  `role="status"` já populado; as que hoje fazem `return` antecipado escrevem
+  na região persistente que `H-39` criou.
+- **Dado** `History.tsx:176-210`, **então** o `<LineChart>` recebe
+  `accessibilityLayer={false}` — hoje `node_modules/recharts/es6/container/RootSurface.js:45`
+  dá `tabIndex={0}` e `role="application"` ao `<svg>` **dentro** de uma subárvore
+  `aria-hidden="true"`, e o operador tabula para um elemento sem nome acessível
+  (`ACHADO 12`).
+- **Dado** o gráfico, **então** ele continua `aria-hidden="true"` e a tabela
+  irmã de `History.tsx:212-240` continua carregando os mesmos números — a
+  correção remove a parada órfã, não a alternativa textual.
+- **Dado** `History.tsx:150-158`, **então** o botão de janela selecionado ganha
+  um canal não-cromático (`border-2` contra `border`), porque sob
+  `forced-colors: active` o agente de usuário substitui a cor da borda e não a
+  espessura; o `aria-pressed` de `:151` já resolve o eixo programático
+  (`ACHADO 13`).
+- **Dado** `web/tests/History.test.tsx` e as outras seis suítes de página,
+  **então** passam.
+
+**Casos-limite:**
+- `MultiSelect.tsx:86` troca `▾` pelo número de itens marcados sob o mesmo par
+  `bg-slate-800`/branco → é `A17` **satisfeita**, padrão a preservar; não tocar.
+- Página cujo estado de erro nunca ocorre em teste → a região ainda precisa
+  existir; ausência de caminho de teste não dispensa a montagem.
+- `accessibilityLayer={false}` alterar o comportamento de tooltip do Recharts →
+  o gráfico já é `aria-hidden`, e o tooltip é ponteiro; se houver regressão
+  visual, ela aparece em `VN-3`.
+
+**Fora desta história:** o `fontSize: 12` dos eixos (`ACHADO 21`) e a contenção
+de rolagem da tabela (`ACHADO 19`) — onda 5, `H-42`.
+
+**Dependências:** H-39
+**Tamanho:** M (7 arquivos, 0 contrato novo)
+
+---
+
+### H-41 — Unificar papéis de UI e tirar a informação só-cor
+
+**Objetivo:** o mesmo papel de UI ter a mesma forma nas sete telas, a mesma ação
+ter o mesmo nome e papel, e nenhuma urgência ser transmitida apenas por cor.
+
+> **`SC 3.2.4` incide aqui porque há roteamento.** A determinação `Z1` do passo
+> zero mediu URIs distintas em `web/src/router.ts:30-45`: as sete telas são um
+> *set of web pages*, e a consistência entre elas deixa de ser preferência.
+> Fosse URI única, `C04` e `C05` seriam reportadas sem incidência normativa.
+
+**Arquivos:**
+- `web/src/components/AlertRow.tsx` — vira link; badge ganha rótulo textual
+- `web/src/components/ProcessTable.tsx` — seção vazia alinhada ao papel
+- `web/src/components/StatCard.tsx` — a `hint` da variante urgência
+- `web/src/pages/Home.tsx` — passa a `hint` nos dois cartões de urgência
+- `web/src/pages/History.tsx` — `EmptyHistory` alinhado ao papel
+- `web/src/pages/ProcessDetail.tsx` — "processo não encontrado" alinhado
+- `web/src/pages/Placeholders.tsx` — `NotFoundPage` alinhado
+
+**Critérios de aceite:**
+- **Dado** os quatro desviantes de `ACHADO 15` — `History.tsx:119`,
+  `ProcessDetail.tsx:61`, `Placeholders.tsx:33`, `ProcessTable.tsx:45` —
+  **então** usam `--color-border-subtle`, como os catorze locais do papel
+  majoritário; nenhum dos quatro codifica estado, logo o contraexemplo de `C04`
+  não os cobre.
+- **Dado** `AlertRow.tsx:45`, **então** abrir o detalhe é um `<a href>` com o
+  mesmo interceptador de clique de `ProcessTable.tsx:79-83`, e não um
+  `<button>` — hoje a mesma ação tem dois papéis e dois nomes acessíveis
+  (`ACHADO 16`).
+- **Dado** `AlertRow.tsx`, **então** o link tem `aria-label` explícito — hoje o
+  nome acessível é o conteúdo concatenado do bloco inteiro (REF, linha, ETA2,
+  rótulos e mensagem), contra `"NBSC260"` na tabela.
+- **Dado** `Home.tsx:37-38`, **então** os dois cartões de urgência passam a
+  `hint` já existente de `StatCard.tsx:17` com texto que marca a distinção —
+  hoje ela é só `border-amber-300`/`bg-amber-50` (`ACHADO 18`, `SC 1.4.1`).
+- **Dado** `AlertRow.tsx:81`, **então** o badge urgente traz prefixo textual;
+  `data-severity` não é exposto ao usuário e não conta como canal.
+- **Dado** os três painéis `border-dashed` de `Alerts.tsx:181`,
+  `Performance.tsx:248` e `ProcessDetail.tsx:195`, **então** continuam
+  distintos — são papel "ressalva", consistentes entre si.
+
+**Casos-limite:**
+- `Placeholders.tsx:19` usa a mesma tripla com `p-8` em vez de `p-4` → `C04`
+  fala de raio, borda e sombra, não de espaçamento; **não é achado**.
+- "Descartar" contra "Esvaziar a fila inteira" em `PendingEditsPanel.tsx` →
+  escopos realmente distintos, cobertos pelo contraexemplo de `C05`; não
+  unificar.
+- O dado de negócio codificado por cor na origem e já convertido em rótulo —
+  `ProcessDetail.tsx:24-42`, `ProcessTable.tsx:105-110`,
+  `ColorFieldsForm.tsx:41-48`, `AlertRow.tsx:27-34` — é `SC 1.4.1`
+  **satisfeito** e padrão a preservar: verificar que se mantém, nunca "corrigir".
+- Trocar `<button>` por `<a>` em `AlertRow` mudar o teclado (Enter/Espaço) → é
+  a mudança pretendida; link ativa com Enter, e é o comportamento da tabela.
+
+**Fora desta história:** extrair as três `@utility` — já foi feito em `H-35` e
+adotado em `H-37` e `H-38`, para não abrir os mesmos oito arquivos duas vezes.
+
+**Dependências:** H-38
+**Tamanho:** M (7 arquivos, 0 contrato novo)
+
+---
+
+### H-42 — Responsividade e contenção de rolagem
+
+**Objetivo:** a página nunca rolar na horizontal por causa de uma tabela, e o
+texto do gráfico acompanhar a fonte-base do operador.
+
+> **A exigência de 320 px não vem do telefone.** Vem de `SC 1.4.10 Reflow`, e o
+> *Understanding* explica: *"320 CSS pixels is equivalent to a starting viewport
+> width of 1280 CSS pixels wide at 400% zoom."* O alvo é desktop, e é o zoom de
+> 400% numa janela de 1280 que alcança o operador — não há dispositivo móvel no
+> escopo, e o corpus corta breakpoint de telefone com fonte na mão.
+
+**Arquivos:**
+- `web/src/pages/History.tsx` — tabela contida, `fontSize` relativo
+- `web/src/pages/Performance.tsx` — as quatro tabelas de quebra, grids
+- `web/src/components/ConflictDialog.tsx` — tabela de cinco colunas
+- `web/src/pages/Clients.tsx` — grid sem contraparte de base
+- `web/src/pages/Operational.tsx` — idem
+- `web/src/pages/ProcessDetail.tsx` — três grids sem contraparte
+
+**Critérios de aceite:**
+- **Dado** `History.tsx:212`, `Performance.tsx:178` e `ConflictDialog.tsx:105`,
+  **então** cada tabela está dentro de um `<div className="overflow-x-auto">`,
+  como `ProcessTable.tsx:54` já faz — hoje a exceção bidimensional da tabela não
+  está contida e arrasta as notas irmãs e a barra de filtros para a rolagem
+  horizontal (`ACHADO 19`, e `R06` na Página Histórico).
+- **Dado** os sete grids de `Clients.tsx:105`, `Performance.tsx:86` e `:99`,
+  `Operational.tsx:50`, `ProcessDetail.tsx:143`, `:166` e `:201`, **então** cada
+  um tem contraparte sem prefixo (`grid-cols-1`) — hoje o valor abaixo do
+  breakpoint é implícito (`ACHADO 20`).
+- **Dado** `History.tsx:183` e `:189`, **então** o `fontSize` dos eixos é
+  `'0.75rem'` e não o número `12`, que o React converte para pixel e que não
+  acompanha a fonte-base (`ACHADO 21`, `SC 1.4.4`).
+- **Dado** `npm run verify`, **então** passa; a verificação visual em 320 px é
+  `VN-1`, em `H-43`, e **não** é critério desta fatia.
+
+**Casos-limite:**
+- Os três `sm:max-w-md`/`sm:max-w-sm` de `Operational.tsx:85`,
+  `EditProcessForm.tsx:103` e `ColorFieldsForm.tsx:133` → **não entram**:
+  `max-width: none` é o valor inicial do CSS, mesma forma do contraexemplo
+  `lg:sticky` que `R04` admite.
+- Os quatro grids que já têm base explícita — `FilterBar.tsx:68`,
+  `Alerts.tsx:130`, `Home.tsx:79`, `IngestionHealth.tsx:33` → já cumprem `R04`;
+  não tocar.
+- `width={48}` e `margin={{...}}` em `History.tsx` → geometria do Recharts, não
+  tipografia; fora de `R03`.
+- Contêiner de rolagem recortar o anel de foco de um controle interno → é o que
+  `VN-3` procura; se aparecer, é achado novo, não regressão desta fatia.
+
+**Fora desta história:** qualquer mudança de largura de contêiner ou de
+breakpoint que o corpus não sustente — o corpus corta, com fonte, número de
+breakpoints e sistema de grid como requisito.
+
+**Dependências:** H-41
+**Tamanho:** M (6 arquivos, 0 contrato novo)
+
+---
+
+### H-43 — Percorrer os cinco procedimentos de navegador
+
+**Objetivo:** executar no navegador o que não é computável estaticamente, e
+registrar o resultado de cada procedimento ao lado do achado que o gerou.
+
+> **Silêncio sobre item de execução é lido como aprovação, e o corpus chama isso
+> de erro grave.** Os procedimentos não são código, mas são trabalho com dono, e
+> vêm depois das oito fatias anteriores: as ondas 2, 4 e 5 mudam cor resolvida,
+> contêiner e rolagem — verificar antes verificaria um estado que vai deixar de
+> existir.
+>
+> **`VN-5` sai daqui e vira pendência.** Ele exige Windows → Configurações →
+> Acessibilidade → Temas de Contraste, e o desenvolvimento é em Linux. É
+> exatamente a situação de `PD-06`, que já espera a primeira instalação na
+> máquina do operador — e deixar `VN-5` amarrado a uma história que fecha antes
+> disso repetiria o que aconteceu com `PD-05`, sem dono entre 14 e 17/08/2026.
+> Os outros cinco rodam em qualquer navegador e ficam nesta fatia.
+
+**Arquivos:**
+- `docs/estilizacao/RESULTADO.md` — o desfecho de cada procedimento, ao lado do
+  bloco que o emitiu
+
+**Critérios de aceite:**
+- **Dado** `VN-1`, **quando** a aplicação é aberta em janela de 1280 px CSS com
+  zoom em 400%, **então** as sete URIs são percorridas e toda rolagem horizontal
+  que não seja da tabela contida nem do `ResponsiveContainer` é registrada, com
+  a página e o elemento.
+- **Dado** `VN-2`, **então** o mesmo percurso em 200% registra texto cortado ou
+  controle fora da tela, e é repetido com a fonte padrão do navegador em "Muito
+  grande" — é onde o `fontSize` corrigido em `H-42` deixa de escalar se a
+  correção falhar.
+- **Dado** `VN-3`, **então** cada parada de `Tab` nas sete páginas tem indicador
+  visível registrado, incluindo os botões sobre fundo escuro e os controles
+  dentro de contêiner com `overflow`, e é confirmado que a parada órfã do
+  gráfico deixou de existir depois de `H-40`.
+- **Dado** `VN-4`, **então** a sequência de `Tab` é comparada com a ordem visual;
+  o inventário estático já mediu 0 `order-*`, 0 `flex-*-reverse`, 0
+  `grid-flow-*` e 0 `tabIndex` positivo, então o que se procura é divergência
+  por grid e a posição do foco após navegação programática.
+- **Dado** `VN-6`, **então** as três ocorrências com alfa —
+  `ConflictDialog.tsx:73`, `MultiSelect.tsx:85`, `PendingEditsPanel.tsx:90` —
+  têm razão medida por conta-gotas sobre o pixel do texto e do fundo, e o número
+  é registrado; nenhuma delas foi computada estaticamente, e inventar valor sob
+  alfa violaria a regra inviolável 3.
+- **Dado** os cinco procedimentos, **então** cada um tem desfecho escrito:
+  aprovado com o que foi observado, ou achado novo com arquivo e linha. Nenhum
+  fica sem linha.
+
+**Casos-limite:**
+- Procedimento que revele achado novo → vira história própria, não correção
+  embutida aqui; esta fatia mede e registra, não conserta.
+- `VN-1` acusar rolagem numa tabela **já contida** → é rolagem legítima da
+  exceção bidimensional de `SC 1.4.10`, e não é achado.
+- Navegador sem os temas de contraste do Windows → é precisamente por isso que
+  `VN-5` não está aqui.
+- Aplicação servida por `npm run dev` em vez do `dist/web` real → o percurso
+  vale igual; o que muda entre os dois é a rota `GET /*`, coberta por `H-30`.
+
+**Fora desta história:** `VN-5` (forced colors), que vira `PD-07` e fecha na
+primeira instalação na máquina do operador, junto de `PD-01`, `PD-05` e `PD-06`.
+E qualquer correção de código: os cinco procedimentos produzem registro.
+
+**Dependências:** H-35, H-36, H-37, H-38, H-39, H-40, H-41, H-42
+**Tamanho:** P (1 arquivo, 0 contrato novo)
+
+---
+
 ## Resumo do backlog
 
 | Épico | Histórias | P | M | G |
@@ -3547,7 +4137,8 @@ conteúdo, **nunca o caminho** — e é o caminho que o watcher precisa.
 | E5 — Edição e escrita | H-23 … H-27 | 0 | 5 | 0 |
 | E6 — Histórico | H-28, H-29 | 1 | 1 | 0 |
 | E7 — Operação | H-30, **H-31 ✅**, H-32, H-33, H-34 | 3 | 2 | 0 |
-| **Total** | **34** | **16** | **18** | **0** |
+| E8 — Estilização | H-35 … H-43 | 1 | 8 | 0 |
+| **Total** | **43** | **17** | **26** | **0** |
 
 **Nenhuma história é G.** As duas candidatas naturais foram quebradas: a
 escrita no `.xlsx` virou `H-24` (cirurgia), `H-25` (defesas) e `H-26` (comando
