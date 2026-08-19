@@ -17,7 +17,7 @@ import { buildHealthResponse, type HealthResponse } from './health.ts'
  * GET e PUT /api/config/workbook — contrato em docs/05-contratos-api.md.
  *
  * A saida de PD-01: o operador aponta a aplicacao para a planilha dele pela
- * tela, e nunca edita `config/app.json` a mao — arquivo com aspas, virgulas e
+ * tela, e nunca edita o `app.json` a mao — arquivo com aspas, virgulas e
  * barras invertidas do Windows, num painel cujo usuario final nao e tecnico.
  *
  * **A conferencia acontece ANTES da gravacao**, e e por isso que um caminho
@@ -45,7 +45,7 @@ export function registerConfigRoutes(
    * pausaria o arquivo errado durante a escrita.
    */
   applyWorkbookPath: (resolvedPath: string) => Promise<void> = reconfigureWorkbook,
-  /** Ponto de injecao para teste. Nenhum teste toca `config/app.json` real. */
+  /** Ponto de injecao para teste. Nenhum teste toca o `app.json` real. */
   configPath?: string,
 ): void {
   app.get('/api/config/workbook', (): WorkbookConfigResponse => {

@@ -363,6 +363,13 @@ const PLAN_ID =
  * que nunca existiria, o que empurraria o nome da rota para fora do comentario
  * que a documenta. Sem a exclusao, toda rota sob um prefixo homonimo de
  * diretorio — `config`, `docs`, `tools` — teria o mesmo destino.
+ *
+ * **A guarda cobra existencia em disco, e o arquivo de configuracao do operador
+ * esta no `.gitignore`** — num checkout limpo ele nao existe, e citar o caminho
+ * dele em comentario reprova o CI enquanto passa na maquina de quem ja o tem.
+ * Foi o que aconteceu em `H-34`. Por isso os comentarios o nomeiam **sem o
+ * prefixo de diretorio**, como `app.json`: ele e artefato de execucao, e o que
+ * o repositorio versiona e `config/app.json.exemplo`. Nao "conserte" de volta.
  */
 const REPO_PATH = /(?<!\/)\b(?:web\/)?(?:docs|config|tools|tests|src|web)\/[A-Za-z0-9._/-]+/g
 const BACKTICKED = /`([^`]+)`/g

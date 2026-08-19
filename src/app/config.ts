@@ -32,7 +32,7 @@ export class ConfigError extends Error {
   override readonly name = 'ConfigError'
 }
 
-/** Gravar `config/app.json` falhou — arquivo somente-leitura, tipicamente. */
+/** Gravar o `app.json` falhou — arquivo somente-leitura, tipicamente. */
 export class ConfigWriteError extends Error {
   override readonly name = 'ConfigWriteError'
 }
@@ -74,7 +74,8 @@ function optionalNumber(raw: Record<string, unknown>, key: string, fallback: num
  * que nao existe. Nas duas o servidor sobe, a leitura falha, e o store fica em
  * 'degradado' com `lastReadAt` em null — que e o gatilho da tela de
  * configuracao. A regra anterior era o contrario, e criava um circulo: o
- * `config/app.json` nao e versionado, entao numa instalacao nova o processo
+ * o `app.json` nao e versionado — o que o repositorio guarda e
+ * `config/app.json.exemplo` —, entao numa instalacao nova o processo
  * morria antes de servir a tela que existiria para consertar o caminho.
  *
  * **As demais continuam matando a partida**, e de proposito: JSON malformado,
@@ -139,7 +140,7 @@ export function loadConfig(path: string = DEFAULT_CONFIG_PATH): AppConfig {
 /**
  * RECUSA o padrao sob NODE_ENV=test, como `history-store` faz desde H-28.
  *
- * Nao e zelo: um ponto de injecao esquecido aqui grava no `config/app.json` do
+ * Nao e zelo: um ponto de injecao esquecido aqui grava no `app.json` do
  * OPERADOR, e silenciosamente — a gravacao preserva os demais campos, entao o
  * unico sintoma seria a aplicacao apontando para um temporario ja apagado.
  * Aconteceu ao escrever H-34: `buildServer` recebeu um caminho de configuracao

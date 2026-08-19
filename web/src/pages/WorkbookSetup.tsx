@@ -5,7 +5,7 @@ import { useWorkbookConfig } from '../hooks/useWorkbookConfig.ts'
  * A tela de configuracao do caminho da planilha (`H-34`).
  *
  * E a saida de `PD-01`: ate ela, apontar a aplicacao para a planilha significava
- * editar `config/app.json` a mao — com aspas, virgulas e barras invertidas do
+ * editar o `app.json` a mao — com aspas, virgulas e barras invertidas do
  * Windows —, num painel cujo usuario final nao e tecnico.
  *
  * **Nao calcula nada, e nao valida o caminho.** Quem diz se o arquivo existe, e
