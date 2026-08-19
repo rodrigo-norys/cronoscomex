@@ -4370,6 +4370,55 @@ funcionalidade nova, fora deste épico e fora do plano.
 
 ### H-39 — Declarar a camada de tema e migrar a casca
 
+> ✅ **CONCLUÍDA em 19/08/2026.** Nenhum teste próprio — a guarda de cor é de
+> `H-42`, por decisão do próprio épico, e nenhum teste do conjunto assere classe
+> de cor. Suíte total **inalterada em 1313**, sem um caso ajustado para
+> acomodar a migração. Nove divergências abertas no protocolo, todas resolvidas.
+>
+> **O vocabulário nasceu com 32 tokens em treze grupos, não com os 24 do
+> contrato.** As quatro famílias que faltavam saíram da conferência da fatia, e
+> cada uma teria reaberto `web/src/index.css` numa história seguinte:
+> `--color-state-info-*` (o sinal `arquivoAberto` de `StatusBanner.tsx:95`,
+> único local em `sky`), `--color-state-success-fg` (`emerald`, em três locais,
+> dois deles fora desta fatia), `--color-action-{bg,bg-hover,fg}` (o botão
+> primário `bg-slate-800` + `text-white`, em **oito** locais) e
+> `--color-overlay-scrim` (o véu do diálogo). Nenhuma delas casava o `grep` do
+> critério de aceite — `sky`, `emerald` e `white` não estão na expressão —, e
+> por isso teriam sobrevivido como passo bruto sem reprovar nada.
+>
+> **Medido antes:** 71 ocorrências do padrão do critério em 41 linhas dos sete
+> `.tsx`. Depois: **zero**, e zero também para `sky`, `emerald`, `bg-white` e
+> `text-white`.
+>
+> **`@theme static`, e não `@theme`.** O Tailwind só emite a variável que vê
+> usada num utilitário: na primeira build, `--color-chart-*` e `--color-meter-*`
+> saíram do CSS servido por ainda não terem consumidor. Os de gráfico serão
+> lidos por `var()` dentro das props do Recharts, onde ele não enxerga uso — o
+> token existiria no fonte e não no CSS, e a cor sumiria sem erro nenhum.
+> `static` os mantém; conferido no `.css` da build, os 32 estão lá.
+>
+> **Um par de contraste que a auditoria não varreu.** `StatusBanner.tsx:111`, o
+> botão *Conferir a planilha configurada*, tinha `border-amber-400` sobre
+> `bg-amber-50` = **1.66:1**, contra o piso de 3:1 de `SC 1.4.11` — é botão, e a
+> borda é o que o delimita. O `ACHADO 6` não o pegou porque procurava
+> `border-slate-300`. Passou a `--color-state-warning-fg`, 8.77:1.
+>
+> **O desabilitado ficou com um padrão só.** `RefreshButton.tsx:17` usava
+> `disabled:opacity-60`, um terceiro padrão que `ACHADO 22` não enumera, e
+> adotou `--color-control-disabled-*` junto do `ApplyChangesButton`: o controle
+> inativo tem a mesma aparência no conjunto, seja o ativo sólido ou de borda.
+>
+> **O portão precisou de uma linha de configuração.** O Biome recusava `@theme`,
+> `@utility` e `@apply` com *"Tailwind-specific syntax is disabled"* — o
+> `index.css` tinha uma linha só até aqui, e o parser nunca tinha visto a
+> sintaxe. `css.parser.tailwindDirectives` em `biome.json`.
+>
+> **Duas razões da auditoria não reproduziram**, ambas envolvendo `slate-600`:
+> `ACHADO 5` afirmava 6.92:1 e `ACHADO 7`, 4.53:1 — são 7.56:1 e 6.90:1.
+> Corrigidas em `docs/estilizacao/RESULTADO.md`, junto da reconferência das
+> outras seis, que reproduzem. Nenhuma decisão muda: os pares passavam e
+> passam.
+
 **Objetivo:** existir um vocabulário semântico de cor, com os valores já
 corrigidos para contraste, e a casca inteira consumindo só ele.
 
@@ -4400,20 +4449,24 @@ corrigidos para contraste, e a casca inteira consumindo só ele.
 
 ```css
 /* web/src/index.css */
-@theme {
+@theme static {
   --color-surface-base:    /* fundo da aplicacao      — era bg-slate-100 */
   --color-surface-raised:  /* cartoes e secoes        — era bg-white     */
   --color-surface-sunken:  /* barra de filtros        — era bg-slate-50  */
-  --color-text-primary:    /* era text-slate-900 */
-  --color-text-secondary:  /* era text-slate-600 */
-  --color-text-muted:      /* ACHADO 3 e 4: substitui slate-400 e slate-300 */
+  --color-text-primary:    /* era text-slate-900 e text-slate-800 */
+  --color-text-secondary:  /* era text-slate-600 e text-slate-700 */
+  --color-text-muted:      /* ACHADO 3 e 4: substitui slate-500, -400 e -300 */
   --color-border-subtle:   /* era border-slate-200 */
   --color-border-strong:   /* era border-slate-800 */
   --color-border-control:  /* ACHADO 6: substitui border-slate-300 */
+  --color-action-bg / -bg-hover / -fg         /* divergencia 3 */
   --color-state-error-bg / -border / -fg      /* ACHADO 9  */
   --color-state-warning-bg / -border / -fg    /* ACHADO 10 */
+  --color-state-info-bg / -border / -fg       /* divergencia 1 */
+  --color-state-success-fg                    /* divergencia 2 */
   --color-meter-track / --color-meter-fill    /* ACHADO 7  */
   --color-control-disabled-bg / -fg           /* ACHADO 22 */
+  --color-overlay-scrim                       /* divergencia 6 */
   --color-chart-series-1 / -2 / -3
   --color-chart-axis / --color-chart-grid     /* ACHADO 8  */
 }
@@ -4456,8 +4509,9 @@ de tema já vive no CSS, e nenhuma outra fatia do épico toca o HTML.
 
 **Critérios de aceite:**
 - **Dado** `web/src/index.css`, **quando** o épico abre, **então** ele contém um
-  bloco `@theme` com os treze grupos de token acima e `:root { color-scheme:
-  light; }` — hoje o arquivo tem uma linha só.
+  bloco `@theme` com os treze grupos de token acima — **32 tokens**, contados
+  ao fechar — e `:root { color-scheme: light; }` — hoje o arquivo tem uma linha
+  só.
 - **Dado** os oito arquivos desta fatia, **então** `grep -E '(text|bg|border)-(slate|red|amber)-[0-9]'`
   não encontra ocorrência em nenhum deles.
 - **Dado** `--color-border-control`, **então** sua razão contra
@@ -4480,7 +4534,7 @@ de tema já vive no CSS, e nenhuma outra fatia do épico toca o HTML.
 - Token declarado e não consumido por nenhum dos oito arquivos → é vocabulário
   para as fatias seguintes e **fica**; o critério de "nenhum consumidor" é sobre
   a camada, não sobre cada token.
-- `@utility` criada aqui e adotada em `App.tsx:118` apenas → as outras seis
+- `@utility` criada aqui e adotada em `App.tsx:142` apenas → as outras seis
   adoções são de `H-41` e `H-42`, e a `@utility` não pode depender delas.
 - `MultiSelect.tsx:85` usa `opacity-80` sobre dois fundos distintos → o alfa
   fica como está; `VN-6` o mede, e trocar cor sob alfa sem medir seria inventar
@@ -5024,8 +5078,8 @@ E qualquer correção de código: os cinco procedimentos produzem registro.
 | E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
-| E9 — Estilização | **H-39 … H-47, todas abertas** | 1 | 8 | 0 |
-| **Total** | **47** — 38 concluídas, 9 abertas | **17** | **30** | **0** |
+| E9 — Estilização | **H-39 ✅, H-40 … H-47 abertas** | 1 | 8 | 0 |
+| **Total** | **47** — 39 concluídas, 8 abertas | **17** | **30** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até

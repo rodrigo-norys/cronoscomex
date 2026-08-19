@@ -86,7 +86,7 @@ export function ApplyChangesButton({
   return (
     <div className="flex items-center gap-2">
       {done !== null && (
-        <span role="status" className="text-sm text-emerald-700">
+        <span role="status" className="text-sm text-state-success-fg">
           {describeWritten(done.cellsWritten, done.rowsRepainted)}
           {/* A fila ficou para tras: sem isto o operador aplicaria de novo e
               receberia uma recusa que ele nao tem como explicar. */}
@@ -97,7 +97,7 @@ export function ApplyChangesButton({
         type="button"
         onClick={() => void apply()}
         disabled={busy || pendingCount === 0}
-        className="rounded bg-slate-800 px-3 py-1.5 text-sm font-medium text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+        className="rounded bg-action-bg px-3 py-1.5 text-sm font-medium text-action-fg hover:bg-action-bg-hover disabled:cursor-not-allowed disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
       >
         {busy
           ? 'Aplicando…'

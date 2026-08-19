@@ -40,18 +40,21 @@ export function FilterBar({ filters, options, optionsError }: FilterBarProps) {
   const { selection, activeCount } = filters
 
   return (
-    <section aria-label="Filtros" className="border-t border-slate-200 bg-slate-50 px-6 py-3">
+    <section
+      aria-label="Filtros"
+      className="border-t border-border-subtle bg-surface-sunken px-6 py-3"
+    >
       <div className="mb-2 flex items-center gap-3">
-        <h2 className="text-xs font-semibold tracking-wide text-slate-500 uppercase">Filtros</h2>
+        <h2 className="text-xs font-semibold tracking-wide text-text-muted uppercase">Filtros</h2>
         {activeCount > 0 && (
           <>
-            <span className="rounded-full bg-slate-800 px-2 py-0.5 text-xs text-white">
+            <span className="rounded-full bg-action-bg px-2 py-0.5 text-xs text-action-fg">
               {activeCount} {activeCount === 1 ? 'ativo' : 'ativos'}
             </span>
             <button
               type="button"
               onClick={filters.clearAll}
-              className="text-xs text-slate-600 underline hover:text-slate-900"
+              className="text-xs text-text-secondary underline hover:text-text-primary"
             >
               Limpar
             </button>
@@ -60,7 +63,10 @@ export function FilterBar({ filters, options, optionsError }: FilterBarProps) {
       </div>
 
       {optionsError && (
-        <p role="alert" className="mb-2 text-sm text-red-800">
+        <p
+          role="alert"
+          className="mb-2 rounded border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg"
+        >
           Não foi possível carregar as opções de filtro: {optionsError}
         </p>
       )}
@@ -79,37 +85,37 @@ export function FilterBar({ filters, options, optionsError }: FilterBarProps) {
         {/* Periodo e UM filtro que ocupa dois parametros. `etaFrom` posterior a
             `etaTo` produz conjunto vazio, sem erro: o intervalo simplesmente
             nao contem nada, e recusar exigiria adivinhar qual o operador quis. */}
-        <label className="flex flex-col gap-1 text-xs text-slate-600">
+        <label className="flex flex-col gap-1 text-xs text-text-secondary">
           ETA2 de
           <input
             type="date"
             value={selection.etaFrom}
             onChange={(event) => filters.setRange('etaFrom', event.target.value)}
-            className="rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-800"
+            className="rounded border border-border-control bg-surface-raised px-2 py-1 text-sm text-text-primary"
           />
         </label>
 
-        <label className="flex flex-col gap-1 text-xs text-slate-600">
+        <label className="flex flex-col gap-1 text-xs text-text-secondary">
           ETA2 até
           <input
             type="date"
             value={selection.etaTo}
             onChange={(event) => filters.setRange('etaTo', event.target.value)}
-            className="rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-800"
+            className="rounded border border-border-control bg-surface-raised px-2 py-1 text-sm text-text-primary"
           />
         </label>
 
         {/* Tres estados, nao uma caixa de marcar: "Não" inclui apenas `false`,
             nunca `null`. Cor nao reconhecida nao e o mesmo que "dentro do RJ", e
             uma caixa de dois estados nao teria como dizer isso. */}
-        <label className="flex flex-col gap-1 text-xs text-slate-600">
+        <label className="flex flex-col gap-1 text-xs text-text-secondary">
           Importador fora do RJ
           <select
             value={selection.importerOutsideRj}
             onChange={(event) =>
               filters.setImporterOutsideRj(event.target.value as typeof selection.importerOutsideRj)
             }
-            className="rounded border border-slate-300 bg-white px-2 py-1 text-sm text-slate-800"
+            className="rounded border border-border-control bg-surface-raised px-2 py-1 text-sm text-text-primary"
           >
             <option value="">Indiferente</option>
             <option value="true">Sim</option>

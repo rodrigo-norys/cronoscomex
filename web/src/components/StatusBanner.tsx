@@ -90,9 +90,9 @@ function formatInstant(isoInstant: string): string {
 }
 
 const SIGNAL_STYLE: Record<SignalKey, string> = {
-  conflito: 'border-red-300 bg-red-50 text-red-900',
-  degradado: 'border-amber-300 bg-amber-50 text-amber-900',
-  arquivoAberto: 'border-sky-300 bg-sky-50 text-sky-900',
+  conflito: 'border-state-error-border bg-state-error-bg text-state-error-fg',
+  degradado: 'border-state-warning-border bg-state-warning-bg text-state-warning-fg',
+  arquivoAberto: 'border-state-info-border bg-state-info-bg text-state-info-fg',
 }
 
 /**
@@ -108,7 +108,7 @@ function SetupLink() {
     <button
       type="button"
       onClick={() => navigate(WORKBOOK_SETUP_PAGE.path)}
-      className="ml-2 rounded border border-amber-400 px-2 py-0.5 font-medium text-amber-900 text-xs hover:bg-amber-100"
+      className="ml-2 rounded border border-state-warning-fg px-2 py-0.5 font-medium text-state-warning-fg text-xs hover:bg-state-warning-bg"
     >
       Conferir a planilha configurada
     </button>
