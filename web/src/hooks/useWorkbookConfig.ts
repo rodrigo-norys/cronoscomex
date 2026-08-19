@@ -50,6 +50,14 @@ export interface WorkbookConfigAccess {
   saving: boolean
   browse(): Promise<BrowseOutcome>
   browsing: boolean
+  /**
+   * Reconfere o estado sem reiniciar nada (H-36).
+   *
+   * **E o MESMO caminho que `save` usa** — o `reloadToken` —, e nao uma segunda
+   * regra: o operador que sincroniza o OneDrive no Explorer e reconfere ali
+   * mesmo precisa ver exatamente o que veria depois de gravar.
+   */
+  reload(): void
 }
 
 /**
@@ -107,5 +115,9 @@ export function useWorkbookConfig(dataVersion: number): WorkbookConfigAccess {
     }
   }, [])
 
-  return { state, save, saving, browse, browsing }
+  const reload = useCallback((): void => {
+    setReloadToken((token) => token + 1)
+  }, [])
+
+  return { state, save, saving, browse, browsing, reload }
 }

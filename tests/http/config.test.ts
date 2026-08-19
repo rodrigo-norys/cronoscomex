@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
@@ -78,6 +78,12 @@ function serverWith(
   storeState: StoreState = state(),
   /** O seletor de arquivos. Ausente, a rota de `browse` nao e exercida. */
   openDialog?: () => Promise<string | null>,
+  /**
+   * Raiz da interface compilada. **Sempre injetada**: sem isto o teste leria o
+   * `dist/web` da maquina, e o portao roda `test` antes de `build` — verde aqui,
+   * vermelho no CI (regra inviolavel 7).
+   */
+  webRoot: string = join(dir, 'sem-interface'),
 ) {
   const app = buildServer(
     current,
@@ -90,6 +96,7 @@ function serverWith(
     },
     configPath,
     openDialog,
+    webRoot,
   )
   return app
 }
@@ -99,6 +106,75 @@ function serverWith(
  * grafica (`PD-06`, item 10). O que a rota precisa provar e como cada desfecho
  * dele vira resposta HTTP.
  */
+/**
+ * H-36. As etapas de partida que o navegador consegue conferir.
+ *
+ * Node instalado e Node >= 22 nao estao aqui: a pagina e servida PELO Node, e
+ * reporta-las como pendentes seria impossivel por construcao. Quem alcanca
+ * essas duas e `scripts/iniciar.cmd`, e nao ha outra camada.
+ */
+describe('GET /api/config/workbook — as etapas de partida', () => {
+  /** A versao real, e nao a de `.nvmrc`: e o que esta rodando agora. */
+  it('devolve a versao do Node que esta executando', async () => {
+    const app = serverWith([])
+
+    const response = await app.inject({ method: 'GET', url: '/api/config/workbook' })
+
+    expect(response.json().runtime.nodeVersion).toBe(process.versions.node)
+  })
+
+  it('diz que a interface esta compilada quando index.html existe', async () => {
+    const raiz = join(dir, 'web-compilada')
+    mkdirSync(raiz, { recursive: true })
+    writeFileSync(join(raiz, 'index.html'), '<!doctype html>')
+    const app = serverWith([], config(), state(), undefined, raiz)
+
+    const response = await app.inject({ method: 'GET', url: '/api/config/workbook' })
+
+    expect(response.json().runtime.webBuilt).toBe(true)
+  })
+
+  /**
+   * O caso-limite do backlog: a SPA carregada em memoria nao prova que o
+   * arquivo continua no disco, e o operador que apagou `dist/` precisa saber.
+   */
+  it('diz que nao esta compilada quando index.html sumiu', async () => {
+    const app = serverWith([], config(), state(), undefined, join(dir, 'nunca-compilada'))
+
+    const response = await app.inject({ method: 'GET', url: '/api/config/workbook' })
+
+    expect(response.json().runtime.webBuilt).toBe(false)
+  })
+
+  /** A pasta existir nao basta: quem e servido e o `index.html`. */
+  it('nao aceita a pasta vazia como interface compilada', async () => {
+    const raiz = join(dir, 'pasta-vazia')
+    mkdirSync(raiz, { recursive: true })
+    const app = serverWith([], config(), state(), undefined, raiz)
+
+    const response = await app.inject({ method: 'GET', url: '/api/config/workbook' })
+
+    expect(response.json().runtime.webBuilt).toBe(false)
+  })
+
+  /**
+   * O que faz o botao Atualizar valer alguma coisa: sem releitura por
+   * requisicao, compilar com o servidor no ar nao mudaria nada na tela.
+   */
+  it('reflete a compilacao feita com o servidor ja no ar', async () => {
+    const raiz = join(dir, 'compilada-depois')
+    mkdirSync(raiz, { recursive: true })
+    const app = serverWith([], config(), state(), undefined, raiz)
+
+    const antes = await app.inject({ method: 'GET', url: '/api/config/workbook' })
+    writeFileSync(join(raiz, 'index.html'), '<!doctype html>')
+    const depois = await app.inject({ method: 'GET', url: '/api/config/workbook' })
+
+    expect(antes.json().runtime.webBuilt).toBe(false)
+    expect(depois.json().runtime.webBuilt).toBe(true)
+  })
+})
+
 describe('POST /api/config/workbook/browse', () => {
   it('devolve o caminho que o operador escolheu', async () => {
     const escolhido = 'C:\\OneDrive\\CONTROLE DOS EMBARQUE.xlsx'

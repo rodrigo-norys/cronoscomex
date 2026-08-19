@@ -482,6 +482,11 @@ estado em que não houve leitura nenhuma.
 
   "configFile": { "path": "config/app.json", "present": true, "parseable": true },
 
+  "runtime": {                 // as etapas de partida que o navegador confere
+    "nodeVersion": "22.23.2",  // process.versions.node, o real
+    "webBuilt": true           // dist/web/index.html existe AGORA
+  },
+
   "fields": [
     { "key": "port", "value": 5173, "source": "arquivo", "restartPending": false },
     { "key": "topN", "value": 10,   "source": "padrao",  "restartPending": false }
@@ -501,6 +506,16 @@ que sumiu do OneDrive e arquivo sem permissão levam a três ações diferentes.
 `sheetPresent` é `null` enquanto **não houve leitura bem-sucedida**, inclusive
 quando a última falhou: a presença da aba não é deduzida do caminho, e abrir o
 arquivo só para responder isto duplicaria o leitor numa segunda regra.
+
+**`runtime` traz só o que o navegador consegue conferir** (`H-36`). Node
+instalado e Node ≥ 22 **não** estão ali: a página é servida *pelo* Node, então
+chegar a exibi-la já é a prova das duas, e reportá-las como pendentes seria
+impossível por construção. Quem alcança a falha delas é `scripts/iniciar.cmd`, e
+não há outra camada.
+
+`webBuilt` é consultado **a cada requisição**, e não na partida — é o que faz o
+botão *Atualizar* da tela valer alguma coisa depois de o operador compilar com o
+servidor no ar. E é o `index.html` que decide: a pasta existir não basta.
 
 | `source` | Significa |
 |---|---|
