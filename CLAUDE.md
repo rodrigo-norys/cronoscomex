@@ -164,11 +164,11 @@ proíbe reescrever histórico.
 **`H-36` fechou o épico E7, e com ele tudo que não é estilização:** o painel diz
 em que etapa a partida está e reconfere sem reexecutar o atalho.
 
-**A próxima é `H-39`**, que abre o **épico E9, de estilização** — `H-39` a
-`H-47`, nascidas da auditoria de
-`docs/estilizacao/RESULTADO.md`. Ela vem primeiro por dependência: é a única
-que decide vocabulário de tema, e as oito seguintes são substituição mecânica só
-porque ela o fixa. As ondas de E9 estão no cabeçalho do épico, em
+**`H-39` abriu o épico E9, de estilização** — `H-39` a `H-47`, nascidas da
+auditoria de `docs/estilizacao/RESULTADO.md`. Ela vinha primeiro por
+dependência: é a única que decide vocabulário de tema, e **agora que ele está
+fixado em `web/src/index.css`, as oito seguintes são substituição mecânica.**
+**A próxima é `H-40`.** As ondas de E9 estão no cabeçalho do épico, em
 `docs/06-backlog.md` — `docs/07-plano-entrega.md` cobre as fases do plano
 original, e não alcança E9.
 

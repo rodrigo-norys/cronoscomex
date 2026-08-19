@@ -126,7 +126,7 @@ TRECHO:   <p className="text-xs text-slate-500">{total} {total === 1 ? 'processo
 BALDE:    DE EXECUÇÃO → estático (§3.2)
 FONTE:    WCAG 2.2 SC 1.4.3 Contrast (Minimum) (AA) —
           https://www.w3.org/TR/WCAG22/#contrast-minimum
-CORREÇÃO: Trocar text-slate-500 por text-slate-600 (6.92:1) nas duas ocorrências, ou
+CORREÇÃO: Trocar text-slate-500 por text-slate-600 (7.56:1) nas duas ocorrências, ou
           envolver a paginação num contêiner bg-white como os demais blocos da página.
 
   CONTA:  fg text-slate-500  oklch(55.4% 0.046 257.417) → #62748e
@@ -176,7 +176,7 @@ TRECHO:   <span className="h-4 grow rounded-sm bg-slate-100">
 BALDE:    DE EXECUÇÃO → estático (§3.2)
 FONTE:    WCAG 2.2 SC 1.4.11 Non-text Contrast (AA), item "Graphical Objects" —
           https://www.w3.org/TR/WCAG22/#non-text-contrast
-CORREÇÃO: Trocar o preenchimento bg-slate-400 por bg-slate-600 (4.53:1 contra o trilho).
+CORREÇÃO: Trocar o preenchimento bg-slate-400 por bg-slate-600 (6.90:1 contra o trilho).
 
   CONTA:  preenchimento bg-slate-400  oklch(70.4% 0.04 256.788)  → #90a1b9
           trilho        bg-slate-100  oklch(96.8% 0.007 247.896) → #f1f5f9
@@ -732,6 +732,24 @@ VEREDITO: VERIFICAR NO NAVEGADOR — procedimento:
 | **D03–D07** | **não aplicáveis — 0 ocorrências de `dark:` no conjunto** |
 
 **(P1)** ✓ Z1 e Z2 declarados. **(P2)** ✓ 40 regras com desfecho registrado. **(P3)** ✓ VN-1 a VN-6 emitidos. **(P4)** ✓ os 7 achados composicionais (1, 9, 10, 15, 16, 17, 18, 19) citam 2+ locais com majoritário e desviante nomeados. **(P5)** ✓ os 5 achados de contraste (3, 4, 5, 6, 7) mostram oklch, hex e razão. **(P6)** ✓ plano abaixo.
+
+---
+
+> **Reconferência de 19/08/2026, ao abrir `H-39`.** As oito razões usadas como
+> critério de aceite da história foram recalculadas contra a paleta 4.3.3 de
+> `node_modules/tailwindcss/theme.css`. Seis reproduzem o que está acima —
+> 2.63, 4.35, 1.36, 2.40, 4.76 e 9.16. As duas que envolvem `slate-600`
+> divergiam e foram corrigidas no texto: `ACHADO 5` dizia **6.92:1** sobre
+> branco (é **7.56:1**) e `ACHADO 7` dizia **4.53:1** contra o trilho (é
+> **6.90:1**). Nenhuma decisão muda — os dois pares passavam e passam, com
+> folga maior que a declarada.
+>
+> A mesma reconferência encontrou **um par que a auditoria não varreu**:
+> `StatusBanner.tsx:111`, o botão *Conferir a planilha configurada*, tem
+> `border-amber-400` sobre `bg-amber-50` = **1.66:1**, contra o piso de 3:1 de
+> `SC 1.4.11` — é botão, e a borda é o que o delimita. O `ACHADO 6` não o pegou
+> porque procurava `border-slate-300`. Corrigido em `H-39` para o token
+> `--color-state-warning-fg`, que mede 8.77:1 ali.
 
 ---
 

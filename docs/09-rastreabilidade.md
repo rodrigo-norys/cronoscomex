@@ -194,6 +194,7 @@ As 33 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
 | H-36 | Cadeia base | ✅ **Concluída.** O checklist das cinco etapas de partida no painel, com a versão real do Node, e o botão *Atualizar* que reconfere sem reexecutar o atalho. `GET /api/config/workbook` ganhou `runtime`, consultado a cada requisição — compilar com o servidor no ar muda a tela |
 | H-37 | Cadeia base | ✅ **Concluída.** `POST /api/config/workbook/browse` abre o seletor do sistema e devolve o caminho escolhido, sem gravar. O diálogo em si só se exerce em Windows — item 10 de `PD-06`; o resto está coberto por injeção do invocador |
 | H-38 | Cadeia base | ✅ **Concluída.** A tela de `H-34` deixou de ser inalcançável: item no menu, link no painel de saúde e botão na faixa de estado degradado. Medido antes: nenhuma linha de `web/src/` apontava para `/configuracao`, e o comentário de `router.ts` afirmava um caminho que nunca existiu |
+| H-39 | Cadeia base | ✅ **Concluída.** A camada de tema: 32 tokens semânticos em `web/src/index.css`, com `color-scheme` e as três `@utility` de painel. A casca e os sete componentes dela não citam mais passo de paleta — 71 ocorrências para zero. Quatro famílias de token que o contrato não previa saíram da conferência da fatia; sem elas, `index.css` reabriria nas oito histórias seguintes |
 
 ---
 
