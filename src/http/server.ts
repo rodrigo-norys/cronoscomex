@@ -1,3 +1,4 @@
+import { pathToFileURL } from 'node:url'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { ColorMapError, loadColorMap } from '../app/color-map-loader.ts'
 import { type AppConfig, ConfigError, loadConfig, WORKBOOK_UNSET } from '../app/config.ts'
@@ -200,7 +201,25 @@ async function main(): Promise<void> {
   app.log.info(`CronosComex em http://${LOOPBACK}:${config.port}`)
 }
 
-// Executa apenas quando invocado diretamente; importar para teste nao sobe servidor.
-if (process.argv[1] && import.meta.url === `file://${process.argv[1]}`) {
+/**
+ * Executa apenas quando invocado diretamente; importar para teste nao sobe
+ * servidor.
+ *
+ * `pathToFileURL`, e NUNCA concatenar `file://` com o caminho. A concatenacao
+ * esteve aqui de H-30 ate 19/08/2026 e funcionava em Linux por acidente — o
+ * caminho ja comeca com barra, entao `file://` + `/home/...` produz as tres
+ * barras certas. Em Windows `process.argv[1]` e `C:\...\server.ts`, a
+ * concatenacao produz `file://C:\...` e `import.meta.url` traz
+ * `file:///C:/...`: nunca batem.
+ *
+ * **O modo de falha e mudo, e por isso custou uma sessao inteira de teste.**
+ * `main()` nao roda, o processo carrega os modulos e termina com codigo ZERO —
+ * sem erro, sem servidor, sem nada escutando. `scripts/iniciar.cmd` lia o zero
+ * como termino normal e fechava a janela, e o navegador abria em
+ * ERR_CONNECTION_REFUSED. Medido na primeira execucao real em Windows (PD-06),
+ * que e o unico ambiente onde o defeito existe — e o unico que nenhum teste
+ * alcanca.
+ */
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   await main()
 }
