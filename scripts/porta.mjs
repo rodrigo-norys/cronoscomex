@@ -3,6 +3,11 @@ import { readFileSync } from 'node:fs'
 /**
  * Imprime a porta configurada. Consumido por `scripts/iniciar.cmd`.
  *
+ * **Ausencia do arquivo e o caso NORMAL da primeira execucao** (H-44). Ate
+ * entao o `.cmd` barrava a partida antes de chegar aqui, e este script so via
+ * arquivo existente; hoje ele e a primeira coisa que responde por um
+ * `config/app.json` que ainda nao foi criado.
+ *
  * Existe por limitacao do CMD, nao por necessidade de logica: dentro de
  * `for /f`, o comando entre backticks e reanalisado pelo interpretador, e
  * PARENTESES e aspas simples no meio dele quebram o parser. Um `node -p` com
@@ -24,8 +29,9 @@ let raw
 try {
   raw = readFileSync(CONFIG_PATH, 'utf-8')
 } catch {
-  // Ausencia nao e erro aqui: o `.cmd` ja barrou o arquivo faltando antes de
-  // chegar neste ponto, com mensagem propria.
+  // Ausencia nao e erro: a aplicacao sobe nos padroes e abre a tela de
+  // configuracao, que cria o arquivo ao salvar o caminho da planilha. O `.cmd`
+  // apenas informa que ele ainda nao existe.
   process.stdout.write(String(FALLBACK_PORT))
   process.exit(0)
 }
