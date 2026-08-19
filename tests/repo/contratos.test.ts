@@ -754,3 +754,54 @@ describe('o resumo do backlog concorda com as histórias', () => {
     expect(declarado.g).toBe(todas.filter((historia) => historia.tamanho === 'G').length)
   })
 })
+
+/**
+ * O índice do backlog envelhece em silêncio: história nova nasce no fim do
+ * arquivo, e nada obriga quem a escreve a voltar ao topo. Sem esta guarda, o
+ * índice descreveria um backlog que existiu, que é o mesmo modo de falha do
+ * comentário de `web/src/router.ts` — corrigido em `H-38` depois de afirmar por
+ * quase um dia um caminho que ninguém havia construído.
+ *
+ * As âncoras são HTML explícito (`<a id="h-37">`) e não o slug automático do
+ * título: `#h-37` sobrevive a uma reescrita do título, e o slug — que embute o
+ * título inteiro — não.
+ */
+describe('o índice do backlog alcança todas as histórias', () => {
+  const ancoras = [...BACKLOG.matchAll(/^<a id="(h-\d+)"><\/a>$/gm)].map((achado) => achado[1])
+  const entradas = [...BACKLOG.matchAll(/^- \[H-\d+ — .+\]\(#(h-\d+)\)$/gm)].map(
+    (achado) => achado[1],
+  )
+
+  it('encontra âncoras e entradas — contra guarda verde por vacuidade', () => {
+    expect(ancoras.length).toBeGreaterThan(30)
+    expect(entradas.length).toBeGreaterThan(30)
+  })
+
+  it('toda história tem âncora, e toda âncora tem entrada no índice', () => {
+    const historias = historiasDoBacklog().map((historia) => historia.id.toLowerCase())
+
+    expect([...ancoras].sort()).toEqual([...historias].sort())
+    expect([...entradas].sort()).toEqual([...historias].sort())
+  })
+
+  /** Link para âncora que não existe é buraco silencioso: não erra, só não vai. */
+  it('todo destino citado no índice está definido no arquivo', () => {
+    const definidas = new Set(
+      [...BACKLOG.matchAll(/^<a id="([\w-]+)"><\/a>$/gm)].map((achado) => achado[1]),
+    )
+    const citados = [...BACKLOG.matchAll(/\]\(#([\w-]+)\)/g)].map((achado) => achado[1])
+
+    expect(citados.length).toBeGreaterThan(30)
+    expect([...new Set(citados)].filter((destino) => !definidas.has(destino))).toEqual([])
+  })
+
+  /** O caminho de volta, do meio de uma história de cem linhas. */
+  it('toda história oferece o retorno ao índice', () => {
+    const semRetorno = BACKLOG.split(/\n(?=<a id="h-\d+")/)
+      .filter((bloco) => /^<a id="(h-\d+)"/.test(bloco))
+      .filter((bloco) => !bloco.includes('[↑ Índice](#indice)'))
+      .map((bloco) => /^<a id="(h-\d+)"/.exec(bloco)?.[1])
+
+    expect(semRetorno).toEqual([])
+  })
+})

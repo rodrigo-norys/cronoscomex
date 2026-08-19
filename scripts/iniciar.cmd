@@ -1,7 +1,7 @@
 @echo off
 setlocal EnableDelayedExpansion
 
-rem  CronosComex - atalho de execucao (H-30, reescrito em H-44).
+rem  CronosComex - atalho de execucao (H-30, reescrito em H-35).
 rem
 rem  O operador nao usa linha de comando: este arquivo e o unico ponto de
 rem  partida da aplicacao na maquina dele (RNF-26, Windows).
@@ -9,7 +9,7 @@ rem
 rem  FICA AQUI SOMENTE o que impede o servidor de subir ou a tela de existir:
 rem  Node ausente, Node abaixo da 22, e a interface nao compilada. Os tres sao
 rem  anteriores ao navegador por natureza, e nenhuma interface pode reporta-los.
-rem  Todo o resto migrou para a tela em H-44 — inclusive `config\app.json`
+rem  Todo o resto migrou para a tela em H-35 — inclusive `config\app.json`
 rem  ausente, que ate entao PARAVA a partida e mandava o operador copiar um
 rem  arquivo e editar JSON a mao, enquanto a tela que resolve isso existia desde
 rem  H-34 e nunca chegava a ser exibida.
@@ -176,7 +176,7 @@ if not errorlevel 1 (
 )
 
 rem  --- Sobe -------------------------------------------------------------
-rem  Ausencia de `config\app.json` NAO barra mais a partida (H-44). Ela e
+rem  Ausencia de `config\app.json` NAO barra mais a partida (H-35). Ela e
 rem  apenas informada: quem cria o arquivo e a tela, ao salvar o caminho da
 rem  planilha, e o operador nunca edita JSON.
 echo.

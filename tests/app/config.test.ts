@@ -95,7 +95,7 @@ describe('loadConfig', () => {
 })
 
 /**
- * H-44. O inventario dos oito campos, que e o que a tela de configuracao mostra.
+ * H-35. O inventario dos oito campos, que e o que a tela de configuracao mostra.
  *
  * O caminho do `app.json` e SEMPRE injetado: sob `NODE_ENV=test` o padrao e
  * recusado, e o ultimo teste deste bloco e quem prova a recusa.

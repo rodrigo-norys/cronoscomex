@@ -3,7 +3,7 @@ import { readFileSync } from 'node:fs'
 /**
  * Imprime a porta configurada. Consumido por `scripts/iniciar.cmd`.
  *
- * **Ausencia do arquivo e o caso NORMAL da primeira execucao** (H-44). Ate
+ * **Ausencia do arquivo e o caso NORMAL da primeira execucao** (H-35). Ate
  * entao o `.cmd` barrava a partida antes de chegar aqui, e este script so via
  * arquivo existente; hoje ele e a primeira coisa que responde por um
  * `config/app.json` que ainda nao foi criado.

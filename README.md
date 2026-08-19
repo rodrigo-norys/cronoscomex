@@ -89,7 +89,7 @@ troca vale de imediato, sem reiniciar.
 
 **`config/app.json` não precisa existir antes.** Ele é criado sozinho quando
 você salva o caminho na tela, já com os demais campos nos valores padrão. O
-atalho avisa que o arquivo ainda não existe e sobe assim mesmo — até `H-44` ele
+atalho avisa que o arquivo ainda não existe e sobe assim mesmo — até `H-35` ele
 parava aqui, mandando copiar um arquivo e editar JSON à mão.
 
 A própria tela mostra **o que está configurado**: os oito campos, o valor em uso

@@ -4,7 +4,7 @@ import { connect } from 'node:net'
  * Espera a porta aceitar conexao. Consumido por `scripts/iniciar.cmd`.
  *
  * Existe por um defeito medido na PRIMEIRA execucao em Windows, em 19/08/2026
- * (H-44, PD-06): o atalho esperava 4 segundos fixos e abria o navegador, e numa
+ * (H-35, PD-06): o atalho esperava 4 segundos fixos e abria o navegador, e numa
  * maquina onde a partida demorou mais que isso o operador recebeu
  * `ERR_CONNECTION_REFUSED` com o servidor subindo normalmente atras. O tempo de
  * partida nao e previsivel — `--experimental-strip-types` transpila os modulos a
