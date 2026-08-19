@@ -117,6 +117,40 @@ describe('navegacao', () => {
     expect(await screen.findByRole('region', { name: 'Identificação' })).toBeTruthy()
   })
 
+  /**
+   * O criterio de aceite de `H-34`: sem leitura nenhuma, a casca abre na tela de
+   * configuracao — e nao num painel de zeros, que afirmaria que a planilha tem
+   * zero processos (regra inviolavel 3). O gatilho e 'degradado' MAIS
+   * `lastReadAt` nulo, a distincao que `H-08` ja fazia entre dado congelado e
+   * ausencia de dado.
+   */
+  it('desvia para a configuracao quando nunca houve leitura', async () => {
+    api.serve(healthFixture({ state: 'degradado', lastReadAt: null, workbookPath: '' }))
+
+    render(<App />)
+
+    expect(
+      await screen.findByRole('heading', { name: /aponte a planilha para começar/i }),
+    ).toBeTruthy()
+    // Sem dado nao ha o que recortar nem para onde navegar.
+    expect(screen.queryByRole('navigation')).toBeNull()
+  })
+
+  it('nao desvia quando o dado esta apenas congelado', async () => {
+    api.serve(
+      healthFixture({
+        state: 'degradado',
+        lastReadAt: '2026-08-18T09:00:00.000Z',
+        degradedReason: 'A planilha esta em uso por outro programa.',
+      }),
+    )
+
+    render(<App />)
+
+    await screen.findByRole('navigation')
+    expect(screen.queryByRole('heading', { name: /aponte a planilha para começar/i })).toBeNull()
+  })
+
   it('nao inventa pagina para endereco desconhecido', () => {
     window.history.replaceState(null, '', '/relatorios')
     render(<App />)
