@@ -101,9 +101,22 @@ Derivados da estrutura real e da fronteira que o Biome impõe — use o mais esp
    Dentro de uma história os pontos verdes caem sozinhos na cadeia canônica: contrato fechado,
    domínio verde, rota verde, interface verde.
 
-   **Quando o agrupamento for não óbvio, prove.** Percorra os commits em `HEAD` destacado e
-   rode a suíte em cada um — foi assim que se descobriu, em `H-12`, que um `exit=1` intermitente
-   não era defeito do agrupamento. Informe a contagem de cada um no plano.
+   **Quando o agrupamento for não óbvio, prove — e prove DURANTE, não no fim.** Depois de
+   cada commit de código, guarde o resto da pilha e rode a suíte sobre o ponto que acabou de
+   criar:
+
+   ```bash
+   git stash push -u -q -m "resto" && npx vitest run; git stash pop -q
+   ```
+
+   O `;` antes do `pop` é deliberado: a suíte reprovando não pode deixar a pilha guardada.
+   Informe a contagem de cada ponto no plano.
+
+   **Percorrer `HEAD` destacado no fim também funciona, e descobre tarde.** Foi como `H-12`
+   mediu que um `exit=1` intermitente não era defeito do agrupamento. Em `H-34` a forma
+   incremental pegou o **primeiro** commit reprovando — um comentário citava identificador que
+   só nasceria dois commits adiante, e a guarda de âncora estava certa. Custou um `--amend`;
+   no fim da pilha teria custado `git reset HEAD~4`.
 
    Um arquivo tocado por duas preocupações **não** se divide aqui: `git add -p` é interativo e
    não roda neste ambiente. Escolha o commit onde ele cabe melhor e **diga por quê** — foi o caso
