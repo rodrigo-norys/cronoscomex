@@ -468,16 +468,59 @@ Corpo: vazio.
 
 ### `GET /api/config/workbook`
 
-O caminho da planilha configurado, e o que o servidor sabe sobre ele. **Nunca
-responde `503`:** é a única rota de leitura que existe justamente para o estado
-em que não houve leitura nenhuma.
+O **inventário da configuração**: o que está configurado, não só o que falta.
+**Nunca responde `503`** — é a única rota de leitura que existe justamente para o
+estado em que não houve leitura nenhuma.
 
 ```jsonc
-{ "workbookPath": "C:\\...\\planilha.xlsx", "exists": true, "readable": true }
+{
+  "workbookPath": "C:\\...\\planilha.xlsx",
+  "defined": true,      // há caminho configurado
+  "exists": true,       // existe no disco
+  "readable": true,     // o painel consegue lê-lo
+  "sheetPresent": true, // a aba configurada apareceu na última leitura
+
+  "configFile": { "path": "config/app.json", "present": true, "parseable": true },
+
+  "fields": [
+    { "key": "port", "value": 5173, "source": "arquivo", "restartPending": false },
+    { "key": "topN", "value": 10,   "source": "padrao",  "restartPending": false }
+    // … os oito campos de config/app.json.exemplo, nessa ordem
+  ]
+}
 ```
+
+**Os quatro fatos do caminho são quatro campos**, e não um `ok`/`não ok`:
+`defined`, `exists`, `readable` e `sheetPresent`. Agrupá-los perderia justamente
+a informação que diz o que fazer em seguida — caminho não configurado, arquivo
+que sumiu do OneDrive e arquivo sem permissão levam a três ações diferentes.
 
 `workbookPath` vem **vazio** na primeira execução — ausência de configuração, que
 é diferente de caminho configurado e inexistente (`exists: false`).
+
+`sheetPresent` é `null` enquanto **não houve leitura bem-sucedida**, inclusive
+quando a última falhou: a presença da aba não é deduzida do caminho, e abrir o
+arquivo só para responder isto duplicaria o leitor numa segunda regra.
+
+| `source` | Significa |
+|---|---|
+| `arquivo` | O campo está declarado em `config/app.json` |
+| `padrao` | Não está declarado; o padrão de `src/app/config.ts` foi aplicado |
+| `ausente` | Só `workbookPath`: é o único dos oito **sem** padrão |
+| `desconhecida` | O arquivo existe e não pôde ser lido agora (`parseable: false`) |
+
+**`arquivo` e `padrao` existem para separar duas situações que mostram o mesmo
+número.** `port: 5173` declarado e `port: 5173` omitido são visualmente
+idênticos e significam coisas diferentes — uma foi decidida por alguém. É a regra
+inviolável 3 aplicada à própria configuração.
+
+`value` é o valor **efetivo**, o que a aplicação está usando agora;
+`restartPending` diz que o arquivo declara outro, que só passa a valer no próximo
+início. Apenas `workbookPath` é trocável com o processo no ar (`H-34`).
+
+`config/app.json` **ausente não é erro** desde `H-34`: os padrões valem, a
+aplicação sobe e o operador resolve por esta tela — `scripts/iniciar.cmd` deixou
+de barrar a partida por causa dele em `H-44`.
 
 ### `PUT /api/config/workbook`
 
