@@ -15,6 +15,8 @@ export type ApiErrorCode =
   | 'ESCRITA_INVALIDA'
   | 'CAMINHO_INVALIDO'
   | 'CONFIG_NAO_GRAVAVEL'
+  | 'SELETOR_INDISPONIVEL'
+  | 'SELETOR_FALHOU'
   | 'ERRO_INTERNO'
 
 export interface ApiErrorBody {

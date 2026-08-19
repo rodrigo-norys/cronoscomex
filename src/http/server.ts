@@ -57,6 +57,8 @@ export function buildServer(
   applyWorkbookPath?: (resolvedPath: string) => Promise<void>,
   /** Ponto de injecao para teste. `saveWorkbookPath` recusa o padrao sob teste. */
   configPath?: string,
+  /** Abre o seletor do sistema (H-37). Ausente, vale o dialogo do Windows. */
+  openDialog?: () => Promise<string | null>,
 ): FastifyInstance {
   // Silencioso sob teste: a saida do Vitest e o relatorio, nao o log do servidor.
   const app = Fastify({
@@ -64,7 +66,7 @@ export function buildServer(
   })
 
   registerHealthRoute(app, config, store)
-  registerConfigRoutes(app, config, store, applyWorkbookPath, configPath)
+  registerConfigRoutes(app, config, store, applyWorkbookPath, configPath, openDialog)
   registerQuarantineRoute(app)
   registerReloadRoute(app, store)
   registerIndicatorsRoute(app, config, store)

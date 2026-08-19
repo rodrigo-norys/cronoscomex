@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { AppConfig } from '../../src/app/config.ts'
+import { FileDialogFailedError, FileDialogUnavailableError } from '../../src/app/file-dialog.ts'
 import type { StoreAccess, StoreState } from '../../src/app/process-store.ts'
 import { buildServer } from '../../src/http/server.ts'
 
@@ -69,12 +70,14 @@ afterEach(() => {
  *
  * `configPath` e o SEXTO argumento, e omiti-lo nao e inofensivo: `describeConfig`
  * e `saveWorkbookPath` recusam o padrao sob `NODE_ENV=test` justamente para que
- * o esquecimento reprove em vez de tocar o `app.json` da maquina (H-34, H-44).
+ * o esquecimento reprove em vez de tocar o `app.json` da maquina (H-34, H-35).
  */
 function serverWith(
   applied: string[],
   current: AppConfig = config(),
   storeState: StoreState = state(),
+  /** O seletor de arquivos. Ausente, a rota de `browse` nao e exercida. */
+  openDialog?: () => Promise<string | null>,
 ) {
   const app = buildServer(
     current,
@@ -86,9 +89,81 @@ function serverWith(
       current.workbookPath = path
     },
     configPath,
+    openDialog,
   )
   return app
 }
+
+/**
+ * H-37. O dialogo do sistema nao e aberto aqui — ele exige Windows com sessao
+ * grafica (`PD-06`, item 10). O que a rota precisa provar e como cada desfecho
+ * dele vira resposta HTTP.
+ */
+describe('POST /api/config/workbook/browse', () => {
+  it('devolve o caminho que o operador escolheu', async () => {
+    const escolhido = 'C:\\OneDrive\\CONTROLE DOS EMBARQUE.xlsx'
+    const app = serverWith([], config(), state(), () => Promise.resolve(escolhido))
+
+    const response = await app.inject({ method: 'POST', url: '/api/config/workbook/browse' })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual({ path: escolhido })
+  })
+
+  /** Cancelar e uma escolha: 200 com `path` nulo, e nao um erro. */
+  it('responde 200 com path nulo quando o operador cancela', async () => {
+    const app = serverWith([], config(), state(), () => Promise.resolve(null))
+
+    const response = await app.inject({ method: 'POST', url: '/api/config/workbook/browse' })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual({ path: null })
+  })
+
+  /**
+   * A maquina de desenvolvimento e este caso, e a de um Windows sem PowerShell
+   * tambem: a saida do operador e digitar o caminho, que continua funcionando.
+   */
+  it('responde 501 quando a maquina nao abre o seletor', async () => {
+    const app = serverWith([], config(), state(), () =>
+      Promise.reject(new FileDialogUnavailableError('Esta maquina nao abre o seletor.')),
+    )
+
+    const response = await app.inject({ method: 'POST', url: '/api/config/workbook/browse' })
+
+    expect(response.statusCode).toBe(501)
+    expect(response.json().error.code).toBe('SELETOR_INDISPONIVEL')
+    expect(response.json().error.message).toMatch(/nao abre o seletor/)
+  })
+
+  it('responde 500 quando o seletor abriu e terminou mal', async () => {
+    const app = serverWith([], config(), state(), () =>
+      Promise.reject(new FileDialogFailedError('O seletor devolveu resposta ilegivel.')),
+    )
+
+    const response = await app.inject({ method: 'POST', url: '/api/config/workbook/browse' })
+
+    expect(response.statusCode).toBe(500)
+    expect(response.json().error.code).toBe('SELETOR_FALHOU')
+  })
+
+  /**
+   * A rota escolhe, e nao grava. `PUT` continua sendo a unica porta de
+   * gravacao — com a conferencia de `checkWorkbookPath` inteira.
+   */
+  it('nao grava nada no app.json ao escolher', async () => {
+    const antes = readFileSync(configPath, 'utf-8')
+    const applied: string[] = []
+    const app = serverWith(applied, config(), state(), () =>
+      Promise.resolve('C:\\OneDrive\\outra.xlsx'),
+    )
+
+    await app.inject({ method: 'POST', url: '/api/config/workbook/browse' })
+
+    expect(readFileSync(configPath, 'utf-8')).toBe(antes)
+    expect(applied).toEqual([])
+  })
+})
 
 describe('GET /api/config/workbook', () => {
   it('responde o caminho configurado com exists e readable', async () => {
@@ -295,7 +370,7 @@ describe('PUT /api/config/workbook', () => {
 })
 
 /**
- * H-44. O GET virou o inventario da configuracao: o que a tela mostra ao
+ * H-35. O GET virou o inventario da configuracao: o que a tela mostra ao
  * operador na primeira execucao, quando ainda nao ha nada configurado.
  */
 describe('GET /api/config/workbook — o inventario', () => {
