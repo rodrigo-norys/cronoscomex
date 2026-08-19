@@ -194,18 +194,31 @@ echo.
 
 rem  O navegador abre em paralelo, e SO quando a porta responde.
 rem
-rem  Ate 19/08/2026 aqui havia `timeout /t 4`, e a primeira execucao real em
-rem  Windows mediu o defeito: a partida demorou mais que os 4 segundos e o
-rem  operador recebeu ERR_CONNECTION_REFUSED com o servidor subindo atras. O
-rem  tempo nao e previsivel — `--experimental-strip-types` transpila os modulos
-rem  a cada execucao, e a primeira, logo apos um `npm ci`, e a mais lenta.
-rem  Numero maior so trocaria quem falha; perguntar a porta responde na hora.
+rem  --- Duas correcoes de 19/08/2026, medidas na PRIMEIRA execucao real em
+rem  --- Windows. As duas sao deste bloco, e a segunda e a que importa.
+rem
+rem  1. Aqui havia `timeout /t 4`, e a partida demorou mais que isso: o
+rem     operador recebeu ERR_CONNECTION_REFUSED com o servidor subindo atras.
+rem     Numero maior so trocaria quem falha — `--experimental-strip-types`
+rem     transpila os modulos a cada execucao, e a primeira, logo apos um
+rem     `npm ci`, e a mais lenta. Perguntar a porta responde na hora certa.
+rem
+rem  2. E este `start` usava `/b`, que roda o filho NO MESMO CONSOLE. Quando
+rem     ele terminava, o evento de console alcancava o grupo inteiro, e o
+rem     `node` do servidor — que trata SIGINT com encerramento limpo — saia
+rem     com codigo ZERO. O atalho lia zero como termino normal e fechava a
+rem     janela. O sintoma era a aplicacao morrer sozinha logo apos o navegador
+rem     abrir, sem erro nenhum: o pior tipo de falha, porque nao parece falha.
+rem
+rem     `/min` abre uma janela PROPRIA, minimizada, que some quando o comando
+rem     acaba. O custo e um piscar na barra de tarefas; o beneficio e que
+rem     nenhum sinal do abridor alcanca o servidor.
 rem
 rem  A URL vai SEM aspas de proposito: dentro de `cmd /c "..."` nao ha forma
 rem  portavel de aninhar aspas, e endereco http nao tem espaco que as exija.
 rem  O `&` e incondicional: estourando a espera, o navegador abre assim mesmo —
 rem  a janela ja tera o erro do servidor, que diz mais do que nao abrir nada.
-start "" /b cmd /c "node scripts\esperar-porta.mjs !PORTA! & start http://127.0.0.1:!PORTA!/"
+start "CronosComex - abrindo o navegador" /min cmd /c "node scripts\esperar-porta.mjs !PORTA! & start http://127.0.0.1:!PORTA!/"
 
 rem  Em PRIMEIRO PLANO, e `node` direto em vez de `npm start`: fechar a janela
 rem  precisa matar o servidor, e o `npm` interporia um processo intermediario
