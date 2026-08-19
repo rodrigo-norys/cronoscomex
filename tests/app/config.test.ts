@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { ConfigError, loadConfig } from '../../src/app/config.ts'
+import { loadConfig, WORKBOOK_UNSET } from '../../src/app/config.ts'
 
 let dir: string
 let workbook: string
@@ -44,26 +44,31 @@ describe('loadConfig', () => {
     expect(config.topN).toBe(25)
   })
 
-  // Caso-limite de H-02: arquivo de configuracao ausente
-  it('falha citando o arquivo de exemplo quando app.json nao existe', () => {
-    const ausente = join(dir, 'nao-existe.json')
+  /**
+   * As tres assercoes abaixo foram INVERTIDAS em H-34, e a inversao e a
+   * historia. Ate ela, cada uma destas condicoes matava a partida — e isso
+   * criava um circulo: `config/app.json` nao e versionado, entao numa
+   * instalacao nova o processo morria antes de servir a tela de configuracao
+   * que existe para consertar o caminho.
+   */
+  it('sobe sem app.json, com o caminho nao configurado', () => {
+    const config = loadConfig(join(dir, 'nao-existe.json'))
 
-    expect(() => loadConfig(ausente)).toThrow(ConfigError)
-    expect(() => loadConfig(ausente)).toThrow(/app\.json\.exemplo/)
+    expect(config.workbookPath).toBe(WORKBOOK_UNSET)
+    expect(config.port).toBe(5173)
   })
 
-  // Caso-limite de H-02: workbookPath apontando para caminho inexistente.
-  // O erro precisa ocorrer NA PARTIDA, nao em tempo de requisicao.
-  it('falha quando a planilha nao existe no caminho configurado', () => {
-    const path = writeConfig({ workbookPath: join(dir, 'sumiu.xlsx') })
+  // O caminho declarado e PRESERVADO mesmo inexistente: a tela mostra para onde
+  // a aplicacao estava apontando, e o store entra em 'degradado' com a razao.
+  it('sobe com a planilha inexistente, preservando o caminho configurado', () => {
+    const sumiu = join(dir, 'sumiu.xlsx')
 
-    expect(() => loadConfig(path)).toThrow(ConfigError)
-    expect(() => loadConfig(path)).toThrow(/planilha nao existe/i)
+    expect(loadConfig(writeConfig({ workbookPath: sumiu })).workbookPath).toBe(sumiu)
   })
 
-  it('falha quando workbookPath esta ausente ou vazio', () => {
-    expect(() => loadConfig(writeConfig({}))).toThrow(/workbookPath/)
-    expect(() => loadConfig(writeConfig({ workbookPath: '   ' }))).toThrow(/workbookPath/)
+  it('trata workbookPath ausente ou so com espacos como nao configurado', () => {
+    expect(loadConfig(writeConfig({})).workbookPath).toBe(WORKBOOK_UNSET)
+    expect(loadConfig(writeConfig({ workbookPath: '   ' })).workbookPath).toBe(WORKBOOK_UNSET)
   })
 
   it('falha quando o JSON e invalido', () => {
