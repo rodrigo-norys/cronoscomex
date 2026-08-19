@@ -3593,6 +3593,246 @@ conteúdo, **nunca o caminho** — e é o caminho que o watcher precisa.
 
 ---
 
+### H-44 — Chegar ao painel na primeira execução, sem linha de comando
+
+> ✅ **CONCLUÍDA em 19/08/2026.** 25 testes próprios — 10 em
+> `tests/app/config.test.ts`, 8 em `tests/http/config.test.ts` e 7 em
+> `web/tests/WorkbookSetup.test.tsx`; suíte total de 1226 para **1251**. Duas
+> divergências decididas na abertura, e uma terceira aberta pelo usuário depois,
+> que quebrou a história em duas.
+>
+> **A história inteira é uma divisão de camadas, e ela se paga na primeira
+> instalação.** O `.cmd` tinha quatro verificações; ficou com três, e a que saiu
+> — `config/app.json` ausente — era a única que já tinha tela desde `H-34`. Numa
+> extração nova o arquivo **nunca** existe, porque está no `.gitignore`: a
+> verificação não era defesa, era a garantia de que a tela jamais seria vista.
+>
+> **`dist/` também está no `.gitignore`, e isso mudou a decisão.** "Interface não
+> compilada" não é caso-limite: é o estado de toda instalação nova. Por isso o
+> atalho passou a **oferecer compilar**, com confirmação — e `npm ci` roda
+> **apenas** quando `node_modules` falta, que é o que preserva a máquina sem
+> internet e com as dependências já baixadas. Rodá-lo à toa apaga a pasta e volta
+> a exigir rede.
+>
+> **`restartPending` nasceu de um buraco que o inventário abriria.** O valor
+> efetivo vem do objeto em memória e a origem vem do arquivo, relido a cada
+> requisição — então um `port` editado à mão depois da partida apareceria como se
+> estivesse valendo. Ele diz que arquivo e memória divergem, e não afirma que o
+> próximo início aceitará o valor: são coisas diferentes, e prometer a segunda
+> exigiria repetir a validação de `loadConfig` numa segunda regra.
+>
+> **`ausente` é a quarta origem porque `workbookPath` é o único dos oito campos
+> sem padrão.** Marcá-lo como `padrao` afirmaria um padrão que `DEFAULTS` não
+> tem. Mesma família de `sheetPresent`, que é `null` inclusive quando a última
+> leitura **falhou**: "não se sabe" e "não tem" são respostas diferentes, e
+> deduzir a presença da aba a partir do caminho seria adivinhar.
+>
+> **A guarda de caminho padrão sob teste passou a valer para a leitura.** Era só
+> da gravação desde `H-34`; `describeConfig` lê, e um teste que caísse no padrão
+> leria o `app.json` da máquina — passando ou reprovando pelo estado dela, que é
+> exatamente o defeito que `H-28` mediu. `tests/http/config.test.ts` só voltou a
+> passar depois de `serverWith` passar o sexto argumento de `buildServer`.
+>
+> **Um falso positivo do hook de dados sensíveis apareceu ao escrever o
+> documento:** o blockquote markdown `> ` seguido de um caminho de configuração é
+> lido como redirecionamento de shell para caminho protegido. O hook falha
+> fechado, que é o comportamento certo; o texto foi reescrito.
+>
+> **Conferido contra a planilha e a configuração reais:** 649 processos lidos
+> pelo caminho configurado, os oito campos do inventário com origem `arquivo`,
+> `sheetPresent` verdadeiro, e `GET /api/config/workbook` respondendo `200` com o
+> caminho no corpo — que é o esperado, porque a **tela** o mostra. O log do
+> Fastify saiu com `method` e `url` apenas: a regra inviolável 8 conferida em
+> execução, e não só pela asserção de código.
+>
+> **`scripts/iniciar.cmd` NÃO FOI EXECUTADO.** É batch do Windows e o
+> desenvolvimento é em Linux. Tudo o que ele passou a fazer — a compilação sob
+> demanda, o aviso de configuração ausente, a receita do JSON corrompido — está
+> em `PD-06`, a conferir na primeira instalação na máquina do operador.
+>
+> **A história foi quebrada durante a execução.** O usuário pediu, depois do
+> aceite, o checklist das etapas de partida no painel, o botão de revalidação e
+> um `config/app.json.exemplo` fiel ao real. Isso levaria a lista a nove
+> arquivos, e nenhuma história do plano é G: o diagnóstico virou `H-45`.
+
+**Objetivo:** numa máquina limpa, o operador dá duplo clique no atalho e chega ao
+painel — ou a uma tela que diz exatamente o que fazer em seguida — sem editar
+arquivo nenhum e sem abrir prompt.
+
+> **Nasceu como proposta de fim de fila e foi movida para o início.** É por isso
+> que ela vive em `E7 — Operação`, ao lado de `H-30` a `H-34`, e não em `E8`:
+> o assunto é operação, não estilização. A precedência sobre `H-35` … `H-43` é
+> **ordem de trabalho**, não dependência técnica.
+>
+> **O defeito que ela corrige é de camada, não de código.** Numa máquina limpa o
+> `scripts/iniciar.cmd` para com "Falta o arquivo de configuracao:
+> config\app.json" e manda copiar um arquivo e editar JSON à mão — enquanto a
+> tela que `H-34` entregou resolve exatamente isso e **nunca chega a ser
+> exibida**, porque o batch morre antes de o Node subir. `config/app.json` está
+> no `.gitignore`: numa instalação nova ele **nunca** existe.
+>
+> **A medida de sucesso é uma frase, e todo critério serve a ela:** instalar numa
+> máquina limpa, sair da sala, e o operador chegar ao painel sem mandar mensagem.
+>
+> **`dist/` também está no `.gitignore`**, então "interface não compilada" não é
+> caso-limite: é o estado garantido de toda extração nova.
+
+**Arquivos:**
+- `scripts/iniciar.cmd` — fica só o que impede o servidor de subir; as três
+  mensagens viram receita completa
+- `scripts/porta.mjs` — o comentário: a ausência do `app.json` deixou de ser
+  barrada antes e virou o caso normal
+- `src/app/config.ts` — `describeConfig`, o inventário dos oito campos
+- `src/http/routes/config.ts` — os campos aditivos no `GET`
+- `web/src/pages/WorkbookSetup.tsx` — a tela vira inventário
+- `docs/05-contratos-api.md` — o contrato estendido
+- `README.md` — passos 3, 4 e 5 da Instalação
+- `tests/app/config.test.ts`, `tests/http/config.test.ts`,
+  `web/tests/WorkbookSetup.test.tsx`
+
+**Contrato fixado:**
+
+```jsonc
+// GET /api/config/workbook — aditivo; os três campos de H-34 permanecem
+{
+  "workbookPath": "C:\\...\\planilha.xlsx",
+  "defined": true, "exists": true, "readable": true, "sheetPresent": true,
+  "configFile": { "path": "config/app.json", "present": true, "parseable": true },
+  "fields": [ { "key": "port", "value": 5173, "source": "arquivo", "restartPending": false } ]
+}
+// source: 'arquivo' | 'padrao' | 'ausente' | 'desconhecida'
+```
+
+**A divisão de camadas é a história.** Fica no `.cmd` **somente** o que impede o
+servidor de subir ou a tela de existir — Node ausente, Node abaixo da 22 e
+`dist/web/index.html` ausente. Os três são anteriores ao navegador por natureza,
+e nenhuma interface pode reportá-los. Todo o resto migra para a tela.
+
+**Duas decisões do usuário, tomadas na abertura da fatia:**
+
+| Situação | Decisão | Por quê |
+|---|---|---|
+| `config/app.json` existe e é JSON inválido | **Continua matando a partida, com mensagem no `.cmd`** | Não é uma quarta verificação: é o tratamento de erro da leitura da porta, que continua acontecendo porque o `.cmd` precisa dela para abrir o navegador. Tolerar no servidor aplicaria padrão por cima de configuração que existe — valor errado invisível — e a tela ficaria **incapaz de salvar**, porque `saveWorkbookPath` relê antes de gravar |
+| `dist/web/index.html` ausente | **O `.cmd` oferece compilar**, com confirmação | "Abra o Prompt na pasta certa" é o passo que quebra para quem não usa linha de comando (RNF-26). `npm ci` roda **só** se `node_modules` faltar — é o que salva a máquina sem internet e com dependências já baixadas |
+
+**Critérios de aceite:**
+- **Dado** máquina limpa sem `config/app.json`, **então** o servidor sobe na
+  porta padrão e a tela de configuração aparece; nenhuma mensagem manda copiar
+  arquivo nem editar JSON.
+- **Dado** o salvamento nessa tela, **então** o `app.json` é criado com os demais
+  campos íntegros.
+- **Dado** `GET /api/config/workbook`, **então** os **oito** campos vêm com valor
+  efetivo e origem, e `padrao` nunca é confundido com `arquivo` quando o valor
+  coincide.
+- **Dado** um caminho configurado, **então** `defined`, `exists`, `readable` e
+  `sheetPresent` são quatro respostas distintas.
+- **Dado** que a tela mostra o caminho, **então** ele não aparece em log algum
+  (regra inviolável 8).
+- **Dado** o épico `E8`, **então** nenhum dos zeros dispensados é reaberto: 0
+  `dark:`, 0 `sticky`, 0 `animate-*`/`transition-*`, 0 `outline-none`, 0
+  `tabIndex`, 0 `onClick` em elemento não interativo.
+
+**Casos-limite:**
+- `config/app.json` ausente → oito campos com origem `padrao`, exceto
+  `workbookPath` com `ausente`.
+- `{ "port": 5173 }` declarado → `arquivo`; `topN` omitido → `padrao`. Mesmo
+  valor de padrão, origens diferentes.
+- Arquivo corrompido **depois** da partida → `parseable: false`, os oito com
+  origem `desconhecida`, valores em uso preservados.
+- Caminho com espaços e acentos, e caminho UNC (`\\servidor\pasta`) → seguem
+  sendo configuração, e não ausência dela.
+- Caminho definido apontando para arquivo inexistente → o inventário mostra o
+  caminho **e** o fato de não existir.
+- `NODE_ENV=test` sem caminho injetado → `describeConfig` lança, como
+  `saveWorkbookPath` desde `H-34` (regra inviolável 7).
+
+**Sem teste automatizado, por serem do `.cmd`:** porta ocupada, segunda execução
+com a aplicação no ar, `dist/web` ausente, máquina sem internet, duplo clique,
+janela fechada sem processo órfão. `scripts/iniciar.cmd` é batch do Windows e o
+desenvolvimento é em Linux — **nada aqui foi executado**, e o que ele passa a
+fazer virou item de `PD-06`, no `CLAUDE.md`.
+
+**Fora desta história:** qualquer código de `H-35` a `H-43` — alterar a contagem
+de arquivos e o tamanho delas é entrega desta fatia; abrir os arquivos delas, não.
+Também fora: vocabulário de tema (é `H-35`, e antecipá-lo tira dela a decisão que
+a justifica), modo escuro, campo de configuração novo, editar os outros sete
+campos pela tela, e seletor de aba (regra inviolável 10).
+
+**Dependências:** H-30, H-34 — e **precede** H-35 … H-43, por ordem de trabalho
+**Tamanho:** M (8 arquivos, 1 contrato estendido — `GET /api/config/workbook`
+ganha campos aditivos; nenhuma rota nova)
+
+---
+
+### H-45 — O painel diz onde a partida parou, e revalida sem reexecutar o atalho
+
+**Objetivo:** o operador ver, no próprio painel, quais etapas da partida foram
+cumpridas e qual falta — e poder reconferir depois de resolver, sem fechar a
+janela e dar duplo clique de novo.
+
+> **Nasceu do corte de `H-44`**, que chegou a nove arquivos e foi quebrada. O que
+> ficou aqui é a camada de diagnóstico: `H-44` faz a aplicação subir e criar o
+> arquivo de configuração sozinha; esta faz o painel **dizer em que ponto ela
+> está**.
+>
+> **Três etapas aparecem sempre cumpridas, e isso não é decoração.** Node
+> instalado, Node ≥ 22 e interface compilada são pré-condição de a página
+> existir — ela é servida *pelo* Node, a partir de `dist/web`. Vê-las verdes é a
+> prova de que o operador passou delas, e mostrar a versão real do Node ao lado
+> transforma "deu certo até aqui" em fato conferível. Quem reporta a **falha**
+> das três continua sendo `scripts/iniciar.cmd`, e não há outra camada possível.
+>
+> **O botão *Atualizar* serve às etapas que mudam sem reiniciar:** o arquivo de
+> configuração aparecer, a planilha voltar a existir na pasta sincronizada, a
+> permissão de leitura mudar. É o caso real — o operador sincroniza o OneDrive
+> no Explorer e reconfere ali mesmo.
+
+**Arquivos:**
+- `web/src/pages/WorkbookSetup.tsx` — o checklist e o botão *Atualizar*
+- `src/http/routes/config.ts` — os campos de ambiente no `GET`
+- `docs/05-contratos-api.md` — o contrato estendido
+- `config/app.json.exemplo` — fiel à forma que a aplicação grava
+- `tests/http/config.test.ts`, `web/tests/WorkbookSetup.test.tsx`
+
+**Contrato fixado:**
+
+```jsonc
+// GET /api/config/workbook — aditivo sobre H-44
+{
+  "runtime": {
+    "nodeVersion": "22.23.2",  // process.versions.node, o real
+    "webBuilt": true           // dist/web/index.html existe
+  }
+}
+```
+
+**Critérios de aceite:**
+- **Dado** o painel aberto, **então** o checklist mostra as etapas na ordem em
+  que `scripts/iniciar.cmd` as percorre, cada uma cumprida ou pendente.
+- **Dado** que a página está sendo exibida, **então** as três etapas anteriores
+  ao navegador aparecem cumpridas, e a do Node traz a **versão real**.
+- **Dado** o botão *Atualizar*, **então** ele refaz `GET /api/config/workbook` e
+  o checklist muda sem recarregar a página nem reexecutar o atalho.
+- **Dado** `config/app.json.exemplo`, **então** ele traz as mesmas oito chaves, na
+  mesma ordem, que a aplicação grava — hoje o exemplo diverge do arquivo real.
+
+**Casos-limite:**
+- `dist/web/index.html` apagado com o servidor no ar → `webBuilt: false`, e o
+  checklist o mostra pendente mesmo com a SPA carregada em memória.
+- Clique em *Atualizar* durante um salvamento → a carga é a mesma do
+  `reloadToken` de `useWorkbookConfig`; não há segunda regra.
+- Etapa pendente **não** vira erro: o checklist é informação de estado, e um
+  painel vermelho na primeira execução afirmaria falha onde há só ausência.
+
+**Fora desta história:** reportar Node ausente ou abaixo da 22 pelo navegador —
+é impossível por construção, e a mensagem do `.cmd` é a única camada que alcança
+esses dois casos. Também fora: gravar pela tela qualquer campo além do caminho.
+
+**Dependências:** H-44
+**Tamanho:** M (5 arquivos, 1 contrato estendido)
+
+---
+
 ## Épico E8 — Estilização
 
 Nasce da revisão de `docs/estilizacao/RESULTADO.md` (18/08/2026), que percorreu
@@ -3786,6 +4026,9 @@ consumirem os tokens, com as bordas de controle corrigidas.
 - `web/src/components/EditProcessForm.tsx` — bordas de controle, faixa de erro
 - `web/src/components/PendingEditsPanel.tsx` — severidade "aviso"
 - `web/src/pages/ProcessDetail.tsx` — `text-slate-400`, adota `panel-*`
+- `web/src/pages/WorkbookSetup.tsx` — bordas de controle, faixa de erro, painel
+  do inventário (**alocada por `H-44`**: a tela nasceu depois do corpus e não
+  aparecia em nenhuma das nove histórias)
 
 **Critérios de aceite:**
 - **Dado** os quatro arquivos, **então** nenhum referencia passo bruto de paleta.
@@ -3812,8 +4055,16 @@ consumirem os tokens, com as bordas de controle corrigidas.
 **Fora desta história:** os três painéis `border-dashed` continuarem distintos
 é decisão do corpus (`ACHADO 15`, nota), e não se re-litiga aqui.
 
+> **`WorkbookSetup.tsx` entra aqui, e não em `H-38`, por duas razões que se
+> somam.** É formulário que grava, com estado de salvamento e de erro: a mesma
+> borda de controle e a mesma faixa de erro dos outros três arquivos desta fatia.
+> E é a única alocação possível **dentro da onda 2** — `H-38` já está em 8
+> arquivos, e é ela que fecha a guarda `tests/repo/estilo.test.ts`, que varre
+> `web/src/**/*.tsx`. Deixar a tela fora da onda faria a guarda nascer vermelha,
+> exatamente o que o bloco de `H-38` existe para evitar.
+
 **Dependências:** H-35
-**Tamanho:** M (4 arquivos, 0 contrato novo)
+**Tamanho:** M (5 arquivos, 0 contrato novo)
 
 ---
 
@@ -3959,6 +4210,8 @@ caminho de tabulação o gráfico que a árvore de acessibilidade não expõe.
 - `web/src/pages/Alerts.tsx` — idem
 - `web/src/pages/History.tsx` — idem, mais o gráfico e o seletor de janela
 - `web/src/pages/ProcessDetail.tsx` — idem
+- `web/src/pages/WorkbookSetup.tsx` — o bloco de erro da carga da configuração,
+  renderizado condicionalmente e sem `role` (**alocada por `H-44`**)
 
 **Critérios de aceite:**
 - **Dado** as sete páginas, **então** nenhuma monta `role="alert"` ou
@@ -3992,8 +4245,13 @@ caminho de tabulação o gráfico que a árvore de acessibilidade não expõe.
 **Fora desta história:** o `fontSize: 12` dos eixos (`ACHADO 21`) e a contenção
 de rolagem da tabela (`ACHADO 19`) — onda 5, `H-42`.
 
+> **`WorkbookSetup.tsx` tem o defeito das páginas, não o da casca.** O bloco
+> `state.status === 'erro'` é renderizado condicionalmente e não tem `role` — o
+> mesmo `return` antecipado das sete. A região `role="alert"` persistente da tela
+> **já está correta desde `H-34`**: é padrão a preservar, nunca a "corrigir".
+
 **Dependências:** H-39
-**Tamanho:** M (7 arquivos, 0 contrato novo)
+**Tamanho:** M (8 arquivos, 0 contrato novo)
 
 ---
 
@@ -4193,9 +4451,9 @@ E qualquer correção de código: os cinco procedimentos produzem registro.
 | E4 — Interface ✅ | H-15 … H-22 | 6 | 2 | 0 |
 | E5 — Edição e escrita ✅ | H-23 … H-27 | 0 | 5 | 0 |
 | E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
-| E7 — Operação ✅ | H-30 … H-34 | 3 | 2 | 0 |
+| E7 — Operação | H-30 … H-34, H-44, **H-45 aberta** | 3 | 4 | 0 |
 | E8 — Estilização | **H-35 … H-43, todas abertas** | 1 | 8 | 0 |
-| **Total** | **43** — 34 concluídas, 9 abertas | **17** | **26** | **0** |
+| **Total** | **45** — 35 concluídas, 10 abertas | **17** | **28** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até
