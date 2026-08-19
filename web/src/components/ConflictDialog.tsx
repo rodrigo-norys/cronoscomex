@@ -70,21 +70,21 @@ export function ConflictDialog({ refusal, onClose }: ConflictDialogProps) {
         : 'Nada foi gravado'
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay-scrim px-4">
       <div
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="conflito-titulo"
-        className="max-h-[80vh] w-full max-w-3xl overflow-auto rounded-lg bg-white p-6 shadow-xl"
+        className="max-h-[80vh] w-full max-w-3xl overflow-auto rounded-lg bg-surface-raised p-6 shadow-xl"
       >
-        <h2 id="conflito-titulo" className="text-lg font-semibold text-slate-900">
+        <h2 id="conflito-titulo" className="text-lg font-semibold text-text-primary">
           {titulo}
         </h2>
 
-        <p className="mt-2 text-sm text-slate-700">{refusal.message}</p>
+        <p className="mt-2 text-sm text-text-secondary">{refusal.message}</p>
 
         {refusal.restored && refusal.backupPath !== null && (
-          <p className="mt-3 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+          <p className="mt-3 rounded border border-state-warning-border bg-state-warning-bg px-3 py-2 text-sm text-state-warning-fg">
             A planilha foi restaurada automaticamente da cópia de segurança em{' '}
             <code className="font-mono text-xs">{refusal.backupPath}</code>.
           </p>
@@ -94,7 +94,7 @@ export function ConflictDialog({ refusal, onClose }: ConflictDialogProps) {
             nao pode ser reposto. Sem este aviso o operador fica com uma planilha
             possivelmente invalida e nenhuma instrucao. */}
         {refusal.fileAtRisk && refusal.backupPath !== null && (
-          <p className="mt-3 rounded border border-red-400 bg-red-50 px-3 py-2 text-sm text-red-900">
+          <p className="mt-3 rounded border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg">
             <strong className="font-semibold">A planilha não pôde ser restaurada.</strong> O arquivo
             em disco pode estar inválido. Feche o Excel e reponha manualmente a partir da cópia de
             segurança em <code className="font-mono text-xs">{refusal.backupPath}</code>.
@@ -105,7 +105,7 @@ export function ConflictDialog({ refusal, onClose }: ConflictDialogProps) {
           <table className="mt-4 w-full border-collapse text-sm">
             <caption className="sr-only">Conflitos entre a sua edição e a planilha</caption>
             <thead>
-              <tr className="border-b border-slate-300 text-left text-slate-600">
+              <tr className="border-b border-border-subtle text-left text-text-secondary">
                 <th scope="col" className="py-2 pr-3 font-medium">
                   Processo
                 </th>
@@ -127,14 +127,16 @@ export function ConflictDialog({ refusal, onClose }: ConflictDialogProps) {
               {refusal.conflicts.map((conflito) => (
                 <tr
                   key={`${conflito.ref}|${conflito.field}`}
-                  className="border-b border-slate-200 align-top"
+                  className="border-b border-border-subtle align-top"
                 >
                   <td className="py-2 pr-3 font-mono text-xs">{conflito.ref}</td>
                   <td className="py-2 pr-3">{NOME_DA_COLUNA[conflito.field] ?? conflito.field}</td>
                   <td className="py-2 pr-3">{conflito.valueWhenEdited || '—'}</td>
                   <td className="py-2 pr-3">
                     {conflito.refMissing ? (
-                      <span className="text-amber-800">Esta linha não está mais na planilha</span>
+                      <span className="text-state-warning-fg">
+                        Esta linha não está mais na planilha
+                      </span>
                     ) : (
                       conflito.valueNow || '—'
                     )}
@@ -153,7 +155,7 @@ export function ConflictDialog({ refusal, onClose }: ConflictDialogProps) {
         {refusal.code !== 'NADA_A_APLICAR' &&
           refusal.code !== 'ERRO_INTERNO' &&
           !refusal.fileAtRisk && (
-            <p className="mt-4 text-sm text-slate-600">
+            <p className="mt-4 text-sm text-text-secondary">
               Suas alterações continuam na fila. Nenhuma célula foi gravada.
             </p>
           )}
@@ -162,7 +164,7 @@ export function ConflictDialog({ refusal, onClose }: ConflictDialogProps) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded bg-slate-800 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+            className="rounded bg-action-bg px-4 py-2 text-sm font-medium text-action-fg hover:bg-action-bg-hover"
           >
             Entendi
           </button>

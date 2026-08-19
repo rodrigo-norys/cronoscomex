@@ -71,16 +71,16 @@ export function App() {
     route.pageId !== 'notFound'
 
   return (
-    <div className="min-h-screen bg-slate-100 font-sans text-slate-900">
-      <header className="border-b border-slate-200 bg-white">
+    <div className="min-h-screen bg-surface-base font-sans text-text-primary">
+      <header className="border-b border-border-subtle bg-surface-raised">
         <div className="flex flex-wrap items-baseline justify-between gap-4 px-6 pt-5 pb-3">
           <div>
             <h1 className="text-xl font-semibold">CronosComex</h1>
-            <p className="text-sm text-slate-500">Painel operacional de desembaraço aduaneiro</p>
+            <p className="text-sm text-text-muted">Painel operacional de desembaraço aduaneiro</p>
           </div>
           <div className="flex items-center gap-3">
             {health && (
-              <span className="text-sm text-slate-500">
+              <span className="text-sm text-text-muted">
                 Dados de <time dateTime={health.today}>{formatDay(health.today)}</time>
               </span>
             )}
@@ -103,7 +103,7 @@ export function App() {
       {healthError && (
         <p
           role="alert"
-          className="border-y border-red-300 bg-red-50 px-6 py-3 text-sm text-red-900"
+          className="border-y border-state-error-border bg-state-error-bg px-6 py-3 text-sm text-state-error-fg"
         >
           <strong className="font-semibold">Sem contato com o servidor.</strong> {healthError}
         </p>
@@ -137,10 +137,7 @@ export function App() {
  */
 function PageLoading() {
   return (
-    <p
-      role="status"
-      className="rounded border border-slate-200 bg-white p-6 text-sm text-slate-500"
-    >
+    <p role="status" className="panel-loading">
       Carregando página…
     </p>
   )
@@ -166,8 +163,8 @@ function MainNav({ route }: { route: Route }) {
             }}
             className={`border-b-2 px-3 py-2 text-sm font-medium ${
               current
-                ? 'border-slate-800 text-slate-900'
-                : 'border-transparent text-slate-500 hover:text-slate-800'
+                ? 'border-border-strong text-text-primary'
+                : 'border-transparent text-text-muted hover:text-text-primary'
             }`}
           >
             {page.label}

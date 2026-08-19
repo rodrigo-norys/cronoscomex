@@ -77,8 +77,8 @@ export function MultiSelect({ label, options, selected, onToggle }: MultiSelectP
         aria-controls={panelId}
         className={`flex w-full items-center justify-between gap-2 rounded border px-2 py-1.5 text-left text-sm ${
           selected.length > 0
-            ? 'border-slate-800 bg-slate-800 text-white'
-            : 'border-slate-300 bg-white text-slate-700 hover:border-slate-400'
+            ? 'border-action-bg bg-action-bg text-action-fg'
+            : 'border-border-control bg-surface-raised text-text-secondary hover:border-border-strong'
         }`}
       >
         <span className="truncate">{label}</span>
@@ -90,7 +90,7 @@ export function MultiSelect({ label, options, selected, onToggle }: MultiSelectP
       {open && (
         <div
           id={panelId}
-          className="absolute z-10 mt-1 max-h-72 w-64 overflow-auto rounded border border-slate-300 bg-white p-2 shadow-lg"
+          className="absolute z-10 mt-1 max-h-72 w-64 overflow-auto rounded border border-border-subtle bg-surface-raised p-2 shadow-lg"
         >
           {options.length > SEARCH_THRESHOLD && (
             <input
@@ -99,17 +99,17 @@ export function MultiSelect({ label, options, selected, onToggle }: MultiSelectP
               onChange={(event) => setSearch(event.target.value)}
               placeholder={`Buscar em ${label.toLowerCase()}`}
               aria-label={`Buscar em ${label}`}
-              className="mb-2 w-full rounded border border-slate-300 px-2 py-1 text-sm"
+              className="mb-2 w-full rounded border border-border-control px-2 py-1 text-sm"
             />
           )}
 
           {visible.length === 0 ? (
-            <p className="px-1 py-2 text-sm text-slate-500">Nenhum valor corresponde.</p>
+            <p className="px-1 py-2 text-sm text-text-muted">Nenhum valor corresponde.</p>
           ) : (
             <ul>
               {visible.map((option) => (
                 <li key={option.key}>
-                  <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm hover:bg-slate-100">
+                  <label className="flex cursor-pointer items-center gap-2 rounded px-1 py-1 text-sm hover:bg-surface-base">
                     <input
                       type="checkbox"
                       checked={selected.includes(option.key)}
@@ -121,7 +121,7 @@ export function MultiSelect({ label, options, selected, onToggle }: MultiSelectP
                     <span className="grow truncate">
                       {option.label === '' ? '(em branco)' : option.label}
                     </span>
-                    <span className="shrink-0 text-xs text-slate-400">{option.count}</span>
+                    <span className="shrink-0 text-xs text-text-muted">{option.count}</span>
                   </label>
                 </li>
               ))}
