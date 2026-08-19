@@ -39,7 +39,7 @@ const History = lazy(() =>
  */
 export function App() {
   const route = useRoute()
-  const { health, healthError, dataVersion, refreshing, refresh } = useAppData()
+  const { health, healthError, dataVersion, refreshing, refresh, applyHealth } = useAppData()
   const filters = useFilters()
   const { options, error: optionsError } = useFilterOptions(dataVersion)
   // A recusa vive na casca, e nao no botao: o dialogo cobre a tela inteira, e
@@ -62,7 +62,13 @@ export function App() {
   // O detalhe de um processo e sobre UM processo, achado pela REF: recortar o
   // conjunto nao muda o que ele mostra. Endereco desconhecido nao tem dado
   // nenhum a filtrar. E sem leitura nenhuma nao ha o que recortar.
-  const showFilters = !firstRun && route.pageId !== 'processDetail' && route.pageId !== 'notFound'
+  // `workbookSetup` entrou no menu em `H-38`, e a barra nao a alcanca: ela nao e
+  // uma visao do dado, e um recorte ali nao teria sobre o que incidir.
+  const showFilters =
+    !firstRun &&
+    route.pageId !== 'processDetail' &&
+    route.pageId !== 'workbookSetup' &&
+    route.pageId !== 'notFound'
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-slate-900">
@@ -106,13 +112,14 @@ export function App() {
       <main className="px-6 py-6">
         <Suspense fallback={<PageLoading />}>
           {firstRun ? (
-            <WorkbookSetup key={dataVersion} dataVersion={dataVersion} firstRun />
+            <WorkbookSetup dataVersion={dataVersion} firstRun onSaved={applyHealth} />
           ) : (
             <PageOutlet
               route={route}
               dataVersion={dataVersion}
               health={health}
               queryString={filters.queryString}
+              onWorkbookSaved={applyHealth}
             />
           )}
         </Suspense>
@@ -176,6 +183,7 @@ interface PageOutletProps {
   dataVersion: number
   health: HealthResponse | null
   queryString: string
+  onWorkbookSaved: (health: HealthResponse) => void
 }
 
 /**
@@ -185,10 +193,16 @@ interface PageOutletProps {
  * `PendingPage` do fim vira rede de seguranca: `PageId` novo sem ramo aqui cai
  * nele, e a guarda de `web/tests/paginas-montadas.test.tsx` reprova.
  *
+ * **`WorkbookSetup` e a unica sem a `key`**, e nao por descuido: ela nao exibe
+ * dado da planilha, e sim o formulario que a aponta. Remontar apagaria o
+ * caminho que o operador esta digitando e a frase que acabou de aparecer sobre
+ * o clique anterior — justamente quando o dado muda, que e o que um clique bem
+ * sucedido provoca.
+ *
  * A casca repassa `queryString` em vez de os filtros inteiros: a pagina precisa
  * anexar o recorte as requisicoes, nunca interpreta-lo.
  */
-function PageOutlet({ route, dataVersion, health, queryString }: PageOutletProps) {
+function PageOutlet({ route, dataVersion, health, queryString, onWorkbookSaved }: PageOutletProps) {
   const page = pageOf(route)
   if (page === null) return <NotFoundPage />
 
@@ -228,7 +242,7 @@ function PageOutlet({ route, dataVersion, health, queryString }: PageOutletProps
   // virada de ano, por exemplo. O desvio automatico da primeira execucao nem
   // chega aqui: ele acontece na casca, antes do outlet.
   if (route.pageId === 'workbookSetup') {
-    return <WorkbookSetup key={dataVersion} dataVersion={dataVersion} firstRun={false} />
+    return <WorkbookSetup dataVersion={dataVersion} firstRun={false} onSaved={onWorkbookSaved} />
   }
 
   return <PendingPage key={dataVersion} page={page} processRef={route.ref} />

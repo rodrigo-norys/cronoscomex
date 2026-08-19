@@ -19,6 +19,15 @@ export interface AppData {
   dataVersion: number
   refreshing: boolean
   refresh: () => Promise<void>
+  /**
+   * Aplica um health que quem chamou JA tem em maos, sem ir a rede.
+   *
+   * Existe por `PUT /api/config/workbook`, que responde o proprio corpo do
+   * health ja com a leitura nova: sem isto a casca so descobre o caminho novo
+   * no poll seguinte, e a tela de configuracao fica identica por ate
+   * `HEALTH_POLL_MS` depois de um clique que deu certo.
+   */
+  applyHealth: (health: HealthResponse) => void
 }
 
 interface SeenState {
@@ -128,5 +137,5 @@ export function useAppData(): AppData {
     }
   }, [checkHealth])
 
-  return { health, healthError, dataVersion, refreshing, refresh }
+  return { health, healthError, dataVersion, refreshing, refresh, applyHealth }
 }
