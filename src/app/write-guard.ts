@@ -278,6 +278,24 @@ export function initWriteGuard(next: WriteGuardOptions): void {
   writing = false
 }
 
+/**
+ * Reaponta o guard para o watcher que observa a planilha nova (H-34).
+ *
+ * Sem isto, trocar o caminho com o processo no ar deixaria o guard segurando o
+ * observador do arquivo ANTIGO: a escrita cirurgica pausaria um watcher que nao
+ * observa mais nada, e o watcher do arquivo novo dispararia releitura no meio
+ * da gravacao — exatamente a corrida que `pause()`/`resume()` existem para
+ * impedir. E o unico ponto do caminho de escrita que a troca de caminho toca.
+ *
+ * Silencioso quando o guard ainda nao foi inicializado: em teste e no uso do
+ * store como biblioteca nao ha guard, e lancar aqui faria a troca de caminho
+ * depender de uma inicializacao que so producao faz.
+ */
+export function retargetWatcher(watcher: Pick<Watcher, 'pause' | 'resume'>): void {
+  if (options === null) return
+  options = { ...options, watcher }
+}
+
 function refuse(
   refusal: WriteRefusal,
   startedAt: number,
