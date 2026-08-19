@@ -11,7 +11,93 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 
 ---
 
+<a id="indice"></a>
+
+## Índice
+
+**[Épico E1 — Fundação e perfilamento](#e1)**
+
+- [H-01 — Perfilar a planilha real e emitir relatório de estrutura](#h-01)
+- [H-02 — Levantar o esqueleto do projeto com servidor, interface e testes](#h-02)
+
+**[Épico E2 — Leitura da planilha e normalização](#e2)**
+
+- [H-03 — Ler a planilha e expor as linhas cruas com a célula-âncora de estilo](#h-03)
+- [H-04 — Traduzir a chave de estilo em responsável, canal e localização do importador](#h-04)
+- [H-05 — Normalizar textos de agrupamento e converter células em datas](#h-05)
+- [H-06 — Classificar cada linha em uma das quatro categorias canônicas](#h-06)
+- [H-07 — Compor os processos e emitir o relatório de quarentena e divergências](#h-07)
+- [H-08 — Recarregar automaticamente quando a planilha for alterada por fora](#h-08)
+
+**[Épico E3 — Indicadores e alertas](#e3)**
+
+- [H-09 — Entregar as contagens por categoria de status](#h-09)
+- [H-10 — Entregar os indicadores de calendário](#h-10)
+- [H-11 — Entregar os agrupamentos e rankings](#h-11)
+- [H-12 — Entregar os indicadores de risco](#h-12)
+- [H-13 — Entregar os indicadores de tempo](#h-13)
+- [H-14 — Entregar os cinco alertas derivados do estado atual](#h-14)
+
+**[Épico E4 — Interface do painel](#e4)**
+
+- [H-15 — Montar a casca da aplicação com os onze filtros globais](#h-15)
+- [H-16 — Entregar a Página Inicial com os cartões-resumo](#h-16)
+- [H-17 — Entregar a Página Operacional com tabela, busca e calendário](#h-17)
+- [H-18 — Entregar a Página Clientes](#h-18)
+- [H-19 — Entregar a Página Performance](#h-19)
+- [H-20 — Entregar a Página Alertas](#h-20)
+- [H-21 — Entregar a Página Histórico](#h-21)
+- [H-22 — Entregar a tela de detalhe do processo](#h-22)
+
+**[Épico E5 — Edição e escrita na planilha](#e5)**
+
+- [H-23 — Editar campos na tela, enfileirando sem tocar no arquivo](#h-23)
+- [H-24 — Alterar células dentro do `.xlsx` preservando o arquivo byte a byte](#h-24)
+- [H-25 — Proteger a escrita com as seis defesas de integridade](#h-25)
+- [H-26 — Aplicar as edições pendentes sob comando explícito](#h-26)
+- [H-27 — Editar os campos codificados em cor](#h-27)
+
+**[Épico E6 — Histórico](#e6)**
+
+- [H-28 — Registrar as mudanças de categoria a cada leitura](#h-28)
+- [H-29 — Entregar o alerta de processos parados](#h-29)
+
+**[Épico E7 — Operação](#e7)**
+
+- [H-30 — Entregar a aplicação empacotada com atalho de execução](#h-30)
+- [H-31 — Entregar logs estruturados e métricas de ingestão](#h-31)
+- [H-32 — Sinalizar interferência externa no arquivo](#h-32)
+- [H-33 — Trocar o leitor de `.xlsx` do ExcelJS para `fflate`](#h-33)
+- [H-34 — Configurar o caminho da planilha pela tela, sem editar JSON](#h-34)
+- [H-35 — Chegar ao painel na primeira execução, sem linha de comando](#h-35)
+- [H-36 — O painel diz onde a partida parou, e revalida sem reexecutar o atalho](#h-36)
+
+**[Épico E8 — A configuração alcançável](#e8)**
+
+- [H-37 — Escolher a planilha pelo diálogo do sistema](#h-37)
+- [H-38 — A tela de configuração deixa de ser inalcançável](#h-38)
+
+**[Épico E9 — Estilização](#e9)**
+
+- [H-39 — Declarar a camada de tema e migrar a casca](#h-39)
+- [H-40 — Migrar os componentes de dado](#h-40)
+- [H-41 — Migrar a superfície de edição](#h-41)
+- [H-42 — Migrar as sete páginas e fechar a guarda de cor](#h-42)
+- [H-43 — Live regions da casca e dos componentes](#h-43)
+- [H-44 — Live regions das páginas, gráfico e forced-colors](#h-44)
+- [H-45 — Unificar papéis de UI e tirar a informação só-cor](#h-45)
+- [H-46 — Responsividade e contenção de rolagem](#h-46)
+- [H-47 — Percorrer os cinco procedimentos de navegador](#h-47)
+
+**[Resumo do backlog](#resumo)**
+
+---
+
+<a id="e1"></a>
+
 ## Épico E1 — Fundação e perfilamento
+
+<a id="h-01"></a>
 
 ### H-01 — Perfilar a planilha real e emitir relatório de estrutura
 
@@ -106,7 +192,11 @@ Executável por `npm run profile -- "<caminho do .xlsx>"`, gravando
 **Dependências:** nenhuma. É a primeira história.
 **Tamanho:** M
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-02"></a>
 
 ### H-02 — Levantar o esqueleto do projeto com servidor, interface e testes
 
@@ -183,9 +273,15 @@ Versões exatas, verificadas em 03/08/2026: `fastify@5.11.2`,
 **Dependências:** nenhuma.
 **Tamanho:** M
 
+[↑ Índice](#indice)
+
 ---
 
+<a id="e2"></a>
+
 ## Épico E2 — Leitura da planilha e normalização
+
+<a id="h-03"></a>
 
 ### H-03 — Ler a planilha e expor as linhas cruas com a célula-âncora de estilo
 
@@ -267,7 +363,11 @@ export function extractStyleKey(cell: unknown): string   // TD-05
 **Dependências:** H-02
 **Tamanho:** M
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-04"></a>
 
 ### H-04 — Traduzir a chave de estilo em responsável, canal e localização do importador
 
@@ -341,7 +441,11 @@ Chave ausente do mapa → `{ responsible: 'indefinido', customsChannel:
 **Dependências:** H-03
 **Tamanho:** P
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-05"></a>
 
 ### H-05 — Normalizar textos de agrupamento e converter células em datas
 
@@ -407,7 +511,11 @@ export function levenshtein(a: string, b: string): number
 **Dependências:** H-03
 **Tamanho:** P
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-06"></a>
 
 ### H-06 — Classificar cada linha em uma das quatro categorias canônicas
 
@@ -474,7 +582,11 @@ export function classify(row: RawRow, aliases: string[]): Classification
 **Dependências:** H-03, H-05
 **Tamanho:** P
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-07"></a>
 
 ### H-07 — Compor os processos e emitir o relatório de quarentena e divergências
 
@@ -552,7 +664,11 @@ Rota `GET /api/quarantine` conforme `05-contratos-api.md`.
 **Dependências:** H-04, H-05, H-06
 **Tamanho:** M
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-08"></a>
 
 ### H-08 — Recarregar automaticamente quando a planilha for alterada por fora
 
@@ -649,9 +765,15 @@ Debounce fixado em **2000 ms**. Rota `POST /api/reload`.
 **Dependências:** H-07
 **Tamanho:** M
 
+[↑ Índice](#indice)
+
 ---
 
+<a id="e3"></a>
+
 ## Épico E3 — Indicadores e alertas
+
+<a id="h-09"></a>
 
 ### H-09 — Entregar as contagens por categoria de status
 
@@ -711,7 +833,11 @@ export function countByCategory(processes: Process[]): CategoryCounts
 **Dependências:** H-07
 **Tamanho:** P
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-10"></a>
 
 ### H-10 — Entregar os indicadores de calendário
 
@@ -789,7 +915,11 @@ domingo, fuso `America/Sao_Paulo` (A-07).
 **Dependências:** H-09
 **Tamanho:** M
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-11"></a>
 
 ### H-11 — Entregar os agrupamentos e rankings
 
@@ -862,7 +992,11 @@ Ordenação: `count` decrescente, desempate por `key` ascendente. `topN` padrão
 **Dependências:** H-09
 **Tamanho:** M
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-12"></a>
 
 ### H-12 — Entregar os indicadores de risco
 
@@ -937,7 +1071,11 @@ export function overdueCount(p: Process[], today: Date): number       // IND-15
 apoia-se em `isOverdue`, extraído por `H-11`
 **Tamanho:** P
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-13"></a>
 
 ### H-13 — Entregar os indicadores de tempo
 
@@ -1038,7 +1176,11 @@ export function documentaryLeadTime(p: Process[]): LeadTime           // IND-22
 **Dependências:** H-10
 **Tamanho:** P
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-14"></a>
 
 ### H-14 — Entregar os cinco alertas derivados do estado atual
 
@@ -1144,9 +1286,15 @@ ascendente, nulos por último.
 **Dependências:** H-12, H-13
 **Tamanho:** M
 
+[↑ Índice](#indice)
+
 ---
 
+<a id="e4"></a>
+
 ## Épico E4 — Interface do painel
+
+<a id="h-15"></a>
 
 ### H-15 — Montar a casca da aplicação com os onze filtros globais
 
@@ -1276,7 +1424,11 @@ export function applyFilters(p: Process[], f: FilterSet): Process[]
 **Dependências:** H-09, H-32
 **Tamanho:** M
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-16"></a>
 
 ### H-16 — Entregar a Página Inicial com os cartões-resumo
 
@@ -1368,7 +1520,11 @@ esta semana · Chegando em 15 dias · **Desembaraçados hoje** (A-64) ·
 **Dependências:** H-15, H-12
 **Tamanho:** P
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-17"></a>
 
 ### H-17 — Entregar a Página Operacional com tabela, busca e calendário
 
@@ -1458,7 +1614,11 @@ chegadas por navio.
 **Dependências:** H-15
 **Tamanho:** M
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-18"></a>
 
 ### H-18 — Entregar a Página Clientes
 
@@ -1555,7 +1715,11 @@ chegadas por navio.
 **Dependências:** H-11, H-15
 **Tamanho:** P
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-19"></a>
 
 ### H-19 — Entregar a Página Performance
 
@@ -1674,7 +1838,11 @@ export function leadTimeByGroup(p: Process[], key: (x: Process) => string,
 **Dependências:** H-11, H-13, H-15
 **Tamanho:** P
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-20"></a>
 
 ### H-20 — Entregar a Página Alertas
 
@@ -1757,7 +1925,11 @@ export function leadTimeByGroup(p: Process[], key: (x: Process) => string,
 **Dependências:** H-14, H-15
 **Tamanho:** P
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-21"></a>
 
 ### H-21 — Entregar a Página Histórico
 
@@ -1848,7 +2020,11 @@ export function leadTimeByGroup(p: Process[], key: (x: Process) => string,
 **Dependências:** H-28, H-15
 **Tamanho:** P
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-22"></a>
 
 ### H-22 — Entregar a tela de detalhe do processo
 
@@ -1948,9 +2124,15 @@ STATUS e os campos fora de escopo.
 **Dependências:** H-17
 **Tamanho:** P
 
+[↑ Índice](#indice)
+
 ---
 
+<a id="e5"></a>
+
 ## Épico E5 — Edição e escrita na planilha
+
+<a id="h-23"></a>
 
 ### H-23 — Editar campos na tela, enfileirando sem tocar no arquivo
 
@@ -2070,7 +2252,11 @@ export function discardAll(): number
 **Dependências:** H-08
 **Tamanho:** M
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-24"></a>
 
 ### H-24 — Alterar células dentro do `.xlsx` preservando o arquivo byte a byte
 
@@ -2251,7 +2437,11 @@ quebra ao regenerar a fixture.
 **Dependências:** H-03
 **Tamanho:** M
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-25"></a>
 
 ### H-25 — Proteger a escrita com as seis defesas de integridade
 
@@ -2406,7 +2596,11 @@ validação → retomar watcher.
 **Dependências:** H-24, H-23
 **Tamanho:** M
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-26"></a>
 
 ### H-26 — Aplicar as edições pendentes sob comando explícito
 
@@ -2563,7 +2757,11 @@ o painel relê.
 **Dependências:** H-25
 **Tamanho:** M
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-27"></a>
 
 ### H-27 — Editar os campos codificados em cor
 
@@ -2758,9 +2956,15 @@ preenchimento próprio e **não** são alteradas.
 **Dependências:** H-26, H-04
 **Tamanho:** M
 
+[↑ Índice](#indice)
+
 ---
 
+<a id="e6"></a>
+
 ## Épico E6 — Histórico
+
+<a id="h-28"></a>
 
 ### H-28 — Registrar as mudanças de categoria a cada leitura
 
@@ -2878,7 +3082,11 @@ Formato de `data/history.jsonl` conforme `03-modelo-dados.md §3.1`.
 **Dependências:** H-08
 **Tamanho:** M
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-29"></a>
 
 ### H-29 — Entregar o alerta de processos parados
 
@@ -2966,9 +3174,15 @@ vindo de `config/app.json` (`stalledDaysThreshold`, padrão **15**, A-32).
 **Dependências:** H-28, H-14
 **Tamanho:** P
 
+[↑ Índice](#indice)
+
 ---
 
+<a id="e7"></a>
+
 ## Épico E7 — Operação
+
+<a id="h-30"></a>
 
 ### H-30 — Entregar a aplicação empacotada com atalho de execução
 
@@ -3094,7 +3308,11 @@ abre o navegador em `http://127.0.0.1:5173`.
 **Dependências:** H-26
 **Tamanho:** P
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-31"></a>
 
 ### H-31 — Entregar logs estruturados e métricas de ingestão
 
@@ -3187,7 +3405,11 @@ Saída em JSON por linha, em `data/logs/app-<AAAAMMDD>.jsonl`, com retenção de
 **Dependências:** H-08
 **Tamanho:** P
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-32"></a>
 
 ### H-32 — Sinalizar interferência externa no arquivo
 
@@ -3285,7 +3507,11 @@ com `409 EXCEL_ABERTO` é de `H-25`. Esta história produz o sinal, não a reaç
 **Dependências:** H-08
 **Tamanho:** P
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-33"></a>
 
 ### H-33 — Trocar o leitor de `.xlsx` do ExcelJS para `fflate`
 
@@ -3448,7 +3674,11 @@ inviolável 10 passa a valer **por construção**, não por convenção. E o
 **Dependências:** H-07
 **Tamanho:** M
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="h-34"></a>
 
 ### H-34 — Configurar o caminho da planilha pela tela, sem editar JSON
 
@@ -3591,9 +3821,468 @@ conteúdo, **nunca o caminho** — e é o caminho que o watcher precisa.
 **Dependências:** H-15, H-16
 **Tamanho:** M
 
+[↑ Índice](#indice)
+
 ---
 
-## Épico E8 — Estilização
+<a id="h-35"></a>
+
+### H-35 — Chegar ao painel na primeira execução, sem linha de comando
+
+> ✅ **CONCLUÍDA em 19/08/2026.** 25 testes próprios — 10 em
+> `tests/app/config.test.ts`, 8 em `tests/http/config.test.ts` e 7 em
+> `web/tests/WorkbookSetup.test.tsx`; suíte total de 1226 para **1251**. Duas
+> divergências decididas na abertura, e uma terceira aberta pelo usuário depois,
+> que quebrou a história em duas.
+>
+> **A história inteira é uma divisão de camadas, e ela se paga na primeira
+> instalação.** O `.cmd` tinha quatro verificações; ficou com três, e a que saiu
+> — `config/app.json` ausente — era a única que já tinha tela desde `H-34`. Numa
+> extração nova o arquivo **nunca** existe, porque está no `.gitignore`: a
+> verificação não era defesa, era a garantia de que a tela jamais seria vista.
+>
+> **`dist/` também está no `.gitignore`, e isso mudou a decisão.** "Interface não
+> compilada" não é caso-limite: é o estado de toda instalação nova. Por isso o
+> atalho passou a **oferecer compilar**, com confirmação — e `npm ci` roda
+> **apenas** quando `node_modules` falta, que é o que preserva a máquina sem
+> internet e com as dependências já baixadas. Rodá-lo à toa apaga a pasta e volta
+> a exigir rede.
+>
+> **`restartPending` nasceu de um buraco que o inventário abriria.** O valor
+> efetivo vem do objeto em memória e a origem vem do arquivo, relido a cada
+> requisição — então um `port` editado à mão depois da partida apareceria como se
+> estivesse valendo. Ele diz que arquivo e memória divergem, e não afirma que o
+> próximo início aceitará o valor: são coisas diferentes, e prometer a segunda
+> exigiria repetir a validação de `loadConfig` numa segunda regra.
+>
+> **`ausente` é a quarta origem porque `workbookPath` é o único dos oito campos
+> sem padrão.** Marcá-lo como `padrao` afirmaria um padrão que `DEFAULTS` não
+> tem. Mesma família de `sheetPresent`, que é `null` inclusive quando a última
+> leitura **falhou**: "não se sabe" e "não tem" são respostas diferentes, e
+> deduzir a presença da aba a partir do caminho seria adivinhar.
+>
+> **A guarda de caminho padrão sob teste passou a valer para a leitura.** Era só
+> da gravação desde `H-34`; `describeConfig` lê, e um teste que caísse no padrão
+> leria o `app.json` da máquina — passando ou reprovando pelo estado dela, que é
+> exatamente o defeito que `H-28` mediu. `tests/http/config.test.ts` só voltou a
+> passar depois de `serverWith` passar o sexto argumento de `buildServer`.
+>
+> **Um falso positivo do hook de dados sensíveis apareceu ao escrever o
+> documento:** o blockquote markdown `> ` seguido de um caminho de configuração é
+> lido como redirecionamento de shell para caminho protegido. O hook falha
+> fechado, que é o comportamento certo; o texto foi reescrito.
+>
+> **Conferido contra a planilha e a configuração reais:** 649 processos lidos
+> pelo caminho configurado, os oito campos do inventário com origem `arquivo`,
+> `sheetPresent` verdadeiro, e `GET /api/config/workbook` respondendo `200` com o
+> caminho no corpo — que é o esperado, porque a **tela** o mostra. O log do
+> Fastify saiu com `method` e `url` apenas: a regra inviolável 8 conferida em
+> execução, e não só pela asserção de código.
+>
+> **`scripts/iniciar.cmd` NÃO FOI EXECUTADO.** É batch do Windows e o
+> desenvolvimento é em Linux. Tudo o que ele passou a fazer — a compilação sob
+> demanda, o aviso de configuração ausente, a receita do JSON corrompido — está
+> em `PD-06`, a conferir na primeira instalação na máquina do operador.
+>
+> **A história foi quebrada durante a execução.** O usuário pediu, depois do
+> aceite, o checklist das etapas de partida no painel, o botão de revalidação e
+> um `config/app.json.exemplo` fiel ao real. Isso levaria a lista a nove
+> arquivos, e nenhuma história do plano é G: o diagnóstico virou `H-36`.
+
+**Objetivo:** numa máquina limpa, o operador dá duplo clique no atalho e chega ao
+painel — ou a uma tela que diz exatamente o que fazer em seguida — sem editar
+arquivo nenhum e sem abrir prompt.
+
+> **Nasceu como proposta de fim de fila e foi movida para o início.** É por isso
+> que ela vive em `E7 — Operação`, ao lado de `H-30` a `H-34`, e não em `E9`:
+> o assunto é operação, não estilização. A precedência sobre `H-39` … `H-47` é
+> **ordem de trabalho**, não dependência técnica.
+>
+> **O defeito que ela corrige é de camada, não de código.** Numa máquina limpa o
+> `scripts/iniciar.cmd` para com "Falta o arquivo de configuracao:
+> config\app.json" e manda copiar um arquivo e editar JSON à mão — enquanto a
+> tela que `H-34` entregou resolve exatamente isso e **nunca chega a ser
+> exibida**, porque o batch morre antes de o Node subir. `config/app.json` está
+> no `.gitignore`: numa instalação nova ele **nunca** existe.
+>
+> **A medida de sucesso é uma frase, e todo critério serve a ela:** instalar numa
+> máquina limpa, sair da sala, e o operador chegar ao painel sem mandar mensagem.
+>
+> **`dist/` também está no `.gitignore`**, então "interface não compilada" não é
+> caso-limite: é o estado garantido de toda extração nova.
+
+**Arquivos:**
+- `scripts/iniciar.cmd` — fica só o que impede o servidor de subir; as três
+  mensagens viram receita completa
+- `scripts/porta.mjs` — o comentário: a ausência do `app.json` deixou de ser
+  barrada antes e virou o caso normal
+- `src/app/config.ts` — `describeConfig`, o inventário dos oito campos
+- `src/http/routes/config.ts` — os campos aditivos no `GET`
+- `web/src/pages/WorkbookSetup.tsx` — a tela vira inventário
+- `docs/05-contratos-api.md` — o contrato estendido
+- `README.md` — passos 3, 4 e 5 da Instalação
+- `tests/app/config.test.ts`, `tests/http/config.test.ts`,
+  `web/tests/WorkbookSetup.test.tsx`
+
+**Contrato fixado:**
+
+```jsonc
+// GET /api/config/workbook — aditivo; os três campos de H-34 permanecem
+{
+  "workbookPath": "C:\\...\\planilha.xlsx",
+  "defined": true, "exists": true, "readable": true, "sheetPresent": true,
+  "configFile": { "path": "config/app.json", "present": true, "parseable": true },
+  "fields": [ { "key": "port", "value": 5173, "source": "arquivo", "restartPending": false } ]
+}
+// source: 'arquivo' | 'padrao' | 'ausente' | 'desconhecida'
+```
+
+**A divisão de camadas é a história.** Fica no `.cmd` **somente** o que impede o
+servidor de subir ou a tela de existir — Node ausente, Node abaixo da 22 e
+`dist/web/index.html` ausente. Os três são anteriores ao navegador por natureza,
+e nenhuma interface pode reportá-los. Todo o resto migra para a tela.
+
+**Duas decisões do usuário, tomadas na abertura da fatia:**
+
+| Situação | Decisão | Por quê |
+|---|---|---|
+| `config/app.json` existe e é JSON inválido | **Continua matando a partida, com mensagem no `.cmd`** | Não é uma quarta verificação: é o tratamento de erro da leitura da porta, que continua acontecendo porque o `.cmd` precisa dela para abrir o navegador. Tolerar no servidor aplicaria padrão por cima de configuração que existe — valor errado invisível — e a tela ficaria **incapaz de salvar**, porque `saveWorkbookPath` relê antes de gravar |
+| `dist/web/index.html` ausente | **O `.cmd` oferece compilar**, com confirmação | "Abra o Prompt na pasta certa" é o passo que quebra para quem não usa linha de comando (RNF-26). `npm ci` roda **só** se `node_modules` faltar — é o que salva a máquina sem internet e com dependências já baixadas |
+
+**Critérios de aceite:**
+- **Dado** máquina limpa sem `config/app.json`, **então** o servidor sobe na
+  porta padrão e a tela de configuração aparece; nenhuma mensagem manda copiar
+  arquivo nem editar JSON.
+- **Dado** o salvamento nessa tela, **então** o `app.json` é criado com os demais
+  campos íntegros.
+- **Dado** `GET /api/config/workbook`, **então** os **oito** campos vêm com valor
+  efetivo e origem, e `padrao` nunca é confundido com `arquivo` quando o valor
+  coincide.
+- **Dado** um caminho configurado, **então** `defined`, `exists`, `readable` e
+  `sheetPresent` são quatro respostas distintas.
+- **Dado** que a tela mostra o caminho, **então** ele não aparece em log algum
+  (regra inviolável 8).
+- **Dado** o épico `E9`, **então** nenhum dos zeros dispensados é reaberto: 0
+  `dark:`, 0 `sticky`, 0 `animate-*`/`transition-*`, 0 `outline-none`, 0
+  `tabIndex`, 0 `onClick` em elemento não interativo.
+
+**Casos-limite:**
+- `config/app.json` ausente → oito campos com origem `padrao`, exceto
+  `workbookPath` com `ausente`.
+- `{ "port": 5173 }` declarado → `arquivo`; `topN` omitido → `padrao`. Mesmo
+  valor de padrão, origens diferentes.
+- Arquivo corrompido **depois** da partida → `parseable: false`, os oito com
+  origem `desconhecida`, valores em uso preservados.
+- Caminho com espaços e acentos, e caminho UNC (`\\servidor\pasta`) → seguem
+  sendo configuração, e não ausência dela.
+- Caminho definido apontando para arquivo inexistente → o inventário mostra o
+  caminho **e** o fato de não existir.
+- `NODE_ENV=test` sem caminho injetado → `describeConfig` lança, como
+  `saveWorkbookPath` desde `H-34` (regra inviolável 7).
+
+**Sem teste automatizado, por serem do `.cmd`:** porta ocupada, segunda execução
+com a aplicação no ar, `dist/web` ausente, máquina sem internet, duplo clique,
+janela fechada sem processo órfão. `scripts/iniciar.cmd` é batch do Windows e o
+desenvolvimento é em Linux — **nada aqui foi executado**, e o que ele passa a
+fazer virou item de `PD-06`, no `CLAUDE.md`.
+
+**Fora desta história:** qualquer código de `H-39` a `H-47` — alterar a contagem
+de arquivos e o tamanho delas é entrega desta fatia; abrir os arquivos delas, não.
+Também fora: vocabulário de tema (é `H-39`, e antecipá-lo tira dela a decisão que
+a justifica), modo escuro, campo de configuração novo, editar os outros sete
+campos pela tela, e seletor de aba (regra inviolável 10).
+
+**Dependências:** H-30, H-34 — e **precede** H-39 … H-47, por ordem de trabalho
+**Tamanho:** M (8 arquivos, 1 contrato estendido — `GET /api/config/workbook`
+ganha campos aditivos; nenhuma rota nova)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-36"></a>
+
+### H-36 — O painel diz onde a partida parou, e revalida sem reexecutar o atalho
+
+**Objetivo:** o operador ver, no próprio painel, quais etapas da partida foram
+cumpridas e qual falta — e poder reconferir depois de resolver, sem fechar a
+janela e dar duplo clique de novo.
+
+> **Nasceu do corte de `H-35`**, que chegou a nove arquivos e foi quebrada. O que
+> ficou aqui é a camada de diagnóstico: `H-35` faz a aplicação subir e criar o
+> arquivo de configuração sozinha; esta faz o painel **dizer em que ponto ela
+> está**.
+>
+> **Três etapas aparecem sempre cumpridas, e isso não é decoração.** Node
+> instalado, Node ≥ 22 e interface compilada são pré-condição de a página
+> existir — ela é servida *pelo* Node, a partir de `dist/web`. Vê-las verdes é a
+> prova de que o operador passou delas, e mostrar a versão real do Node ao lado
+> transforma "deu certo até aqui" em fato conferível. Quem reporta a **falha**
+> das três continua sendo `scripts/iniciar.cmd`, e não há outra camada possível.
+>
+> **O botão *Atualizar* serve às etapas que mudam sem reiniciar:** o arquivo de
+> configuração aparecer, a planilha voltar a existir na pasta sincronizada, a
+> permissão de leitura mudar. É o caso real — o operador sincroniza o OneDrive
+> no Explorer e reconfere ali mesmo.
+
+**Arquivos:**
+- `web/src/pages/WorkbookSetup.tsx` — o checklist e o botão *Atualizar*
+- `src/http/routes/config.ts` — os campos de ambiente no `GET`
+- `docs/05-contratos-api.md` — o contrato estendido
+- `config/app.json.exemplo` — fiel à forma que a aplicação grava
+- `tests/http/config.test.ts`, `web/tests/WorkbookSetup.test.tsx`
+
+**Contrato fixado:**
+
+```jsonc
+// GET /api/config/workbook — aditivo sobre H-35
+{
+  "runtime": {
+    "nodeVersion": "22.23.2",  // process.versions.node, o real
+    "webBuilt": true           // dist/web/index.html existe
+  }
+}
+```
+
+**Critérios de aceite:**
+- **Dado** o painel aberto, **então** o checklist mostra as etapas na ordem em
+  que `scripts/iniciar.cmd` as percorre, cada uma cumprida ou pendente.
+- **Dado** que a página está sendo exibida, **então** as três etapas anteriores
+  ao navegador aparecem cumpridas, e a do Node traz a **versão real**.
+- **Dado** o botão *Atualizar*, **então** ele refaz `GET /api/config/workbook` e
+  o checklist muda sem recarregar a página nem reexecutar o atalho.
+- **Dado** `config/app.json.exemplo`, **então** ele traz as mesmas oito chaves, na
+  mesma ordem, que a aplicação grava — hoje o exemplo diverge do arquivo real.
+
+**Casos-limite:**
+- `dist/web/index.html` apagado com o servidor no ar → `webBuilt: false`, e o
+  checklist o mostra pendente mesmo com a SPA carregada em memória.
+- Clique em *Atualizar* durante um salvamento → a carga é a mesma do
+  `reloadToken` de `useWorkbookConfig`; não há segunda regra.
+- Etapa pendente **não** vira erro: o checklist é informação de estado, e um
+  painel vermelho na primeira execução afirmaria falha onde há só ausência.
+
+**Fora desta história:** reportar Node ausente ou abaixo da 22 pelo navegador —
+é impossível por construção, e a mensagem do `.cmd` é a única camada que alcança
+esses dois casos. Também fora: gravar pela tela qualquer campo além do caminho.
+
+**Dependências:** H-35
+**Tamanho:** M (5 arquivos, 1 contrato estendido)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="e8"></a>
+
+## Épico E8 — A configuração alcançável
+
+Duas histórias que nascem do mesmo relato, em 19/08/2026, na primeira máquina
+Windows: *"o botão de carregar esta planilha não está funcionando"*. O botão
+funcionava — o servidor gravava e relia. O que faltava era o caminho entre a
+intenção do operador e a tela, nas duas pontas: informar **qual** arquivo sem
+digitar um caminho, e **voltar** à tela depois da primeira vez.
+
+Não vêm de auditoria nem do plano original. Vêm de uso.
+
+---
+
+<a id="h-37"></a>
+
+### H-37 — Escolher a planilha pelo diálogo do sistema
+
+> ✅ **CONCLUÍDA em 19/08/2026.** 20 testes próprios — 11 em
+> `tests/app/file-dialog.test.ts`, 5 em `tests/http/config.test.ts` e 6 em
+> `web/tests/WorkbookSetup.test.tsx`; suíte total de 1267 para **1296**, junto
+> de `H-38`. Nenhuma divergência.
+>
+> **O gesto pedido era impossível pela via óbvia, e medir isso foi metade da
+> história.** `<input type="file">` não entrega caminho — o `value` vira
+> `C:\fakepath\<nome>` —, e a File System Access API também não. Como a
+> aplicação grava cirurgicamente no arquivo do OneDrive, um upload seria uma
+> cópia solta com a escrita voltando ao lugar errado. A saída é o servidor abrir
+> o diálogo, e ela só existe porque o processo roda na máquina do operador.
+>
+> **O caminho volta em base64 de UTF-8, e isso não é zelo.** O console do
+> Windows do operador está em code page 850, e `PD-06` já mediu o acento sendo
+> corrompido em mensagem do `.cmd`. Transportar bytes tira a code page da conta.
+> A conferência de ida e volta veio junto: `Buffer.from(…, 'base64')` **não**
+> rejeita entrada inválida, decodifica lixo em silêncio — sem ela, um aviso
+> escrito no stdout do PowerShell viraria um caminho inventado (regra 3).
+>
+> **Cancelar tem desfecho próprio, e é o mais comum depois do acerto.**
+> `path: null` com `200`; o campo fica intacto e nada é dito. Um erro ali
+> acusaria problema onde o operador só mudou de ideia.
+>
+> **O ponto de injeção atravessa as três camadas** — módulo, `registerConfigRoutes`
+> e `buildServer` — de propósito. O diálogo em si exige Windows com sessão
+> gráfica e é o único trecho que nenhum teste alcança; tudo ao redor dele fica
+> coberto. É a lição de `PD-06` aplicada **antes** do fato, e não depois: a
+> aplicação nunca subiu em Windows desde `H-30` por um defeito num trecho que
+> nenhum teste tocava. **O diálogo é o item 10 de `PD-06`.**
+>
+> Conferido no servidor real em Linux: `POST /api/config/workbook/browse`
+> responde `501 SELETOR_INDISPONIVEL` com a frase que manda digitar o caminho, e
+> o campo de texto continua sendo via de primeira classe.
+
+**Objetivo:** o operador clica em *Escolher arquivo*, o seletor do Windows abre,
+ele seleciona o `.xlsx` e o caminho chega ao campo — sem digitar nem colar.
+
+> **O navegador não entrega caminho, e isso não tem contorno.**
+> `<input type="file">` devolve o conteúdo e o nome; o `value` vira literalmente
+> `C:\fakepath\<nome>`. A File System Access API também não expõe caminho. É
+> isolamento de segurança do navegador, e a aplicação precisa do caminho no
+> disco: ela **grava cirurgicamente** naquele arquivo do OneDrive, e um upload
+> seria uma cópia solta com a escrita voltando para o lugar errado.
+>
+> **Quem abre o diálogo é o servidor**, que roda na máquina do operador
+> (RNF-29: só loopback). Ele invoca o seletor do próprio sistema e devolve o
+> caminho escolhido. É a única via que entrega o gesto pedido.
+>
+> **O diálogo preenche o campo; não aplica.** `PUT /api/config/workbook` segue
+> sendo a única porta de gravação, com a conferência que já existe — o operador
+> vê o que escolheu antes de trocar a planilha da empresa. Dois passos por
+> desenho, não por omissão.
+
+**Arquivos:**
+- `src/app/file-dialog.ts` — invoca o seletor do sistema
+- `src/http/routes/config.ts` — a rota, que só serializa
+- `src/http/server.ts` — passa o invocador de produção
+- `web/src/api-client.ts` — `browseWorkbookPath()`
+- `web/src/pages/WorkbookSetup.tsx` — o botão, ao lado do campo
+- `docs/05-contratos-api.md`
+- `tests/app/file-dialog.test.ts`, `tests/http/config.test.ts`,
+  `web/tests/WorkbookSetup.test.tsx`
+
+**Contrato fixado:**
+
+```jsonc
+// POST /api/config/workbook/browse — sem corpo
+200 { "path": "C:\\Users\\...\\CONTROLE DOS EMBARQUE.xlsx" }
+200 { "path": null }            // o operador cancelou
+501 SELETOR_INDISPONIVEL        // esta máquina não abre diálogo
+500 SELETOR_FALHOU              // o diálogo abriu e terminou mal
+```
+
+`POST` e não `GET`: abre uma janela na máquina — tem efeito, não é leitura.
+
+**Critérios de aceite:**
+- **Dado** o botão *Escolher arquivo*, **quando** o operador seleciona um
+  `.xlsx`, **então** o caminho absoluto aparece no campo e **nada é gravado**.
+- **Dado** que o operador cancela, **então** o campo fica **intacto** e nenhuma
+  mensagem de erro aparece — cancelar é uma escolha, não uma falha.
+- **Dado** uma máquina sem como abrir o diálogo, **então** a resposta é `501`, a
+  tela diz para digitar o caminho, e o campo de texto continua funcionando.
+- **Dado** um caminho com acento e espaço, **então** ele volta íntegro.
+
+**Casos-limite:**
+- Operador cancela → `path: null`, campo intacto (o caso mais provável depois do
+  acerto, e o único em que "sem resposta" é a resposta correta).
+- Linux, ou Windows sem PowerShell → `501`, e o campo de texto segue como via.
+- `C:\Users\ana\OneDrive - Comércio Exterior\CONTROLE DOS EMBARQUE.xlsx` → volta com
+  o acento e os três espaços preservados.
+- O diálogo devolve algo que não é `.xlsx` → o `PUT` recusa como sempre; o
+  seletor **não** vira uma segunda regra de validação.
+- Dois cliques seguidos → um diálogo só.
+- Diálogo deixado aberto → limite de tempo, em vez de requisição pendurada.
+
+**Fora desta história:** arrastar e soltar o arquivo na página; lembrar a última
+pasta usada; editar os outros sete campos de configuração.
+
+**Dependências:** H-34, H-35
+**Tamanho:** M (8 arquivos, 1 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-38"></a>
+
+### H-38 — A tela de configuração deixa de ser inalcançável
+
+> ✅ **CONCLUÍDA em 19/08/2026.** 9 testes próprios em `web/tests/App.test.tsx`;
+> suíte total de 1267 para **1296**, junto de `H-37`. Nenhuma divergência.
+>
+> **O defeito era um link ausente, e ele durou desde `H-34`.** Medido antes de
+> escrever qualquer linha: `grep` por `/configuracao` em `web/src/` devolvia
+> apenas comentários. Nem menu, nem painel de saúde, nem faixa de estado — o
+> único acesso era digitar o endereço, e depois de apontar a planilha uma vez o
+> operador perdia a tela. A troca já funcionava e relia sem reiniciar; estava
+> inalcançável.
+>
+> **E o comentário afirmava o contrário.** `web/src/router.ts` documentava
+> *"Chega-se a ela pelo painel de saúde"* desde `H-34`, descrevendo um caminho
+> que nenhuma linha construiu. É o mesmo modo de falha de `PD-06`: a afirmação
+> que ninguém reconfere porque parece verificada.
+>
+> **`WORKBOOK_SETUP_PAGE` passou a derivar de `NAV_PAGES`** em vez de declarar
+> os próprios campos. Ela continua exportada porque a casca desvia para a tela na
+> primeira execução, quando o menu ainda não existe — mas duas declarações do
+> mesmo endereço divergiriam na primeira vez que uma delas mudasse, e
+> `parseRoute` perdeu o desvio dedicado pelo mesmo motivo.
+>
+> **O teste da casca deixou de contar seis.** `toHaveLength(6)` virou
+> `toHaveLength(NAV_PAGES.length)`: o literal só avisaria reprovando, sem dizer
+> se a página nova entrou ou se outra sumiu.
+
+**Objetivo:** depois da primeira vez, o operador chega à troca de planilha por
+três caminhos, sem digitar endereço no navegador.
+
+> **A tela existe desde `H-34` e ninguém consegue chegar nela.** Medido em
+> 19/08/2026: `/configuracao` não aparece em lugar nenhum de `web/src/` — nem no
+> menu, nem no painel de saúde, nem na faixa de estado. O único acesso é digitar
+> o endereço. Depois que a planilha é apontada uma vez, o operador **perde** a
+> tela, e a troca — que já funciona, e relê sem reiniciar — fica inalcançável.
+>
+> **E o código afirmava o contrário.** `web/src/router.ts` documentava
+> *"Chega-se a ela pelo painel de saúde"* desde `H-34`. Nunca se chegou: o
+> comentário descrevia um caminho que nenhuma linha construiu. É o modo de falha
+> de `PD-06` outra vez — a afirmação que ninguém reconfere porque parece
+> verificada.
+>
+> **Três caminhos, e não um**, porque são três momentos: o menu para quem
+> procura, o painel de saúde para quem está olhando o estado da planilha, e a
+> faixa vermelha para quando ela não pôde ser lida — o momento em que o conserto
+> é urgente e o operador não deveria ter de procurar onde ele fica.
+
+**Arquivos:**
+- `web/src/router.ts` — a página entra no menu, e o comentário passa a descrever
+  o código
+- `web/src/App.tsx` — item de menu e link no painel de saúde
+- `web/src/components/StatusBanner.tsx` — o botão na faixa
+- `web/tests/App.test.tsx`, `web/tests/StatusBanner.test.tsx`,
+  `web/tests/paginas-montadas.test.tsx`
+
+**Critérios de aceite:**
+- **Dado** o painel com a planilha lida, **então** existe um item de menu que
+  leva a `/configuracao`, e ele marca `aria-current="page"` como os outros seis.
+- **Dado** o painel de saúde, **então** há um link para a mesma tela.
+- **Dado** o estado `degradado`, **então** a faixa traz o botão que leva ao
+  conserto — inclusive quando há leitura anterior (dado congelado).
+- **Dado** a tela de configuração aberta, **então** a barra de filtros **não**
+  aparece: ela não é uma visão do dado.
+
+**Casos-limite:**
+- Primeira execução → o menu segue escondido, e a casca continua desviando para
+  a tela; um menu ali ofereceria seis páginas vazias.
+- `degradado` **com** `lastReadAt` preenchido → o botão aparece igual; dado
+  congelado também se conserta apontando a planilha certa.
+- A guarda de `web/tests/paginas-montadas.test.tsx` passa a cobrir a página, que
+  entra em `NAV_PAGES` — e `H-34` está `✅ CONCLUÍDA`, então ela é exigida.
+
+**Fora desta história:** reordenar ou reagrupar o menu; qualquer estilização de
+E9 — o item novo herda a forma dos seis existentes.
+
+**Dependências:** H-34
+**Tamanho:** M (6 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="e9"></a>
+
+## Épico E9 — Estilização
 
 Nasce da revisão de `docs/estilizacao/RESULTADO.md` (18/08/2026), que percorreu
 a casca e as sete páginas contra o corpus verificável de
@@ -3608,7 +4297,7 @@ as sete telas são um *set of web pages* e **SC 3.2.3 e SC 3.2.4 incidem** — a
 regras `C04`, `C05`, `C06` e `C10` são normativas aqui, não preferência. E
 `web/src/index.css` tem uma linha (`@import "tailwindcss";`), sem bloco
 `@theme` e sem `color-scheme`: `C01` e `D01` estão violadas por construção, e é
-isso que `H-35` fecha primeiro.
+isso que `H-39` fecha primeiro.
 
 **As 23 regras do corpus avaliadas e dispensadas não geram história, e não
 devem ser reabertas.** Sem achado: `A03` (0 `outline-none`), `A04` (0 `onClick`
@@ -3627,10 +4316,12 @@ não existe.
 **A onda 6 do plano (modo escuro) não virou história.** Ela existe lá para
 registrar a condicionalidade, e fecha vazia: `D03`–`D07` exigem ao menos uma
 ocorrência de `dark:`, e há zero. O único item de modo escuro com trabalho real
-é `D02` (`color-scheme`), que está em `H-35`. Introduzir a variante `dark:` é
+é `D02` (`color-scheme`), que está em `H-39`. Introduzir a variante `dark:` é
 funcionalidade nova, fora deste épico e fora do plano.
 
-### H-35 — Declarar a camada de tema e migrar a casca
+<a id="h-39"></a>
+
+### H-39 — Declarar a camada de tema e migrar a casca
 
 **Objetivo:** existir um vocabulário semântico de cor, com os valores já
 corrigidos para contraste, e a casca inteira consumindo só ele.
@@ -3675,6 +4366,7 @@ corrigidos para contraste, e a casca inteira consumindo só ele.
   --color-state-error-bg / -border / -fg      /* ACHADO 9  */
   --color-state-warning-bg / -border / -fg    /* ACHADO 10 */
   --color-meter-track / --color-meter-fill    /* ACHADO 7  */
+  --color-control-disabled-bg / -fg           /* ACHADO 22 */
   --color-chart-series-1 / -2 / -3
   --color-chart-axis / --color-chart-grid     /* ACHADO 8  */
 }
@@ -3688,6 +4380,33 @@ corrigidos para contraste, e a casca inteira consumindo só ele.
 `color-scheme` vai em `web/src/index.css`, **não** em `web/index.html`: a camada
 de tema já vive no CSS, e nenhuma outra fatia do épico toca o HTML.
 
+> **`ACHADO 22` — o estado desabilitado, medido em 19/08/2026.** Não veio da
+> auditoria de `docs/estilizacao/RESULTADO.md`: apareceu na primeira instalação
+> em Windows, quando o botão *Carregar esta planilha* — o único chamado à ação da
+> tela de primeira execução — **desapareceu** numa sessão de acesso remoto. O
+> canal com perda de cor foi o revelador, não a causa; a causa é o contraste
+> estar no limiar.
+>
+> Há **dois padrões convivendo**, e nenhum dos dois serve como está:
+>
+> | Padrão | Onde | Texto sobre o botão | Botão sobre a página |
+> |---|---|---|---|
+> | `disabled:opacity-40` | `EditProcessForm`, `ColorFieldsForm`, `WorkbookSetup` | 2,40:1 | **2,32:1** |
+> | `disabled:bg-slate-300` | `ApplyChangesButton` | 5,10:1 | **1,36:1** |
+>
+> Para comparar: o mesmo botão **habilitado** está em 14,63:1. A `opacity-40`
+> compõe fundo **e** texto contra a página, e por isso derruba os dois de uma vez.
+>
+> **Não é violação normativa** — `SC 1.4.3` isenta componente inativo, e a guarda
+> de `H-42` já isenta `disabled:*`. É consistência de papel de UI (`C04`) somada a
+> robustez de canal, e por isso a decisão é aqui: o token nasce em `H-39` e
+> `H-41` o adota nos três arquivos que ainda usam `opacity-40`.
+>
+> **Não vai para `H-45`**, apesar de ser unificação de papel: os quatro arquivos
+> com `disabled` não estão na lista dela, e somá-los a levaria de 7 para 11 —
+> nenhuma história do plano é G. `ApplyChangesButton` já está **aqui**, e a linha
+> dele nesta fatia já diz "superfícies e **estado**".
+
 **Critérios de aceite:**
 - **Dado** `web/src/index.css`, **quando** o épico abre, **então** ele contém um
   bloco `@theme` com os treze grupos de token acima e `:root { color-scheme:
@@ -3700,6 +4419,9 @@ de tema já vive no CSS, e nenhuma outra fatia do épico toca o HTML.
 - **Dado** `--color-text-muted`, **então** sua razão contra
   `--color-surface-raised` é ≥ 4.5:1 — hoje `text-slate-400` sobre branco está
   em 2.63:1 (`ACHADO 3`).
+- **Dado** `--color-control-disabled-*`, **então** o botão desabilitado tem
+  **≥ 3:1 contra `--color-surface-base`** e texto legível sobre si mesmo, e
+  `ApplyChangesButton.tsx` passa a consumi-lo (`ACHADO 22`, abaixo).
 - **Dado** `ConflictDialog.tsx:97` e `FilterBar.tsx:63`, **então** ambos usam o
   mesmo trio `--color-state-error-*` dos outros onze locais de severidade
   "erro", fechando os dois desviantes que `ACHADO 9` nomeia.
@@ -3712,12 +4434,12 @@ de tema já vive no CSS, e nenhuma outra fatia do épico toca o HTML.
   para as fatias seguintes e **fica**; o critério de "nenhum consumidor" é sobre
   a camada, não sobre cada token.
 - `@utility` criada aqui e adotada em `App.tsx:118` apenas → as outras seis
-  adoções são de `H-37` e `H-38`, e a `@utility` não pode depender delas.
+  adoções são de `H-41` e `H-42`, e a `@utility` não pode depender delas.
 - `MultiSelect.tsx:85` usa `opacity-80` sobre dois fundos distintos → o alfa
   fica como está; `VN-6` o mede, e trocar cor sob alfa sem medir seria inventar
   número (regra inviolável 3).
 - Utilitário de paleta bruta que sobreviver em arquivo **fora** desta fatia →
-  não é regressão; a guarda automática só entra em `H-38`, quando os 24 já
+  não é regressão; a guarda automática só entra em `H-42`, quando os 24 já
   migraram.
 
 **Fora desta história:** introduzir a variante `dark:` — `D03`–`D07` estão
@@ -3728,9 +4450,13 @@ foco autoral (`ACHADO 14`, `[NÃO NORMATIVO]`), nem `web/index.html`.
 **Tamanho:** M (8 arquivos, 0 contrato novo — token de tema é *custom
 property* de build, não rota, campo de resposta nem formato de arquivo)
 
+[↑ Índice](#indice)
+
 ---
 
-### H-36 — Migrar os componentes de dado
+<a id="h-40"></a>
+
+### H-40 — Migrar os componentes de dado
 
 **Objetivo:** os seis componentes que desenham dado passarem a consumir os
 tokens, com os três contrastes reprovados deles corrigidos.
@@ -3760,23 +4486,27 @@ tokens, com os três contrastes reprovados deles corrigidos.
 
 **Casos-limite:**
 - `AlertRow.tsx:78` distingue urgência **só** por cor → a troca por token não
-  resolve isso; o canal textual é `ACHADO 18`, em `H-41`, e esta fatia não pode
+  resolve isso; o canal textual é `ACHADO 18`, em `H-45`, e esta fatia não pode
   fingir que fechou `A11`.
 - `ProcessTable.tsx:45` usa `border-slate-300` como seção vazia, não como
   controle → vai para `--color-border-subtle` junto com o `ACHADO 15` em
-  `H-41`, e **não** para `--color-border-control`.
+  `H-45`, e **não** para `--color-border-control`.
 - Componente que não tenha nenhuma cor de estado → migra só superfície, borda e
   texto; ausência de estado não é omissão.
 
 **Fora desta história:** o rótulo textual da urgência (`ACHADO 18`) e a
-unificação de papel de UI (`ACHADO 15`) — ambos são onda 4, em `H-41`.
+unificação de papel de UI (`ACHADO 15`) — ambos são onda 4, em `H-45`.
 
-**Dependências:** H-35
+**Dependências:** H-39
 **Tamanho:** M (6 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
 
 ---
 
-### H-37 — Migrar a superfície de edição
+<a id="h-41"></a>
+
+### H-41 — Migrar a superfície de edição
 
 **Objetivo:** os três formulários da fila de edições e a Página Detalhe
 consumirem os tokens, com as bordas de controle corrigidas.
@@ -3786,6 +4516,9 @@ consumirem os tokens, com as bordas de controle corrigidas.
 - `web/src/components/EditProcessForm.tsx` — bordas de controle, faixa de erro
 - `web/src/components/PendingEditsPanel.tsx` — severidade "aviso"
 - `web/src/pages/ProcessDetail.tsx` — `text-slate-400`, adota `panel-*`
+- `web/src/pages/WorkbookSetup.tsx` — bordas de controle, faixa de erro, painel
+  do inventário (**alocada por `H-35`**: a tela nasceu depois do corpus e não
+  aparecia em nenhuma das nove histórias)
 
 **Critérios de aceite:**
 - **Dado** os quatro arquivos, **então** nenhum referencia passo bruto de paleta.
@@ -3812,18 +4545,36 @@ consumirem os tokens, com as bordas de controle corrigidas.
 **Fora desta história:** os três painéis `border-dashed` continuarem distintos
 é decisão do corpus (`ACHADO 15`, nota), e não se re-litiga aqui.
 
-**Dependências:** H-35
-**Tamanho:** M (4 arquivos, 0 contrato novo)
+> **`WorkbookSetup.tsx` entra aqui, e não em `H-42`, por duas razões que se
+> somam.** É formulário que grava, com estado de salvamento e de erro: a mesma
+> borda de controle e a mesma faixa de erro dos outros três arquivos desta fatia.
+> E é a única alocação possível **dentro da onda 2** — `H-42` já está em 8
+> arquivos, e é ela que fecha a guarda `tests/repo/estilo.test.ts`, que varre
+> `web/src/**/*.tsx`. Deixar a tela fora da onda faria a guarda nascer vermelha,
+> exatamente o que o bloco de `H-42` existe para evitar.
+
+- **Dado** `EditProcessForm.tsx`, `ColorFieldsForm.tsx` e `WorkbookSetup.tsx`,
+  **então** os três botões de submissão trocam `disabled:opacity-40` pelo
+  `--color-control-disabled-*` que `H-39` fixa — hoje o botão desabilitado fica
+  em 2,32:1 contra o fundo da página e some em canal com perda de cor
+  (`ACHADO 22`, medido em 19/08/2026 na primeira instalação em Windows).
+
+**Dependências:** H-39
+**Tamanho:** M (5 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
 
 ---
 
-### H-38 — Migrar as sete páginas e fechar a guarda de cor
+<a id="h-42"></a>
+
+### H-42 — Migrar as sete páginas e fechar a guarda de cor
 
 **Objetivo:** encerrar a onda 2 com as páginas migradas e uma guarda automática
 que impeça o passo bruto de voltar.
 
-> **A guarda entra aqui, e não em `H-35`, porque só aqui ela pode passar.**
-> Declarada antes, reprovaria a suíte enquanto `H-36` e `H-37` não tivessem
+> **A guarda entra aqui, e não em `H-39`, porque só aqui ela pode passar.**
+> Declarada antes, reprovaria a suíte enquanto `H-40` e `H-41` não tivessem
 > migrado — e uma guarda que nasce vermelha é desligada, não obedecida. Ao fim
 > desta fatia os 24 arquivos consumidores da onda 2 estão migrados, e a asserção
 > passa a valer sobre o conjunto inteiro.
@@ -3880,15 +4631,19 @@ que impeça o passo bruto de voltar.
 
 **Fora desta história:** a contenção de rolagem da tabela irmã do gráfico
 (`ACHADO 19`) e o `fontSize: 12` dos eixos (`ACHADO 21`) — são onda 5, em
-`H-42`, e entram lá para não abrir `History.tsx` uma vez a mais.
+`H-46`, e entram lá para não abrir `History.tsx` uma vez a mais.
 
-**Dependências:** H-35
+**Dependências:** H-39
 **Tamanho:** M (8 arquivos, 0 contrato novo — o teste de guarda é asserção
 sobre o repositório, não contrato de API)
 
+[↑ Índice](#indice)
+
 ---
 
-### H-39 — Live regions da casca e dos componentes
+<a id="h-43"></a>
+
+### H-43 — Live regions da casca e dos componentes
 
 **Objetivo:** as regiões de estado da casca existirem no DOM antes de receberem
 mensagem, para que o leitor de tela as anuncie.
@@ -3900,9 +4655,9 @@ mensagem, para que o leitor de tela as anuncie.
 > texto, e o leitor de tela não tem o que comparar; a mensagem não é anunciada.
 >
 > **Esta fatia decide onde mora o contêiner que sobrevive.** As sete páginas de
-> `H-40` fazem `return` antecipado no estado de erro, e por isso precisam de uma
+> `H-44` fazem `return` antecipado no estado de erro, e por isso precisam de uma
 > região que não desmonte junto — ela é criada aqui, em `App.tsx`. Por isso
-> `H-40` depende desta, e não o contrário.
+> `H-44` depende desta, e não o contrário.
 
 **Arquivos:**
 - `web/src/App.tsx` — a região persistente e a faixa de `healthError`
@@ -3933,20 +4688,24 @@ mensagem, para que o leitor de tela as anuncie.
   espaçamento visíveis quando não há mensagem; o critério é ausência de caixa
   vazia na tela, não ausência do nó.
 - `Home.tsx:114` acrescenta `role: 'alert'` por *spread* condicional a um nó já
-  populado — variante do mesmo defeito, mas está em `H-40`.
+  populado — variante do mesmo defeito, mas está em `H-44`.
 - Duas mensagens simultâneas na mesma região → a última vence; empilhar
   anúncios não é requisito de `SC 4.1.3`.
 
-**Fora desta história:** as sete páginas — são `H-40`. E qualquer troca de cor:
+**Fora desta história:** as sete páginas — são `H-44`. E qualquer troca de cor:
 esta fatia é independente de tema e não deve tocar utilitário de cor, mesmo nos
-quatro arquivos que `H-35` já migrou.
+quatro arquivos que `H-39` já migrou.
 
 **Dependências:** nenhuma — o plano declara a onda 3 paralelizável à onda 1.
 **Tamanho:** M (7 arquivos, 0 contrato novo)
 
+[↑ Índice](#indice)
+
 ---
 
-### H-40 — Live regions das páginas, gráfico e forced-colors
+<a id="h-44"></a>
+
+### H-44 — Live regions das páginas, gráfico e forced-colors
 
 **Objetivo:** fechar o restante de `ACHADO 11` nas sete páginas e tirar do
 caminho de tabulação o gráfico que a árvore de acessibilidade não expõe.
@@ -3959,11 +4718,13 @@ caminho de tabulação o gráfico que a árvore de acessibilidade não expõe.
 - `web/src/pages/Alerts.tsx` — idem
 - `web/src/pages/History.tsx` — idem, mais o gráfico e o seletor de janela
 - `web/src/pages/ProcessDetail.tsx` — idem
+- `web/src/pages/WorkbookSetup.tsx` — o bloco de erro da carga da configuração,
+  renderizado condicionalmente e sem `role` (**alocada por `H-35`**)
 
 **Critérios de aceite:**
 - **Dado** as sete páginas, **então** nenhuma monta `role="alert"` ou
   `role="status"` já populado; as que hoje fazem `return` antecipado escrevem
-  na região persistente que `H-39` criou.
+  na região persistente que `H-43` criou.
 - **Dado** `History.tsx:176-210`, **então** o `<LineChart>` recebe
   `accessibilityLayer={false}` — hoje `node_modules/recharts/es6/container/RootSurface.js:45`
   dá `tabIndex={0}` e `role="application"` ao `<svg>` **dentro** de uma subárvore
@@ -3990,14 +4751,23 @@ caminho de tabulação o gráfico que a árvore de acessibilidade não expõe.
   visual, ela aparece em `VN-3`.
 
 **Fora desta história:** o `fontSize: 12` dos eixos (`ACHADO 21`) e a contenção
-de rolagem da tabela (`ACHADO 19`) — onda 5, `H-42`.
+de rolagem da tabela (`ACHADO 19`) — onda 5, `H-46`.
 
-**Dependências:** H-39
-**Tamanho:** M (7 arquivos, 0 contrato novo)
+> **`WorkbookSetup.tsx` tem o defeito das páginas, não o da casca.** O bloco
+> `state.status === 'erro'` é renderizado condicionalmente e não tem `role` — o
+> mesmo `return` antecipado das sete. A região `role="alert"` persistente da tela
+> **já está correta desde `H-34`**: é padrão a preservar, nunca a "corrigir".
+
+**Dependências:** H-43
+**Tamanho:** M (8 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
 
 ---
 
-### H-41 — Unificar papéis de UI e tirar a informação só-cor
+<a id="h-45"></a>
+
+### H-45 — Unificar papéis de UI e tirar a informação só-cor
 
 **Objetivo:** o mesmo papel de UI ter a mesma forma nas sete telas, a mesma ação
 ter o mesmo nome e papel, e nenhuma urgência ser transmitida apenas por cor.
@@ -4051,15 +4821,19 @@ ter o mesmo nome e papel, e nenhuma urgência ser transmitida apenas por cor.
 - Trocar `<button>` por `<a>` em `AlertRow` mudar o teclado (Enter/Espaço) → é
   a mudança pretendida; link ativa com Enter, e é o comportamento da tabela.
 
-**Fora desta história:** extrair as três `@utility` — já foi feito em `H-35` e
-adotado em `H-37` e `H-38`, para não abrir os mesmos oito arquivos duas vezes.
+**Fora desta história:** extrair as três `@utility` — já foi feito em `H-39` e
+adotado em `H-41` e `H-42`, para não abrir os mesmos oito arquivos duas vezes.
 
-**Dependências:** H-38
+**Dependências:** H-42
 **Tamanho:** M (7 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
 
 ---
 
-### H-42 — Responsividade e contenção de rolagem
+<a id="h-46"></a>
+
+### H-46 — Responsividade e contenção de rolagem
 
 **Objetivo:** a página nunca rolar na horizontal por causa de uma tabela, e o
 texto do gráfico acompanhar a fonte-base do operador.
@@ -4092,7 +4866,7 @@ texto do gráfico acompanhar a fonte-base do operador.
   `'0.75rem'` e não o número `12`, que o React converte para pixel e que não
   acompanha a fonte-base (`ACHADO 21`, `SC 1.4.4`).
 - **Dado** `npm run verify`, **então** passa; a verificação visual em 320 px é
-  `VN-1`, em `H-43`, e **não** é critério desta fatia.
+  `VN-1`, em `H-47`, e **não** é critério desta fatia.
 
 **Casos-limite:**
 - Os três `sm:max-w-md`/`sm:max-w-sm` de `Operational.tsx:85`,
@@ -4111,12 +4885,16 @@ texto do gráfico acompanhar a fonte-base do operador.
 breakpoint que o corpus não sustente — o corpus corta, com fonte, número de
 breakpoints e sistema de grid como requisito.
 
-**Dependências:** H-41
+**Dependências:** H-45
 **Tamanho:** M (6 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
 
 ---
 
-### H-43 — Percorrer os cinco procedimentos de navegador
+<a id="h-47"></a>
+
+### H-47 — Percorrer os cinco procedimentos de navegador
 
 **Objetivo:** executar no navegador o que não é computável estaticamente, e
 registrar o resultado de cada procedimento ao lado do achado que o gerou.
@@ -4145,12 +4923,12 @@ registrar o resultado de cada procedimento ao lado do achado que o gerou.
   a página e o elemento.
 - **Dado** `VN-2`, **então** o mesmo percurso em 200% registra texto cortado ou
   controle fora da tela, e é repetido com a fonte padrão do navegador em "Muito
-  grande" — é onde o `fontSize` corrigido em `H-42` deixa de escalar se a
+  grande" — é onde o `fontSize` corrigido em `H-46` deixa de escalar se a
   correção falhar.
 - **Dado** `VN-3`, **então** cada parada de `Tab` nas sete páginas tem indicador
   visível registrado, incluindo os botões sobre fundo escuro e os controles
   dentro de contêiner com `overflow`, e é confirmado que a parada órfã do
-  gráfico deixou de existir depois de `H-40`.
+  gráfico deixou de existir depois de `H-44`.
 - **Dado** `VN-4`, **então** a sequência de `Tab` é comparada com a ordem visual;
   o inventário estático já mediu 0 `order-*`, 0 `flex-*-reverse`, 0
   `grid-flow-*` e 0 `tabIndex` positivo, então o que se procura é divergência
@@ -4178,10 +4956,14 @@ registrar o resultado de cada procedimento ao lado do achado que o gerou.
 primeira instalação na máquina do operador, junto de `PD-01`, `PD-05` e `PD-06`.
 E qualquer correção de código: os cinco procedimentos produzem registro.
 
-**Dependências:** H-35, H-36, H-37, H-38, H-39, H-40, H-41, H-42
+**Dependências:** H-39, H-40, H-41, H-42, H-43, H-44, H-45, H-46
 **Tamanho:** P (1 arquivo, 0 contrato novo)
 
+[↑ Índice](#indice)
+
 ---
+
+<a id="resumo"></a>
 
 ## Resumo do backlog
 
@@ -4193,9 +4975,10 @@ E qualquer correção de código: os cinco procedimentos produzem registro.
 | E4 — Interface ✅ | H-15 … H-22 | 6 | 2 | 0 |
 | E5 — Edição e escrita ✅ | H-23 … H-27 | 0 | 5 | 0 |
 | E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
-| E7 — Operação ✅ | H-30 … H-34 | 3 | 2 | 0 |
-| E8 — Estilização | **H-35 … H-43, todas abertas** | 1 | 8 | 0 |
-| **Total** | **43** — 34 concluídas, 9 abertas | **17** | **26** | **0** |
+| E7 — Operação | H-30 … H-34, H-35, **H-36 aberta** | 3 | 4 | 0 |
+| E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
+| E9 — Estilização | **H-39 … H-47, todas abertas** | 1 | 8 | 0 |
+| **Total** | **47** — 37 concluídas, 10 abertas | **17** | **30** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até

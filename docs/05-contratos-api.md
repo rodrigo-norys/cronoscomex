@@ -468,16 +468,59 @@ Corpo: vazio.
 
 ### `GET /api/config/workbook`
 
-O caminho da planilha configurado, e o que o servidor sabe sobre ele. **Nunca
-responde `503`:** é a única rota de leitura que existe justamente para o estado
-em que não houve leitura nenhuma.
+O **inventário da configuração**: o que está configurado, não só o que falta.
+**Nunca responde `503`** — é a única rota de leitura que existe justamente para o
+estado em que não houve leitura nenhuma.
 
 ```jsonc
-{ "workbookPath": "C:\\...\\planilha.xlsx", "exists": true, "readable": true }
+{
+  "workbookPath": "C:\\...\\planilha.xlsx",
+  "defined": true,      // há caminho configurado
+  "exists": true,       // existe no disco
+  "readable": true,     // o painel consegue lê-lo
+  "sheetPresent": true, // a aba configurada apareceu na última leitura
+
+  "configFile": { "path": "config/app.json", "present": true, "parseable": true },
+
+  "fields": [
+    { "key": "port", "value": 5173, "source": "arquivo", "restartPending": false },
+    { "key": "topN", "value": 10,   "source": "padrao",  "restartPending": false }
+    // … os oito campos de config/app.json.exemplo, nessa ordem
+  ]
+}
 ```
+
+**Os quatro fatos do caminho são quatro campos**, e não um `ok`/`não ok`:
+`defined`, `exists`, `readable` e `sheetPresent`. Agrupá-los perderia justamente
+a informação que diz o que fazer em seguida — caminho não configurado, arquivo
+que sumiu do OneDrive e arquivo sem permissão levam a três ações diferentes.
 
 `workbookPath` vem **vazio** na primeira execução — ausência de configuração, que
 é diferente de caminho configurado e inexistente (`exists: false`).
+
+`sheetPresent` é `null` enquanto **não houve leitura bem-sucedida**, inclusive
+quando a última falhou: a presença da aba não é deduzida do caminho, e abrir o
+arquivo só para responder isto duplicaria o leitor numa segunda regra.
+
+| `source` | Significa |
+|---|---|
+| `arquivo` | O campo está declarado em `config/app.json` |
+| `padrao` | Não está declarado; o padrão de `src/app/config.ts` foi aplicado |
+| `ausente` | Só `workbookPath`: é o único dos oito **sem** padrão |
+| `desconhecida` | O arquivo existe e não pôde ser lido agora (`parseable: false`) |
+
+**`arquivo` e `padrao` existem para separar duas situações que mostram o mesmo
+número.** `port: 5173` declarado e `port: 5173` omitido são visualmente
+idênticos e significam coisas diferentes — uma foi decidida por alguém. É a regra
+inviolável 3 aplicada à própria configuração.
+
+`value` é o valor **efetivo**, o que a aplicação está usando agora;
+`restartPending` diz que o arquivo declara outro, que só passa a valer no próximo
+início. Apenas `workbookPath` é trocável com o processo no ar (`H-34`).
+
+`config/app.json` **ausente não é erro** desde `H-34`: os padrões valem, a
+aplicação sobe e o operador resolve por esta tela — `scripts/iniciar.cmd` deixou
+de barrar a partida por causa dele em `H-35`.
 
 ### `PUT /api/config/workbook`
 
@@ -498,9 +541,53 @@ Resposta `200`: **o corpo de `GET /api/health`**, já com a leitura nova.
 **A conferência acontece antes da gravação**, e é por isso que uma tentativa
 falha nunca derruba o caminho que funcionava.
 
+**O `path` é aceito como o Explorer do Windows o entrega**: espaço em volta e um
+par de aspas duplas envolvendo o texto inteiro são removidos antes da
+conferência. "Copiar como caminho" — a única forma de copiar um caminho sem
+digitá-lo — sempre acrescenta as aspas, e `"` é caractere proibido em nome de
+arquivo no Windows, então um par envolvente nunca faz parte do nome. Sem isso, o
+caminho colado chegava com a extensão valendo `.xlsx"` e a resposta era
+`CAMINHO_INVALIDO` dizendo que o arquivo precisa ser `.xlsx` — sobre um arquivo
+que é. Medido na primeira instalação em Windows (`PD-06`).
+
 **Uma planilha válida sem a aba em escopo é aceita**, e a aplicação entra em
 `degradado` com a razão. Recusar aqui esconderia do operador o motivo real — a
 regra é a mesma da leitura: buraco visível, nunca valor errado invisível.
+
+---
+
+### `POST /api/config/workbook/browse`
+
+Abre o **seletor de arquivos do sistema** na máquina onde o processo roda — que
+é a do operador (RNF-29: só loopback) — e devolve o caminho escolhido. `H-37`.
+
+Sem corpo.
+
+| Código | Corpo | Situação |
+|---|---|---|
+| 200 | `{ "path": "C:\\…\\planilha.xlsx" }` | O operador escolheu |
+| 200 | `{ "path": null }` | O operador cancelou |
+| 501 | `SELETOR_INDISPONIVEL` | Esta máquina não abre diálogo — não é Windows, ou não tem `powershell.exe` |
+| 500 | `SELETOR_FALHOU` | O diálogo abriu e terminou mal |
+
+**`POST`, e não `GET`:** abre uma janela na máquina, o que é efeito — não
+leitura. E **não grava nada**: `PUT /api/config/workbook` continua sendo a única
+porta de gravação, com a conferência de `checkWorkbookPath` inteira. O operador
+vê o que escolheu antes de trocar a planilha da empresa.
+
+**Cancelar responde 200, não erro.** É uma escolha, e o desfecho mais comum
+depois do acerto; um código de erro faria a tela acusar problema onde o operador
+só mudou de ideia.
+
+**`501` não é falha, é ausência de recurso.** A saída do operador é digitar o
+caminho — o campo de texto continua sendo via de primeira classe, e é a única na
+máquina de desenvolvimento, que é Linux.
+
+> **O caminho volta do PowerShell em base64 de UTF-8.** O console do Windows do
+> operador está em code page 850 e o caminho do OneDrive corporativo tem acento
+> por natureza; transportar bytes tira a code page da conta. A conferência de ida
+> e volta rejeita saída que não seja base64 — `Buffer.from(…, 'base64')` decodifica
+> lixo em silêncio, e um aviso escrito no stdout viraria um caminho inventado.
 
 ---
 

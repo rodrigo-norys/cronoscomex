@@ -458,6 +458,55 @@ export async function getWorkbookConfig(signal?: AbortSignal): Promise<WorkbookC
  * nesse caminho", "precisa ser uma planilha .xlsx" —, e nao o codigo cru: o
  * operador nao e tecnico, e e ele quem vai consertar o caminho.
  */
+/**
+ * Um pouco MAIS que o limite do servidor, de proposito: assim quem responde
+ * primeiro e sempre ele, com a frase que sabe explicar. Este corte e rede de
+ * seguranca para o caso de o servidor nao responder nada.
+ */
+const BROWSE_TIMEOUT_MS = 2 * 60_000 + 10_000
+
+/**
+ * Abre o seletor de arquivos DO SISTEMA, na maquina onde o servidor roda — que
+ * e a do operador (RNF-29: so loopback).
+ *
+ * Devolve `null` quando ele cancelou, e **nao grava nada**: o caminho vai para o
+ * campo, e `setWorkbookPath` continua sendo quem troca a planilha.
+ *
+ * **Tem limite de tempo, e ele nao e zelo.** Na primeira maquina Windows o
+ * dialogo nao apareceu, o processo ficou vivo esperando uma escolha que ninguem
+ * podia fazer, e o unico sinal ao operador foi o cursor girando — sem fim, sem
+ * mensagem e sem saida. Uma espera sem teto nao e paciencia: e um estado do qual
+ * a tela nao sabe voltar.
+ */
+export async function browseWorkbookPath(): Promise<string | null> {
+  const controller = new AbortController()
+  const corte = setTimeout(() => controller.abort(), BROWSE_TIMEOUT_MS)
+
+  let response: Response
+  try {
+    response = await fetch('/api/config/workbook/browse', {
+      method: 'POST',
+      signal: controller.signal,
+    })
+  } catch (cause) {
+    if ((cause as Error).name === 'AbortError') {
+      throw new Error(
+        'O seletor de arquivos não respondeu. Se nenhuma janela apareceu, digite o caminho da planilha no campo.',
+      )
+    }
+    throw cause
+  } finally {
+    clearTimeout(corte)
+  }
+
+  if (!response.ok) {
+    throw new Error(
+      await messageOf(response, `POST /api/config/workbook/browse respondeu ${response.status}`),
+    )
+  }
+  return ((await response.json()) as { path: string | null }).path
+}
+
 export async function setWorkbookPath(path: string): Promise<HealthResponse> {
   const response = await fetch('/api/config/workbook', {
     method: 'PUT',

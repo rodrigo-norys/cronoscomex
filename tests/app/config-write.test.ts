@@ -50,6 +50,35 @@ describe('checkWorkbookPath', () => {
     expect(checkWorkbookPath(comAcento).reason).toBeNull()
   })
 
+  /**
+   * "Copiar como caminho" do Explorer do Windows — a unica forma de copiar um
+   * caminho sem digita-lo — envolve o texto em aspas duplas. Sem isto o
+   * candidato colado tem extensao `.xlsx"`, e a recusa manda o operador
+   * procurar um arquivo `.xlsx` que ele ja escolheu. Medido na primeira
+   * instalacao em Windows (H-35, PD-06).
+   */
+  it('aceita o caminho colado do Explorer, entre aspas duplas', () => {
+    expect(checkWorkbookPath(`"${workbook}"`)).toEqual({
+      resolved: workbook,
+      exists: true,
+      readable: true,
+      reason: null,
+    })
+  })
+
+  it('aceita aspas com espaco em volta, como o campo as recebe', () => {
+    expect(checkWorkbookPath(`  "${workbook}"  `).reason).toBeNull()
+  })
+
+  /** Aspas de um lado so nao sao envolvimento: o nome fica como esta. */
+  it('nao remove aspas soltas, que fazem parte do nome no Linux', () => {
+    const aspas = join(dir, 'com"aspas.xlsx')
+    writeFileSync(aspas, 'conteudo irrelevante')
+
+    expect(checkWorkbookPath(aspas).reason).toBeNull()
+    expect(checkWorkbookPath(`"${workbook}`).resolved).not.toBe(workbook)
+  })
+
   it('recusa quem nao e .xlsx antes de conferir existencia', () => {
     writeFileSync(join(dir, 'planilha.xls'), 'x')
 

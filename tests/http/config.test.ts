@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { AppConfig } from '../../src/app/config.ts'
+import { FileDialogFailedError, FileDialogUnavailableError } from '../../src/app/file-dialog.ts'
 import type { StoreAccess, StoreState } from '../../src/app/process-store.ts'
 import { buildServer } from '../../src/http/server.ts'
 
@@ -64,14 +65,105 @@ afterEach(() => {
   rmSync(dir, { recursive: true, force: true })
 })
 
-/** O servidor com a rota de configuracao ja injetada. */
-function serverWith(applied: string[], current: AppConfig = config()) {
-  const app = buildServer(current, storeOf(state()), [], undefined, async (path) => {
-    applied.push(path)
-    current.workbookPath = path
-  })
+/**
+ * O servidor com a rota de configuracao ja injetada.
+ *
+ * `configPath` e o SEXTO argumento, e omiti-lo nao e inofensivo: `describeConfig`
+ * e `saveWorkbookPath` recusam o padrao sob `NODE_ENV=test` justamente para que
+ * o esquecimento reprove em vez de tocar o `app.json` da maquina (H-34, H-35).
+ */
+function serverWith(
+  applied: string[],
+  current: AppConfig = config(),
+  storeState: StoreState = state(),
+  /** O seletor de arquivos. Ausente, a rota de `browse` nao e exercida. */
+  openDialog?: () => Promise<string | null>,
+) {
+  const app = buildServer(
+    current,
+    storeOf(storeState),
+    [],
+    undefined,
+    async (path) => {
+      applied.push(path)
+      current.workbookPath = path
+    },
+    configPath,
+    openDialog,
+  )
   return app
 }
+
+/**
+ * H-37. O dialogo do sistema nao e aberto aqui — ele exige Windows com sessao
+ * grafica (`PD-06`, item 10). O que a rota precisa provar e como cada desfecho
+ * dele vira resposta HTTP.
+ */
+describe('POST /api/config/workbook/browse', () => {
+  it('devolve o caminho que o operador escolheu', async () => {
+    const escolhido = 'C:\\OneDrive\\CONTROLE DOS EMBARQUE.xlsx'
+    const app = serverWith([], config(), state(), () => Promise.resolve(escolhido))
+
+    const response = await app.inject({ method: 'POST', url: '/api/config/workbook/browse' })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual({ path: escolhido })
+  })
+
+  /** Cancelar e uma escolha: 200 com `path` nulo, e nao um erro. */
+  it('responde 200 com path nulo quando o operador cancela', async () => {
+    const app = serverWith([], config(), state(), () => Promise.resolve(null))
+
+    const response = await app.inject({ method: 'POST', url: '/api/config/workbook/browse' })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json()).toEqual({ path: null })
+  })
+
+  /**
+   * A maquina de desenvolvimento e este caso, e a de um Windows sem PowerShell
+   * tambem: a saida do operador e digitar o caminho, que continua funcionando.
+   */
+  it('responde 501 quando a maquina nao abre o seletor', async () => {
+    const app = serverWith([], config(), state(), () =>
+      Promise.reject(new FileDialogUnavailableError('Esta maquina nao abre o seletor.')),
+    )
+
+    const response = await app.inject({ method: 'POST', url: '/api/config/workbook/browse' })
+
+    expect(response.statusCode).toBe(501)
+    expect(response.json().error.code).toBe('SELETOR_INDISPONIVEL')
+    expect(response.json().error.message).toMatch(/nao abre o seletor/)
+  })
+
+  it('responde 500 quando o seletor abriu e terminou mal', async () => {
+    const app = serverWith([], config(), state(), () =>
+      Promise.reject(new FileDialogFailedError('O seletor devolveu resposta ilegivel.')),
+    )
+
+    const response = await app.inject({ method: 'POST', url: '/api/config/workbook/browse' })
+
+    expect(response.statusCode).toBe(500)
+    expect(response.json().error.code).toBe('SELETOR_FALHOU')
+  })
+
+  /**
+   * A rota escolhe, e nao grava. `PUT` continua sendo a unica porta de
+   * gravacao — com a conferencia de `checkWorkbookPath` inteira.
+   */
+  it('nao grava nada no app.json ao escolher', async () => {
+    const antes = readFileSync(configPath, 'utf-8')
+    const applied: string[] = []
+    const app = serverWith(applied, config(), state(), () =>
+      Promise.resolve('C:\\OneDrive\\outra.xlsx'),
+    )
+
+    await app.inject({ method: 'POST', url: '/api/config/workbook/browse' })
+
+    expect(readFileSync(configPath, 'utf-8')).toBe(antes)
+    expect(applied).toEqual([])
+  })
+})
 
 describe('GET /api/config/workbook', () => {
   it('responde o caminho configurado com exists e readable', async () => {
@@ -80,7 +172,12 @@ describe('GET /api/config/workbook', () => {
     const response = await app.inject({ method: 'GET', url: '/api/config/workbook' })
 
     expect(response.statusCode).toBe(200)
-    expect(response.json()).toEqual({ workbookPath: workbook, exists: true, readable: true })
+    expect(response.json()).toMatchObject({
+      workbookPath: workbook,
+      defined: true,
+      exists: true,
+      readable: true,
+    })
     await app.close()
   })
 
@@ -100,11 +197,14 @@ describe('GET /api/config/workbook', () => {
   it('responde caminho vazio na primeira execucao', async () => {
     const app = serverWith([], { ...config(), workbookPath: '' })
 
-    expect((await app.inject({ method: 'GET', url: '/api/config/workbook' })).json()).toEqual({
-      workbookPath: '',
-      exists: false,
-      readable: false,
-    })
+    expect((await app.inject({ method: 'GET', url: '/api/config/workbook' })).json()).toMatchObject(
+      {
+        workbookPath: '',
+        defined: false,
+        exists: false,
+        readable: false,
+      },
+    )
     await app.close()
   })
 })
@@ -266,5 +366,112 @@ describe('PUT /api/config/workbook', () => {
     expect(ordem).toEqual([primeira, segunda])
     expect(JSON.parse(readFileSync(configPath, 'utf-8')).workbookPath).toBe(segunda)
     await app.close()
+  })
+})
+
+/**
+ * H-35. O GET virou o inventario da configuracao: o que a tela mostra ao
+ * operador na primeira execucao, quando ainda nao ha nada configurado.
+ */
+describe('GET /api/config/workbook — o inventario', () => {
+  it('traz os OITO campos, com a origem de cada valor', async () => {
+    writeFileSync(configPath, JSON.stringify({ workbookPath: workbook, port: 5173 }))
+    const app = serverWith([])
+
+    const body = (await app.inject({ method: 'GET', url: '/api/config/workbook' })).json()
+
+    expect(body.fields).toHaveLength(8)
+    expect(body.configFile).toMatchObject({ path: configPath, present: true, parseable: true })
+    // `port` declarado com o mesmo 5173 do padrao: mesma tela, sentidos opostos.
+    expect(body.fields.find((field: { key: string }) => field.key === 'port').source).toBe(
+      'arquivo',
+    )
+    expect(body.fields.find((field: { key: string }) => field.key === 'topN').source).toBe('padrao')
+    await app.close()
+  })
+
+  it('sem config/app.json, diz que o arquivo nao existe — e nao trata isso como erro', async () => {
+    rmSync(configPath)
+    const app = serverWith([], { ...config(), workbookPath: '' })
+
+    const body = (await app.inject({ method: 'GET', url: '/api/config/workbook' })).json()
+
+    expect(body.configFile).toMatchObject({ present: false, parseable: true })
+    expect(body.defined).toBe(false)
+    expect(body.fields.find((field: { key: string }) => field.key === 'workbookPath').source).toBe(
+      'ausente',
+    )
+    await app.close()
+  })
+
+  /**
+   * O caso-limite do enunciado: mostrar o caminho E o fato de ele nao existir.
+   * Agrupar os dois em "ok / nao ok" perderia o que diz o que fazer em seguida.
+   */
+  it('caminho configurado apontando para arquivo ausente mostra os dois fatos', async () => {
+    const sumiu = join(dir, 'sumiu.xlsx')
+    const app = serverWith([], { ...config(), workbookPath: sumiu })
+
+    const body = (await app.inject({ method: 'GET', url: '/api/config/workbook' })).json()
+
+    expect(body.workbookPath).toBe(sumiu)
+    expect(body.defined).toBe(true)
+    expect(body.exists).toBe(false)
+    await app.close()
+  })
+
+  it('sheetPresent e null enquanto nao houve leitura nenhuma', async () => {
+    const app = serverWith([], config(), state({ lastReadAt: null, lastReadOk: false }))
+
+    expect(
+      (await app.inject({ method: 'GET', url: '/api/config/workbook' })).json().sheetPresent,
+    ).toBeNull()
+    await app.close()
+  })
+
+  it('sheetPresent e null quando a ultima leitura falhou — nao se sabe, e nao "nao tem"', async () => {
+    const app = serverWith([], config(), state({ lastReadOk: false, state: 'degradado' }))
+
+    expect(
+      (await app.inject({ method: 'GET', url: '/api/config/workbook' })).json().sheetPresent,
+    ).toBeNull()
+    await app.close()
+  })
+
+  it('sheetPresent e true quando a aba configurada foi a lida', async () => {
+    const app = serverWith([], config(), state({ sheetName: '2026' }))
+
+    expect(
+      (await app.inject({ method: 'GET', url: '/api/config/workbook' })).json().sheetPresent,
+    ).toBe(true)
+    await app.close()
+  })
+
+  it('sheetPresent e false quando a leitura trouxe outra aba', async () => {
+    const app = serverWith([], config(), state({ sheetName: '2025' }))
+
+    expect(
+      (await app.inject({ method: 'GET', url: '/api/config/workbook' })).json().sheetPresent,
+    ).toBe(false)
+    await app.close()
+  })
+
+  /**
+   * Regra inviolavel 8. O caminho carrega o nome da organizacao e a estrutura de
+   * pastas — `config/app.json.exemplo` registra isso como motivo de o arquivo
+   * nao ser versionado. A TELA o mostra, porque e para isso que ela serve; o log
+   * nao pode, e as duas camadas que o conhecem sao estas.
+   *
+   * A assercao e sobre o CODIGO, e nao sobre uma execucao: o logger do Fastify e
+   * `false` sob teste (`buildServer`), entao um log acrescentado aqui passaria
+   * despercebido por qualquer teste de comportamento.
+   */
+  it('nenhuma das duas camadas que conhecem o caminho registra log', () => {
+    const fontes = ['src/http/routes/config.ts', 'src/app/config.ts']
+
+    for (const fonte of fontes) {
+      const codigo = readFileSync(fonte, 'utf-8')
+      expect(codigo).not.toMatch(/logger\.log\(|app\.log\.|request\.log\.|console\./)
+    }
   })
 })

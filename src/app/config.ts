@@ -32,7 +32,11 @@ export class ConfigError extends Error {
   override readonly name = 'ConfigError'
 }
 
-/** Gravar o `app.json` falhou — arquivo somente-leitura, tipicamente. */
+/**
+ * Acesso ao `app.json` falhou: arquivo somente-leitura na gravacao, ou caminho
+ * padrao sob teste. O nome diz "Write" porque a gravacao foi o primeiro uso
+ * (H-34); `describeConfig` o reaproveita, e a rota ja o mapeia para 400.
+ */
 export class ConfigWriteError extends Error {
   override readonly name = 'ConfigWriteError'
 }
@@ -138,7 +142,121 @@ export function loadConfig(path: string = DEFAULT_CONFIG_PATH): AppConfig {
 }
 
 /**
+ * De onde veio o valor que a aplicacao esta usando.
+ *
+ * `ausente` existe por `workbookPath`, o unico dos oito campos SEM padrao —
+ * `DEFAULTS` nao o tem, e ele e modelado por `WORKBOOK_UNSET`. Dizer `padrao`
+ * ali afirmaria um padrao que nao existe, que e a regra inviolavel 3 aplicada a
+ * propria configuracao.
+ */
+export type ConfigFieldSource = 'arquivo' | 'padrao' | 'ausente' | 'desconhecida'
+
+export interface ConfigFieldReport {
+  key: string
+  /** O valor EFETIVO — o que a aplicacao esta usando agora, nao o do arquivo. */
+  value: string | number | null
+  source: ConfigFieldSource
+  /**
+   * O arquivo declara valor diferente do que esta em uso. Nao afirma que o
+   * proximo inicio o aceitara: afirma que o arquivo e a memoria divergem.
+   *
+   * So `workbookPath` e trocavel em execucao (H-34); os outros sete sao lidos
+   * na partida, e editar o arquivo com a aplicacao no ar nao muda nada ate
+   * reiniciar. Sem este campo o inventario mostraria o valor do arquivo como se
+   * estivesse valendo.
+   */
+  restartPending: boolean
+}
+
+export interface ConfigReport {
+  /** Caminho do proprio `app.json`, para a tela poder nomea-lo. */
+  path: string
+  /** Ausente NAO e erro desde H-34: os padroes valem e a tela resolve o resto. */
+  present: boolean
+  /** Legivel como JSON agora. So pode ser falso quando `present`. */
+  parseable: boolean
+  fields: ConfigFieldReport[]
+}
+
+/** A ordem do inventario e a de `config/app.json.exemplo`, nao a alfabetica. */
+const FIELD_ORDER: readonly (keyof AppConfig)[] = [
+  'workbookPath',
+  'sheetName',
+  'headerRow',
+  'firstDataRow',
+  'port',
+  'stalledDaysThreshold',
+  'topN',
+  'timezone',
+]
+
+/** O valor declarado, na mesma forma que `loadConfig` produziria. */
+function normalizeDeclared(key: keyof AppConfig, declared: unknown): unknown {
+  if (key !== 'workbookPath') return declared
+  if (typeof declared !== 'string') return declared
+
+  const trimmed = declared.trim()
+  return trimmed === '' ? WORKBOOK_UNSET : resolve(trimmed)
+}
+
+/**
+ * O inventario dos oito campos: valor efetivo, origem e divergencia (H-35).
+ *
+ * **A origem e o ponto.** `port: 5173` vindo do arquivo e `port: 5173` vindo do
+ * padrao mostram o mesmo numero e significam coisas diferentes — uma foi
+ * decidida por alguem, a outra ninguem decidiu. Sem a distincao, a tela de
+ * configuracao afirmaria configuracao onde ha ausencia dela.
+ *
+ * O valor sai do objeto EM MEMORIA e a origem sai do arquivo, relido a cada
+ * chamada: e assim que uma edicao manual feita depois da partida aparece como
+ * divergencia em vez de virar um numero que ninguem esta usando.
+ *
+ * NAO valida nada. Reprovar aqui duplicaria `loadConfig` numa segunda regra, que
+ * divergiria da primeira no dia em que uma das duas mudasse.
+ */
+export function describeConfig(config: AppConfig, path?: string): ConfigReport {
+  const target = resolveConfigPath(path)
+  const present = existsSync(target)
+
+  let raw: Record<string, unknown> | null = {}
+  if (present) {
+    try {
+      raw = JSON.parse(readFileSync(target, 'utf-8')) as Record<string, unknown>
+    } catch {
+      // Corrompido DEPOIS da partida: a aplicacao segue rodando com o que leu, e
+      // a origem de cada campo deixa de ser conhecivel. Ver `desconhecida`.
+      raw = null
+    }
+  }
+
+  const fields = FIELD_ORDER.map((key): ConfigFieldReport => {
+    const value = config[key]
+    if (raw === null) {
+      return { key, value, source: 'desconhecida', restartPending: false }
+    }
+
+    const declaredHere = Object.hasOwn(raw, key)
+    const declared = normalizeDeclared(key, raw[key])
+    const unset = key === 'workbookPath' && (!declaredHere || declared === WORKBOOK_UNSET)
+
+    return {
+      key,
+      value,
+      source: unset ? 'ausente' : declaredHere ? 'arquivo' : 'padrao',
+      restartPending: declaredHere && declared !== value,
+    }
+  })
+
+  return { path: target, present, parseable: raw !== null, fields }
+}
+
+/**
  * RECUSA o padrao sob NODE_ENV=test, como `history-store` faz desde H-28.
+ *
+ * Guarda a leitura de `describeConfig` tambem, e nao so a gravacao: um teste que
+ * caisse no padrao leria o `app.json` da maquina, e passaria ou reprovaria pelo
+ * estado dela — o defeito que H-28 mediu com 649 eventos gravados no arquivo do
+ * operador.
  *
  * Nao e zelo: um ponto de injecao esquecido aqui grava no `app.json` do
  * OPERADOR, e silenciosamente — a gravacao preserva os demais campos, entao o
@@ -169,6 +287,23 @@ export interface WorkbookPathCheck {
 }
 
 /**
+ * O caminho como o Explorer do Windows o entrega.
+ *
+ * "Copiar como caminho" — a unica forma de copiar um caminho sem digita-lo —
+ * envolve o texto em ASPAS DUPLAS, e `"` e caractere proibido em nome de
+ * arquivo no Windows: um par envolvendo o texto inteiro nunca faz parte do
+ * nome. Sem isto o caminho colado chega com a extensao valendo `.xlsx"`, e a
+ * recusa diz "precisa ser uma planilha .xlsx" sobre um arquivo que E .xlsx —
+ * mandando o operador procurar um problema que nao existe. Medido na primeira
+ * instalacao em Windows (H-35, PD-06).
+ */
+function unquote(candidate: string): string {
+  const trimmed = candidate.trim()
+  const quoted = trimmed.length >= 2 && trimmed.startsWith('"') && trimmed.endsWith('"')
+  return quoted ? trimmed.slice(1, -1).trim() : trimmed
+}
+
+/**
  * Confere um caminho candidato ANTES de grava-lo.
  *
  * A ordem das conferencias e a da mensagem mais util: extensao primeiro, porque
@@ -182,7 +317,7 @@ export interface WorkbookPathCheck {
  * esconderia do operador o motivo real (H-34, caso-limite).
  */
 export function checkWorkbookPath(candidate: string): WorkbookPathCheck {
-  const trimmed = candidate.trim()
+  const trimmed = unquote(candidate)
   if (trimmed === '') {
     return {
       resolved: WORKBOOK_UNSET,

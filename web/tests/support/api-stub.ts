@@ -209,6 +209,44 @@ export function healthFixture(overrides: Partial<HealthResponse> = {}): HealthRe
   }
 }
 
+/**
+ * O inventario da configuracao (`H-35`), no estado de uma instalacao JA
+ * apontada: `config/app.json` existe, so `workbookPath` foi declarado, e os
+ * outros sete campos vem do padrao.
+ *
+ * A origem de cada campo e o que a tela mostra, e e por isso que a fixture nao
+ * declara tudo: uma que trouxesse os oito como `arquivo` esconderia justamente a
+ * distincao entre "padrao aplicado" e "configurado com valor igual ao padrao".
+ */
+export function workbookConfigFixture(
+  overrides: Partial<WorkbookConfigResponse> = {},
+): WorkbookConfigResponse {
+  return {
+    workbookPath: 'C:/OneDrive/planilha-do-operador',
+    defined: true,
+    exists: true,
+    readable: true,
+    sheetPresent: true,
+    configFile: { path: 'config/app.json', present: true, parseable: true },
+    fields: [
+      {
+        key: 'workbookPath',
+        value: 'C:/OneDrive/planilha-do-operador',
+        source: 'arquivo',
+        restartPending: false,
+      },
+      { key: 'sheetName', value: '2026', source: 'padrao', restartPending: false },
+      { key: 'headerRow', value: 1, source: 'padrao', restartPending: false },
+      { key: 'firstDataRow', value: 2, source: 'padrao', restartPending: false },
+      { key: 'port', value: 5173, source: 'padrao', restartPending: false },
+      { key: 'stalledDaysThreshold', value: 15, source: 'padrao', restartPending: false },
+      { key: 'topN', value: 10, source: 'padrao', restartPending: false },
+      { key: 'timezone', value: 'America/Sao_Paulo', source: 'padrao', restartPending: false },
+    ],
+    ...overrides,
+  }
+}
+
 /** Enxuto de proposito: os nove blocos existem, com valores que cabem no
  * assert. A rota real e testada em `tests/http/`, sobre a fixture. */
 export function filterOptionsFixture(
@@ -262,8 +300,14 @@ export interface ApiStub {
   /** `PATCH /api/processes/:ref/color` passa a recusar com esta mensagem. */
   failEnqueueColor(message: string): void
   /** `POST /api/edits/apply` passa a responder 200 com este corpo. */
-  serveWorkbookConfig(config: WorkbookConfigResponse): void
+  serveWorkbookConfig(config: Partial<WorkbookConfigResponse>): void
   failSaveWorkbookPath(message: string): void
+  /** `POST /api/config/workbook/browse` passa a devolver este caminho. */
+  serveBrowse(path: string): void
+  /** O operador cancelou o dialogo: `path: null`, e nao erro. */
+  cancelBrowse(): void
+  /** `501 SELETOR_INDISPONIVEL` e a recusa que a maquina de desenvolvimento da. */
+  failBrowse(status: number, code: string, message: string): void
   serveApply(response: Partial<ApplyResponse>): void
   /** `POST /api/edits/apply` passa a recusar, com o corpo do envelope de erro. */
   refuseApply(status: number, code: string, message: string, detail?: unknown): void
@@ -330,12 +374,10 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
   }
   let applyRefusal: { status: number; body: unknown } | null = null
   let applyNetworkFails = false
-  let workbookConfig: WorkbookConfigResponse = {
-    workbookPath: 'C:/OneDrive/planilha-do-operador',
-    exists: true,
-    readable: true,
-  }
+  let workbookConfig: WorkbookConfigResponse = workbookConfigFixture()
   let workbookSaveFailure: string | null = null
+  let browseResult: string | null = 'C:/OneDrive/escolhida-no-dialogo.xlsx'
+  let browseFailure: { status: number; code: string; message: string } | null = null
 
   vi.stubGlobal(
     'fetch',
@@ -484,6 +526,24 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
         } as Response)
       }
 
+      if (path === '/api/config/workbook/browse') {
+        if (browseFailure !== null) {
+          return Promise.resolve({
+            ok: false,
+            status: browseFailure.status,
+            json: () =>
+              Promise.resolve({
+                error: { code: browseFailure?.code, message: browseFailure?.message },
+              }),
+          } as Response)
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve({ path: browseResult }),
+        } as Response)
+      }
+
       if (path === '/api/config/workbook') {
         if (init?.method !== 'PUT') {
           return Promise.resolve({
@@ -503,11 +563,9 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
           } as Response)
         }
         // O contrato: o PUT devolve o corpo do health, ja com a leitura nova.
-        workbookConfig = {
+        workbookConfig = workbookConfigFixture({
           workbookPath: JSON.parse(String(init.body)).path as string,
-          exists: true,
-          readable: true,
-        }
+        })
         return Promise.resolve({
           ok: true,
           status: 200,
@@ -539,7 +597,18 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
       healthFailure = message
     },
     serveWorkbookConfig: (next) => {
-      workbookConfig = next
+      workbookConfig = workbookConfigFixture(next)
+    },
+    serveBrowse: (next) => {
+      browseResult = next
+      browseFailure = null
+    },
+    cancelBrowse: () => {
+      browseResult = null
+      browseFailure = null
+    },
+    failBrowse: (status, code, message) => {
+      browseFailure = { status, code, message }
     },
     failSaveWorkbookPath: (message) => {
       workbookSaveFailure = message

@@ -143,15 +143,33 @@ com verificação pendente:** o `iniciar.cmd` só é exercível na máquina Wind
 operador, e `PD-06` guarda a lista do que falta conferir lá.
 
 **`H-33` trocou o leitor de `.xlsx` para `fflate`**, e com ele o `exceljs` saiu
-do projeto; **`H-34` fechou o caminho da planilha configurável pela tela** — as
-duas acrescentadas depois do plano e sem fase atribuída. **O plano original e
-tudo que veio depois dele estão fechados.**
+do projeto; **`H-34` fechou o caminho da planilha configurável pela tela**, e
+**`H-35` fechou a primeira execução numa máquina limpa** — o atalho deixou de
+barrar por configuração ausente, e o inventário da configuração passou a dizer
+de onde vem cada valor. As três foram acrescentadas depois do plano e não têm
+fase atribuída. **O plano original e tudo que veio depois dele estão fechados.**
 
-O que resta é o **épico E8, de estilização** — `H-35` a `H-43`, nascidas da
-auditoria de `docs/estilizacao/RESULTADO.md`. `H-35` vem primeiro por
-dependência: é a única que decide vocabulário de tema, e as oito seguintes são
-substituição mecânica só porque ela o fixa. As fases estão em
-`docs/07-plano-entrega.md`.
+**O épico E8 nasceu e fechou no mesmo dia, e veio de uso, não de auditoria:**
+`H-37` entrega o seletor de arquivos do sistema — o servidor abre o diálogo,
+porque o navegador não expõe caminho —, e `H-38` fecha o link ausente que deixava
+a tela de configuração inalcançável desde `H-34`.
+
+**A numeração foi refeita para acompanhar a ordem do backlog**, em 19/08/2026:
+as duas de operação assumiram `H-35` e `H-36`, o épico da configuração assumiu
+`E8` com `H-37` e `H-38`, e o de estilização passou a `E9`, com `H-39`–`H-47`.
+**O histórico do git continua citando os números antigos** — a branch e os
+commits de `H-35` dizem `H-44` —, e não há como alinhá-lo: a `main` protegida
+proíbe reescrever histórico.
+
+**A próxima é `H-36`**, aberta pelo corte de `H-35`: o checklist das etapas de
+partida no painel, o botão que revalida sem reexecutar o atalho, e o
+`config/app.json.exemplo` fiel à forma que a aplicação grava. Depois dela vem o
+**épico E9, de estilização** — `H-39` a `H-47`, nascidas da auditoria de
+`docs/estilizacao/RESULTADO.md`. `H-39` vem primeiro por dependência: é a única
+que decide vocabulário de tema, e as oito seguintes são substituição mecânica só
+porque ela o fixa. As ondas de E9 estão no cabeçalho do épico, em
+`docs/06-backlog.md` — `docs/07-plano-entrega.md` cobre as fases do plano
+original, e não alcança E9.
 
 > **A escrita é o ponto onde errar custa a planilha da empresa.** O subagent
 > `revisor-xml` existe desde 11/08/2026 — invoque-o antes de commitar qualquer
@@ -187,8 +205,8 @@ Não bloqueiam a implementação. Fechar antes da entrega ao operador.
 
 | # | Pendência | Quando fechar |
 |---|---|---|
-| **PD-06** | `scripts/iniciar.cmd` foi entregue por `H-30` e **nunca executado**: é batch do Windows (RNF-26) e o desenvolvimento é em Linux. Sem verificação: duplo clique, Node ausente, `config/app.json` ausente, janela fechada sem processo órfão, porta ocupada, segunda execução com a aplicação no ar, e caminho com espaços e acentos. A parte servidor está testada — `GET /*` tem 11 casos e foi conferida contra o `dist/web` real | **Primeira instalação na máquina do operador.** Percorra os sete itens; cada falha é correção no `.cmd`, não história nova |
-| **PD-01** | `config/app.json` aponta para `CONTROLE DOS EMBARQUE.xlsx` na **raiz do projeto**, usado para validar a partida em `H-02`. Na máquina Windows precisa do caminho real da pasta sincronizada (`C:\Users\...\OneDrive - <org>\...`). O arquivo está no `.gitignore`, então o caminho de desenvolvimento não vaza. **`H-34` deu a saída, em 18/08/2026**: o caminho é configurável pela tela, a aplicação sobe sem planilha válida e abre na tela de configuração, e o operador nunca edita JSON | **Primeira instalação na máquina do operador.** Deixou de exigir edição de arquivo: o passo 4 do `README.md` agora é apontar a planilha na tela, e o passo continua existindo porque alguém precisa apontá-la uma vez |
+| **PD-06** | `scripts/iniciar.cmd` foi entregue por `H-30`, **reescrito por `H-35`** e **nunca executado**: é batch do Windows (RNF-26) e o desenvolvimento é em Linux. Sem verificação, em dez itens: duplo clique · Node ausente · Node abaixo da 22 · janela fechada sem processo órfão · porta ocupada · segunda execução com a aplicação no ar · caminho com espaços e acentos · **primeira execução sem o arquivo de configuração, que agora é apenas informada e a partida segue** · **compilação sob demanda: aceitar, recusar, máquina sem internet, e `node_modules` presente e ausente** · **o diálogo de escolha de arquivo de `H-37`: abrir à frente do navegador e não atrás, devolver caminho com acento íntegro, e cancelar sem efeito**. **A primeira execução real, em 19/08/2026, achou um defeito que não era do `.cmd`: a aplicação NUNCA subiu em Windows, desde `H-30`.** O disparo de `main()` em `src/http/server.ts` comparava `import.meta.url` com `file://` concatenado a `process.argv[1]` — verdadeiro em Linux por acidente da barra inicial, falso em todo caminho `C:\...`. O processo carregava os módulos e saía com código **zero**, sem erro e sem escutar; o atalho lia zero como término normal e fechava a janela. Corrigido com `pathToFileURL`, e guardado por `tests/http/partida.test.ts`. **O modo de falha era mudo, e é a lição desta pendência: o único ambiente onde a aplicação roda de verdade é o único que nenhum teste alcança.** No caminho, dois defeitos reais do próprio `.cmd` também caíram: o navegador abria depois de 4 segundos fixos, antes de a porta responder — corrigido por `scripts/esperar-porta.mjs` —, e o abridor rodava com `start /b`, no mesmo console do servidor, corrigido com `/min`. **Nenhuma das três foi reexecutada.** Suspeitas ainda abertas, cada uma virando correção no `.cmd`: a detecção de "já está no ar" depende do espaçamento de colunas do `netstat`; o `PATH` de uma janela aberta antes de instalar o Node não enxerga o executável novo; e o caminho do projeto com acento aparece em algumas mensagens, em code page 850. A parte servidor está testada — `GET /*` tem 11 casos e foi conferida contra o `dist/web` real | **Primeira instalação na máquina do operador.** Percorra os nove itens; cada falha é correção no `.cmd`, não história nova |
+| **PD-01** | `config/app.json` aponta para `CONTROLE DOS EMBARQUE.xlsx` na **raiz do projeto**, usado para validar a partida em `H-02`. Na máquina Windows precisa do caminho real da pasta sincronizada (`C:\Users\...\OneDrive - <org>\...`). O arquivo está no `.gitignore`, então o caminho de desenvolvimento não vaza. **`H-34` deu a saída, em 18/08/2026**, e **`H-35` tirou o último passo manual, em 19/08/2026**: o arquivo de configuração não precisa mais existir antes — ele nasce ao salvar o caminho na tela | **Primeira instalação na máquina do operador.** Não exige copiar nem editar arquivo nenhum: o passo 4 do `README.md` é apontar a planilha na tela, e continua existindo porque alguém precisa apontá-la uma vez |
 | **PD-05** | A remoção de entrada em `xl/calcChain.xml` ganhou fixture com cadeia declarada — `tests/fixtures/formulas.xlsx` —, e a saída foi **aberta no Excel real em 13/08/2026**: sem aviso de reparo, com o recálculo produzindo as datas dependentes. **Falta a cadeia produzida pelo próprio Excel.** A fixture é montada por nós, e foi exatamente uma forma que ela não cobria — entrada seguinte com atributo além de `r` — que escondeu um defeito real até 14/08/2026: o `i` era perdido em toda cadeia que o Excel de fato produz. Corrigido, mas a lição é que fixture nossa não substitui arquivo do Excel. **Medido em 17/08/2026: a planilha real não tem `xl/calcChain.xml`** — o Excel só emite a parte quando há fórmula, então nenhuma das quatro abas tem uma, e o código é hoje inalcançável em produção | **Primeira instalação na máquina do operador**: planilha nova, uma fórmula, salvar, copiar para `tests/fixtures/`. O gatilho foi `H-30` até 18/08/2026, e antes disso era "quando existir um `.xlsx` salvo pelo Excel" — passivo, e sem dono desde 14/08/2026, quando `H-26` fechou sem o arquivo. Fechar antes é possível a qualquer momento com um Excel à mão; se a via for o Excel Online, **confira a forma da cadeia** antes de tratar a fixture como representativa — é a lição desta pendência |
 
 Ao fechar uma pendência, remova a linha.

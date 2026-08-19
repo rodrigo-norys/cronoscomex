@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useState } from 'react'
 import type { WorkbookConfigResponse } from '../../../src/http/routes/config.ts'
-import { getWorkbookConfig, setWorkbookPath } from '../api-client.ts'
+import {
+  browseWorkbookPath,
+  getWorkbookConfig,
+  type HealthResponse,
+  setWorkbookPath,
+} from '../api-client.ts'
 
 /**
  * Tres estados, e nao os quatro das paginas de dado.
@@ -15,11 +20,36 @@ export type WorkbookConfigState =
   | { status: 'pronto'; config: WorkbookConfigResponse }
   | { status: 'erro'; message: string }
 
+/**
+ * O desfecho de um clique em "Carregar esta planilha".
+ *
+ * Carrega o health que o `PUT` devolve, e nao so "deu certo": **gravar o
+ * caminho e ler a planilha sao coisas diferentes**, e o caso em que o caminho e
+ * aceito e a leitura falha — planilha sem a aba `2026` — responde 200. Sem o
+ * corpo, a tela teria de escolher entre chamar isso de sucesso ou de erro, e as
+ * duas escolhas mentem.
+ */
+export type SaveOutcome =
+  | { saved: true; health: HealthResponse }
+  | { saved: false; message: string }
+
+/**
+ * O desfecho de um clique em "Escolher arquivo".
+ *
+ * **Cancelar tem desfecho proprio** — `chosen: false` com `message` nula. E o
+ * caso mais comum depois do acerto, e o unico em que nao ha nada a dizer: uma
+ * mensagem ali acusaria problema onde o operador so mudou de ideia.
+ */
+export type BrowseOutcome =
+  | { chosen: true; path: string }
+  | { chosen: false; message: string | null }
+
 export interface WorkbookConfigAccess {
   state: WorkbookConfigState
-  /** `null` quando gravou; a frase do servidor quando recusou. */
-  save(path: string): Promise<string | null>
+  save(path: string): Promise<SaveOutcome>
   saving: boolean
+  browse(): Promise<BrowseOutcome>
+  browsing: boolean
 }
 
 /**
@@ -32,6 +62,7 @@ export interface WorkbookConfigAccess {
 export function useWorkbookConfig(dataVersion: number): WorkbookConfigAccess {
   const [state, setState] = useState<WorkbookConfigState>({ status: 'carregando' })
   const [saving, setSaving] = useState(false)
+  const [browsing, setBrowsing] = useState(false)
   const [reloadToken, setReloadToken] = useState(0)
 
   // biome-ignore lint/correctness/useExhaustiveDependencies: gatilho deliberado; remover congela o caminho exibido na primeira carga
@@ -48,21 +79,33 @@ export function useWorkbookConfig(dataVersion: number): WorkbookConfigAccess {
     return () => controller.abort()
   }, [dataVersion, reloadToken])
 
-  const save = useCallback(async (path: string): Promise<string | null> => {
+  const save = useCallback(async (path: string): Promise<SaveOutcome> => {
     setSaving(true)
     try {
-      await setWorkbookPath(path)
+      const health = await setWorkbookPath(path)
       // Recarrega o proprio recorte: o `exists`/`readable` do caminho novo vem
       // do servidor, e derivar do sucesso da gravacao afirmaria legibilidade
       // que ninguem conferiu depois da releitura.
       setReloadToken((token) => token + 1)
-      return null
+      return { saved: true, health }
     } catch (cause) {
-      return (cause as Error).message
+      return { saved: false, message: (cause as Error).message }
     } finally {
       setSaving(false)
     }
   }, [])
 
-  return { state, save, saving }
+  const browse = useCallback(async (): Promise<BrowseOutcome> => {
+    setBrowsing(true)
+    try {
+      const path = await browseWorkbookPath()
+      return path === null ? { chosen: false, message: null } : { chosen: true, path }
+    } catch (cause) {
+      return { chosen: false, message: (cause as Error).message }
+    } finally {
+      setBrowsing(false)
+    }
+  }, [])
+
+  return { state, save, saving, browse, browsing }
 }
