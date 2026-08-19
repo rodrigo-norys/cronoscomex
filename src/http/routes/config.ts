@@ -1,14 +1,18 @@
 import type { FastifyInstance } from 'fastify'
 import {
   type AppConfig,
+  type ConfigFieldReport,
   ConfigWriteError,
   checkWorkbookPath,
+  describeConfig,
   saveWorkbookPath,
+  WORKBOOK_UNSET,
 } from '../../app/config.ts'
 import {
   store as defaultStore,
   reconfigureWorkbook,
   type StoreAccess,
+  type StoreState,
 } from '../../app/process-store.ts'
 import { apiError } from '../errors.ts'
 import { buildHealthResponse, type HealthResponse } from './health.ts'
@@ -23,11 +27,38 @@ import { buildHealthResponse, type HealthResponse } from './health.ts'
  * **A conferencia acontece ANTES da gravacao**, e e por isso que um caminho
  * invalido nunca derruba o que ja funcionava: o arquivo so e tocado depois que
  * o candidato passou. O criterio de aceite exige exatamente isso.
+ *
+ * O GET virou o INVENTARIO da configuracao em H-44: alem do caminho, os oito
+ * campos com a origem de cada valor. Ele nao calcula nada — `describeConfig`
+ * monta o inventario e a rota so serializa (regra inviolavel 6).
  */
 export interface WorkbookConfigResponse {
   workbookPath: string
+  /** Ha caminho configurado. NAO e o mesmo que existir em disco. */
+  defined: boolean
   exists: boolean
   readable: boolean
+  /**
+   * A aba configurada apareceu na ULTIMA LEITURA BEM-SUCEDIDA.
+   *
+   * `null` enquanto nao houve nenhuma. Deduzir a presenca da aba do caminho
+   * seria adivinhar (regra inviolavel 3), e abrir o arquivo so para responder
+   * isto duplicaria o leitor numa segunda regra.
+   */
+  sheetPresent: boolean | null
+  configFile: {
+    path: string
+    present: boolean
+    parseable: boolean
+  }
+  fields: ConfigFieldReport[]
+}
+
+function sheetPresent(config: AppConfig, state: StoreState): boolean | null {
+  if (state.lastReadAt === null || !state.lastReadOk) return null
+  // `sheetName` nulo na config significa "a primeira aba do arquivo", que esta
+  // em escopo por definicao — nao ha nome a conferir.
+  return config.sheetName === null || state.sheetName === config.sheetName
 }
 
 interface PutBody {
@@ -50,10 +81,20 @@ export function registerConfigRoutes(
 ): void {
   app.get('/api/config/workbook', (): WorkbookConfigResponse => {
     const check = checkWorkbookPath(config.workbookPath)
+    const report = describeConfig(config, configPath)
+
     return {
       workbookPath: config.workbookPath,
+      defined: config.workbookPath !== WORKBOOK_UNSET,
       exists: check.exists,
       readable: check.readable,
+      sheetPresent: sheetPresent(config, store.getState()),
+      configFile: {
+        path: report.path,
+        present: report.present,
+        parseable: report.parseable,
+      },
+      fields: report.fields,
     }
   })
 
