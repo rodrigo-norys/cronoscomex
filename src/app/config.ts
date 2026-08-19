@@ -200,7 +200,7 @@ function normalizeDeclared(key: keyof AppConfig, declared: unknown): unknown {
 }
 
 /**
- * O inventario dos oito campos: valor efetivo, origem e divergencia (H-44).
+ * O inventario dos oito campos: valor efetivo, origem e divergencia (H-35).
  *
  * **A origem e o ponto.** `port: 5173` vindo do arquivo e `port: 5173` vindo do
  * padrao mostram o mesmo numero e significam coisas diferentes — uma foi
@@ -287,6 +287,23 @@ export interface WorkbookPathCheck {
 }
 
 /**
+ * O caminho como o Explorer do Windows o entrega.
+ *
+ * "Copiar como caminho" — a unica forma de copiar um caminho sem digita-lo —
+ * envolve o texto em ASPAS DUPLAS, e `"` e caractere proibido em nome de
+ * arquivo no Windows: um par envolvendo o texto inteiro nunca faz parte do
+ * nome. Sem isto o caminho colado chega com a extensao valendo `.xlsx"`, e a
+ * recusa diz "precisa ser uma planilha .xlsx" sobre um arquivo que E .xlsx —
+ * mandando o operador procurar um problema que nao existe. Medido na primeira
+ * instalacao em Windows (H-35, PD-06).
+ */
+function unquote(candidate: string): string {
+  const trimmed = candidate.trim()
+  const quoted = trimmed.length >= 2 && trimmed.startsWith('"') && trimmed.endsWith('"')
+  return quoted ? trimmed.slice(1, -1).trim() : trimmed
+}
+
+/**
  * Confere um caminho candidato ANTES de grava-lo.
  *
  * A ordem das conferencias e a da mensagem mais util: extensao primeiro, porque
@@ -300,7 +317,7 @@ export interface WorkbookPathCheck {
  * esconderia do operador o motivo real (H-34, caso-limite).
  */
 export function checkWorkbookPath(candidate: string): WorkbookPathCheck {
-  const trimmed = candidate.trim()
+  const trimmed = unquote(candidate)
   if (trimmed === '') {
     return {
       resolved: WORKBOOK_UNSET,
