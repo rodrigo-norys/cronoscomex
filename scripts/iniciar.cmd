@@ -187,15 +187,25 @@ if not exist "%RAIZ%\config\app.json" (
   echo.
 )
 echo   Iniciando o CronosComex em http://127.0.0.1:!PORTA!/
+echo   O navegador abre sozinho quando estiver pronto. Pode levar alguns
+echo   segundos na primeira vez.
 echo   FECHE ESTA JANELA para encerrar a aplicacao.
 echo.
 
-rem  O navegador abre em paralelo, com atraso: o servidor le a planilha antes
-rem  de escutar, e abrir de imediato mostraria "nao foi possivel conectar".
+rem  O navegador abre em paralelo, e SO quando a porta responde.
+rem
+rem  Ate 19/08/2026 aqui havia `timeout /t 4`, e a primeira execucao real em
+rem  Windows mediu o defeito: a partida demorou mais que os 4 segundos e o
+rem  operador recebeu ERR_CONNECTION_REFUSED com o servidor subindo atras. O
+rem  tempo nao e previsivel — `--experimental-strip-types` transpila os modulos
+rem  a cada execucao, e a primeira, logo apos um `npm ci`, e a mais lenta.
+rem  Numero maior so trocaria quem falha; perguntar a porta responde na hora.
 rem
 rem  A URL vai SEM aspas de proposito: dentro de `cmd /c "..."` nao ha forma
 rem  portavel de aninhar aspas, e endereco http nao tem espaco que as exija.
-start "" /b cmd /c "timeout /t 4 /nobreak >nul & start http://127.0.0.1:!PORTA!/"
+rem  O `&` e incondicional: estourando a espera, o navegador abre assim mesmo —
+rem  a janela ja tera o erro do servidor, que diz mais do que nao abrir nada.
+start "" /b cmd /c "node scripts\esperar-porta.mjs !PORTA! & start http://127.0.0.1:!PORTA!/"
 
 rem  Em PRIMEIRO PLANO, e `node` direto em vez de `npm start`: fechar a janela
 rem  precisa matar o servidor, e o `npm` interporia um processo intermediario
