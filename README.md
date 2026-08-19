@@ -69,22 +69,38 @@ npm ci
 npm run build
 ```
 
-### 4. Aponte para a planilha
+### 4. Aponte para a planilha — pela tela
+
+**Não é preciso editar arquivo nenhum.** Siga para o passo 5, inicie a
+aplicação, e ela abre na tela de configuração pedindo o caminho da planilha:
+cole o caminho completo do arquivo na pasta sincronizada e clique em *Carregar
+esta planilha*. Isso é pedido **uma vez** — o caminho fica salvo, e nas
+aberturas seguintes a leitura acontece sozinha.
+
+Para trocar de arquivo depois — na virada de ano, por exemplo — a mesma tela
+está em `/configuracao`, alcançável pelo painel de saúde da Página Inicial. A
+troca vale de imediato, sem reiniciar.
+
+<details>
+<summary>Se preferir configurar por arquivo</summary>
 
 ```bash
 copy config\app.json.exemplo config\app.json
 ```
 
 Abra `config/app.json` e ajuste **`workbookPath`** para o caminho completo da
-planilha na pasta sincronizada — algo como
+planilha — algo como
 `C:\Users\<usuário>\OneDrive - <organização>\<pasta>\<arquivo>.xlsx`. As barras
 invertidas precisam ser dobradas, como no arquivo de exemplo.
 
 O arquivo está no `.gitignore`: o caminho revela a estrutura de pastas e o nome
 da organização.
 
+</details>
+
 Os demais campos têm padrão utilizável, e cada um traz um comentário `_comentario`
-explicando o que é. Dois merecem atenção:
+explicando o que é. Eles continuam sendo editados no arquivo — a tela configura
+**apenas** o caminho da planilha. Dois merecem atenção:
 
 | Campo | O que muda |
 |---|---|
