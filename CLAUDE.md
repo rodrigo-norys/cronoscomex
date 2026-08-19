@@ -161,11 +161,12 @@ as duas de operação assumiram `H-35` e `H-36`, o épico da configuração assu
 commits de `H-35` dizem `H-44` —, e não há como alinhá-lo: a `main` protegida
 proíbe reescrever histórico.
 
-**A próxima é `H-36`**, aberta pelo corte de `H-35`: o checklist das etapas de
-partida no painel, o botão que revalida sem reexecutar o atalho, e o
-`config/app.json.exemplo` fiel à forma que a aplicação grava. Depois dela vem o
-**épico E9, de estilização** — `H-39` a `H-47`, nascidas da auditoria de
-`docs/estilizacao/RESULTADO.md`. `H-39` vem primeiro por dependência: é a única
+**`H-36` fechou o épico E7, e com ele tudo que não é estilização:** o painel diz
+em que etapa a partida está e reconfere sem reexecutar o atalho.
+
+**A próxima é `H-39`**, que abre o **épico E9, de estilização** — `H-39` a
+`H-47`, nascidas da auditoria de
+`docs/estilizacao/RESULTADO.md`. Ela vem primeiro por dependência: é a única
 que decide vocabulário de tema, e as oito seguintes são substituição mecânica só
 porque ela o fixa. As ondas de E9 estão no cabeçalho do épico, em
 `docs/06-backlog.md` — `docs/07-plano-entrega.md` cobre as fases do plano

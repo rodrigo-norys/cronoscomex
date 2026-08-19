@@ -4004,6 +4004,49 @@ ganha campos aditivos; nenhuma rota nova)
 
 ### H-36 — O painel diz onde a partida parou, e revalida sem reexecutar o atalho
 
+> ✅ **CONCLUÍDA em 19/08/2026.** 13 testes próprios — 5 em
+> `tests/http/config.test.ts` e 8 em `web/tests/WorkbookSetup.test.tsx`; suíte
+> total de 1300 para **1313**. Quatro divergências abertas no protocolo de
+> fatia, todas confirmadas pelo usuário.
+>
+> **A lista de arquivos foi de 5 para 8, e as três que faltavam eram fiação.**
+> `useWorkbookConfig.ts`, porque o botão *Atualizar* precisa da recarga e
+> `reloadToken` era estado interno; `api-stub.ts`, porque a fixture monta a
+> resposta inteira e o `typecheck` quebra assim que o contrato ganha campo — a
+> mesma omissão que mordeu em `H-19`, e ela **quebrou de fato**, na primeira
+> compilação depois de estender o contrato; e `server.ts`, pela regra
+> inviolável 7.
+>
+> **`webBuilt` lê o disco, e por isso precisou de ponto de injeção.** O portão
+> roda `test` **antes** de `build`, e no CI o checkout é limpo: um teste que
+> lesse `dist/web` direto ficaria verde na máquina de quem acabou de compilar e
+> vermelho no CI, sem nada ter mudado no código. `registerStaticRoute` já tinha
+> resolvido isso com `root` injetável em `H-30`; a rota de configuração passou a
+> receber a **mesma** raiz, pela mesma via — duas fontes divergiriam no dia em
+> que alguém mudasse uma delas.
+>
+> **O critério do `config/app.json.exemplo` já passava como estava escrito.**
+> Medido: as oito chaves estão na mesma ordem de `FIELD_ORDER`, `loadConfig`
+> aceita o arquivo, e os `_comentario` sobrevivem à gravação — `saveWorkbookPath`
+> reserializa e preserva tudo. A única diferença de forma são as linhas em
+> branco, que o `JSON.stringify` remove. O que de fato divergia era o **texto**:
+> o comentário do topo mandava *"Copie para config/app.json e ajuste
+> workbookPath"*, procedimento que `H-35` eliminou. O critério foi reescrito para
+> o que faltava.
+>
+> **`runtime` traz só o que o navegador consegue conferir.** Node instalado e
+> Node ≥ 22 ficaram de fora do contrato: a página é servida **pelo** Node, então
+> exibi-la já é a prova das duas, e reportá-las como pendentes seria impossível
+> por construção. Elas aparecem no checklist como cumpridas, com a versão real ao
+> lado — o que transforma "deu certo até aqui" em fato conferível.
+>
+> **A planilha não entrou no checklist.** Os quatro fatos dela são o inventário
+> logo abaixo, e repeti-los criaria dois lugares para manter o mesmo estado.
+>
+> Conferido no servidor real, sem `webRoot` injetado: `nodeVersion` bate com
+> `process.versions.node` (22.23.2), `webBuilt` responde `true` lendo o
+> `dist/web` de verdade, e os oito campos saem na ordem de `FIELD_ORDER`.
+
 **Objetivo:** o operador ver, no próprio painel, quais etapas da partida foram
 cumpridas e qual falta — e poder reconferir depois de resolver, sem fechar a
 janela e dar duplo clique de novo.
@@ -4027,10 +4070,13 @@ janela e dar duplo clique de novo.
 
 **Arquivos:**
 - `web/src/pages/WorkbookSetup.tsx` — o checklist e o botão *Atualizar*
+- `web/src/hooks/useWorkbookConfig.ts` — expõe a recarga *(a conferência da fatia acrescentou)*
 - `src/http/routes/config.ts` — os campos de ambiente no `GET`
+- `src/http/server.ts` — repassa a raiz de `dist/web` *(idem, pela regra inviolável 7)*
 - `docs/05-contratos-api.md` — o contrato estendido
 - `config/app.json.exemplo` — fiel à forma que a aplicação grava
 - `tests/http/config.test.ts`, `web/tests/WorkbookSetup.test.tsx`
+- `web/tests/support/api-stub.ts` — a fixture *(idem; quebrou o `typecheck` de fato)*
 
 **Contrato fixado:**
 
@@ -4051,8 +4097,9 @@ janela e dar duplo clique de novo.
   ao navegador aparecem cumpridas, e a do Node traz a **versão real**.
 - **Dado** o botão *Atualizar*, **então** ele refaz `GET /api/config/workbook` e
   o checklist muda sem recarregar a página nem reexecutar o atalho.
-- **Dado** `config/app.json.exemplo`, **então** ele traz as mesmas oito chaves, na
-  mesma ordem, que a aplicação grava — hoje o exemplo diverge do arquivo real.
+- **Dado** `config/app.json.exemplo`, **então** ele descreve o procedimento que
+  existe hoje e deixa de instruir cópia manual — as oito chaves e a ordem **já**
+  batiam com o que a aplicação grava, e o que divergia era o texto.
 
 **Casos-limite:**
 - `dist/web/index.html` apagado com o servidor no ar → `webBuilt: false`, e o
@@ -4067,7 +4114,7 @@ janela e dar duplo clique de novo.
 esses dois casos. Também fora: gravar pela tela qualquer campo além do caminho.
 
 **Dependências:** H-35
-**Tamanho:** M (5 arquivos, 1 contrato estendido)
+**Tamanho:** M (8 arquivos, 1 contrato estendido)
 
 [↑ Índice](#indice)
 
@@ -4975,10 +5022,10 @@ E qualquer correção de código: os cinco procedimentos produzem registro.
 | E4 — Interface ✅ | H-15 … H-22 | 6 | 2 | 0 |
 | E5 — Edição e escrita ✅ | H-23 … H-27 | 0 | 5 | 0 |
 | E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
-| E7 — Operação | H-30 … H-34, H-35, **H-36 aberta** | 3 | 4 | 0 |
+| E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização | **H-39 … H-47, todas abertas** | 1 | 8 | 0 |
-| **Total** | **47** — 37 concluídas, 10 abertas | **17** | **30** | **0** |
+| **Total** | **47** — 38 concluídas, 9 abertas | **17** | **30** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até
