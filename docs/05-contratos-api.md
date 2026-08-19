@@ -466,6 +466,44 @@ Corpo: vazio.
 
 ---
 
+### `GET /api/config/workbook`
+
+O caminho da planilha configurado, e o que o servidor sabe sobre ele. **Nunca
+responde `503`:** é a única rota de leitura que existe justamente para o estado
+em que não houve leitura nenhuma.
+
+```jsonc
+{ "workbookPath": "C:\\...\\planilha.xlsx", "exists": true, "readable": true }
+```
+
+`workbookPath` vem **vazio** na primeira execução — ausência de configuração, que
+é diferente de caminho configurado e inexistente (`exists: false`).
+
+### `PUT /api/config/workbook`
+
+Aponta a aplicação para outra planilha, **com o processo no ar**: grava o caminho
+em `config/app.json`, relê e passa a observar o diretório novo. É a saída de
+`PD-01` — o operador nunca edita JSON à mão.
+
+Corpo: `{ "path": "C:\\...\\planilha.xlsx" }`
+
+Resposta `200`: **o corpo de `GET /api/health`**, já com a leitura nova.
+
+| Código | Situação |
+|---|---|
+| 200 | Caminho gravado e planilha relida |
+| 400 | `CAMINHO_INVALIDO` — não é `.xlsx`, não existe, é pasta, ou sem permissão de leitura |
+| 400 | `CONFIG_NAO_GRAVAVEL` — `config/app.json` somente-leitura |
+
+**A conferência acontece antes da gravação**, e é por isso que uma tentativa
+falha nunca derruba o caminho que funcionava.
+
+**Uma planilha válida sem a aba em escopo é aceita**, e a aplicação entra em
+`degradado` com a razão. Recusar aqui esconderia do operador o motivo real — a
+regra é a mesma da leitura: buraco visível, nunca valor errado invisível.
+
+---
+
 ## 3. Rotas de edição
 
 ### Campos editáveis
