@@ -15,6 +15,7 @@ import { Operational } from './pages/Operational.tsx'
 import { Performance } from './pages/Performance.tsx'
 import { NotFoundPage, PendingPage } from './pages/Placeholders.tsx'
 import { ProcessDetail } from './pages/ProcessDetail.tsx'
+import { WorkbookSetup } from './pages/WorkbookSetup.tsx'
 import { NAV_PAGES, navigate, pageOf, type Route, useRoute } from './router.ts'
 
 /**
@@ -46,10 +47,22 @@ export function App() {
   // aplicou.
   const [refusal, setRefusal] = useState<ApplyRefusal | null>(null)
 
+  /**
+   * Primeira execucao: 'degradado' MAIS `lastReadAt` nulo, que e exatamente
+   * "nunca houve leitura" (`H-34`). A distincao vem de `H-08` e nao inventa
+   * estado: 'degradado' com `lastReadAt` preenchido e dado congelado — o painel
+   * segue util —, e sem ele e ausencia de dado, onde um painel de zeros
+   * afirmaria que a planilha tem zero processos (regra inviolavel 3).
+   *
+   * A casca desvia em vez de a pagina se anunciar: o operador nao tem como
+   * saber que existe uma tela de configuracao se o que ele ve e um painel vazio.
+   */
+  const firstRun = health !== null && health.state === 'degradado' && health.lastReadAt === null
+
   // O detalhe de um processo e sobre UM processo, achado pela REF: recortar o
   // conjunto nao muda o que ele mostra. Endereco desconhecido nao tem dado
-  // nenhum a filtrar.
-  const showFilters = route.pageId !== 'processDetail' && route.pageId !== 'notFound'
+  // nenhum a filtrar. E sem leitura nenhuma nao ha o que recortar.
+  const showFilters = !firstRun && route.pageId !== 'processDetail' && route.pageId !== 'notFound'
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-slate-900">
@@ -73,7 +86,7 @@ export function App() {
             <RefreshButton onRefresh={refresh} busy={refreshing} />
           </div>
         </div>
-        <MainNav route={route} />
+        {!firstRun && <MainNav route={route} />}
         {showFilters && (
           <FilterBar filters={filters} options={options} optionsError={optionsError} />
         )}
@@ -92,12 +105,16 @@ export function App() {
 
       <main className="px-6 py-6">
         <Suspense fallback={<PageLoading />}>
-          <PageOutlet
-            route={route}
-            dataVersion={dataVersion}
-            health={health}
-            queryString={filters.queryString}
-          />
+          {firstRun ? (
+            <WorkbookSetup key={dataVersion} dataVersion={dataVersion} firstRun />
+          ) : (
+            <PageOutlet
+              route={route}
+              dataVersion={dataVersion}
+              health={health}
+              queryString={filters.queryString}
+            />
+          )}
         </Suspense>
       </main>
 
@@ -205,6 +222,13 @@ function PageOutlet({ route, dataVersion, health, queryString }: PageOutletProps
   // recorte nao muda o que ele mostra — a casca ja esconde a barra aqui.
   if (route.pageId === 'processDetail' && route.ref !== null) {
     return <ProcessDetail key={dataVersion} processRef={route.ref} dataVersion={dataVersion} />
+  }
+
+  // Alcancavel pelo endereco depois que ja houve leitura — trocar de planilha na
+  // virada de ano, por exemplo. O desvio automatico da primeira execucao nem
+  // chega aqui: ele acontece na casca, antes do outlet.
+  if (route.pageId === 'workbookSetup') {
+    return <WorkbookSetup key={dataVersion} dataVersion={dataVersion} firstRun={false} />
   }
 
   return <PendingPage key={dataVersion} page={page} processRef={route.ref} />

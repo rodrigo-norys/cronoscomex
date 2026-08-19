@@ -9,6 +9,7 @@ import {
   getState,
   initStore,
   markWriting,
+  reconfigureWorkbook,
   reload,
   settle,
 } from '../../src/app/process-store.ts'
@@ -512,5 +513,125 @@ describe('settle', () => {
     await settle()
 
     expect(getState().state).toBe('escrevendo')
+  })
+})
+
+describe('process-store — reconfiguracao do caminho (H-34)', () => {
+  it('passa a ler a planilha nova sem reiniciar o processo', async () => {
+    const outra = join(dir, 'outra.xlsx')
+    copyFileSync('tests/fixtures/cores.xlsx', outra)
+    start()
+    await reload()
+    expect(getState().rowsRead).toBe(3)
+
+    await reconfigureWorkbook(outra)
+
+    expect(getState().state).toBe('pronto')
+    expect(getState().rowsRead).toBe(10)
+  })
+
+  /**
+   * O MESMO objeto `AppConfig` foi passado ao store, ao write-guard e a cada
+   * registrador de rota. Trocar o objeto em vez de muta-lo deixaria a rota de
+   * saude respondendo o caminho velho enquanto a leitura usa o novo.
+   */
+  it('muta o config compartilhado, para os demais consumidores enxergarem', async () => {
+    const compartilhado = config()
+    const outra = join(dir, 'outra.xlsx')
+    copyFileSync('tests/fixtures/cores.xlsx', outra)
+    start({ config: compartilhado })
+
+    await reconfigureWorkbook(outra)
+
+    expect(compartilhado.workbookPath).toBe(outra)
+  })
+
+  it('volta lastReadAt a null quando a planilha nova nao pode ser lida', async () => {
+    start()
+    await reload()
+    expect(getState().lastReadAt).not.toBeNull()
+
+    await reconfigureWorkbook(join(dir, 'nao-existe.xlsx'))
+
+    // E o gatilho da tela de configuracao: 'degradado' MAIS lastReadAt nulo. O
+    // painel nao pode seguir exibindo o dado do arquivo anterior.
+    expect(getState().state).toBe('degradado')
+    expect(getState().lastReadAt).toBeNull()
+    expect(getState().processes).toEqual([])
+  })
+
+  it('nao reconfigura no meio de uma leitura em voo', async () => {
+    const outra = join(dir, 'outra.xlsx')
+    copyFileSync('tests/fixtures/cores.xlsx', outra)
+
+    let liberar = (): void => {}
+    const presa = new Promise<void>((resolve) => {
+      liberar = resolve
+    })
+    const lidos: string[] = []
+    start({
+      readWorkbookFn: async (cfg): Promise<ReadResult> => {
+        lidos.push(cfg.workbookPath)
+        if (lidos.length === 1) await presa
+        return {
+          rows: [] as RawRow[],
+          fileHash: 'sha256:x',
+          readAt: new Date(),
+          sheetName: '2026',
+          sheetPath: 'xl/worksheets/sheet1.xml',
+        }
+      },
+    })
+
+    const emVoo = reload()
+    const trocando = reconfigureWorkbook(outra)
+    // A primeira leitura ainda esta presa: a troca nao pode ter acontecido.
+    await new Promise((resolve) => setTimeout(resolve, 10))
+    expect(lidos).toEqual([workbookPath])
+
+    liberar()
+    await emVoo
+    await trocando
+
+    expect(lidos).toEqual([workbookPath, outra])
+  })
+
+  it('serializa reconfiguracoes concorrentes, na ordem de chegada', async () => {
+    const primeira = join(dir, 'primeira.xlsx')
+    const segunda = join(dir, 'segunda.xlsx')
+    copyFileSync('tests/fixtures/cores.xlsx', primeira)
+    copyFileSync('tests/fixtures/vazio.xlsx', segunda)
+
+    const lidos: string[] = []
+    let simultaneas = 0
+    start({
+      readWorkbookFn: async (cfg): Promise<ReadResult> => {
+        simultaneas++
+        expect(simultaneas).toBe(1)
+        await new Promise((resolve) => setTimeout(resolve, 5))
+        lidos.push(cfg.workbookPath)
+        simultaneas--
+        return {
+          rows: [] as RawRow[],
+          fileHash: 'sha256:x',
+          readAt: new Date(),
+          sheetName: '2026',
+          sheetPath: 'xl/worksheets/sheet1.xml',
+        }
+      },
+    })
+
+    await Promise.all([reconfigureWorkbook(primeira), reconfigureWorkbook(segunda)])
+
+    expect(lidos).toEqual([primeira, segunda])
+  })
+
+  it('exige initStore antes de reconfigurar', async () => {
+    vi.resetModules()
+    const fresh = await import('../../src/app/process-store.ts')
+
+    await expect(fresh.reconfigureWorkbook('/x.xlsx')).rejects.toThrow(
+      fresh.StoreNotInitializedError,
+    )
   })
 })

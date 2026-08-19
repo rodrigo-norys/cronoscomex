@@ -189,6 +189,7 @@ As 33 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
 | H-31 | §5 abaixo (RF-16, observabilidade) | ✅ **Concluída.** Logs e métricas. Fecha a Fase 1 |
 | H-32 | §5 abaixo (RF-16, observabilidade) | ✅ **Concluída.** Sinal de interferência externa no arquivo (A-58). Antecipada para destravar `H-15`. Sinal, nunca ação: a leitura acontece igual |
 | H-33 | Cadeia base | ✅ **Concluída.** Leitor sobre `fflate`: nenhuma aba fora de escopo é descomprimida, `/tmp` fica intocado e o `exceljs` saiu do projeto. O erro não determinístico do portão já tinha sido corrigido fora dela, em 06/08/2026 |
+| H-34 | Cadeia base | ✅ **Concluída.** Caminho da planilha configurável pela tela, com troca em execução — o operador nunca edita JSON. A partida deixou de exigir planilha válida: sem ela a aplicação sobe e abre na tela de configuração |
 
 ---
 

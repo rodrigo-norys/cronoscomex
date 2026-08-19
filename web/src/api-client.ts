@@ -2,6 +2,7 @@ import type { Conflict, WriteRefusal } from '../../src/app/write-guard.ts'
 import type { ColorTarget } from '../../src/domain/color-mapper.ts'
 import type { AlertsResponse } from '../../src/http/routes/alerts.ts'
 import type { ApplyResponse } from '../../src/http/routes/apply.ts'
+import type { WorkbookConfigResponse } from '../../src/http/routes/config.ts'
 import type { EditsListResponse, EnqueuedEditResponse } from '../../src/http/routes/edits.ts'
 import type { FilterOptionsResponse } from '../../src/http/routes/filter-options.ts'
 import type { HealthResponse } from '../../src/http/routes/health.ts'
@@ -432,4 +433,41 @@ export async function requestReload(): Promise<boolean> {
   } catch {
     return false
   }
+}
+
+/**
+ * O caminho da planilha configurado, com o que o servidor sabe sobre ele.
+ *
+ * **Nao responde `503`**, e e a unica rota de leitura assim: ela existe
+ * justamente para o estado em que nao houve leitura nenhuma. Por isso o hook
+ * dela tem tres estados, e nao os quatro das paginas de dado — `semLeitura`
+ * seria um estado que esta rota nunca produz.
+ */
+export async function getWorkbookConfig(signal?: AbortSignal): Promise<WorkbookConfigResponse> {
+  const response = await fetch('/api/config/workbook', signal ? { signal } : undefined)
+  if (!response.ok) {
+    throw new Error(`GET /api/config/workbook respondeu ${response.status}`)
+  }
+  return (await response.json()) as WorkbookConfigResponse
+}
+
+/**
+ * Grava o caminho e devolve o health ja com a leitura nova.
+ *
+ * A recusa carrega a frase que o servidor escreveu — "nao ha nenhum arquivo
+ * nesse caminho", "precisa ser uma planilha .xlsx" —, e nao o codigo cru: o
+ * operador nao e tecnico, e e ele quem vai consertar o caminho.
+ */
+export async function setWorkbookPath(path: string): Promise<HealthResponse> {
+  const response = await fetch('/api/config/workbook', {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ path }),
+  })
+  if (!response.ok) {
+    throw new Error(
+      await messageOf(response, `PUT /api/config/workbook respondeu ${response.status}`),
+    )
+  }
+  return (await response.json()) as HealthResponse
 }

@@ -13,6 +13,8 @@ export type ApiErrorCode =
   | 'ESCRITA_EM_ANDAMENTO'
   | 'ARQUIVO_INDISPONIVEL'
   | 'ESCRITA_INVALIDA'
+  | 'CAMINHO_INVALIDO'
+  | 'CONFIG_NAO_GRAVAVEL'
   | 'ERRO_INTERNO'
 
 export interface ApiErrorBody {

@@ -1,6 +1,7 @@
 import { vi } from 'vitest'
 import type { AlertsResponse } from '../../../src/http/routes/alerts.ts'
 import type { ApplyResponse } from '../../../src/http/routes/apply.ts'
+import type { WorkbookConfigResponse } from '../../../src/http/routes/config.ts'
 import type { FilterOptionsResponse } from '../../../src/http/routes/filter-options.ts'
 import type { HealthResponse } from '../../../src/http/routes/health.ts'
 import type { MonthlyHistoryResponse } from '../../../src/http/routes/history.ts'
@@ -261,6 +262,8 @@ export interface ApiStub {
   /** `PATCH /api/processes/:ref/color` passa a recusar com esta mensagem. */
   failEnqueueColor(message: string): void
   /** `POST /api/edits/apply` passa a responder 200 com este corpo. */
+  serveWorkbookConfig(config: WorkbookConfigResponse): void
+  failSaveWorkbookPath(message: string): void
   serveApply(response: Partial<ApplyResponse>): void
   /** `POST /api/edits/apply` passa a recusar, com o corpo do envelope de erro. */
   refuseApply(status: number, code: string, message: string, detail?: unknown): void
@@ -327,6 +330,12 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
   }
   let applyRefusal: { status: number; body: unknown } | null = null
   let applyNetworkFails = false
+  let workbookConfig: WorkbookConfigResponse = {
+    workbookPath: 'C:/OneDrive/planilha-do-operador',
+    exists: true,
+    readable: true,
+  }
+  let workbookSaveFailure: string | null = null
 
   vi.stubGlobal(
     'fetch',
@@ -475,6 +484,37 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
         } as Response)
       }
 
+      if (path === '/api/config/workbook') {
+        if (init?.method !== 'PUT') {
+          return Promise.resolve({
+            ok: true,
+            status: 200,
+            json: () => Promise.resolve(workbookConfig),
+          } as Response)
+        }
+        if (workbookSaveFailure !== null) {
+          return Promise.resolve({
+            ok: false,
+            status: 400,
+            json: () =>
+              Promise.resolve({
+                error: { code: 'CAMINHO_INVALIDO', message: workbookSaveFailure },
+              }),
+          } as Response)
+        }
+        // O contrato: o PUT devolve o corpo do health, ja com a leitura nova.
+        workbookConfig = {
+          workbookPath: JSON.parse(String(init.body)).path as string,
+          exists: true,
+          readable: true,
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(health),
+        } as Response)
+      }
+
       if (url === '/api/reload') {
         return Promise.resolve({
           ok: true,
@@ -497,6 +537,12 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
     },
     failNextHealth: (message) => {
       healthFailure = message
+    },
+    serveWorkbookConfig: (next) => {
+      workbookConfig = next
+    },
+    failSaveWorkbookPath: (message) => {
+      workbookSaveFailure = message
     },
     failOptions: () => {
       optionsFails = true

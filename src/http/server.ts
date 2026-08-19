@@ -1,14 +1,21 @@
 import Fastify, { type FastifyInstance } from 'fastify'
 import { ColorMapError, loadColorMap } from '../app/color-map-loader.ts'
-import { type AppConfig, ConfigError, loadConfig } from '../app/config.ts'
+import { type AppConfig, ConfigError, loadConfig, WORKBOOK_UNSET } from '../app/config.ts'
 import { createLogger, type Logger } from '../app/logger.ts'
-import { store as defaultStore, initStore, reload, type StoreAccess } from '../app/process-store.ts'
+import {
+  store as defaultStore,
+  initStore,
+  reconfigureWorkbook,
+  reload,
+  type StoreAccess,
+} from '../app/process-store.ts'
 import { loadStatusAliases, StatusAliasesError } from '../app/status-aliases-loader.ts'
-import { initWriteGuard } from '../app/write-guard.ts'
+import { initWriteGuard, retargetWatcher } from '../app/write-guard.ts'
 import type { ColorMapEntry } from '../domain/color-mapper.ts'
-import { createWatcher, DEFAULT_DEBOUNCE_MS } from '../io/watcher.ts'
+import { createWatcher, DEFAULT_DEBOUNCE_MS, type Watcher } from '../io/watcher.ts'
 import { registerAlertsRoute } from './routes/alerts.ts'
 import { registerApplyRoute } from './routes/apply.ts'
+import { registerConfigRoutes } from './routes/config.ts'
 import { registerEditsRoutes } from './routes/edits.ts'
 import { registerFilterOptionsRoute } from './routes/filter-options.ts'
 import { registerHealthRoute } from './routes/health.ts'
@@ -27,6 +34,9 @@ import { registerStaticRoute } from './routes/static.ts'
  */
 export const LOOPBACK = '127.0.0.1'
 
+/** Sem planilha configurada nao ha observador — nem escrita a coordenar. */
+const INERT_WATCHER = { pause: (): void => {}, resume: (): void => {} }
+
 export function buildServer(
   config: AppConfig,
   store: StoreAccess = defaultStore,
@@ -38,6 +48,14 @@ export function buildServer(
   // teste. Um default nesta assinatura anularia essa guarda em todo teste que
   // monta o servidor.
   historyPath?: string,
+  /**
+   * Aplica um caminho de planilha ja conferido (H-34). Ausente, `PUT
+   * /api/config/workbook` so reconfigura o store — que e o certo em teste, onde
+   * nao ha watcher. Em producao `main` passa o que tambem troca o observador.
+   */
+  applyWorkbookPath?: (resolvedPath: string) => Promise<void>,
+  /** Ponto de injecao para teste. `saveWorkbookPath` recusa o padrao sob teste. */
+  configPath?: string,
 ): FastifyInstance {
   // Silencioso sob teste: a saida do Vitest e o relatorio, nao o log do servidor.
   const app = Fastify({
@@ -45,6 +63,7 @@ export function buildServer(
   })
 
   registerHealthRoute(app, config, store)
+  registerConfigRoutes(app, config, store, applyWorkbookPath, configPath)
   registerQuarantineRoute(app)
   registerReloadRoute(app, store)
   registerIndicatorsRoute(app, config, store)
@@ -101,7 +120,9 @@ async function main(): Promise<void> {
   // processo — `POST /api/reload` continua disponivel para nova tentativa.
   await reload()
 
-  const app = buildServer(config, defaultStore, colorMap)
+  const app = buildServer(config, defaultStore, colorMap, undefined, (path) =>
+    applyWorkbookPath(path),
+  )
 
   try {
     await app.listen({ host: LOOPBACK, port: config.port })
@@ -117,9 +138,41 @@ async function main(): Promise<void> {
     throw error
   }
 
-  const watcher = createWatcher(config.workbookPath, DEFAULT_DEBOUNCE_MS)
-  watcher.onChange(reload)
-  watcher.start()
+  /**
+   * O watcher e o UNICO consumidor que guarda uma copia do caminho, e por isso
+   * ele — e so ele — precisa ser recriado quando o caminho muda (H-34). Todos
+   * os demais leem `config.workbookPath` por referencia do mesmo objeto, que
+   * `reconfigureWorkbook` muta.
+   *
+   * Nulo enquanto nao ha planilha configurada: observar o diretorio corrente a
+   * espera de um arquivo sem nome nao vigia nada e ainda segura um descritor.
+   */
+  let watcher: Watcher | null = null
+
+  const startWatching = (path: string): void => {
+    const next = createWatcher(path, DEFAULT_DEBOUNCE_MS)
+    next.onChange(reload)
+    next.start()
+    watcher = next
+    // O guard pausa e retoma o observador durante a escrita cirurgica. Segurando
+    // o antigo, ele pausaria um watcher que nao observa mais nada, e o novo
+    // dispararia releitura no meio da gravacao.
+    retargetWatcher(next)
+  }
+
+  if (config.workbookPath !== WORKBOOK_UNSET) startWatching(config.workbookPath)
+
+  /**
+   * A releitura vem ANTES da troca de observador: `reconfigureWorkbook` espera
+   * a leitura em voo e rele com o caminho novo, e so entao passa a observar.
+   * Invertido, o watcher novo poderia disparar uma releitura concorrente com a
+   * que a propria reconfiguracao ja fez.
+   */
+  const applyWorkbookPath = async (resolvedPath: string): Promise<void> => {
+    await reconfigureWorkbook(resolvedPath)
+    watcher?.stop()
+    startWatching(resolvedPath)
+  }
 
   // Depois do `start`: o guard pausa e retoma o observador durante a escrita
   // (04-arquitetura.md secao 3.2), e nao teria o que pausar antes disto.
@@ -130,10 +183,15 @@ async function main(): Promise<void> {
   // fila do operador ficaria para tras a cada aplicacao. Enquanto os dois usarem
   // o default nao ha como divergirem — e passar um so aqui seria exatamente o
   // jeito de quebrar isso.
-  initWriteGuard({ config, colorMap, watcher, logger })
+  // `watcher` e nulo enquanto nao ha planilha configurada, e ai nao ha o que
+  // pausar: sem caminho nao ha escrita. O primeiro salvamento bem-sucedido chama
+  // `retargetWatcher` com o observador de verdade — e as chamadas de
+  // `startWatching` anteriores a esta linha sao silenciosas de proposito, porque
+  // o guard ainda nao existe.
+  initWriteGuard({ config, colorMap, watcher: watcher ?? INERT_WATCHER, logger })
 
   const shutdown = (): void => {
-    watcher.stop()
+    watcher?.stop()
     void app.close().then(() => process.exit(0))
   }
   process.once('SIGINT', shutdown)

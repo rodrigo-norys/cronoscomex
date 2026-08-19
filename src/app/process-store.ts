@@ -357,6 +357,54 @@ export async function reload(): Promise<void> {
   return inFlight
 }
 
+let reconfiguring: Promise<void> | null = null
+
+/**
+ * Aponta a aplicacao para outra planilha, com o processo no ar (H-34).
+ *
+ * **Muta `options.config` em vez de trocar o objeto**, e isso e deliberado: o
+ * MESMO `AppConfig` foi passado a `initStore`, a `initWriteGuard` e a cada
+ * registrador de rota, que o capturaram por referencia. Trocar o objeto aqui
+ * deixaria todos eles apontando para o caminho velho — a rota de saude
+ * responderia o antigo enquanto a leitura usaria o novo, que e a forma mais
+ * silenciosa possivel de errar. O unico consumidor que guarda uma COPIA do
+ * caminho e o watcher, criado em `src/http/server.ts`, e por isso ele e
+ * recriado la, e nao aqui: o store nao o conhece.
+ *
+ * **Serializa por construcao.** Duas requisicoes concorrentes entram na mesma
+ * fila, e cada uma so comeca depois que a anterior terminou — falhando ou nao.
+ * E `settle()` garante que nenhuma reconfiguracao comeca no meio de uma
+ * leitura: trocar o caminho ali deixaria a leitura em voo gravando o estado do
+ * arquivo ANTIGO por cima do novo.
+ *
+ * O estado volta a vazio antes da releitura, de proposito: se a planilha nova
+ * nao puder ser lida, `lastReadAt` fica em null e a tela de configuracao
+ * reaparece, em vez de o painel seguir exibindo o dado do arquivo anterior.
+ */
+export async function reconfigureWorkbook(workbookPath: string): Promise<void> {
+  const deps = options
+  if (!deps) {
+    throw new StoreNotInitializedError(
+      'initStore precisa ser chamado antes de reconfigureWorkbook.',
+    )
+  }
+
+  const run = async (): Promise<void> => {
+    await settle()
+    deps.config.workbookPath = workbookPath
+    current = emptyState()
+    await reload()
+  }
+
+  const mine = (reconfiguring ?? Promise.resolve()).catch(() => {}).then(run)
+  reconfiguring = mine
+  try {
+    await mine
+  } finally {
+    if (reconfiguring === mine) reconfiguring = null
+  }
+}
+
 /**
  * Espera a releitura em voo terminar. Resolve na hora quando nao ha nenhuma.
  *

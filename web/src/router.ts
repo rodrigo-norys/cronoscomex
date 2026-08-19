@@ -17,6 +17,7 @@ export type PageId =
   | 'alerts'
   | 'history'
   | 'processDetail'
+  | 'workbookSetup'
   | 'notFound'
 
 export interface PageDefinition {
@@ -44,6 +45,18 @@ export const PROCESS_DETAIL_PAGE: PageDefinition = {
   story: 'H-22',
 }
 
+/**
+ * Fora do menu tambem, e por outro motivo: nao e uma visao do dado. Chega-se a
+ * ela pelo painel de saude — ou automaticamente, quando nao houve leitura
+ * nenhuma e a casca desvia para ca (`H-34`).
+ */
+export const WORKBOOK_SETUP_PAGE: PageDefinition = {
+  id: 'workbookSetup',
+  path: '/configuracao',
+  label: 'Configuração da planilha',
+  story: 'H-34',
+}
+
 const PROCESS_DETAIL_PREFIX = `${PROCESS_DETAIL_PAGE.path}/`
 
 export interface Route {
@@ -62,12 +75,15 @@ export function parseRoute(pathname: string): Route {
     return ref === '' ? NOT_FOUND : { pageId: 'processDetail', ref }
   }
 
+  if (path === WORKBOOK_SETUP_PAGE.path) return { pageId: 'workbookSetup', ref: null }
+
   const page = NAV_PAGES.find((candidate) => candidate.path === path)
   return page ? { pageId: page.id, ref: null } : NOT_FOUND
 }
 
 export function pageOf(route: Route): PageDefinition | null {
   if (route.pageId === 'processDetail') return PROCESS_DETAIL_PAGE
+  if (route.pageId === 'workbookSetup') return WORKBOOK_SETUP_PAGE
   return NAV_PAGES.find((candidate) => candidate.id === route.pageId) ?? null
 }
 

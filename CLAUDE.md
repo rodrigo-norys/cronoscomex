@@ -139,9 +139,15 @@ com verificação pendente:** o `iniciar.cmd` só é exercível na máquina Wind
 operador, e `PD-06` guarda a lista do que falta conferir lá.
 
 **`H-33` trocou o leitor de `.xlsx` para `fflate`**, e com ele o `exceljs` saiu
-do projeto. Resta **`H-34`**, o caminho da planilha configurável pela tela,
-acrescentada depois do plano e sem fase atribuída. Não bloqueia a instalação. As
-fases estão em `docs/07-plano-entrega.md`.
+do projeto; **`H-34` fechou o caminho da planilha configurável pela tela** — as
+duas acrescentadas depois do plano e sem fase atribuída. **O plano original e
+tudo que veio depois dele estão fechados.**
+
+O que resta é o **épico E8, de estilização** — `H-35` a `H-43`, nascidas da
+auditoria de `docs/estilizacao/RESULTADO.md`. `H-35` vem primeiro por
+dependência: é a única que decide vocabulário de tema, e as oito seguintes são
+substituição mecânica só porque ela o fixa. As fases estão em
+`docs/07-plano-entrega.md`.
 
 > **A escrita é o ponto onde errar custa a planilha da empresa.** O subagent
 > `revisor-xml` existe desde 11/08/2026 — invoque-o antes de commitar qualquer
@@ -178,7 +184,7 @@ Não bloqueiam a implementação. Fechar antes da entrega ao operador.
 | # | Pendência | Quando fechar |
 |---|---|---|
 | **PD-06** | `scripts/iniciar.cmd` foi entregue por `H-30` e **nunca executado**: é batch do Windows (RNF-26) e o desenvolvimento é em Linux. Sem verificação: duplo clique, Node ausente, `config/app.json` ausente, janela fechada sem processo órfão, porta ocupada, segunda execução com a aplicação no ar, e caminho com espaços e acentos. A parte servidor está testada — `GET /*` tem 11 casos e foi conferida contra o `dist/web` real | **Primeira instalação na máquina do operador.** Percorra os sete itens; cada falha é correção no `.cmd`, não história nova |
-| **PD-01** | `config/app.json` aponta para `CONTROLE DOS EMBARQUE.xlsx` na **raiz do projeto**, usado para validar a partida em `H-02`. Na máquina Windows precisa do caminho real da pasta sincronizada (`C:\Users\...\OneDrive - <org>\...`). O arquivo está no `.gitignore`, então o caminho de desenvolvimento não vaza. **`H-34` dá a saída definitiva**: o caminho passa a ser configurável pela tela, e o operador nunca edita JSON | **Primeira instalação na máquina do operador**, pelo passo 4 do `README.md`. `H-34` a torna indolor, mas não é pré-requisito |
+| **PD-01** | `config/app.json` aponta para `CONTROLE DOS EMBARQUE.xlsx` na **raiz do projeto**, usado para validar a partida em `H-02`. Na máquina Windows precisa do caminho real da pasta sincronizada (`C:\Users\...\OneDrive - <org>\...`). O arquivo está no `.gitignore`, então o caminho de desenvolvimento não vaza. **`H-34` deu a saída, em 18/08/2026**: o caminho é configurável pela tela, a aplicação sobe sem planilha válida e abre na tela de configuração, e o operador nunca edita JSON | **Primeira instalação na máquina do operador.** Deixou de exigir edição de arquivo: o passo 4 do `README.md` agora é apontar a planilha na tela, e o passo continua existindo porque alguém precisa apontá-la uma vez |
 | **PD-05** | A remoção de entrada em `xl/calcChain.xml` ganhou fixture com cadeia declarada — `tests/fixtures/formulas.xlsx` —, e a saída foi **aberta no Excel real em 13/08/2026**: sem aviso de reparo, com o recálculo produzindo as datas dependentes. **Falta a cadeia produzida pelo próprio Excel.** A fixture é montada por nós, e foi exatamente uma forma que ela não cobria — entrada seguinte com atributo além de `r` — que escondeu um defeito real até 14/08/2026: o `i` era perdido em toda cadeia que o Excel de fato produz. Corrigido, mas a lição é que fixture nossa não substitui arquivo do Excel. **Medido em 17/08/2026: a planilha real não tem `xl/calcChain.xml`** — o Excel só emite a parte quando há fórmula, então nenhuma das quatro abas tem uma, e o código é hoje inalcançável em produção | **Primeira instalação na máquina do operador**: planilha nova, uma fórmula, salvar, copiar para `tests/fixtures/`. O gatilho foi `H-30` até 18/08/2026, e antes disso era "quando existir um `.xlsx` salvo pelo Excel" — passivo, e sem dono desde 14/08/2026, quando `H-26` fechou sem o arquivo. Fechar antes é possível a qualquer momento com um Excel à mão; se a via for o Excel Online, **confira a forma da cadeia** antes de tratar a fixture como representativa — é a lição desta pendência |
 
 Ao fechar uma pendência, remova a linha.

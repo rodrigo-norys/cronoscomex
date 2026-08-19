@@ -1,5 +1,13 @@
-import { existsSync, readFileSync } from 'node:fs'
-import { resolve } from 'node:path'
+import {
+  accessSync,
+  constants,
+  existsSync,
+  readFileSync,
+  renameSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs'
+import { extname, resolve } from 'node:path'
 
 /** Configuracao da aplicacao. Ver docs/03-modelo-dados.md secao 3.5. */
 export interface AppConfig {
@@ -24,6 +32,21 @@ export class ConfigError extends Error {
   override readonly name = 'ConfigError'
 }
 
+/** Gravar o `app.json` falhou — arquivo somente-leitura, tipicamente. */
+export class ConfigWriteError extends Error {
+  override readonly name = 'ConfigWriteError'
+}
+
+/**
+ * Caminho ainda nao configurado.
+ *
+ * NAO e "planilha vazia" nem "planilha ilegivel": e a ausencia de configuracao,
+ * o estado de primeira execucao. A tela de H-34 existe para sair dele, e a
+ * distincao importa porque as tres situacoes levam a mensagens diferentes —
+ * regra inviolavel 3 aplicada ao proprio caminho.
+ */
+export const WORKBOOK_UNSET = ''
+
 const DEFAULTS = {
   sheetName: '2026',
   headerRow: 1,
@@ -33,14 +56,6 @@ const DEFAULTS = {
   topN: 10,
   timezone: 'America/Sao_Paulo',
 } as const
-
-function requireString(raw: Record<string, unknown>, key: string): string {
-  const value = raw[key]
-  if (typeof value !== 'string' || value.trim() === '') {
-    throw new ConfigError(`"${key}" e obrigatorio e deve ser um texto nao vazio.`)
-  }
-  return value
-}
 
 function optionalNumber(raw: Record<string, unknown>, key: string, fallback: number): number {
   const value = raw[key]
@@ -52,32 +67,37 @@ function optionalNumber(raw: Record<string, unknown>, key: string, fallback: num
 }
 
 /**
- * Carrega e valida a configuracao. Lanca ConfigError na partida, nunca em
- * tempo de requisicao: um caminho invalido deve impedir o servidor de subir,
- * e nao produzir erro quando o operador ja estiver usando o painel.
+ * Carrega e valida a configuracao.
+ *
+ * **Duas condicoes NAO impedem a partida, e ate H-34 impediam:** o arquivo de
+ * configuracao ausente, e o `workbookPath` ausente ou apontando para arquivo
+ * que nao existe. Nas duas o servidor sobe, a leitura falha, e o store fica em
+ * 'degradado' com `lastReadAt` em null — que e o gatilho da tela de
+ * configuracao. A regra anterior era o contrario, e criava um circulo: o
+ * o `app.json` nao e versionado — o que o repositorio guarda e
+ * `config/app.json.exemplo` —, entao numa instalacao nova o processo
+ * morria antes de servir a tela que existiria para consertar o caminho.
+ *
+ * **As demais continuam matando a partida**, e de proposito: JSON malformado,
+ * porta fora de faixa e `firstDataRow` menor ou igual a `headerRow` nao sao
+ * consertaveis pela tela. Subir com elas trocaria uma falha visivel por uma
+ * aplicacao que se comporta errado sem dizer por que.
  */
 export function loadConfig(path: string = DEFAULT_CONFIG_PATH): AppConfig {
-  if (!existsSync(path)) {
-    throw new ConfigError(
-      `Arquivo de configuracao nao encontrado: ${path}\n` +
-        `Copie ${CONFIG_EXAMPLE_PATH} para ${path} e ajuste o caminho da planilha.`,
-    )
+  let raw: Record<string, unknown> = {}
+  if (existsSync(path)) {
+    try {
+      raw = JSON.parse(readFileSync(path, 'utf-8')) as Record<string, unknown>
+    } catch (cause) {
+      throw new ConfigError(`${path} nao e um JSON valido: ${(cause as Error).message}`)
+    }
   }
 
-  let raw: Record<string, unknown>
-  try {
-    raw = JSON.parse(readFileSync(path, 'utf-8')) as Record<string, unknown>
-  } catch (cause) {
-    throw new ConfigError(`${path} nao e um JSON valido: ${(cause as Error).message}`)
-  }
-
-  const workbookPath = resolve(requireString(raw, 'workbookPath'))
-  if (!existsSync(workbookPath)) {
-    throw new ConfigError(
-      `A planilha nao existe no caminho configurado:\n  ${workbookPath}\n` +
-        'Confira "workbookPath" e se a pasta do OneDrive esta sincronizada.',
-    )
-  }
+  const declared = typeof raw.workbookPath === 'string' ? raw.workbookPath.trim() : ''
+  // Caminho declarado e inexistente e PRESERVADO: a tela mostra o que esta
+  // configurado e que ele nao existe, o que e informacao. Descartar deixaria o
+  // operador sem saber para onde a aplicacao estava apontando.
+  const workbookPath = declared === '' ? WORKBOOK_UNSET : resolve(declared)
 
   const sheetName =
     raw.sheetName === null ? null : ((raw.sheetName as string) ?? DEFAULTS.sheetName)
@@ -114,5 +134,137 @@ export function loadConfig(path: string = DEFAULT_CONFIG_PATH): AppConfig {
     ),
     topN: optionalNumber(raw, 'topN', DEFAULTS.topN),
     timezone,
+  }
+}
+
+/**
+ * RECUSA o padrao sob NODE_ENV=test, como `history-store` faz desde H-28.
+ *
+ * Nao e zelo: um ponto de injecao esquecido aqui grava no `app.json` do
+ * OPERADOR, e silenciosamente — a gravacao preserva os demais campos, entao o
+ * unico sintoma seria a aplicacao apontando para um temporario ja apagado.
+ * Aconteceu ao escrever H-34: `buildServer` recebeu um caminho de configuracao
+ * como sexto argumento, e a assinatura so tinha cinco — o argumento foi
+ * ignorado em silencio, e o teste sobrescreveu o arquivo real. Com esta recusa,
+ * o mesmo engano reprova o teste.
+ *
+ * Fora de teste a variavel nao e sequer consultada.
+ */
+function resolveConfigPath(path: string | undefined): string {
+  if (path !== undefined) return path
+  if (process.env.NODE_ENV !== 'test') return DEFAULT_CONFIG_PATH
+
+  throw new ConfigWriteError(
+    'config: sob teste, injete o caminho — o padrao aponta para o config/app.json real.',
+  )
+}
+
+export interface WorkbookPathCheck {
+  /** Absoluto. Vazio quando nada foi informado. */
+  resolved: string
+  exists: boolean
+  readable: boolean
+  /** Motivo em pt-br, e null quando o caminho serve. O usuario final nao e tecnico. */
+  reason: string | null
+}
+
+/**
+ * Confere um caminho candidato ANTES de grava-lo.
+ *
+ * A ordem das conferencias e a da mensagem mais util: extensao primeiro, porque
+ * apontar para o arquivo errado e o engano mais provavel e a mensagem mais
+ * especifica; depois existencia; depois permissao de leitura. Invertida, um
+ * `.docx` inexistente diria "nao existe", e o operador procuraria o arquivo em
+ * vez de perceber que escolheu o tipo errado.
+ *
+ * NAO confere se a aba `2026` esta la: isso e leitura, e uma planilha sem ela
+ * deve ser salva assim mesmo, entrando em 'degradado' com a razao. Recusar aqui
+ * esconderia do operador o motivo real (H-34, caso-limite).
+ */
+export function checkWorkbookPath(candidate: string): WorkbookPathCheck {
+  const trimmed = candidate.trim()
+  if (trimmed === '') {
+    return {
+      resolved: WORKBOOK_UNSET,
+      exists: false,
+      readable: false,
+      reason: 'Informe o caminho da planilha.',
+    }
+  }
+
+  const resolved = resolve(trimmed)
+  if (extname(resolved).toLowerCase() !== '.xlsx') {
+    return {
+      resolved,
+      exists: false,
+      readable: false,
+      reason: 'O arquivo precisa ser uma planilha .xlsx.',
+    }
+  }
+  if (!existsSync(resolved)) {
+    return {
+      resolved,
+      exists: false,
+      readable: false,
+      reason:
+        'Nao ha nenhum arquivo nesse caminho. Confira se a pasta do OneDrive esta sincronizada.',
+    }
+  }
+  if (!statSync(resolved).isFile()) {
+    return {
+      resolved,
+      exists: true,
+      readable: false,
+      reason: 'Esse caminho e uma pasta, e nao um arquivo.',
+    }
+  }
+
+  try {
+    accessSync(resolved, constants.R_OK)
+  } catch {
+    return {
+      resolved,
+      exists: true,
+      readable: false,
+      reason: 'Sem permissao para ler esse arquivo.',
+    }
+  }
+
+  return { resolved, exists: true, readable: true, reason: null }
+}
+
+/**
+ * Grava o caminho preservando TODOS os demais campos do arquivo.
+ *
+ * Reserializa o JSON lido em vez de montar um objeto novo: `port`, `sheetName`,
+ * `timezone` e os limiares sao do operador, e um deles perdido viraria um
+ * comportamento diferente sem nenhum aviso. As chaves prefixadas com `_` das
+ * configuracoes de exemplo sobrevivem pelo mesmo caminho.
+ *
+ * A gravacao e atomica — temporario ao lado e renomeacao — porque este arquivo
+ * e lido na partida: interrompido no meio, um `app.json` truncado impediria a
+ * aplicacao de subir, e o operador nao teria tela para consertar.
+ */
+export function saveWorkbookPath(resolvedPath: string, path?: string): void {
+  const target = resolveConfigPath(path)
+  let raw: Record<string, unknown> = {}
+  if (existsSync(target)) {
+    try {
+      raw = JSON.parse(readFileSync(target, 'utf-8')) as Record<string, unknown>
+    } catch (cause) {
+      throw new ConfigWriteError(`${target} nao e um JSON valido: ${(cause as Error).message}`)
+    }
+  }
+
+  raw.workbookPath = resolvedPath
+  const temporary = `${target}.tmp`
+  try {
+    writeFileSync(temporary, `${JSON.stringify(raw, null, 2)}\n`, 'utf-8')
+    renameSync(temporary, target)
+  } catch (cause) {
+    throw new ConfigWriteError(
+      `Nao foi possivel gravar ${target}: ${(cause as Error).message}\n` +
+        'Confira se o arquivo nao esta somente-leitura.',
+    )
   }
 }
