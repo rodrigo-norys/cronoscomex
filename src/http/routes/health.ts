@@ -38,6 +38,38 @@ export interface HealthResponse {
 }
 
 /**
+ * O corpo do health, montado a partir do estado corrente.
+ *
+ * Exportado porque `PUT /api/config/workbook` responde exatamente este corpo,
+ * ja com a leitura nova (H-34): duplicar a montagem la faria as duas respostas
+ * divergirem no primeiro campo que alguem acrescentasse a uma so.
+ */
+export function buildHealthResponse(config: AppConfig, store: StoreAccess): HealthResponse {
+  const state = store.getState()
+
+  return {
+    state: state.state,
+    workbookPath: config.workbookPath,
+    // A aba lida so e conhecida apos a primeira leitura; ate la vale a
+    // configurada, que pode ser `null` (primeira aba do arquivo).
+    sheetName: state.sheetName ?? config.sheetName,
+    lastReadAt: state.lastReadAt?.toISOString() ?? null,
+    lastReadOk: state.lastReadOk,
+    lastReadDurationMs: state.lastReadDurationMs,
+    sourceFileHash: state.fileHash,
+    rowsRead: state.rowsRead,
+    rowsAccepted: state.rowsAccepted,
+    rowsQuarantined: state.rowsQuarantined,
+    // Fila de edicoes chega em H-23.
+    pendingEditsCount: state.pendingEdits.length,
+    degradedReason: state.degradedReason,
+    externalLock: state.externalLock,
+    conflictFiles: state.conflictFiles,
+    today: toIsoDay(currentDay(config.timezone)),
+  }
+}
+
+/**
  * GET /api/health — contrato em docs/05-contratos-api.md.
  * Nunca falha enquanto o servidor responder; devolve 200 inclusive em
  * estado 'degradado', porque a interface precisa distinguir "sem dado" de
@@ -48,28 +80,5 @@ export function registerHealthRoute(
   config: AppConfig,
   store: StoreAccess = defaultStore,
 ): void {
-  app.get('/api/health', (): HealthResponse => {
-    const state = store.getState()
-
-    return {
-      state: state.state,
-      workbookPath: config.workbookPath,
-      // A aba lida so e conhecida apos a primeira leitura; ate la vale a
-      // configurada, que pode ser `null` (primeira aba do arquivo).
-      sheetName: state.sheetName ?? config.sheetName,
-      lastReadAt: state.lastReadAt?.toISOString() ?? null,
-      lastReadOk: state.lastReadOk,
-      lastReadDurationMs: state.lastReadDurationMs,
-      sourceFileHash: state.fileHash,
-      rowsRead: state.rowsRead,
-      rowsAccepted: state.rowsAccepted,
-      rowsQuarantined: state.rowsQuarantined,
-      // Fila de edicoes chega em H-23.
-      pendingEditsCount: state.pendingEdits.length,
-      degradedReason: state.degradedReason,
-      externalLock: state.externalLock,
-      conflictFiles: state.conflictFiles,
-      today: toIsoDay(currentDay(config.timezone)),
-    }
-  })
+  app.get('/api/health', (): HealthResponse => buildHealthResponse(config, store))
 }
