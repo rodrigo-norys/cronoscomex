@@ -58,6 +58,30 @@ describe('StatusBanner', () => {
     expect(screen.getByText(/Ainda não houve nenhuma leitura bem-sucedida/)).toBeTruthy()
   })
 
+  /**
+   * H-35, medido na primeira execucao em Windows. "Dado congelado" pressupoe
+   * dado a congelar, e na primeira execucao nao ha nenhum — o titulo
+   * contradizia o detalhe logo abaixo, que ja dizia que nunca houve leitura.
+   */
+  it('na primeira execucao nao fala em dado congelado — nao ha dado a congelar', () => {
+    render(
+      <StatusBanner
+        health={healthFixture({
+          state: 'degradado',
+          degradedReason: 'Nenhuma planilha configurada ainda.',
+          lastReadAt: null,
+          workbookPath: '',
+        })}
+      />,
+    )
+
+    expect(screen.getByText('Nenhuma planilha configurada')).toBeTruthy()
+    expect(screen.queryByText(/Dado congelado/)).toBeNull()
+    // O detalhe acrescenta, e nao repete o titulo nem a razao do servidor.
+    expect(screen.getByText(/assim que você informar o caminho/)).toBeTruthy()
+    expect(screen.queryByText(/Ainda não houve nenhuma leitura/)).toBeNull()
+  })
+
   it('avisa que alguem esta com a planilha aberta, sem dizer que ha problema', () => {
     render(<StatusBanner health={healthFixture({ externalLock: true })} />)
 

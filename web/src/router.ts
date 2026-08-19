@@ -35,6 +35,7 @@ export const NAV_PAGES: readonly PageDefinition[] = [
   { id: 'performance', path: '/performance', label: 'Performance', story: 'H-19' },
   { id: 'alerts', path: '/alertas', label: 'Alertas', story: 'H-20' },
   { id: 'history', path: '/historico', label: 'Histórico', story: 'H-21' },
+  { id: 'workbookSetup', path: '/configuracao', label: 'Configuração', story: 'H-34' },
 ]
 
 /** Fora do menu: so se chega nela a partir de um processo (`H-17` → `H-22`). */
@@ -46,14 +47,23 @@ export const PROCESS_DETAIL_PAGE: PageDefinition = {
 }
 
 /**
- * Fora do menu tambem, e por outro motivo: nao e uma visao do dado. Chega-se a
- * ela pelo painel de saude — ou automaticamente, quando nao houve leitura
- * nenhuma e a casca desvia para ca (`H-34`).
+ * A mesma pagina de `NAV_PAGES`, alcancavel tambem sem passar pelo menu.
+ *
+ * **Ate `H-38` ela estava so aqui, e este bloco afirmava que se chegava nela
+ * pelo painel de saude — nao se chegava.** Nenhuma linha de `web/src/` apontava
+ * para `/configuracao`: o unico acesso era digitar o endereco, e depois de
+ * apontar a planilha uma vez o operador perdia a tela. O comentario descrevia um
+ * caminho que ninguem construiu, que e o modo de falha de `PD-06`.
+ *
+ * Continua exportada porque a casca desvia para ca na primeira execucao, quando
+ * o menu ainda nao existe — e `pageOf` precisa resolve-la nesse estado.
  */
-export const WORKBOOK_SETUP_PAGE: PageDefinition = {
+export const WORKBOOK_SETUP_PAGE: PageDefinition = NAV_PAGES.find(
+  (page) => page.id === 'workbookSetup',
+) ?? {
   id: 'workbookSetup',
   path: '/configuracao',
-  label: 'Configuração da planilha',
+  label: 'Configuração',
   story: 'H-34',
 }
 
@@ -74,8 +84,6 @@ export function parseRoute(pathname: string): Route {
     const ref = decodeURIComponent(path.slice(PROCESS_DETAIL_PREFIX.length))
     return ref === '' ? NOT_FOUND : { pageId: 'processDetail', ref }
   }
-
-  if (path === WORKBOOK_SETUP_PAGE.path) return { pageId: 'workbookSetup', ref: null }
 
   const page = NAV_PAGES.find((candidate) => candidate.path === path)
   return page ? { pageId: page.id, ref: null } : NOT_FOUND

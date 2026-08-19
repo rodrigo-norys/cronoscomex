@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from '../src/App.tsx'
+import { NAV_PAGES } from '../src/router.ts'
 import { type ApiStub, healthFixture, stubApi } from './support/api-stub.ts'
 
 /**
@@ -27,12 +28,88 @@ function nav(): HTMLElement {
 }
 
 describe('casca', () => {
-  it('monta o cabecalho e as seis paginas do menu', async () => {
+  /**
+   * A contagem sai de `NAV_PAGES`, e nao de um numero escrito aqui: o menu
+   * passou de seis para sete itens em `H-38`, e um literal so avisaria disso
+   * reprovando — sem dizer se a pagina nova entrou ou se outra sumiu.
+   */
+  it('monta o cabecalho e todas as paginas do menu', async () => {
     render(<App />)
 
     expect(screen.getByRole('heading', { name: 'CronosComex' })).toBeTruthy()
-    expect(within(nav()).getAllByRole('link')).toHaveLength(6)
+    expect(within(nav()).getAllByRole('link')).toHaveLength(NAV_PAGES.length)
     expect(await screen.findByText('07/08/2026')).toBeTruthy()
+  })
+
+  /**
+   * H-38. A tela de `H-34` existia desde 18/08/2026 e nao havia como chegar
+   * nela: nenhuma linha de `web/src/` apontava para `/configuracao`, e o unico
+   * acesso era digitar o endereco. Depois de apontar a planilha uma vez, o
+   * operador PERDIA a tela — e a troca, que ja funcionava, ficava inalcancavel.
+   */
+  describe('os tres caminhos ate a configuracao', () => {
+    it('leva a configuracao pelo menu', async () => {
+      render(<App />)
+
+      const item = within(nav()).getByRole('link', { name: 'Configuração' })
+      fireEvent.click(item)
+
+      expect(await screen.findByRole('region', { name: /Configuração da planilha/i })).toBeTruthy()
+    })
+
+    it('marca a pagina corrente tambem no item novo', async () => {
+      window.history.replaceState(null, '', '/configuracao')
+      render(<App />)
+
+      expect(within(nav()).getByRole('link', { current: 'page' }).textContent).toBe('Configuração')
+    })
+
+    it('leva a configuracao pelo painel de saude', async () => {
+      render(<App />)
+
+      const link = await screen.findByRole('link', { name: /a planilha configurada/i })
+      fireEvent.click(link)
+
+      expect(await screen.findByRole('region', { name: /Configuração da planilha/i })).toBeTruthy()
+    })
+
+    /**
+     * O momento em que o caminho mais importa: a planilha nao pode ser lida, e o
+     * conserto quase sempre e apontar o arquivo certo.
+     */
+    it('leva a configuracao pela faixa de estado degradado', async () => {
+      api.serve(
+        healthFixture({
+          state: 'degradado',
+          degradedReason: 'A planilha nao pode ser lida.',
+          lastReadAt: '2026-08-07T10:00:00.000Z',
+        }),
+      )
+      render(<App />)
+
+      const botao = await screen.findByRole('button', { name: /conferir a planilha configurada/i })
+      fireEvent.click(botao)
+
+      expect(await screen.findByRole('region', { name: /Configuração da planilha/i })).toBeTruthy()
+    })
+
+    /** Nao e uma visao do dado: um recorte ali nao teria sobre o que incidir. */
+    it('nao mostra a barra de filtros na configuracao', async () => {
+      window.history.replaceState(null, '', '/configuracao')
+      render(<App />)
+      await screen.findByRole('region', { name: /Configuração da planilha/i })
+
+      expect(screen.queryByRole('region', { name: /filtros/i })).toBeNull()
+    })
+
+    /** Na primeira execucao o menu segue escondido: seriam seis paginas vazias. */
+    it('nao mostra o menu na primeira execucao', async () => {
+      api.serve(healthFixture({ state: 'degradado', lastReadAt: null, workbookPath: '' }))
+      render(<App />)
+      await screen.findByRole('region', { name: /Configuração da planilha/i })
+
+      expect(screen.queryByRole('navigation', { name: 'Páginas' })).toBeNull()
+    })
   })
 
   it('marca a pagina corrente para o leitor de tela', () => {

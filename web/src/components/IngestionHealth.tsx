@@ -1,4 +1,5 @@
 import type { HealthResponse, QuarantineResponse } from '../api-client.ts'
+import { navigate, WORKBOOK_SETUP_PAGE } from '../router.ts'
 
 /**
  * Painel de saude da ingestao (RF-16).
@@ -57,6 +58,28 @@ export function IngestionHealth({ health, quarantine }: IngestionHealthProps) {
           nenhum.
         </p>
       )}
+
+      {/*
+        O segundo dos tres caminhos ate a tela de configuracao (`H-38`). Fica
+        aqui porque este painel e onde o operador ja esta olhando o estado da
+        leitura — e trocar a planilha e a acao seguinte natural de quem conclui
+        que esta lendo o arquivo errado.
+      */}
+      <p className="mt-3 text-sm text-slate-600">
+        Lendo{' '}
+        <a
+          href={WORKBOOK_SETUP_PAGE.path}
+          onClick={(event) => {
+            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+            event.preventDefault()
+            navigate(WORKBOOK_SETUP_PAGE.path)
+          }}
+          className="underline hover:text-slate-900"
+        >
+          a planilha configurada
+        </a>{' '}
+        — clique para conferir o caminho ou apontar outro arquivo.
+      </p>
 
       {health.rowsQuarantined > 0 && (
         <p className="mt-3 text-sm text-slate-600">

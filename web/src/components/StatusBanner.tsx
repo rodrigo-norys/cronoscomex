@@ -1,4 +1,5 @@
 import type { HealthResponse } from '../api-client.ts'
+import { navigate, WORKBOOK_SETUP_PAGE } from '../router.ts'
 
 /**
  * A faixa de estado vive na casca, nunca nas paginas (A-57).
@@ -42,7 +43,11 @@ export function bannerSignals(health: HealthResponse): readonly StatusSignal[] {
   if (health.state === 'degradado') {
     signals.push({
       key: 'degradado',
-      title: 'Dado congelado',
+      // "Dado congelado" pressupoe dado a congelar. Na primeira execucao nao ha
+      // nenhum, e o titulo contradizia o proprio detalhe logo abaixo — que ja
+      // dizia que nunca houve leitura. E a distincao que `H-34` fixou entre dado
+      // congelado e ausencia de dado, aplicada ao texto. Medido em Windows, H-35.
+      title: firstRun(health) ? 'Nenhuma planilha configurada' : 'Dado congelado',
       detail: freezeDetail(health),
       files: [],
     })
@@ -60,8 +65,19 @@ export function bannerSignals(health: HealthResponse): readonly StatusSignal[] {
   return signals
 }
 
+/** Nunca houve leitura E nao ha caminho: o estado de primeira execucao (H-34). */
+function firstRun(health: HealthResponse): boolean {
+  return health.lastReadAt === null && health.workbookPath === ''
+}
+
 function freezeDetail(health: HealthResponse): string {
   const reason = health.degradedReason ?? 'A planilha não pôde ser lida.'
+  // Na primeira execucao a razao do servidor e o proprio titulo, e repeti-la
+  // aqui diria a mesma frase duas vezes na mesma faixa. O detalhe acrescenta o
+  // que vem em seguida — que e o unico dado novo que existe neste estado.
+  if (firstRun(health)) {
+    return 'O painel começa a ler assim que você informar o caminho da planilha.'
+  }
   return health.lastReadAt === null
     ? `${reason} Ainda não houve nenhuma leitura bem-sucedida.`
     : `${reason} Última leitura bem-sucedida: ${formatInstant(health.lastReadAt)}.`
@@ -79,6 +95,26 @@ const SIGNAL_STYLE: Record<SignalKey, string> = {
   arquivoAberto: 'border-sky-300 bg-sky-50 text-sky-900',
 }
 
+/**
+ * O terceiro caminho ate a tela de configuracao (`H-38`), e o mais importante:
+ * a planilha nao pode ser lida, e o conserto quase sempre e apontar o arquivo
+ * certo. Sem isto o operador le que o dado esta congelado e nao tem para onde ir.
+ *
+ * So no sinal de `degradado`. Conflito do OneDrive se resolve no Explorer, e
+ * arquivo aberto no Excel nao se resolve em lugar nenhum — e so contexto (A-58).
+ */
+function SetupLink() {
+  return (
+    <button
+      type="button"
+      onClick={() => navigate(WORKBOOK_SETUP_PAGE.path)}
+      className="ml-2 rounded border border-amber-400 px-2 py-0.5 font-medium text-amber-900 text-xs hover:bg-amber-100"
+    >
+      Conferir a planilha configurada
+    </button>
+  )
+}
+
 export function StatusBanner({ health }: { health: HealthResponse | null }) {
   if (health === null) return null
 
@@ -94,6 +130,7 @@ export function StatusBanner({ health }: { health: HealthResponse | null }) {
           className={`border-y px-6 py-3 text-sm ${SIGNAL_STYLE[signal.key]}`}
         >
           <strong className="font-semibold">{signal.title}</strong> {signal.detail}
+          {signal.key === 'degradado' && <SetupLink />}
           {signal.files.length > 0 && (
             <ul className="mt-1 list-disc pl-5 font-mono text-xs">
               {signal.files.map((file) => (
