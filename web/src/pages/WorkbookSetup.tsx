@@ -40,7 +40,7 @@ export function WorkbookSetup({
    */
   onSaved: (health: HealthResponse) => void
 }) {
-  const { state, save, saving, browse, browsing } = useWorkbookConfig(dataVersion)
+  const { state, save, saving, browse, browsing, reload } = useWorkbookConfig(dataVersion)
   const [path, setPath] = useState('')
   const [refusal, setRefusal] = useState('')
   const [confirmation, setConfirmation] = useState('')
@@ -214,7 +214,12 @@ export function WorkbookSetup({
         {confirmation}
       </p>
 
-      {state.status === 'pronto' && <ConfigInventory config={state.config} />}
+      {state.status === 'pronto' && (
+        <>
+          <StartupChecklist config={state.config} onRecheck={reload} />
+          <ConfigInventory config={state.config} />
+        </>
+      )}
     </section>
   )
 }
@@ -222,6 +227,110 @@ export function WorkbookSetup({
 /** O plural do numero que o servidor contou. Nao calcula nada: so concorda. */
 function countRead(rows: number): string {
   return rows === 1 ? '1 processo lido' : `${rows} processos lidos`
+}
+
+interface StartupStep {
+  readonly label: string
+  readonly done: boolean
+  /** O fato conferivel ao lado do rotulo. Vazio quando nao ha o que mostrar. */
+  readonly detail: string
+}
+
+/**
+ * As etapas da partida, na ordem em que `scripts/iniciar.cmd` as percorre.
+ *
+ * **As tres primeiras aparecem sempre cumpridas, e isso nao e decoracao.** Node
+ * instalado, Node >= 22 e servidor no ar sao pre-condicao de esta pagina
+ * existir — ela e servida PELO Node. Ve-las cumpridas e a prova de que o
+ * operador passou delas, e a versao real ao lado transforma "deu certo ate
+ * aqui" em fato conferivel. Quem reporta a FALHA das duas primeiras continua
+ * sendo o `.cmd`, e nao ha outra camada possivel (H-36).
+ *
+ * A planilha nao entra: os quatro fatos dela sao o inventario logo abaixo, e
+ * repeti-los aqui criaria dois lugares para manter o mesmo estado.
+ */
+function startupSteps(config: WorkbookConfigResponse): StartupStep[] {
+  return [
+    { label: 'Node.js instalado', done: true, detail: `versão ${config.runtime.nodeVersion}` },
+    { label: 'Node.js 22 ou superior', done: true, detail: 'exigido para rodar sem compilar' },
+    { label: 'Painel respondendo', done: true, detail: 'esta página veio dele' },
+    {
+      label: 'Interface compilada',
+      done: config.runtime.webBuilt,
+      detail: config.runtime.webBuilt ? 'dist/web/index.html no lugar' : 'falta gerar dist/web',
+    },
+    {
+      label: 'Arquivo de configuração',
+      done: config.configFile.present,
+      detail: config.configFile.present
+        ? config.configFile.path
+        : 'nasce ao salvar o caminho da planilha',
+    },
+  ]
+}
+
+/**
+ * Onde a partida parou — e o botao que reconfere sem reexecutar o atalho.
+ *
+ * **Etapa pendente nao e erro.** Sem `role="alert"` e sem vermelho: um painel de
+ * falha na primeira execucao afirmaria problema onde ha so ausencia, e a
+ * ausencia e o estado normal de quem acabou de instalar (regra inviolavel 3).
+ */
+function StartupChecklist({
+  config,
+  onRecheck,
+}: {
+  config: WorkbookConfigResponse
+  onRecheck: () => void
+}) {
+  const steps = startupSteps(config)
+  const pending = steps.filter((step) => !step.done).length
+
+  return (
+    <section aria-label="Etapas da partida" className="mt-8">
+      <div className="flex flex-wrap items-baseline justify-between gap-2">
+        <h3 className="text-sm font-semibold text-slate-900">Etapas da partida</h3>
+        {/*
+          A forma do `RefreshButton`: mesmo papel de UI — acao secundaria de
+          revalidacao — tem a mesma forma nas sete telas (determinacao `Z1` do
+          epico E9).
+        */}
+        <button
+          type="button"
+          onClick={onRecheck}
+          className="rounded border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+        >
+          Atualizar
+        </button>
+      </div>
+
+      <p className="mt-1 text-sm text-slate-600">
+        {pending === 0
+          ? 'Tudo pronto. O painel está no ar com a configuração completa.'
+          : 'Resolva o que falta e clique em Atualizar — não é preciso fechar esta janela.'}
+      </p>
+
+      <ul className="mt-2 rounded border border-slate-200 bg-white p-4 text-sm">
+        {steps.map((step) => (
+          <li key={step.label} className="flex flex-wrap items-baseline gap-x-2 py-1">
+            {/*
+              O simbolo e redundante com o texto de proposito: informacao que so
+              existe na forma ou na cor nao chega a quem usa leitor de tela, nem
+              a um canal com perda de cor.
+            */}
+            <span aria-hidden="true" className={step.done ? 'text-emerald-700' : 'text-slate-400'}>
+              {step.done ? '✓' : '○'}
+            </span>
+            <span className="font-medium text-slate-800">{step.label}</span>
+            <span className="text-slate-600">
+              — {step.done ? 'cumprida' : 'pendente'}
+              {step.detail === '' ? '' : `, ${step.detail}`}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
 }
 
 /** Os oito campos de `config/app.json.exemplo`, com o nome que o operador lê. */

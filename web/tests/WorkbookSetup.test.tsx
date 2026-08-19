@@ -379,6 +379,121 @@ describe('WorkbookSetup', () => {
   })
 
   /**
+   * H-36. O painel diz onde a partida parou. As tres primeiras etapas aparecem
+   * sempre cumpridas porque sao pre-condicao de a pagina existir — quem reporta
+   * a falha delas e `scripts/iniciar.cmd`, e nao ha outra camada.
+   */
+  describe('as etapas da partida', () => {
+    async function checklist(): Promise<HTMLElement> {
+      return await screen.findByRole('region', { name: /etapas da partida/i })
+    }
+
+    it('mostra a versao real do Node ao lado da etapa dele', async () => {
+      api.serveWorkbookConfig({ runtime: { nodeVersion: '22.23.2', webBuilt: true } })
+      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+
+      expect((await checklist()).textContent).toMatch(/Node\.js instalado.*versão 22\.23\.2/)
+    })
+
+    it('lista as etapas na ordem em que o atalho as percorre', async () => {
+      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+
+      const itens = [...(await checklist()).querySelectorAll('li')].map((item) =>
+        item.textContent?.replace(/\s+/g, ' ').trim(),
+      )
+
+      expect(itens).toHaveLength(5)
+      expect(itens[0]).toMatch(/Node\.js instalado/)
+      expect(itens[1]).toMatch(/Node\.js 22 ou superior/)
+      expect(itens[2]).toMatch(/Painel respondendo/)
+      expect(itens[3]).toMatch(/Interface compilada/)
+      expect(itens[4]).toMatch(/Arquivo de configuração/)
+    })
+
+    /**
+     * O caso-limite do backlog: a SPA carregada em memoria nao prova que o
+     * arquivo continua no disco.
+     */
+    it('mostra a interface como pendente quando dist/web sumiu', async () => {
+      api.serveWorkbookConfig({ runtime: { nodeVersion: '22.23.2', webBuilt: false } })
+      render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+
+      const item = [...(await checklist()).querySelectorAll('li')].find((linha) =>
+        /Interface compilada/.test(linha.textContent ?? ''),
+      )
+
+      expect(item?.textContent).toMatch(/pendente/)
+      expect(item?.textContent).toMatch(/falta gerar dist\/web/)
+    })
+
+    it('mostra o arquivo de configuracao como pendente antes de ele nascer', async () => {
+      api.serveWorkbookConfig({
+        configFile: { path: 'config/app.json', present: false, parseable: true },
+      })
+      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+
+      const item = [...(await checklist()).querySelectorAll('li')].find((linha) =>
+        /Arquivo de configuração/.test(linha.textContent ?? ''),
+      )
+
+      expect(item?.textContent).toMatch(/pendente/)
+      expect(item?.textContent).toMatch(/nasce ao salvar/)
+    })
+
+    /**
+     * Etapa pendente e informacao de estado, nao falha: um painel vermelho na
+     * primeira execucao afirmaria problema onde ha so ausencia (regra 3).
+     */
+    it('nao trata etapa pendente como erro', async () => {
+      api.serveWorkbookConfig({
+        runtime: { nodeVersion: '22.23.2', webBuilt: false },
+        configFile: { path: 'config/app.json', present: false, parseable: true },
+      })
+      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+      const regiao = await checklist()
+
+      expect(regiao.querySelector('[role="alert"]')).toBeNull()
+      expect(regiao.className).not.toMatch(/red/)
+      expect(regiao.innerHTML).not.toMatch(/text-red|bg-red/)
+    })
+
+    /**
+     * O texto do estado nao pode viver so no simbolo: informacao que existe
+     * apenas na forma ou na cor nao chega a quem usa leitor de tela.
+     */
+    it('diz cumprida ou pendente em texto, e nao so no simbolo', async () => {
+      api.serveWorkbookConfig({ runtime: { nodeVersion: '22.23.2', webBuilt: false } })
+
+      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+      const regiao = await checklist()
+
+      expect(regiao.textContent).toMatch(/cumprida/)
+      expect(regiao.textContent).toMatch(/pendente/)
+    })
+
+    it('reconfere sem recarregar a pagina nem reexecutar o atalho', async () => {
+      api.serveWorkbookConfig({ runtime: { nodeVersion: '22.23.2', webBuilt: false } })
+      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+      await checklist()
+
+      api.serveWorkbookConfig({ runtime: { nodeVersion: '22.23.2', webBuilt: true } })
+      await act(async () => {
+        fireEvent.click(screen.getByRole('button', { name: /atualizar/i }))
+      })
+
+      await waitFor(async () =>
+        expect((await checklist()).textContent).toMatch(/Interface compilada.*cumprida/),
+      )
+    })
+
+    it('anuncia que tudo esta pronto quando nada falta', async () => {
+      render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+
+      expect((await checklist()).textContent).toMatch(/Tudo pronto/)
+    })
+  })
+
+  /**
    * H-35. A tela mostra o que ESTA configurado, e nao so o que falta: e o que
    * separa "instalei e nao sei o que ele esta usando" de um inventario.
    */
