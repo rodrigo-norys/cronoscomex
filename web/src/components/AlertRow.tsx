@@ -41,17 +41,17 @@ export function AlertRow({ group }: { group: AlertGroup }) {
   if (mostSevere === undefined) return null
 
   return (
-    <li className="border-b border-slate-100 last:border-0">
+    <li className="border-b border-border-subtle last:border-0">
       <button
         type="button"
         onClick={() => navigate(`/processo/${encodeURIComponent(group.ref)}`)}
         title={`Abrir o detalhe de ${group.ref}`}
-        className="flex w-full flex-col gap-1 px-1 py-2 text-left hover:bg-slate-50"
+        className="flex w-full flex-col gap-1 px-1 py-2 text-left hover:bg-surface-sunken"
       >
         <span className="flex flex-wrap items-baseline gap-2">
-          <span className="font-mono text-sm font-medium text-slate-900">{group.ref}</span>
-          <span className="text-xs text-slate-400">linha {group.sourceRow}</span>
-          <span className="text-xs text-slate-500">
+          <span className="font-mono text-sm font-medium text-text-primary">{group.ref}</span>
+          <span className="text-xs text-text-muted">linha {group.sourceRow}</span>
+          <span className="text-xs text-text-muted">
             ETA2 {group.eta2 === null ? '—' : formatDay(group.eta2)}
           </span>
         </span>
@@ -62,7 +62,7 @@ export function AlertRow({ group }: { group: AlertGroup }) {
           ))}
         </span>
 
-        <span className="text-xs text-slate-600">{mostSevere.message}</span>
+        <span className="text-xs text-text-secondary">{mostSevere.message}</span>
       </button>
     </li>
   )
@@ -75,7 +75,7 @@ function TypeBadge({ alert }: { alert: Alert }) {
     <span
       data-severity={alert.severity}
       className={`rounded px-2 py-0.5 text-xs ${
-        urgent ? 'bg-amber-100 text-amber-900' : 'bg-slate-100 text-slate-700'
+        urgent ? 'bg-state-warning-bg text-state-warning-fg' : 'bg-surface-base text-text-secondary'
       }`}
     >
       {ALERT_LABELS[alert.type]}

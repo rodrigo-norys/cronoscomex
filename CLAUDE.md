@@ -168,7 +168,8 @@ em que etapa a partida está e reconfere sem reexecutar o atalho.
 auditoria de `docs/estilizacao/RESULTADO.md`. Ela vinha primeiro por
 dependência: é a única que decide vocabulário de tema, e **agora que ele está
 fixado em `web/src/index.css`, as oito seguintes são substituição mecânica.**
-**A próxima é `H-40`.** As ondas de E9 estão no cabeçalho do épico, em
+**`H-40` migrou os seis componentes de dado; a próxima é `H-41`.** As ondas de
+E9 estão no cabeçalho do épico, em
 `docs/06-backlog.md` — `docs/07-plano-entrega.md` cobre as fases do plano
 original, e não alcança E9.
 
