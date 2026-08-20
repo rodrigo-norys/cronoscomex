@@ -195,6 +195,7 @@ As 33 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
 | H-37 | Cadeia base | ✅ **Concluída.** `POST /api/config/workbook/browse` abre o seletor do sistema e devolve o caminho escolhido, sem gravar. O diálogo em si só se exerce em Windows — item 10 de `PD-06`; o resto está coberto por injeção do invocador |
 | H-38 | Cadeia base | ✅ **Concluída.** A tela de `H-34` deixou de ser inalcançável: item no menu, link no painel de saúde e botão na faixa de estado degradado. Medido antes: nenhuma linha de `web/src/` apontava para `/configuracao`, e o comentário de `router.ts` afirmava um caminho que nunca existiu |
 | H-39 | Cadeia base | ✅ **Concluída.** A camada de tema: 32 tokens semânticos em `web/src/index.css`, com `color-scheme` e as três `@utility` de painel. A casca e os sete componentes dela não citam mais passo de paleta — 71 ocorrências para zero. Quatro famílias de token que o contrato não previa saíram da conferência da fatia; sem elas, `index.css` reabriria nas oito histórias seguintes |
+| H-40 | Cadeia base | ✅ **Concluída.** Os seis componentes de dado consomem os tokens — 46 linhas de passo bruto para zero. Corrige os três contrastes reprovados deles: a barra do ranking (2.40 → 6.90:1), o traço de "sem leitura" do cartão (1.49 → 4.77:1) e a borda ausente da severidade "erro" em `IngestionHealth`. Acrescenta `channel-red-*`, porque Canal Vermelho é dado e não severidade, e `meter-fill-hover`, cujo realce a própria correção do trilho consumira |
 
 ---
 

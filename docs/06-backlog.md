@@ -4559,6 +4559,36 @@ property* de build, não rota, campo de resposta nem formato de arquivo)
 
 ### H-40 — Migrar os componentes de dado
 
+> ✅ **CONCLUÍDA em 19/08/2026.** Nenhum teste próprio — mesma razão de `H-39`:
+> a guarda de cor é de `H-42`, e nenhum teste do conjunto assere classe de cor.
+> Suíte total **inalterada em 1313**. Quatro divergências abertas no protocolo,
+> todas resolvidas.
+>
+> **Medido antes:** 46 linhas com passo bruto nos seis arquivos. Depois: zero,
+> incluindo `bg-white`, que o `grep` de `H-39` não alcançava.
+>
+> **Três tokens acrescentados, e a camada foi a 35.** A fatia era substituição
+> mecânica, e não foi inteiramente:
+> - **`--color-channel-red-{bg,fg}`** — o badge *Canal Vermelho* de
+>   `ProcessTable.tsx:107` é **dado** (IND-06), não severidade: o `ACHADO 9` não
+>   o lista entre os onze locais de erro nem entre os desviantes. Reusar
+>   `state-error-*` faria o badge do canal seguir uma futura mudança no vermelho
+>   de erro sem motivo. 8.24:1.
+> - **`--color-meter-fill-hover`** — a correção do `ACHADO 7` consumiu o que era
+>   o realce: a barra ia de slate-400 para slate-600 sob o cursor, e slate-600
+>   virou o estado normal. Sem um passo além, o `group-hover` viraria no-op.
+>
+> **Dois passos brutos não tinham destino no vocabulário**, e ambos colapsaram
+> em token existente em vez de virar token novo: `border-slate-100` (divisória
+> de linha, em dois arquivos) foi para `--color-border-subtle`, e o par
+> `text-slate-800` → `hover:text-slate-950` do link da REF virou
+> `text-secondary` → `hover:text-primary`, o mesmo par que `RankingBar` já
+> usava.
+>
+> **Os três contrastes reprovados da fatia:** a barra do ranking de 2.40 para
+> **6.90:1**, o traço de "sem leitura" do `StatCard` de 1.49 para **4.77:1**, e
+> `IngestionHealth.tsx:55` ganhou a borda que os outros onze locais de erro têm.
+
 **Objetivo:** os seis componentes que desenham dado passarem a consumir os
 tokens, com os três contrastes reprovados deles corrigidos.
 
@@ -5078,8 +5108,8 @@ E qualquer correção de código: os cinco procedimentos produzem registro.
 | E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
-| E9 — Estilização | **H-39 ✅, H-40 … H-47 abertas** | 1 | 8 | 0 |
-| **Total** | **47** — 39 concluídas, 8 abertas | **17** | **30** | **0** |
+| E9 — Estilização | **H-39 ✅, H-40 ✅, H-41 … H-47 abertas** | 1 | 8 | 0 |
+| **Total** | **47** — 40 concluídas, 7 abertas | **17** | **30** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até
