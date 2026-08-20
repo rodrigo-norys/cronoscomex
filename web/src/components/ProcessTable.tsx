@@ -42,7 +42,7 @@ interface ProcessTableProps {
 export function ProcessTable({ items, sort, order, onSort }: ProcessTableProps) {
   if (items.length === 0) {
     return (
-      <p className="rounded border border-slate-300 bg-white p-6 text-sm text-slate-600">
+      <p className="rounded border border-border-subtle bg-surface-raised p-6 text-sm text-text-secondary">
         Nenhum processo corresponde ao recorte atual.
       </p>
     )
@@ -51,10 +51,10 @@ export function ProcessTable({ items, sort, order, onSort }: ProcessTableProps) 
   return (
     // A tabela e larga; o scroll fica NELA, para a pagina nunca rolar na
     // horizontal e levar o cabecalho junto.
-    <div className="overflow-x-auto rounded border border-slate-200 bg-white">
+    <div className="overflow-x-auto rounded border border-border-subtle bg-surface-raised">
       <table className="w-full text-sm">
         <caption className="sr-only">Processos</caption>
-        <thead className="border-b border-slate-200 bg-slate-50">
+        <thead className="border-b border-border-subtle bg-surface-sunken">
           <tr>
             {COLUMNS.map((column) => (
               <HeaderCell
@@ -71,7 +71,7 @@ export function ProcessTable({ items, sort, order, onSort }: ProcessTableProps) 
           {items.map((item) => (
             <tr
               key={item.ref}
-              className="border-b border-slate-100 last:border-0 hover:bg-slate-50"
+              className="border-b border-border-subtle last:border-0 hover:bg-surface-sunken"
             >
               <td className="px-3 py-2 font-mono">
                 <a
@@ -81,7 +81,7 @@ export function ProcessTable({ items, sort, order, onSort }: ProcessTableProps) 
                     event.preventDefault()
                     navigate(`/processo/${encodeURIComponent(item.ref)}`)
                   }}
-                  className="text-slate-800 underline hover:text-slate-950"
+                  className="text-text-secondary underline hover:text-text-primary"
                 >
                   {item.ref}
                 </a>
@@ -89,7 +89,7 @@ export function ProcessTable({ items, sort, order, onSort }: ProcessTableProps) 
                 {item.hasPendingEdits && (
                   <span
                     title="Tem edições pendentes de aplicação"
-                    className="ml-1 rounded bg-amber-200 px-1 text-xs text-amber-900"
+                    className="ml-1 rounded bg-state-warning-bg px-1 text-xs text-state-warning-fg"
                   >
                     ●
                   </span>
@@ -104,7 +104,7 @@ export function ProcessTable({ items, sort, order, onSort }: ProcessTableProps) 
               <td className="px-3 py-2">
                 <span className="whitespace-nowrap">{CATEGORY_LABELS[item.statusCategory]}</span>
                 {item.customsChannel === 'vermelho' && (
-                  <span className="ml-1 rounded bg-red-100 px-1.5 py-0.5 text-xs text-red-900">
+                  <span className="ml-1 rounded bg-channel-red-bg px-1.5 py-0.5 text-xs text-channel-red-fg">
                     Canal Vermelho
                   </span>
                 )}
@@ -135,7 +135,7 @@ function HeaderCell({
     <th
       scope="col"
       {...(ariaSort ? { 'aria-sort': ariaSort } : {})}
-      className="px-3 py-2 text-left font-medium text-slate-600"
+      className="px-3 py-2 text-left font-medium text-text-secondary"
     >
       {column.sortBy === undefined ? (
         column.label
@@ -143,7 +143,7 @@ function HeaderCell({
         <button
           type="button"
           onClick={() => onSort(column.sortBy as SortField)}
-          className="flex items-center gap-1 hover:text-slate-900"
+          className="flex items-center gap-1 hover:text-text-primary"
         >
           {column.label}
           <span aria-hidden="true" className="text-xs">

@@ -98,9 +98,22 @@
   /*
    * Medidor do ranking: a barra e o unico canal da comparacao entre linhas, e
    * o preenchimento media 2.40:1 contra o trilho. slate-600 mede 6.90:1.
+   *
+   * O tom de foco existe porque a correcao acima consumiu o que era o realce:
+   * a barra ia de slate-400 para slate-600 sob o cursor, e slate-600 virou o
+   * estado normal. Sem um passo alem, o realce da linha desapareceria (`H-40`).
    */
   --color-meter-track: oklch(96.8% 0.007 247.896);
   --color-meter-fill: oklch(44.6% 0.043 257.281);
+  --color-meter-fill-hover: oklch(27.9% 0.041 260.031);
+
+  /*
+   * Canal Vermelho e DADO, nao severidade (IND-06): a auditoria nao o listou
+   * entre os locais de erro, e reusar `state-error-*` faria o badge do canal
+   * seguir uma futura mudanca no vermelho de erro sem motivo nenhum (`H-40`).
+   */
+  --color-channel-red-bg: oklch(93.6% 0.032 17.717);
+  --color-channel-red-fg: oklch(39.6% 0.141 25.723);
 }
 
 /*

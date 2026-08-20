@@ -18,13 +18,13 @@ interface StatCardProps {
 }
 
 const VARIANT_STYLE: Record<StatVariant, string> = {
-  volume: 'border-slate-200 bg-white',
-  urgencia: 'border-amber-300 bg-amber-50',
+  volume: 'border-border-subtle bg-surface-raised',
+  urgencia: 'border-state-warning-border bg-state-warning-bg',
 }
 
 const VALUE_STYLE: Record<StatVariant, string> = {
-  volume: 'text-slate-900',
-  urgencia: 'text-amber-900',
+  volume: 'text-text-primary',
+  urgencia: 'text-state-warning-fg',
 }
 
 export function StatCard({ label, value, variant = 'volume', hint }: StatCardProps) {
@@ -36,17 +36,17 @@ export function StatCard({ label, value, variant = 'volume', hint }: StatCardPro
       data-variant={variant}
       aria-busy={loading}
     >
-      <h3 className="text-xs font-medium tracking-wide text-slate-500 uppercase">{label}</h3>
+      <h3 className="text-xs font-medium tracking-wide text-text-muted uppercase">{label}</h3>
       {loading ? (
         // Um traco, e nao `0`: zero medido e zero por falta de leitura sao
         // coisas diferentes, e o cartao e o unico lugar que pode dizer qual.
-        <p className="mt-1 text-3xl font-semibold text-slate-300">—</p>
+        <p className="mt-1 text-3xl font-semibold text-text-muted">—</p>
       ) : (
         <p className={`mt-1 text-3xl font-semibold tabular-nums ${VALUE_STYLE[variant]}`}>
           {value.toLocaleString('pt-BR')}
         </p>
       )}
-      {hint && <p className="mt-1 text-xs text-slate-500">{hint}</p>}
+      {hint && <p className="mt-1 text-xs text-text-muted">{hint}</p>}
     </article>
   )
 }

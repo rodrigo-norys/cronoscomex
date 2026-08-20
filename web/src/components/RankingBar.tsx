@@ -42,12 +42,15 @@ export function RankingBar({
   const largest = entries.reduce((greatest, entry) => Math.max(greatest, entry.count), 0)
 
   return (
-    <section aria-label={title} className="rounded border border-slate-200 bg-white p-4">
-      <h2 className="text-sm font-semibold text-slate-700">{title}</h2>
+    <section
+      aria-label={title}
+      className="rounded border border-border-subtle bg-surface-raised p-4"
+    >
+      <h2 className="text-sm font-semibold text-text-secondary">{title}</h2>
       {caveat}
 
       {entries.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-600">{emptyMessage}</p>
+        <p className="mt-3 text-sm text-text-secondary">{emptyMessage}</p>
       ) : (
         <ol className="mt-3 flex flex-col gap-1">
           {entries.map((entry) => (
@@ -87,16 +90,16 @@ function RankingRow({
 
   const content = (
     <>
-      <span className="w-40 shrink-0 truncate text-sm text-slate-700 group-hover:text-slate-900">
+      <span className="w-40 shrink-0 truncate text-sm text-text-secondary group-hover:text-text-primary">
         {label}
       </span>
-      <span className="h-4 grow rounded-sm bg-slate-100">
+      <span className="h-4 grow rounded-sm bg-meter-track">
         <span
-          className="block h-full rounded-sm bg-slate-400 group-hover:bg-slate-600"
+          className="block h-full rounded-sm bg-meter-fill group-hover:bg-meter-fill-hover"
           style={{ width: `${share}%` }}
         />
       </span>
-      <span className="w-12 shrink-0 text-right text-sm tabular-nums text-slate-600">
+      <span className="w-12 shrink-0 text-right text-sm tabular-nums text-text-secondary">
         {entry.count.toLocaleString('pt-BR')}
       </span>
       {secondary && <span className="w-24 shrink-0 text-right text-xs">{secondary(entry)}</span>}
@@ -112,7 +115,7 @@ function RankingRow({
       type="button"
       onClick={() => onSelect(entry.key)}
       title={`Filtrar por ${label} e abrir na Página Operacional`}
-      className={`${shared} hover:bg-slate-50`}
+      className={`${shared} hover:bg-surface-sunken`}
     >
       {content}
     </button>
