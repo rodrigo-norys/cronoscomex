@@ -105,36 +105,36 @@ export function WorkbookSetup({
 
   return (
     <section aria-label="Configuração da planilha" className="max-w-3xl">
-      <h2 className="text-lg font-semibold text-slate-900">
+      <h2 className="text-lg font-semibold text-text-primary">
         {firstRun ? 'Aponte a planilha para começar' : 'Caminho da planilha'}
       </h2>
 
       {firstRun ? (
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-text-secondary">
           O painel ainda não leu nenhuma planilha. Informe onde ela está na sua pasta do OneDrive —
           isso é pedido <strong>uma vez</strong>, e fica salvo para as próximas aberturas.
         </p>
       ) : (
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-text-secondary">
           Trocar o arquivo faz o painel reler imediatamente, sem reiniciar.
         </p>
       )}
 
       {state.status === 'carregando' && (
-        <p role="status" className="mt-4 text-sm text-slate-500">
+        <p role="status" className="mt-4 text-sm text-text-muted">
           Carregando a configuração atual…
         </p>
       )}
 
       {state.status === 'erro' && (
-        <p className="mt-4 rounded border border-red-300 bg-red-50 p-3 text-sm text-red-900">
+        <p className="mt-4 rounded border border-state-error-border bg-state-error-bg p-3 text-sm text-state-error-fg">
           Não foi possível ler a configuração atual: {state.message}
         </p>
       )}
 
       {state.status === 'pronto' && (
         <form className="mt-4" onSubmit={onSubmit}>
-          <label className="block text-sm font-medium text-slate-700" htmlFor="workbook-path">
+          <label className="block text-sm font-medium text-text-secondary" htmlFor="workbook-path">
             Caminho completo do arquivo da planilha
           </label>
           <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -142,7 +142,7 @@ export function WorkbookSetup({
               id="workbook-path"
               name="workbookPath"
               type="text"
-              className="min-w-64 flex-1 rounded border border-slate-300 px-3 py-2 font-mono text-sm"
+              className="min-w-64 flex-1 rounded border border-border-control px-3 py-2 font-mono text-sm"
               value={path}
               onChange={(event) => setPath(event.target.value)}
             />
@@ -159,20 +159,20 @@ export function WorkbookSetup({
               type="button"
               onClick={() => void onBrowse()}
               disabled={browsing}
-              className="rounded border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100 disabled:cursor-progress disabled:opacity-60"
+              className="rounded border border-border-control px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-surface-base disabled:cursor-progress disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
             >
               {browsing ? 'Escolhendo…' : 'Escolher arquivo…'}
             </button>
           </div>
 
           {state.config.workbookPath !== '' && !state.config.exists && (
-            <p className="mt-2 text-sm text-amber-800">
+            <p className="mt-2 text-sm text-state-warning-fg">
               O caminho salvo não aponta para nenhum arquivo. Confira se a pasta do OneDrive está
               sincronizada.
             </p>
           )}
           {state.config.exists && !state.config.readable && (
-            <p className="mt-2 text-sm text-amber-800">
+            <p className="mt-2 text-sm text-state-warning-fg">
               O arquivo existe, mas o painel não consegue lê-lo.
             </p>
           )}
@@ -186,7 +186,7 @@ export function WorkbookSetup({
           <button
             type="submit"
             disabled={saving || path.trim() === ''}
-            className="mt-4 rounded border border-slate-800 bg-slate-800 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40"
+            className="mt-4 rounded border border-action-bg bg-action-bg px-3 py-1.5 text-sm font-medium text-action-fg disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
           >
             {saving ? 'Carregando a planilha…' : 'Carregar esta planilha'}
           </button>
@@ -204,12 +204,12 @@ export function WorkbookSetup({
         tela nao mudava nada onde ele estava olhando. Medido na primeira
         instalacao em Windows (H-35, PD-06).
       */}
-      <p role="alert" className={refusal === '' ? 'sr-only' : 'mt-3 text-sm text-red-900'}>
+      <p role="alert" className={refusal === '' ? 'sr-only' : 'mt-3 text-sm text-state-error-fg'}>
         {refusal}
       </p>
       <p
         role="status"
-        className={confirmation === '' ? 'sr-only' : 'mt-3 text-sm text-emerald-700'}
+        className={confirmation === '' ? 'sr-only' : 'mt-3 text-sm text-state-success-fg'}
       >
         {confirmation}
       </p>
@@ -289,7 +289,7 @@ function StartupChecklist({
   return (
     <section aria-label="Etapas da partida" className="mt-8">
       <div className="flex flex-wrap items-baseline justify-between gap-2">
-        <h3 className="text-sm font-semibold text-slate-900">Etapas da partida</h3>
+        <h3 className="text-sm font-semibold text-text-primary">Etapas da partida</h3>
         {/*
           A forma do `RefreshButton`: mesmo papel de UI — acao secundaria de
           revalidacao — tem a mesma forma nas sete telas (determinacao `Z1` do
@@ -298,19 +298,19 @@ function StartupChecklist({
         <button
           type="button"
           onClick={onRecheck}
-          className="rounded border border-slate-300 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+          className="rounded border border-border-control px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-surface-base"
         >
           Atualizar
         </button>
       </div>
 
-      <p className="mt-1 text-sm text-slate-600">
+      <p className="mt-1 text-sm text-text-secondary">
         {pending === 0
           ? 'Tudo pronto. O painel está no ar com a configuração completa.'
           : 'Resolva o que falta e clique em Atualizar — não é preciso fechar esta janela.'}
       </p>
 
-      <ul className="mt-2 rounded border border-slate-200 bg-white p-4 text-sm">
+      <ul className="mt-2 rounded border border-border-subtle bg-surface-raised p-4 text-sm">
         {steps.map((step) => (
           <li key={step.label} className="flex flex-wrap items-baseline gap-x-2 py-1">
             {/*
@@ -318,11 +318,14 @@ function StartupChecklist({
               existe na forma ou na cor nao chega a quem usa leitor de tela, nem
               a um canal com perda de cor.
             */}
-            <span aria-hidden="true" className={step.done ? 'text-emerald-700' : 'text-slate-400'}>
+            <span
+              aria-hidden="true"
+              className={step.done ? 'text-state-success-fg' : 'text-text-muted'}
+            >
               {step.done ? '✓' : '○'}
             </span>
-            <span className="font-medium text-slate-800">{step.label}</span>
-            <span className="text-slate-600">
+            <span className="font-medium text-text-primary">{step.label}</span>
+            <span className="text-text-secondary">
               — {step.done ? 'cumprida' : 'pendente'}
               {step.detail === '' ? '' : `, ${step.detail}`}
             </span>
@@ -363,14 +366,14 @@ const SOURCE_LABELS: Record<ConfigFieldSource, string> = {
 function ConfigInventory({ config }: { config: WorkbookConfigResponse }) {
   return (
     <section aria-label="O que está configurado" className="mt-8">
-      <h3 className="text-sm font-semibold text-slate-900">O que está configurado</h3>
+      <h3 className="text-sm font-semibold text-text-primary">O que está configurado</h3>
 
-      <dl className="mt-2 rounded border border-slate-200 bg-white p-4 text-sm">
+      <dl className="mt-2 rounded border border-border-subtle bg-surface-raised p-4 text-sm">
         <Fact term="Caminho informado">
           {config.defined ? (
-            <span className="break-all font-mono text-slate-900">{config.workbookPath}</span>
+            <span className="break-all font-mono text-text-primary">{config.workbookPath}</span>
           ) : (
-            <span className="text-slate-600">Nenhum caminho informado ainda.</span>
+            <span className="text-text-secondary">Nenhum caminho informado ainda.</span>
           )}
         </Fact>
         <Fact term="Existe no disco">{answer(config.defined, config.exists)}</Fact>
@@ -378,7 +381,7 @@ function ConfigInventory({ config }: { config: WorkbookConfigResponse }) {
         <Fact term="Aba da planilha">{sheetAnswer(config)}</Fact>
       </dl>
 
-      <p className="mt-4 text-sm text-slate-600">
+      <p className="mt-4 text-sm text-text-secondary">
         O arquivo <span className="font-mono">{config.configFile.path}</span>{' '}
         {configFileAnswer(config)}
       </p>
@@ -388,9 +391,9 @@ function ConfigInventory({ config }: { config: WorkbookConfigResponse }) {
         corporativo — que e longo por natureza — empurraria a pagina inteira para
         os lados.
       */}
-      <div className="mt-2 overflow-x-auto rounded border border-slate-200 bg-white">
+      <div className="mt-2 overflow-x-auto rounded border border-border-subtle bg-surface-raised">
         <table className="w-full text-left text-sm">
-          <thead className="border-slate-200 border-b text-xs text-slate-600 uppercase">
+          <thead className="border-border-subtle border-b text-xs text-text-secondary uppercase">
             <tr>
               <th className="px-4 py-2 font-medium">Campo</th>
               <th className="px-4 py-2 font-medium">Valor em uso</th>
@@ -410,17 +413,17 @@ function ConfigInventory({ config }: { config: WorkbookConfigResponse }) {
 
 function FieldRow({ field }: { field: ConfigFieldReport }) {
   return (
-    <tr className="border-slate-100 border-t align-top">
-      <th scope="row" className="px-4 py-2 font-medium text-slate-700">
+    <tr className="border-border-subtle border-t align-top">
+      <th scope="row" className="px-4 py-2 font-medium text-text-secondary">
         {FIELD_LABELS[field.key] ?? field.key}
       </th>
-      <td className="break-all px-4 py-2 font-mono text-slate-900">
+      <td className="break-all px-4 py-2 font-mono text-text-primary">
         {field.value === null || field.value === '' ? '—' : String(field.value)}
       </td>
-      <td className="px-4 py-2 text-slate-600">
+      <td className="px-4 py-2 text-text-secondary">
         {SOURCE_LABELS[field.source]}
         {field.restartPending && (
-          <span className="block text-amber-900">
+          <span className="block text-state-warning-fg">
             O arquivo declara outro valor, que passa a valer no próximo início.
           </span>
         )}
@@ -432,8 +435,8 @@ function FieldRow({ field }: { field: ConfigFieldReport }) {
 function Fact({ term, children }: { term: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-wrap gap-x-2 py-1">
-      <dt className="font-medium text-slate-700">{term}:</dt>
-      <dd className="text-slate-900">{children}</dd>
+      <dt className="font-medium text-text-secondary">{term}:</dt>
+      <dd className="text-text-primary">{children}</dd>
     </div>
   )
 }

@@ -102,27 +102,27 @@ export function ColorFieldsForm({
   return (
     <section
       aria-label="Alterar cor da linha"
-      className="rounded border border-slate-200 bg-white p-4"
+      className="rounded border border-border-subtle bg-surface-raised p-4"
     >
-      <h2 className="text-sm font-semibold text-slate-700">Responsável, canal e importador</h2>
-      <p className="mt-1 text-xs text-slate-600">
+      <h2 className="text-sm font-semibold text-text-secondary">Responsável, canal e importador</h2>
+      <p className="mt-1 text-xs text-text-secondary">
         Os três são gravados juntos, como a <strong>cor da linha</strong> — é assim que a planilha
         os registra, então escolher uma cor <strong>substitui os três</strong>. A alteração entra na
         fila; <strong>a planilha não é modificada</strong>.
       </p>
-      <p className="mt-1 text-xs text-slate-600">
+      <p className="mt-1 text-xs text-text-secondary">
         Hoje esta linha diz:{' '}
         <strong>{current === null ? 'cor não reconhecida' : describe(current)}</strong>
       </p>
 
       {failed && (
-        <p role="alert" className="mt-2 text-sm text-slate-700">
+        <p role="alert" className="mt-2 text-sm text-text-secondary">
           Não foi possível carregar as cores configuradas.
         </p>
       )}
 
       {options !== null && options.length === 0 && (
-        <p className="mt-2 text-sm text-slate-700">
+        <p className="mt-2 text-sm text-text-secondary">
           Nenhuma cor configurada em <code>config/color-map.json</code>.
         </p>
       )}
@@ -130,7 +130,7 @@ export function ColorFieldsForm({
       {options !== null && options.length > 0 && (
         <>
           <form onSubmit={submit} className="mt-3 flex flex-wrap items-end gap-3">
-            <label className="flex grow flex-col gap-1 text-xs text-slate-600 sm:max-w-sm">
+            <label className="flex grow flex-col gap-1 text-xs text-text-secondary sm:max-w-sm">
               Cor da linha
               <select
                 value={chosen}
@@ -138,7 +138,7 @@ export function ColorFieldsForm({
                   setChosen(event.target.value)
                   setError(null)
                 }}
-                className="rounded border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-800"
+                className="rounded border border-border-control bg-surface-raised px-2 py-1.5 text-sm text-text-primary"
               >
                 <option value="">Selecione…</option>
                 {options.map((option) => (
@@ -152,7 +152,7 @@ export function ColorFieldsForm({
             <button
               type="submit"
               disabled={busy || chosen === ''}
-              className="rounded border border-slate-800 bg-slate-800 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40"
+              className="rounded border border-action-bg bg-action-bg px-3 py-1.5 text-sm font-medium text-action-fg disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
             >
               {busy ? 'Enfileirando…' : 'Enfileirar'}
             </button>
@@ -161,7 +161,7 @@ export function ColorFieldsForm({
           {/* A planilha tem tons distintos da mesma cor (A-48), e a gravação
               unifica no tom principal. Sem este aviso, o operador veria a linha
               mudar de tom sem ter pedido. */}
-          <p className="mt-2 text-xs text-slate-600">
+          <p className="mt-2 text-xs text-text-secondary">
             A planilha tem tons diferentes da mesma cor. A gravação usa sempre o tom principal de
             cada uma, então uma linha pode mudar de tom sem mudar de significado.
           </p>
@@ -171,7 +171,7 @@ export function ColorFieldsForm({
       {error !== null && (
         <p
           role="alert"
-          className="mt-2 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900"
+          className="mt-2 rounded border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg"
         >
           {error}
         </p>

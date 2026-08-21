@@ -453,8 +453,8 @@ describe('WorkbookSetup', () => {
       const regiao = await checklist()
 
       expect(regiao.querySelector('[role="alert"]')).toBeNull()
-      expect(regiao.className).not.toMatch(/red/)
-      expect(regiao.innerHTML).not.toMatch(/text-red|bg-red/)
+      expect(regiao.className).not.toMatch(/state-error/)
+      expect(regiao.innerHTML).not.toMatch(/text-state-error|bg-state-error/)
     })
 
     /**
