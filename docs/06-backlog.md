@@ -4639,6 +4639,46 @@ unificação de papel de UI (`ACHADO 15`) — ambos são onda 4, em `H-45`.
 
 ### H-41 — Migrar a superfície de edição
 
+> ✅ **CONCLUÍDA em 21/08/2026.** Nenhum teste próprio; **duas asserções
+> atualizadas** — a única alteração de teste do épico até aqui, e o porquê está
+> abaixo. Suíte total **inalterada em 1313**. Cinco divergências abertas no
+> protocolo, todas resolvidas.
+>
+> **Medido antes:** 91 linhas com passo bruto nos cinco arquivos — a maior fatia
+> do épico. Depois: zero. **Nenhum token novo**, o que é o sinal de que a camada
+> de `H-39` estabilizou: `H-40` ainda precisou de dois.
+>
+> **A história se contradizia, e a contradição foi resolvida a favor do mais
+> recente.** O caso-limite dizia que `disabled:opacity-40` **não migra**; o
+> último critério de aceite, acrescentado com o `ACHADO 22` em 19/08, mandava
+> trocá-lo por `--color-control-disabled-*`. Venceu o critério — a nota de
+> `H-39` confirma a intenção —, e o caso-limite foi reescrito: o que continua
+> verdadeiro nele é a **isenção na guarda** de `H-42`, não a proibição de
+> migrar. **Eram seis botões, não três:** além dos três de submissão,
+> `PendingEditsPanel` tem dois e `WorkbookSetup:162` um sétimo padrão
+> (`opacity-60`). Os seis adotaram o token — o conjunto inteiro passa a ter
+> **uma** aparência de controle inativo, que era o ponto de `C04`.
+>
+> **Duas asserções teriam ficado verdes por vacuidade.**
+> `web/tests/WorkbookSetup.test.tsx:456-457` guardam que o checklist de partida
+> não pinta etapa pendente de vermelho — regra inviolável 3 — casando `/red/` e
+> `/text-red|bg-red/`. Depois da migração nenhuma classe do arquivo contém
+> "red": as duas passariam a ser **inquebráveis**, e alguém poderia pintar o
+> checklist com `bg-state-error-bg` sem o teste notar. Os padrões passaram a
+> `/state-error/`, e a asserção foi **provada por mutação**: injetando
+> `bg-state-error-bg` na lista, o teste reprova; removendo, volta a passar. Não
+> é teste ajustado para acomodar migração — é o oposto.
+>
+> **Primeira adoção das `@utility` fora da casca.** `ProcessDetail` assume as
+> três de uma vez — `panel-error`, `panel-no-read`, `panel-loading` —, o que
+> `H-39` deixou preparado e não pôde exercer. `:61` ficou de fora: "processo não
+> encontrado" não é nenhum dos três papéis do `ACHADO 17`.
+>
+> **Fechados aqui:** três dos treze controles de `ACHADO 6`, a terceira e última
+> ocorrência de `ACHADO 3` (`ProcessDetail:298`, 2.63 → 4.77:1), e os quatro
+> papéis de estado de `WorkbookSetup` que o corpus nunca varreu — a tela nasceu
+> depois dele.
+
 **Objetivo:** os três formulários da fila de edições e a Página Detalhe
 consumirem os tokens, com as bordas de controle corrigidas.
 
@@ -4652,7 +4692,7 @@ consumirem os tokens, com as bordas de controle corrigidas.
   aparecia em nenhuma das nove histórias)
 
 **Critérios de aceite:**
-- **Dado** os quatro arquivos, **então** nenhum referencia passo bruto de paleta.
+- **Dado** os **cinco** arquivos, **então** nenhum referencia passo bruto de paleta.
 - **Dado** `EditProcessForm.tsx:93` e `:110` e `ColorFieldsForm.tsx:141`,
   **então** usam `--color-border-control`, fechando três dos treze controles de
   `ACHADO 6`.
@@ -4665,9 +4705,12 @@ consumirem os tokens, com as bordas de controle corrigidas.
   **sem alteração** — a migração é de cor, não de comportamento.
 
 **Casos-limite:**
-- `disabled:opacity-40` e `disabled:bg-slate-300` nos botões de enfileirar →
-  **não migram** e não entram na guarda: `SC 1.4.3` e `SC 1.4.11` isentam
-  componente de interface inativo, e o corpus registra a isenção.
+- `disabled:opacity-40` e `disabled:bg-slate-300` **não entram na guarda** de
+  `H-42`: `SC 1.4.3` e `SC 1.4.11` isentam componente de interface inativo, e o
+  corpus registra a isenção. **Migram, porém** — a redação anterior dizia que
+  não, e envelheceu quando o `ACHADO 22` entrou, em 19/08/2026: isenção
+  normativa não é o mesmo que proibição de unificar, e o critério de aceite
+  abaixo manda trocar pelo token. Foram **seis** botões, não três.
 - `PendingEditsPanel.tsx:90` usa `line-through opacity-60` sobre `bg-amber-50` →
   o alfa fica; `VN-6` mede.
 - `ProcessDetail.tsx:195` é painel `border-dashed` de ressalva, papel distinto
@@ -5108,8 +5151,8 @@ E qualquer correção de código: os cinco procedimentos produzem registro.
 | E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
-| E9 — Estilização | **H-39 ✅, H-40 ✅, H-41 … H-47 abertas** | 1 | 8 | 0 |
-| **Total** | **47** — 40 concluídas, 7 abertas | **17** | **30** | **0** |
+| E9 — Estilização | **H-39 ✅, H-40 ✅, H-41 ✅, H-42 … H-47 abertas** | 1 | 8 | 0 |
+| **Total** | **47** — 41 concluídas, 6 abertas | **17** | **30** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até
