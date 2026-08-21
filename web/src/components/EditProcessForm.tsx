@@ -73,15 +73,18 @@ export function EditProcessForm({
   }
 
   return (
-    <section aria-label="Editar processo" className="rounded border border-slate-200 bg-white p-4">
-      <h2 className="text-sm font-semibold text-slate-700">Editar</h2>
-      <p className="mt-1 text-xs text-slate-600">
+    <section
+      aria-label="Editar processo"
+      className="rounded border border-border-subtle bg-surface-raised p-4"
+    >
+      <h2 className="text-sm font-semibold text-text-secondary">Editar</h2>
+      <p className="mt-1 text-xs text-text-secondary">
         A alteração entra numa fila e aparece imediatamente no painel.{' '}
         <strong>A planilha não é modificada</strong> — gravar é um passo separado.
       </p>
 
       <form onSubmit={submit} className="mt-3 flex flex-wrap items-end gap-3">
-        <label className="flex flex-col gap-1 text-xs text-slate-600">
+        <label className="flex flex-col gap-1 text-xs text-text-secondary">
           Campo
           <select
             value={field}
@@ -90,7 +93,7 @@ export function EditProcessForm({
               setValue('')
               setError(null)
             }}
-            className="rounded border border-slate-300 bg-white px-2 py-1.5 text-sm text-slate-800"
+            className="rounded border border-border-control bg-surface-raised px-2 py-1.5 text-sm text-text-primary"
           >
             {FIELDS.map((option) => (
               <option key={option.field} value={option.field}>
@@ -100,21 +103,21 @@ export function EditProcessForm({
           </select>
         </label>
 
-        <label className="flex grow flex-col gap-1 text-xs text-slate-600 sm:max-w-sm">
+        <label className="flex grow flex-col gap-1 text-xs text-text-secondary sm:max-w-sm">
           Valor novo
           <input
             type={isDate ? 'date' : 'text'}
             value={value}
             onChange={(event) => setValue(event.target.value)}
             placeholder={isDate ? '' : 'deixe vazio para esvaziar a célula'}
-            className="rounded border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800"
+            className="rounded border border-border-control bg-surface-raised px-3 py-1.5 text-sm text-text-primary"
           />
         </label>
 
         <button
           type="submit"
           disabled={busy}
-          className="rounded border border-slate-800 bg-slate-800 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-40"
+          className="rounded border border-action-bg bg-action-bg px-3 py-1.5 text-sm font-medium text-action-fg disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
         >
           {busy ? 'Enfileirando…' : 'Enfileirar'}
         </button>
@@ -123,7 +126,7 @@ export function EditProcessForm({
       {error !== null && (
         <p
           role="alert"
-          className="mt-2 rounded border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-900"
+          className="mt-2 rounded border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg"
         >
           {error}
         </p>

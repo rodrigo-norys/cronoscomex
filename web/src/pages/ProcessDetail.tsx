@@ -46,7 +46,7 @@ export function ProcessDetail({ processRef, dataVersion }: ProcessDetailProps) {
 
   if (state.status === 'erro') {
     return (
-      <p role="alert" className="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-900">
+      <p role="alert" className="panel-error">
         <strong className="font-semibold">Não foi possível carregar o processo.</strong>{' '}
         {state.message}
       </p>
@@ -58,10 +58,10 @@ export function ProcessDetail({ processRef, dataVersion }: ProcessDetailProps) {
     return (
       <section
         aria-label="Processo não encontrado"
-        className="rounded border border-slate-300 bg-white p-8"
+        className="rounded border border-border-subtle bg-surface-raised p-8"
       >
-        <h2 className="text-lg font-semibold text-slate-700">Processo não encontrado</h2>
-        <p className="mt-2 text-sm text-slate-600">
+        <h2 className="text-lg font-semibold text-text-secondary">Processo não encontrado</h2>
+        <p className="mt-2 text-sm text-text-secondary">
           Nenhum processo com a REF <strong className="font-mono">{processRef}</strong> na leitura
           atual. Ele pode ter saído da planilha, ou a REF pode estar digitada de outro jeito.
         </p>
@@ -71,7 +71,7 @@ export function ProcessDetail({ processRef, dataVersion }: ProcessDetailProps) {
 
   if (state.status === 'semLeitura') {
     return (
-      <p role="status" className="rounded border border-slate-300 bg-white p-4 text-sm">
+      <p role="status" className="panel-no-read">
         Nenhuma leitura da planilha foi concluída ainda. O processo aparece assim que a primeira
         terminar — a ausência aqui não significa que a REF não existe.
       </p>
@@ -79,11 +79,7 @@ export function ProcessDetail({ processRef, dataVersion }: ProcessDetailProps) {
   }
 
   if (state.status === 'carregando') {
-    return (
-      <p className="rounded border border-slate-200 bg-white p-6 text-sm text-slate-500">
-        Carregando processo…
-      </p>
-    )
+    return <p className="panel-loading">Carregando processo…</p>
   }
 
   const { process, anomalies, statusHistory, daysInCurrentCategory, pendingEdits } = state.detail
@@ -119,9 +115,12 @@ export function ProcessDetail({ processRef, dataVersion }: ProcessDetailProps) {
 
 function Identification({ process }: { process: ProcessDto }) {
   return (
-    <section aria-label="Identificação" className="rounded border border-slate-200 bg-white p-4">
+    <section
+      aria-label="Identificação"
+      className="rounded border border-border-subtle bg-surface-raised p-4"
+    >
       <h2 className="font-mono text-xl font-semibold">{process.ref}</h2>
-      <p className="mt-1 text-xs text-slate-500">Linha {process.sourceRow} da planilha</p>
+      <p className="mt-1 text-xs text-text-muted">Linha {process.sourceRow} da planilha</p>
     </section>
   )
 }
@@ -138,8 +137,11 @@ function StatusBlock({
   daysInCurrentCategory: number | null
 }) {
   return (
-    <section aria-label="Status" className="rounded border border-slate-200 bg-white p-4">
-      <h2 className="text-sm font-semibold text-slate-700">Status</h2>
+    <section
+      aria-label="Status"
+      className="rounded border border-border-subtle bg-surface-raised p-4"
+    >
+      <h2 className="text-sm font-semibold text-text-secondary">Status</h2>
       <dl className="mt-3 grid gap-3 sm:grid-cols-3">
         <Field label="Texto original (STATUS)" value={process.statusRaw} mono />
         <Field label="Categoria classificada" value={CATEGORY_LABELS[process.statusCategory]} />
@@ -148,7 +150,7 @@ function StatusBlock({
           value={daysInCurrentCategory === null ? '' : String(daysInCurrentCategory)}
         />
       </dl>
-      <p className="mt-3 text-xs text-slate-500">
+      <p className="mt-3 text-xs text-text-muted">
         O texto original é exibido apenas aqui: ele nunca é usado para agrupar ou contar (§2.1). A
         categoria ao lado é o resultado da classificação.
       </p>
@@ -160,9 +162,9 @@ function Fields({ process }: { process: ProcessDto }) {
   return (
     <section
       aria-label="Campos do processo"
-      className="rounded border border-slate-200 bg-white p-4"
+      className="rounded border border-border-subtle bg-surface-raised p-4"
     >
-      <h2 className="text-sm font-semibold text-slate-700">Campos</h2>
+      <h2 className="text-sm font-semibold text-text-secondary">Campos</h2>
       <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="Cliente" value={process.client} />
         <Field label="Importador" value={process.importer} />
@@ -192,10 +194,10 @@ function OutOfScope({ process }: { process: ProcessDto }) {
   return (
     <section
       aria-label="Campos fora de escopo"
-      className="rounded border border-dashed border-slate-300 bg-slate-50 p-4"
+      className="rounded border border-dashed border-border-subtle bg-surface-sunken p-4"
     >
-      <h2 className="text-sm font-semibold text-slate-700">Fora de escopo para indicadores</h2>
-      <p className="mt-1 text-xs text-slate-600">
+      <h2 className="text-sm font-semibold text-text-secondary">Fora de escopo para indicadores</h2>
+      <p className="mt-1 text-xs text-text-secondary">
         Exibidos como texto puro, exatamente como estão na planilha. Nenhum indicador os usa (§2).
       </p>
       <dl className="mt-3 grid gap-3 sm:grid-cols-3">
@@ -210,11 +212,14 @@ function OutOfScope({ process }: { process: ProcessDto }) {
 /** A explicação vem do domínio, junto do código — nunca montada aqui. */
 function Anomalies({ items }: { items: ProcessDetailResponse['anomalies'] }) {
   return (
-    <section aria-label="Anomalias" className="rounded border border-slate-200 bg-white p-4">
-      <h2 className="text-sm font-semibold text-slate-700">Anomalias</h2>
+    <section
+      aria-label="Anomalias"
+      className="rounded border border-border-subtle bg-surface-raised p-4"
+    >
+      <h2 className="text-sm font-semibold text-text-secondary">Anomalias</h2>
 
       {items.length === 0 ? (
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-text-secondary">
           Nenhuma divergência registrada nesta linha na leitura atual.
         </p>
       ) : (
@@ -222,10 +227,10 @@ function Anomalies({ items }: { items: ProcessDetailResponse['anomalies'] }) {
           {items.map((anomaly) => (
             <li
               key={anomaly.code}
-              className="rounded border border-amber-300 bg-amber-50 px-3 py-2 text-sm"
+              className="rounded border border-state-warning-border bg-state-warning-bg px-3 py-2 text-sm"
             >
-              <strong className="font-mono text-xs text-amber-900">{anomaly.code}</strong>
-              <p className="text-amber-900">{anomaly.detail}</p>
+              <strong className="font-mono text-xs text-state-warning-fg">{anomaly.code}</strong>
+              <p className="text-state-warning-fg">{anomaly.detail}</p>
             </li>
           ))}
         </ul>
@@ -257,18 +262,18 @@ function StatusHistory({
   return (
     <section
       aria-label="Histórico de categoria"
-      className="rounded border border-slate-200 bg-white p-4"
+      className="rounded border border-border-subtle bg-surface-raised p-4"
     >
-      <h2 className="text-sm font-semibold text-slate-700">Histórico de categoria</h2>
+      <h2 className="text-sm font-semibold text-text-secondary">Histórico de categoria</h2>
 
       {events.length === 0 && daysInCurrentCategory === null ? (
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-text-secondary">
           Nenhum evento registrado para este processo. O histórico começa quando a aplicação passa a
           acompanhar a planilha, e não há retroatividade anterior a isso (A-43) — vazio aqui{' '}
           <strong>não</strong> significa que o processo nunca mudou de categoria.
         </p>
       ) : events.length === 0 ? (
-        <p className="mt-2 text-sm text-slate-600">
+        <p className="mt-2 text-sm text-text-secondary">
           Nenhuma mudança de categoria desde que o registro começou. A primeira observação do
           processo e as trocas de cor da linha não aparecem aqui.
         </p>
@@ -276,7 +281,7 @@ function StatusHistory({
         <ol className="mt-3 flex flex-col gap-1">
           {events.map((event) => (
             <li key={event.ts} className="flex gap-2 text-sm">
-              <time dateTime={event.ts} className="tabular-nums text-slate-500">
+              <time dateTime={event.ts} className="tabular-nums text-text-muted">
                 {formatTimestamp(event.ts)}
               </time>
               <span>
@@ -294,8 +299,8 @@ function StatusHistory({
 function Field({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
     <div>
-      <dt className="text-xs text-slate-500">{label}</dt>
-      <dd className={`text-sm ${mono ? 'font-mono' : ''} ${value === '' ? 'text-slate-400' : ''}`}>
+      <dt className="text-xs text-text-muted">{label}</dt>
+      <dd className={`text-sm ${mono ? 'font-mono' : ''} ${value === '' ? 'text-text-muted' : ''}`}>
         {value === '' ? '—' : value}
       </dd>
     </div>

@@ -72,12 +72,14 @@ export function PendingEditsPanel({
   return (
     <section
       aria-label="Edições pendentes"
-      className="rounded border border-amber-300 bg-amber-50 p-4"
+      className="rounded border border-state-warning-border bg-state-warning-bg p-4"
     >
-      <h2 className="text-sm font-semibold text-amber-900">Edições pendentes deste processo</h2>
+      <h2 className="text-sm font-semibold text-state-warning-fg">
+        Edições pendentes deste processo
+      </h2>
 
       {edits.length === 0 ? (
-        <p className="mt-2 text-sm text-amber-900">
+        <p className="mt-2 text-sm text-state-warning-fg">
           Nenhuma. Os valores exibidos são os da planilha.
         </p>
       ) : (
@@ -85,8 +87,8 @@ export function PendingEditsPanel({
           <ul className="mt-3 flex flex-col gap-2">
             {edits.map((edit) => (
               <li key={edit.id} className="flex flex-wrap items-baseline gap-2 text-sm">
-                <strong className="text-amber-900">{labelOf(edit)}</strong>
-                <span className="text-amber-900">
+                <strong className="text-state-warning-fg">{labelOf(edit)}</strong>
+                <span className="text-state-warning-fg">
                   <span className="line-through opacity-60">{previousOf(edit)}</span> →{' '}
                   <strong>{nextOf(edit)}</strong>
                 </span>
@@ -94,7 +96,7 @@ export function PendingEditsPanel({
                   type="button"
                   disabled={busy}
                   onClick={() => void run(() => discardEdit(edit.id))}
-                  className="rounded border border-amber-400 px-2 py-0.5 text-xs text-amber-900 disabled:opacity-40"
+                  className="rounded border border-state-warning-fg px-2 py-0.5 text-xs text-state-warning-fg disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
                 >
                   Descartar
                 </button>
@@ -102,7 +104,7 @@ export function PendingEditsPanel({
             ))}
           </ul>
 
-          <p className="mt-3 text-xs text-amber-900">
+          <p className="mt-3 text-xs text-state-warning-fg">
             Nada foi gravado na planilha. Gravar é um passo separado, pelo botão{' '}
             <strong>Aplicar alterações</strong>.
           </p>
@@ -114,7 +116,7 @@ export function PendingEditsPanel({
           type="button"
           disabled={busy}
           onClick={() => void run(discardAllEdits)}
-          className="mt-3 rounded border border-amber-500 px-3 py-1 text-xs font-medium text-amber-900 disabled:opacity-40"
+          className="mt-3 rounded border border-state-warning-fg px-3 py-1 text-xs font-medium text-state-warning-fg disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
         >
           Esvaziar a fila inteira — de <strong>todos</strong> os processos
         </button>
