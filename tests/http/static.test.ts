@@ -188,4 +188,99 @@ describe('GET /* — sem o build (caso-limite de H-30)', () => {
 
     await app.close()
   })
+
+  /**
+   * A metade que faltava, e a que produzia a tela branca: ate `H-42` o
+   * `index.html` passava a ser servido e os arquivos que ele referencia, nao.
+   * O teste acima existia e passava — media so o HTML.
+   */
+  it('serve tambem os ASSETS que nasceram depois da partida', async () => {
+    const app = buildApp()
+    compile()
+
+    const resposta = await app.inject({ method: 'GET', url: '/assets/index-abc123.js' })
+
+    expect(resposta.statusCode).toBe(200)
+    expect(resposta.body).toContain('export const painel')
+    expect(resposta.headers['content-type']).toContain('javascript')
+
+    await app.close()
+  })
+
+  /**
+   * O segundo caminho para a mesma tela branca, e o mais rotineiro: recompilar
+   * com o servidor no ar troca o hash do nome. O `@fastify/static` com
+   * `wildcard: false` enumerava o diretorio no registro — a propria
+   * documentacao dele avisa que nao serve arquivo novo.
+   */
+  it('serve o asset de hash NOVO depois de uma recompilacao', async () => {
+    compile()
+    const app = buildApp()
+
+    // O `inject` precede a recompilacao de proposito: e ele que leva o Fastify
+    // ao `ready`. Escrever o arquivo antes disso deixaria o teste passar contra
+    // a implementacao antiga tambem — o glob do plugin ainda nao teria rodado,
+    // e o cenario medido (servidor NO AR quando o build acontece) nao seria
+    // exercido. Reproduzido em 21/08/2026, ao corrigir o proprio teste.
+    await app.inject({ method: 'GET', url: '/assets/index-abc123.js' })
+
+    writeFileSync(join(root, 'assets', 'index-def456.js'), 'export const painel = 2\n', 'utf-8')
+    const resposta = await app.inject({ method: 'GET', url: '/assets/index-def456.js' })
+
+    expect(resposta.statusCode).toBe(200)
+    expect(resposta.body).toContain('export const painel = 2')
+
+    await app.close()
+  })
+
+  it('devolve o content-type de cada tipo que o vite emite', async () => {
+    compile()
+    writeFileSync(join(root, 'assets', 'index-abc123.css'), '.a{color:red}', 'utf-8')
+    const app = buildApp()
+
+    const js = await app.inject({ method: 'GET', url: '/assets/index-abc123.js' })
+    const css = await app.inject({ method: 'GET', url: '/assets/index-abc123.css' })
+
+    expect(js.headers['content-type']).toContain('javascript')
+    expect(css.headers['content-type']).toContain('text/css')
+
+    await app.close()
+  })
+})
+
+/**
+ * Servir a mao troca o plugin por vinte linhas — e assume a guarda que ele dava
+ * de graca. O caminho pedido vem do navegador e nao e confiavel.
+ */
+describe('GET /* — a guarda de travessia', () => {
+  it('nao entrega arquivo de fora da raiz servida', async () => {
+    compile()
+    writeFileSync(join(directory, 'segredo.txt'), 'nao deve sair daqui', 'utf-8')
+    const app = buildApp()
+
+    for (const url of [
+      '/../segredo.txt',
+      '/assets/../../segredo.txt',
+      '/%2e%2e/segredo.txt',
+      '/..%2fsegredo.txt',
+    ]) {
+      const resposta = await app.inject({ method: 'GET', url })
+
+      expect(resposta.body).not.toContain('nao deve sair daqui')
+    }
+
+    await app.close()
+  })
+
+  it('devolve o index para caminho sem arquivo correspondente', async () => {
+    compile()
+    const app = buildApp()
+
+    const resposta = await app.inject({ method: 'GET', url: '/assets/nao-existe.js' })
+
+    expect(resposta.statusCode).toBe(200)
+    expect(resposta.body).toBe(INDEX)
+
+    await app.close()
+  })
 })
