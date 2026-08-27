@@ -1,0 +1,144 @@
+@import "tailwindcss";
+
+/**
+ * Camada de tema (`H-39`).
+ *
+ * Todo utilitario de cor do conjunto passa por aqui: nenhum `.tsx` volta a
+ * citar passo de paleta. Os valores nao sao copia do que havia antes — os tres
+ * que reprovavam contraste nascem ja corrigidos, para que a substituicao das
+ * oito fatias seguintes carregue a correcao junto em vez de virar uma segunda
+ * passada pelos mesmos arquivos.
+ *
+ * As contas estao em `docs/estilizacao/RESULTADO.md`; as razoes citadas abaixo
+ * foram reconferidas contra a paleta 4.3.3 instalada, ao abrir `H-39`.
+ *
+ * `static` porque o Tailwind so emite a variavel que ele ve usada num
+ * utilitario, e os tokens de grafico serao lidos por `var()` dentro do JS das
+ * props do Recharts, onde ele nao enxerga. Sem isto, o token existiria no
+ * fonte e nao no CSS servido — e a cor sumiria sem erro nenhum.
+ */
+@theme static {
+  /* Superficies: slate-100, branco e slate-50. */
+  --color-surface-base: oklch(96.8% 0.007 247.896);
+  --color-surface-raised: #ffffff;
+  --color-surface-sunken: oklch(98.4% 0.003 247.858);
+
+  /*
+   * Texto: slate-900 e slate-600 seguem como estavam. `muted` sai de slate-400
+   * e slate-300 — 2.63:1 e 1.49:1 sobre `surface-raised`, contra um piso de
+   * 4.5:1 — e assume slate-500, que mede 4.77:1 ali. Sobre `surface-base` ele
+   * cai para 4.35:1: nessa superficie quem vale e `--color-text-secondary`.
+   */
+  --color-text-primary: oklch(20.8% 0.042 265.755);
+  --color-text-secondary: oklch(44.6% 0.043 257.281);
+  --color-text-muted: oklch(55.4% 0.046 257.417);
+
+  /*
+   * Bordas: `control` e a que delimita campo e botao, e o piso dela e 3:1.
+   * Vinha de slate-300, que mede 1.35:1 sobre `surface-base` — a borda que
+   * informa onde o campo comeca era praticamente invisivel. slate-500 mede
+   * 4.35:1 ali e 4.77:1 sobre `surface-raised`.
+   */
+  --color-border-subtle: oklch(92.9% 0.013 255.508);
+  --color-border-strong: oklch(27.9% 0.041 260.031);
+  --color-border-control: oklch(55.4% 0.046 257.417);
+
+  /* Acao primaria: slate-800, slate-700 no hover, branco por cima (14.66:1). */
+  --color-action-bg: oklch(27.9% 0.041 260.031);
+  --color-action-bg-hover: oklch(37.2% 0.044 257.287);
+  --color-action-fg: #ffffff;
+
+  /*
+   * Severidade: um trio por nivel, e nenhum local escolhe o seu. Os desviantes
+   * que a auditoria nomeia — borda mais forte aqui, contentor ausente ali —
+   * desaparecem por nao haver mais onde divergir.
+   */
+  --color-state-error-bg: oklch(97.1% 0.013 17.38);
+  --color-state-error-border: oklch(80.8% 0.114 19.571);
+  --color-state-error-fg: oklch(39.6% 0.141 25.723);
+
+  --color-state-warning-bg: oklch(98.7% 0.022 95.277);
+  --color-state-warning-border: oklch(87.9% 0.169 91.605);
+  --color-state-warning-fg: oklch(41.4% 0.112 45.904);
+
+  --color-state-info-bg: oklch(97.7% 0.013 236.62);
+  --color-state-info-border: oklch(82.8% 0.111 230.318);
+  --color-state-info-fg: oklch(39.1% 0.09 240.876);
+
+  --color-state-success-fg: oklch(50.8% 0.118 165.612);
+
+  /*
+   * Controle desabilitado. Os dois padroes anteriores derrubavam o botao
+   * contra a pagina — 2.32:1 com `opacity-40`, 1.36:1 com slate-300 —, e foi
+   * assim que o unico chamado a acao da tela de primeira execucao sumiu numa
+   * sessao remota. slate-500 mede 4.35:1 contra `surface-base`, e o branco por
+   * cima, 4.77:1.
+   */
+  --color-control-disabled-bg: oklch(55.4% 0.046 257.417);
+  --color-control-disabled-fg: #ffffff;
+
+  /*
+   * Veu do dialogo: slate-900 a 40%, o mesmo valor resolvido de antes. A cor
+   * efetiva depende do que esta pintado atras, e por isso ela e medida no
+   * navegador ([VN-6]) — aqui houve renomeacao, nao recoloracao.
+   */
+  --color-overlay-scrim: oklch(20.8% 0.042 265.755 / 0.4);
+
+  /*
+   * Grafico. As tres series ficam nos valores ja medidos; eixo e grade saem de
+   * literal hexadecimal para a paleta da versao instalada, que e onde estavam
+   * derivando — dois dos tres literais eram passo da v3.
+   */
+  --color-chart-series-1: #4f46e5;
+  --color-chart-series-2: #0d9488;
+  --color-chart-series-3: #dc2626;
+  --color-chart-axis: oklch(55.4% 0.046 257.417);
+  --color-chart-grid: oklch(92.9% 0.013 255.508);
+
+  /*
+   * Medidor do ranking: a barra e o unico canal da comparacao entre linhas, e
+   * o preenchimento media 2.40:1 contra o trilho. slate-600 mede 6.90:1.
+   *
+   * O tom de foco existe porque a correcao acima consumiu o que era o realce:
+   * a barra ia de slate-400 para slate-600 sob o cursor, e slate-600 virou o
+   * estado normal. Sem um passo alem, o realce da linha desapareceria (`H-40`).
+   */
+  --color-meter-track: oklch(96.8% 0.007 247.896);
+  --color-meter-fill: oklch(44.6% 0.043 257.281);
+  --color-meter-fill-hover: oklch(27.9% 0.041 260.031);
+
+  /*
+   * Canal Vermelho e DADO, nao severidade (IND-06): a auditoria nao o listou
+   * entre os locais de erro, e reusar `state-error-*` faria o badge do canal
+   * seguir uma futura mudanca no vermelho de erro sem motivo nenhum (`H-40`).
+   */
+  --color-channel-red-bg: oklch(93.6% 0.032 17.717);
+  --color-channel-red-fg: oklch(39.6% 0.141 25.723);
+}
+
+/*
+ * Sem isto, as barras de rolagem e os controles nativos de formulario — os
+ * quatro `input type="date"` e os tres `select` do conjunto — nao recebem o
+ * esquema que o restante da interface declara.
+ */
+:root {
+  color-scheme: light;
+}
+
+/*
+ * Os tres paineis de estado de pagina, cada um repetido nas sete telas. O
+ * `no-read` fica com a borda de controle e o `loading` com a discreta: a
+ * distincao entre "ainda carregando" e "a planilha nao pode ser lida" era o
+ * que os dois passos de borda marcavam antes, e ela nao se perde aqui.
+ */
+@utility panel-loading {
+  @apply rounded border border-border-subtle bg-surface-raised p-6 text-sm text-text-muted;
+}
+
+@utility panel-error {
+  @apply rounded border border-state-error-border bg-state-error-bg p-4 text-sm text-state-error-fg;
+}
+
+@utility panel-no-read {
+  @apply rounded border border-border-control bg-surface-raised p-4 text-sm;
+}

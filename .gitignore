@@ -1,0 +1,30 @@
+# Planilha real: dado de cliente e, na aba CNPJ, dado de acesso de terceiros
+*.xlsx
+!tests/fixtures/*.xlsx
+
+# Prints da planilha real
+*.jpeg
+*.jpg
+*.png
+
+# Especificacao funcional original: documento do cliente. O que este
+# repositorio guarda e a AUDITORIA dela, em docs/01-auditoria-especificacao.md
+especificacao-dashboard-comex.md
+
+# Estado de execucao
+data/
+
+# Configuracao com caminho local
+config/app.json
+
+# Node
+node_modules/
+dist/
+
+# Configuracao local do Claude Code — escolhas de maquina, nao da equipe
+.claude/settings.local.json
+
+# Perfilamento bruto: sanitizado nas 32 colunas identificaveis, mas mantem
+# amostras em ETA, ETA2, RG, DOCS ENVIADOS, ARMAD e ANDAMENTO. Decidir antes
+# de publicar; ate la fica fora do historico. RESULTADO.md continua versionado.
+docs/perfilamento/*.json

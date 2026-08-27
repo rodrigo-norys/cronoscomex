@@ -1,0 +1,20 @@
+{
+  "_comentario": "Referencia do formato: este arquivo NAO precisa ser copiado. Desde H-35, config/app.json nasce sozinho quando voce aponta a planilha na tela do painel - o passo 4 do README.md. As chaves e a ordem abaixo sao as mesmas que a aplicacao grava; os campos _comentario sobrevivem a gravacao, que preserva tudo o que ja estava no arquivo. Edite o app.json a mao apenas para os sete campos que a tela nao troca, e reinicie o painel depois.",
+
+  "workbookPath": "C:\\Users\\<usuario>\\OneDrive - <organizacao>\\<pasta>\\CONTROLE DOS EMBARQUE.xlsx",
+
+  "_comentario_sheetName": "Medido em H-01: o arquivo tem 4 abas com 3 esquemas distintos. Apenas 2026 esta em escopo (A-46, D-10). Na virada de ano, troque para a aba nova e reexecute o perfilamento.",
+  "sheetName": "2026",
+
+  "headerRow": 1,
+  "firstDataRow": 2,
+
+  "_comentario_port": "Porta do painel. Se ela ja estiver em uso na maquina, o servidor recusa a partida dizendo isso; altere aqui e inicie de novo. scripts/iniciar.cmd le este mesmo valor para abrir o navegador, e a tela mostra qual esta valendo e se veio daqui ou do padrao.",
+  "port": 5173,
+
+  "_comentario_stalled": "Limiar do alerta Processos parados (ALE-06). A especificacao nunca define o numero (A-32); 15 e premissa.",
+  "stalledDaysThreshold": 15,
+
+  "topN": 10,
+  "timezone": "America/Sao_Paulo"
+}

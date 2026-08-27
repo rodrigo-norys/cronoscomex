@@ -1,0 +1,49 @@
+{
+  "name": "cronoscomex",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Painel operacional de desembaraco aduaneiro. Le a planilha .xlsx local, calcula indicadores e grava de volta sob comando explicito.",
+  "engines": {
+    "node": ">=22.12.0 <23"
+  },
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "dev:server": "node --watch --experimental-strip-types src/http/server.ts",
+    "dev:web": "vite --config web/vite.config.ts",
+    "build": "tsc --noEmit && vite build --config web/vite.config.ts",
+    "start": "node --experimental-strip-types src/http/server.ts",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:hooks": "bash .claude/hooks/test-guard.sh",
+    "test:strip": "node --experimental-strip-types tools/verificar-strip-types.mjs",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "typecheck": "tsc --noEmit",
+    "verify": "npm run test:hooks && npm run test:strip && npm run lint && npm run typecheck && npm test && npm run build",
+    "profile": "python3 tools/profile_workbook.py",
+    "fixtures": "python3 tools/build_fixtures.py"
+  },
+  "dependencies": {
+    "chokidar": "5.0.0",
+    "fastify": "5.11.2",
+    "fflate": "0.8.3"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.5.6",
+    "@tailwindcss/vite": "4.3.3",
+    "@testing-library/react": "16.3.2",
+    "@types/node": "22.20.0",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "@vitejs/plugin-react": "6.0.5",
+    "jsdom": "30.0.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "recharts": "3.10.1",
+    "tailwindcss": "4.3.3",
+    "typescript": "7.0.2",
+    "vite": "8.2.0",
+    "vitest": "4.1.10"
+  }
+}
