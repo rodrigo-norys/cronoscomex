@@ -58,7 +58,7 @@ export function Home({ health, queryString, dataVersion }: HomeProps) {
 
   if (state.status === 'erro') {
     return (
-      <p role="alert" className="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-900">
+      <p role="alert" className="panel-error">
         <strong className="font-semibold">Não foi possível carregar os indicadores.</strong>{' '}
         {state.message}
       </p>
@@ -70,7 +70,7 @@ export function Home({ health, queryString, dataVersion }: HomeProps) {
   return (
     <div className="flex flex-col gap-6">
       {state.status === 'semLeitura' && (
-        <p role="status" className="rounded border border-slate-300 bg-white p-4 text-sm">
+        <p role="status" className="panel-no-read">
           Nenhuma leitura da planilha foi concluída ainda. Os cartões aparecem assim que a primeira
           terminar — os traços não significam zero.
         </p>
@@ -109,16 +109,18 @@ function CategorySum({ counts }: { counts: IndicatorsResponse['counts'] }) {
   return (
     <p
       className={`rounded border px-4 py-2 text-sm ${
-        matches ? 'border-slate-200 bg-white text-slate-600' : 'border-red-300 bg-red-50'
+        matches
+          ? 'border-border-subtle bg-surface-raised text-text-secondary'
+          : 'border-state-error-border bg-state-error-bg'
       }`}
       {...(matches ? {} : { role: 'alert' })}
     >
       Soma das 4 categorias: <strong className="tabular-nums">{sum.toLocaleString('pt-BR')}</strong>{' '}
       · Total: <strong className="tabular-nums">{counts.total.toLocaleString('pt-BR')}</strong>
       {matches ? (
-        <span className="ml-2 text-slate-500">conferem</span>
+        <span className="ml-2 text-text-muted">conferem</span>
       ) : (
-        <span className="ml-2 font-semibold text-red-900">
+        <span className="ml-2 font-semibold text-state-error-fg">
           NÃO conferem — há processo fora das quatro categorias
         </span>
       )}

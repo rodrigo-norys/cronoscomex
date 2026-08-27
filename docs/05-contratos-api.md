@@ -1011,6 +1011,18 @@ O `503` é **HTML, não o envelope de erro de §1.2**: quem lê é o operador nu
 navegador, e JSON técnico ali seria tela em branco. A pasta é consultada por
 requisição, então rodar o `build` com o servidor no ar dispensa reiniciá-lo.
 
+> **A frase acima valia só para o `index.html` até 21/08/2026**, e a metade que
+> faltava era justamente a que o operador vê. Os arquivos vinham do
+> `@fastify/static` com `wildcard: false`, que enumera o diretório **uma vez, no
+> registro** — a documentação do plugin avisa que ele "will not serve newly
+> added files". Dois caminhos rotineiros davam a mesma tela branca, sem erro
+> nenhum: servidor no ar antes de `dist/web` existir, e recompilação com o
+> servidor no ar, que troca o hash dos nomes. Em ambos o `index.html` era
+> servido e apontava para arquivos que caíam no próprio `/*`, devolvendo HTML
+> onde o navegador esperava JavaScript. Corrigido em `H-42`, servindo os
+> arquivos à mão: o plugin saiu do projeto, e cada requisição passa a consultar
+> o disco. O teste que afirmava cobrir o caso media apenas o HTML.
+
 ---
 
 ## 5. Mapa rota → história

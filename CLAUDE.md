@@ -168,8 +168,11 @@ em que etapa a partida está e reconfere sem reexecutar o atalho.
 auditoria de `docs/estilizacao/RESULTADO.md`. Ela vinha primeiro por
 dependência: é a única que decide vocabulário de tema, e **agora que ele está
 fixado em `web/src/index.css`, as oito seguintes são substituição mecânica.**
-**`H-40` e `H-41` migraram os componentes de dado e a superfície de edição; a
-próxima é `H-42`, que fecha a onda com as sete páginas e a guarda de cor.** As ondas de
+**`H-40` a `H-42` migraram tudo que consome cor, e a guarda
+`tests/repo/estilo.test.ts` impede o passo bruto de voltar — a onda 2 fechou.**
+**`H-42` corrigiu também um defeito de `H-30`** que a verificação dela encontrou:
+`GET /*` servia os assets como `text/html`, e a tela ficava branca sem erro.
+**A próxima é `H-43`.** As ondas de
 E9 estão no cabeçalho do épico, em
 `docs/06-backlog.md` — `docs/07-plano-entrega.md` cobre as fases do plano
 original, e não alcança E9.

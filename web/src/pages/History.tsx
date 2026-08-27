@@ -38,14 +38,20 @@ const DEFAULT_WINDOW: WindowMonths = 12
 interface MeasureDefinition {
   readonly key: 'total' | 'desembaracados' | 'canalVermelho'
   readonly label: string
-  /** Validado contra fundo claro: pior par adjacente com ΔE 13,1 em deuteranopia. */
+  /**
+   * Le o token de `web/src/index.css`, e nao um literal: dois dos tres valores
+   * de eixo e grade que viviam aqui ja eram passo da v3 do Tailwind, divergindo
+   * da paleta que o resto do conjunto usa (`H-42`).
+   *
+   * Validado contra fundo claro: pior par adjacente com ΔE 13,1 em deuteranopia.
+   */
   readonly color: string
 }
 
 const MEASURES: readonly MeasureDefinition[] = [
-  { key: 'total', label: 'Volume', color: '#4f46e5' },
-  { key: 'desembaracados', label: 'Desembaraçados', color: '#0d9488' },
-  { key: 'canalVermelho', label: 'Canal Vermelho', color: '#dc2626' },
+  { key: 'total', label: 'Volume', color: 'var(--color-chart-series-1)' },
+  { key: 'desembaracados', label: 'Desembaraçados', color: 'var(--color-chart-series-2)' },
+  { key: 'canalVermelho', label: 'Canal Vermelho', color: 'var(--color-chart-series-3)' },
 ]
 
 interface HistoryProps {
@@ -59,7 +65,7 @@ export function History({ queryString, dataVersion }: HistoryProps) {
 
   if (state.status === 'erro') {
     return (
-      <p role="alert" className="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-900">
+      <p role="alert" className="panel-error">
         <strong className="font-semibold">Não foi possível carregar o histórico.</strong>{' '}
         {state.message}
       </p>
@@ -68,7 +74,7 @@ export function History({ queryString, dataVersion }: HistoryProps) {
 
   if (state.status === 'semLeitura') {
     return (
-      <p role="status" className="rounded border border-slate-300 bg-white p-4 text-sm">
+      <p role="status" className="panel-no-read">
         Nenhuma leitura da planilha foi concluída ainda. A série aparece assim que a primeira
         terminar — gráfico vazio aqui não significa zero processo.
       </p>
@@ -76,11 +82,7 @@ export function History({ queryString, dataVersion }: HistoryProps) {
   }
 
   if (state.status === 'carregando') {
-    return (
-      <p className="rounded border border-slate-200 bg-white p-6 text-sm text-slate-500">
-        Carregando histórico…
-      </p>
-    )
+    return <p className="panel-loading">Carregando histórico…</p>
   }
 
   const { series, historyStartedAt, truncated } = state.history
@@ -116,15 +118,17 @@ function EmptyHistory() {
   return (
     <section
       aria-label="Evolução mensal"
-      className="rounded border border-slate-300 bg-white p-6 text-sm"
+      className="rounded border border-border-subtle bg-surface-raised p-6 text-sm"
     >
-      <h2 className="text-base font-semibold text-slate-700">Ainda não há histórico registrado.</h2>
-      <p className="mt-2 text-slate-600">
+      <h2 className="text-base font-semibold text-text-secondary">
+        Ainda não há histórico registrado.
+      </h2>
+      <p className="mt-2 text-text-secondary">
         A série é montada a partir das mudanças que a aplicação observa a cada leitura da planilha,
         e o primeiro ponto aparece na próxima. Um gráfico zerado aqui afirmaria que não há
         processos, o que é diferente de não haver passado gravado.
       </p>
-      <p className="mt-2 text-slate-600">
+      <p className="mt-2 text-text-secondary">
         <strong className="font-semibold">Não há retroatividade</strong> (A-43): a aplicação não
         reconstrói o histórico anterior à sua primeira execução, porque a planilha guarda o estado
         de hoje e não o de cada mês.
@@ -141,9 +145,9 @@ function WindowPicker({
   onChange: (next: WindowMonths) => void
 }) {
   return (
-    <fieldset className="flex flex-wrap items-center gap-2 rounded border border-slate-200 bg-white px-4 py-3">
+    <fieldset className="flex flex-wrap items-center gap-2 rounded border border-border-subtle bg-surface-raised px-4 py-3">
       <legend className="sr-only">Janela da série</legend>
-      <span className="text-sm text-slate-600">Janela:</span>
+      <span className="text-sm text-text-secondary">Janela:</span>
       {WINDOWS.map((option) => (
         <button
           key={option}
@@ -152,8 +156,8 @@ function WindowPicker({
           onClick={() => onChange(option)}
           className={`rounded border px-3 py-1 text-sm font-medium ${
             option === months
-              ? 'border-slate-800 bg-slate-800 text-white'
-              : 'border-slate-300 text-slate-600 hover:border-slate-500'
+              ? 'border-action-bg bg-action-bg text-action-fg'
+              : 'border-border-control text-text-secondary hover:border-border-strong'
           }`}
         >
           {option} meses
@@ -170,24 +174,31 @@ function WindowPicker({
  */
 function MonthlySeries({ series }: { series: MonthlyHistoryResponse['series'] }) {
   return (
-    <section aria-label="Evolução mensal" className="rounded border border-slate-200 bg-white p-4">
-      <h2 className="text-sm font-semibold text-slate-700">Evolução mensal</h2>
+    <section
+      aria-label="Evolução mensal"
+      className="rounded border border-border-subtle bg-surface-raised p-4"
+    >
+      <h2 className="text-sm font-semibold text-text-secondary">Evolução mensal</h2>
 
       <div aria-hidden="true" className="mt-3 h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={series} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
-            <CartesianGrid stroke="#e2e8f0" strokeDasharray="3 3" vertical={false} />
+            <CartesianGrid
+              stroke="var(--color-chart-grid)"
+              strokeDasharray="3 3"
+              vertical={false}
+            />
             <XAxis
               dataKey="month"
               tickFormatter={formatMonth}
-              tick={{ fill: '#64748b', fontSize: 12 }}
-              stroke="#cbd5e1"
+              tick={{ fill: 'var(--color-chart-axis)', fontSize: 12 }}
+              stroke="var(--color-chart-axis)"
             />
             <YAxis
               allowDecimals={false}
               width={48}
-              tick={{ fill: '#64748b', fontSize: 12 }}
-              stroke="#cbd5e1"
+              tick={{ fill: 'var(--color-chart-axis)', fontSize: 12 }}
+              stroke="var(--color-chart-axis)"
             />
             <Tooltip
               labelFormatter={(label) => (typeof label === 'string' ? formatMonth(label) : label)}
@@ -214,7 +225,7 @@ function MonthlySeries({ series }: { series: MonthlyHistoryResponse['series'] })
           Volume, desembaraçados e Canal Vermelho ao fim de cada mês
         </caption>
         <thead>
-          <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
+          <tr className="border-b border-border-subtle text-left text-xs text-text-muted">
             <th className="pb-1 font-medium">mês</th>
             {MEASURES.map((measure) => (
               <th key={measure.key} className="pb-1 text-right font-medium">
@@ -225,7 +236,7 @@ function MonthlySeries({ series }: { series: MonthlyHistoryResponse['series'] })
         </thead>
         <tbody>
           {series.map((point) => (
-            <tr key={point.month} className="border-b border-slate-100 last:border-0">
+            <tr key={point.month} className="border-b border-border-subtle last:border-0">
               <td className="py-1">
                 <time dateTime={point.month}>{formatMonth(point.month)}</time>
               </td>
@@ -247,7 +258,7 @@ function StartNote({ startedAt }: { startedAt: string | null }) {
   if (startedAt === null) return null
 
   return (
-    <p className="rounded border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+    <p className="rounded border border-border-subtle bg-surface-sunken px-4 py-3 text-xs text-text-secondary">
       O histórico começou em <strong className="font-semibold">{formatInstant(startedAt)}</strong>,
       quando a aplicação passou a registrar as mudanças.{' '}
       <strong>Não há dado anterior a essa data</strong> — a planilha guarda o estado de hoje, e
@@ -268,7 +279,7 @@ function StartNote({ startedAt }: { startedAt: string | null }) {
  */
 function VolumeNote() {
   return (
-    <p className="rounded border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+    <p className="rounded border border-border-subtle bg-surface-sunken px-4 py-3 text-xs text-text-secondary">
       <strong className="font-semibold">
         Volume conta os processos que a aplicação já observou
       </strong>{' '}
@@ -285,7 +296,7 @@ function TruncatedNote({ months, pointCount }: { months: number; pointCount: num
   return (
     <p
       role="status"
-      className="rounded border border-amber-300 bg-amber-50 px-4 py-3 text-xs text-amber-900"
+      className="rounded border border-state-warning-border bg-state-warning-bg px-4 py-3 text-xs text-state-warning-fg"
     >
       A janela pedida — <strong className="font-semibold">{months} meses</strong> — é maior que o
       histórico existente. A série mostra os{' '}
@@ -304,7 +315,7 @@ function TruncatedNote({ months, pointCount }: { months: number; pointCount: num
  */
 function FilterCaveat() {
   return (
-    <p className="rounded border border-slate-200 bg-slate-50 px-4 py-3 text-xs text-slate-600">
+    <p className="rounded border border-border-subtle bg-surface-sunken px-4 py-3 text-xs text-text-secondary">
       Há filtro ativo, e o histórico guarda apenas a REF de cada processo. Os filtros são resolvidos
       contra a leitura atual da planilha: a série descreve o passado dos processos que casam{' '}
       <strong className="font-semibold">hoje</strong>. Um processo cujo navio mudou aparece sob o

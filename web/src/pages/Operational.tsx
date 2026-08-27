@@ -31,17 +31,14 @@ export function Operational({ queryString, dataVersion }: OperationalProps) {
       <Controls query={query} />
 
       {processes.status === 'semLeitura' && (
-        <p role="status" className="rounded border border-slate-300 bg-white p-4 text-sm">
+        <p role="status" className="panel-no-read">
           Nenhuma leitura da planilha foi concluída ainda. A tabela aparece assim que a primeira
           terminar — vazio aqui não significa nenhum processo.
         </p>
       )}
 
       {processes.status === 'erro' && (
-        <p
-          role="alert"
-          className="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-900"
-        >
+        <p role="alert" className="panel-error">
           <strong className="font-semibold">Não foi possível carregar os processos.</strong>{' '}
           {processes.message}
         </p>
@@ -66,9 +63,7 @@ export function Operational({ queryString, dataVersion }: OperationalProps) {
             </>
           ) : (
             processes.status === 'carregando' && (
-              <p className="rounded border border-slate-200 bg-white p-6 text-sm text-slate-500">
-                Carregando processos…
-              </p>
+              <p className="panel-loading">Carregando processos…</p>
             )
           )}
         </div>
@@ -82,20 +77,20 @@ export function Operational({ queryString, dataVersion }: OperationalProps) {
 function Controls({ query }: { query: ReturnType<typeof useProcessQuery> }) {
   return (
     <div className="flex flex-wrap items-end gap-4">
-      <label className="flex grow flex-col gap-1 text-xs text-slate-600 sm:max-w-md">
+      <label className="flex grow flex-col gap-1 text-xs text-text-secondary sm:max-w-md">
         Buscar por REF, BL ou CNTR
         <input
           type="search"
           value={query.search}
           onChange={(event) => query.setSearch(event.target.value)}
           placeholder="ex.: NBSC260"
-          className="rounded border border-slate-300 bg-white px-3 py-1.5 text-sm text-slate-800"
+          className="rounded border border-border-control bg-surface-raised px-3 py-1.5 text-sm text-text-primary"
         />
       </label>
 
       {/* A-16. O padrao da PAGINA e mostrar so os ativos; a rota tem o padrao
           oposto, porque serve tambem quem procura um processo especifico. */}
-      <label className="flex items-center gap-2 pb-1.5 text-sm text-slate-700">
+      <label className="flex items-center gap-2 pb-1.5 text-sm text-text-secondary">
         <input
           type="checkbox"
           checked={!query.activeOnly}
@@ -120,7 +115,7 @@ function Pagination({
 }) {
   if (total <= PAGE_SIZE) {
     return (
-      <p className="text-xs text-slate-500">
+      <p className="text-xs text-text-secondary">
         {total} {total === 1 ? 'processo' : 'processos'}
       </p>
     )
@@ -131,7 +126,7 @@ function Pagination({
 
   return (
     <nav aria-label="Paginação" className="flex items-center justify-between gap-3 text-sm">
-      <span className="text-xs text-slate-500 tabular-nums">
+      <span className="text-xs text-text-secondary tabular-nums">
         {first}–{last} de {total}
       </span>
       <span className="flex gap-2">
@@ -139,7 +134,7 @@ function Pagination({
           type="button"
           onClick={() => onOffset(Math.max(0, offset - PAGE_SIZE))}
           disabled={offset === 0}
-          className="rounded border border-slate-300 px-2 py-1 text-xs disabled:opacity-40"
+          className="rounded border border-border-control px-2 py-1 text-xs disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
         >
           Anterior
         </button>
@@ -147,7 +142,7 @@ function Pagination({
           type="button"
           onClick={() => onOffset(offset + PAGE_SIZE)}
           disabled={last >= total}
-          className="rounded border border-slate-300 px-2 py-1 text-xs disabled:opacity-40"
+          className="rounded border border-border-control px-2 py-1 text-xs disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
         >
           Próxima
         </button>
