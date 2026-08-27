@@ -4744,6 +4744,62 @@ consumirem os tokens, com as bordas de controle corrigidas.
 
 ### H-42 — Migrar as sete páginas e fechar a guarda de cor
 
+> ✅ **CONCLUÍDA em 21/08/2026.** 9 testes próprios — 4 em
+> `tests/repo/estilo.test.ts` e 5 em `tests/http/static.test.ts`, estes últimos
+> de uma correção fora do plano, abaixo. Suíte de 1313 para **1322**. Três
+> divergências abertas no protocolo, todas resolvidas.
+>
+> **A onda 2 fechou:** 77 linhas de passo bruto nas sete páginas para zero, e os
+> **24 arquivos** consumidores estão migrados. `Operational:123` e `:134` saem
+> de 4.35 para **6.90:1** contra a casca (`ACHADO 5`), e `Alerts:145` de 1.49
+> para **4.77:1** (`ACHADO 4`).
+>
+> **A guarda tem duas asserções, não uma.** `C01` cobre o utilitário de passo
+> bruto, que era o contrato; `C02` cobre **literal hexadecimal**, acrescentada
+> porque o defeito que esta mesma história consertou em `History.tsx` — seis
+> valores passados direto às props do Recharts — não é utilitário e nenhuma
+> regex de classe o alcançaria. Migrados hoje, voltariam amanhã sem nada
+> reprovar. **As duas foram provadas por mutação:** `text-slate-600`
+> reintroduzido reprova `C01` citando arquivo e linha; `const COR = '#4f46e5'`
+> reprova `C02`. O escopo passou a `.ts` além de `.tsx` — hoje nenhum `.ts` de
+> `web/src/` tem cor, e nada impedia que passasse a ter.
+>
+> **`var()` em atributo de apresentação SVG foi MEDIDO, não suposto.** A fatia
+> abriu com a suspeita de que não funcionaria, o que teria mudado a
+> implementação inteira. Renderizado no Chrome, um `stroke="var(--x)"` sai
+> idêntico ao literal; e o gráfico real foi conferido na tela, com as três
+> séries, a legenda e o tooltip coloridos. **Quatro caminhos de automação
+> falharam antes disso** — headless com `virtual-time-budget` não monta o React,
+> porque o scheduler usa `MessageChannel`; por CDP com espera real o `#root`
+> fica vazio; e em jsdom o `ResponsiveContainer` do Recharts não renderiza SVG
+> nenhum, por medir zero. **A Página Histórico não é verificável por automação
+> neste projeto**, e quem quiser conferi-la olha a tela.
+>
+> ---
+>
+> **A tentativa de verificar achou um defeito de `H-30`, e ele foi corrigido
+> aqui por decisão do usuário — a fatia cresceu de propósito.**
+>
+> `GET /*` servia **`text/html` para `/assets/*.js` e `*.css`**, e a tela ficava
+> branca sem erro nenhum. A causa é o `@fastify/static` com `wildcard: false`,
+> que **enumera o diretório uma vez, no registro** — a documentação do plugin
+> avisa que ele *"will not serve newly added files"*. Dois caminhos rotineiros
+> caíam nisso: servidor no ar antes de `dist/web` existir, e **recompilação com
+> o servidor no ar**, que troca o hash dos nomes. O `index.html` era servido, e
+> apontava para arquivos que caíam no próprio `/*`.
+>
+> **O teste que afirmava cobrir o caso media apenas o HTML** — `passa a servir
+> assim que a pasta aparece` pedia `/alertas`, nunca um asset. É o mesmo modo de
+> falha de `PD-06`: a afirmação existia, a verificação não a alcançava.
+>
+> O plugin saiu do projeto e os arquivos passaram a ser servidos à mão, com
+> guarda de travessia própria — o preço de largar o plugin. **Os dois cenários
+> reprovam contra o código anterior e passam com a correção.** Um dos testes
+> novos precisou ser corrigido: escrevendo o arquivo antes do primeiro `inject`,
+> ele passava contra a implementação antiga também, porque o glob do plugin
+> ainda não tinha rodado — teste que não reproduz o defeito que nomeia é pior
+> que teste nenhum.
+
 **Objetivo:** encerrar a onda 2 com as páginas migradas e uma guarda automática
 que impeça o passo bruto de voltar.
 
@@ -5151,8 +5207,8 @@ E qualquer correção de código: os cinco procedimentos produzem registro.
 | E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
-| E9 — Estilização | **H-39 ✅, H-40 ✅, H-41 ✅, H-42 … H-47 abertas** | 1 | 8 | 0 |
-| **Total** | **47** — 41 concluídas, 6 abertas | **17** | **30** | **0** |
+| E9 — Estilização | **H-39 ✅ … H-42 ✅, H-43 … H-47 abertas** | 1 | 8 | 0 |
+| **Total** | **47** — 42 concluídas, 5 abertas | **17** | **30** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até
