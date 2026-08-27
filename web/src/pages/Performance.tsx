@@ -53,7 +53,7 @@ export function Performance({ queryString, dataVersion }: PerformanceProps) {
 
   if (state.status === 'erro') {
     return (
-      <p role="alert" className="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-900">
+      <p role="alert" className="panel-error">
         <strong className="font-semibold">Não foi possível carregar a performance.</strong>{' '}
         {state.message}
       </p>
@@ -62,7 +62,7 @@ export function Performance({ queryString, dataVersion }: PerformanceProps) {
 
   if (state.status === 'semLeitura') {
     return (
-      <p role="status" className="rounded border border-slate-300 bg-white p-4 text-sm">
+      <p role="status" className="panel-no-read">
         Nenhuma leitura da planilha foi concluída ainda. Os tempos aparecem assim que a primeira
         terminar — traço aqui não significa zero dia.
       </p>
@@ -70,11 +70,7 @@ export function Performance({ queryString, dataVersion }: PerformanceProps) {
   }
 
   if (state.status === 'carregando') {
-    return (
-      <p className="rounded border border-slate-200 bg-white p-6 text-sm text-slate-500">
-        Carregando performance…
-      </p>
-    )
+    return <p className="panel-loading">Carregando performance…</p>
   }
 
   const { documentaryLeadTime, leadTimeByGroup, rankings, meta } = state.indicators
@@ -123,19 +119,19 @@ function Aggregate({ leadTime }: { leadTime: IndicatorsResponse['documentaryLead
   return (
     <section
       aria-label="Tempo médio de envio documental"
-      className="rounded border border-slate-200 bg-white p-4"
+      className="rounded border border-border-subtle bg-surface-raised p-4"
     >
-      <h2 className="text-sm font-semibold text-slate-700">Tempo médio de envio documental</h2>
+      <h2 className="text-sm font-semibold text-text-secondary">Tempo médio de envio documental</h2>
       <p className="mt-2 flex items-baseline gap-2">
         <strong className="text-3xl font-semibold tabular-nums">
           {formatDays(leadTime.averageDays)}
         </strong>
-        <span className="text-sm text-slate-500">
+        <span className="text-sm text-text-muted">
           sobre {leadTime.sampleSize.toLocaleString('pt-BR')}{' '}
           {leadTime.sampleSize === 1 ? 'processo medido' : 'processos medidos'}
         </span>
       </p>
-      <p className="mt-2 text-xs text-slate-600">
+      <p className="mt-2 text-xs text-text-secondary">
         Excluídos e contados (A-30):{' '}
         <strong className="tabular-nums">
           {leadTime.excludedIncomplete.toLocaleString('pt-BR')}
@@ -168,16 +164,19 @@ interface LeadTimeTableProps {
  */
 function LeadTimeTable({ title, unit, groups, total, shown }: LeadTimeTableProps) {
   return (
-    <section aria-label={title} className="rounded border border-slate-200 bg-white p-4">
-      <h2 className="text-sm font-semibold text-slate-700">{title}</h2>
+    <section
+      aria-label={title}
+      className="rounded border border-border-subtle bg-surface-raised p-4"
+    >
+      <h2 className="text-sm font-semibold text-text-secondary">{title}</h2>
 
       {groups.length === 0 ? (
-        <p className="mt-3 text-sm text-slate-600">Nenhum {unit} no recorte atual.</p>
+        <p className="mt-3 text-sm text-text-secondary">Nenhum {unit} no recorte atual.</p>
       ) : (
         <>
           <table className="mt-3 w-full text-sm">
             <thead>
-              <tr className="border-b border-slate-200 text-left text-xs text-slate-500">
+              <tr className="border-b border-border-subtle text-left text-xs text-text-muted">
                 <th className="pb-1 font-medium">{unit}</th>
                 <th className="pb-1 text-right font-medium">média</th>
                 <th className="pb-1 text-right font-medium">amostra</th>
@@ -186,15 +185,15 @@ function LeadTimeTable({ title, unit, groups, total, shown }: LeadTimeTableProps
             </thead>
             <tbody>
               {groups.map((group) => (
-                <tr key={group.key} className="border-b border-slate-100 last:border-0">
+                <tr key={group.key} className="border-b border-border-subtle last:border-0">
                   <td className="max-w-0 truncate py-1 pr-2">
                     {group.label === '' ? '(sem valor)' : group.label}
                   </td>
                   <td className="py-1 text-right tabular-nums">{formatDays(group.averageDays)}</td>
-                  <td className="py-1 text-right tabular-nums text-slate-500">
+                  <td className="py-1 text-right tabular-nums text-text-muted">
                     {group.sampleSize.toLocaleString('pt-BR')}
                   </td>
-                  <td className="py-1 text-right tabular-nums text-slate-500">
+                  <td className="py-1 text-right tabular-nums text-text-muted">
                     {group.count.toLocaleString('pt-BR')}
                   </td>
                 </tr>
@@ -203,7 +202,7 @@ function LeadTimeTable({ title, unit, groups, total, shown }: LeadTimeTableProps
           </table>
 
           {total > shown && (
-            <p className="mt-2 text-xs text-slate-500">
+            <p className="mt-2 text-xs text-text-muted">
               Exibindo {shown} de {total.toLocaleString('pt-BR')} grupos, os de maior amostra.
             </p>
           )}
@@ -218,7 +217,7 @@ function OverdueBadge({ overdue }: { overdue: number | undefined }) {
   if (overdue === undefined) return null
 
   return (
-    <span className={overdue > 0 ? 'font-semibold text-amber-800' : 'text-slate-500'}>
+    <span className={overdue > 0 ? 'font-semibold text-state-warning-fg' : 'text-text-muted'}>
       {overdue.toLocaleString('pt-BR')} {overdue === 1 ? 'atrasado' : 'atrasados'}
     </span>
   )
@@ -231,7 +230,7 @@ function OverdueBadge({ overdue }: { overdue: number | undefined }) {
  */
 function ResponsibleCaveat() {
   return (
-    <p className="mt-2 rounded border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+    <p className="mt-2 rounded border border-border-subtle bg-surface-sunken px-3 py-2 text-xs text-text-secondary">
       O responsável vem da cor da linha, e linha vermelha ou verde não o carrega (A-31) — por isso{' '}
       <strong>Indefinido</strong> costuma liderar. As linhas não são clicáveis: o filtro por
       Colaborador 1 seleciona também os outros clientes dele (A-18), e o recorte não bateria com a
@@ -245,10 +244,10 @@ function OutOfScopeNote({ topN }: { topN: number }) {
   return (
     <section
       aria-label="Fora de escopo"
-      className="rounded border border-dashed border-slate-300 bg-slate-50 p-4 text-xs text-slate-600"
+      className="rounded border border-dashed border-border-subtle bg-surface-sunken p-4 text-xs text-text-secondary"
     >
       <p>
-        <strong className="font-semibold text-slate-700">
+        <strong className="font-semibold text-text-secondary">
           Tempo médio até desembaraço não é exibido.
         </strong>{' '}
         O cálculo exige a data de presença de carga, que a planilha não tem (§4 da especificação).

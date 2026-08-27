@@ -32,7 +32,7 @@ export function Alerts({ queryString, dataVersion }: AlertsProps) {
 
   if (state.status === 'erro') {
     return (
-      <p role="alert" className="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-900">
+      <p role="alert" className="panel-error">
         <strong className="font-semibold">Não foi possível carregar os alertas.</strong>{' '}
         {state.message}
       </p>
@@ -45,7 +45,7 @@ export function Alerts({ queryString, dataVersion }: AlertsProps) {
    */
   if (state.status === 'semLeitura') {
     return (
-      <p role="status" className="rounded border border-slate-300 bg-white p-4 text-sm">
+      <p role="status" className="panel-no-read">
         Nenhuma leitura da planilha foi concluída ainda. A fila aparece assim que a primeira
         terminar — vazio aqui não significa ausência de pendências.
       </p>
@@ -53,11 +53,7 @@ export function Alerts({ queryString, dataVersion }: AlertsProps) {
   }
 
   if (state.status === 'carregando') {
-    return (
-      <p className="rounded border border-slate-200 bg-white p-6 text-sm text-slate-500">
-        Carregando alertas…
-      </p>
-    )
+    return <p className="panel-loading">Carregando alertas…</p>
   }
 
   const {
@@ -76,16 +72,16 @@ export function Alerts({ queryString, dataVersion }: AlertsProps) {
 
       <section
         aria-label="Fila de alertas"
-        className="rounded border border-slate-200 bg-white p-4"
+        className="rounded border border-border-subtle bg-surface-raised p-4"
       >
-        <h2 className="text-sm font-semibold text-slate-700">
+        <h2 className="text-sm font-semibold text-text-secondary">
           {groups.length === 0
             ? 'Fila de alertas'
             : `${groups.length} ${groups.length === 1 ? 'processo pede' : 'processos pedem'} ação`}
         </h2>
 
         {groups.length === 0 ? (
-          <p className="mt-3 text-sm text-slate-700">
+          <p className="mt-3 text-sm text-text-secondary">
             Nenhum processo ativo com pendência no recorte atual. A leitura foi concluída e a fila
             está de fato vazia.
           </p>
@@ -135,14 +131,14 @@ function TypeCounts({
           <article
             key={type}
             aria-label={ALERT_LABELS[type]}
-            className="rounded border border-slate-200 bg-white p-3"
+            className="rounded border border-border-subtle bg-surface-raised p-3"
           >
-            <h3 className="text-xs font-medium text-slate-500">{ALERT_LABELS[type]}</h3>
+            <h3 className="text-xs font-medium text-text-muted">{ALERT_LABELS[type]}</h3>
             {measurable ? (
               <p className="mt-1 text-2xl font-semibold tabular-nums">{counts[type]}</p>
             ) : (
               <p
-                className="mt-1 text-2xl font-semibold text-slate-300"
+                className="mt-1 text-2xl font-semibold text-text-muted"
                 title="O histórico ainda não cobre o limiar"
               >
                 —
@@ -178,17 +174,21 @@ function StalledNote({
   return (
     <section
       aria-label="Processos parados"
-      className="rounded border border-dashed border-slate-300 bg-slate-50 p-4 text-xs text-slate-600"
+      className="rounded border border-dashed border-border-subtle bg-surface-sunken p-4 text-xs text-text-secondary"
     >
       {measurable ? (
         <p>
-          <strong className="font-semibold text-slate-700">Processos parados está medido.</strong> O
-          alerta compara a data do último evento de mudança de categoria com hoje. Trocar apenas a
+          <strong className="font-semibold text-text-secondary">
+            Processos parados está medido.
+          </strong>{' '}
+          O alerta compara a data do último evento de mudança de categoria com hoje. Trocar apenas a
           cor de uma linha não reinicia a contagem.
         </p>
       ) : (
         <p>
-          <strong className="font-semibold text-slate-700">Processos parados não é medido.</strong>{' '}
+          <strong className="font-semibold text-text-secondary">
+            Processos parados não é medido.
+          </strong>{' '}
           {coverageDays === null
             ? 'O alerta compara a data do último evento de mudança com hoje, e nenhuma leitura foi registrada ainda.'
             : `O histórico tem ${describeDays(coverageDays)} e o limiar é de ${thresholdDays} dias — nenhum processo teve tempo de atingi-lo.`}{' '}

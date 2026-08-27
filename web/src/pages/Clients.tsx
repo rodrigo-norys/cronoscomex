@@ -69,7 +69,7 @@ export function Clients({ queryString, dataVersion }: ClientsProps) {
 
   if (state.status === 'erro') {
     return (
-      <p role="alert" className="rounded border border-red-300 bg-red-50 p-4 text-sm text-red-900">
+      <p role="alert" className="panel-error">
         <strong className="font-semibold">Não foi possível carregar os rankings.</strong>{' '}
         {state.message}
       </p>
@@ -78,7 +78,7 @@ export function Clients({ queryString, dataVersion }: ClientsProps) {
 
   if (state.status === 'semLeitura') {
     return (
-      <p role="status" className="rounded border border-slate-300 bg-white p-4 text-sm">
+      <p role="status" className="panel-no-read">
         Nenhuma leitura da planilha foi concluída ainda. Os rankings aparecem assim que a primeira
         terminar — lista vazia aqui não significa nenhum processo.
       </p>
@@ -86,18 +86,14 @@ export function Clients({ queryString, dataVersion }: ClientsProps) {
   }
 
   if (state.status === 'carregando') {
-    return (
-      <p className="rounded border border-slate-200 bg-white p-6 text-sm text-slate-500">
-        Carregando rankings…
-      </p>
-    )
+    return <p className="panel-loading">Carregando rankings…</p>
   }
 
   const { rankings, meta } = state.indicators
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-slate-600">
+      <p className="text-sm text-text-secondary">
         Os {meta.topN} maiores de cada dimensão, no recorte atual. Clique em um item para filtrar
         por ele e abrir a Página Operacional.
       </p>
@@ -132,7 +128,7 @@ function BazarCaveat({ share }: { share: number | null }) {
   if (share === null) return null
 
   return (
-    <p className="mt-2 rounded border border-amber-300 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+    <p className="mt-2 rounded border border-state-warning-border bg-state-warning-bg px-3 py-2 text-xs text-state-warning-fg">
       <strong className="font-semibold">
         BAZAR concentra {(share * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%
       </strong>{' '}
