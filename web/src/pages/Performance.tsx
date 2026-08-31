@@ -1,6 +1,12 @@
 import type { IndicatorsResponse } from '../api-client.ts'
 import { RankingBar } from '../components/RankingBar.tsx'
-import { type MultiFilterKey, useFilters } from '../hooks/useFilters.ts'
+import {
+  type FilterSelection,
+  MULTI_FILTER_LABELS,
+  MULTI_FILTERS,
+  type MultiFilterKey,
+  useFilters,
+} from '../hooks/useFilters.ts'
 import { useIndicators } from '../hooks/useIndicators.ts'
 import { navigate } from '../router.ts'
 
@@ -16,6 +22,16 @@ import { navigate } from '../router.ts'
  * **O denominador nunca sai do lado da media** (A-42). Medido na planilha real:
  * so 101 dos 649 processos tem as duas datas, e a media de um grupo pode vir de
  * uma unica medicao — numero sem amostra ao lado convida a conclusao errada.
+ *
+ * **A pagina diz o que mede e sobre o que mede** (`H-53`). Duas perguntas do
+ * levantamento de uso morreram aqui, e nenhuma era defeito de calculo: qual e a
+ * metrica — correta desde IND-22 — e se dava para filtrar por cliente e
+ * importador — dava desde `H-15`. Aplicacao certa e muda e a variante mais
+ * barata de defeito, e a mais facil de deixar aberta para sempre.
+ *
+ * **Nada aqui passa a ser calculado no cliente.** A formula e a lista de filtros
+ * ativos sao apresentacao de regras que ja existem: a primeira vem de A-02, a
+ * segunda da propria URL, que e o unico estado dos filtros.
  */
 
 type LeadTimeGroup = IndicatorsResponse['leadTimeByGroup']['clients'][number]
@@ -77,6 +93,8 @@ export function Performance({ queryString, dataVersion }: PerformanceProps) {
 
   return (
     <div className="flex flex-col gap-4">
+      <ActiveScope selection={filters.selection} activeCount={filters.activeCount} />
+
       <Aggregate leadTime={documentaryLeadTime} />
 
       <div className="grid gap-4 lg:grid-cols-2">
@@ -114,6 +132,85 @@ export function Performance({ queryString, dataVersion }: PerformanceProps) {
   )
 }
 
+/**
+ * O recorte que a pagina esta exibindo, dito em vez de suposto (`H-53`).
+ *
+ * A pagina SEMPRE respeitou os filtros globais (RF-18) — o que faltava era
+ * dizer isso. O operador perguntou se dava para filtrar por cliente e
+ * importador; dava desde `H-15`, e a funcionalidade era invisivel.
+ *
+ * **Nao recalcula nada** (regra inviolavel 6): le a selecao da URL, que e o
+ * unico estado dos filtros, e a nomeia. Quem recortou os numeros foi o servidor.
+ */
+function ActiveScope({
+  selection,
+  activeCount,
+}: {
+  selection: FilterSelection
+  activeCount: number
+}) {
+  const ativos: string[] = []
+
+  for (const key of MULTI_FILTERS) {
+    const valores = selection.multi[key]
+    if (valores.length === 0) continue
+    ativos.push(
+      valores.length === 1
+        ? `${MULTI_FILTER_LABELS[key]}: ${valores[0] === '' ? '(em branco)' : valores[0]}`
+        : `${MULTI_FILTER_LABELS[key]}: ${valores.length} valores`,
+    )
+  }
+
+  if (selection.etaFrom !== '' || selection.etaTo !== '') {
+    const inicio = selection.etaFrom === '' ? 'início' : formatDay(selection.etaFrom)
+    const fim = selection.etaTo === '' ? 'hoje em diante' : formatDay(selection.etaTo)
+    ativos.push(`Período (ETA2): ${inicio} a ${fim}`)
+  }
+
+  if (selection.importerOutsideRj !== '') {
+    ativos.push(
+      selection.importerOutsideRj === 'true'
+        ? 'Importador fora do RJ: sim'
+        : 'Importador fora do RJ: não',
+    )
+  }
+
+  return (
+    <section
+      aria-label="Recorte ativo"
+      className="rounded border border-border-subtle bg-surface-sunken px-4 py-3 text-xs text-text-secondary"
+    >
+      {activeCount === 0 ? (
+        <p>
+          <strong className="font-semibold">Sem filtro ativo:</strong> os números abaixo cobrem a
+          base inteira. Para recortá-los — por cliente, importador, agente, navio ou período —, use
+          a barra de filtros no topo da página; ela vale para todas as telas.
+        </p>
+      ) : (
+        <>
+          <p>
+            <strong className="font-semibold">
+              {activeCount === 1 ? '1 filtro ativo' : `${activeCount} filtros ativos`}
+            </strong>{' '}
+            recortando os números abaixo:
+          </p>
+          <ul className="mt-1 flex flex-wrap gap-x-4 gap-y-1">
+            {ativos.map((texto) => (
+              <li key={texto}>{texto}</li>
+            ))}
+          </ul>
+        </>
+      )}
+    </section>
+  )
+}
+
+/** `AAAA-MM-DD` como o operador lê. Formatação, nunca cálculo. */
+function formatDay(iso: string): string {
+  const [year, month, day] = iso.split('-')
+  return `${day}/${month}/${year}`
+}
+
 /** O agregado de IND-22, com as duas exclusões de A-30 à vista. */
 function Aggregate({ leadTime }: { leadTime: IndicatorsResponse['documentaryLeadTime'] }) {
   return (
@@ -122,6 +219,18 @@ function Aggregate({ leadTime }: { leadTime: IndicatorsResponse['documentaryLead
       className="rounded border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Tempo médio de envio documental</h2>
+
+      {/* `H-53`. A formula junto do agregado, e nao em nota de rodape: o
+          operador perguntou o que a metrica media, e a resposta estava correta
+          desde IND-22 — so nao estava escrita. A ordem das duas datas e a que
+          A-02 fixou; a invertida produziria valor negativo, porque RG e a
+          extremidade final do intervalo. */}
+      <p className="mt-1 text-xs text-text-secondary">
+        <strong className="font-semibold">RG − DOCS ENVIADOS</strong>, em dias inteiros: quantos
+        dias se passaram entre o envio da documentação e o registro. Média sobre os processos que
+        têm <strong>as duas</strong> datas.
+      </p>
+
       <p className="mt-2 flex items-baseline gap-2">
         <strong className="text-3xl font-semibold tabular-nums">
           {formatDays(leadTime.averageDays)}
@@ -131,16 +240,38 @@ function Aggregate({ leadTime }: { leadTime: IndicatorsResponse['documentaryLead
           {leadTime.sampleSize === 1 ? 'processo medido' : 'processos medidos'}
         </span>
       </p>
+
+      {/* Amostra zerada e o caso-limite: traco, nunca zero dia — media de
+          conjunto vazio nao e zero (A-42) —, e a tela diz POR QUE, senao o
+          traco parece falha de carregamento. */}
+      {leadTime.sampleSize === 0 && (
+        <p className="mt-1 text-xs text-text-secondary">
+          O traço significa que{' '}
+          <strong className="font-semibold">nenhum processo do recorte</strong> tem o par completo
+          de datas — não que o tempo seja zero.
+        </p>
+      )}
+      {/* As duas exclusoes de A-30 seguem contadas, agora com o que cada uma
+          significa: numero sem explicacao e descarte que parece medicao. */}
       <p className="mt-2 text-xs text-text-secondary">
-        Excluídos e contados (A-30):{' '}
+        <strong className="font-semibold">Excluídos e contados</strong> (A-30):{' '}
         <strong className="tabular-nums">
           {leadTime.excludedIncomplete.toLocaleString('pt-BR')}
         </strong>{' '}
-        sem uma das duas datas ·{' '}
+        <span>
+          sem uma das duas datas — falta RG, DOCS ENVIADOS, ou as duas, e sem par não há intervalo a
+          medir
+        </span>{' '}
+        ·{' '}
         <strong className="tabular-nums">
           {leadTime.excludedNegative.toLocaleString('pt-BR')}
         </strong>{' '}
-        com intervalo negativo.
+        <span>
+          com intervalo negativo — o registro está datado antes do envio, o que é divergência da
+          planilha e não tempo de zero dia
+        </span>
+        . Nenhum dos dois entra na média; ambos continuam contados aqui, porque descartar em
+        silêncio esconderia o tamanho real da lacuna.
       </p>
     </section>
   )
