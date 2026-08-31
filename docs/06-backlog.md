@@ -4899,6 +4899,47 @@ sobre o repositório, não contrato de API)
 
 ### H-43 — Live regions da casca e dos componentes
 
+> ✅ **CONCLUÍDA em 31/08/2026.** **10 testes próprios** em quatro arquivos —
+> três em `App.test.tsx`, dois em `FilterBar.test.tsx`, dois em
+> `IngestionHealth.test.tsx`, dois em `ColorFieldsForm.test.tsx` e um em
+> `StatusBanner.test.tsx`. Suíte total de **1556 para 1566**. **Nove casos
+> existentes mudaram de forma, nenhum de força** — a razão está três parágrafos
+> abaixo. Uma divergência no protocolo, resolvida.
+>
+> **O padrão adotado já existia no repositório, e não foi inventado aqui.**
+> `WorkbookSetup.tsx` faz isso desde `H-34`: o nó fica sempre no DOM e alterna
+> entre `sr-only` e o estilo visível. `H-43` o estendeu aos sete arquivos da
+> casca, que é o que o próprio `ACHADO 11` descreve como um defeito repetido, e
+> não como uma coleção de descuidos.
+>
+> **`StatusBanner` foi o único que mudou de estrutura, e não só de condicional.**
+> Ele montava um `role` por sinal, cada um já populado. Agora há **duas** regiões
+> — uma `alert` e uma `status` —, porque os papéis são dois: `arquivoAberto` é
+> contexto, e os demais interrompem. Os sinais entram dentro delas, e **o estilo
+> mora no filho**: sem sinal, os dois contêineres são nós vazios sem borda, fundo
+> nem espaçamento. O critério do caso-limite não é ausência do nó, é ausência de
+> caixa vazia na tela.
+>
+> **Nove testes existentes mudaram de forma porque a forma era o defeito.** Eles
+> consultavam `getByRole('alert')` — no singular, e a região vazia agora existe
+> desde a montagem, então "existe algum alert" resolve no primeiro render, antes
+> de a mensagem chegar. Passaram a esperar pelo **texto** e a verificar em que
+> região ele caiu. Nenhuma asserção foi afrouxada: duas delas **ganharam** força,
+> porque agora provam a identidade do nó — o elemento que recebe o texto é o
+> mesmo objeto que já estava no DOM, que é exatamente o que o leitor de tela
+> compara.
+>
+> **Divergência 1 — a região persistente das páginas precisa de endereço, e o
+> plano não diz qual.** O critério exige que ela seja "alcançável por elas, sem
+> que a casca conheça nenhuma página". A casca expõe um `id` estável,
+> `PAGE_LIVE_REGION_ID`, exportado como constante: um `id` escrito duas vezes
+> vira dois `id` diferentes no primeiro ajuste, e o portal falharia **em
+> silêncio** — `getElementById` devolveria `null` e a mensagem simplesmente não
+> apareceria. `H-44` é quem escreve nela.
+>
+> **Nada de cor foi tocado**, como a fatia manda: os quatro arquivos que `H-39`
+> já migrou seguem com os mesmos tokens.
+
 **Objetivo:** as regiões de estado da casca existirem no DOM antes de receberem
 mensagem, para que o leitor de tela as anuncie.
 
@@ -6848,10 +6889,10 @@ superfície dobrada pelo segundo esquema.
 | E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
-| E9 — Estilização | **H-39 ✅ … H-42 ✅, H-43 … H-47 abertas** | 1 | 8 | 0 |
+| E9 — Estilização | **H-39 ✅ … H-43 ✅; H-44 … H-47 abertas** | 1 | 8 | 0 |
 | E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-52 ✅, H-53 ✅, H-54 ✅, H-55 ✅, H-56 ✅; só `H-50` aberta** | 1 | 8 | 0 |
 | E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
-| **Total** | **65** — 50 concluídas, 15 abertas | **21** | **44** | **0** |
+| **Total** | **65** — 51 concluídas, 14 abertas | **21** | **44** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até

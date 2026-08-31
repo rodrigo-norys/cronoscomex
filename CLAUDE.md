@@ -174,7 +174,10 @@ fixado em `web/src/index.css`, as oito seguintes são substituição mecânica.*
 `tests/repo/estilo.test.ts` impede o passo bruto de voltar — a onda 2 fechou.**
 **`H-42` corrigiu também um defeito de `H-30`** que a verificação dela encontrou:
 `GET /*` servia os assets como `text/html`, e a tela ficava branca sem erro.
-**E9 está parada em `H-43`**, e as ondas dela estão no cabeçalho do épico, em
+**`H-43` abriu a onda 3**, fechando `ACHADO 11` na casca e nos seis componentes:
+as regiões vivas passam a existir no DOM antes de receberem mensagem, e a região
+persistente que as páginas usarão nasceu ali. **E9 está em `H-44`**, e as ondas
+dela estão no cabeçalho do épico, em
 `docs/06-backlog.md` — `docs/07-plano-entrega.md` cobre as fases do plano
 original, e não alcança E9 nem E10.
 
