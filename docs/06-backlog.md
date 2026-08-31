@@ -5712,6 +5712,51 @@ verde para status — a categoria continua vindo de TD-01 (regra inviolável 4).
 
 ### H-52 — Os cartões declaram o período, e ele é editável ali
 
+> ✅ **CONCLUÍDA em 31/08/2026.** **32 testes próprios** em quatro arquivos — 15
+> de domínio, 6 na rota, 4 no `useFilters` e 7 na Página Inicial. Suíte total de
+> **1494 para 1526**. Os cinco casos existentes que mudaram são contagens de
+> cartão — de doze para treze —, não asserções afrouxadas. Duas divergências no
+> protocolo, ambas resolvidas.
+>
+> **Conferido contra a planilha real**, e os quatro números do critério de aceite
+> bateram: `ETA2` de **30/12/2025 a 09/09/2026**, `RG` de **05/01/2026 a
+> 31/07/2026**, **64** dos 649 sem `ETA2` e **166** sem `RG`. Sem janela,
+> `desembaracadosNoPeriodo` é **480** — igual a `desembaracados`, porque todos os
+> 480 da categoria têm data de registro; em fevereiro, **58**.
+>
+> **A janela incide sobre o conjunto já filtrado, e não sobre a base.** O texto
+> da história — "quantos desembaraçamos desde fevereiro" — admitia duas leituras:
+> aplicar a janela sobre `registrationDate` **ignorando** o filtro de `ETA2`, ou
+> sobre o recorte que a página inteira já usa. **RF-18 decide**: todo indicador
+> desta rota responde sobre o conjunto filtrado, e um cartão que ignorasse um
+> filtro global visível na barra exibiria um número que a tela não explica. Sem
+> filtro de período — o estado do critério de aceite — as duas leituras
+> coincidem. O rótulo do cartão diz qual data ele conta, e a linha de período diz
+> qual janela.
+>
+> **`meta.dataRange` traz `missing`, e não só os extremos.** Data ausente não está
+> dentro nem fora de janela nenhuma (A-20): esses processos somem de qualquer
+> recorte por período, e sumir sem contagem seria descarte silencioso. `from` e
+> `to` são `null` quando o conjunto não tem a data, e a tela diz "sem data" —
+> nunca uma faixa inventada.
+>
+> **Divergência 1 — a rota precisava da janela, e `filteredProcesses` não a
+> devolve.** Nasceu `filteredWithPeriod` em `src/http/filter-request.ts`, arquivo
+> fora da lista. Ao lado do existente, e não no lugar dele: alargar aquele
+> alcançaria as seis rotas **[F]**, e cinco não têm uso para a janela; reparsear
+> a query dentro da rota duplicaria o tratamento de `400 FILTRO_INVALIDO` que o
+> módulo existe para concentrar.
+>
+> **Divergência 2 — `web/tests/FilterBar.test.tsx` e `web/tests/support/api-stub.ts`.**
+> A fábrica de `Filters` do primeiro e a fixture de `IndicatorsResponse` do
+> segundo quebraram no `typecheck` ao ganharem campo obrigatório. É o modo de
+> falha que `H-32` já tinha medido, e que a conferência da fatia pergunta.
+>
+> **`setPeriod` escreve os dois extremos numa chamada só**, e não é conveniência:
+> duas chamadas a `setRange` derivariam o rascunho da **mesma** leitura de
+> `query`, e a segunda perderia a primeira. O seletor da página escreve nos
+> mesmos `etaFrom`/`etaTo` da barra de filtros — um estado só, na URL.
+
 **Objetivo:** cada cartão da Página Inicial dizer que janela está contando, e a
 janela poder ser mudada sem ir à barra de filtros.
 
@@ -6707,9 +6752,9 @@ superfície dobrada pelo segundo esquema.
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização | **H-39 ✅ … H-42 ✅, H-43 … H-47 abertas** | 1 | 8 | 0 |
-| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-55 ✅, H-56 ✅, H-50 · H-52 … H-54 abertas** | 1 | 8 | 0 |
+| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-52 ✅, H-55 ✅, H-56 ✅, H-50 · H-53 · H-54 abertas** | 1 | 8 | 0 |
 | E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
-| **Total** | **65** — 47 concluídas, 18 abertas | **21** | **44** | **0** |
+| **Total** | **65** — 48 concluídas, 17 abertas | **21** | **44** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até

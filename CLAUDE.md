@@ -188,9 +188,10 @@ uso da própria tela e fecharam no mesmo dia** — o filtro Cliente ganhou um n�
 de árvore, e o ranking passou a mostrar o grupo com a composição; o épico foi a
 oito histórias. **`H-51` acrescentou o canal verde** — o campo deixou de ser
 binário sobre 5 linhas, `nenhum` saiu do domínio, e a Página Inicial mostra a
-distribuição com o denominador ao lado. **A próxima é `H-50`**, a segunda que
-consome os mapas; as três seguintes são independentes entre si. E9 e E10 estão
-abertos ao mesmo tempo, e não se bloqueiam.
+distribuição com o denominador ao lado —, e **`H-52` pôs a janela em cada
+cartão**, com o atalho que a edita sem ir à barra de filtros. **A próxima é
+`H-50`**, a segunda que consome os mapas; `H-53` depende dela e `H-54` não
+depende de nenhuma. E9 e E10 estão abertos ao mesmo tempo, e não se bloqueiam.
 
 **O épico E11 nasceu de proposta de desenho, não de auditoria nem de uso**, em
 31/08/2026: `docs/redesign/PROPOSTA.md` transcreve o mockup *Cronos Console* e o
