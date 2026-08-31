@@ -258,7 +258,7 @@ export function filterOptionsFixture(
   return {
     clients: [
       { key: 'ACME', label: 'ACME', count: 12 },
-      { key: 'YRD', label: 'YRD', count: 5 },
+      { key: 'BETA', label: 'BETA', count: 5 },
     ],
     clientProcesses: [
       { key: 'ACME-12', label: 'ACME-12', count: 1 },

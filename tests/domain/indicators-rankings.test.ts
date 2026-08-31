@@ -100,12 +100,12 @@ describe('groupCount — agrupamento e normalizacao (A-26)', () => {
 
   it('ordena por contagem decrescente', () => {
     const lista = byClient([
-      process({ client: 'YRD' }),
+      process({ client: 'BETA' }),
       process({ client: 'ACME LOG' }),
       process({ client: 'ACME LOG' }),
     ])
 
-    expect(lista.map((g) => g.key)).toEqual(['ACME LOG', 'YRD'])
+    expect(lista.map((g) => g.key)).toEqual(['ACME LOG', 'BETA'])
   })
 
   it('desempata alfabeticamente pela chave (A-25)', () => {

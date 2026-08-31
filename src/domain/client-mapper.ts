@@ -74,7 +74,7 @@ function matches(rule: ClientRule, clientKey: string, importerKey: string): bool
  * **A PRIMEIRA entrada que casa vence**, na ordem do arquivo, e dentro dela a
  * primeira regra. Exigir correspondencia unica recusaria o mapa real: o mesmo
  * cliente aparece por prefixo e por texto contido — `X` como prefixo e `X`
- * dentro de `HYS101 - X` sao duas regras do mesmo destino. A ordem e a
+ * dentro de `NOR-77 - X` sao duas regras do mesmo destino. A ordem e a
  * ferramenta de desempate do operador, e por isso ela e documentada no proprio
  * JSON em vez de ser um detalhe de implementacao.
  *

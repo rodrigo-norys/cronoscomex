@@ -220,7 +220,7 @@ describe('GET /api/history/monthly — validacao', () => {
 
 describe('GET /api/history/monthly — recorte por filtro', () => {
   const processes = [
-    process('A', 'em_andamento', { clientKey: 'RSASSI' }),
+    process('A', 'em_andamento', { clientKey: 'ACME' }),
     process('B', 'em_andamento', { clientKey: 'OUTRO' }),
   ]
 
@@ -234,7 +234,7 @@ describe('GET /api/history/monthly — recorte por filtro', () => {
   it('recorta a serie aos processos que o filtro seleciona', async () => {
     const resposta = await server(state({ processes })).inject({
       method: 'GET',
-      url: '/api/history/monthly?months=1&client=RSASSI',
+      url: '/api/history/monthly?months=1&client=ACME',
     })
 
     expect(resposta.json().series[0].total).toBe(1)

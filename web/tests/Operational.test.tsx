@@ -40,13 +40,13 @@ describe('tabela', () => {
     api.serveProcesses(
       processesFixture([
         processFixture({ ref: 'FT501.26', client: 'ACME LOG' }),
-        processFixture({ ref: 'FT502.26', client: 'YRD' }),
+        processFixture({ ref: 'FT502.26', client: 'BETA' }),
       ]),
     )
     renderPage()
 
     expect(await screen.findByRole('link', { name: 'FT501.26' })).toBeTruthy()
-    expect(screen.getByText('YRD')).toBeTruthy()
+    expect(screen.getByText('BETA')).toBeTruthy()
   })
 
   it('exibe traco para campo vazio e para eta2 nulo', async () => {

@@ -148,7 +148,7 @@ describe('GET /api/filters/options', () => {
     const processes = [
       process({ clientKey: 'ACME', clientRaw: 'Acme' }),
       process({ clientKey: 'ACME', clientRaw: 'ACME' }),
-      process({ clientKey: 'YRD', clientRaw: 'Yrd' }),
+      process({ clientKey: 'BETA', clientRaw: 'Beta' }),
     ]
     const app = buildServer(config, fakeStore(state(processes)))
 
@@ -156,7 +156,7 @@ describe('GET /api/filters/options', () => {
 
     expect(body.clients).toEqual([
       { key: 'ACME', label: 'Acme', count: 2 },
-      { key: 'YRD', label: 'Yrd', count: 1 },
+      { key: 'BETA', label: 'Beta', count: 1 },
     ])
 
     await app.close()
@@ -213,7 +213,7 @@ describe('filtros nas rotas [F]', () => {
   const conjunto = [
     process({ clientKey: 'ACME', statusCategory: 'em_andamento', eta2: new Date('2020-01-01') }),
     process({ clientKey: 'ACME', statusCategory: 'desembaracado' }),
-    process({ clientKey: 'YRD', statusCategory: 'em_andamento' }),
+    process({ clientKey: 'BETA', statusCategory: 'em_andamento' }),
   ]
 
   it('GET /api/indicators recorta o conjunto antes de calcular', async () => {
@@ -249,7 +249,7 @@ describe('filtros nas rotas [F]', () => {
     const app = buildServer(config, fakeStore(state(conjunto)))
 
     const body = (
-      await app.inject({ method: 'GET', url: '/api/indicators?client=ACME&client=YRD' })
+      await app.inject({ method: 'GET', url: '/api/indicators?client=ACME&client=BETA' })
     ).json()
 
     expect(body.counts.total).toBe(3)
@@ -262,7 +262,7 @@ describe('filtros nas rotas [F]', () => {
     const app = buildServer(config, fakeStore(state(conjunto)))
 
     const semFiltro = (await app.inject({ method: 'GET', url: '/api/alerts' })).json()
-    const comFiltro = (await app.inject({ method: 'GET', url: '/api/alerts?client=YRD' })).json()
+    const comFiltro = (await app.inject({ method: 'GET', url: '/api/alerts?client=BETA' })).json()
 
     expect(semFiltro.items.length).toBeGreaterThan(0)
     expect(comFiltro.items).toEqual([])

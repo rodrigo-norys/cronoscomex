@@ -171,7 +171,7 @@ describe('casos-limite', () => {
     serveRankings({
       clients: [
         { key: 'ACME', label: 'Acme', count: 12 },
-        { key: 'YRD', label: 'Yrd', count: 5 },
+        { key: 'BETA', label: 'Beta', count: 5 },
       ],
     })
     renderPage()

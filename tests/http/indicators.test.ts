@@ -247,7 +247,7 @@ describe('GET /api/indicators — quebras de IND-22 (H-19)', () => {
   it('respeita os filtros globais, como todo bloco da rota', async () => {
     const conjunto = [
       process(2, 'em_andamento', { clientKey: 'ACME', clientRaw: 'Acme' }),
-      process(3, 'em_andamento', { clientKey: 'YRD', clientRaw: 'Yrd' }),
+      process(3, 'em_andamento', { clientKey: 'BETA', clientRaw: 'Beta' }),
     ]
     const app = buildServer(config, fakeStore(state({ processes: conjunto })))
 

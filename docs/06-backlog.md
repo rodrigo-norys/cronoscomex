@@ -497,7 +497,7 @@ export function levenshtein(a: string, b: string): number
 ```
 
 **Critérios de aceite:**
-- **Dado** `"  rsassi  "`, **quando** `normKey` roda, **então** devolve
+- **Dado** `"  acme  "`, **quando** `normKey` roda, **então** devolve
   `"ACME LOG"`.
 - **Dado** `"ACME LOG  LTDA"` (dois espaços), **então** devolve `"ACME LOG LTDA"`.
 - **Dado** `"DESEMBARAÇADA"`, **então** devolve `"DESEMBARACADA"`.
@@ -1399,7 +1399,7 @@ export function applyFilters(p: Process[], f: FilterSet): Process[]
 **Critérios de aceite:**
 - **Dado** os filtros `client=ACME LOG` e `category=em_andamento`, **então** o
   resultado satisfaz **ambos** (E entre parâmetros).
-- **Dado** `client=ACME LOG&client=YRD`, **então** o resultado satisfaz
+- **Dado** `client=ACME LOG&client=BETA`, **então** o resultado satisfaz
   **qualquer um** dos dois (OU dentro do parâmetro).
 - **Dado** `responsible=colaborador1`, **então** o resultado inclui também os
   processos `colaborador1_outros_clientes` (A-18).

@@ -97,7 +97,7 @@ const withFilters = (overrides: Partial<FilterSet>): FilterSet => ({
 describe('applyFilters — combinacao entre parametros', () => {
   const acme = process({ clientKey: 'ACME LOG', statusCategory: 'em_andamento' })
   const acmeConcluido = process({ clientKey: 'ACME LOG', statusCategory: 'desembaracado' })
-  const outro = process({ clientKey: 'YRD', statusCategory: 'em_andamento' })
+  const outro = process({ clientKey: 'BETA', statusCategory: 'em_andamento' })
 
   // E entre parametros distintos.
   it('exige que ambos os filtros sejam satisfeitos', () => {
@@ -111,7 +111,7 @@ describe('applyFilters — combinacao entre parametros', () => {
 
   // OU dentro do mesmo parametro.
   it('aceita qualquer um dos valores do mesmo parametro', () => {
-    const resultado = applyFilters([acme, outro], withFilters({ client: ['ACME LOG', 'YRD'] }))
+    const resultado = applyFilters([acme, outro], withFilters({ client: ['ACME LOG', 'BETA'] }))
 
     expect(resultado).toHaveLength(2)
   })
@@ -390,9 +390,9 @@ describe('parseFilters — chave vazia nos dominios abertos', () => {
 describe('optionsOf — dominio derivado dos dados (A-36)', () => {
   it('devolve as chaves distintas, ordenadas', () => {
     const conjunto = [
-      process({ clientKey: 'YRD', clientRaw: 'Yrd' }),
+      process({ clientKey: 'BETA', clientRaw: 'Beta' }),
       process({ clientKey: 'ACME LOG', clientRaw: 'Acme Log' }),
-      process({ clientKey: 'YRD', clientRaw: 'YRD ' }),
+      process({ clientKey: 'BETA', clientRaw: 'BETA ' }),
     ]
 
     expect(
@@ -403,7 +403,7 @@ describe('optionsOf — dominio derivado dos dados (A-36)', () => {
       ),
     ).toEqual([
       { key: 'ACME LOG', label: 'Acme Log', count: 1 },
-      { key: 'YRD', label: 'Yrd', count: 2 },
+      { key: 'BETA', label: 'Beta', count: 2 },
     ])
   })
 
