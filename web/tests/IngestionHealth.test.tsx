@@ -93,3 +93,43 @@ describe('ligacao para o relatorio', () => {
     expect(screen.getByText(/1 linha não interpretada/)).toBeTruthy()
   })
 })
+
+/**
+ * `H-43`. A região do aviso de quarentena existe desde a montagem, e só o texto
+ * dentro dela muda.
+ */
+describe('a região viva do limite de quarentena', () => {
+  it('monta a região vazia, sem caixa na tela, dentro do limite', () => {
+    const { container } = render(
+      <IngestionHealth
+        health={healthFixture({ rowsRead: 649, rowsAccepted: 649, rowsQuarantined: 0 })}
+        quarantine={quarantineFixture({ quarantinedRows: 0, quarantineRate: 0 })}
+      />,
+    )
+
+    const regiao = screen.getByRole('alert')
+    expect(regiao.textContent).toBe('')
+    expect(container.querySelector('.bg-state-error-bg')).toBeNull()
+  })
+
+  // RNF-24: o limite é 2%. Acima dele a mesma região recebe o texto.
+  it('escreve no mesmo nó quando a taxa passa do limite', () => {
+    const { rerender } = render(
+      <IngestionHealth
+        health={healthFixture({ rowsRead: 649, rowsAccepted: 649, rowsQuarantined: 0 })}
+        quarantine={quarantineFixture({ quarantinedRows: 0, quarantineRate: 0 })}
+      />,
+    )
+    const antes = screen.getByRole('alert')
+
+    rerender(
+      <IngestionHealth
+        health={healthFixture({ rowsRead: 649, rowsAccepted: 629, rowsQuarantined: 20 })}
+        quarantine={quarantineFixture({ quarantinedRows: 20, quarantineRate: 0.031 })}
+      />,
+    )
+
+    expect(screen.getByRole('alert')).toBe(antes)
+    expect(antes.textContent).toContain('Acima do limite de 2%')
+  })
+})

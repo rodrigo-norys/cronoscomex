@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App } from '../src/App.tsx'
+import { App, PAGE_LIVE_REGION_ID } from '../src/App.tsx'
 import { NAV_PAGES } from '../src/router.ts'
 import { type ApiStub, healthFixture, stubApi } from './support/api-stub.ts'
 
@@ -245,12 +245,18 @@ describe('faixa de estado', () => {
     expect(await screen.findByText(/Arquivo em uso/)).toBeTruthy()
   })
 
+  /**
+   * `H-43` trocou a forma sem trocar o que se defende: as regiões vivas existem
+   * desde a montagem — sem isso o leitor de tela não anuncia nada —, e o que não
+   * pode aparecer é **texto** de faixa, não o nó.
+   */
   it('nao exibe faixa nenhuma com o estado pronto', async () => {
     render(<App />)
     await screen.findByText('07/08/2026')
 
-    expect(screen.queryByRole('alert')).toBeNull()
-    expect(screen.queryByRole('status')).toBeNull()
+    for (const regiao of [...screen.queryAllByRole('alert'), ...screen.queryAllByRole('status')]) {
+      expect(regiao.textContent).toBe('')
+    }
   })
 
   it('avisa quando o servidor nao responde', async () => {
@@ -366,3 +372,59 @@ describe('botao de atualizacao (A-62)', () => {
 function contar(call: string): number {
   return api.calls.filter((made) => made === call).length
 }
+
+/**
+ * `H-43`. As regiões vivas existem no DOM antes de receberem mensagem.
+ *
+ * A MDN é explícita: *"Do not try to dynamically add/generate an element with
+ * `role='alert'` that is already populated"*. O nó nasce com o texto dentro, o
+ * leitor de tela não tem o que comparar, e a mensagem **não é anunciada** — era
+ * o mesmo padrão repetido em 23 pontos da aplicação (`ACHADO 11`).
+ */
+describe('as regiões vivas da casca', () => {
+  it('escreve no MESMO nó que já estava no DOM quando healthError aparece', async () => {
+    render(<App />)
+    await screen.findByText('07/08/2026')
+
+    // Todas as regiões vivas, vazias, antes de qualquer falha.
+    const antes = screen.getAllByRole('alert')
+    expect(antes.length).toBeGreaterThan(0)
+    for (const regiao of antes) expect(regiao.textContent).toBe('')
+
+    api.failNextHealth('Failed to fetch')
+    fireEvent.click(screen.getByRole('button', { name: 'Atualizar' }))
+    const texto = await screen.findByText(/Sem contato com o servidor/)
+
+    // O nó que recebeu o texto é UM DOS QUE JÁ ESTAVAM no DOM — mesma
+    // referência de objeto. É isso que o leitor de tela compara; um nó novo,
+    // nascido já populado, não produz anúncio nenhum.
+    const regiaoDoTexto = texto.closest('[role="alert"]')
+    expect(antes).toContain(regiaoDoTexto)
+  })
+
+  // O caso-limite do backlog: a região montada permanentemente não pode deixar
+  // caixa vazia na tela. O critério é ausência de caixa, não ausência do nó.
+  it('não deixa borda, fundo nem espaçamento visíveis na região vazia', async () => {
+    render(<App />)
+    await screen.findByText('07/08/2026')
+
+    for (const regiao of screen.getAllByRole('alert')) {
+      if ((regiao.textContent ?? '').trim() !== '') continue
+      const classe = regiao.className
+      expect(classe).not.toMatch(/border-y|bg-state|px-6|py-3/)
+    }
+  })
+
+  /**
+   * A região persistente que as sete páginas de `H-44` vão usar.
+   *
+   * Ela vive na casca porque as páginas fazem `return` antecipado no estado de
+   * erro: declarada dentro delas, desmontaria junto com o resto da árvore.
+   */
+  it('monta a região persistente das páginas, sem conhecer página nenhuma', async () => {
+    const { container } = render(<App />)
+    await screen.findByText('07/08/2026')
+
+    expect(container.querySelector(`#${PAGE_LIVE_REGION_ID}`)).toBeTruthy()
+  })
+})

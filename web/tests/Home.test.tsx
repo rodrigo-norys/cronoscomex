@@ -123,7 +123,9 @@ describe('os treze cartoes', () => {
     await waitFor(() => expect(cardsInOrder()).toHaveLength(13))
     const section = screen.getByRole('region', { name: 'Cartões-resumo' })
     expect(within(section).getAllByText('0')).toHaveLength(12)
-    expect(screen.queryByRole('alert')).toBeNull()
+    // `H-43`: as regiões vivas existem sempre; o que não pode haver é texto de
+    // erro dentro delas.
+    for (const regiao of screen.queryAllByRole('alert')) expect(regiao.textContent).toBe('')
   })
 })
 
@@ -141,9 +143,13 @@ describe('a conferencia de A-12', () => {
     api.serveIndicators(indicatorsFixture({ emAndamento: 100 }))
     renderHome()
 
-    const alerta = await screen.findByRole('alert')
-    expect(alerta.textContent).toMatch(/NÃO conferem/)
-    expect(alerta.textContent).toMatch(/646/)
+    // `H-43` pôs regiões vivas VAZIAS em cena desde a montagem, então esperar
+    // por "existe algum alert" resolve cedo demais: o que se espera é a região
+    // que carrega a mensagem.
+    const denuncia = await screen.findByText(/NÃO conferem/)
+
+    expect(denuncia.closest('[role="alert"]')).toBeTruthy()
+    expect(denuncia.closest('[role="alert"]')?.textContent).toMatch(/646/)
   })
 })
 
@@ -164,8 +170,9 @@ describe('estados que nao sao zero', () => {
     api.failIndicators()
     renderHome()
 
-    const alerta = await screen.findByRole('alert')
-    expect(alerta.textContent).toMatch(/Não foi possível carregar os indicadores/)
+    const aviso = await screen.findByText(/Não foi possível carregar os indicadores/)
+
+    expect(aviso.closest('[role="alert"]')).toBeTruthy()
     expect(screen.queryByRole('region', { name: 'Cartões-resumo' })).toBeNull()
   })
 })

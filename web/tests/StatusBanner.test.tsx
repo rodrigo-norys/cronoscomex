@@ -23,10 +23,36 @@ describe('bannerSignals', () => {
 })
 
 describe('StatusBanner', () => {
-  it('nao renderiza nada antes da primeira resposta de health', () => {
+  /**
+   * `H-43` inverteu a forma, e não o que se defende: as duas regiões vivas
+   * existem desde a montagem — um `role="alert"` que nasce populado não é
+   * anunciado —, e o que não pode aparecer é **caixa** na tela.
+   *
+   * O estilo mora no filho; sem sinal, os dois contêineres são nós vazios.
+   */
+  it('monta as duas regiões vivas vazias antes da primeira resposta de health', () => {
     const { container } = render(<StatusBanner health={null} />)
 
-    expect(container.innerHTML).toBe('')
+    expect(screen.getByRole('alert').textContent).toBe('')
+    expect(screen.getByRole('status').textContent).toBe('')
+    // Nenhuma caixa: os contêineres não têm borda, fundo nem espaçamento.
+    expect(container.querySelector('.border-y')).toBeNull()
+  })
+
+  // A região que recebe o texto é o MESMO nó que já estava no DOM — é o que
+  // permite ao leitor de tela comparar e anunciar.
+  it('escreve na mesma região que já estava montada, sem trocar o nó', () => {
+    const { rerender } = render(<StatusBanner health={null} />)
+    const antes = screen.getByRole('alert')
+
+    rerender(
+      <StatusBanner
+        health={healthFixture({ state: 'degradado', degradedReason: 'Leitura falhou.' })}
+      />,
+    )
+
+    expect(screen.getByRole('alert')).toBe(antes)
+    expect(antes.textContent).toContain('Leitura falhou.')
   })
 
   it('informa o motivo e o horario da ultima leitura boa em estado degradado', () => {
@@ -117,7 +143,11 @@ describe('StatusBanner', () => {
       />,
     )
 
-    expect(screen.getAllByRole('alert')).toHaveLength(2)
-    expect(screen.getAllByRole('status')).toHaveLength(1)
+    // Uma região por papel, com os sinais dentro: o que se defende é que
+    // nenhum encobre o outro, e os três textos continuam na tela.
+    const alertas = screen.getByRole('alert')
+    expect(alertas.textContent).toContain('Leitura falhou.')
+    expect(alertas.textContent).toContain('conflito.xlsx')
+    expect(screen.getByRole('status').textContent).toContain('aberta no Excel')
   })
 })
