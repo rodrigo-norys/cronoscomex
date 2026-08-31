@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MonthlyHistoryResponse } from '../src/api-client.ts'
 import { History } from '../src/pages/History.tsx'
 import { type ApiStub, monthlyHistoryFixture, stubApi } from './support/api-stub.ts'
+import { findLiveRegion, mountLiveRegions, unmountLiveRegions } from './support/live-region.ts'
 
 /**
  * A Página Histórico (RF-14). Nada é agregado aqui: os pontos chegam prontos de
@@ -16,11 +17,13 @@ import { type ApiStub, monthlyHistoryFixture, stubApi } from './support/api-stub
 let api: ApiStub
 
 beforeEach(() => {
+  mountLiveRegions()
   window.history.replaceState(null, '', '/historico')
   api = stubApi()
 })
 
 afterEach(() => {
+  unmountLiveRegions()
   window.history.replaceState(null, '', '/')
   vi.unstubAllGlobals()
 })
@@ -200,7 +203,12 @@ describe('o que a série não cobre (A-43)', () => {
     renderPage()
     await serie()
 
-    expect(screen.getByText(/é maior que o histórico existente/)).toBeTruthy()
+    // `H-44`: o bloco visível fica, e a região viva da casca anuncia. O portal
+    // monta num efeito, então a região vem primeiro na espera.
+    expect((await findLiveRegion('status')).textContent).toMatch(
+      /é maior que o histórico existente/,
+    )
+    expect(screen.getAllByText(/é maior que o histórico existente/)).toHaveLength(2)
   })
 
   it('nao avisa nada quando a janela cabe no historico', async () => {
@@ -276,7 +284,7 @@ describe('os dois estados que não são zero', () => {
     api.historyWithoutRead()
     renderPage()
 
-    const aviso = await screen.findByRole('status')
+    const aviso = await findLiveRegion('status')
     expect(aviso.textContent).toMatch(/Nenhuma leitura da planilha foi concluída ainda/)
     expect(screen.queryByRole('table')).toBe(null)
   })
@@ -285,7 +293,7 @@ describe('os dois estados que não são zero', () => {
     api.failHistory()
     renderPage()
 
-    const erro = await screen.findByRole('alert')
+    const erro = await findLiveRegion('alert')
     expect(erro.textContent).toMatch(/Não foi possível carregar o histórico/)
     expect(screen.queryByRole('table')).toBe(null)
   })
@@ -430,5 +438,61 @@ describe('a série reconstruída', () => {
     renderPage()
 
     expect(await linhas()).toEqual([['ago/2026', '650', '480', '5', '585', '483']])
+  })
+})
+
+/**
+ * `H-44`. O gráfico sai do caminho de tabulação, e o botão de janela ganha um
+ * canal que sobrevive a `forced-colors`.
+ */
+describe('acessibilidade do gráfico e da janela', () => {
+  it('não deixa parada de tabulação órfã dentro da subárvore aria-hidden', async () => {
+    serve()
+    const { container } = renderPage()
+    await serie()
+
+    // `ACHADO 12`: sem `accessibilityLayer={false}`, o Recharts dá `tabIndex=0`
+    // e `role="application"` ao `<svg>` — dentro de `aria-hidden="true"`. O
+    // operador tabularia para um elemento que a árvore de acessibilidade não
+    // expõe, e que por isso não tem nome nenhum a anunciar.
+    const escondido = container.querySelector('[aria-hidden="true"]')
+    expect(escondido).toBeTruthy()
+    expect(escondido?.querySelector('[tabindex="0"]')).toBeNull()
+    expect(escondido?.querySelector('[role="application"]')).toBeNull()
+  })
+
+  // A correção remove a parada, nunca a alternativa textual: a tabela irmã
+  // continua carregando os mesmos números.
+  it('mantém o gráfico aria-hidden e a tabela com os mesmos números', async () => {
+    serve({
+      series: [{ month: '2026-08', total: 649, desembaracados: 480, canalVermelho: 5 }],
+      reconstructed: SEM_RECONSTRUCAO,
+    })
+    renderPage()
+
+    const secao = await serie()
+
+    expect(secao.querySelector('[aria-hidden="true"]')).toBeTruthy()
+    expect(await linhas()).toEqual([['ago/2026', '649', '480', '5', '—', '—']])
+  })
+
+  /**
+   * `ACHADO 13`. Sob `forced-colors: active` o agente de usuário substitui a
+   * **cor** da borda, e não a espessura. Sem o canal não-cromático, o botão
+   * selecionado ficaria indistinguível dos outros dois.
+   */
+  it('distingue o botão de janela selecionado pela espessura da borda', async () => {
+    serve()
+    renderPage()
+    await serie()
+
+    const selecionado = screen.getByRole('button', { name: '12 meses' })
+    const outro = screen.getByRole('button', { name: '60 meses' })
+
+    expect(selecionado.className).toContain('border-2')
+    expect(outro.className).not.toContain('border-2')
+    // O eixo programático já estava resolvido, e continua.
+    expect(selecionado.getAttribute('aria-pressed')).toBe('true')
+    expect(outro.getAttribute('aria-pressed')).toBe('false')
   })
 })

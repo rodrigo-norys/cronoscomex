@@ -8,6 +8,7 @@ import {
   processFixture,
   stubApi,
 } from './support/api-stub.ts'
+import { findLiveRegion, mountLiveRegions, unmountLiveRegions } from './support/live-region.ts'
 
 /**
  * A Pagina Operacional (RF-10). Nada e ordenado, filtrado ou somado aqui — o
@@ -18,11 +19,13 @@ import {
 let api: ApiStub
 
 beforeEach(() => {
+  mountLiveRegions()
   window.history.replaceState(null, '', '/operacional')
   api = stubApi()
 })
 
 afterEach(() => {
+  unmountLiveRegions()
   window.history.replaceState(null, '', '/')
   vi.unstubAllGlobals()
 })
@@ -312,8 +315,12 @@ describe('estados que nao sao lista vazia', () => {
     api.processesWithoutRead()
     renderPage()
 
-    expect(await screen.findByRole('status')).toBeTruthy()
-    expect(screen.getByText(/vazio aqui não significa nenhum processo/)).toBeTruthy()
+    // `H-44`: o bloco visível é `aria-hidden`, e quem anuncia é a região viva
+    // da casca — um nó que já existia, que é o que o leitor de tela compara.
+    expect((await findLiveRegion('status')).textContent).toMatch(
+      /vazio aqui não significa nenhum processo/,
+    )
+    expect(screen.getAllByText(/vazio aqui não significa nenhum processo/)).toHaveLength(2)
     expect(screen.queryByRole('table')).toBeNull()
   })
 
@@ -321,7 +328,7 @@ describe('estados que nao sao lista vazia', () => {
     api.failProcesses()
     renderPage()
 
-    const alerta = await screen.findByRole('alert')
+    const alerta = await findLiveRegion('alert')
     expect(alerta.textContent).toMatch(/Não foi possível carregar os processos/)
     expect(screen.queryByRole('table')).toBeNull()
   })

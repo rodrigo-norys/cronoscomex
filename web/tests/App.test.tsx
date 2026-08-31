@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { App, PAGE_LIVE_REGION_ID } from '../src/App.tsx'
+import { App } from '../src/App.tsx'
+import { PAGE_LIVE_REGION_ID } from '../src/components/PageAlert.tsx'
 import { NAV_PAGES } from '../src/router.ts'
 import { type ApiStub, healthFixture, stubApi } from './support/api-stub.ts'
 

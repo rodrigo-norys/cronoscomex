@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Home } from '../src/pages/Home.tsx'
 import { type ApiStub, healthFixture, indicatorsFixture, stubApi } from './support/api-stub.ts'
+import { findLiveRegion, mountLiveRegions, unmountLiveRegions } from './support/live-region.ts'
 
 /**
  * A Pagina Inicial (RF-09). Treze cartoes desde `H-52`, na ordem fixada pelo
@@ -35,10 +36,12 @@ const ORDEM_ESPERADA = [
 ]
 
 beforeEach(() => {
+  mountLiveRegions()
   api = stubApi()
 })
 
 afterEach(() => {
+  unmountLiveRegions()
   vi.unstubAllGlobals()
 })
 
@@ -146,10 +149,20 @@ describe('a conferencia de A-12', () => {
     // `H-43` pôs regiões vivas VAZIAS em cena desde a montagem, então esperar
     // por "existe algum alert" resolve cedo demais: o que se espera é a região
     // que carrega a mensagem.
-    const denuncia = await screen.findByText(/NÃO conferem/)
+    // `H-44` tirou o `role` do bloco visível — ele existe sempre e só muda de
+    // tom, e ganhar `role` na quebra criaria uma região já populada. Quem
+    // anuncia é a região viva da casca.
+    const regiao = await findLiveRegion('alert')
 
-    expect(denuncia.closest('[role="alert"]')).toBeTruthy()
-    expect(denuncia.closest('[role="alert"]')?.textContent).toMatch(/646/)
+    expect(regiao.textContent).toMatch(/NÃO conferem/)
+    expect(regiao.textContent).toMatch(/646/)
+    // O bloco visível existe e NÃO carrega `role`: ele fica sempre na tela e só
+    // muda de tom, e ganhar `role` na quebra criaria uma região já populada.
+    const visivel = screen
+      .getAllByText(/NÃO conferem/)
+      .find((no) => no.closest(`#${'regiao-viva-da-pagina'}`) === null)
+    expect(visivel).toBeTruthy()
+    expect(visivel?.closest('[role="alert"]')).toBeNull()
   })
 })
 
@@ -158,7 +171,7 @@ describe('estados que nao sao zero', () => {
     api.indicatorsWithoutRead()
     renderHome()
 
-    expect(await screen.findByRole('status')).toBeTruthy()
+    expect((await findLiveRegion('status')).textContent).not.toBe('')
     expect(screen.getByText(/os traços não significam zero/)).toBeTruthy()
 
     const section = screen.getByRole('region', { name: 'Cartões-resumo' })
@@ -170,9 +183,9 @@ describe('estados que nao sao zero', () => {
     api.failIndicators()
     renderHome()
 
-    const aviso = await screen.findByText(/Não foi possível carregar os indicadores/)
-
-    expect(aviso.closest('[role="alert"]')).toBeTruthy()
+    expect((await findLiveRegion('alert')).textContent).toMatch(
+      /Não foi possível carregar os indicadores/,
+    )
     expect(screen.queryByRole('region', { name: 'Cartões-resumo' })).toBeNull()
   })
 })
@@ -399,5 +412,39 @@ describe('o atalho de periodo', () => {
     expect(window.location.search).not.toContain('etaFrom')
     expect(window.location.search).not.toContain('etaTo')
     window.history.replaceState(null, '', '/')
+  })
+})
+
+/**
+ * `H-44`. As páginas anunciam pela região que `H-43` deixou na casca.
+ *
+ * Uma região declarada DENTRO da página não resolveria: ela nasceria junto com
+ * o `return` antecipado, no mesmo commit em que o texto chega — que é o próprio
+ * `ACHADO 11`.
+ */
+describe('a página anuncia pela região da casca', () => {
+  it('o bloco visível do erro não carrega role, e é aria-hidden', async () => {
+    api.failIndicators()
+    renderHome()
+
+    await findLiveRegion('alert')
+    const visivel = screen
+      .getAllByText(/Não foi possível carregar os indicadores/)
+      .find((no) => no.closest('#regiao-viva-da-pagina') === null)
+
+    expect(visivel?.closest('[aria-hidden="true"]')).toBeTruthy()
+    expect(visivel?.closest('[role="alert"]')).toBeNull()
+  })
+
+  // "Ainda não foi lida" é contexto, não urgência: anunciá-lo como `alert`
+  // cortaria o que o leitor de tela estivesse falando.
+  it('usa status, e não alert, para a ausência de leitura', async () => {
+    api.indicatorsWithoutRead()
+    renderHome()
+
+    const regiao = await findLiveRegion('status')
+
+    expect(regiao.textContent).toMatch(/Nenhuma leitura da planilha foi concluída ainda/)
+    expect(document.getElementById('regiao-viva-da-pagina')?.textContent).toBe('')
   })
 })

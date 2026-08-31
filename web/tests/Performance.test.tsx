@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { IndicatorsResponse } from '../src/api-client.ts'
 import { Performance } from '../src/pages/Performance.tsx'
 import { type ApiStub, indicatorsFixture, stubApi } from './support/api-stub.ts'
+import { findLiveRegion, mountLiveRegions, unmountLiveRegions } from './support/live-region.ts'
 
 /**
  * A Pagina Performance (RF-12). Nada e calculado aqui: media, amostra, exclusoes
@@ -12,11 +13,13 @@ import { type ApiStub, indicatorsFixture, stubApi } from './support/api-stub.ts'
 let api: ApiStub
 
 beforeEach(() => {
+  mountLiveRegions()
   window.history.replaceState(null, '', '/performance')
   api = stubApi()
 })
 
 afterEach(() => {
+  unmountLiveRegions()
   window.history.replaceState(null, '', '/')
   vi.unstubAllGlobals()
 })
@@ -314,16 +317,22 @@ describe('estados que nao sao zero', () => {
     api.indicatorsWithoutRead()
     renderPage()
 
-    expect(await screen.findByRole('status')).toBeTruthy()
-    expect(screen.getByText(/traço aqui não significa zero dia/)).toBeTruthy()
+    expect((await findLiveRegion('status')).textContent).toMatch(
+      /traço aqui não significa zero dia/,
+    )
+    expect(screen.getAllByText(/traço aqui não significa zero dia/)).toHaveLength(2)
   })
 
   it('reporta falha sem apagar a pagina', async () => {
     api.failIndicators()
     renderPage()
 
-    expect(await screen.findByRole('alert')).toBeTruthy()
-    expect(screen.getByText(/Não foi possível carregar a performance/)).toBeTruthy()
+    // A região viva primeiro: o portal monta num efeito, e esperar por "existe
+    // algum alert" resolveria na região vazia, antes de a mensagem chegar.
+    expect((await findLiveRegion('alert')).textContent).toMatch(
+      /Não foi possível carregar a performance/,
+    )
+    expect(screen.getAllByText(/Não foi possível carregar a performance/)).toHaveLength(2)
   })
 })
 

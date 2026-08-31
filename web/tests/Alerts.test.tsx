@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AlertsResponse } from '../src/api-client.ts'
 import { Alerts } from '../src/pages/Alerts.tsx'
 import { type ApiStub, alertsFixture, stubApi } from './support/api-stub.ts'
+import { findLiveRegion, mountLiveRegions, unmountLiveRegions } from './support/live-region.ts'
 
 /**
  * A Página Alertas (RF-13) é fila de trabalho, não panorama (A-59).
@@ -15,11 +16,13 @@ import { type ApiStub, alertsFixture, stubApi } from './support/api-stub.ts'
 let api: ApiStub
 
 beforeEach(() => {
+  mountLiveRegions()
   window.history.replaceState(null, '', '/alertas')
   api = stubApi()
 })
 
 afterEach(() => {
+  unmountLiveRegions()
   window.history.replaceState(null, '', '/')
   vi.unstubAllGlobals()
 })
@@ -308,8 +311,8 @@ describe('casos-limite', () => {
     api.alertsWithoutRead()
     renderPage()
 
-    expect(await screen.findByRole('status')).toBeTruthy()
-    expect(screen.getByText(/vazio aqui não significa ausência de pendências/)).toBeTruthy()
+    expect((await findLiveRegion('status')).textContent).not.toBe('')
+    expect(screen.getAllByText(/vazio aqui não significa ausência de pendências/)).toHaveLength(2)
     expect(screen.queryByRole('region', { name: 'Fila de alertas' })).toBeNull()
   })
 
@@ -317,8 +320,14 @@ describe('casos-limite', () => {
     api.failAlerts()
     renderPage()
 
-    expect(await screen.findByRole('alert')).toBeTruthy()
-    expect(screen.getByText(/Não foi possível carregar os alertas/)).toBeTruthy()
+    // `H-44`: o portal monta num efeito, então esperar a região viva primeiro é
+    // o que torna a contagem determinística. O texto aparece duas vezes de
+    // propósito — o bloco visível é `aria-hidden`, e a região carrega o
+    // conteúdo acessível.
+    expect((await findLiveRegion('alert')).textContent).toMatch(
+      /Não foi possível carregar os alertas/,
+    )
+    expect(screen.getAllByText(/Não foi possível carregar os alertas/)).toHaveLength(2)
   })
 })
 
