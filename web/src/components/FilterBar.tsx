@@ -1,5 +1,5 @@
 import type { FilterOptionsResponse } from '../api-client.ts'
-import type { Filters, MultiFilterKey } from '../hooks/useFilters.ts'
+import { type Filters, MULTI_FILTER_LABELS, type MultiFilterKey } from '../hooks/useFilters.ts'
 import { MultiSelect } from './MultiSelect.tsx'
 
 /**
@@ -16,7 +16,6 @@ import { MultiSelect } from './MultiSelect.tsx'
 
 interface MultiControl {
   readonly key: MultiFilterKey
-  readonly label: string
   readonly source: keyof FilterOptionsResponse
 }
 
@@ -28,16 +27,16 @@ interface MultiControl {
  * especifico pelo valor da celula CLT.
  */
 const MULTI_CONTROLS: readonly MultiControl[] = [
-  { key: 'category', label: 'Categoria', source: 'categories' },
-  { key: 'client', label: 'Cliente', source: 'clients' },
-  { key: 'clientProcess', label: 'Processo do cliente', source: 'clientProcesses' },
-  { key: 'importer', label: 'Importador', source: 'importers' },
-  { key: 'responsible', label: 'Responsável', source: 'responsible' },
-  { key: 'channel', label: 'Canal', source: 'channels' },
-  { key: 'vessel', label: 'Navio', source: 'vessels' },
-  { key: 'agent', label: 'Agente', source: 'agents' },
-  { key: 'port', label: 'Porto', source: 'ports' },
-  { key: 'goods', label: 'Mercadoria', source: 'goods' },
+  { key: 'category', source: 'categories' },
+  { key: 'client', source: 'clients' },
+  { key: 'clientProcess', source: 'clientProcesses' },
+  { key: 'importer', source: 'importers' },
+  { key: 'responsible', source: 'responsible' },
+  { key: 'channel', source: 'channels' },
+  { key: 'vessel', source: 'vessels' },
+  { key: 'agent', source: 'agents' },
+  { key: 'port', source: 'ports' },
+  { key: 'goods', source: 'goods' },
 ]
 
 interface FilterBarProps {
@@ -85,7 +84,7 @@ export function FilterBar({ filters, options, optionsError }: FilterBarProps) {
         {MULTI_CONTROLS.map((control) => (
           <MultiSelect
             key={control.key}
-            label={control.label}
+            label={MULTI_FILTER_LABELS[control.key]}
             options={options?.[control.source] ?? []}
             selected={selection.multi[control.key]}
             onToggle={(value) => filters.toggle(control.key, value)}

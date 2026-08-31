@@ -33,6 +33,29 @@ export const MULTI_FILTERS = [
 
 export type MultiFilterKey = (typeof MULTI_FILTERS)[number]
 
+/**
+ * O nome de cada filtro na tela, numa fonte so (`H-53`).
+ *
+ * Vive aqui, e nao em `FilterBar.tsx`, porque a Pagina Performance passou a
+ * declarar **quais** filtros estao recortando os numeros dela — e dois mapas de
+ * rotulo divergem no primeiro filtro renomeado. `clientGroup` nao tem caixa
+ * propria na barra, mas tem nome, e sem ele o recorte por grupo apareceria sem
+ * dizer o que e.
+ */
+export const MULTI_FILTER_LABELS: Readonly<Record<MultiFilterKey, string>> = {
+  category: 'Categoria',
+  client: 'Cliente',
+  clientProcess: 'Processo do cliente',
+  clientGroup: 'Grupo de clientes',
+  importer: 'Importador',
+  responsible: 'Responsável',
+  channel: 'Canal',
+  vessel: 'Navio',
+  agent: 'Agente',
+  port: 'Porto',
+  goods: 'Mercadoria',
+}
+
 export type OutsideRjSelection = '' | 'true' | 'false'
 
 export interface FilterSelection {
