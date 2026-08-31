@@ -34,6 +34,7 @@ function filtersStub(overrides: Partial<Filters> = {}): Filters {
     queryString: '',
     toggle: vi.fn(),
     setRange: vi.fn(),
+    setPeriod: vi.fn(),
     setImporterOutsideRj: vi.fn(),
     clearAll: vi.fn(),
     ...overrides,
@@ -328,5 +329,39 @@ describe('grupo de clientes dentro do filtro Cliente', () => {
 
     expect(screen.getAllByRole('checkbox', { name: /Beta Ltda/ })).toHaveLength(1)
     expect(screen.getByRole('checkbox', { name: /Zeta/ })).toBeTruthy()
+  })
+})
+
+/**
+ * `H-43`. A região de erro das opções existe desde a montagem.
+ *
+ * Um `role="alert"` que nasce já populado não é anunciado: o leitor de tela não
+ * tem estado anterior com que comparar.
+ */
+describe('a região viva das opções de filtro', () => {
+  it('monta a região vazia, sem caixa na tela, quando não há erro', () => {
+    const { container } = renderBar()
+
+    const regiao = screen.getByRole('alert')
+    expect(regiao.textContent).toBe('')
+    // O caso-limite: nenhuma caixa vazia. O estilo só entra com a mensagem.
+    expect(regiao.className).toBe('sr-only')
+    expect(container.querySelector('.bg-state-error-bg')).toBeNull()
+  })
+
+  it('escreve no mesmo nó quando o erro aparece', () => {
+    const { rerender } = renderBar()
+    const antes = screen.getByRole('alert')
+
+    rerender(
+      <FilterBar
+        filters={filtersStub()}
+        options={filterOptionsFixture()}
+        optionsError="rede indisponível"
+      />,
+    )
+
+    expect(screen.getByRole('alert')).toBe(antes)
+    expect(antes.textContent).toContain('rede indisponível')
   })
 })

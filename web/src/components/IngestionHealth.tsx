@@ -51,16 +51,24 @@ export function IngestionHealth({ health, quarantine }: IngestionHealthProps) {
         />
       </dl>
 
-      {overLimit && (
-        <p
-          role="alert"
-          className="mt-3 rounded border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg"
-        >
-          <strong className="font-semibold">Acima do limite de 2%.</strong> A carga precisa ser
-          revista antes de os números serem usados: linhas não interpretadas não entram em indicador
-          nenhum.
-        </p>
-      )}
+      {/* A regiao existe desde a montagem (`H-43`), e so o texto dentro dela
+          muda: um `role="alert"` que nasce populado nao e anunciado. */}
+      <p
+        role="alert"
+        className={
+          overLimit
+            ? 'mt-3 rounded border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg'
+            : 'sr-only'
+        }
+      >
+        {overLimit && (
+          <>
+            <strong className="font-semibold">Acima do limite de 2%.</strong> A carga precisa ser
+            revista antes de os números serem usados: linhas não interpretadas não entram em
+            indicador nenhum.
+          </>
+        )}
+      </p>
 
       {/*
         O segundo dos tres caminhos ate a tela de configuracao (`H-38`). Fica

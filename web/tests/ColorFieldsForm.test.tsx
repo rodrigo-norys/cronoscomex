@@ -84,7 +84,9 @@ describe('o menu de cores', () => {
     api.failColorOptions()
     renderForm()
 
-    expect(await screen.findByRole('alert')).toBeTruthy()
+    // `H-43`: as duas regiões vivas existem desde a montagem, então o que se
+    // espera é o texto — não a existência do nó.
+    expect(await screen.findByText(/Não foi possível carregar as cores/)).toBeTruthy()
     expect(screen.queryByRole('combobox')).toBeNull()
   })
 })
@@ -124,10 +126,12 @@ describe('enfileirar a troca', () => {
     })
     fireEvent.click(screen.getByRole('button', { name: 'Enfileirar' }))
 
-    expect(await screen.findByRole('alert')).toHaveProperty(
-      'textContent',
+    // A mensagem cai na região de recusa, que existe desde a montagem (`H-43`).
+    const recusa = await screen.findByText(
       'Essa combinacao nao tem cor correspondente na planilha.',
     )
+
+    expect(recusa.getAttribute('role')).toBe('alert')
     expect(enfileirou).toBe(0)
   })
 })
@@ -177,5 +181,38 @@ describe('o que a tela afirma', () => {
     renderForm(null)
 
     expect(within(await bloco()).getByText('cor não reconhecida')).toBeTruthy()
+  })
+})
+
+/**
+ * `H-43`. Os dois `role="alert"` deste formulário existem desde a montagem — o
+ * da carga das cores e o da recusa do enfileiramento.
+ */
+describe('as duas regiões vivas', () => {
+  it('monta as duas vazias, sem caixa na tela', async () => {
+    const { container } = renderForm()
+    await screen.findAllByRole('option')
+
+    const regioes = screen.getAllByRole('alert')
+
+    expect(regioes).toHaveLength(2)
+    for (const regiao of regioes) expect(regiao.textContent).toBe('')
+    expect(container.querySelector('.bg-state-error-bg')).toBeNull()
+  })
+
+  it('a recusa cai numa região que já estava no DOM', async () => {
+    api.failEnqueueColor('Combinação sem cor correspondente.')
+    renderForm()
+    await screen.findAllByRole('option')
+    const antes = screen.getAllByRole('alert')
+
+    fireEvent.change(screen.getByRole('combobox'), {
+      target: { value: 'colaborador1|indefinido|false' },
+    })
+    fireEvent.click(screen.getByRole('button', { name: 'Enfileirar' }))
+
+    const texto = await screen.findByText('Combinação sem cor correspondente.')
+
+    expect(antes).toContain(texto.closest('[role="alert"]'))
   })
 })

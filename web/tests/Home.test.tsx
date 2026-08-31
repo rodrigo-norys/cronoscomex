@@ -1,12 +1,13 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Home } from '../src/pages/Home.tsx'
 import { type ApiStub, healthFixture, indicatorsFixture, stubApi } from './support/api-stub.ts'
+import { findLiveRegion, mountLiveRegions, unmountLiveRegions } from './support/live-region.ts'
 
 /**
- * A Pagina Inicial (RF-09). Doze cartoes, na ordem fixada pelo backlog, e
- * nenhum numero calculado aqui — todos vem de `GET /api/indicators`, ja
- * recortado no servidor.
+ * A Pagina Inicial (RF-09). Treze cartoes desde `H-52`, na ordem fixada pelo
+ * backlog, e nenhum numero calculado aqui — todos vem de `GET /api/indicators`,
+ * ja recortado no servidor.
  *
  * Os valores das fixtures sao os medidos na planilha real em 07/08/2026.
  */
@@ -16,7 +17,7 @@ let api: ApiStub
 /**
  * A ordem e criterio de aceite. Tres cartoes existem por achado, nao pela
  * especificacao original: "Em desembaraco" (A-12), os dois de urgencia (A-40) e
- * "Desembaracados hoje" (A-64).
+ * "Desembaracados hoje" (A-64). O decimo-terceiro veio de `H-52`, do uso.
  */
 const ORDEM_ESPERADA = [
   'Total',
@@ -24,6 +25,7 @@ const ORDEM_ESPERADA = [
   'Em andamento',
   'Em desembaraço',
   'Fechado — aguardando draft',
+  'Desembaraçados no período (por registro)',
   'Canal Vermelho',
   'Chegando hoje',
   'Chegando esta semana',
@@ -34,10 +36,12 @@ const ORDEM_ESPERADA = [
 ]
 
 beforeEach(() => {
+  mountLiveRegions()
   api = stubApi()
 })
 
 afterEach(() => {
+  unmountLiveRegions()
   vi.unstubAllGlobals()
 })
 
@@ -52,11 +56,11 @@ function cardsInOrder(): string[] {
     .map((heading) => heading.textContent ?? '')
 }
 
-describe('os doze cartoes', () => {
-  it('exibe os doze, na ordem fixada', async () => {
+describe('os treze cartoes', () => {
+  it('exibe os treze, na ordem fixada', async () => {
     renderHome()
 
-    await waitFor(() => expect(cardsInOrder()).toHaveLength(12))
+    await waitFor(() => expect(cardsInOrder()).toHaveLength(13))
     expect(cardsInOrder()).toEqual(ORDEM_ESPERADA)
   })
 
@@ -64,7 +68,7 @@ describe('os doze cartoes', () => {
    * painel de saude, e sao numeros diferentes que coincidem. */
   it('mostra os valores que a rota devolveu, cada um no seu cartao', async () => {
     renderHome()
-    await waitFor(() => expect(cardsInOrder()).toHaveLength(12))
+    await waitFor(() => expect(cardsInOrder()).toHaveLength(13))
     const section = screen.getByRole('region', { name: 'Cartões-resumo' })
 
     const porRotulo = new Map(
@@ -86,14 +90,14 @@ describe('os doze cartoes', () => {
 
   it('separa visualmente as urgencias dos cartoes de volume (A-40)', async () => {
     renderHome()
-    await waitFor(() => expect(cardsInOrder()).toHaveLength(12))
+    await waitFor(() => expect(cardsInOrder()).toHaveLength(13))
 
     const section = screen.getByRole('region', { name: 'Cartões-resumo' })
     const urgentes = section.querySelectorAll('[data-variant="urgencia"]')
     const volumes = section.querySelectorAll('[data-variant="volume"]')
 
     expect(urgentes).toHaveLength(2)
-    expect(volumes).toHaveLength(10)
+    expect(volumes).toHaveLength(11)
     expect(Array.from(urgentes).map((card) => card.querySelector('h3')?.textContent)).toEqual([
       'Atrasados',
       'Documentos pendentes',
@@ -119,10 +123,12 @@ describe('os doze cartoes', () => {
     )
     renderHome()
 
-    await waitFor(() => expect(cardsInOrder()).toHaveLength(12))
+    await waitFor(() => expect(cardsInOrder()).toHaveLength(13))
     const section = screen.getByRole('region', { name: 'Cartões-resumo' })
     expect(within(section).getAllByText('0')).toHaveLength(12)
-    expect(screen.queryByRole('alert')).toBeNull()
+    // `H-43`: as regiões vivas existem sempre; o que não pode haver é texto de
+    // erro dentro delas.
+    for (const regiao of screen.queryAllByRole('alert')) expect(regiao.textContent).toBe('')
   })
 })
 
@@ -140,9 +146,23 @@ describe('a conferencia de A-12', () => {
     api.serveIndicators(indicatorsFixture({ emAndamento: 100 }))
     renderHome()
 
-    const alerta = await screen.findByRole('alert')
-    expect(alerta.textContent).toMatch(/NÃO conferem/)
-    expect(alerta.textContent).toMatch(/646/)
+    // `H-43` pôs regiões vivas VAZIAS em cena desde a montagem, então esperar
+    // por "existe algum alert" resolve cedo demais: o que se espera é a região
+    // que carrega a mensagem.
+    // `H-44` tirou o `role` do bloco visível — ele existe sempre e só muda de
+    // tom, e ganhar `role` na quebra criaria uma região já populada. Quem
+    // anuncia é a região viva da casca.
+    const regiao = await findLiveRegion('alert')
+
+    expect(regiao.textContent).toMatch(/NÃO conferem/)
+    expect(regiao.textContent).toMatch(/646/)
+    // O bloco visível existe e NÃO carrega `role`: ele fica sempre na tela e só
+    // muda de tom, e ganhar `role` na quebra criaria uma região já populada.
+    const visivel = screen
+      .getAllByText(/NÃO conferem/)
+      .find((no) => no.closest(`#${'regiao-viva-da-pagina'}`) === null)
+    expect(visivel).toBeTruthy()
+    expect(visivel?.closest('[role="alert"]')).toBeNull()
   })
 })
 
@@ -151,11 +171,11 @@ describe('estados que nao sao zero', () => {
     api.indicatorsWithoutRead()
     renderHome()
 
-    expect(await screen.findByRole('status')).toBeTruthy()
+    expect((await findLiveRegion('status')).textContent).not.toBe('')
     expect(screen.getByText(/os traços não significam zero/)).toBeTruthy()
 
     const section = screen.getByRole('region', { name: 'Cartões-resumo' })
-    expect(within(section).getAllByText('—')).toHaveLength(12)
+    expect(within(section).getAllByText('—')).toHaveLength(13)
     expect(within(section).queryByText('0')).toBeNull()
   })
 
@@ -163,8 +183,9 @@ describe('estados que nao sao zero', () => {
     api.failIndicators()
     renderHome()
 
-    const alerta = await screen.findByRole('alert')
-    expect(alerta.textContent).toMatch(/Não foi possível carregar os indicadores/)
+    expect((await findLiveRegion('alert')).textContent).toMatch(
+      /Não foi possível carregar os indicadores/,
+    )
     expect(screen.queryByRole('region', { name: 'Cartões-resumo' })).toBeNull()
   })
 })
@@ -244,7 +265,214 @@ describe('a distribuicao por canal', () => {
   it('nao remove o cartao Canal Vermelho', async () => {
     renderHome()
 
-    await waitFor(() => expect(cardsInOrder()).toHaveLength(12))
+    await waitFor(() => expect(cardsInOrder()).toHaveLength(13))
     expect(cardsInOrder()).toContain('Canal Vermelho')
+  })
+})
+
+/**
+ * `H-52`. A janela em cada cartao e o atalho que a edita.
+ *
+ * Nada e calculado aqui: a faixa e a janela vem de `GET /api/indicators`, e a
+ * pagina so formata. O que se verifica e que ela diz **qual** data cada cartao
+ * conta, e que o atalho escreve nos mesmos parametros da barra de filtros.
+ */
+describe('a janela declarada nos cartoes', () => {
+  function cardByLabel(label: string): HTMLElement {
+    const section = screen.getByRole('region', { name: 'Cartões-resumo' })
+    const card = Array.from(section.querySelectorAll('article')).find(
+      (article) => article.querySelector('h3')?.textContent === label,
+    )
+    if (!card) throw new Error(`cartão ausente: ${label}`)
+    return card as HTMLElement
+  }
+
+  // Sem filtro de periodo, cada cartao declara a faixa REAL dos dados para a
+  // data que ele usa — medido em 31/08/2026 e servido pela rota.
+  it('sem filtro, o cartao de ETA2 declara a faixa real dos dados', async () => {
+    renderHome()
+    await waitFor(() => expect(cardsInOrder()).toHaveLength(13))
+
+    const texto = cardByLabel('Total').querySelector('[data-period]')?.textContent ?? ''
+
+    expect(texto).toContain('ETA2')
+    expect(texto).toContain('30/12/2025')
+    expect(texto).toContain('09/09/2026')
+  })
+
+  // Duas datas, duas perguntas: o cartao novo conta por RG e diz isso.
+  it('o cartao por registro declara a faixa de RG, e nao a de ETA2', async () => {
+    renderHome()
+    await waitFor(() => expect(cardsInOrder()).toHaveLength(13))
+
+    const texto =
+      cardByLabel('Desembaraçados no período (por registro)').querySelector('[data-period]')
+        ?.textContent ?? ''
+
+    expect(texto).toContain('registro')
+    expect(texto).toContain('05/01/2026')
+    expect(texto).toContain('31/07/2026')
+  })
+
+  it('com janela ativa, o cartao declara o recorte em vez da faixa dos dados', async () => {
+    api.serveIndicators(
+      indicatorsFixture({}, {}, { period: { from: '2026-02-01', to: '2026-02-28' } }),
+    )
+    renderHome('?etaFrom=2026-02-01&etaTo=2026-02-28')
+    await waitFor(() => expect(cardsInOrder()).toHaveLength(13))
+
+    const texto = cardByLabel('Total').querySelector('[data-period]')?.textContent ?? ''
+
+    expect(texto).toContain('01/02/2026')
+    expect(texto).toContain('28/02/2026')
+    expect(texto).not.toContain('todo o período')
+  })
+
+  // Regra inviolavel 3: base sem data nao recebe faixa inventada.
+  it('diz "sem data" quando o conjunto nao tem a data, em vez de inventar faixa', async () => {
+    api.serveIndicators(
+      indicatorsFixture(
+        {},
+        {},
+        {
+          dataRange: {
+            eta2: { from: null, to: null, missing: 12 },
+            registration: { from: null, to: null, missing: 12 },
+          },
+        },
+      ),
+    )
+    renderHome()
+    await waitFor(() => expect(cardsInOrder()).toHaveLength(13))
+
+    const texto = cardByLabel('Total').querySelector('[data-period]')?.textContent ?? ''
+
+    expect(texto).toContain('sem data')
+  })
+
+  // O caso-limite que motivou a historia: zero por recorte precisa vir COM a
+  // janela ao lado, senao e indistinguivel de zero por ausencia de dado.
+  it('recorte sem nenhum processo exibe zero com a janela ao lado', async () => {
+    api.serveIndicators(
+      indicatorsFixture(
+        { total: 0, desembaracadosNoPeriodo: 0 },
+        {},
+        {
+          period: { from: '2026-02-01', to: '2026-02-28' },
+          dataRange: {
+            eta2: { from: null, to: null, missing: 0 },
+            registration: { from: null, to: null, missing: 0 },
+          },
+        },
+      ),
+    )
+    renderHome('?etaFrom=2026-02-01&etaTo=2026-02-28')
+    await waitFor(() => expect(cardsInOrder()).toHaveLength(13))
+
+    const cartao = cardByLabel('Total')
+
+    expect(cartao.querySelector('p')?.textContent).toBe('0')
+    expect(cartao.querySelector('[data-period]')?.textContent).toContain('01/02/2026')
+  })
+
+  // Os cartoes que nao contam data — os tres de chegada e o de hoje — nao
+  // recebem frase: eles tem janela propria, e declarar a do filtro mentiria.
+  it('nao declara janela nos cartoes que nao contam data de periodo', async () => {
+    renderHome()
+    await waitFor(() => expect(cardsInOrder()).toHaveLength(13))
+
+    expect(cardByLabel('Chegando hoje').querySelector('[data-period]')).toBeNull()
+    expect(cardByLabel('Desembaraçados hoje').querySelector('[data-period]')).toBeNull()
+  })
+})
+
+describe('o atalho de periodo', () => {
+  it('escreve nos mesmos parametros da barra de filtros', async () => {
+    window.history.replaceState(null, '', '/')
+    renderHome()
+    await waitFor(() => expect(cardsInOrder()).toHaveLength(13))
+
+    const painel = screen.getByRole('region', { name: 'Período' })
+    const de = within(painel).getByLabelText(/de$/)
+    fireEvent.change(de, { target: { value: '2026-02-01' } })
+
+    expect(window.location.search).toContain('etaFrom=2026-02-01')
+    window.history.replaceState(null, '', '/')
+  })
+
+  // Um estado so: o botao de limpar apaga os dois parametros, e nao guarda
+  // periodo proprio que divergiria da barra.
+  it('o botao de todo o período apaga os dois extremos', async () => {
+    window.history.replaceState(null, '', '/?etaFrom=2026-02-01&etaTo=2026-02-28')
+    renderHome('?etaFrom=2026-02-01&etaTo=2026-02-28')
+    await waitFor(() => expect(cardsInOrder()).toHaveLength(13))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Todo o período' }))
+
+    expect(window.location.search).not.toContain('etaFrom')
+    expect(window.location.search).not.toContain('etaTo')
+    window.history.replaceState(null, '', '/')
+  })
+})
+
+/**
+ * `H-44`. As páginas anunciam pela região que `H-43` deixou na casca.
+ *
+ * Uma região declarada DENTRO da página não resolveria: ela nasceria junto com
+ * o `return` antecipado, no mesmo commit em que o texto chega — que é o próprio
+ * `ACHADO 11`.
+ */
+describe('a página anuncia pela região da casca', () => {
+  it('o bloco visível do erro não carrega role, e é aria-hidden', async () => {
+    api.failIndicators()
+    renderHome()
+
+    await findLiveRegion('alert')
+    const visivel = screen
+      .getAllByText(/Não foi possível carregar os indicadores/)
+      .find((no) => no.closest('#regiao-viva-da-pagina') === null)
+
+    expect(visivel?.closest('[aria-hidden="true"]')).toBeTruthy()
+    expect(visivel?.closest('[role="alert"]')).toBeNull()
+  })
+
+  // "Ainda não foi lida" é contexto, não urgência: anunciá-lo como `alert`
+  // cortaria o que o leitor de tela estivesse falando.
+  it('usa status, e não alert, para a ausência de leitura', async () => {
+    api.indicatorsWithoutRead()
+    renderHome()
+
+    const regiao = await findLiveRegion('status')
+
+    expect(regiao.textContent).toMatch(/Nenhuma leitura da planilha foi concluída ainda/)
+    expect(document.getElementById('regiao-viva-da-pagina')?.textContent).toBe('')
+  })
+})
+
+/**
+ * `H-45`, `ACHADO 18` e `SC 1.4.1`. A distinção entre volume e urgência deixa de
+ * ser transmitida **apenas** por cor.
+ */
+describe('a urgência dos cartões não é só cor', () => {
+  it('os dois cartões de urgência trazem a distinção em texto', async () => {
+    renderHome()
+    await waitFor(() => expect(cardsInOrder()).toHaveLength(13))
+
+    const section = screen.getByRole('region', { name: 'Cartões-resumo' })
+    const urgentes = Array.from(section.querySelectorAll('[data-variant="urgencia"]'))
+
+    expect(urgentes).toHaveLength(2)
+    for (const cartao of urgentes) expect(cartao.textContent).toContain('Pede ação')
+  })
+
+  it('os cartões de volume não trazem o texto de urgência', async () => {
+    renderHome()
+    await waitFor(() => expect(cardsInOrder()).toHaveLength(13))
+
+    const section = screen.getByRole('region', { name: 'Cartões-resumo' })
+
+    for (const cartao of section.querySelectorAll('[data-variant="volume"]')) {
+      expect(cartao.textContent).not.toContain('Pede ação')
+    }
   })
 })

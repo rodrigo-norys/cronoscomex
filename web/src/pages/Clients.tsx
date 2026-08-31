@@ -1,3 +1,4 @@
+import { PageAlert } from '../components/PageAlert.tsx'
 import { RankingBar } from '../components/RankingBar.tsx'
 import { type MultiFilterKey, useFilters } from '../hooks/useFilters.ts'
 import { useIndicators } from '../hooks/useIndicators.ts'
@@ -69,19 +70,26 @@ export function Clients({ queryString, dataVersion }: ClientsProps) {
 
   if (state.status === 'erro') {
     return (
-      <p role="alert" className="panel-error">
+      <PageAlert
+        className="panel-error"
+        announcement={`Não foi possível carregar os rankings. ${state.message}`}
+      >
         <strong className="font-semibold">Não foi possível carregar os rankings.</strong>{' '}
         {state.message}
-      </p>
+      </PageAlert>
     )
   }
 
   if (state.status === 'semLeitura') {
     return (
-      <p role="status" className="panel-no-read">
+      <PageAlert
+        tone="status"
+        className="panel-no-read"
+        announcement="Nenhuma leitura da planilha foi concluída ainda. Os rankings aparecem assim que a primeira terminar — lista vazia aqui não significa nenhum processo."
+      >
         Nenhuma leitura da planilha foi concluída ainda. Os rankings aparecem assim que a primeira
         terminar — lista vazia aqui não significa nenhum processo.
-      </p>
+      </PageAlert>
     )
   }
 
@@ -98,7 +106,7 @@ export function Clients({ queryString, dataVersion }: ClientsProps) {
         por ele e abrir a Página Operacional.
       </p>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {RANKINGS.map((ranking) => (
           <RankingBar
             key={ranking.source}

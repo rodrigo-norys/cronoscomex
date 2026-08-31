@@ -28,6 +28,23 @@ const botao = (): HTMLElement => screen.getByRole('button', { name: /Aplicar/ })
  * O que o leitor de tela anuncia ao abrir o dialogo: o elemento apontado por
  * `aria-labelledby`. Consultar por `heading` nao serve — a casca tem outros.
  */
+/**
+ * A região viva que **tem texto**.
+ *
+ * `H-43` pôs as regiões no DOM desde a montagem, para que o leitor de tela tenha
+ * o que comparar. Esperar por "existe algum `role=status`" passou a resolver no
+ * primeiro render, antes de a confirmação chegar — o que se espera é o texto.
+ */
+async function esperarStatus(): Promise<HTMLElement> {
+  return waitFor(() => {
+    const comTexto = screen
+      .getAllByRole('status')
+      .find((no) => (no.textContent ?? '').trim() !== '')
+    if (!comTexto) throw new Error('nenhuma região de status com texto ainda')
+    return comTexto
+  })
+}
+
 function nomeAcessivelDo(dialogo: HTMLElement): string {
   const id = dialogo.getAttribute('aria-labelledby')
   return (id === null ? null : document.getElementById(id))?.textContent ?? ''
@@ -60,9 +77,7 @@ describe('o comando de aplicacao', () => {
 
     fireEvent.click(botao())
 
-    expect((await screen.findByRole('status')).textContent).toContain(
-      '3 células gravadas na planilha',
-    )
+    expect((await esperarStatus()).textContent).toContain('3 células gravadas na planilha')
     expect(api.calls).toContain('POST /api/edits/apply')
   })
 
@@ -78,7 +93,7 @@ describe('o comando de aplicacao', () => {
 
     fireEvent.click(botao())
 
-    expect((await screen.findByRole('status')).textContent).toContain(
+    expect((await esperarStatus()).textContent).toContain(
       '1 célula gravada · 1 linha repintada na planilha',
     )
   })
@@ -95,7 +110,7 @@ describe('o comando de aplicacao', () => {
 
     fireEvent.click(botao())
 
-    const aviso = (await screen.findByRole('status')).textContent
+    const aviso = (await esperarStatus()).textContent
     expect(aviso).toContain('nada precisou ser gravado')
     expect(aviso).not.toContain('gravadas na planilha')
   })
@@ -125,7 +140,7 @@ describe('o comando de aplicacao', () => {
 
     fireEvent.click(botao())
 
-    expect((await screen.findByRole('status')).textContent).toContain('não foi arquivada')
+    expect((await esperarStatus()).textContent).toContain('não foi arquivada')
   })
 })
 

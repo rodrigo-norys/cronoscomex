@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { IndicatorsResponse } from '../src/api-client.ts'
 import { Clients } from '../src/pages/Clients.tsx'
 import { type ApiStub, indicatorsFixture, stubApi } from './support/api-stub.ts'
+import { findLiveRegion, mountLiveRegions, unmountLiveRegions } from './support/live-region.ts'
 
 /**
  * A Pagina Clientes (RF-11). Os tres rankings chegam prontos do servidor —
@@ -13,11 +14,13 @@ import { type ApiStub, indicatorsFixture, stubApi } from './support/api-stub.ts'
 let api: ApiStub
 
 beforeEach(() => {
+  mountLiveRegions()
   window.history.replaceState(null, '', '/clientes')
   api = stubApi()
 })
 
 afterEach(() => {
+  unmountLiveRegions()
   window.history.replaceState(null, '', '/')
   vi.unstubAllGlobals()
 })
@@ -225,8 +228,8 @@ describe('estados que nao sao zero', () => {
     api.indicatorsWithoutRead()
     renderPage()
 
-    expect(await screen.findByRole('status')).toBeTruthy()
-    expect(screen.getByText(/não significa nenhum processo/)).toBeTruthy()
+    expect((await findLiveRegion('status')).textContent).not.toBe('')
+    expect(screen.getAllByText(/não significa nenhum processo/)).toHaveLength(2)
     expect(screen.queryByRole('region', { name: 'Clientes' })).toBeNull()
   })
 
@@ -234,8 +237,13 @@ describe('estados que nao sao zero', () => {
     api.failIndicators()
     renderPage()
 
-    expect(await screen.findByRole('alert')).toBeTruthy()
-    expect(screen.getByText(/Não foi possível carregar os rankings/)).toBeTruthy()
+    // O texto aparece duas vezes de propósito: o bloco visível é `aria-hidden`,
+    // e a região viva carrega o conteúdo acessível. Uma leitura só para quem
+    // ouve, e o mesmo texto para quem vê.
+    expect((await findLiveRegion('alert')).textContent).toMatch(
+      /Não foi possível carregar os rankings/,
+    )
+    expect(screen.getAllByText(/Não foi possível carregar os rankings/)).toHaveLength(2)
   })
 })
 

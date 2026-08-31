@@ -30,23 +30,60 @@ export function filteredProcesses(
 }
 
 /**
+ * O recorte E a janela que o produziu, para a rota que precisa dizer ao
+ * operador **qual** periodo esta contando (`H-52`).
+ *
+ * Existe ao lado de `filteredProcesses`, e nao no lugar dele: alargar aquele
+ * alcancaria as seis rotas **[F]**, e cinco delas nao tem uso para a janela.
+ * Reparsear a query dentro da rota devolveria o mesmo objeto por outro caminho,
+ * duplicando o tratamento de `400 FILTRO_INVALIDO` que este modulo existe para
+ * concentrar.
+ */
+export function filteredWithPeriod(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  processes: readonly Process[],
+): { processes: readonly Process[]; from: Date | null; to: Date | null } | null {
+  try {
+    const filters = parseFilters(request.query as Record<string, unknown>)
+    return {
+      processes: applyFilters(processes, filters),
+      from: filters.etaFrom,
+      to: filters.etaTo,
+    }
+  } catch (error) {
+    if (error instanceof FilterParseError) {
+      reply.code(400).send(apiError('FILTRO_INVALIDO', error.message))
+      return null
+    }
+    throw error
+  }
+}
+
+/**
  * Os REF que os filtros da query selecionam, para as rotas **[F]** que recortam
  * algo que nao e a lista de processos — hoje so a serie mensal de `H-28`.
  *
  * Tres respostas distintas, e a diferenca entre elas e o contrato:
  * `null` ja respondeu `400`; `{ refs: null }` significa **nenhum filtro ativo**,
  * e quem chama nao deve recortar nada; um conjunto significa recorte.
+ *
+ * `selected` acompanha os REF desde `H-54`: a serie reconstruida sai das DATAS
+ * dos processos, e nao dos eventos gravados, entao ela precisa das linhas e nao
+ * das chaves. Sem filtro ativo vem o conjunto inteiro, que e o que a
+ * reconstrucao deve cobrir.
  */
 export function filteredRefs(
   request: FastifyRequest,
   reply: FastifyReply,
   processes: readonly Process[],
-): { refs: ReadonlySet<string> | null } | null {
+): { refs: ReadonlySet<string> | null; selected: readonly Process[] } | null {
   try {
     const filters = parseFilters(request.query as Record<string, unknown>)
-    if (!hasAnyFilter(filters)) return { refs: null }
+    if (!hasAnyFilter(filters)) return { refs: null, selected: processes }
 
-    return { refs: new Set(applyFilters(processes, filters).map((process) => process.ref)) }
+    const selected = applyFilters(processes, filters)
+    return { refs: new Set(selected.map((process) => process.ref)), selected }
   } catch (error) {
     if (error instanceof FilterParseError) {
       reply.code(400).send(apiError('FILTRO_INVALIDO', error.message))

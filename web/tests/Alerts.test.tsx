@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AlertsResponse } from '../src/api-client.ts'
 import { Alerts } from '../src/pages/Alerts.tsx'
 import { type ApiStub, alertsFixture, stubApi } from './support/api-stub.ts'
+import { findLiveRegion, mountLiveRegions, unmountLiveRegions } from './support/live-region.ts'
 
 /**
  * A Página Alertas (RF-13) é fila de trabalho, não panorama (A-59).
@@ -15,11 +16,13 @@ import { type ApiStub, alertsFixture, stubApi } from './support/api-stub.ts'
 let api: ApiStub
 
 beforeEach(() => {
+  mountLiveRegions()
   window.history.replaceState(null, '', '/alertas')
   api = stubApi()
 })
 
 afterEach(() => {
+  unmountLiveRegions()
   window.history.replaceState(null, '', '/')
   vi.unstubAllGlobals()
 })
@@ -104,7 +107,9 @@ describe('agrupamento por processo (A-60)', () => {
 
     expect(linhas).toHaveLength(3)
     expect(
-      linhas.map((linha) => within(linha).getByRole('button').textContent?.slice(0, 3)),
+      // `H-45` trocou o `<button>` por `<a href>`: abrir o detalhe é a MESMA
+      // ação que a tabela oferece, e tinha dois papéis (`SC 3.2.4`).
+      linhas.map((linha) => within(linha).getByRole('link').textContent?.slice(0, 3)),
     ).toEqual(['A-1', 'B-2', 'C-3'])
   })
 
@@ -274,7 +279,11 @@ describe('navegacao', () => {
     serve({ items: [alert({ ref: 'FT501.26' })] })
     renderPage()
 
-    fireEvent.click(await within(await fila()).findByRole('button', { name: /FT501.26/ }))
+    // O nome acessível é o `aria-label` explícito, e não o bloco concatenado:
+    // sem ele seriam dois nomes para a mesma ação (`ACHADO 16`).
+    fireEvent.click(
+      await within(await fila()).findByRole('link', { name: 'Abrir o detalhe de FT501.26' }),
+    )
 
     expect(window.location.pathname).toBe('/processo/FT501.26')
   })
@@ -283,7 +292,9 @@ describe('navegacao', () => {
     serve({ items: [alert({ ref: 'FT 501/26' })] })
     renderPage()
 
-    fireEvent.click(await within(await fila()).findByRole('button', { name: /FT 501\/26/ }))
+    fireEvent.click(
+      await within(await fila()).findByRole('link', { name: 'Abrir o detalhe de FT 501/26' }),
+    )
 
     expect(window.location.pathname).toBe('/processo/FT%20501%2F26')
   })
@@ -308,8 +319,8 @@ describe('casos-limite', () => {
     api.alertsWithoutRead()
     renderPage()
 
-    expect(await screen.findByRole('status')).toBeTruthy()
-    expect(screen.getByText(/vazio aqui não significa ausência de pendências/)).toBeTruthy()
+    expect((await findLiveRegion('status')).textContent).not.toBe('')
+    expect(screen.getAllByText(/vazio aqui não significa ausência de pendências/)).toHaveLength(2)
     expect(screen.queryByRole('region', { name: 'Fila de alertas' })).toBeNull()
   })
 
@@ -317,8 +328,14 @@ describe('casos-limite', () => {
     api.failAlerts()
     renderPage()
 
-    expect(await screen.findByRole('alert')).toBeTruthy()
-    expect(screen.getByText(/Não foi possível carregar os alertas/)).toBeTruthy()
+    // `H-44`: o portal monta num efeito, então esperar a região viva primeiro é
+    // o que torna a contagem determinística. O texto aparece duas vezes de
+    // propósito — o bloco visível é `aria-hidden`, e a região carrega o
+    // conteúdo acessível.
+    expect((await findLiveRegion('alert')).textContent).toMatch(
+      /Não foi possível carregar os alertas/,
+    )
+    expect(screen.getAllByText(/Não foi possível carregar os alertas/)).toHaveLength(2)
   })
 })
 
@@ -329,5 +346,95 @@ describe('filtros globais', () => {
 
     await fila()
     expect(api.calls).toContain('GET /api/alerts?category=em_andamento')
+  })
+})
+
+/**
+ * `H-45`. A mesma ação com o mesmo papel e o mesmo nome nas sete telas.
+ *
+ * `SC 3.2.4 Consistent Identification` incide porque o roteamento tem URIs
+ * distintas (determinação `Z1` do passo zero): as sete telas são um *set of web
+ * pages*, e a consistência deixa de ser preferência.
+ */
+describe('papel e nome da ação de abrir o detalhe', () => {
+  it('abrir o detalhe é um link, como na tabela — e não um botão', async () => {
+    serve({ items: [alert({ ref: 'FT501.26' })] })
+    renderPage()
+
+    const acao = await within(await fila()).findByRole('link', {
+      name: 'Abrir o detalhe de FT501.26',
+    })
+
+    expect(acao.getAttribute('href')).toBe('/processo/FT501.26')
+    expect(within(await fila()).queryByRole('button')).toBeNull()
+  })
+
+  /**
+   * Sem o `aria-label`, o nome acessível seria o bloco inteiro concatenado —
+   * REF, linha, ETA2, os rótulos de tipo e a mensagem —, contra `"NBSC260"` na
+   * tabela. Dois nomes para a mesma ação é o que `SC 3.2.4` proíbe.
+   */
+  it('tem nome acessível curto e explícito, e não o bloco concatenado', async () => {
+    serve({
+      items: [alert({ ref: 'FT501.26', message: 'ETA2 vencida ha 18 dias', sourceRow: 502 })],
+    })
+    renderPage()
+
+    const acao = await within(await fila()).findByRole('link')
+
+    expect(acao.getAttribute('aria-label')).toBe('Abrir o detalhe de FT501.26')
+    // O conteúdo visível segue completo — o que muda é o nome, não o texto.
+    expect(acao.textContent).toContain('ETA2 vencida ha 18 dias')
+    expect(acao.textContent).toContain('502')
+  })
+
+  // O mesmo interceptador da tabela: modificador pressionado abre em aba nova,
+  // como qualquer link.
+  it('deixa o navegador cuidar do clique com modificador', async () => {
+    serve({ items: [alert({ ref: 'FT501.26' })] })
+    renderPage()
+
+    const acao = await within(await fila()).findByRole('link')
+    fireEvent.click(acao, { metaKey: true })
+
+    expect(window.location.pathname).toBe('/alertas')
+  })
+})
+
+/**
+ * `H-45`, `ACHADO 18` e `SC 1.4.1`. Nenhuma urgência é transmitida apenas por
+ * cor.
+ */
+describe('a urgência não é só cor', () => {
+  it('o badge urgente traz prefixo textual', async () => {
+    serve({ items: [alert({ type: 'eta_vencida', severity: 1, daysOverdue: null })] })
+    renderPage()
+
+    const badge = within(await fila()).getByText(/ETA vencida/)
+
+    expect(badge.textContent).toContain('Pede ação')
+  })
+
+  // Severidade 4–6 é aviso, e não pede ação: o prefixo não aparece.
+  it('o badge não urgente não traz o prefixo', async () => {
+    serve({
+      items: [alert({ type: 'chegadas_7_dias', severity: 6, daysOverdue: null })],
+    })
+    renderPage()
+
+    const badge = within(await fila()).getByText(/Chegada em 7 dias/)
+
+    expect(badge.textContent).not.toContain('Pede ação')
+  })
+
+  // `data-severity` não é exposto ao usuário, e por isso não conta como canal.
+  it('data-severity continua presente, e não substitui o texto', async () => {
+    serve({ items: [alert({ type: 'eta_vencida', severity: 1, daysOverdue: null })] })
+    renderPage()
+
+    const badge = within(await fila()).getByText(/ETA vencida/)
+
+    expect(badge.getAttribute('data-severity')).toBe('1')
+    expect(badge.textContent).toContain('Pede ação')
   })
 })

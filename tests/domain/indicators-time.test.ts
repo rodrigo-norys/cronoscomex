@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
+  clearedInPeriodCount,
   clearedTodayCount,
+  dataRanges,
   documentaryLeadTime,
   leadTimeByGroup,
 } from '../../src/domain/indicators.ts'
@@ -14,6 +16,7 @@ const HOJE = civil('2026-08-03')
 
 interface Fields {
   registration?: string | null
+  eta2?: string | null
   docsSent?: string | null
   statusCategory?: StatusCategory
   statusRaw?: string
@@ -25,6 +28,7 @@ let nextRow = 2
 
 function process({
   registration = null,
+  eta2 = null,
   docsSent = null,
   statusCategory = 'em_andamento',
   statusRaw = '',
@@ -47,7 +51,7 @@ function process({
     boletoRaw: '',
     paymentRaw: '',
     columnPRaw: '',
-    eta2: null,
+    eta2: eta2 === null ? null : civil(eta2),
     registrationDate: registration === null ? null : civil(registration),
     docsSentDate: docsSent === null ? null : civil(docsSent),
     clientKey,
@@ -478,5 +482,148 @@ describe('leadTimeByGroup — a quebra de IND-22 (H-19)', () => {
     expect(soma('sampleSize')).toBe(agregado.sampleSize)
     expect(soma('excludedNegative')).toBe(agregado.excludedNegative)
     expect(soma('excludedIncomplete')).toBe(agregado.excludedIncomplete)
+  })
+})
+
+/**
+ * `H-52`. A mesma regra de IND-16 — categoria E data de registro (A-29) —, com
+ * a janela no lugar do dia.
+ *
+ * Existe porque `desembaracados` responde "quantos dos que chegaram na janela ja
+ * concluiram" e e lido como "quantos concluimos na janela".
+ */
+describe('clearedInPeriodCount — H-52', () => {
+  const DE = civil('2026-02-01')
+  const ATE = civil('2026-02-28')
+
+  it('conta o desembaracado cujo RG cai dentro da janela', () => {
+    const dentro = process({ registration: '2026-02-15', statusCategory: 'desembaracado' })
+
+    expect(clearedInPeriodCount([dentro], DE, ATE)).toBe(1)
+  })
+
+  // Os dois extremos entram: a janela e fechada nos dois lados, como a de
+  // `matchesPeriod` sobre `ETA2`.
+  it('inclui os dois extremos da janela', () => {
+    const conjunto = [
+      process({ registration: '2026-02-01', statusCategory: 'desembaracado' }),
+      process({ registration: '2026-02-28', statusCategory: 'desembaracado' }),
+    ]
+
+    expect(clearedInPeriodCount(conjunto, DE, ATE)).toBe(2)
+  })
+
+  it('nao conta RG fora da janela', () => {
+    const conjunto = [
+      process({ registration: '2026-01-31', statusCategory: 'desembaracado' }),
+      process({ registration: '2026-03-01', statusCategory: 'desembaracado' }),
+    ]
+
+    expect(clearedInPeriodCount(conjunto, DE, ATE)).toBe(0)
+  })
+
+  /**
+   * O caso da linha amarela de A-05, herdado de IND-16: RG preenchido em
+   * processo que nao concluiu. Sem o cruzamento com a categoria (A-29), o
+   * indicador contaria como concluido um processo que nao concluiu.
+   */
+  it('nao conta RG dentro da janela em processo que nao concluiu', () => {
+    const naoConcluido = process({ registration: '2026-02-15', statusCategory: 'em_andamento' })
+
+    expect(clearedInPeriodCount([naoConcluido], DE, ATE)).toBe(0)
+  })
+
+  // A-20: data ausente nao esta dentro nem fora. Nunca conta, nem com janela
+  // aberta dos dois lados — nao ha data para dizer que caiu na janela.
+  it('nao conta desembaracado sem data de registro, nem sem janela', () => {
+    const semRg = process({ registration: null, statusCategory: 'desembaracado' })
+
+    expect(clearedInPeriodCount([semRg], DE, ATE)).toBe(0)
+    expect(clearedInPeriodCount([semRg], null, null)).toBe(0)
+  })
+
+  it('sem janela conta todo desembaracado com RG', () => {
+    const conjunto = [
+      process({ registration: '2025-01-01', statusCategory: 'desembaracado' }),
+      process({ registration: '2026-12-31', statusCategory: 'desembaracado' }),
+      process({ registration: null, statusCategory: 'desembaracado' }),
+    ]
+
+    expect(clearedInPeriodCount(conjunto, null, null)).toBe(2)
+  })
+
+  // Um extremo so recorta por aquele lado, como o filtro de periodo ja faz.
+  it('aceita janela com um extremo so', () => {
+    const conjunto = [
+      process({ registration: '2026-01-15', statusCategory: 'desembaracado' }),
+      process({ registration: '2026-03-15', statusCategory: 'desembaracado' }),
+    ]
+
+    expect(clearedInPeriodCount(conjunto, DE, null)).toBe(1)
+    expect(clearedInPeriodCount(conjunto, null, ATE)).toBe(1)
+  })
+
+  // O caso-limite do backlog: janela que nao cobre nenhum RG devolve zero
+  // MEDIDO. A tela o exibe como zero com a janela ao lado, nunca traco.
+  it('devolve zero quando a janela nao cobre nenhum RG', () => {
+    const conjunto = [process({ registration: '2026-07-31', statusCategory: 'desembaracado' })]
+
+    expect(clearedInPeriodCount(conjunto, DE, ATE)).toBe(0)
+  })
+
+  it('devolve zero para conjunto vazio', () => {
+    expect(clearedInPeriodCount([], DE, ATE)).toBe(0)
+  })
+})
+
+/**
+ * `H-52`. A faixa real de cada data, para o cartao distinguir zero por recorte
+ * de zero por ausencia de dado.
+ */
+describe('dataRanges — H-52', () => {
+  it('devolve o menor e o maior de cada campo, e conta os ausentes', () => {
+    const conjunto = [
+      process({ eta2: '2026-03-10', registration: '2026-04-01' }),
+      process({ eta2: '2026-01-05', registration: '2026-06-20' }),
+      process({ eta2: '2026-05-30', registration: null }),
+    ]
+
+    const faixa = dataRanges(conjunto)
+
+    expect(faixa.eta2).toEqual({ from: '2026-01-05', to: '2026-05-30', missing: 0 })
+    expect(faixa.registration).toEqual({ from: '2026-04-01', to: '2026-06-20', missing: 1 })
+  })
+
+  // Regra inviolavel 2: quem sai de qualquer janela por nao ter data precisa ser
+  // contavel. Sao 64 sem `ETA2` na planilha real (`docs/uso/RESULTADO.md` §5).
+  it('conta os processos sem a data, em vez de ignora-los', () => {
+    const conjunto = [
+      process({ eta2: null }),
+      process({ eta2: null }),
+      process({ eta2: '2026-02-02' }),
+    ]
+
+    expect(dataRanges(conjunto).eta2.missing).toBe(2)
+  })
+
+  // Regra inviolavel 3: base sem nenhuma data produz faixa nula, e a tela diz
+  // "sem data" — nunca uma faixa inventada.
+  it('devolve faixa nula quando nenhum processo tem a data', () => {
+    const faixa = dataRanges([process({ eta2: null, registration: null })])
+
+    expect(faixa.eta2).toEqual({ from: null, to: null, missing: 1 })
+    expect(faixa.registration).toEqual({ from: null, to: null, missing: 1 })
+  })
+
+  it('devolve faixa nula e zero ausentes para conjunto vazio', () => {
+    expect(dataRanges([]).eta2).toEqual({ from: null, to: null, missing: 0 })
+  })
+
+  // Uma data so e faixa legitima, com os dois extremos iguais.
+  it('um processo so produz faixa de um dia', () => {
+    const faixa = dataRanges([process({ eta2: '2026-08-03' })])
+
+    expect(faixa.eta2.from).toBe('2026-08-03')
+    expect(faixa.eta2.to).toBe('2026-08-03')
   })
 })

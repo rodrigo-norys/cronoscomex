@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { IndicatorsResponse } from '../src/api-client.ts'
 import { Performance } from '../src/pages/Performance.tsx'
 import { type ApiStub, indicatorsFixture, stubApi } from './support/api-stub.ts'
+import { findLiveRegion, mountLiveRegions, unmountLiveRegions } from './support/live-region.ts'
 
 /**
  * A Pagina Performance (RF-12). Nada e calculado aqui: media, amostra, exclusoes
@@ -12,11 +13,13 @@ import { type ApiStub, indicatorsFixture, stubApi } from './support/api-stub.ts'
 let api: ApiStub
 
 beforeEach(() => {
+  mountLiveRegions()
   window.history.replaceState(null, '', '/performance')
   api = stubApi()
 })
 
 afterEach(() => {
+  unmountLiveRegions()
   window.history.replaceState(null, '', '/')
   vi.unstubAllGlobals()
 })
@@ -314,16 +317,22 @@ describe('estados que nao sao zero', () => {
     api.indicatorsWithoutRead()
     renderPage()
 
-    expect(await screen.findByRole('status')).toBeTruthy()
-    expect(screen.getByText(/traço aqui não significa zero dia/)).toBeTruthy()
+    expect((await findLiveRegion('status')).textContent).toMatch(
+      /traço aqui não significa zero dia/,
+    )
+    expect(screen.getAllByText(/traço aqui não significa zero dia/)).toHaveLength(2)
   })
 
   it('reporta falha sem apagar a pagina', async () => {
     api.failIndicators()
     renderPage()
 
-    expect(await screen.findByRole('alert')).toBeTruthy()
-    expect(screen.getByText(/Não foi possível carregar a performance/)).toBeTruthy()
+    // A região viva primeiro: o portal monta num efeito, e esperar por "existe
+    // algum alert" resolveria na região vazia, antes de a mensagem chegar.
+    expect((await findLiveRegion('alert')).textContent).toMatch(
+      /Não foi possível carregar a performance/,
+    )
+    expect(screen.getAllByText(/Não foi possível carregar a performance/)).toHaveLength(2)
   })
 })
 
@@ -334,5 +343,127 @@ describe('filtros globais', () => {
 
     await section('Tempo documental por cliente')
     expect(api.calls).toContain('GET /api/indicators?category=em_andamento')
+  })
+})
+
+/**
+ * `H-53`. A página passa a dizer o que mede e sobre o que mede.
+ *
+ * Nenhum dos dois era defeito de cálculo: a métrica está correta desde IND-22, e
+ * o filtro funciona desde `H-15`. O que faltava era a tela dizer.
+ */
+describe('o que a página declara sobre si', () => {
+  it('escreve a fórmula junto do agregado, e não em nota de rodapé', async () => {
+    renderPage()
+
+    const agregado = await screen.findByRole('region', { name: 'Tempo médio de envio documental' })
+
+    // A ordem das duas datas é a de A-02: a invertida daria valor negativo.
+    expect(within(agregado).getByText(/RG − DOCS ENVIADOS/)).toBeTruthy()
+    expect(within(agregado).getByText(/dias inteiros/)).toBeTruthy()
+  })
+
+  it('explica o que cada uma das duas exclusões de A-30 significa', async () => {
+    renderPage()
+
+    const agregado = await screen.findByRole('region', { name: 'Tempo médio de envio documental' })
+    const texto = agregado.textContent ?? ''
+
+    expect(texto).toContain('sem uma das duas datas')
+    expect(texto).toContain('com intervalo negativo')
+    // O que cada uma significa, e não só o número.
+    expect(texto).toMatch(/registro está datado antes do envio/)
+    expect(texto).toMatch(/descartar em silêncio/)
+  })
+
+  // A funcionalidade existia e era invisível: o operador perguntou se dava para
+  // filtrar por cliente e importador, e dava desde `H-15`.
+  it('sem filtro, diz que os números cobrem a base inteira e oferece o caminho', async () => {
+    window.history.replaceState(null, '', '/')
+    renderPage()
+
+    const recorte = await screen.findByRole('region', { name: 'Recorte ativo' })
+    const texto = recorte.textContent ?? ''
+
+    expect(texto).toContain('Sem filtro ativo')
+    expect(texto).toContain('base inteira')
+    expect(texto).toMatch(/barra de filtros/)
+  })
+
+  it('com filtro ativo, nomeia quais estão recortando os números', async () => {
+    window.history.replaceState(null, '', '/?client=ACME&agent=B%26M')
+    renderPage('?client=ACME&agent=B%26M')
+
+    const recorte = await screen.findByRole('region', { name: 'Recorte ativo' })
+    const texto = recorte.textContent ?? ''
+
+    expect(texto).toContain('2 filtros ativos')
+    expect(texto).toContain('Cliente: ACME')
+    expect(texto).toContain('Agente: B&M')
+    window.history.replaceState(null, '', '/')
+  })
+
+  it('resume o filtro com muitos valores pela contagem, em vez de listar todos', async () => {
+    window.history.replaceState(null, '', '/?client=ACME&client=BETA&client=GAMA')
+    renderPage('?client=ACME&client=BETA&client=GAMA')
+
+    const recorte = await screen.findByRole('region', { name: 'Recorte ativo' })
+
+    expect(recorte.textContent).toContain('Cliente: 3 valores')
+    window.history.replaceState(null, '', '/')
+  })
+
+  // O período ocupa dois parâmetros e conta como UM filtro — a mesma regra de
+  // `activeCount` em `useFilters`.
+  it('declara o período como um filtro só, com os dois extremos', async () => {
+    window.history.replaceState(null, '', '/?etaFrom=2026-02-01&etaTo=2026-02-28')
+    renderPage('?etaFrom=2026-02-01&etaTo=2026-02-28')
+
+    const recorte = await screen.findByRole('region', { name: 'Recorte ativo' })
+    const texto = recorte.textContent ?? ''
+
+    expect(texto).toContain('1 filtro ativo')
+    expect(texto).toContain('01/02/2026 a 28/02/2026')
+    window.history.replaceState(null, '', '/')
+  })
+
+  // A-42: o denominador não sai do lado da média, e explicar a métrica não
+  // afrouxa isso. Amostra de 1 continua exibida com a amostra ao lado.
+  it('amostra de tamanho 1 continua com o denominador ao lado', async () => {
+    const comUmSo = indicatorsFixture()
+    comUmSo.documentaryLeadTime = {
+      averageDays: 9,
+      sampleSize: 1,
+      excludedNegative: 0,
+      excludedIncomplete: 648,
+    }
+    api.serveIndicators(comUmSo)
+    renderPage()
+
+    const agregado = await screen.findByRole('region', { name: 'Tempo médio de envio documental' })
+
+    expect(within(agregado).getByText('9 d')).toBeTruthy()
+    expect(within(agregado).getByText(/1 processo medido/)).toBeTruthy()
+  })
+
+  // O caso-limite do backlog: traço, nunca zero dia, E a página diz por quê —
+  // senão o traço parece falha de carregamento.
+  it('amostra zerada exibe traço e diz que o recorte não tem par completo', async () => {
+    const zerado = indicatorsFixture()
+    zerado.documentaryLeadTime = {
+      averageDays: null,
+      sampleSize: 0,
+      excludedNegative: 0,
+      excludedIncomplete: 12,
+    }
+    api.serveIndicators(zerado)
+    renderPage()
+
+    const agregado = await screen.findByRole('region', { name: 'Tempo médio de envio documental' })
+    const texto = agregado.textContent ?? ''
+
+    expect(within(agregado).getByText('—')).toBeTruthy()
+    expect(texto).toContain('nenhum processo do recorte')
+    expect(texto).toContain('não que o tempo seja zero')
   })
 })

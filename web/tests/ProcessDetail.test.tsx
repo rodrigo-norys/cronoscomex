@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ProcessDetail } from '../src/pages/ProcessDetail.tsx'
 import { type ApiStub, processDetailFixture, processFixture, stubApi } from './support/api-stub.ts'
+import { findLiveRegion, mountLiveRegions, unmountLiveRegions } from './support/live-region.ts'
 
 /**
  * O detalhe do processo (RF-15). É a **única** tela onde `statusRaw` aparece
@@ -11,11 +12,13 @@ import { type ApiStub, processDetailFixture, processFixture, stubApi } from './s
 let api: ApiStub
 
 beforeEach(() => {
+  mountLiveRegions()
   window.history.replaceState(null, '', '/processo/FT501.26')
   api = stubApi()
 })
 
 afterEach(() => {
+  unmountLiveRegions()
   window.history.replaceState(null, '', '/')
   vi.unstubAllGlobals()
 })
@@ -216,8 +219,8 @@ describe('estados que nao sao zero', () => {
     api.processDetailWithoutRead()
     renderPage()
 
-    expect(await screen.findByRole('status')).toBeTruthy()
-    expect(screen.getByText(/não significa que a REF não existe/)).toBeTruthy()
+    expect((await findLiveRegion('status')).textContent).not.toBe('')
+    expect(screen.getAllByText(/não significa que a REF não existe/)).toHaveLength(2)
     expect(screen.queryByRole('region', { name: 'Processo não encontrado' })).toBeNull()
   })
 
@@ -225,8 +228,10 @@ describe('estados que nao sao zero', () => {
     api.failProcessDetail()
     renderPage()
 
-    expect(await screen.findByRole('alert')).toBeTruthy()
-    expect(screen.getByText(/Não foi possível carregar o processo/)).toBeTruthy()
+    expect((await findLiveRegion('alert')).textContent).toMatch(
+      /Não foi possível carregar o processo/,
+    )
+    expect(screen.getAllByText(/Não foi possível carregar o processo/)).toHaveLength(2)
   })
 })
 

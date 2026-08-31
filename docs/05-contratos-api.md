@@ -247,7 +247,8 @@ está fora de escopo por lacuna de dado (§4 da especificação).
     "chegando15Dias": 0,           // IND-09
     "documentosPendentes": 0,      // IND-14
     "atrasados": 0,                // IND-15
-    "desembaracadosHoje": 0        // IND-16
+    "desembaracadosHoje": 0,       // IND-16
+    "desembaracadosNoPeriodo": 0   // H-52 — por RG, adicional a desembaracados
   },
   "channelDistribution": {         // H-51 — acompanha IND-06, não o redefine
     "verde": 0,
@@ -288,7 +289,12 @@ está fora de escopo por lacuna de dado (§4 da especificação).
     "today": "2026-08-03",
     "timezone": "America/Sao_Paulo",
     "weekEnd": "2026-08-09",
-    "bazarShare": null
+    "bazarShare": null,
+    "period": { "from": null, "to": null },          // H-52 — a janela aplicada
+    "dataRange": {                                   // H-52 — a faixa real
+      "eta2":         { "from": "2025-12-30", "to": "2026-09-09", "missing": 64 },
+      "registration": { "from": "2026-01-05", "to": "2026-07-31", "missing": 166 }
+    }
   }
 }
 ```
@@ -304,6 +310,23 @@ cliente (`H-56`).
 de conjunto vazio não é zero, e apresentá-la como zero seria mentir sobre o
 dado (A-42). `bazarShare` acompanha IND-13 para tornar visível a distorção
 declarada em A-34.
+
+`counts.desembaracadosNoPeriodo` (`H-52`) é **adicional** a `desembaracados`,
+nunca substituto: aquele conta a categoria sobre o recorte de `ETA2`, este conta
+a data de **registro** dentro da janela — duas datas, duas perguntas. A soma das
+quatro categorias continua fechando com o total, e a linha de conferência de A-12
+segue válida. Como todo indicador desta rota, ele responde sobre o conjunto
+**filtrado** (RF-18): a janela incide sobre o recorte ativo, não sobre a base.
+
+`meta.period` ecoa a janela que o servidor de fato aplicou, e `meta.dataRange`
+traz a faixa real das duas datas **no conjunto filtrado**, com quantos processos
+não têm cada uma. Os dois existem para o cartão distinguir zero por recorte de
+zero por ausência de dado: derivar a faixa no cliente seria cálculo na tela, e
+`missing` está lá porque data ausente não está dentro nem fora de janela nenhuma
+(A-20) — some de qualquer recorte por período, e sumir sem contagem seria
+descarte silencioso. `from` e `to` são `null` quando nenhum processo do conjunto
+tem a data; a tela diz "sem data", nunca uma faixa inventada. Medido em
+31/08/2026 sobre a planilha real: 64 dos 649 sem `ETA2`, 166 sem `RG`.
 
 `channelDistribution` (`H-51`) é bloco próprio, e não um campo em `counts`:
 `counts.canalVermelho` é IND-06 e continua com o mesmo valor. `known` é
@@ -406,6 +429,13 @@ desde `H-28`; a tela que a consome é `H-21`.
   "series": [
     { "month": "2026-08", "total": 0, "desembaracados": 0, "canalVermelho": 0 }
   ],
+  "reconstructed": {                          // H-54 — derivada das datas da planilha
+    "points": [
+      { "month": "2025-12", "chegados": 0, "desembaracados": 0, "forecast": false }
+    ],
+    "missingEta2": 64,
+    "missingRegistration": 166
+  },
   "historyStartedAt": "2026-08-03T14:22:31.004Z",
   "truncated": true
 }
@@ -414,6 +444,31 @@ desde `H-28`; a tela que a consome é `H-21`.
 Cada ponto é o **estado ao fim do mês**, não a contagem de eventos dele: um mês
 sem evento algum repete os valores do anterior, porque ausência de mudança não é
 ausência de processos.
+
+`reconstructed` (`H-54`) é **bloco separado, e nunca somado a `series`**. As duas
+têm origem diferente: `series` sai dos eventos que a aplicação observou desde a
+primeira execução (ADR-0005), e `reconstructed` sai das datas que a planilha
+carrega. Emendá-las numa série só afirmaria continuidade que não existe — que é o
+que A-43 proíbe; o que ele proíbe é apresentar reconstrução como histórico
+observado, não derivá-la.
+
+As duas medidas de `reconstructed` são **estoque ao fim do mês**, a mesma
+grandeza de `series`: `chegados` acumula os processos com `ETA2` até o fim do mês,
+e `desembaracados` os com data de registro. **Não há `canalVermelho`** ali — a cor
+é o estado de hoje e não carrega data, e projetá-la para trás afirmaria que a
+linha já era vermelha naquele mês (regra inviolável 3).
+
+`points` cobre **todo** mês entre a primeira e a última data presente, inclusive
+os vazios: mês sem processo repete o acumulado, e não abre buraco. `forecast` é
+`true` no mês posterior ao corrente — a data já está na planilha, o mês ainda não
+aconteceu; medido em 31/08/2026, 18 processos têm `ETA2` em set/2026.
+`missingEta2` e `missingRegistration` contam quem não entra em cada medida: data
+ausente não pertence a mês nenhum (A-20), e sumir sem contagem seria descarte
+silencioso. Medido: 64 dos 649 sem `ETA2` e 166 sem `RG`.
+
+**`months` não recorta `reconstructed`.** A janela é da série observada; a
+reconstruída cobre o intervalo das datas, porque cortá-la pela janela esconderia
+justamente o passado que ela existe para mostrar.
 
 `truncated: true` indica que a janela pedida excede o histórico existente — a
 série começa quando a aplicação começou, não antes. Sem histórico algum,

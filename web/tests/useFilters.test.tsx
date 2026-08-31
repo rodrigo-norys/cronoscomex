@@ -134,3 +134,52 @@ describe('escrita na URL', () => {
     expect(result.current.queryString).toBe('?client=ACME&category=em_andamento')
   })
 })
+
+/**
+ * `H-52`. O atalho que a Pagina Inicial usa, escrevendo os MESMOS parametros da
+ * barra de filtros.
+ *
+ * Ele existe porque duas chamadas a `setRange` derivariam o rascunho da mesma
+ * leitura de `query` — a segunda perderia a primeira.
+ */
+describe('setPeriod — H-52', () => {
+  it('escreve os dois extremos numa unica chamada', () => {
+    const { result } = renderHook(() => useFilters())
+
+    act(() => result.current.setPeriod('2026-02-01', '2026-02-28'))
+
+    expect(search()).toContain('etaFrom=2026-02-01')
+    expect(search()).toContain('etaTo=2026-02-28')
+  })
+
+  it('escreve nos mesmos parametros que setRange, e nao em outros', () => {
+    const { result } = renderHook(() => useFilters())
+
+    act(() => result.current.setPeriod('2026-03-01', ''))
+
+    expect(result.current.selection.etaFrom).toBe('2026-03-01')
+    expect(result.current.selection.etaTo).toBe('')
+    expect(result.current.activeCount).toBe(1)
+  })
+
+  it('extremo vazio apaga o parametro, em vez de gravar `etaTo=`', () => {
+    window.history.replaceState(null, '', '/?etaFrom=2026-01-01&etaTo=2026-12-31')
+    const { result } = renderHook(() => useFilters())
+
+    act(() => result.current.setPeriod('', ''))
+
+    expect(search()).not.toContain('etaFrom')
+    expect(search()).not.toContain('etaTo')
+    expect(result.current.activeCount).toBe(0)
+  })
+
+  it('preserva os demais filtros', () => {
+    window.history.replaceState(null, '', '/?client=ACME')
+    const { result } = renderHook(() => useFilters())
+
+    act(() => result.current.setPeriod('2026-02-01', '2026-02-28'))
+
+    expect(result.current.selection.multi.client).toEqual(['ACME'])
+    expect(result.current.selection.etaFrom).toBe('2026-02-01')
+  })
+})

@@ -502,6 +502,90 @@ export function clearedTodayCount(processes: readonly Process[], today: Date): n
   ).length
 }
 
+/**
+ * `H-52`. Desembaracados dentro da janela, contados pela data de REGISTRO.
+ *
+ * Mesma regra de IND-16 — categoria E data de registro (A-29) —, com a janela
+ * no lugar do dia. Existe porque `desembaracados` responde "quantos dos que
+ * chegaram na janela ja concluiram" e e lido como "quantos concluimos na
+ * janela": duas perguntas, duas datas (`docs/uso/RESULTADO.md` secao 5).
+ *
+ * **A janela incide sobre o conjunto ja filtrado, e nao sobre a base.** RF-18
+ * manda todo indicador desta rota responder sobre o recorte ativo, e um cartao
+ * que ignorasse o filtro de periodo visivel na barra afirmaria um numero que a
+ * tela nao explica. Sem filtro de periodo — o caso do criterio de aceite — os
+ * dois conjuntos coincidem.
+ *
+ * Janela aberta dos dois lados conta todo processo desembaracado com RG: e o
+ * mesmo `desembaracados` menos os que nao tem data de registro.
+ */
+export function clearedInPeriodCount(
+  processes: readonly Process[],
+  from: Date | null,
+  to: Date | null,
+): number {
+  return processes.filter((process) => {
+    if (process.statusCategory !== 'desembaracado') return false
+    if (process.registrationDate === null) return false
+
+    const time = process.registrationDate.getTime()
+    if (from !== null && time < from.getTime()) return false
+    if (to !== null && time > to.getTime()) return false
+    return true
+  }).length
+}
+
+/**
+ * `H-52`. A faixa real de uma data no conjunto, para o cartao distinguir zero
+ * por recorte de zero por ausencia de dado.
+ *
+ * `missing` nao e detalhe: data ausente nao esta dentro nem fora de janela
+ * nenhuma (A-20), entao esses processos somem de qualquer recorte por periodo —
+ * e sumir sem contagem seria descarte silencioso (regra inviolavel 2). Medido
+ * em 31/08/2026: 64 dos 649 processos nao tem `ETA2` e 166 nao tem `RG`
+ * (`docs/uso/RESULTADO.md` secao 5).
+ */
+export interface DateFieldRange {
+  /** `AAAA-MM-DD`, ou `null` quando nenhum processo do conjunto tem a data. */
+  readonly from: string | null
+  readonly to: string | null
+  readonly missing: number
+}
+
+export interface DataRanges {
+  readonly eta2: DateFieldRange
+  readonly registration: DateFieldRange
+}
+
+function rangeOf(processes: readonly Process[], pick: (p: Process) => Date | null): DateFieldRange {
+  let earliest: Date | null = null
+  let latest: Date | null = null
+  let missing = 0
+
+  for (const process of processes) {
+    const date = pick(process)
+    if (date === null) {
+      missing += 1
+      continue
+    }
+    if (earliest === null || date.getTime() < earliest.getTime()) earliest = date
+    if (latest === null || date.getTime() > latest.getTime()) latest = date
+  }
+
+  return {
+    from: earliest === null ? null : toIsoDay(earliest),
+    to: latest === null ? null : toIsoDay(latest),
+    missing,
+  }
+}
+
+export function dataRanges(processes: readonly Process[]): DataRanges {
+  return {
+    eta2: rangeOf(processes, (process) => process.eta2),
+    registration: rangeOf(processes, (process) => process.registrationDate),
+  }
+}
+
 /** IND-22. Bloco `documentaryLeadTime` de GET /api/indicators. */
 export interface LeadTime {
   /** `null` quando `sampleSize` e zero — media de conjunto vazio nao e zero. */

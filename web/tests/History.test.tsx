@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { MonthlyHistoryResponse } from '../src/api-client.ts'
 import { History } from '../src/pages/History.tsx'
 import { type ApiStub, monthlyHistoryFixture, stubApi } from './support/api-stub.ts'
+import { findLiveRegion, mountLiveRegions, unmountLiveRegions } from './support/live-region.ts'
 
 /**
  * A Página Histórico (RF-14). Nada é agregado aqui: os pontos chegam prontos de
@@ -16,11 +17,13 @@ import { type ApiStub, monthlyHistoryFixture, stubApi } from './support/api-stub
 let api: ApiStub
 
 beforeEach(() => {
+  mountLiveRegions()
   window.history.replaceState(null, '', '/historico')
   api = stubApi()
 })
 
 afterEach(() => {
+  unmountLiveRegions()
   window.history.replaceState(null, '', '/')
   vi.unstubAllGlobals()
 })
@@ -28,6 +31,13 @@ afterEach(() => {
 function serve(overrides: Partial<MonthlyHistoryResponse> = {}): void {
   api.serveHistory(monthlyHistoryFixture(overrides))
 }
+
+/**
+ * `H-54` pos uma segunda serie no mesmo grafico e na mesma tabela. Os testes que
+ * medem a OBSERVADA a servem vazia — isolar e o que mantem cada caso medindo o
+ * que o nome dele diz.
+ */
+const SEM_RECONSTRUCAO = { points: [], missingEta2: 0, missingRegistration: 0 }
 
 function renderPage(queryString = '') {
   return render(<History queryString={queryString} dataVersion={0} />)
@@ -58,14 +68,17 @@ describe('a série mensal com as três medidas', () => {
         { month: '2026-07', total: 645, desembaracados: 475, canalVermelho: 6 },
         { month: '2026-08', total: 649, desembaracados: 480, canalVermelho: 5 },
       ],
+      reconstructed: SEM_RECONSTRUCAO,
       truncated: false,
     })
     renderPage()
 
+    // As duas ultimas colunas sao da serie reconstruida, servida vazia aqui: o
+    // traco diz que ela nao tem o mes, que e diferente de ter zero.
     expect(await linhas()).toEqual([
-      ['jun/26', '640', '470', '4'],
-      ['jul/26', '645', '475', '6'],
-      ['ago/26', '649', '480', '5'],
+      ['jun/2026', '640', '470', '4', '—', '—'],
+      ['jul/2026', '645', '475', '6', '—', '—'],
+      ['ago/2026', '649', '480', '5', '—', '—'],
     ])
   })
 
@@ -80,13 +93,14 @@ describe('a série mensal com as três medidas', () => {
         { month: '2026-06', total: 10, desembaracados: 7, canalVermelho: 1 },
         { month: '2026-07', total: 10, desembaracados: 7, canalVermelho: 1 },
       ],
+      reconstructed: SEM_RECONSTRUCAO,
       truncated: false,
     })
     renderPage()
 
     expect(await linhas()).toEqual([
-      ['jun/26', '10', '7', '1'],
-      ['jul/26', '10', '7', '1'],
+      ['jun/2026', '10', '7', '1', '—', '—'],
+      ['jul/2026', '10', '7', '1', '—', '—'],
     ])
   })
 
@@ -123,7 +137,14 @@ describe('o que a série não cobre (A-43)', () => {
    * distintos, e este é o de arquivo vazio ou apagado.
    */
   it('exibe estado vazio afirmativo sem historico algum, e nenhum grafico', async () => {
-    serve({ series: [], historyStartedAt: null, truncated: false })
+    // Sem reconstrucao tambem: com ela `H-54` acompanha o estado vazio em vez de
+    // substitui-lo, e isso tem caso proprio abaixo.
+    serve({
+      series: [],
+      reconstructed: SEM_RECONSTRUCAO,
+      historyStartedAt: null,
+      truncated: false,
+    })
     renderPage()
 
     const vazio = await serie()
@@ -135,11 +156,12 @@ describe('o que a série não cobre (A-43)', () => {
   it('exibe um unico ponto quando so a primeira leitura foi gravada', async () => {
     serve({
       series: [{ month: '2026-08', total: 649, desembaracados: 480, canalVermelho: 5 }],
+      reconstructed: SEM_RECONSTRUCAO,
       historyStartedAt: '2026-08-03T14:22:31.004Z',
     })
     renderPage()
 
-    expect(await linhas()).toEqual([['ago/26', '649', '480', '5']])
+    expect(await linhas()).toEqual([['ago/2026', '649', '480', '5', '—', '—']])
     expect(screen.getByText(/03\/08\/2026/)).toBeTruthy()
   })
 
@@ -164,7 +186,12 @@ describe('o que a série não cobre (A-43)', () => {
   })
 
   it('nao declara nada sobre volume sem serie a explicar', async () => {
-    serve({ series: [], historyStartedAt: null, truncated: false })
+    serve({
+      series: [],
+      reconstructed: SEM_RECONSTRUCAO,
+      historyStartedAt: null,
+      truncated: false,
+    })
     renderPage()
     await serie()
 
@@ -176,7 +203,12 @@ describe('o que a série não cobre (A-43)', () => {
     renderPage()
     await serie()
 
-    expect(screen.getByText(/é maior que o histórico existente/)).toBeTruthy()
+    // `H-44`: o bloco visível fica, e a região viva da casca anuncia. O portal
+    // monta num efeito, então a região vem primeiro na espera.
+    expect((await findLiveRegion('status')).textContent).toMatch(
+      /é maior que o histórico existente/,
+    )
+    expect(screen.getAllByText(/é maior que o histórico existente/)).toHaveLength(2)
   })
 
   it('nao avisa nada quando a janela cabe no historico', async () => {
@@ -226,8 +258,15 @@ describe('a janela da série', () => {
     )
   })
 
+  // A janela recorta a serie OBSERVADA, e por isso nao aparece sem ela — mesmo
+  // com a reconstruida a vista, que nao e recortada por `months` (`H-54`).
   it('nao oferece janela nenhuma sem historico a recortar', async () => {
-    serve({ series: [], historyStartedAt: null, truncated: false })
+    serve({
+      series: [],
+      reconstructed: SEM_RECONSTRUCAO,
+      historyStartedAt: null,
+      truncated: false,
+    })
     renderPage()
     await serie()
 
@@ -245,7 +284,7 @@ describe('os dois estados que não são zero', () => {
     api.historyWithoutRead()
     renderPage()
 
-    const aviso = await screen.findByRole('status')
+    const aviso = await findLiveRegion('status')
     expect(aviso.textContent).toMatch(/Nenhuma leitura da planilha foi concluída ainda/)
     expect(screen.queryByRole('table')).toBe(null)
   })
@@ -254,8 +293,206 @@ describe('os dois estados que não são zero', () => {
     api.failHistory()
     renderPage()
 
-    const erro = await screen.findByRole('alert')
+    const erro = await findLiveRegion('alert')
     expect(erro.textContent).toMatch(/Não foi possível carregar o histórico/)
     expect(screen.queryByRole('table')).toBe(null)
+  })
+})
+
+/**
+ * `H-54`. As duas series na mesma tela, e o rotulo com quatro digitos.
+ *
+ * O que se verifica: que a reconstruida aparece distinta e nomeada, que ela
+ * acompanha o estado vazio em vez de substitui-lo, e que o que ficou fora dela
+ * esta contado.
+ */
+describe('a série reconstruída', () => {
+  it('exibe as duas séries na tabela, com nome que diz qual é qual', async () => {
+    serve({
+      series: [{ month: '2026-08', total: 649, desembaracados: 480, canalVermelho: 5 }],
+      reconstructed: {
+        points: [
+          { month: '2026-07', chegados: 600, desembaracados: 470, forecast: false },
+          { month: '2026-08', chegados: 631, desembaracados: 483, forecast: false },
+        ],
+        missingEta2: 64,
+        missingRegistration: 166,
+      },
+    })
+    renderPage()
+
+    const secao = await serie()
+    const cabecalhos = within(secao)
+      .getAllByRole('columnheader')
+      .map((th) => th.textContent ?? '')
+
+    expect(cabecalhos).toContain('Volume (observado)')
+    expect(cabecalhos).toContain('Volume (reconstruído)')
+
+    // Julho tem só a reconstruída: traço nas observadas, e não zero.
+    expect(await linhas()).toEqual([
+      ['jul/2026', '—', '—', '—', '600', '470'],
+      ['ago/2026', '649', '480', '5', '631', '483'],
+    ])
+  })
+
+  // O defeito que o operador relatou: `ago/26` foi lido como dia 26 de agosto.
+  it('escreve o ano com quatro dígitos no rótulo do mês', async () => {
+    serve({
+      series: [{ month: '2026-08', total: 1, desembaracados: 0, canalVermelho: 0 }],
+      reconstructed: SEM_RECONSTRUCAO,
+    })
+    renderPage()
+
+    const secao = await serie()
+
+    expect(within(secao).getByText('ago/2026')).toBeTruthy()
+    expect(within(secao).queryByText('ago/26')).toBeNull()
+  })
+
+  // Regra inviolável 2: quem ficou fora da reconstrução está contado na tela.
+  it('diz quantos processos ficaram fora de cada medida reconstruída', async () => {
+    serve()
+    renderPage()
+    await serie()
+
+    const nota = screen.getByText(/não têm ETA2/)
+
+    expect(nota.textContent).toContain('64')
+    expect(nota.textContent).toContain('166')
+  })
+
+  // O caso-limite do backlog: 18 processos com ETA2 em set/2026. O trecho
+  // futuro é marcado como previsão, e não omitido.
+  it('marca o trecho futuro como previsão, com o mês em que ele começa', async () => {
+    serve()
+    renderPage()
+    await serie()
+
+    const nota = screen.getByText(/não têm ETA2/)
+
+    expect(nota.textContent).toContain('previsão')
+    expect(nota.textContent).toContain('set/2026')
+  })
+
+  it('não diz nada sobre previsão quando nenhum mês é futuro', async () => {
+    serve({
+      reconstructed: {
+        points: [{ month: '2026-01', chegados: 10, desembaracados: 3, forecast: false }],
+        missingEta2: 0,
+        missingRegistration: 0,
+      },
+    })
+    renderPage()
+    await serie()
+
+    expect(screen.getByText(/não têm ETA2/).textContent).not.toContain('previsão')
+  })
+
+  /**
+   * O critério de aceite: o estado vazio de `H-21` não é substituído, é
+   * acompanhado. A tela continua dizendo que não há observação registrada, e a
+   * reconstruída aparece ao lado.
+   */
+  it('acompanha o estado vazio em vez de substituí-lo', async () => {
+    serve({ series: [], historyStartedAt: null, truncated: false })
+    renderPage()
+
+    await serie()
+
+    // O aviso de `H-21` continua, sob rótulo próprio: acompanhado da série, o
+    // nome "Evolução mensal" pertence ao gráfico, e duas landmarks homônimas
+    // deixariam o leitor de tela sem como distingui-las.
+    const vazio = screen.getByRole('region', { name: 'Histórico observado' })
+    expect(within(vazio).getByText('Ainda não há histórico registrado.')).toBeTruthy()
+    expect(within(vazio).getByText(/Não há retroatividade/)).toBeTruthy()
+
+    // E a reconstruída, apesar disso, está na tela.
+    expect(screen.getByRole('table')).toBeTruthy()
+    expect(screen.getByText('dez/2025')).toBeTruthy()
+  })
+
+  // A janela recorta a observada; sem observada não há o que recortar, mesmo
+  // com a reconstruída à vista.
+  it('não oferece a janela quando só há série reconstruída', async () => {
+    serve({ series: [], historyStartedAt: null, truncated: false })
+    renderPage()
+    await screen.findByRole('region', { name: 'Evolução mensal' })
+
+    expect(screen.queryByRole('button', { name: '60 meses' })).toBeNull()
+  })
+
+  /**
+   * Divergirem no mesmo mês é informação sobre a planilha, não erro: escolher
+   * uma esconderia o que `docs/uso/RESULTADO.md` §6 documenta.
+   */
+  it('mostra as duas quando divergem no mesmo mês', async () => {
+    serve({
+      series: [{ month: '2026-08', total: 650, desembaracados: 480, canalVermelho: 5 }],
+      reconstructed: {
+        points: [{ month: '2026-08', chegados: 585, desembaracados: 483, forecast: false }],
+        missingEta2: 64,
+        missingRegistration: 166,
+      },
+    })
+    renderPage()
+
+    expect(await linhas()).toEqual([['ago/2026', '650', '480', '5', '585', '483']])
+  })
+})
+
+/**
+ * `H-44`. O gráfico sai do caminho de tabulação, e o botão de janela ganha um
+ * canal que sobrevive a `forced-colors`.
+ */
+describe('acessibilidade do gráfico e da janela', () => {
+  it('não deixa parada de tabulação órfã dentro da subárvore aria-hidden', async () => {
+    serve()
+    const { container } = renderPage()
+    await serie()
+
+    // `ACHADO 12`: sem `accessibilityLayer={false}`, o Recharts dá `tabIndex=0`
+    // e `role="application"` ao `<svg>` — dentro de `aria-hidden="true"`. O
+    // operador tabularia para um elemento que a árvore de acessibilidade não
+    // expõe, e que por isso não tem nome nenhum a anunciar.
+    const escondido = container.querySelector('[aria-hidden="true"]')
+    expect(escondido).toBeTruthy()
+    expect(escondido?.querySelector('[tabindex="0"]')).toBeNull()
+    expect(escondido?.querySelector('[role="application"]')).toBeNull()
+  })
+
+  // A correção remove a parada, nunca a alternativa textual: a tabela irmã
+  // continua carregando os mesmos números.
+  it('mantém o gráfico aria-hidden e a tabela com os mesmos números', async () => {
+    serve({
+      series: [{ month: '2026-08', total: 649, desembaracados: 480, canalVermelho: 5 }],
+      reconstructed: SEM_RECONSTRUCAO,
+    })
+    renderPage()
+
+    const secao = await serie()
+
+    expect(secao.querySelector('[aria-hidden="true"]')).toBeTruthy()
+    expect(await linhas()).toEqual([['ago/2026', '649', '480', '5', '—', '—']])
+  })
+
+  /**
+   * `ACHADO 13`. Sob `forced-colors: active` o agente de usuário substitui a
+   * **cor** da borda, e não a espessura. Sem o canal não-cromático, o botão
+   * selecionado ficaria indistinguível dos outros dois.
+   */
+  it('distingue o botão de janela selecionado pela espessura da borda', async () => {
+    serve()
+    renderPage()
+    await serie()
+
+    const selecionado = screen.getByRole('button', { name: '12 meses' })
+    const outro = screen.getByRole('button', { name: '60 meses' })
+
+    expect(selecionado.className).toContain('border-2')
+    expect(outro.className).not.toContain('border-2')
+    // O eixo programático já estava resolvido, e continua.
+    expect(selecionado.getAttribute('aria-pressed')).toBe('true')
+    expect(outro.getAttribute('aria-pressed')).toBe('false')
   })
 })

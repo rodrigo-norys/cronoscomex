@@ -101,51 +101,58 @@ export function ConflictDialog({ refusal, onClose }: ConflictDialogProps) {
           </p>
         )}
 
+        {/* `ACHADO 19`. Cinco colunas dentro de um diálogo de largura fixa: a
+            exceção bidimensional de `SC 1.4.10` cobre a tabela, e não o diálogo
+            inteiro. */}
         {temConflitos && (
-          <table className="mt-4 w-full border-collapse text-sm">
-            <caption className="sr-only">Conflitos entre a sua edição e a planilha</caption>
-            <thead>
-              <tr className="border-b border-border-subtle text-left text-text-secondary">
-                <th scope="col" className="py-2 pr-3 font-medium">
-                  Processo
-                </th>
-                <th scope="col" className="py-2 pr-3 font-medium">
-                  Campo
-                </th>
-                <th scope="col" className="py-2 pr-3 font-medium">
-                  Quando você editou
-                </th>
-                <th scope="col" className="py-2 pr-3 font-medium">
-                  Na planilha agora
-                </th>
-                <th scope="col" className="py-2 font-medium">
-                  Você queria gravar
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {refusal.conflicts.map((conflito) => (
-                <tr
-                  key={`${conflito.ref}|${conflito.field}`}
-                  className="border-b border-border-subtle align-top"
-                >
-                  <td className="py-2 pr-3 font-mono text-xs">{conflito.ref}</td>
-                  <td className="py-2 pr-3">{NOME_DA_COLUNA[conflito.field] ?? conflito.field}</td>
-                  <td className="py-2 pr-3">{conflito.valueWhenEdited || '—'}</td>
-                  <td className="py-2 pr-3">
-                    {conflito.refMissing ? (
-                      <span className="text-state-warning-fg">
-                        Esta linha não está mais na planilha
-                      </span>
-                    ) : (
-                      conflito.valueNow || '—'
-                    )}
-                  </td>
-                  <td className="py-2">{conflito.yourValue || '(vazio)'}</td>
+          <div className="overflow-x-auto">
+            <table className="mt-4 w-full border-collapse text-sm">
+              <caption className="sr-only">Conflitos entre a sua edição e a planilha</caption>
+              <thead>
+                <tr className="border-b border-border-subtle text-left text-text-secondary">
+                  <th scope="col" className="py-2 pr-3 font-medium">
+                    Processo
+                  </th>
+                  <th scope="col" className="py-2 pr-3 font-medium">
+                    Campo
+                  </th>
+                  <th scope="col" className="py-2 pr-3 font-medium">
+                    Quando você editou
+                  </th>
+                  <th scope="col" className="py-2 pr-3 font-medium">
+                    Na planilha agora
+                  </th>
+                  <th scope="col" className="py-2 font-medium">
+                    Você queria gravar
+                  </th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {refusal.conflicts.map((conflito) => (
+                  <tr
+                    key={`${conflito.ref}|${conflito.field}`}
+                    className="border-b border-border-subtle align-top"
+                  >
+                    <td className="py-2 pr-3 font-mono text-xs">{conflito.ref}</td>
+                    <td className="py-2 pr-3">
+                      {NOME_DA_COLUNA[conflito.field] ?? conflito.field}
+                    </td>
+                    <td className="py-2 pr-3">{conflito.valueWhenEdited || '—'}</td>
+                    <td className="py-2 pr-3">
+                      {conflito.refMissing ? (
+                        <span className="text-state-warning-fg">
+                          Esta linha não está mais na planilha
+                        </span>
+                      ) : (
+                        conflito.valueNow || '—'
+                      )}
+                    </td>
+                    <td className="py-2">{conflito.yourValue || '(vazio)'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         )}
 
         {/* Incondicional, o rodape mentia em tres ramos: `NADA_A_APLICAR` parte

@@ -4899,6 +4899,47 @@ sobre o repositório, não contrato de API)
 
 ### H-43 — Live regions da casca e dos componentes
 
+> ✅ **CONCLUÍDA em 31/08/2026.** **10 testes próprios** em quatro arquivos —
+> três em `App.test.tsx`, dois em `FilterBar.test.tsx`, dois em
+> `IngestionHealth.test.tsx`, dois em `ColorFieldsForm.test.tsx` e um em
+> `StatusBanner.test.tsx`. Suíte total de **1556 para 1566**. **Nove casos
+> existentes mudaram de forma, nenhum de força** — a razão está três parágrafos
+> abaixo. Uma divergência no protocolo, resolvida.
+>
+> **O padrão adotado já existia no repositório, e não foi inventado aqui.**
+> `WorkbookSetup.tsx` faz isso desde `H-34`: o nó fica sempre no DOM e alterna
+> entre `sr-only` e o estilo visível. `H-43` o estendeu aos sete arquivos da
+> casca, que é o que o próprio `ACHADO 11` descreve como um defeito repetido, e
+> não como uma coleção de descuidos.
+>
+> **`StatusBanner` foi o único que mudou de estrutura, e não só de condicional.**
+> Ele montava um `role` por sinal, cada um já populado. Agora há **duas** regiões
+> — uma `alert` e uma `status` —, porque os papéis são dois: `arquivoAberto` é
+> contexto, e os demais interrompem. Os sinais entram dentro delas, e **o estilo
+> mora no filho**: sem sinal, os dois contêineres são nós vazios sem borda, fundo
+> nem espaçamento. O critério do caso-limite não é ausência do nó, é ausência de
+> caixa vazia na tela.
+>
+> **Nove testes existentes mudaram de forma porque a forma era o defeito.** Eles
+> consultavam `getByRole('alert')` — no singular, e a região vazia agora existe
+> desde a montagem, então "existe algum alert" resolve no primeiro render, antes
+> de a mensagem chegar. Passaram a esperar pelo **texto** e a verificar em que
+> região ele caiu. Nenhuma asserção foi afrouxada: duas delas **ganharam** força,
+> porque agora provam a identidade do nó — o elemento que recebe o texto é o
+> mesmo objeto que já estava no DOM, que é exatamente o que o leitor de tela
+> compara.
+>
+> **Divergência 1 — a região persistente das páginas precisa de endereço, e o
+> plano não diz qual.** O critério exige que ela seja "alcançável por elas, sem
+> que a casca conheça nenhuma página". A casca expõe um `id` estável,
+> `PAGE_LIVE_REGION_ID`, exportado como constante: um `id` escrito duas vezes
+> vira dois `id` diferentes no primeiro ajuste, e o portal falharia **em
+> silêncio** — `getElementById` devolveria `null` e a mensagem simplesmente não
+> apareceria. `H-44` é quem escreve nela.
+>
+> **Nada de cor foi tocado**, como a fatia manda: os quatro arquivos que `H-39`
+> já migrou seguem com os mesmos tokens.
+
 **Objetivo:** as regiões de estado da casca existirem no DOM antes de receberem
 mensagem, para que o leitor de tela as anuncie.
 
@@ -4961,6 +5002,70 @@ quatro arquivos que `H-39` já migrou.
 
 ### H-44 — Live regions das páginas, gráfico e forced-colors
 
+> ✅ **CONCLUÍDA em 31/08/2026.** **5 testes próprios** — três em
+> `History.test.tsx` e dois em `Home.test.tsx`. Suíte total de **1566 para
+> 1571**. **Doze casos existentes mudaram de forma, nenhum de força**, e a
+> mudança deles **é** a verificação do primeiro critério: eles passaram a
+> consultar a região viva da casca, que é onde a mensagem agora é anunciada.
+> Três divergências no protocolo, e **dois pontos que a lista de arquivos não
+> nomeava**.
+>
+> **Por que um portal, e não um `role` na própria página.** Uma região declarada
+> dentro da página nasceria **junto** com o `return` antecipado, no mesmo commit
+> em que o texto chega — o `ACHADO 11` de novo, uma camada acima. Quem sobrevive
+> à troca de estado da página é o nó da casca, e é por isso que `H-43` o criou lá.
+>
+> **O texto é lido uma vez só.** O bloco visível é `aria-hidden`, e o conteúdo
+> acessível vai pelo portal. Sem isso o operador ouviria a mesma frase duas
+> vezes, uma no fluxo e outra na região viva. É por isso que os testes agora
+> contam **duas** ocorrências do mesmo texto — uma delas escondida de propósito.
+>
+> **Divergência 1 — a região da casca nasceu sem `role`.** `H-43` a criou como
+> endereço (`<div id=…>`), e um `div` sem papel não é região viva nenhuma. Um
+> defeito da própria onda, corrigido aqui. Nasceu também a **segunda** região,
+> `role="status"`: "a planilha ainda não foi lida" é contexto, e anunciá-lo como
+> `alert` cortaria o que o leitor de tela estivesse falando — a mesma razão pela
+> qual `StatusBanner` tem duas.
+>
+> **Divergência 2 — `PAGE_LIVE_REGION_ID` mudou de casa.** Vivia em `App.tsx`, e
+> as páginas importando de lá fechariam um ciclo: a casca importa as sete
+> páginas. A constante e o componente `PageAlert` vivem agora em
+> `web/src/components/PageAlert.tsx`, que não importa nada do projeto.
+>
+> **Divergência 3 — as suítes de página montam uma página sozinha**, sem casca em
+> volta, e o portal não encontra alvo. `web/tests/support/live-region.ts` monta
+> as duas regiões no `beforeEach` das sete. **Não é contornar a ausência:** é
+> reproduzir o ambiente real, onde a página sempre vive dentro da casca. Sem
+> isso, cada suíte verificaria uma árvore que não existe em execução.
+>
+> **Dois pontos fora da lista, e ambos são o primeiro critério.**
+> `History.tsx` — a nota de janela truncada — e `WorkbookSetup.tsx` — o
+> "Carregando a configuração atual…" — montavam `role="status"` já populado,
+> exatamente como as sete. A lista de arquivos nomeava outros trechos dos mesmos
+> arquivos; o critério fala das páginas inteiras.
+>
+> **`ACHADO 12` fechado com `accessibilityLayer={false}`.** Sem ele,
+> `recharts/es6/container/RootSurface.js:45` dá `tabIndex={0}` e
+> `role="application"` ao `<svg>` — **dentro** de uma subárvore `aria-hidden`. O
+> operador tabulava para um elemento que a árvore de acessibilidade não expõe, e
+> que por isso não tem nome nenhum a anunciar. O gráfico segue `aria-hidden` e a
+> tabela irmã segue com os mesmos números: a correção remove a parada, nunca a
+> alternativa textual.
+>
+> **`ACHADO 13` fechado pela espessura**, não pela cor: sob `forced-colors:
+> active` o agente de usuário substitui a cor da borda e não a espessura, e o
+> botão selecionado ficaria indistinguível dos outros dois. O `aria-pressed` já
+> resolvia o eixo programático.
+>
+> **A fatia introduziu uma corrida, e ela foi fechada antes do commit.** O portal
+> monta num **efeito**, então `findByRole('alert')` passou a resolver na região
+> vazia — que agora existe desde a montagem — antes de a mensagem chegar. Sete
+> casos ficaram não-determinísticos, e o portão reprovou de forma intermitente.
+> A correção é esperar pelo **conteúdo**, e não pelo nó: `findLiveRegion` faz
+> isso, e o portão foi executado **três vezes seguidas** verde para confirmar.
+> Não confundir com o intermitente conhecido de `src/io/`, que devolve `exit=1`
+> com zero testes falhando — este tinha teste nomeado na saída, e era meu.
+
 **Objetivo:** fechar o restante de `ACHADO 11` nas sete páginas e tirar do
 caminho de tabulação o gráfico que a árvore de acessibilidade não expõe.
 
@@ -5022,6 +5127,50 @@ de rolagem da tabela (`ACHADO 19`) — onda 5, `H-46`.
 <a id="h-45"></a>
 
 ### H-45 — Unificar papéis de UI e tirar a informação só-cor
+
+> ✅ **CONCLUÍDA em 31/08/2026.** **11 testes próprios** — seis em
+> `Alerts.test.tsx`, dois em `Home.test.tsx` e três em `tests/repo/estilo.test.ts`.
+> Suíte total de **1571 para 1582**. Três casos existentes reapontados para o
+> papel novo. Uma divergência no protocolo, resolvida.
+>
+> **O primeiro critério já vinha satisfeito, e o trabalho foi travá-lo.** Os
+> quatro desviantes de `ACHADO 15` usavam `border-slate-300`; `H-42` migrou o
+> conjunto inteiro para tokens e, ao fazê-lo, alinhou os quatro em
+> `--color-border-subtle` **de passagem**. Confirmar isso e seguir deixaria o
+> desvio livre para voltar no primeiro arquivo novo — que é exatamente a razão de
+> `tests/repo/estilo.test.ts` existir. A guarda ganhou `C04`, com duas asserções
+> de conjunto e **prova por mutação**: trocar a borda de `Placeholders.tsx:33`
+> reprova a suíte.
+>
+> **O sinal sintático que separa os dois papéis é o `p-` uniforme.** A primeira
+> versão da regex pegava `input` e `select`, que também são
+> `rounded border … bg-surface-raised` — mas com `px-`/`py-` assimétricos e
+> `--color-border-control`. Papel diferente, token diferente, e a guarda tem de
+> saber disso.
+>
+> **`ACHADO 16` — a mesma ação tinha dois papéis e dois nomes.** Abrir o detalhe
+> era `<a href>` na tabela e `<button>` no alerta. `SC 3.2.4` incide porque a
+> determinação `Z1` mediu URIs distintas, então a consistência deixa de ser
+> preferência. O `AlertRow` passou a usar o **mesmo** interceptador da tabela —
+> modificador pressionado abre em aba nova, como qualquer link — e ganhou
+> `aria-label` explícito: sem ele o nome acessível seria o bloco inteiro
+> concatenado, contra `"NBSC260"` na tabela.
+>
+> **`ACHADO 18` — a urgência era só cor, em dois lugares.** O badge urgente
+> ganhou o prefixo "Pede ação"; `data-severity` continua onde estava e **não**
+> conta como canal, porque não é exposto ao usuário. E os dois cartões de
+> urgência passaram a usar a `hint` que `StatCard` já oferecia desde `H-16` e que
+> nenhum cartão usava.
+>
+> **Divergência 1 — `tests/repo/estilo.test.ts` não estava na lista.** A história
+> nomeia sete arquivos de `web/src/`, e nenhum lugar onde travar um critério
+> composicional. A guarda do épico é o lugar natural: ela já existe para `C01` e
+> `C02`, roda no `verify` e no CI, e não tem lista fixa — acrescentar arquivo
+> muda a expectativa sozinho.
+>
+> **Os três painéis `border-dashed` continuam distintos**, e a segunda asserção
+> guarda isso: papel "ressalva" é legítimo **porque** os três são consistentes
+> entre si. Um quarto com outra borda quebraria o papel, e agora reprova.
 
 **Objetivo:** o mesmo papel de UI ter a mesma forma nas sete telas, a mesma ação
 ter o mesmo nome e papel, e nenhuma urgência ser transmitida apenas por cor.
@@ -5088,6 +5237,48 @@ adotado em `H-41` e `H-42`, para não abrir os mesmos oito arquivos duas vezes.
 <a id="h-46"></a>
 
 ### H-46 — Responsividade e contenção de rolagem
+
+> ✅ **CONCLUÍDA em 31/08/2026.** **5 testes próprios**, todos em
+> `tests/repo/estilo.test.ts`. Suíte total de **1582 para 1586**. Nenhum caso
+> existente ajustado. Uma divergência no protocolo, resolvida.
+>
+> **As três correções são estáticas, e por isso foram travadas em guarda, não
+> só aplicadas.** Cada uma reprova sob mutação: tirar o `overflow-x-auto` do
+> diálogo, tirar a base de um grid, ou devolver `fontSize: 12` — as três
+> derrubam a suíte, e a reversão a devolve ao verde. Sem isso, a próxima tabela
+> ou grid nasceria com o mesmo defeito e ninguém saberia.
+>
+> **Três tabelas contidas**, pelo padrão que `ProcessTable` já usava: `History`,
+> as quatro quebras de `Performance` e as cinco colunas de `ConflictDialog`. A
+> exceção bidimensional de `SC 1.4.10` cobre a **tabela**, e não a página — sem o
+> invólucro ela arrasta as notas irmãs e a barra de filtros junto, que é
+> exatamente a rolagem que o critério proíbe.
+>
+> **Sete grids ganharam `grid-cols-1` explícito.** O valor implícito é o inicial
+> do CSS, e escrevê-lo é o que faz a intenção aparecer no código: sem ele, quem
+> lê não sabe se uma coluna é decisão ou esquecimento. Os **quatro** que já
+> tinham base — `FilterBar`, `Alerts`, `Home` e `IngestionHealth` — não foram
+> tocados.
+>
+> **`fontSize` dos eixos passou de `12` para `'0.75rem'`.** O React converte o
+> número para pixel, e pixel não acompanha a fonte-base que o operador escolheu
+> no navegador (`SC 1.4.4`). `width={48}` e `margin={{…}}` continuam numéricos de
+> propósito: são **geometria** do Recharts, não tipografia — o caso-limite do
+> backlog.
+>
+> **Divergência 1 — o comentário JSX não cabe onde eu o pus.** Um `{/* … */}`
+> logo depois de `{condicao && (` é sintaxe inválida, e o `typecheck` pegou. O
+> comentário do `ConflictDialog` foi para **antes** do condicional, que é onde
+> ele descreve a decisão inteira em vez de metade dela.
+>
+> **A guarda de tabela procura o invólucro nas três linhas ACIMA**, e não na
+> mesma. O JSX quebra a linha, e exigir os dois no mesmo texto reprovaria o
+> padrão que `ProcessTable` já usava antes desta história — a guarda teria
+> nascido vermelha, e guarda que nasce vermelha é desligada, não obedecida.
+>
+> **O quarto critério não é desta fatia, e o backlog diz isso.** A verificação
+> visual a 320 px é `VN-1`, em `H-47`: o que se pode afirmar aqui é que nada no
+> código **produz** aquela rolagem, e é isso que as guardas garantem.
 
 **Objetivo:** a página nunca rolar na horizontal por causa de uma tabela, e o
 texto do gráfico acompanhar a fonte-base do operador.
@@ -5712,6 +5903,51 @@ verde para status — a categoria continua vindo de TD-01 (regra inviolável 4).
 
 ### H-52 — Os cartões declaram o período, e ele é editável ali
 
+> ✅ **CONCLUÍDA em 31/08/2026.** **32 testes próprios** em quatro arquivos — 15
+> de domínio, 6 na rota, 4 no `useFilters` e 7 na Página Inicial. Suíte total de
+> **1494 para 1526**. Os cinco casos existentes que mudaram são contagens de
+> cartão — de doze para treze —, não asserções afrouxadas. Duas divergências no
+> protocolo, ambas resolvidas.
+>
+> **Conferido contra a planilha real**, e os quatro números do critério de aceite
+> bateram: `ETA2` de **30/12/2025 a 09/09/2026**, `RG` de **05/01/2026 a
+> 31/07/2026**, **64** dos 649 sem `ETA2` e **166** sem `RG`. Sem janela,
+> `desembaracadosNoPeriodo` é **480** — igual a `desembaracados`, porque todos os
+> 480 da categoria têm data de registro; em fevereiro, **58**.
+>
+> **A janela incide sobre o conjunto já filtrado, e não sobre a base.** O texto
+> da história — "quantos desembaraçamos desde fevereiro" — admitia duas leituras:
+> aplicar a janela sobre `registrationDate` **ignorando** o filtro de `ETA2`, ou
+> sobre o recorte que a página inteira já usa. **RF-18 decide**: todo indicador
+> desta rota responde sobre o conjunto filtrado, e um cartão que ignorasse um
+> filtro global visível na barra exibiria um número que a tela não explica. Sem
+> filtro de período — o estado do critério de aceite — as duas leituras
+> coincidem. O rótulo do cartão diz qual data ele conta, e a linha de período diz
+> qual janela.
+>
+> **`meta.dataRange` traz `missing`, e não só os extremos.** Data ausente não está
+> dentro nem fora de janela nenhuma (A-20): esses processos somem de qualquer
+> recorte por período, e sumir sem contagem seria descarte silencioso. `from` e
+> `to` são `null` quando o conjunto não tem a data, e a tela diz "sem data" —
+> nunca uma faixa inventada.
+>
+> **Divergência 1 — a rota precisava da janela, e `filteredProcesses` não a
+> devolve.** Nasceu `filteredWithPeriod` em `src/http/filter-request.ts`, arquivo
+> fora da lista. Ao lado do existente, e não no lugar dele: alargar aquele
+> alcançaria as seis rotas **[F]**, e cinco não têm uso para a janela; reparsear
+> a query dentro da rota duplicaria o tratamento de `400 FILTRO_INVALIDO` que o
+> módulo existe para concentrar.
+>
+> **Divergência 2 — `web/tests/FilterBar.test.tsx` e `web/tests/support/api-stub.ts`.**
+> A fábrica de `Filters` do primeiro e a fixture de `IndicatorsResponse` do
+> segundo quebraram no `typecheck` ao ganharem campo obrigatório. É o modo de
+> falha que `H-32` já tinha medido, e que a conferência da fatia pergunta.
+>
+> **`setPeriod` escreve os dois extremos numa chamada só**, e não é conveniência:
+> duas chamadas a `setRange` derivariam o rascunho da **mesma** leitura de
+> `query`, e a segunda perderia a primeira. O seletor da página escreve nos
+> mesmos `etaFrom`/`etaTo` da barra de filtros — um estado só, na URL.
+
 **Objetivo:** cada cartão da Página Inicial dizer que janela está contando, e a
 janela poder ser mudada sem ir à barra de filtros.
 
@@ -5779,6 +6015,53 @@ atalho, na Inicial.
 
 ### H-53 — A Página Performance diz a métrica e mostra o recorte
 
+> ✅ **CONCLUÍDA em 31/08/2026, com o quinto critério declarado não-incidente.**
+> **8 testes próprios** em `web/tests/Performance.test.tsx`. Suíte total de
+> **1548 para 1556**. Nenhum caso existente ajustado. Uma divergência no
+> protocolo, resolvida.
+>
+> **O quinto critério não foi cumprido porque a premissa dele é falsa.** Ele diz
+> "**Dado** `H-50` fechada, **então** a ressalva de A-31 descreve o campo novo".
+> `H-50` **não** foi executada — a razão está em
+> `docs/sessao-autonoma/RELATORIO.md`, Pendência 1 —, e a ressalva de `A-31`
+> continua descrevendo a limitação que **ainda existe**: o responsável vem da
+> cor, e linha verde ou vermelha não o carrega. Reescrevê-la agora afirmaria que
+> a limitação acabou. **Quando `H-50` fechar, esta linha é o que sobra a fazer**,
+> e ela é de dois parágrafos em `ResponsibleCaveat`.
+>
+> **Nenhum dos dois defeitos era de cálculo, e é isso que os torna caros.** A
+> métrica está correta desde IND-22 e o filtro funciona desde `H-15`; o que
+> faltava era a tela dizer. Aplicação certa e muda é a variante mais barata de
+> defeito e a mais fácil de deixar aberta para sempre.
+>
+> **Conferido contra a planilha real:** média de **12,5 dias** sobre amostra de
+> **101**, com **547** sem uma das duas datas e **1** com intervalo negativo —
+> e 101 + 547 + 1 = **649**, o total. Um recorte que zera a amostra devolve
+> `averageDays: null`, nunca zero.
+>
+> **A fórmula vai junto do agregado, e na ordem de A-02.** `RG − DOCS ENVIADOS`,
+> em dias inteiros; a ordem invertida produziria valor negativo, porque RG é a
+> extremidade final do intervalo. Nota de rodapé foi descartada pelo próprio
+> critério de aceite.
+>
+> **As duas exclusões de A-30 ganharam o que significam**, não só o número: um
+> número sem explicação é descarte que parece medição. E a amostra zerada passou
+> a dizer **por que** exibe traço — sem isso o traço parece falha de
+> carregamento, e não "nenhum processo do recorte tem o par completo".
+>
+> **Divergência 1 — os rótulos dos filtros viviam só na barra.** O painel de
+> recorte precisa nomear cada filtro ativo, e copiar as onze strings criaria dois
+> mapas que divergem no primeiro filtro renomeado. `MULTI_FILTER_LABELS` nasceu
+> em `web/src/hooks/useFilters.ts`, ao lado de `MULTI_FILTERS`, e
+> `web/src/components/FilterBar.tsx` passou a consumi-lo — os dois arquivos
+> estavam fora da lista da história. `clientGroup` entrou no mapa embora não
+> tenha caixa própria na barra: ele **tem** nome, e sem ele um recorte por grupo
+> apareceria sem dizer o que é.
+>
+> **Nada passou a ser calculado no cliente.** A fórmula é texto de uma regra do
+> domínio, e a lista de filtros ativos é leitura da URL — que já é o único estado
+> dos filtros desde `H-15`.
+
 **Objetivo:** a página explicar o que mede e tornar visível o filtro que ela já
 respeita.
 
@@ -5831,6 +6114,56 @@ desejada, é história própria.
 <a id="h-54"></a>
 
 ### H-54 — O histórico reconstrói os meses da planilha
+
+> ✅ **CONCLUÍDA em 31/08/2026.** **22 testes próprios** em três arquivos — 10 de
+> domínio, 5 na rota e 7 na Página Histórico. Suíte total de **1526 para 1548**.
+> Oito casos existentes mudaram de forma, nenhum de força: passaram a servir a
+> série reconstruída **vazia**, para continuarem medindo o que o nome deles diz.
+> Uma divergência no protocolo, resolvida, e um defeito de acessibilidade que a
+> própria fatia criou e fechou.
+>
+> **Conferido contra a planilha real:** a série cobre **10 meses**, de
+> **dez/2025 a set/2026**, com **zero** meses ausentes no intervalo; **64** dos
+> 649 sem `ETA2` e **166** sem `RG`; e **18** processos com `ETA2` em set/2026, o
+> único mês marcado como previsão. Os quatro números são os que
+> `docs/uso/RESULTADO.md` §6 e os casos-limite declaram.
+>
+> **As duas medidas reconstruídas são estoque ao fim do mês**, e não fluxo. Sem
+> isso as séries não seriam comparáveis no mesmo eixo: a observada é estado
+> acumulado, e uma contagem mensal ao lado dela pareceria despencar todo mês.
+> `chegados` acumula os processos com `ETA2` até o fim do mês; `desembaracados`,
+> os com data de registro.
+>
+> **Não há `canalVermelho` na reconstruída, e a ausência é a regra 3 aplicada.**
+> A cor é o estado de **hoje** e não carrega data: projetá-la para trás afirmaria
+> que a linha já era vermelha naquele mês. Buraco visível é melhor que valor
+> errado invisível.
+>
+> **A reconstrução não revoga A-43**, e a separação é o que garante isso: bloco
+> próprio na resposta, traçado tracejado no gráfico, colunas próprias na tabela,
+> e o nome de cada série dizendo "observado" ou "reconstruído". O que A-43 proíbe
+> é apresentar reconstrução como histórico observado — não derivá-la.
+>
+> **`months` não recorta a reconstruída.** A janela é da série observada; cortar
+> a outra por ela esconderia justamente o passado que a história existe para
+> mostrar. Está declarado no contrato e coberto por teste.
+>
+> **Divergência 1 — `filteredRefs` devolvia só as chaves.** A reconstrução sai
+> das **datas** dos processos, não dos eventos, então precisa das linhas. O
+> retorno passou a carregar `selected` junto; `src/http/filter-request.ts` não
+> estava na lista de arquivos. Mudança segura porque a função tem um consumidor
+> só — a própria rota de histórico, como o cabeçalho dela já declarava.
+>
+> **O defeito que a fatia criou, e fechou.** Com a reconstruída acompanhando o
+> estado vazio de `H-21`, as duas seções passaram a existir ao mesmo tempo com o
+> mesmo `aria-label` — **duas landmarks homônimas na mesma página**, e o leitor de
+> tela sem como distingui-las. `EmptyHistory` passou a receber `alone`: sozinha
+> mantém o nome que `H-21` fixou, acompanhada vira "Histórico observado". Pego
+> por um teste que reprovou com "Found multiple elements with the role region".
+>
+> **`formatMonth` passou a escrever quatro dígitos.** `ago/26` foi lido pelo
+> operador como dia 26 de agosto — em pt-br a forma `26/08` é data. Quatro
+> dígitos também tornam legível a virada de ano, que a reconstruída atravessa.
 
 **Objetivo:** o gráfico mostrar os meses que a planilha datou, sem passar
 reconstrução por observação.
@@ -6706,10 +7039,10 @@ superfície dobrada pelo segundo esquema.
 | E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
-| E9 — Estilização | **H-39 ✅ … H-42 ✅, H-43 … H-47 abertas** | 1 | 8 | 0 |
-| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-55 ✅, H-56 ✅, H-50 · H-52 … H-54 abertas** | 1 | 8 | 0 |
+| E9 — Estilização | **H-39 ✅ … H-46 ✅; só `H-47` aberta, e ela exige navegador** | 1 | 8 | 0 |
+| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-52 ✅, H-53 ✅, H-54 ✅, H-55 ✅, H-56 ✅; só `H-50` aberta** | 1 | 8 | 0 |
 | E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
-| **Total** | **65** — 47 concluídas, 18 abertas | **21** | **44** | **0** |
+| **Total** | **65** — 54 concluídas, 11 abertas | **21** | **44** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até

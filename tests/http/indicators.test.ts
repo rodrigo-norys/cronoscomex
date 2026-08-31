@@ -143,6 +143,8 @@ describe('GET /api/indicators', () => {
       'chegandoSemana',
       'desembaracados',
       'desembaracadosHoje',
+      // `H-52`. Adicional a `desembaracados`, contado pela data de registro.
+      'desembaracadosNoPeriodo',
       'documentosPendentes',
       'emAndamento',
       'emDesembaraco',
@@ -683,6 +685,122 @@ describe('GET /api/indicators — distribuicao de canal (H-51)', () => {
 
     expect(response.statusCode).toBe(200)
     expect(response.json().counts.total).toBe(1)
+
+    await app.close()
+  })
+})
+
+/**
+ * `H-52`. A rota nao calcula — serializa. O que se verifica e a fiacao dos tres
+ * campos novos e o eco da janela que ela de fato aplicou.
+ */
+describe('GET /api/indicators — periodo declarado (H-52)', () => {
+  const comDatas = () => [
+    process(2, 'desembaracado', {
+      eta2: new Date('2026-02-10T00:00:00Z'),
+      registrationDate: new Date('2026-02-15T00:00:00Z'),
+    }),
+    process(3, 'desembaracado', {
+      eta2: new Date('2026-05-20T00:00:00Z'),
+      registrationDate: new Date('2026-06-01T00:00:00Z'),
+    }),
+    process(4, 'em_andamento', { eta2: new Date('2026-03-01T00:00:00Z') }),
+  ]
+
+  it('serializa a faixa real das duas datas, com os ausentes contados', async () => {
+    const app = buildServer(config, fakeStore(state({ processes: comDatas() })))
+
+    const meta = (await app.inject({ method: 'GET', url: '/api/indicators' })).json().meta
+
+    expect(meta.dataRange.eta2).toEqual({ from: '2026-02-10', to: '2026-05-20', missing: 0 })
+    expect(meta.dataRange.registration).toEqual({
+      from: '2026-02-15',
+      to: '2026-06-01',
+      missing: 1,
+    })
+
+    await app.close()
+  })
+
+  // Sem filtro de periodo a janela e nula, e e nesse estado que o criterio de
+  // aceite manda o cartao declarar a faixa REAL dos dados.
+  it('devolve janela nula quando nao ha filtro de periodo', async () => {
+    const app = buildServer(config, fakeStore(state({ processes: comDatas() })))
+
+    const meta = (await app.inject({ method: 'GET', url: '/api/indicators' })).json().meta
+
+    expect(meta.period).toEqual({ from: null, to: null })
+
+    await app.close()
+  })
+
+  it('ecoa a janela que aplicou, e recorta a faixa junto', async () => {
+    const app = buildServer(config, fakeStore(state({ processes: comDatas() })))
+
+    const meta = (
+      await app.inject({
+        method: 'GET',
+        url: '/api/indicators?etaFrom=2026-01-01&etaTo=2026-03-31',
+      })
+    ).json().meta
+
+    expect(meta.period).toEqual({ from: '2026-01-01', to: '2026-03-31' })
+    // A faixa acompanha o recorte: o de maio saiu, e com ele o `to` de ETA2.
+    expect(meta.dataRange.eta2.to).toBe('2026-03-01')
+
+    await app.close()
+  })
+
+  it('conta desembaracadosNoPeriodo pela data de registro dentro da janela', async () => {
+    const app = buildServer(config, fakeStore(state({ processes: comDatas() })))
+
+    const counts = (
+      await app.inject({
+        method: 'GET',
+        url: '/api/indicators?etaFrom=2026-01-01&etaTo=2026-03-31',
+      })
+    ).json().counts
+
+    // Sobra o de fevereiro: o de maio saiu pelo recorte de ETA2, e o terceiro
+    // nao esta desembaracado.
+    expect(counts.desembaracadosNoPeriodo).toBe(1)
+
+    await app.close()
+  })
+
+  // A-12: o cartao novo e adicional, nunca substituto. A soma das quatro
+  // categorias tem de continuar fechando com o total.
+  it('nao altera a soma das quatro categorias', async () => {
+    const app = buildServer(config, fakeStore(state({ processes: comDatas() })))
+
+    const counts = (await app.inject({ method: 'GET', url: '/api/indicators' })).json().counts
+    const soma =
+      counts.emAndamento +
+      counts.emDesembaraco +
+      counts.desembaracados +
+      counts.fechadoAguardandoDraft
+
+    expect(soma).toBe(counts.total)
+
+    await app.close()
+  })
+
+  // O caso-limite do backlog: intervalo invertido produz conjunto vazio sem
+  // erro, e o eco da janela mostra exatamente o que foi pedido.
+  it('aceita janela invertida, devolvendo conjunto vazio sem erro', async () => {
+    const app = buildServer(config, fakeStore(state({ processes: comDatas() })))
+
+    const body = (
+      await app.inject({
+        method: 'GET',
+        url: '/api/indicators?etaFrom=2026-06-01&etaTo=2026-01-01',
+      })
+    ).json()
+
+    expect(body.counts.total).toBe(0)
+    expect(body.counts.desembaracadosNoPeriodo).toBe(0)
+    expect(body.meta.period).toEqual({ from: '2026-06-01', to: '2026-01-01' })
+    expect(body.meta.dataRange.eta2).toEqual({ from: null, to: null, missing: 0 })
 
     await app.close()
   })

@@ -15,8 +15,11 @@ import {
   type CategoryCounts,
   type ChannelDistribution,
   channelDistribution,
+  clearedInPeriodCount,
   clearedTodayCount,
   countByCategory,
+  type DataRanges,
+  dataRanges,
   documentaryLeadTime,
   type ExpectedVessel,
   expectedVessels,
@@ -32,7 +35,7 @@ import {
   responsibleRanking,
 } from '../../domain/indicators.ts'
 import { apiError } from '../errors.ts'
-import { filteredProcesses } from '../filter-request.ts'
+import { filteredWithPeriod } from '../filter-request.ts'
 
 /**
  * GET /api/indicators — contrato em docs/05-contratos-api.md.
@@ -50,6 +53,13 @@ export interface IndicatorsCounts extends CategoryCounts {
   documentosPendentes: number
   atrasados: number
   desembaracadosHoje: number
+  /**
+   * `H-52`. Adicional a `desembaracados`, nunca substituto: aquele conta
+   * categoria sobre o recorte de `ETA2`, este conta a data de REGISTRO dentro da
+   * janela. A soma das quatro categorias continua fechando com o total (A-12), e
+   * a linha de conferencia da Pagina Inicial segue valida.
+   */
+  desembaracadosNoPeriodo: number
 }
 
 export interface IndicatorsRankings {
@@ -88,6 +98,20 @@ export interface IndicatorsMeta {
   topN: number
   /** `null` quando nenhum processo tem mercadoria preenchida (A-34). */
   bazarShare: number | null
+  /**
+   * `H-52`. A janela que o servidor de fato aplicou, ecoada. A tela a exibe em
+   * cada cartao em vez de reler a URL: quem recortou foi o servidor, e um
+   * cartao que declarasse a janela por conta propria poderia divergir do numero
+   * que exibe.
+   */
+  period: { from: string | null; to: string | null }
+  /**
+   * `H-52`. A faixa real das duas datas no conjunto FILTRADO, com quantos
+   * processos nao tem cada uma. Sem ela, cartao zerado por recorte e cartao
+   * zerado por ausencia de dado sao indistinguiveis, e derivar a faixa no
+   * cliente seria calculo na tela (regra inviolavel 6).
+   */
+  dataRange: DataRanges
 }
 
 export interface IndicatorsResponse {
@@ -151,9 +175,11 @@ export function registerIndicatorsRoute(
     const groupLabels = new Map(clientGroups.map((group) => [group.key, group.label]))
 
     // Os filtros recortam o conjunto ANTES de qualquer calculo: todo indicador
-    // desta rota responde sobre o conjunto filtrado (RF-18).
-    const processes = filteredProcesses(request, reply, state.processes)
-    if (processes === null) return reply
+    // desta rota responde sobre o conjunto filtrado (RF-18). A janela vem junto
+    // porque `H-52` precisa dizer ao operador qual periodo cada cartao conta.
+    const recorte = filteredWithPeriod(request, reply, state.processes)
+    if (recorte === null) return reply
+    const { processes } = recorte
 
     // Uma chamada por dimensao, sem teto: o corte acontece abaixo, depois de o
     // total de grupos ser conhecido. Cortar dentro do dominio apagaria o numero
@@ -191,6 +217,9 @@ export function registerIndicatorsRoute(
         documentosPendentes: pendingDocsCount(processes, day),
         atrasados: overdueCount(processes, day),
         desembaracadosHoje: clearedTodayCount(processes, day),
+        // `H-52`. Adicional, nunca substituto: os quatro de categoria seguem
+        // intactos, e a soma deles continua fechando com o total (A-12).
+        desembaracadosNoPeriodo: clearedInPeriodCount(processes, recorte.from, recorte.to),
       },
       channelDistribution: channelDistribution(processes),
       rankings: {
@@ -241,6 +270,11 @@ export function registerIndicatorsRoute(
         weekEnd: toIsoDay(isoWeekEnd(day)),
         topN: config.topN,
         bazarShare: bazarShare(processes),
+        period: {
+          from: recorte.from === null ? null : toIsoDay(recorte.from),
+          to: recorte.to === null ? null : toIsoDay(recorte.to),
+        },
+        dataRange: dataRanges(processes),
       },
     }
     return reply.code(200).send(body)
