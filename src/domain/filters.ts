@@ -46,7 +46,7 @@ export const RESPONSIBLES: readonly Responsible[] = [
   'indefinido',
 ]
 
-export const CUSTOMS_CHANNELS: readonly CustomsChannel[] = ['vermelho', 'nenhum', 'indefinido']
+export const CUSTOMS_CHANNELS: readonly CustomsChannel[] = ['verde', 'vermelho', 'indefinido']
 
 export function emptyFilterSet(): FilterSet {
   return {
@@ -303,8 +303,8 @@ export const RESPONSIBLE_LABELS: Readonly<Record<Responsible, string>> = {
 }
 
 export const CHANNEL_LABELS: Readonly<Record<CustomsChannel, string>> = {
+  verde: 'Canal Verde',
   vermelho: 'Canal Vermelho',
-  nenhum: 'Sem canal',
   indefinido: 'Indefinido',
 }
 

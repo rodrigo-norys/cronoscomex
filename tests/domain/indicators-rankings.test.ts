@@ -68,7 +68,7 @@ function process({
     goodsKey: normKey(goods),
     statusCategory,
     responsible,
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: null,
     styleKey: 'none',
     anomalies: [],

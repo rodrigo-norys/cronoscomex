@@ -15,7 +15,7 @@ const ENTRADAS: ColorMapEntry[] = [
     fillId: 8,
     label: 'Azul',
     responsible: 'colaborador1',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: false,
   },
   {
@@ -31,7 +31,7 @@ const ENTRADAS: ColorMapEntry[] = [
     fillId: 0,
     label: 'Branco',
     responsible: 'indefinido',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: false,
   },
 ]

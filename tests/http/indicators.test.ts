@@ -51,7 +51,7 @@ function process(
     goodsKey: '',
     statusCategory,
     responsible: 'indefinido',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: null,
     styleKey: 'none',
     anomalies: [],
@@ -121,6 +121,10 @@ describe('GET /api/indicators', () => {
       // teto de 15 dias, que precisa vir do servidor para nao virar regra no
       // cliente. `expectedVessels` (IND-12) segue intacto, sem teto (A-24).
       'arrivalCalendar',
+      // `channelDistribution` entrou em `H-51`: bloco proprio, e nao um campo
+      // em `counts` — aquele e a lista dos indicadores do catalogo, e
+      // `counts.canalVermelho` (IND-06) continua la com o mesmo valor.
+      'channelDistribution',
       'counts',
       'documentaryLeadTime',
       'expectedVessels',
@@ -598,6 +602,87 @@ describe('GET /api/indicators — o grupo de clientes no ranking', () => {
     ).json()
 
     expect(body.counts.total).toBe(2)
+
+    await app.close()
+  })
+})
+
+/**
+ * `H-51`. A rota nao calcula — serializa o que `channelDistribution` devolveu.
+ * O que se verifica aqui e a fiacao, que foi esquecida cinco vezes seguidas de
+ * `H-09` a `H-13`, e a coexistencia com IND-06.
+ */
+describe('GET /api/indicators — distribuicao de canal (H-51)', () => {
+  it('serializa a distribuicao ao lado de counts.canalVermelho', async () => {
+    const processes = [
+      process(2, 'desembaracado', { customsChannel: 'verde' }),
+      process(3, 'desembaracado', { customsChannel: 'verde' }),
+      process(4, 'em_andamento', { customsChannel: 'vermelho' }),
+      process(5, 'em_andamento', { customsChannel: 'indefinido' }),
+    ]
+    const app = buildServer(config, fakeStore(state({ processes })))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/indicators' })).json()
+
+    expect(body.channelDistribution).toEqual({
+      verde: 2,
+      vermelho: 1,
+      indefinido: 1,
+      known: 3,
+      verdeShare: 2 / 3,
+      vermelhoShare: 1 / 3,
+    })
+    // IND-06 nao foi redefinido pela historia.
+    expect(body.counts.canalVermelho).toBe(1)
+
+    await app.close()
+  })
+
+  // RF-18: todo indicador desta rota responde sobre o conjunto FILTRADO, e a
+  // distribuicao nao e excecao — inclusive o denominador.
+  it('recorta a distribuicao pelos filtros globais', async () => {
+    const processes = [
+      process(2, 'desembaracado', { customsChannel: 'verde', clientKey: 'ACME' }),
+      process(3, 'em_andamento', { customsChannel: 'vermelho', clientKey: 'OUTRO' }),
+    ]
+    const app = buildServer(config, fakeStore(state({ processes })))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/indicators?client=ACME' })).json()
+
+    expect(body.channelDistribution.verde).toBe(1)
+    expect(body.channelDistribution.vermelho).toBe(0)
+    expect(body.channelDistribution.known).toBe(1)
+    expect(body.channelDistribution.verdeShare).toBe(1)
+
+    await app.close()
+  })
+
+  // O caso-limite do backlog: filtro salvo antes de `H-51`. O valor saiu do
+  // dominio, e recusar e o comportamento correto — servir a lista inteira
+  // fingiria que o recorte foi aplicado.
+  it('recusa o canal `nenhum`, que saiu do dominio, com 400 FILTRO_INVALIDO', async () => {
+    const app = buildServer(config, fakeStore(state()))
+
+    const response = await app.inject({ method: 'GET', url: '/api/indicators?channel=nenhum' })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.json().error.code).toBe('FILTRO_INVALIDO')
+    expect(response.json().error.message).toContain('nenhum')
+
+    await app.close()
+  })
+
+  it('aceita o canal `verde` no filtro', async () => {
+    const processes = [
+      process(2, 'desembaracado', { customsChannel: 'verde' }),
+      process(3, 'em_andamento', { customsChannel: 'indefinido' }),
+    ]
+    const app = buildServer(config, fakeStore(state({ processes })))
+
+    const response = await app.inject({ method: 'GET', url: '/api/indicators?channel=verde' })
+
+    expect(response.statusCode).toBe(200)
+    expect(response.json().counts.total).toBe(1)
 
     await app.close()
   })

@@ -61,7 +61,7 @@ function process({
     goodsKey: '',
     statusCategory,
     responsible: 'indefinido',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: null,
     styleKey: 'none',
     anomalies: [],

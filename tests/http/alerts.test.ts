@@ -61,7 +61,7 @@ function process(
     goodsKey: '',
     statusCategory,
     responsible: 'indefinido',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: null,
     styleKey: 'none',
     anomalies: [],
@@ -104,7 +104,7 @@ function diasAtras(days: number): string {
 }
 
 function evento(ts: string, ref: string, to: StatusCategory = 'em_andamento'): string {
-  return JSON.stringify({ ts, ref, from: null, to, channel: 'nenhum', sourceRow: 2 })
+  return JSON.stringify({ ts, ref, from: null, to, channel: 'indefinido', sourceRow: 2 })
 }
 
 /**

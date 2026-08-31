@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  channelDistribution,
   overdueCount,
   PENDING_DOCS_HORIZON_DAYS,
   pendingDocsCount,
@@ -28,7 +29,7 @@ function process({
   eta2 = null,
   docsSent = null,
   statusCategory = 'em_andamento',
-  customsChannel = 'nenhum',
+  customsChannel = 'indefinido',
   statusRaw = '',
   anomalies = [],
 }: Fields): Process {
@@ -77,7 +78,7 @@ describe('redChannelCount — IND-06', () => {
   // A-06: so a cor e fonte. Texto em STATUS nao promove nada a canal.
   it('nao conta STATUS com CANAL VERMELHO quando a cor nao e vermelha', () => {
     const azul = process({
-      customsChannel: 'nenhum',
+      customsChannel: 'indefinido',
       statusRaw: 'DUIMP 1 - CANAL VERMELHO CONFERIDO',
       anomalies: ['CANAL_EM_TEXTO_STATUS'],
     })
@@ -96,11 +97,17 @@ describe('redChannelCount — IND-06', () => {
     const conjunto = [
       process({ customsChannel: 'vermelho' }),
       process({ customsChannel: 'vermelho' }),
-      process({ customsChannel: 'nenhum' }),
+      process({ customsChannel: 'verde' }),
       process({ customsChannel: 'indefinido' }),
     ]
 
     expect(redChannelCount(conjunto)).toBe(2)
+  })
+
+  // `H-51` acrescentou o verde, e IND-06 NAO foi redefinido: o criterio de
+  // aceite exige que o valor dele nao mude.
+  it('nao conta canal verde', () => {
+    expect(redChannelCount([process({ customsChannel: 'verde' })])).toBe(0)
   })
 
   it('a categoria de status nao influencia IND-06', () => {
@@ -239,5 +246,96 @@ describe('IND-14 e IND-15 — sobreposicao intencional', () => {
 
     expect(overdueCount(conjunto, HOJE)).toBe(0)
     expect(pendingDocsCount(conjunto, HOJE)).toBe(0)
+  })
+})
+
+/**
+ * `H-51`. A distribuicao acompanha IND-06 e nao o redefine — o teste acima
+ * garante que o valor dele nao mudou.
+ *
+ * O que se mede aqui e a separacao entre o que a cor classifica e o que ela nao
+ * classifica: `known` e o denominador, `indefinido` fica de fora dele, e as
+ * fracoes sao `null` quando nao ha denominador (A-42).
+ */
+describe('channelDistribution — H-51', () => {
+  it('separa os tres canais e usa so os conhecidos como denominador', () => {
+    const conjunto = [
+      process({ customsChannel: 'verde' }),
+      process({ customsChannel: 'verde' }),
+      process({ customsChannel: 'verde' }),
+      process({ customsChannel: 'vermelho' }),
+      process({ customsChannel: 'indefinido' }),
+      process({ customsChannel: 'indefinido' }),
+    ]
+
+    const d = channelDistribution(conjunto)
+
+    expect(d.verde).toBe(3)
+    expect(d.vermelho).toBe(1)
+    expect(d.indefinido).toBe(2)
+    expect(d.known).toBe(4)
+    expect(d.verdeShare).toBe(3 / 4)
+    expect(d.vermelhoShare).toBe(1 / 4)
+  })
+
+  // A soma das tres chaves e o total, sempre: nenhuma linha fica fora da conta
+  // (regra inviolavel 2).
+  it('as tres contagens somam o conjunto inteiro', () => {
+    const conjunto = [
+      process({ customsChannel: 'verde' }),
+      process({ customsChannel: 'vermelho' }),
+      process({ customsChannel: 'indefinido' }),
+    ]
+
+    const d = channelDistribution(conjunto)
+
+    expect(d.verde + d.vermelho + d.indefinido).toBe(conjunto.length)
+  })
+
+  // A-42: fracao de conjunto vazio nao e zero. Sem denominador, nao ha
+  // percentual — e `0%` afirmaria que nenhum processo e verde.
+  it('devolve fracao nula quando nenhum processo tem canal conhecido', () => {
+    const d = channelDistribution([
+      process({ customsChannel: 'indefinido' }),
+      process({ customsChannel: 'indefinido' }),
+    ])
+
+    expect(d.known).toBe(0)
+    expect(d.verdeShare).toBeNull()
+    expect(d.vermelhoShare).toBeNull()
+    expect(d.indefinido).toBe(2)
+  })
+
+  it('devolve tudo zerado e sem fracao para conjunto vazio', () => {
+    const d = channelDistribution([])
+
+    expect(d.verde).toBe(0)
+    expect(d.vermelho).toBe(0)
+    expect(d.indefinido).toBe(0)
+    expect(d.known).toBe(0)
+    expect(d.verdeShare).toBeNull()
+  })
+
+  // Um so canal conhecido leva a fracao a 1, e a outra a zero MEDIDO — que e
+  // diferente de nulo: aqui ha denominador.
+  it('distingue fracao zero de fracao ausente', () => {
+    const d = channelDistribution([
+      process({ customsChannel: 'verde' }),
+      process({ customsChannel: 'indefinido' }),
+    ])
+
+    expect(d.verdeShare).toBe(1)
+    expect(d.vermelhoShare).toBe(0)
+  })
+
+  // Regra inviolavel 4: a cor nunca infere status, e o inverso tambem vale — a
+  // categoria nao entra na distribuicao de canal.
+  it('a categoria de status nao influencia a distribuicao', () => {
+    const d = channelDistribution([
+      process({ customsChannel: 'verde', statusCategory: 'em_andamento' }),
+      process({ customsChannel: 'verde', statusCategory: 'desembaracado' }),
+    ])
+
+    expect(d.verde).toBe(2)
   })
 })

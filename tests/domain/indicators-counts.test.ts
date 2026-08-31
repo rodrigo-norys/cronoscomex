@@ -32,7 +32,7 @@ function process(sourceRow: number, statusCategory: StatusCategory): Process {
     goodsKey: '',
     statusCategory,
     responsible: 'indefinido',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: null,
     styleKey: 'none',
     anomalies: [],

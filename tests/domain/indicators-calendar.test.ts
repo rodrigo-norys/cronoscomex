@@ -54,7 +54,7 @@ function process({ eta2 = null, vessel = '', statusCategory = 'em_andamento' }: 
     goodsKey: '',
     statusCategory,
     responsible: 'indefinido',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: null,
     styleKey: 'none',
     anomalies: [],

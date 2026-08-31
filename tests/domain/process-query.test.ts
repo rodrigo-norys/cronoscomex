@@ -69,7 +69,7 @@ function makeProcess(fields: Fields = {}): Process {
     goodsKey: '',
     statusCategory: fields.statusCategory ?? 'em_andamento',
     responsible: 'indefinido',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: null,
     styleKey: 'none',
     anomalies: [],

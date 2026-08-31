@@ -26,8 +26,8 @@ const RESPONSIBLE_LABELS: Readonly<Record<string, string>> = {
 }
 
 const CHANNEL_LABELS: Readonly<Record<string, string>> = {
+  verde: 'Canal Verde',
   vermelho: 'Canal Vermelho',
-  nenhum: 'sem canal',
   indefinido: 'canal indefinido',
 }
 

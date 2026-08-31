@@ -64,7 +64,7 @@ function process(
     goodsKey: '',
     statusCategory,
     responsible: 'indefinido',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: null,
     styleKey: 'none',
     anomalies: [],
@@ -105,7 +105,7 @@ function writeEvents(...events: string[]): void {
   writeFileSync(path, `${events.join('\n')}\n`, 'utf-8')
 }
 
-function event(ref: string, ts: string, to: StatusCategory, channel = 'nenhum'): string {
+function event(ref: string, ts: string, to: StatusCategory, channel = 'indefinido'): string {
   return JSON.stringify({ ts, ref, from: null, to, channel, sourceRow: 10 })
 }
 

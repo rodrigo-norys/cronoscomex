@@ -71,7 +71,7 @@ function process(fields: Fields = {}): Process {
     goodsKey: fields.goodsKey ?? '',
     statusCategory: fields.statusCategory ?? 'em_andamento',
     responsible: fields.responsible ?? 'indefinido',
-    customsChannel: fields.customsChannel ?? 'nenhum',
+    customsChannel: fields.customsChannel ?? 'indefinido',
     importerOutsideRj: fields.importerOutsideRj ?? null,
     styleKey: 'none',
     anomalies: [],
@@ -199,6 +199,32 @@ describe('GET /api/filters/options', () => {
     expect(body.channels.map((o: { label: string }) => o.label)).toContain('Canal Vermelho')
 
     await app.close()
+  })
+
+  /**
+   * `H-51` trocou o dominio: `nenhum` saiu e `verde` entrou. A opcao que a barra
+   * de filtros deixou de oferecer nao pode reaparecer aqui — e por `fixedOptions`
+   * derivar de `CUSTOMS_CHANNELS`, uma so mudanca de dominio move os dois lados.
+   */
+  it('oferece verde e nao oferece mais o canal `nenhum` (H-51)', async () => {
+    const app = buildServer(config, fakeStore(state([process({ customsChannel: 'verde' })])))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/filters/options' })).json()
+    const chaves = body.channels.map((o: { key: string }) => o.key)
+
+    expect(chaves).toEqual(['verde', 'vermelho', 'indefinido'])
+    expect(chaves).not.toContain('nenhum')
+  })
+
+  // A-28: chave zerada nao se esconde. Sem processo verde, a opcao continua na
+  // lista com zero — esconde-la faria o filtro parecer completo quando nao e.
+  it('mantem o canal verde na lista mesmo sem nenhum processo verde', async () => {
+    const app = buildServer(config, fakeStore(state([process({ customsChannel: 'indefinido' })])))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/filters/options' })).json()
+    const verde = body.channels.find((o: { key: string }) => o.key === 'verde')
+
+    expect(verde).toEqual({ key: 'verde', label: 'Canal Verde', count: 0 })
   })
 
   it('devolve 503 quando nunca houve leitura', async () => {

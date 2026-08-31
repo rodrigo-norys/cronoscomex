@@ -22,6 +22,7 @@ import type { QuarantineResponse } from '../../../src/http/routes/quarantine.ts'
  */
 export function indicatorsFixture(
   countsOverrides: Partial<IndicatorsResponse['counts']> = {},
+  channelOverrides: Partial<IndicatorsResponse['channelDistribution']> = {},
 ): IndicatorsResponse {
   return {
     counts: {
@@ -40,6 +41,18 @@ export function indicatorsFixture(
       // 31/07, e passando esse dia a funcao devolve 3.
       desembaracadosHoje: 0,
       ...countsOverrides,
+    },
+    // `H-51`. Medido em 31/08/2026 sobre a planilha real: 477 verdes, 5
+    // vermelhas e 167 sem canal, somando as 649. O denominador do percentual e
+    // 482, e as 167 ficam fora dele — contadas, nunca diluidas.
+    channelDistribution: {
+      verde: 477,
+      vermelho: 5,
+      indefinido: 167,
+      known: 482,
+      verdeShare: 477 / 482,
+      vermelhoShare: 5 / 482,
+      ...channelOverrides,
     },
     rankings: { clients: [], importers: [], agents: [], goods: [], responsible: [] },
     expectedVessels: [],
@@ -139,7 +152,7 @@ export function processFixture(overrides: Partial<ProcessDto> = {}): ProcessDto 
     statusRaw: 'EM ANDAMENTO',
     statusCategory: 'em_andamento',
     responsible: 'colaborador1',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: false,
     boletoRaw: '',
     paymentRaw: '',
@@ -359,13 +372,13 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
     {
       label: 'Verde (tom A)',
       responsible: 'indefinido',
-      customsChannel: 'nenhum',
+      customsChannel: 'verde',
       importerOutsideRj: false,
     },
     {
       label: 'Azul',
       responsible: 'colaborador1',
-      customsChannel: 'nenhum',
+      customsChannel: 'indefinido',
       importerOutsideRj: false,
     },
   ]

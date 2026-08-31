@@ -40,7 +40,7 @@ const COLOR_MAP: ColorMapEntry[] = [
     fillId: 2,
     label: 'Verde (tom A)',
     responsible: 'indefinido',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: false,
   },
   {
@@ -48,7 +48,7 @@ const COLOR_MAP: ColorMapEntry[] = [
     fillId: 12,
     label: 'Verde (tom B)',
     responsible: 'indefinido',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: false,
   },
   {
@@ -56,7 +56,7 @@ const COLOR_MAP: ColorMapEntry[] = [
     fillId: 27,
     label: 'Roxo (tom A)',
     responsible: 'colaborador2',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: false,
   },
   {
@@ -64,12 +64,12 @@ const COLOR_MAP: ColorMapEntry[] = [
     fillId: 11,
     label: 'Roxo (tom B)',
     responsible: 'colaborador2',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: false,
   },
 ]
 
-const ROXO = { responsible: 'colaborador2', customsChannel: 'nenhum', importerOutsideRj: false }
+const ROXO = { responsible: 'colaborador2', customsChannel: 'indefinido', importerOutsideRj: false }
 
 function process(overrides: Partial<Process> = {}): Process {
   return {
@@ -101,7 +101,7 @@ function process(overrides: Partial<Process> = {}): Process {
     goodsKey: '',
     statusCategory: 'em_andamento',
     responsible: 'indefinido',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: false,
     styleKey: 'argb:FF00FF00',
     anomalies: [],
@@ -159,13 +159,13 @@ describe('GET /api/color-options', () => {
       {
         label: 'Verde (tom A)',
         responsible: 'indefinido',
-        customsChannel: 'nenhum',
+        customsChannel: 'indefinido',
         importerOutsideRj: false,
       },
       {
         label: 'Roxo (tom A)',
         responsible: 'colaborador2',
-        customsChannel: 'nenhum',
+        customsChannel: 'indefinido',
         importerOutsideRj: false,
       },
     ])
@@ -233,7 +233,7 @@ describe('PATCH /api/processes/:ref/color', () => {
     const projetado = state({ processes: [process({ styleKey: 'argb:FFA74F7B' })] })
     await patch(buildApp(projetado), {
       responsible: 'indefinido',
-      customsChannel: 'nenhum',
+      customsChannel: 'indefinido',
       importerOutsideRj: false,
     })
 
@@ -279,9 +279,9 @@ describe('PATCH /api/processes/:ref/color', () => {
 
     for (const payload of [
       {},
-      { responsible: 'colaborador2', customsChannel: 'nenhum' },
-      { responsible: 'colaborador2', customsChannel: 'nenhum', importerOutsideRj: 'nao' },
-      { responsible: 42, customsChannel: 'nenhum', importerOutsideRj: false },
+      { responsible: 'colaborador2', customsChannel: 'indefinido' },
+      { responsible: 'colaborador2', customsChannel: 'indefinido', importerOutsideRj: 'nao' },
+      { responsible: 42, customsChannel: 'indefinido', importerOutsideRj: false },
     ]) {
       const response = await patch(app, payload)
       expect(response.statusCode).toBe(400)
@@ -321,7 +321,7 @@ describe('PATCH /api/processes/:ref/color', () => {
     await patch(app, ROXO)
     const response = await patch(app, {
       responsible: 'indefinido',
-      customsChannel: 'nenhum',
+      customsChannel: 'indefinido',
       importerOutsideRj: false,
     })
 
