@@ -240,6 +240,38 @@ contra 1548 ao fim de `H-54` — 8 testes próprios.
 2. `feat(web): a Performance diz a metrica e mostra o recorte`
 3. `docs(docs): fecha H-53, com o quinto criterio declarado nao-incidente`
 
+### `H-43` — Live regions da casca e dos componentes · PR #TBD
+
+**Branch:** `H-43/fix-live-regions-da-casca`, saindo de
+`H-53/feat-performance-diz-a-metrica`. Posição 5 da pilha, e a primeira de `E9`.
+
+**O que mudou.** As regiões vivas da casca e dos seis componentes passam a
+existir no DOM **antes** de receberem mensagem. Um `role="alert"` que nasce já
+populado não é anunciado pelo leitor de tela — não há estado anterior a comparar
+—, e era o mesmo padrão repetido em 23 pontos (`ACHADO 11`).
+
+**Arquivos** — 14, em 3 commits: `web/src/App.tsx` e os seis componentes que a
+história nomeia, mais sete arquivos de teste.
+
+**Verify.** Verde. `Test Files 73 passed (73)` · `Tests 1566 passed (1566)`,
+contra 1556 ao fim de `H-53` — 10 testes próprios.
+
+**Sem conferência contra a planilha:** a história não toca dado nenhum. Nenhum
+indicador, contrato ou valor muda.
+
+**Nove testes existentes mudaram de forma, e nenhum de força.** Eles consultavam
+`getByRole('alert')` no singular; com a região vazia existindo desde a montagem,
+"existe algum alert" resolve no primeiro render, antes de a mensagem chegar.
+Passaram a esperar pelo **texto**. Dois deles **ganharam** força: agora provam a
+identidade do nó — o elemento que recebe o texto é o mesmo objeto que já estava
+no DOM.
+
+**Commits:**
+
+1. `fix(web): as regioes vivas passam a existir antes de receber mensagem`
+2. `fix(web): os testes passam a esperar pelo texto, e nao pelo no`
+3. `docs(docs): fecha H-43 no backlog, na rastreabilidade e no estado`
+
 ---
 
 ## 3. PENDÊNCIAS PARA O DONO
@@ -383,6 +415,7 @@ da anterior e todas escrevem em `docs/06-backlog.md`,
 | 2 | [#70](https://github.com/rodrigo-norys/cronoscomex/pull/70) — `H-52` | `H-52/feat-periodo-nos-cartoes` | `H-51/feat-canal-verde` |
 | 3 | [#71](https://github.com/rodrigo-norys/cronoscomex/pull/71) — `H-54` | `H-54/feat-historico-reconstruido` | `H-52/feat-periodo-nos-cartoes` |
 | 4 | [#72](https://github.com/rodrigo-norys/cronoscomex/pull/72) — `H-53` | `H-53/feat-performance-diz-a-metrica` | `H-54/feat-historico-reconstruido` |
+| 5 | #TBD — `H-43` | `H-43/fix-live-regions-da-casca` | `H-53/feat-performance-diz-a-metrica` |
 
 Depois do último merge, a branch `distribuicao` fica para trás e precisa ser
 sincronizada — `node --experimental-strip-types scripts/sincronizar-distribuicao.ts`.
@@ -443,3 +476,10 @@ A seguinte é de `H-53`.
 10. **`MULTI_FILTER_LABELS` nasceu em `useFilters.ts`**, e a barra passou a
     consumi-lo. Alternativa descartada: copiar as onze strings para a Página
     Performance, criando dois mapas que divergem no primeiro filtro renomeado.
+
+A seguinte é de `H-43`.
+
+11. **A região persistente das páginas é endereçada por um `id` exportado**,
+    `PAGE_LIVE_REGION_ID`, e as páginas escreverão nela por portal. Alternativa
+    descartada: um estado na casca, que faria a casca saber o que cada página tem
+    a dizer — e ela não calcula nada (regra inviolável 6).
