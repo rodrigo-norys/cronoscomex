@@ -385,11 +385,30 @@ com o gatilho em aberto na tabela de marcos** — mencionar e marcar são coisas
 diferentes. Falha **aberto**. `test-guard.sh` é a regressão do guard e roda
 **primeiro** no `npm run verify` — exige `bash` e `jq`.
 
-**Permissões** (`.claude/settings.json`). `git add`, `git push`, `npm install` e
-`npm ci` pedem confirmação. `curl`, `wget`, force-push e leitura ou escrita de
-`*.xlsx` e `*.jpeg` da raiz estão negados. O modo bypass está desabilitado.
+**Permissões** (`.claude/settings.json`). `npm install` e `npm ci` pedem
+confirmação. `curl`, `wget`, force-push e leitura ou escrita de `*.xlsx` e
+`*.jpeg` da raiz estão negados. O modo bypass está desabilitado.
 **`mcp__*` está negado — todo MCP, de todo servidor** (D-19 e D-20 em
 `docs/10-governanca.md`).
+
+**O git é permitido até o PR, e negado do PR em diante.** `git add`, `commit`,
+`push`, `switch` e `gh pr create` rodam sem confirmação; **`gh pr merge` está
+negado**, e o merge continua sendo do dono, no GitHub. Negados também os
+comandos que **perdem trabalho ou reescrevem história**: `reset --hard`,
+`clean`, `checkout --`, `switch -f`, `rebase`, `commit --amend`,
+`commit --no-verify`, `branch -D` e `gh repo delete`.
+
+> **A confirmação em `git add` e `git push` saiu em 31/08/2026**, ao abrir a
+> sessão sem supervisão. Quem protege deixou de ser o prompt e passou a ser o
+> par: **o portão antes do commit** e a **`main` protegida** depois dele — nada
+> chega à `main` sem PR, `verify` e `dados-sensiveis`. As negações acima
+> entraram no mesmo commit, e são o outro lado da troca: sem prompt, o que não
+> pode acontecer precisa ser impossível, e não apenas desaconselhado.
+>
+> `git switch -f` e `--discard-changes` negados têm par no repositório:
+> `scripts/sincronizar-distribuicao.ts` recusa árvore suja antes do seu próprio
+> `git switch`. Os dois defendem a mesma coisa — mudança não commitada não
+> atravessa troca de branch — por caminhos diferentes.
 
 **Gates no GitHub** (`.github/workflows/`), em `pull_request` e em `push` na
 `main`. `verify.yml` roda o portão inteiro com o Node de `.nvmrc`;
