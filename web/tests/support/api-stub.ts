@@ -142,6 +142,20 @@ export function monthlyHistoryFixture(
 ): MonthlyHistoryResponse {
   return {
     series: [{ month: '2026-08', total: 649, desembaracados: 480, canalVermelho: 5 }],
+    // `H-54`. A serie reconstruida, que a planilha datou muito antes de a
+    // aplicacao existir: `ETA2` cobre dez meses a partir de dez/2025 e `RG`
+    // cobre sete de 2026 (`docs/uso/RESULTADO.md` secao 6). Os quatro pontos
+    // abaixo sao um recorte da forma — cada teste serve a serie que exercita.
+    reconstructed: {
+      points: [
+        { month: '2025-12', chegados: 3, desembaracados: 0, forecast: false },
+        { month: '2026-01', chegados: 60, desembaracados: 12, forecast: false },
+        { month: '2026-08', chegados: 631, desembaracados: 483, forecast: false },
+        { month: '2026-09', chegados: 649, desembaracados: 483, forecast: true },
+      ],
+      missingEta2: 64,
+      missingRegistration: 166,
+    },
     historyStartedAt: '2026-08-03T14:22:31.004Z',
     truncated: true,
     ...overrides,

@@ -119,13 +119,20 @@ afterEach(() => {
 })
 
 describe('GET /api/history/monthly', () => {
-  it('devolve as tres chaves do contrato', async () => {
+  it('devolve as quatro chaves do contrato', async () => {
     writeEvents(event('A', '2026-08-01T12:00:00.000Z', 'em_andamento'))
 
     const resposta = await server().inject({ method: 'GET', url: '/api/history/monthly' })
 
     expect(resposta.statusCode).toBe(200)
-    expect(Object.keys(resposta.json()).sort()).toEqual(['historyStartedAt', 'series', 'truncated'])
+    // `reconstructed` entrou em `H-54`: bloco proprio, e nao pontos somados a
+    // `series` — as duas tem origem diferente e nunca sao emendadas (A-43).
+    expect(Object.keys(resposta.json()).sort()).toEqual([
+      'historyStartedAt',
+      'reconstructed',
+      'series',
+      'truncated',
+    ])
   })
 
   it('serializa cada ponto com month, total, desembaracados e canalVermelho', async () => {
@@ -153,7 +160,9 @@ describe('GET /api/history/monthly', () => {
   it('devolve serie vazia e historyStartedAt nulo sem historico algum', async () => {
     const resposta = await server().inject({ method: 'GET', url: '/api/history/monthly' })
 
-    expect(resposta.json()).toEqual({ series: [], historyStartedAt: null, truncated: false })
+    expect(resposta.json().series).toEqual([])
+    expect(resposta.json().historyStartedAt).toBeNull()
+    expect(resposta.json().truncated).toBe(false)
   })
 
   it('usa 12 meses quando months e omitido', async () => {
@@ -261,5 +270,104 @@ describe('GET /api/history/monthly — recorte por filtro', () => {
     })
 
     expect(resposta.json().series).toEqual([])
+  })
+})
+
+/**
+ * `H-54`. A rota so serializa: a reconstrucao vive em `src/domain/history.ts`.
+ * O que se verifica aqui e a fiacao e o recorte pelos filtros.
+ */
+describe('GET /api/history/monthly — serie reconstruida (H-54)', () => {
+  const civil = (iso: string): Date => new Date(`${iso}T00:00:00Z`)
+
+  const comDatas = () =>
+    state({
+      processes: [
+        process('A', 'desembaracado', {
+          clientKey: 'ACME',
+          eta2: civil('2026-01-10'),
+          registrationDate: civil('2026-02-05'),
+        }),
+        process('B', 'em_andamento', {
+          clientKey: 'OUTRO',
+          eta2: civil('2026-03-20'),
+          registrationDate: null,
+        }),
+      ],
+    })
+
+  it('serializa a reconstruida ao lado da observada, sem somar as duas', async () => {
+    writeEvents(event('A', '2026-08-01T12:00:00.000Z', 'desembaracado'))
+
+    const body = (
+      await server(comDatas()).inject({ method: 'GET', url: '/api/history/monthly' })
+    ).json()
+
+    // A observada tem o mes do evento; a reconstruida tem os meses das datas.
+    expect(body.series.map((p: { month: string }) => p.month)).toContain('2026-08')
+    expect(body.reconstructed.points.map((p: { month: string }) => p.month)).toEqual([
+      '2026-01',
+      '2026-02',
+      '2026-03',
+    ])
+    expect(body.reconstructed.missingRegistration).toBe(1)
+  })
+
+  // Sem historico gravado a reconstruida vem cheia: e o criterio de aceite que
+  // manda ela aparecer sozinha, acompanhando o estado vazio em vez de
+  // substitui-lo.
+  it('devolve a reconstruida mesmo sem nenhum evento gravado', async () => {
+    const body = (
+      await server(comDatas()).inject({ method: 'GET', url: '/api/history/monthly' })
+    ).json()
+
+    expect(body.series).toEqual([])
+    expect(body.historyStartedAt).toBeNull()
+    expect(body.reconstructed.points).toHaveLength(3)
+  })
+
+  // O criterio de aceite: a reconstruida e recortada pelos MESMOS filtros, que
+  // incidem sobre a leitura de hoje — o mesmo limite que a rota ja declara.
+  it('recorta a reconstruida pelos filtros globais', async () => {
+    const body = (
+      await server(comDatas()).inject({
+        method: 'GET',
+        url: '/api/history/monthly?client=ACME',
+      })
+    ).json()
+
+    expect(body.reconstructed.points.map((p: { month: string }) => p.month)).toEqual([
+      '2026-01',
+      '2026-02',
+    ])
+    expect(body.reconstructed.missingRegistration).toBe(0)
+  })
+
+  it('devolve reconstrucao vazia quando nenhum processo do recorte tem data', async () => {
+    const semDatas = state({ processes: [process('C', 'em_andamento')] })
+
+    const body = (
+      await server(semDatas).inject({ method: 'GET', url: '/api/history/monthly' })
+    ).json()
+
+    expect(body.reconstructed).toEqual({
+      points: [],
+      missingEta2: 1,
+      missingRegistration: 1,
+    })
+  })
+
+  // A janela da pagina recorta a serie OBSERVADA. A reconstruida cobre o
+  // intervalo das datas, porque cortar por `months` esconderia justamente o
+  // passado que a historia existe para mostrar.
+  it('nao aplica a janela `months` a reconstruida', async () => {
+    writeEvents(event('A', '2026-08-01T12:00:00.000Z', 'desembaracado'))
+
+    const body = (
+      await server(comDatas()).inject({ method: 'GET', url: '/api/history/monthly?months=1' })
+    ).json()
+
+    expect(body.series).toHaveLength(1)
+    expect(body.reconstructed.points).toHaveLength(3)
   })
 })

@@ -67,17 +67,23 @@ export function filteredWithPeriod(
  * Tres respostas distintas, e a diferenca entre elas e o contrato:
  * `null` ja respondeu `400`; `{ refs: null }` significa **nenhum filtro ativo**,
  * e quem chama nao deve recortar nada; um conjunto significa recorte.
+ *
+ * `selected` acompanha os REF desde `H-54`: a serie reconstruida sai das DATAS
+ * dos processos, e nao dos eventos gravados, entao ela precisa das linhas e nao
+ * das chaves. Sem filtro ativo vem o conjunto inteiro, que e o que a
+ * reconstrucao deve cobrir.
  */
 export function filteredRefs(
   request: FastifyRequest,
   reply: FastifyReply,
   processes: readonly Process[],
-): { refs: ReadonlySet<string> | null } | null {
+): { refs: ReadonlySet<string> | null; selected: readonly Process[] } | null {
   try {
     const filters = parseFilters(request.query as Record<string, unknown>)
-    if (!hasAnyFilter(filters)) return { refs: null }
+    if (!hasAnyFilter(filters)) return { refs: null, selected: processes }
 
-    return { refs: new Set(applyFilters(processes, filters).map((process) => process.ref)) }
+    const selected = applyFilters(processes, filters)
+    return { refs: new Set(selected.map((process) => process.ref)), selected }
   } catch (error) {
     if (error instanceof FilterParseError) {
       reply.code(400).send(apiError('FILTRO_INVALIDO', error.message))

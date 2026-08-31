@@ -2,7 +2,11 @@ import type { FastifyInstance } from 'fastify'
 import type { AppConfig } from '../../app/config.ts'
 import { store as defaultStore, type StoreAccess } from '../../app/process-store.ts'
 import { today as currentDay } from '../../domain/date-window.ts'
-import type { MonthlyPoint } from '../../domain/history.ts'
+import {
+  type MonthlyPoint,
+  type ReconstructedSeries,
+  reconstructMonthly,
+} from '../../domain/history.ts'
 import { historyStartedAt, monthlySeries } from '../../io/history-store.ts'
 import { apiError } from '../errors.ts'
 import { filteredRefs } from '../filter-request.ts'
@@ -32,6 +36,16 @@ const MAX_MONTHS = 60
 
 export interface MonthlyHistoryResponse {
   series: MonthlyPoint[]
+  /**
+   * `H-54`. A serie derivada das DATAS da planilha, ao lado da observada e
+   * nunca somada a ela.
+   *
+   * Bloco separado porque as duas tem origem diferente: `series` sai dos eventos
+   * que a aplicacao observou desde a primeira execucao (ADR-0005, A-43), e esta
+   * sai do que a planilha datou. Emenda-las numa serie so afirmaria continuidade
+   * que nao existe — que e exatamente o que A-43 proibe.
+   */
+  reconstructed: ReconstructedSeries
   /**
    * Instante do primeiro evento gravado. `null` enquanto nao houver historico —
    * e `null` e o que faz a Pagina Historico dizer que nao ha dado anterior,
@@ -89,6 +103,13 @@ export function registerHistoryRoute(
 
     const body: MonthlyHistoryResponse = {
       series,
+      // Recortada pelos MESMOS filtros da observada, que incidem sobre a leitura
+      // de hoje — o mesmo limite que a ressalva da rota ja declara.
+      reconstructed: reconstructMonthly(
+        selection.selected,
+        currentDay(config.timezone),
+        config.timezone,
+      ),
       historyStartedAt: historyStartedAt({ path: historyPath }),
       truncated,
     }

@@ -429,6 +429,13 @@ desde `H-28`; a tela que a consome é `H-21`.
   "series": [
     { "month": "2026-08", "total": 0, "desembaracados": 0, "canalVermelho": 0 }
   ],
+  "reconstructed": {                          // H-54 — derivada das datas da planilha
+    "points": [
+      { "month": "2025-12", "chegados": 0, "desembaracados": 0, "forecast": false }
+    ],
+    "missingEta2": 64,
+    "missingRegistration": 166
+  },
   "historyStartedAt": "2026-08-03T14:22:31.004Z",
   "truncated": true
 }
@@ -437,6 +444,31 @@ desde `H-28`; a tela que a consome é `H-21`.
 Cada ponto é o **estado ao fim do mês**, não a contagem de eventos dele: um mês
 sem evento algum repete os valores do anterior, porque ausência de mudança não é
 ausência de processos.
+
+`reconstructed` (`H-54`) é **bloco separado, e nunca somado a `series`**. As duas
+têm origem diferente: `series` sai dos eventos que a aplicação observou desde a
+primeira execução (ADR-0005), e `reconstructed` sai das datas que a planilha
+carrega. Emendá-las numa série só afirmaria continuidade que não existe — que é o
+que A-43 proíbe; o que ele proíbe é apresentar reconstrução como histórico
+observado, não derivá-la.
+
+As duas medidas de `reconstructed` são **estoque ao fim do mês**, a mesma
+grandeza de `series`: `chegados` acumula os processos com `ETA2` até o fim do mês,
+e `desembaracados` os com data de registro. **Não há `canalVermelho`** ali — a cor
+é o estado de hoje e não carrega data, e projetá-la para trás afirmaria que a
+linha já era vermelha naquele mês (regra inviolável 3).
+
+`points` cobre **todo** mês entre a primeira e a última data presente, inclusive
+os vazios: mês sem processo repete o acumulado, e não abre buraco. `forecast` é
+`true` no mês posterior ao corrente — a data já está na planilha, o mês ainda não
+aconteceu; medido em 31/08/2026, 18 processos têm `ETA2` em set/2026.
+`missingEta2` e `missingRegistration` contam quem não entra em cada medida: data
+ausente não pertence a mês nenhum (A-20), e sumir sem contagem seria descarte
+silencioso. Medido: 64 dos 649 sem `ETA2` e 166 sem `RG`.
+
+**`months` não recorta `reconstructed`.** A janela é da série observada; a
+reconstruída cobre o intervalo das datas, porque cortá-la pela janela esconderia
+justamente o passado que ela existe para mostrar.
 
 `truncated: true` indica que a janela pedida excede o histórico existente — a
 série começa quando a aplicação começou, não antes. Sem histórico algum,
