@@ -122,7 +122,7 @@ pilha guardado e imprimiu `1490 passed`:
 caminho: qualquer corte menor deixaria um commit vermelho, e commit vermelho no
 meio quebra o `git bisect` que o corte atômico existe para preservar.
 
-### `H-52` — Os cartões declaram o período, e ele é editável ali · PR #TBD
+### `H-52` — Os cartões declaram o período, e ele é editável ali · [PR #70](https://github.com/rodrigo-norys/cronoscomex/pull/70)
 
 **Branch:** `H-52/feat-periodo-nos-cartoes`, saindo de `H-51/feat-canal-verde`.
 Posição 2 da pilha.
@@ -160,7 +160,7 @@ segundo.
 2. `feat(http): a rota declara a janela aplicada e a faixa real dos dados`
 3. `feat(web): cada cartao diz que janela conta, e o atalho a edita ali`
 4. `docs(docs): fecha H-52 no backlog, na rastreabilidade e no estado`
-5. `docs(docs): o relatório registra o PR de H-52`
+5. `docs(docs): o relatorio registra H-52`
 
 ---
 
@@ -185,7 +185,7 @@ da anterior e todas escrevem em `docs/06-backlog.md`,
 | # | PR | Branch | Base |
 |---|---|---|---|
 | 1 | [#69](https://github.com/rodrigo-norys/cronoscomex/pull/69) — `H-51` | `H-51/feat-canal-verde` | `main` |
-| 2 | #TBD — `H-52` | `H-52/feat-periodo-nos-cartoes` | `H-51/feat-canal-verde` |
+| 2 | [#70](https://github.com/rodrigo-norys/cronoscomex/pull/70) — `H-52` | `H-52/feat-periodo-nos-cartoes` | `H-51/feat-canal-verde` |
 
 Depois do último merge, a branch `distribuicao` fica para trás e precisa ser
 sincronizada — `node --experimental-strip-types scripts/sincronizar-distribuicao.ts`.
