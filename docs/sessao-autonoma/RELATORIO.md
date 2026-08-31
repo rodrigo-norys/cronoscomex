@@ -334,6 +334,37 @@ contra 1571 ao fim de `H-44` — 11 testes próprios.
 2. `fix(repo): a guarda de estilo passa a travar o papel de UI (C04)`
 3. `docs(docs): fecha H-45 no backlog, na rastreabilidade e no estado`
 
+### `H-46` — Responsividade e contenção de rolagem · PR #TBD
+
+**Branch:** `H-46/fix-responsividade`, saindo de `H-45/fix-papeis-de-ui`.
+Posição 8 da pilha, e a **última alcançável** — `H-47` exige navegador.
+
+**O que mudou.** Três tabelas passam a rolar dentro do próprio invólucro, sete
+grids declaram o valor abaixo do breakpoint, e o texto dos eixos do gráfico
+passa a acompanhar a fonte-base do operador.
+
+**As três correções são estáticas, e foram travadas em guarda — não só
+aplicadas.** Cada uma reprova sob mutação, e a reversão devolve ao verde. Sem
+isso, a próxima tabela ou grid nasceria com o mesmo defeito.
+
+**Arquivos** — 7, em 3 commits: cinco páginas, `ConflictDialog.tsx` e
+`tests/repo/estilo.test.ts`.
+
+**Verify.** Verde. `Test Files 73 passed (73)` · `Tests 1586 passed (1586)`,
+contra 1582 ao fim de `H-45` — 5 testes próprios.
+
+**Sem conferência contra a planilha:** a história não toca dado nenhum.
+
+**O quarto critério não é desta fatia, e o backlog diz isso:** a verificação
+visual a 320 px é `VN-1`, em `H-47`. O que se pode afirmar aqui é que nada no
+código **produz** aquela rolagem.
+
+**Commits:**
+
+1. `fix(web): tabela contida, grid com base explicita e eixo em rem`
+2. `fix(repo): a guarda de estilo passa a travar R01, R04 e R03`
+3. `docs(docs): fecha H-46, e E9 fica so com a historia de navegador`
+
 ---
 
 ## 3. PENDÊNCIAS PARA O DONO
@@ -480,6 +511,7 @@ da anterior e todas escrevem em `docs/06-backlog.md`,
 | 5 | [#73](https://github.com/rodrigo-norys/cronoscomex/pull/73) — `H-43` | `H-43/fix-live-regions-da-casca` | `H-53/feat-performance-diz-a-metrica` |
 | 6 | [#74](https://github.com/rodrigo-norys/cronoscomex/pull/74) — `H-44` | `H-44/fix-live-regions-das-paginas` | `H-43/fix-live-regions-da-casca` |
 | 7 | [#75](https://github.com/rodrigo-norys/cronoscomex/pull/75) — `H-45` | `H-45/fix-papeis-de-ui` | `H-44/fix-live-regions-das-paginas` |
+| 8 | #TBD — `H-46` | `H-46/fix-responsividade` | `H-45/fix-papeis-de-ui` |
 
 Depois do último merge, a branch `distribuicao` fica para trás e precisa ser
 sincronizada — `node --experimental-strip-types scripts/sincronizar-distribuicao.ts`.
@@ -564,3 +596,11 @@ A seguinte é de `H-45`.
     de arquivos. Alternativa descartada: confirmar que `H-42` já alinhara os
     quatro desviantes e seguir — o que deixaria o desvio livre para voltar no
     primeiro arquivo novo.
+
+A seguinte é de `H-46`.
+
+15. **`R01`, `R04` e `R03` também foram travados na guarda**, pelo mesmo motivo,
+    e a de tabela procura o invólucro nas **três linhas acima** — não na mesma.
+    Alternativa descartada: exigir os dois no mesmo texto, que faria a guarda
+    nascer vermelha contra o padrão que `ProcessTable` já usava; guarda que nasce
+    vermelha é desligada, não obedecida.
