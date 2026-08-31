@@ -206,7 +206,7 @@ estado vazio de `H-21`, as duas seções passaram a coexistir com o **mesmo
 como distingui-las. Pego por um teste que reprovou com "Found multiple elements
 with the role region"; `EmptyHistory` passou a receber `alone`.
 
-### `H-53` — A Página Performance diz a métrica e mostra o recorte · PR #TBD
+### `H-53` — A Página Performance diz a métrica e mostra o recorte · [PR #72](https://github.com/rodrigo-norys/cronoscomex/pull/72)
 
 **Branch:** `H-53/feat-performance-diz-a-metrica`, saindo de
 `H-54/feat-historico-reconstruido`. Posição 4 da pilha.
@@ -382,7 +382,7 @@ da anterior e todas escrevem em `docs/06-backlog.md`,
 | 1 | [#69](https://github.com/rodrigo-norys/cronoscomex/pull/69) — `H-51` | `H-51/feat-canal-verde` | `main` |
 | 2 | [#70](https://github.com/rodrigo-norys/cronoscomex/pull/70) — `H-52` | `H-52/feat-periodo-nos-cartoes` | `H-51/feat-canal-verde` |
 | 3 | [#71](https://github.com/rodrigo-norys/cronoscomex/pull/71) — `H-54` | `H-54/feat-historico-reconstruido` | `H-52/feat-periodo-nos-cartoes` |
-| 4 | #TBD — `H-53` | `H-53/feat-performance-diz-a-metrica` | `H-54/feat-historico-reconstruido` |
+| 4 | [#72](https://github.com/rodrigo-norys/cronoscomex/pull/72) — `H-53` | `H-53/feat-performance-diz-a-metrica` | `H-54/feat-historico-reconstruido` |
 
 Depois do último merge, a branch `distribuicao` fica para trás e precisa ser
 sincronizada — `node --experimental-strip-types scripts/sincronizar-distribuicao.ts`.
