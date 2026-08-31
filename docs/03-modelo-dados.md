@@ -52,7 +52,9 @@ export interface Process {
   readonly docsSentDate: Date | null      // O  — DOCS ENVIADOS
 
   // ---- Chaves normalizadas, para agrupamento ----
-  readonly clientKey: string
+  readonly clientKey: string              // cliente CONSOLIDADO (H-49, TD-04.1)
+  readonly clientProcessKey: string       // chave da célula CLT — o processo do cliente
+  readonly clientLabel: string            // rótulo do consolidado: label do mapa, ou a grafia da célula
   readonly importerKey: string
   readonly agentKey: string
   readonly vesselKey: string
@@ -236,6 +238,44 @@ espaços internos. Não corrige digitação (isso é §8, fora de escopo).
 
 O rótulo exibido para cada grupo é a **primeira grafia encontrada** na ordem de
 linha, não a chave normalizada.
+
+### TD-04.1 — Consolidação do cliente (`H-49`)
+
+A chave de CLT sai de `normKey` e passa por mais uma etapa, **só ela**: a célula
+guarda a referência do processo *daquele* cliente, não o cliente. Medido em
+31/08/2026: 649 processos produzem **509** valores distintos
+(`docs/uso/RESULTADO.md` §2).
+
+`resolveClient` compara a chave contra as entradas de `config/client-map.json`,
+na ordem do arquivo, e **a primeira que casa vence** — a ordem é a ferramenta de
+desempate do operador.
+
+| Regra | Casa quando | Existe porque |
+|---|---|---|
+| `prefix` | a chave começa com `value` | é a forma do sufixo numérico crescente |
+| `contains` | a chave contém `value` | dois grupos levam o nome do cliente dentro do texto |
+| `exact` | a chave é igual a `value` | grupo de valor único |
+| `importer` (qualificador, opcional) | além da regra, o importador é o declarado | medido: um prefixo de **62** processos cobre **três** clientes, separáveis só pelo importador |
+
+Resultado, com o mapa real do operador: as 509 chaves caem para **124** — **466**
+processos consolidados em **11** clientes, e **183** permanecem com a chave da
+célula (62 do prefixo de três clientes, 121 ainda sem regra declarada).
+
+| Situação | `clientKey` | `clientProcessKey` | `clientLabel` |
+|---|---|---|---|
+| Regra casou | chave do mapa | chave da célula | `label` do mapa |
+| Nenhuma regra casou | chave da célula | chave da célula | **primeira grafia** da célula (A-26) |
+| Célula vazia | `""` | `""` | `""` |
+| Mapa ausente | chave da célula | chave da célula | primeira grafia da célula |
+
+**Não consolidar é resultado legítimo**, não falha: a regra é do negócio e não é
+derivável do dado — dois prefixos podem ser o mesmo cliente, e um prefixo pode
+ser vários. Inferir aqui seria adivinhar (regra inviolável 3).
+
+**O rótulo do não coberto é a grafia da célula, nunca a chave normalizada.**
+`resolveClient` devolve a chave nos dois campos quando nada casa; quem escolhe a
+grafia é `process-builder.ts`, para não trocar `zeta comércio` por
+`ZETA COMERCIO` na tela.
 
 ### TD-05 — Chave de estilo e mapeamento de cor
 
