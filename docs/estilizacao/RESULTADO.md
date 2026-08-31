@@ -557,6 +557,12 @@ CORREÇÃO: Trocar por `fontSize: '0.75rem'` nas duas ocorrências — os rótul
 
 **Nenhum achado.** `D03–D07: não aplicáveis — 0 ocorrências de `dark:` no conjunto` (verificado em `web/src/**/*.tsx` e `web/src/index.css`).
 
+> **Superada em 31/08/2026, e a medição acima continua correta.** `D-21` decidiu
+> que o modo escuro entra, e com ele a condição que este resultado nomeia passa a
+> ser satisfeita: `D03`–`D07` deixam de ser inaplicáveis. Esta auditoria é
+> registro datado de 18/08/2026 e não é reescrita — quem executa o modo escuro é
+> o épico `E11`, a partir de `docs/redesign/PROPOSTA.md`, e não esta onda.
+
 ---
 
 # PROCEDIMENTOS "VERIFICAR NO NAVEGADOR"
@@ -812,6 +818,8 @@ ARQUIVOS TOCADOS: 0
 ACHADOS: nenhum — D03–D07 não aplicáveis, 0 ocorrências de `dark:` no conjunto
 PORQUE VEM AQUI: a onda existe e fica vazia porque o corpus (§ leitura de arquitetura do
   eixo modo escuro) condiciona D03–D07 à introdução da variante, que não aconteceu.
+SUPERADA EM 31/08/2026: a introdução da variante passou a acontecer, por D-21. A onda
+  segue vazia AQUI — quem a executa é o épico E11, fora deste plano.
 
 ONDA 7 — VERIFICAÇÃO MANUAL
 DEPENDE DE: ondas 1 a 6

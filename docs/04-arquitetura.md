@@ -332,6 +332,7 @@ cronoscomex/
 │  │  ├─ router.ts
 │  │  ├─ index.css
 │  │  └─ api-client.ts
+│  ├─ public/fonts/          # .woff2 versionados (H-58) — RNF-43, nenhum CDN
 │  └─ index.html
 ├─ tests/                     # projeto `servidor`, ambiente node
 │  ├─ domain/ · io/ · app/ · http/ · repo/

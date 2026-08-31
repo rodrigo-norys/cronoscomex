@@ -72,6 +72,12 @@ especificação são rastreados aqui, para que **nenhum** fique fora.
 
 ### 3.1. Telas (§6)
 
+> **`E11` redesenha a casca que hospeda estas sete telas, e nenhuma linha desta
+> tabela muda por causa dele:** o que cada página mostra, calcula e recorta segue
+> igual. Se uma história de `E11` alterar uma coluna daqui, ela saiu do escopo do
+> épico.
+
+
 | Tela | Requisito | Histórias | Status |
 |---|---|---|---|
 | Página Inicial | RF-09 | H-16 | ✅ **Entregue.** 12 cartões: "Em desembaraço" por A-12, os dois de urgência por A-40, "Desembaraçados hoje" por A-64. A soma das 4 categorias é exibida e confere (649) |
@@ -84,10 +90,15 @@ especificação são rastreados aqui, para que **nenhum** fique fora.
 
 ### 3.2. Filtros globais (§7)
 
+> **São treze**, e a tabela abaixo os lista. `H-15` entregou onze, `H-49` levou a
+> doze e `H-55` a treze. `H-60`, em `E11`, troca a **apresentação** — cada filtro
+> vira um chip que abre em popover —, sem tirar, acrescentar ou redefinir nenhum.
+
+
 | Filtro | Campo | Histórias | Status |
 |---|---|---|---|
 | Período | ETA2 | H-15 | ✅ **Entregue.** `eta2 = null` nunca satisfaz quando há limite (A-20) |
-| Cliente | CLT | H-15 | ✅ **Entregue.** Domínio aberto; medidos 509 valores na planilha real |
+| Cliente | CLT consolidado | H-15, H-49 | ✅ **Entregue.** Domínio aberto. Desde `H-49` recorta pelo **cliente consolidado** do mapa de `H-48`: os 509 valores medidos na célula viraram **124** chaves |
 | Importador | IMPORTADOR | H-15 | ✅ **Entregue.** Domínio aberto; medidos 26 valores |
 | Navio | NAVIO | H-15 | ✅ **Entregue.** Domínio aberto; medidos 70 valores |
 | Agente | AGENTE | H-15 | ✅ **Entregue.** Domínio aberto; medidos 35 valores |
@@ -97,6 +108,8 @@ especificação são rastreados aqui, para que **nenhum** fique fora.
 | Canal | Cor | H-04, H-15 | ✅ **Entregue.** Domínio fechado de A-37, as 3 chaves sempre exibidas |
 | Porto | ETA | H-15 | ✅ **Entregue.** A-36 confirmado na prática: o porto `RO` existe com 2 processos, e domínio fechado o teria escondido |
 | Importador fora do RJ | Cor | H-04, H-15 | ✅ **Entregue.** Tri-estado, não caixa de marcar: `false` inclui apenas `false`, nunca `null`. Medido: `true`=1 e `false`=648 somam 649, então nenhuma linha real exercita o `null` hoje |
+| Processo do cliente | CLT literal | H-49 | ✅ **Entregue.** O valor da célula continua recortável por conta própria — os dois campos coexistem, e o antigo passou a se chamar pelo que sempre foi |
+| Grupo de clientes | CLT consolidado | H-55 | ✅ **Entregue.** Segundo nível do filtro Cliente (TD-04.2). Marcar o grupo recorta os membros; **nenhum indicador muda de valor** |
 
 ### 3.3. Colunas da planilha (§2)
 

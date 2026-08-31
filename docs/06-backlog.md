@@ -101,6 +101,18 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 - [H-55 — Grupo de clientes no filtro](#h-55)
 - [H-56 — O ranking de clientes mostra o grupo com a composição](#h-56)
 
+**[Épico E11 — A casca redesenhada](#e11)**
+
+- [H-57 — O par escuro da camada de tema](#h-57)
+- [H-58 — As duas famílias de fonte, servidas do repositório](#h-58)
+- [H-59 — Navegação lateral e topo de uma linha](#h-59)
+- [H-60 — Os treze filtros como chips em popover](#h-60)
+- [H-61 — Forma, densidade e número nos componentes de dado](#h-61)
+- [H-62 — Forma e número na superfície de edição e no detalhe](#h-62)
+- [H-63 — Forma e número nas sete páginas, e a guarda de forma](#h-63)
+- [H-64 — Movimento curto, com a redução nascendo junto](#h-64)
+- [H-65 — Percorrer os procedimentos de navegador nos dois esquemas](#h-65)
+
 **[Resumo do backlog](#resumo)**
 
 ---
@@ -6032,6 +6044,597 @@ mercadoria — grupo é conceito de cliente.
 
 ---
 
+<a id="e11"></a>
+
+## Épico E11 — A casca redesenhada
+
+Nasce de `docs/redesign/PROPOSTA.md` (31/08/2026), transcrição versionada do
+mockup *Cronos Console*. **Não é auditoria:** `E9` mediu conformidade contra um
+corpus e `E10` registrou o que apareceu na tela em uso; este épico executa uma
+proposta de desenho, aceita pelo operador em 31/08/2026 e registrada em `D-21` e
+`D-22`.
+
+**Nenhum indicador muda de valor, nenhuma rota muda de contrato.** As nove
+histórias abaixo tocam `web/src/` e `web/public/`, e nada mais. História deste
+épico que precise de campo novo na API está mal fatiada.
+
+**Quatro determinações valem para o épico inteiro e não se re-litigam:**
+
+1. **O modo escuro entra** (`D-21`). O cabeçalho de `E9` diz que introduzir a
+   variante é "funcionalidade nova, fora deste épico e fora do plano" — a
+   primeira metade segue verdadeira e a segunda deixou de valer. As regras
+   `D03`–`D07` do corpus saem da condicionalidade e passam a incidir; as outras
+   23 dispensas de `E9` continuam de pé.
+2. **O sistema decide o esquema.** `prefers-color-scheme`, sem alternância
+   manual — os botões *Claro* / *Escuro* do mockup são moldura da proposta, não
+   produto. Consequência direta: `D04` **não** incide, porque a variante `dark:`
+   da v4 já resolve para a media query sem `@custom-variant`.
+3. **Toda história posterior a `H-57` que acrescentar token de cor declara os
+   dois esquemas.** Sem esta regra, `H-51` e qualquer fatia futura nasceriam com
+   metade da paleta, e o buraco só apareceria na máquina de quem usa o tema
+   escuro.
+4. **A fonte-base não é reduzida.** A densidade vem de espaçamento e altura de
+   linha; encolher o texto abaixo do que o operador configurou contraria `R03` e
+   `SC 1.4.4`, e desfaria `H-46`.
+
+**`E11` vem depois de `E9` e de `E10` inteiros, por dependência de arquivo e não
+por gosto.** `H-45` e `H-46` tocam os mesmos 25 arquivos que este épico
+reescreve: corrigir acessibilidade sobre a casca antiga e depois redesenhá-la
+paga duas vezes, e redesenhar antes faz a casca nova nascer com os defeitos que
+`E9` estava fechando. `H-47` é a linha de base — os procedimentos de navegador
+precisam ter rodado uma vez no esquema claro antes de o escuro dobrar a
+superfície a verificar. E `E10` ainda muda o que três telas **dizem** (`H-52`,
+`H-53`, `H-54`): forma assentada sobre conteúdo que ainda se move é retrabalho.
+
+**A medição já reprovou seis pares da paleta proposta**, e três deles são
+exatamente os defeitos que `H-39` e `H-40` removeram — `text-muted` volta a
+3,35:1 e `border-control` a 1,59:1. Os valores corrigidos estão calculados em
+`docs/redesign/PROPOSTA.md §2.2`, e `H-57` nasce com eles, pelo mesmo motivo que
+`H-39` nasceu com as três correções dela: substituição que carrega o defeito
+junto vira segunda passada pelos mesmos arquivos.
+
+**Duas coisas do mockup não viraram história, e a proposta declara as duas em
+aberto:** a busca por `⌘K` — cujo comportamento é decisão à parte — e o detalhe
+do processo em painel lado a lado, que mexe no roteador e toca o gatilho de
+reavaliação de `D-16`. Nenhuma das duas entra aqui.
+
+**As cinco ondas, pela dependência técnica:**
+
+| Onda | Histórias | Arquivos | Por que vem aqui |
+|---|---|---|---|
+| 1 | `H-57`, `H-58` | 3 + 3 | Todo componente lê token e herda pilha de fonte. Sem as duas, cada história seguinte declararia valor por conta própria |
+| 2 | `H-59`, `H-60` | 7 + 5 | A casca muda de eixo, e o chip de filtro só existe dentro do topo que `H-59` cria |
+| 3 | `H-61`, `H-62`, `H-63` | 6 + 6 + 8 | Raio, elevação, densidade e número aplicados **por grupo de arquivo**, todas as propriedades de uma vez — o corte por propriedade abriria cada arquivo quatro vezes |
+| 4 | `H-64` | 4 | O movimento anima a forma final; animar antes animaria o que vai deixar de existir |
+| 5 | `H-65` | 1 | Verificação no navegador, nos dois esquemas |
+
+---
+
+<a id="h-57"></a>
+
+### H-57 — O par escuro da camada de tema
+
+**Objetivo:** todo token de cor ter valor nos dois esquemas, com o navegador
+escolhendo qual vale, sem que nenhum componente mude de linha.
+
+> **Esta é a `H-39` do épico**, e pela mesma razão: é a única história que decide
+> vocabulário e valor. As oito seguintes são substituição mecânica, e só são
+> baratas porque esta as antecede.
+>
+> **Os seis pares reprovados nascem corrigidos.** `docs/redesign/PROPOSTA.md
+> §2.2` traz a conta e o candidato de cada um. Adotar o hexadecimal do mockup e
+> corrigir depois repetiria o erro que `H-39` evitou.
+>
+> **O override por esquema exige `@theme static`, não `inline`.** O arquivo já
+> está assim desde `H-39`: com `inline`, o utilitário grava o valor em vez de
+> referenciar a variável, e a redefinição sob a media query não teria efeito
+> nenhum — regra `D05` do corpus.
+
+**Arquivos:**
+- `web/src/index.css` — o par por esquema de cada token de cor, os seis valores
+  corrigidos, e os tokens novos: `surface-hover`, `action-soft`,
+  `channel-green-*`, `channel-amber-*`, `radius-control`, `radius-container`,
+  `speed-fast`, `speed-base`, `ease`
+- `tests/repo/estilo.test.ts` — a asserção de par completo
+- `docs/02-requisitos.md` — RNF-42
+
+**Critérios de aceite:**
+- **Dado** `web/src/index.css`, **então** `:root` declara
+  `color-scheme: light dark`, e todo token de **cor** tem valor sob
+  `@media (prefers-color-scheme: dark)`. Os tokens de raio, velocidade e curva
+  não têm par: não são cor.
+- **Dado** os seis pares de `PROPOSTA.md §2.2`, **então** cada um mede ao menos
+  o piso da sua regra em **ambos** os esquemas — 4,5:1 para texto, 3:1 para
+  limite de controle.
+- **Dado** `tests/repo/estilo.test.ts`, **então** uma asserção nova reprova
+  token de cor declarado em um esquema e ausente no outro, provada por mutação.
+- **Dado** `npm run verify`, **então** passa, e nenhum `.tsx` mudou.
+
+**Casos-limite:**
+- `state-*-border` **não** é removido: `IngestionHealth` e as três `@utility` o
+  consomem, e o mockup não o declarar é consequência de ali a severidade ser
+  faixa lateral. Retirá-lo aqui seria mudança de comportamento disfarçada de
+  troca de valor.
+- `channel-green-*` colide com `H-51`, que também o introduz. Quem chegar
+  primeiro declara os dois esquemas; a segunda encontra o token pronto.
+- `overlay-scrim` é cor com transparência: o par escuro precisa de valor
+  próprio, porque o mesmo `oklch(… / 0.4)` sobre fundo escuro não escurece nada.
+- `meter-track` e `meter-fill` são o único canal de comparação entre linhas do
+  ranking (`H-40`): a razão entre os dois é medida nos dois esquemas, não só
+  contra a superfície.
+- Token de raio ou de velocidade duplicado sob a media query → reprova: par por
+  esquema é para cor.
+
+**Fora desta história:** qualquer `.tsx`. Nenhum componente muda aqui.
+
+**Dependências:** `H-47`.
+**Tamanho:** P (3 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-58"></a>
+
+### H-58 — As duas famílias de fonte, servidas do repositório
+
+**Objetivo:** IBM Plex Sans e IBM Plex Mono disponíveis sem rede, com a pilha
+declarada em token e nenhuma requisição externa.
+
+> **O mockup carrega de `fonts.googleapis.com`, e o produto não pode.**
+> **RNF-34** proíbe CDN e telemetria, **RNF-31** diz que nenhum dado sai da
+> máquina em tempo de execução, e a máquina do operador pode estar sem internet
+> — é um dos caminhos infelizes de `PD-06`. Fonte por CDN falharia calada, com a
+> tipografia caindo para a pilha do sistema sem erro nenhum.
+>
+> **Sem dependência npm.** Os `.woff2` entram versionados em
+> `web/public/fonts/`, e o `@font-face` é escrito à mão. `@fontsource` resolveria
+> o mesmo com uma dependência que o plano não prevê.
+
+**Arquivos:**
+- `web/public/fonts/` — os `.woff2` das duas famílias, pesos 400, 500 e 600,
+  subconjunto latino
+- `web/src/index.css` — `@font-face` das seis faces, `--font-sans` e
+  `--font-mono` com pilha de reserva real
+- `tests/repo/estilo.test.ts` — a asserção de ausência de origem externa
+
+**Critérios de aceite:**
+- **Dado** o conjunto servido, **então** `grep -r 'fonts.googleapis\|fonts.gstatic\|https://' web/src web/index.html` não devolve requisição de fonte.
+- **Dado** cada `@font-face`, **então** declara `font-display: swap` e uma pilha
+  de reserva que não é `sans-serif` sozinha — a fonte pode não carregar, e o
+  fallback é o que o operador vê.
+- **Dado** `npm run build`, **então** os `.woff2` saem em `dist/web` e são
+  servidos por `GET /*` com o tipo correto — o mesmo defeito que `H-42`
+  corrigiu em `H-30`, agora para fonte.
+- **Dado** `tests/repo/estilo.test.ts`, **então** reprova origem externa em
+  `web/`, provado por mutação.
+
+**Casos-limite:**
+- Peso 700 pedido por algum componente → não existe arquivo; o teto de 600 é
+  decisão da proposta, e hoje já é verdade (0 `font-bold` medidos em
+  31/08/2026).
+- Itálico → não entra: nenhuma tela do conjunto usa.
+- `font-display: block` → cairia em texto invisível durante a carga, que é
+  regressão de percepção sem ganho.
+- Licença — IBM Plex é OFL; o arquivo de licença acompanha os `.woff2`, porque
+  o repositório vai a público.
+
+**Fora desta história:** aplicar mono a REF, data ou contagem — isso é `H-61` a
+`H-63`, arquivo por arquivo. Aqui só as famílias existem.
+
+**Dependências:** nenhuma. Pode rodar em paralelo a `H-57`.
+**Tamanho:** P (3 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-59"></a>
+
+### H-59 — Navegação lateral e topo de uma linha
+
+**Objetivo:** o operador ver dado sem descer quatro faixas — a navegação vai
+para a lateral, e o topo guarda contexto e ação numa linha só.
+
+> **A casca hoje empilha quatro faixas antes do `<main>`:** título com ações,
+> `MainNav`, `FilterBar` e `StatusBanner` (`web/src/App.tsx:76-101`). A proposta
+> mede o ganho em cerca de oito linhas de tabela a mais na mesma janela.
+>
+> **A lateral escala além de sete itens; abas horizontais não.** É o argumento
+> estrutural, e vale independentemente da estética: o menu tem sete destinos
+> hoje, e `E10` não fechou sem propor mais nenhum.
+
+**Arquivos:**
+- `web/src/App.tsx` — o eixo passa a ser lateral + coluna de conteúdo
+- `web/src/components/AppSidebar.tsx` (novo) — navegação, contagens e o rodapé
+  com Configuração
+- `web/src/components/TopBar.tsx` (novo) — título da página, data do dado e as
+  duas ações
+- `web/src/components/StatusBanner.tsx` — passa a viver na coluna de conteúdo
+- `web/src/components/ApplyChangesButton.tsx`, `RefreshButton.tsx` — forma de
+  controle no topo
+- `web/src/router.ts` — `NAV_PAGES` ganha o que a lateral precisa exibir
+- os testes correspondentes
+
+**Critérios de aceite:**
+- **Dado** qualquer das sete páginas, **então** existe **uma** faixa horizontal
+  acima do conteúdo, e a navegação está numa coluna à esquerda.
+- **Dado** a página corrente, **então** o item da lateral tem
+  `aria-current="page"` — o mesmo contrato que `MainNav` cumpre hoje.
+- **Dado** a lateral, **então** ela é `<nav aria-label="Páginas">` e os destinos
+  seguem sendo links com `href` real: o roteamento não muda, e `D-16` não é
+  reaberta.
+- **Dado** `web/tests/paginas-montadas.test.tsx`, **então** as sete páginas
+  seguem montadas e alcançáveis.
+- **Dado** a primeira execução, **então** o desvio para a tela de configuração
+  continua valendo (`H-34`), e a lateral não aparece sem dado — hoje é
+  `firstRun` que a esconde.
+
+**Casos-limite:**
+- Janela estreita — a 320 px CSS a lateral não pode empurrar o conteúdo para
+  fora; `SC 1.4.10` já é obrigação desde `H-46`, e aqui o alvo é novo.
+- A contagem ao lado do item ("649", "6" em Alertas) é dado servido, nunca
+  calculado no cliente (**regra inviolável 6**); enquanto não houver o número,
+  o item aparece sem contagem, não com zero.
+- `healthError` e a faixa de estado degradado continuam visíveis em todas as
+  páginas (A-57) — mudar de lugar não pode ser deixar de existir.
+- Foco de teclado: a ordem passa a ser lateral → topo → conteúdo, e a lateral
+  precisa de salto para o conteúdo se ficar antes dele no DOM.
+- O link de Configuração vive no rodapé da lateral e **não** some (`H-38`
+   fechou justamente a tela inalcançável).
+
+**Fora desta história:** os filtros, que seguem na faixa antiga até `H-60`;
+qualquer mudança de raio, densidade ou tipografia nos arquivos tocados; a busca
+`⌘K`.
+
+**Dependências:** `H-57`, `H-58`.
+**Tamanho:** M (7 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-60"></a>
+
+### H-60 — Os treze filtros como chips em popover
+
+**Objetivo:** o recorte ativo ocupar uma linha em vez de uma faixa de controles,
+sem perder nenhum dos treze filtros nem o estado na URL.
+
+> **São treze, não onze.** `H-15` montou onze, `H-49` levou a doze com o cliente
+> consolidado e `H-55` a treze com o grupo. O mockup diz "onze" e está
+> desatualizado em dois — divergência 1 de `PROPOSTA.md §5`.
+>
+> **A URL continua sendo o único estado** (`useFilters.ts:5`). O chip é
+> apresentação do que já está lá; recarregar a página tem de reconstruir o mesmo
+> recorte, e é isso que separa esta fatia de uma reescrita do filtro.
+
+**Arquivos:**
+- `web/src/components/FilterBar.tsx` — a linha de chips
+- `web/src/components/FilterChip.tsx` (novo) — o gatilho, o valor ativo e o
+  popover
+- `web/src/components/MultiSelect.tsx` — passa a viver dentro do popover; perde
+  a sombra
+- `web/src/hooks/useFilters.ts` — se precisar de contagem de ativos para o chip
+- os testes correspondentes
+
+**Critérios de aceite:**
+- **Dado** qualquer recorte ativo, **então** o chip correspondente mostra o
+  filtro e o valor sem abrir o popover — o recorte ativo continua visível.
+- **Dado** nenhum recorte, **então** a barra ocupa uma linha e nenhum popover
+  está aberto.
+- **Dado** um popover aberto, **então** `Esc` fecha, o foco volta ao chip, e o
+  clique fora fecha — o padrão que `MultiSelect` já implementa hoje.
+- **Dado** a URL com os treze parâmetros, **então** os treze chips refletem o
+  recorte, e nenhum filtro ficou inalcançável.
+- **Dado** o filtro Cliente, **então** o segundo nível de `H-55` continua
+  dentro do popover, com a árvore intacta.
+
+**Casos-limite:**
+- Filtro de período: são dois `input type="date"`, e o chip precisa exibir
+  intervalo, não um valor.
+- Tri-estado de "Importador fora do RJ" (`H-15`): três estados, e o chip não
+  pode reduzi-los a marcado/desmarcado.
+- Rótulo longo — nome de cliente real chega a estourar a linha; o chip trunca
+  com o valor completo acessível, nunca corta em silêncio.
+- Erro ao carregar opções (`optionsError`) continua anunciado, e `H-43` já lhe
+  deu live region.
+- Duas abas do mesmo navegador (RNF-10): o estado é a URL, então nada a
+  sincronizar.
+- O popover não pode ser recortado por contêiner de rolagem — é o que `VN-3`
+  procura.
+
+**Fora desta história:** mudar quais filtros existem, o que cada um recorta, ou
+o contrato de `GET /api/filter-options`.
+
+**Dependências:** `H-59`.
+**Tamanho:** M (5 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-61"></a>
+
+### H-61 — Forma, densidade e número nos componentes de dado
+
+**Objetivo:** os seis componentes que apresentam dado adotarem os dois raios, a
+linha de 40 px, o mono onde há número e o alinhamento à direita.
+
+> **O corte é por arquivo, não por propriedade.** Raio, elevação, densidade e
+> largura de fonte aplicados em passadas separadas abririam cada arquivo quatro
+> vezes — é a razão que a onda 5 de `estilizacao/RESULTADO.md` deu para juntar o
+> `ACHADO 21` com os outros dois.
+>
+> **São os mesmos seis arquivos de `H-40`**, deliberadamente: o agrupamento já
+> foi exercido uma vez e o épico não inventa um segundo.
+
+**Arquivos:**
+- `web/src/components/ProcessTable.tsx` — linha de 40 px, sem zebra, ações sob
+  cursor e foco, REF e datas em mono, numérico à direita
+- `web/src/components/RankingBar.tsx` — raio de contentor, contagem em mono
+- `web/src/components/StatCard.tsx` — raio de contentor, número em mono
+- `web/src/components/ArrivalCalendar.tsx` — raio de controle nos dias,
+  contagem em mono
+- `web/src/components/AlertRow.tsx` — severidade como faixa lateral com ícone
+- `web/src/components/IngestionHealth.tsx` — idem, e o contador em mono
+- os testes correspondentes
+
+**Critérios de aceite:**
+- **Dado** `ProcessTable`, **então** a linha tem altura declarada de 40 px em
+  unidade relativa, não há faixa alternada, e a divisória é de 1 px.
+- **Dado** uma linha sem cursor e sem foco, **então** as ações dela não estão
+  visíveis; **quando** o foco de teclado entra na linha, **então** aparecem —
+  `tr:focus-within`, e o controle nunca sai da ordem de tabulação.
+- **Dado** REF, data, contagem e número, **então** cada um usa a família mono e
+  `tabular-nums`; **e** toda coluna numérica está alinhada à direita, cabeçalho
+  incluído.
+- **Dado** os seis arquivos, **então** todo raio é `radius-control` ou
+  `radius-container` — nenhum valor intermediário —, e a pílula do rótulo de
+  canal é a única exceção, declarada.
+- **Dado** `AlertRow` e `IngestionHealth`, **então** a severidade aparece como
+  faixa lateral **mais** ícone, e o canal, quando houver, como chip preenchido
+  com rótulo escrito: forma diferente, não só matiz diferente (**regra
+  inviolável 4**).
+
+**Casos-limite:**
+- Célula com valor longo — a linha de 40 px não pode crescer nem cortar dado
+  sem que o valor completo continue alcançável.
+- `opacity: 0` nas ações mantém o controle clicável por engano: a transição é de
+  opacidade, e o alvo só é interativo quando visível.
+- Zoom de 400% (`SC 1.4.10`): a altura fixa é em `rem`, então acompanha; medir
+  em `VN-1` de `H-65`.
+- A barra do ranking é o único canal da comparação entre linhas (`H-40`): a
+  razão trilho/preenchimento é conferida nos **dois** esquemas.
+- Dia sem chegada no calendário segue vazio, não zero (**regra inviolável 3**).
+
+**Fora desta história:** os outros dezenove arquivos; movimento, que é `H-64`.
+
+**Dependências:** `H-57`, `H-58`.
+**Tamanho:** M (6 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-62"></a>
+
+### H-62 — Forma e número na superfície de edição e no detalhe
+
+**Objetivo:** os seis arquivos onde o operador escreve e confere adotarem os
+dois raios, a elevação por borda e o mono onde há número.
+
+> **É aqui que a última sombra do conjunto sai.** São duas em 31/08/2026 —
+> `MultiSelect.tsx:141`, que `H-60` já terá tratado, e
+> `ConflictDialog.tsx:78` —, e o diálogo é o caso em que a sombra parecia
+> indispensável: sem ela, o que separa o painel do véu é a borda mais o
+> `overlay-scrim`.
+
+**Arquivos:**
+- `web/src/components/ConflictDialog.tsx` — `shadow-xl` sai, borda entra;
+  tabela de cinco colunas na densidade nova
+- `web/src/components/EditProcessForm.tsx` — raio de controle nos campos
+- `web/src/components/ColorFieldsForm.tsx` — idem, e as seis combinações de cor
+- `web/src/components/PendingEditsPanel.tsx` — raio de contentor, contagem em
+  mono
+- `web/src/pages/ProcessDetail.tsx` — REF, datas e as três colunas fora de
+  escopo em mono
+- `web/src/pages/WorkbookSetup.tsx` — campos, caminho de arquivo em mono
+- os testes correspondentes
+
+**Critérios de aceite:**
+- **Dado** os seis arquivos, **então** `grep -r 'shadow-' web/src` devolve zero.
+- **Dado** o diálogo de conflito, **então** ele continua distinguível do fundo
+  sem sombra — borda em contraste ao menos 3:1 contra o que estiver atrás, nos
+  dois esquemas.
+- **Dado** todo controle de formulário, **então** o raio é `radius-control`, e
+  todo contentor, `radius-container`.
+- **Dado** REF, data, caminho de arquivo e valor monetário, **então** aparecem
+  em mono com `tabular-nums`.
+- **Dado** os seis botões desabilitados que `H-41` corrigiu, **então** seguem
+  em `control-disabled-*`, agora medidos também no esquema escuro.
+
+**Casos-limite:**
+- `ColorFieldsForm` oferece as seis combinações representáveis (`H-27`): o
+  seletor de cor mostra **dado**, e a amostra precisa ser identificável nos dois
+  esquemas sem virar severidade.
+- Campo com erro de validação: a faixa de erro é severidade — faixa lateral e
+  ícone, nunca só a borda vermelha.
+- `WorkbookSetup` é a primeira tela numa máquina limpa (`H-35`): se a fonte não
+  carregar, ela ainda precisa estar legível.
+- O véu do diálogo (`overlay-scrim`) tem valor próprio por esquema desde
+  `H-57`; conferir que o painel não se dissolve no fundo escuro.
+
+**Fora desta história:** o que a aplicação **diz** sobre a escrita — mensagem de
+`H-26` não muda de texto aqui.
+
+**Dependências:** `H-57`, `H-58`.
+**Tamanho:** M (6 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-63"></a>
+
+### H-63 — Forma e número nas sete páginas, e a guarda de forma
+
+**Objetivo:** fechar a onda 3 com as sete páginas na forma nova, e impedir que o
+raio solto e a sombra voltem.
+
+> **A guarda é o que faz a onda durar.** `tests/repo/estilo.test.ts` nasceu em
+> `H-42` para impedir o passo bruto de paleta de voltar, e a mesma mecânica vale
+> aqui: raio fora dos dois valores, sombra, peso acima de 600 e tamanho de fonte
+> em unidade absoluta reprovam a suíte.
+
+**Arquivos:**
+- `web/src/pages/Home.tsx` — cartões e a faixa de erro
+- `web/src/pages/Operational.tsx` — paginação e a tabela
+- `web/src/pages/Clients.tsx` — os três rankings
+- `web/src/pages/Performance.tsx` — as quatro tabelas de quebra
+- `web/src/pages/Alerts.tsx` — a fila agrupada
+- `web/src/pages/History.tsx` — o gráfico, cujos literais já saíram em `H-42`
+- `web/src/pages/Placeholders.tsx` — superfícies e bordas
+- `tests/repo/estilo.test.ts` — as quatro asserções novas
+- os testes correspondentes
+
+**Critérios de aceite:**
+- **Dado** `web/src/**/*.tsx`, **então** toda ocorrência de raio é
+  `rounded-control`, `rounded-container` ou a pílula declarada — contra as 81
+  ocorrências medidas em 31/08/2026, 77 delas no mesmo valor de 4 px.
+- **Dado** o mesmo recorte, **então** zero `shadow-*`, zero `font-bold`, e zero
+  tamanho de fonte em unidade absoluta.
+- **Dado** cada uma das quatro asserções novas, **então** ela reprova sob
+  mutação — asserção que não erra quando o defeito é injetado não guarda nada.
+- **Dado** as tabelas de `Performance` e `History`, **então** adotam a densidade
+  de `H-61`, e as tabelas seguem dentro do invólucro de rolagem de `H-46`.
+- **Dado** o Recharts, **então** os eixos leem os tokens por `var()` — o caminho
+  que `H-42` mediu no navegador em vez de supor.
+
+**Casos-limite:**
+- `RankingBar` usa o único `style={{}}` do conjunto, para largura dinâmica
+  (`C03` dispensou): a guarda não pode passar a reprová-lo.
+- A pílula de canal é exceção **declarada**, e a guarda a conhece pelo nome do
+  utilitário — não por lista de arquivos.
+- Gráfico em `forced-colors` já é obrigação de `H-44`; a forma nova não pode
+  desfazê-la.
+- Página vazia continua com estado vazio afirmativo, não contentor em branco.
+
+**Fora desta história:** movimento; qualquer mudança de largura de contêiner ou
+de breakpoint que o corpus não sustente — o mesmo corte de `H-46`.
+
+**Dependências:** `H-61`, `H-62`.
+**Tamanho:** M (8 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-64"></a>
+
+### H-64 — Movimento curto, com a redução nascendo junto
+
+**Objetivo:** a interface responder ao cursor e à troca de tela com duas
+durações e uma curva, e desligar tudo isso sob `prefers-reduced-motion`.
+
+> **A redução nasce junto, e não depois.** O conjunto tem **zero** `transition-*`
+> e **zero** `animate-*` em 31/08/2026, e é por isso que `A07`, `A09` e `A10` do
+> corpus estão dispensadas por inaplicabilidade. A primeira transição as torna
+> aplicáveis todas de uma vez: entregar movimento sem a contraparte seria criar
+> três achados no mesmo commit.
+>
+> **`SC 2.3.3` é AAA**, e a Fase 2 declarou o nível AAA dispensável. A obrigação
+> aqui não vem dele: vem de `A10`, que o corpus manteve com o sinal sintático
+> limpo e custo baixo, e de a alternativa ser mais cara depois.
+
+**Arquivos:**
+- `web/src/index.css` — o bloco `@media (prefers-reduced-motion: reduce)` e a
+  regra de recuo do controle pressionado
+- `web/src/components/AppSidebar.tsx` — realce do item sob cursor
+- `web/src/components/ProcessTable.tsx` — realce da linha e a revelação das
+  ações
+- `web/src/components/FilterChip.tsx` — abertura do popover
+- os testes correspondentes
+
+**Critérios de aceite:**
+- **Dado** qualquer elemento com transição, **então** a duração é `speed-fast`
+  ou `speed-base`, e a curva é `ease` — nenhum terceiro valor.
+- **Dado** `prefers-reduced-motion: reduce`, **então** toda transição de
+  **movimento** é anulada; transição de cor pode permanecer, porque `A10` trata
+  de movimento e o contraexemplo do corpus é explícito nisso.
+- **Dado** um controle pressionado, **então** ele recua 2,5%, e esse recuo cai
+  sob redução de movimento.
+- **Dado** `tests/repo/estilo.test.ts`, **então** transição de movimento sem
+  contraparte de redução reprova.
+
+**Casos-limite:**
+- A revelação das ações da linha é opacidade: sob redução, o estado final é o
+  mesmo, sem a interpolação.
+- Troca de página não usa a View Transition API — o roteamento é próprio
+  (`D-16`), e trazer a API para dentro dele é dependência de comportamento que a
+  fatia não paga.
+- Gráfico do Recharts anima por conta própria: conferir se a biblioteca honra a
+  preferência, e desligar por prop se não honrar.
+- Duração declarada em `.tsx` em vez de token → reprova pela guarda.
+
+**Fora desta história:** animação de entrada de página, esqueleto de carga, e
+qualquer movimento que não responda a uma ação do operador.
+
+**Dependências:** `H-63`.
+**Tamanho:** M (4 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-65"></a>
+
+### H-65 — Percorrer os procedimentos de navegador nos dois esquemas
+
+**Objetivo:** provar no navegador o que a estática não alcança, agora com a
+superfície dobrada pelo segundo esquema.
+
+> **`H-47` é a linha de base, e esta história é a segunda passada.** Metade dos
+> procedimentos de `estilizacao/RESULTADO.md` mede cor **resolvida**, e cor
+> resolvida depende do esquema: rodá-los só no claro deixaria o escuro sem
+> verificação nenhuma.
+>
+> **O que a suíte não alcança:** contraste do que é pintado por cima de
+> `overlay-scrim`, foco visível recortado por contêiner de rolagem, e reflow a
+> 320 px com a lateral nova. Os três são de execução, não de código.
+
+**Arquivos:**
+- `docs/redesign/VERIFICACAO.md` (novo) — o registro datado de cada
+  procedimento, nos dois esquemas, com o que foi observado
+
+**Critérios de aceite:**
+- **Dado** cada procedimento de `VN-1` a `VN-6`, **então** ele foi executado
+  **duas** vezes — uma por esquema — e o resultado está registrado com data.
+- **Dado** `VN-1` (reflow a 320 px), **então** a lateral de `H-59` não produz
+  rolagem horizontal, e o que rolar é a tabela dentro do próprio invólucro.
+- **Dado** `VN-3` (foco visível), **então** nenhum anel de foco é recortado pelo
+  popover de `H-60` nem pelo contêiner de rolagem das tabelas.
+- **Dado** qualquer achado, **então** ele vira correção nesta história se for de
+  um arquivo já tocado pelo épico, ou história nova se não for — nunca nota
+  solta.
+
+**Casos-limite:**
+- Esquema forçado pelo sistema operacional durante a execução: alternar o tema
+  do Windows com a aplicação aberta é o caminho real do operador, e a página
+  precisa acompanhar sem recarregar.
+- `forced-colors` é um terceiro modo, e não o escuro: `H-44` já o cobre, e aqui
+  só se confere que a forma nova não o desfez.
+- Impressão não está no escopo de nenhuma tela.
+
+**Fora desta história:** qualquer redesenho novo. É verificação.
+
+**Dependências:** `H-64`.
+**Tamanho:** P (1 arquivo, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
 <a id="resumo"></a>
 
 ## Resumo do backlog
@@ -6048,7 +6651,8 @@ mercadoria — grupo é conceito de cliente.
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização | **H-39 ✅ … H-42 ✅, H-43 … H-47 abertas** | 1 | 8 | 0 |
 | E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-55 ✅, H-56 ✅, H-50 … H-54 abertas** | 1 | 8 | 0 |
-| **Total** | **56** — 46 concluídas, 10 abertas | **18** | **38** | **0** |
+| E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
+| **Total** | **65** — 46 concluídas, 19 abertas | **21** | **44** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até
