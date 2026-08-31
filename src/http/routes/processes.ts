@@ -38,7 +38,14 @@ import { filteredProcesses } from '../filter-request.ts'
 export interface ProcessDto {
   ref: string
   sourceRow: number
+  /** O cliente CONSOLIDADO (`H-49`) — quem e o cliente. */
   client: string
+  /**
+   * O valor da celula CLT — qual o processo daquele cliente. Os dois viajam
+   * juntos: derivar um do outro no cliente seria regra de negocio fora do
+   * dominio (regra inviolavel 6).
+   */
+  clientProcess: string
   importer: string
   billOfLading: string
   agent: string
@@ -120,7 +127,8 @@ function toDto(process: Process, hasPendingEdits = false): ProcessDto {
   return {
     ref: process.ref,
     sourceRow: process.sourceRow,
-    client: process.clientRaw,
+    client: process.clientLabel,
+    clientProcess: process.clientRaw,
     importer: process.importerRaw,
     billOfLading: process.billOfLading,
     agent: process.agentRaw,
@@ -187,7 +195,7 @@ function parseInteger(raw: string | undefined, field: string, min: number, max: 
 /**
  * GET /api/processes — contrato em `docs/05-contratos-api.md`.
  *
- * Marcada **[F]**: os onze filtros globais valem aqui, e sao aplicados **antes**
+ * Marcada **[F]**: os doze filtros globais valem aqui, e sao aplicados **antes**
  * da busca, da ordenacao e da paginacao. A ordem importa — `total` precisa ser
  * do conjunto filtrado inteiro, e paginar antes de contar daria o tamanho da
  * pagina.

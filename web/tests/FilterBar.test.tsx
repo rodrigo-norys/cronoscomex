@@ -18,6 +18,7 @@ function filtersStub(overrides: Partial<Filters> = {}): Filters {
       importerOutsideRj: '',
       multi: {
         client: [],
+        clientProcess: [],
         importer: [],
         vessel: [],
         agent: [],
@@ -55,13 +56,13 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('os onze controles', () => {
-  it('monta os nove de multipla escolha, o periodo e o tri-estado', () => {
+describe('os doze controles', () => {
+  it('monta os dez de multipla escolha, o periodo e o tri-estado', () => {
     renderBar()
     const bar = screen.getByRole('region', { name: 'Filtros' })
 
-    // 9 botoes de multipla escolha + 1 select tri-estado + 2 campos de data.
-    expect(within(bar).getAllByRole('button')).toHaveLength(9)
+    // 10 botoes de multipla escolha + 1 select tri-estado + 2 campos de data.
+    expect(within(bar).getAllByRole('button')).toHaveLength(10)
     expect(within(bar).getByLabelText('Importador fora do RJ')).toBeTruthy()
     expect(within(bar).getByLabelText('ETA2 de')).toBeTruthy()
     expect(within(bar).getByLabelText('ETA2 até')).toBeTruthy()
@@ -238,5 +239,29 @@ describe('opcoes ausentes', () => {
     render(<FilterBar filters={filtersStub()} options={null} optionsError="respondeu 503" />)
 
     expect(screen.getByRole('alert').textContent).toMatch(/opções de filtro: respondeu 503/)
+  })
+})
+
+/**
+ * `H-49`. Dois controles, porque sao duas perguntas: um recorta a carteira do
+ * cliente, o outro acha um processo pelo valor da celula CLT.
+ */
+describe('cliente e processo do cliente', () => {
+  it('monta o controle do processo do cliente com as opcoes da rota', () => {
+    renderBar()
+
+    fireEvent.click(screen.getByRole('button', { name: /Processo do cliente/ }))
+
+    expect(screen.getByRole('checkbox', { name: /ACME-12/ })).toBeTruthy()
+  })
+
+  it('marcar um valor chama toggle com o filtro proprio', () => {
+    const filters = filtersStub()
+    renderBar(filters)
+
+    fireEvent.click(screen.getByRole('button', { name: /Processo do cliente/ }))
+    fireEvent.click(screen.getByRole('checkbox', { name: /ACME-12/ }))
+
+    expect(filters.toggle).toHaveBeenCalledWith('clientProcess', 'ACME-12')
   })
 })

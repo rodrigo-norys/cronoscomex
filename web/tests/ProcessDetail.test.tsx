@@ -381,3 +381,25 @@ describe('edicao na tela', () => {
     await waitFor(() => expect(api.calls).toContain('DELETE /api/edits'))
   })
 })
+
+/**
+ * `H-49`. Os dois campos vêm juntos do servidor: a tela nunca deriva um do
+ * outro (regra inviolavel 6).
+ */
+describe('cliente consolidado e processo do cliente', () => {
+  it('exibe os dois campos lado a lado', async () => {
+    api.serveProcessDetail(
+      processDetailFixture({
+        process: processFixture({ client: 'Acme Comércio', clientProcess: 'ACM-29' }),
+      }),
+    )
+    renderPage()
+
+    const campos = await bloco('Campos do processo')
+
+    expect(within(campos).getByText('Cliente')).toBeTruthy()
+    expect(within(campos).getByText('Acme Comércio')).toBeTruthy()
+    expect(within(campos).getByText('Processo do cliente')).toBeTruthy()
+    expect(within(campos).getByText('ACM-29')).toBeTruthy()
+  })
+})

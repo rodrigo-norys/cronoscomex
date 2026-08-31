@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { normalizeClientMap } from '../../src/domain/client-mapper.ts'
 import { type ColorMapEntry, indexColorMap } from '../../src/domain/color-mapper.ts'
 import { type BuildDeps, buildProcesses, quarantineRate } from '../../src/domain/process-builder.ts'
 import { ALL_COLUMNS } from '../../src/domain/status-classifier.ts'
@@ -241,5 +242,100 @@ describe('quarantineRate', () => {
 
   it('devolve zero quando nada foi quarentenado', () => {
     expect(quarantineRate(buildProcesses([linha(2, { A: 'FT001.26' })], deps))).toBe(0)
+  })
+})
+
+/**
+ * `H-49`. O campo CLT guarda o processo do cliente, e nao o cliente: medido,
+ * 649 processos produzem 509 valores distintos (`docs/uso/RESULTADO.md` §2).
+ */
+describe('buildProcesses — cliente consolidado (H-49)', () => {
+  const CLIENTES = normalizeClientMap([
+    { key: 'ACME', label: 'Acme Comércio', rules: [{ match: 'prefix', value: 'ACM' }] },
+    {
+      key: 'BETA',
+      label: 'Beta Ltda',
+      rules: [
+        { match: 'prefix', value: 'NOR', importer: 'IMPORTADORA NORTE' },
+        { match: 'contains', value: 'BETA' },
+      ],
+    },
+  ])
+
+  const comMapa: BuildDeps = { ...deps, clientMap: CLIENTES }
+
+  const cliente = (rows: RawRow[], mapDeps: BuildDeps = comMapa) =>
+    buildProcesses(rows, mapDeps).processes[0]
+
+  it('sem mapa, a chave do cliente e a da propria celula', () => {
+    const process = cliente([linha(2, { A: 'FT001.26', B: 'ACM-29' })], deps)
+
+    expect(process?.clientKey).toBe('ACM-29')
+    expect(process?.clientProcessKey).toBe('ACM-29')
+    expect(process?.clientLabel).toBe('ACM-29')
+  })
+
+  it('consolida pela regra de prefixo, preservando o valor da celula', () => {
+    const process = cliente([linha(2, { A: 'FT001.26', B: 'ACM-29' })])
+
+    expect(process?.clientKey).toBe('ACME')
+    expect(process?.clientLabel).toBe('Acme Comércio')
+    expect(process?.clientProcessKey).toBe('ACM-29')
+    expect(process?.clientRaw).toBe('ACM-29')
+  })
+
+  /**
+   * Medido: um prefixo de 62 processos cobre TRES clientes, separaveis so pelo
+   * importador. Sem qualificar, o grupo inteiro permanece como esta.
+   */
+  it('qualifica a regra pelo importador', () => {
+    const daNorte = cliente([linha(2, { A: 'FT001.26', B: 'NOR-77', C: 'Importadora Norte' })])
+    const deOutro = cliente([linha(3, { A: 'FT002.26', B: 'NOR-77', C: 'Importadora Leste' })])
+
+    expect(daNorte?.clientKey).toBe('BETA')
+    expect(deOutro?.clientKey).toBe('NOR-77')
+    expect(deOutro?.clientLabel).toBe('NOR-77')
+  })
+
+  it('casa tambem por texto contido, na segunda regra da mesma entrada', () => {
+    const process = cliente([
+      linha(2, { A: 'FT001.26', B: 'NOR-77 - BETA', C: 'Importadora Leste' }),
+    ])
+
+    expect(process?.clientKey).toBe('BETA')
+    expect(process?.clientLabel).toBe('Beta Ltda')
+  })
+
+  it('com duas entradas casando, a primeira do arquivo vence', () => {
+    const ambiguo = normalizeClientMap([
+      { key: 'PRIMEIRA', label: 'Primeira', rules: [{ match: 'prefix', value: 'AC' }] },
+      { key: 'SEGUNDA', label: 'Segunda', rules: [{ match: 'prefix', value: 'ACM' }] },
+    ])
+
+    const process = cliente([linha(2, { A: 'FT001.26', B: 'ACM-29' })], {
+      ...deps,
+      clientMap: ambiguo,
+    })
+
+    expect(process?.clientKey).toBe('PRIMEIRA')
+  })
+
+  it('celula vazia nao casa regra alguma e segue filtravel pela chave vazia', () => {
+    const process = cliente([linha(2, { A: 'FT001.26', B: null })])
+
+    expect(process?.clientKey).toBe('')
+    expect(process?.clientProcessKey).toBe('')
+    expect(process?.clientLabel).toBe('')
+  })
+
+  /**
+   * A-26: o rotulo do grupo nao coberto e a primeira grafia encontrada, e nao
+   * a chave normalizada que `resolveClient` devolve quando nada casa.
+   */
+  it('rotula o grupo sem regra pela grafia da celula', () => {
+    const process = cliente([linha(2, { A: 'FT001.26', B: 'zeta comércio' })])
+
+    expect(process?.clientKey).toBe('ZETA COMERCIO')
+    expect(process?.clientLabel).toBe('zeta comércio')
   })
 })

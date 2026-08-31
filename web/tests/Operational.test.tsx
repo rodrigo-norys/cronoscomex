@@ -40,13 +40,13 @@ describe('tabela', () => {
     api.serveProcesses(
       processesFixture([
         processFixture({ ref: 'FT501.26', client: 'ACME LOG' }),
-        processFixture({ ref: 'FT502.26', client: 'YRD' }),
+        processFixture({ ref: 'FT502.26', client: 'BETA' }),
       ]),
     )
     renderPage()
 
     expect(await screen.findByRole('link', { name: 'FT501.26' })).toBeTruthy()
-    expect(screen.getByText('YRD')).toBeTruthy()
+    expect(screen.getByText('BETA')).toBeTruthy()
   })
 
   it('exibe traco para campo vazio e para eta2 nulo', async () => {
@@ -343,5 +343,28 @@ describe('filtros globais', () => {
     renderPage('?client=ACME')
 
     await waitFor(() => expect(api.calls).toContain('GET /api/indicators?client=ACME'))
+  })
+})
+
+/**
+ * `H-49`. A coluna Cliente responde "quem e o cliente"; a do lado guarda o
+ * valor da celula CLT, que continua sendo como se acha um processo aqui.
+ */
+describe('cliente consolidado e processo do cliente', () => {
+  it('exibe as duas colunas, com o valor de cada uma', async () => {
+    api.serveProcesses(
+      processesFixture([
+        processFixture({ ref: 'FT501.26', client: 'Acme Comércio', clientProcess: 'ACM-29' }),
+      ]),
+    )
+    renderPage()
+
+    await screen.findByRole('table')
+    const colunas = screen.getAllByRole('columnheader').map((th) => th.textContent)
+
+    expect(colunas.some((texto) => texto?.includes('Cliente'))).toBe(true)
+    expect(colunas.some((texto) => texto?.includes('Processo do cliente'))).toBe(true)
+    expect(screen.getByText('Acme Comércio')).toBeTruthy()
+    expect(screen.getByText('ACM-29')).toBeTruthy()
   })
 })

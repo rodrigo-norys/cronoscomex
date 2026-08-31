@@ -29,11 +29,11 @@ describe('leitura da URL', () => {
   })
 
   it('le valores repetidos do mesmo parametro — o OU de RF-17', () => {
-    window.history.replaceState(null, '', '/?client=ACME&client=YRD')
+    window.history.replaceState(null, '', '/?client=ACME&client=BETA')
 
     const { result } = renderHook(() => useFilters())
 
-    expect(result.current.selection.multi.client).toEqual(['ACME', 'YRD'])
+    expect(result.current.selection.multi.client).toEqual(['ACME', 'BETA'])
     expect(result.current.activeCount).toBe(1)
   })
 
@@ -80,9 +80,9 @@ describe('escrita na URL', () => {
     const { result } = renderHook(() => useFilters())
 
     act(() => result.current.toggle('client', 'ACME'))
-    act(() => result.current.toggle('client', 'YRD'))
+    act(() => result.current.toggle('client', 'BETA'))
 
-    expect(new URLSearchParams(search()).getAll('client')).toEqual(['ACME', 'YRD'])
+    expect(new URLSearchParams(search()).getAll('client')).toEqual(['ACME', 'BETA'])
   })
 
   it('desmarca so o valor pedido, mantendo os demais do mesmo filtro', () => {
@@ -108,7 +108,7 @@ describe('escrita na URL', () => {
     const before = window.history.length
 
     act(() => result.current.toggle('client', 'ACME'))
-    act(() => result.current.toggle('client', 'YRD'))
+    act(() => result.current.toggle('client', 'BETA'))
     act(() => result.current.toggle('category', 'em_andamento'))
 
     expect(window.history.length).toBe(before)

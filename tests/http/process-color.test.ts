@@ -91,6 +91,8 @@ function process(overrides: Partial<Process> = {}): Process {
     registrationDate: null,
     docsSentDate: null,
     clientKey: 'ACME LOG',
+    clientProcessKey: 'ACME LOG',
+    clientLabel: 'ACME LOG',
     importerKey: '',
     agentKey: '',
     vesselKey: '',

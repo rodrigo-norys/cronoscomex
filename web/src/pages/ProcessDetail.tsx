@@ -167,6 +167,7 @@ function Fields({ process }: { process: ProcessDto }) {
       <h2 className="text-sm font-semibold text-text-secondary">Campos</h2>
       <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="Cliente" value={process.client} />
+        <Field label="Processo do cliente" value={process.clientProcess} mono />
         <Field label="Importador" value={process.importer} />
         <Field label="Agente" value={process.agent} />
         <Field label="Navio" value={process.vessel} />

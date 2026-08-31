@@ -51,6 +51,8 @@ function process({
     registrationDate: registration === null ? null : civil(registration),
     docsSentDate: docsSent === null ? null : civil(docsSent),
     clientKey,
+    clientProcessKey: clientKey,
+    clientLabel: clientRaw,
     importerKey: '',
     agentKey: '',
     vesselKey: '',

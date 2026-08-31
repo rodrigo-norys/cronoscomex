@@ -96,7 +96,7 @@ export function pageOf(route: Route): PageDefinition | null {
 }
 
 /**
- * Troca de pagina **preservando a query**, que e onde os onze filtros globais
+ * Troca de pagina **preservando a query**, que e onde os doze filtros globais
  * vivem — trocar de pagina nunca limpa o recorte que o operador montou.
  *
  * `pushState` nao emite evento nenhum, entao o `popstate` sintetico e o que faz

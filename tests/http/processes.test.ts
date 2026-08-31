@@ -6,6 +6,7 @@ import { loadColorMap } from '../../src/app/color-map-loader.ts'
 import type { AppConfig } from '../../src/app/config.ts'
 import type { StoreAccess, StoreState } from '../../src/app/process-store.ts'
 import type { Process, StatusCategory } from '../../src/domain/types.ts'
+import type { ProcessDto } from '../../src/http/routes/processes.ts'
 import { buildServer } from '../../src/http/server.ts'
 
 const config: AppConfig = {
@@ -41,6 +42,8 @@ function process(sourceRow: number, extra: Partial<Process> = {}): Process {
     registrationDate: null,
     docsSentDate: null,
     clientKey: '',
+    clientProcessKey: '',
+    clientLabel: '',
     importerKey: '',
     agentKey: '',
     vesselKey: '',
@@ -105,6 +108,7 @@ describe('GET /api/processes — envelope', () => {
       'billOfLading',
       'boletoRaw',
       'client',
+      'clientProcess',
       'columnPRaw',
       'container',
       'customsChannel',
@@ -583,5 +587,56 @@ describe('GET /api/processes/:ref — historico no detalhe', () => {
     expect(body.daysInCurrentCategory).toBe(1)
 
     await app.close()
+  })
+})
+
+/**
+ * `H-49`. Os dois campos chegam juntos na mesma resposta: derivar um do outro
+ * no cliente seria regra de negocio fora do dominio (regra inviolavel 6).
+ */
+describe('GET /api/processes — cliente consolidado e processo do cliente', () => {
+  const conjunto = [
+    process(2, {
+      ref: 'FT002.26',
+      clientKey: 'ACME',
+      clientLabel: 'Acme Comércio',
+      clientProcessKey: 'ACM-29',
+      clientRaw: 'ACM-29',
+    }),
+    process(3, {
+      ref: 'FT003.26',
+      clientKey: 'ACME',
+      clientLabel: 'Acme Comércio',
+      clientProcessKey: 'ACM-30',
+      clientRaw: 'ACM-30',
+    }),
+    process(4, {
+      ref: 'FT004.26',
+      clientKey: 'BETA',
+      clientLabel: 'Beta Ltda',
+      clientProcessKey: 'BET-01',
+      clientRaw: 'BET-01',
+    }),
+  ]
+
+  it('serve o cliente consolidado em `client` e a celula em `clientProcess`', async () => {
+    const body = (await get('/api/processes', conjunto)).json()
+
+    expect(body.items[0].client).toBe('Acme Comércio')
+    expect(body.items[0].clientProcess).toBe('ACM-29')
+  })
+
+  it('o recorte por cliente traz todos os processos dele', async () => {
+    const body = (await get('/api/processes?client=ACME', conjunto)).json()
+
+    expect(body.total).toBe(2)
+    expect(body.items.map((item: ProcessDto) => item.ref)).toEqual(['FT002.26', 'FT003.26'])
+  })
+
+  it('o recorte pela celula traz um processo so', async () => {
+    const body = (await get('/api/processes?clientProcess=ACM-30', conjunto)).json()
+
+    expect(body.total).toBe(1)
+    expect(body.items[0].ref).toBe('FT003.26')
   })
 })

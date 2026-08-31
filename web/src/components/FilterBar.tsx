@@ -3,7 +3,7 @@ import type { Filters, MultiFilterKey } from '../hooks/useFilters.ts'
 import { MultiSelect } from './MultiSelect.tsx'
 
 /**
- * Os onze filtros globais, em uma barra que vive na casca e vale para todas as
+ * Os doze filtros globais, em uma barra que vive na casca e vale para todas as
  * paginas de dado (RF-17, RF-18).
  *
  * Ela **nao filtra nada**: escreve a selecao na URL, e as paginas anexam a
@@ -17,10 +17,17 @@ interface MultiControl {
   readonly source: keyof FilterOptionsResponse
 }
 
-/** Os nove de multipla escolha. Ordem: quem o operador usa mais, primeiro. */
+/**
+ * Os dez de multipla escolha. Ordem: quem o operador usa mais, primeiro.
+ *
+ * "Cliente" e "Processo do cliente" sao controles distintos porque sao
+ * perguntas distintas (`H-49`): um recorta a carteira, o outro acha um processo
+ * especifico pelo valor da celula CLT.
+ */
 const MULTI_CONTROLS: readonly MultiControl[] = [
   { key: 'category', label: 'Categoria', source: 'categories' },
   { key: 'client', label: 'Cliente', source: 'clients' },
+  { key: 'clientProcess', label: 'Processo do cliente', source: 'clientProcesses' },
   { key: 'importer', label: 'Importador', source: 'importers' },
   { key: 'responsible', label: 'Responsável', source: 'responsible' },
   { key: 'channel', label: 'Canal', source: 'channels' },

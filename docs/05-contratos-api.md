@@ -12,7 +12,7 @@ Sem autenticação (RNF-32): o processo escuta somente em loopback (RNF-29).
 
 ### 1.1. Filtros globais
 
-Onze parâmetros de consulta, todos opcionais, aplicáveis às rotas marcadas
+Doze parâmetros de consulta, todos opcionais, aplicáveis às rotas marcadas
 **[F]**. Quando ausentes, nenhum filtro é aplicado. Valores múltiplos são
 repetidos (`?client=A&client=B`) e combinados em **OU** dentro do mesmo
 parâmetro, **E** entre parâmetros distintos.
@@ -21,7 +21,8 @@ parâmetro, **E** entre parâmetros distintos.
 |---|---|---|
 | `etaFrom` | `string` | Data ISO `AAAA-MM-DD`. Compara com ETA2, inclusivo |
 | `etaTo` | `string` | Data ISO `AAAA-MM-DD`. Compara com ETA2, inclusivo |
-| `client` | `string[]` | Chave normalizada de CLT |
+| `client` | `string[]` | Chave do **cliente consolidado** (`H-49`), resolvida contra `client-map.json`. Sem mapa, ou sem regra que case, é a própria chave de CLT |
+| `clientProcess` | `string[]` | Chave normalizada da célula CLT — o processo daquele cliente (`H-49`). Domínio aberto |
 | `importer` | `string[]` | Chave normalizada de IMPORTADOR |
 | `vessel` | `string[]` | Chave normalizada de NAVIO |
 | `agent` | `string[]` | Chave normalizada de AGENTE |
@@ -78,7 +79,9 @@ type CustomsChannel = 'vermelho' | 'nenhum' | 'indefinido'
 interface ProcessDto {
   ref: string
   sourceRow: number
-  client: string; importer: string; billOfLading: string; agent: string
+  client: string          // cliente consolidado (H-49)
+  clientProcess: string   // valor da célula CLT — o processo daquele cliente
+  importer: string; billOfLading: string; agent: string
   container: string; vessel: string; port: string; goods: string
   eta2: string | null            // AAAA-MM-DD
   registrationDate: string | null
@@ -167,7 +170,7 @@ Lista de processos, já filtrada.
 |---|---|---|---|
 | `search` | `string` | — | Busca por substring, sem acento e sem caixa, em REF, BL e CNTR (A-39) |
 | `activeOnly` | `boolean` | `false` | `true` restringe a `statusCategory ≠ desembaracado` (A-16) |
-| `sort` | `string` | `eta2` | `ref` · `eta2` · `registrationDate` · `client` · `vessel` |
+| `sort` | `string` | `eta2` | `ref` · `eta2` · `registrationDate` · `client` · `vessel`. `client` ordena pelo **cliente consolidado**; a coluna do processo do cliente não tem ordem própria (`H-49`) |
 | `order` | `string` | `asc` | `asc` · `desc`. Nulos sempre por último |
 | `limit` | `number` | `200` | 1 a 1000 |
 | `offset` | `number` | `0` | ≥ 0 |
@@ -406,9 +409,15 @@ essa forma que é estável no tempo.
 Valores disponíveis para cada filtro, derivados do arquivo, não de lista fixa
 (RF-19, A-36).
 
+`clients` traz os clientes **consolidados**, rotulados pelo `label` do mapa;
+`clientProcesses` traz os valores de célula, com contagem própria. São perguntas
+distintas — quem é o cliente, e qual o processo dele —, e por isso duas listas
+(`H-49`).
+
 ```jsonc
 {
-  "clients":   [ { "key": "RSASSI", "label": "RSASSI", "count": 0 } ],
+  "clients":         [ { "key": "ACME", "label": "ACME", "count": 0 } ],
+  "clientProcesses": [ { "key": "ACME-29", "label": "ACME-29", "count": 0 } ],
   "importers": [], "vessels": [], "agents": [], "goods": [], "ports": [],
   "categories":  [ { "key": "desembaracado", "label": "Desembaraçado", "count": 0 } ],
   "responsible": [ { "key": "colaborador1", "label": "Colaborador 1", "count": 0 } ],
@@ -1030,12 +1039,12 @@ requisição, então rodar o `build` com o servidor no ar dispensa reiniciá-lo.
 | Rota | Histórias |
 |---|---|
 | `GET /api/health` | H-02, H-31, H-32, H-15 |
-| `GET /api/processes` | H-17 |
+| `GET /api/processes` | H-17, H-49 |
 | `GET /api/processes/:ref` | H-22 |
-| `GET /api/indicators` | H-09, H-10, H-11, H-12, H-13, H-16, H-17 |
+| `GET /api/indicators` | H-09, H-10, H-11, H-12, H-13, H-16, H-17, H-49 |
 | `GET /api/alerts` | H-14, H-29 |
 | `GET /api/history/monthly` | H-21, H-28 |
-| `GET /api/filters/options` | H-15 |
+| `GET /api/filters/options` | H-15, H-49 |
 | `GET /api/quarantine` | H-07 |
 | `POST /api/reload` | H-08 |
 | `POST /api/edits`, `GET`, `DELETE` | H-23 |

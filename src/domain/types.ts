@@ -106,7 +106,32 @@ export interface Process {
   readonly docsSentDate: Date | null
 
   // ---- Chaves de agrupamento ----
+  /**
+   * O cliente CONSOLIDADO (`H-49`), resolvido contra `client-map.json`.
+   *
+   * Sem mapa, ou com celula que nenhuma regra alcanca, vale exatamente
+   * `clientProcessKey` — nao consolidar e resultado legitimo, e o unico honesto
+   * para os grupos cujo cliente o operador ainda nao declarou.
+   */
   readonly clientKey: string
+  /**
+   * A chave da CELULA CLT, que guarda o processo daquele cliente e nao o
+   * cliente (`docs/uso/RESULTADO.md` secao 2). Medido: 649 processos produzem
+   * 509 valores distintos.
+   *
+   * Continua sendo a unica forma de achar um processo especifico na Pagina
+   * Operacional, e por isso o campo antigo nao some — muda de nome.
+   */
+  readonly clientProcessKey: string
+  /**
+   * O rotulo do cliente consolidado: o `label` do mapa quando alguma regra
+   * casou, e a primeira grafia da celula quando nenhuma casou (A-26).
+   *
+   * Existe porque `clientKey` e normalizado: rotular o grupo consolidado pela
+   * celula do primeiro processo dele exibiria a referencia de um processo no
+   * lugar do nome do cliente, que e o defeito que `H-49` fecha.
+   */
+  readonly clientLabel: string
   readonly importerKey: string
   readonly agentKey: string
   readonly vesselKey: string

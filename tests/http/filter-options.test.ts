@@ -22,6 +22,8 @@ const config: AppConfig = {
 
 interface Fields {
   clientKey?: string
+  clientProcessKey?: string
+  clientLabel?: string
   clientRaw?: string
   goodsKey?: string
   goodsRaw?: string
@@ -57,6 +59,8 @@ function process(fields: Fields = {}): Process {
     registrationDate: null,
     docsSentDate: null,
     clientKey: fields.clientKey ?? '',
+    clientProcessKey: fields.clientProcessKey ?? fields.clientKey ?? '',
+    clientLabel: fields.clientLabel ?? fields.clientRaw ?? '',
     importerKey: '',
     agentKey: '',
     vesselKey: '',
@@ -96,7 +100,7 @@ const fakeStore = (initial: StoreState): StoreAccess => ({
 })
 
 describe('GET /api/filters/options', () => {
-  it('devolve os nove blocos do contrato', async () => {
+  it('devolve os dez blocos do contrato', async () => {
     const app = buildServer(config, fakeStore(state()))
 
     const resposta = await app.inject({ method: 'GET', url: '/api/filters/options' })
@@ -106,6 +110,7 @@ describe('GET /api/filters/options', () => {
       'agents',
       'categories',
       'channels',
+      'clientProcesses',
       'clients',
       'goods',
       'importers',
@@ -143,7 +148,7 @@ describe('GET /api/filters/options', () => {
     const processes = [
       process({ clientKey: 'ACME', clientRaw: 'Acme' }),
       process({ clientKey: 'ACME', clientRaw: 'ACME' }),
-      process({ clientKey: 'YRD', clientRaw: 'Yrd' }),
+      process({ clientKey: 'BETA', clientRaw: 'Beta' }),
     ]
     const app = buildServer(config, fakeStore(state(processes)))
 
@@ -151,7 +156,7 @@ describe('GET /api/filters/options', () => {
 
     expect(body.clients).toEqual([
       { key: 'ACME', label: 'Acme', count: 2 },
-      { key: 'YRD', label: 'Yrd', count: 1 },
+      { key: 'BETA', label: 'Beta', count: 1 },
     ])
 
     await app.close()
@@ -208,7 +213,7 @@ describe('filtros nas rotas [F]', () => {
   const conjunto = [
     process({ clientKey: 'ACME', statusCategory: 'em_andamento', eta2: new Date('2020-01-01') }),
     process({ clientKey: 'ACME', statusCategory: 'desembaracado' }),
-    process({ clientKey: 'YRD', statusCategory: 'em_andamento' }),
+    process({ clientKey: 'BETA', statusCategory: 'em_andamento' }),
   ]
 
   it('GET /api/indicators recorta o conjunto antes de calcular', async () => {
@@ -244,7 +249,7 @@ describe('filtros nas rotas [F]', () => {
     const app = buildServer(config, fakeStore(state(conjunto)))
 
     const body = (
-      await app.inject({ method: 'GET', url: '/api/indicators?client=ACME&client=YRD' })
+      await app.inject({ method: 'GET', url: '/api/indicators?client=ACME&client=BETA' })
     ).json()
 
     expect(body.counts.total).toBe(3)
@@ -257,7 +262,7 @@ describe('filtros nas rotas [F]', () => {
     const app = buildServer(config, fakeStore(state(conjunto)))
 
     const semFiltro = (await app.inject({ method: 'GET', url: '/api/alerts' })).json()
-    const comFiltro = (await app.inject({ method: 'GET', url: '/api/alerts?client=YRD' })).json()
+    const comFiltro = (await app.inject({ method: 'GET', url: '/api/alerts?client=BETA' })).json()
 
     expect(semFiltro.items.length).toBeGreaterThan(0)
     expect(comFiltro.items).toEqual([])
@@ -331,6 +336,61 @@ describe('filtros nas rotas [F]', () => {
 
     expect(resposta.statusCode).toBe(200)
     expect(resposta.json().counts.total).toBe(0)
+
+    await app.close()
+  })
+})
+
+/**
+ * `H-49`. Os dois blocos respondem perguntas distintas: `clients` diz de quem e
+ * a carteira, `clientProcesses` diz qual processo daquele cliente e este.
+ */
+describe('GET /api/filters/options — cliente consolidado e processo do cliente', () => {
+  const consolidados = [
+    process({
+      clientKey: 'ACME',
+      clientLabel: 'Acme Comércio',
+      clientProcessKey: 'ACM-29',
+      clientRaw: 'ACM-29',
+    }),
+    process({
+      clientKey: 'ACME',
+      clientLabel: 'Acme Comércio',
+      clientProcessKey: 'ACM-30',
+      clientRaw: 'ACM-30',
+    }),
+    process({
+      clientKey: 'ZETA',
+      clientLabel: 'zeta comércio',
+      clientProcessKey: 'ZETA',
+      clientRaw: 'zeta comércio',
+    }),
+  ]
+
+  it('agrupa os clientes pela chave consolidada, com o rotulo do mapa', async () => {
+    const app = buildServer(config, fakeStore(state(consolidados)))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/filters/options' })).json()
+
+    expect(body.clients).toEqual([
+      { key: 'ACME', label: 'Acme Comércio', count: 2 },
+      // Sem regra no mapa, o rotulo e a primeira grafia da celula (A-26).
+      { key: 'ZETA', label: 'zeta comércio', count: 1 },
+    ])
+
+    await app.close()
+  })
+
+  it('serve os valores de celula com a contagem propria', async () => {
+    const app = buildServer(config, fakeStore(state(consolidados)))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/filters/options' })).json()
+
+    expect(body.clientProcesses).toEqual([
+      { key: 'ACM-29', label: 'ACM-29', count: 1 },
+      { key: 'ACM-30', label: 'ACM-30', count: 1 },
+      { key: 'ZETA', label: 'zeta comércio', count: 1 },
+    ])
 
     await app.close()
   })

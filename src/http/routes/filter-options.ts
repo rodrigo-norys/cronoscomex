@@ -25,7 +25,14 @@ import { apiError } from '../errors.ts'
  * existe. Mesma razao de IND-20 exibir os quatro responsaveis.
  */
 export interface FilterOptionsResponse {
+  /** Clientes CONSOLIDADOS (`H-49`), rotulados pelo `label` do mapa. */
   clients: FilterOption[]
+  /**
+   * Os valores da celula CLT, com a contagem propria. Sao a unica forma de
+   * achar um processo especifico na Pagina Operacional, e por isso o campo
+   * antigo continua servido — com o nome que diz o que ele guarda.
+   */
+  clientProcesses: FilterOption[]
   importers: FilterOption[]
   vessels: FilterOption[]
   agents: FilterOption[]
@@ -59,6 +66,11 @@ export function registerFilterOptionsRoute(
       clients: optionsOf(
         processes,
         (p) => p.clientKey,
+        (p) => p.clientLabel,
+      ),
+      clientProcesses: optionsOf(
+        processes,
+        (p) => p.clientProcessKey,
         (p) => p.clientRaw,
       ),
       importers: optionsOf(

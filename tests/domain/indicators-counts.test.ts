@@ -22,6 +22,8 @@ function process(sourceRow: number, statusCategory: StatusCategory): Process {
     registrationDate: null,
     docsSentDate: null,
     clientKey: '',
+    clientProcessKey: '',
+    clientLabel: '',
     importerKey: '',
     agentKey: '',
     vesselKey: '',
