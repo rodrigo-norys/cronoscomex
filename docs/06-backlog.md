@@ -5877,6 +5877,56 @@ desejada, é história própria.
 
 ### H-54 — O histórico reconstrói os meses da planilha
 
+> ✅ **CONCLUÍDA em 31/08/2026.** **22 testes próprios** em três arquivos — 10 de
+> domínio, 5 na rota e 7 na Página Histórico. Suíte total de **1526 para 1548**.
+> Oito casos existentes mudaram de forma, nenhum de força: passaram a servir a
+> série reconstruída **vazia**, para continuarem medindo o que o nome deles diz.
+> Uma divergência no protocolo, resolvida, e um defeito de acessibilidade que a
+> própria fatia criou e fechou.
+>
+> **Conferido contra a planilha real:** a série cobre **10 meses**, de
+> **dez/2025 a set/2026**, com **zero** meses ausentes no intervalo; **64** dos
+> 649 sem `ETA2` e **166** sem `RG`; e **18** processos com `ETA2` em set/2026, o
+> único mês marcado como previsão. Os quatro números são os que
+> `docs/uso/RESULTADO.md` §6 e os casos-limite declaram.
+>
+> **As duas medidas reconstruídas são estoque ao fim do mês**, e não fluxo. Sem
+> isso as séries não seriam comparáveis no mesmo eixo: a observada é estado
+> acumulado, e uma contagem mensal ao lado dela pareceria despencar todo mês.
+> `chegados` acumula os processos com `ETA2` até o fim do mês; `desembaracados`,
+> os com data de registro.
+>
+> **Não há `canalVermelho` na reconstruída, e a ausência é a regra 3 aplicada.**
+> A cor é o estado de **hoje** e não carrega data: projetá-la para trás afirmaria
+> que a linha já era vermelha naquele mês. Buraco visível é melhor que valor
+> errado invisível.
+>
+> **A reconstrução não revoga A-43**, e a separação é o que garante isso: bloco
+> próprio na resposta, traçado tracejado no gráfico, colunas próprias na tabela,
+> e o nome de cada série dizendo "observado" ou "reconstruído". O que A-43 proíbe
+> é apresentar reconstrução como histórico observado — não derivá-la.
+>
+> **`months` não recorta a reconstruída.** A janela é da série observada; cortar
+> a outra por ela esconderia justamente o passado que a história existe para
+> mostrar. Está declarado no contrato e coberto por teste.
+>
+> **Divergência 1 — `filteredRefs` devolvia só as chaves.** A reconstrução sai
+> das **datas** dos processos, não dos eventos, então precisa das linhas. O
+> retorno passou a carregar `selected` junto; `src/http/filter-request.ts` não
+> estava na lista de arquivos. Mudança segura porque a função tem um consumidor
+> só — a própria rota de histórico, como o cabeçalho dela já declarava.
+>
+> **O defeito que a fatia criou, e fechou.** Com a reconstruída acompanhando o
+> estado vazio de `H-21`, as duas seções passaram a existir ao mesmo tempo com o
+> mesmo `aria-label` — **duas landmarks homônimas na mesma página**, e o leitor de
+> tela sem como distingui-las. `EmptyHistory` passou a receber `alone`: sozinha
+> mantém o nome que `H-21` fixou, acompanhada vira "Histórico observado". Pego
+> por um teste que reprovou com "Found multiple elements with the role region".
+>
+> **`formatMonth` passou a escrever quatro dígitos.** `ago/26` foi lido pelo
+> operador como dia 26 de agosto — em pt-br a forma `26/08` é data. Quatro
+> dígitos também tornam legível a virada de ano, que a reconstruída atravessa.
+
 **Objetivo:** o gráfico mostrar os meses que a planilha datou, sem passar
 reconstrução por observação.
 
@@ -6752,9 +6802,9 @@ superfície dobrada pelo segundo esquema.
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização | **H-39 ✅ … H-42 ✅, H-43 … H-47 abertas** | 1 | 8 | 0 |
-| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-52 ✅, H-55 ✅, H-56 ✅, H-50 · H-53 · H-54 abertas** | 1 | 8 | 0 |
+| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-52 ✅, H-54 ✅, H-55 ✅, H-56 ✅, H-50 e H-53 abertas** | 1 | 8 | 0 |
 | E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
-| **Total** | **65** — 48 concluídas, 17 abertas | **21** | **44** | **0** |
+| **Total** | **65** — 49 concluídas, 16 abertas | **21** | **44** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até

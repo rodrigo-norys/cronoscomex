@@ -188,10 +188,11 @@ uso da própria tela e fecharam no mesmo dia** — o filtro Cliente ganhou um n�
 de árvore, e o ranking passou a mostrar o grupo com a composição; o épico foi a
 oito histórias. **`H-51` acrescentou o canal verde** — o campo deixou de ser
 binário sobre 5 linhas, `nenhum` saiu do domínio, e a Página Inicial mostra a
-distribuição com o denominador ao lado —, e **`H-52` pôs a janela em cada
-cartão**, com o atalho que a edita sem ir à barra de filtros. **A próxima é
-`H-50`**, a segunda que consome os mapas; `H-53` depende dela e `H-54` não
-depende de nenhuma. E9 e E10 estão abertos ao mesmo tempo, e não se bloqueiam.
+distribuição com o denominador ao lado —, **`H-52` pôs a janela em cada
+cartão**, com o atalho que a edita sem ir à barra de filtros, e **`H-54` pôs a
+série reconstruída ao lado da observada**, sem emendar as duas. **Sobram `H-50`,
+a segunda que consome os mapas, e `H-53`, que depende dela.** E9 e E10 estão
+abertos ao mesmo tempo, e não se bloqueiam.
 
 **O épico E11 nasceu de proposta de desenho, não de auditoria nem de uso**, em
 31/08/2026: `docs/redesign/PROPOSTA.md` transcreve o mockup *Cronos Console* e o
@@ -202,7 +203,7 @@ depois de o cabeçalho de E9 tê-lo declarado fora. **Nenhum indicador muda de
 valor e nenhuma rota muda de contrato**; história de E11 que precise de campo
 novo na API está mal fatiada. **E11 vem depois de E9 e E10 inteiros**, porque
 `H-45` e `H-46` tocam os mesmos 25 arquivos, `H-47` é a linha de base da
-verificação no navegador, e `H-52` a `H-54` ainda mudam o que três telas dizem.
+verificação no navegador, e `H-53` ainda muda o que uma tela diz.
 **A medição já reprovou seis pares da paleta proposta**, três deles
 reintroduzindo defeitos que `H-39` e `H-40` haviam removido — é o risco `R-16`, e
 `H-57` nasce com as correções calculadas.
