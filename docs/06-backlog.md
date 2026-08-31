@@ -99,6 +99,7 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 - [H-53 — A Página Performance diz a métrica e mostra o recorte](#h-53)
 - [H-54 — O histórico reconstrói os meses da planilha](#h-54)
 - [H-55 — Grupo de clientes no filtro](#h-55)
+- [H-56 — O ranking de clientes mostra o grupo com a composição](#h-56)
 
 **[Resumo do backlog](#resumo)**
 
@@ -5937,6 +5938,100 @@ cliente; segundo nível de hierarquia.
 
 ---
 
+<a id="h-56"></a>
+
+### H-56 — O ranking de clientes mostra o grupo com a composição
+
+> ✅ **CONCLUÍDA em 31/08/2026.** **13 testes próprios** em três arquivos — um de
+> domínio, um de rota e um de interface. Suíte total de **1461 para 1474**, com
+> dois casos de `H-55` reescritos: eles fixavam que o grupo não tocava indicador,
+> e é exatamente isso que esta história revê.
+>
+> **O desenho mudou depois de ver a tela, e a barra empilhada foi descartada.**
+> A primeira entrega segmentou a barra do grupo e pôs os nomes acima dela; no
+> painel real ficou ilegível, porque as proporções são **304 · 15 · 2** — o menor
+> componente ocupa **0,6%** da largura, cerca de 4px, e nenhum texto cabe ali. A
+> pesquisa de referência convergiu: a orientação corrente é esconder rótulo de
+> segmento abaixo de ~5% e agrupar o resto em "Outros", o que apagaria justamente
+> os dois componentes que o operador queria ver.
+>
+> **O desenho final é a árvore indentada:** o grupo é uma linha com o total, cada
+> componente é uma linha própria com nome, contagem e mini-barra **na mesma
+> escala do ranking** — o que mantém a comparação com os outros clientes válida.
+> A hierarquia é estrutural, não visual: os componentes vivem numa `<ul>`
+> aninhada, e há teste para isso.
+>
+> **A soma das barras volta a bater com o total.** O grupo entra no lugar dos
+> membros, nunca ao lado deles: exibir os dois níveis contaria os mesmos
+> processos duas vezes.
+>
+> **Medido contra a planilha real:** o topo do ranking passa a ser o grupo com
+> **321**, composto de **304 · 15 · 2**; nenhum membro aparece como linha própria;
+> e `leadTimeByGroup.clients` segue com os três separados, porque IND-22 não
+> entrou na revisão.
+>
+> **Uma observação que ficou para `H-45`:** o nome acessível de qualquer linha de
+> ranking sai grudado — `"Alfa304"` —, e isso vale desde `H-18`, não desta fatia.
+
+**Objetivo:** o gráfico de clientes ter uma barra do grupo, segmentada
+proporcionalmente pelos membros e com os nomes deles acima — sem contar nenhum
+processo duas vezes.
+
+> **Terceira formulação da mesma pergunta, e a que fecha as duas anteriores.**
+> `H-49` decidiu que hierarquia não viraria campo; `H-55` a trouxe **só para o
+> filtro**, com o operador escolhendo explicitamente a alternativa que não mexia
+> em indicador. Ao ver a tela pronta, ele apontou o que faltava: o grupo existia
+> no filtro e não existia no gráfico, e o cliente que dá nome ao maior prefixo
+> aparecia rotulado com o nome do grupo. **O pedido registrado é a barra do grupo com os componentes
+> nomeados acima dela.**
+>
+> **Colapsar é o que impede a dupla contagem.** O grupo entra no lugar dos
+> membros, e não ao lado deles: exibir os dois níveis somaria 642 barras para 321
+> processos. A composição não se perde — ela vira segmento dentro da própria
+> barra, que é o que o operador pediu ao dizer "proporcionalmente".
+>
+> **A revisão é só do ranking de clientes.** IND-22 segue por cliente: lá a
+> pergunta é sobre prazo de documento, e agrupar por carteira não a responde.
+
+**Arquivos:**
+- `src/domain/indicators.ts` — `groupCountWithGroups` e o campo `segments`
+- `src/http/routes/indicators.ts`, `src/http/server.ts` — os grupos chegam à rota
+- `web/src/components/RankingBar.tsx` — a barra segmentada e a legenda acima
+- `web/src/pages/Clients.tsx` — o clique do grupo e o do componente
+- `docs/05-contratos-api.md`, `docs/09-rastreabilidade.md`
+- os testes correspondentes
+
+**Critérios de aceite:**
+- **Dado** o mapa real, **quando** a Página Clientes carrega, **então** o grupo
+  aparece como **uma** barra com 321, segmentada em 304 · 15 · 2, e nenhum membro
+  tem barra própria.
+- **Dado** o ranking inteiro, **então** a soma das contagens exibidas iguala o
+  total de processos do recorte — nenhum processo em duas barras.
+- **Dado** um clique na barra do grupo, **então** o recorte é `clientGroup`; num
+  nome da legenda, é `client`.
+- **Dado** `leadTimeByGroup.clients`, **então** nada muda: os membros seguem
+  separados.
+- **Dado** mapa sem grupos, **então** o ranking é o de `H-49`.
+
+**Casos-limite:**
+- Grupo com um membro só → barra de um segmento, idêntica visualmente à barra
+  simples, e a legenda com um nome.
+- Membro com contagem zero no recorte → não vira segmento: segmento de largura
+  zero é linha invisível, e a legenda mentiria sobre o que a barra mostra.
+- Grupo cujo rótulo não está no mapa carregado → usa a própria chave, como
+  `resolveClient` faz com cliente não mapeado.
+- Corte de `topN` → o grupo ocupa **uma** posição, não três.
+
+**Fora desta história:** IND-22, os cartões, e grupo nos rankings de importador e
+mercadoria — grupo é conceito de cliente.
+
+**Dependências:** `H-55`.
+**Tamanho:** M (7 arquivos, contrato de uma rota alterado)
+
+[↑ Índice](#indice)
+
+---
+
 <a id="resumo"></a>
 
 ## Resumo do backlog
@@ -5952,8 +6047,8 @@ cliente; segundo nível de hierarquia.
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização | **H-39 ✅ … H-42 ✅, H-43 … H-47 abertas** | 1 | 8 | 0 |
-| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-55 ✅, H-50 … H-54 abertas** | 1 | 7 | 0 |
-| **Total** | **55** — 45 concluídas, 10 abertas | **18** | **37** | **0** |
+| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-55 ✅, H-56 ✅, H-50 … H-54 abertas** | 1 | 8 | 0 |
+| **Total** | **56** — 46 concluídas, 10 abertas | **18** | **38** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até
