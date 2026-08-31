@@ -122,6 +122,46 @@ pilha guardado e imprimiu `1490 passed`:
 caminho: qualquer corte menor deixaria um commit vermelho, e commit vermelho no
 meio quebra o `git bisect` que o corte atômico existe para preservar.
 
+### `H-52` — Os cartões declaram o período, e ele é editável ali · PR #TBD
+
+**Branch:** `H-52/feat-periodo-nos-cartoes`, saindo de `H-51/feat-canal-verde`.
+Posição 2 da pilha.
+
+**O que mudou.** Cada cartão da Página Inicial declara a janela que está
+contando e **qual data** ela recorta. Nasceu o cartão "Desembaraçados no período
+(por registro)", contado por `registrationDate`, e um seletor de período na
+própria página, que escreve nos mesmos parâmetros da barra de filtros.
+
+**Arquivos** — 16, em 5 commits. Domínio: `src/domain/indicators.ts`. Servidor:
+`src/http/filter-request.ts`, `src/http/routes/indicators.ts`. Interface:
+`web/src/pages/Home.tsx`, `web/src/components/StatCard.tsx`,
+`web/src/hooks/useFilters.ts`. Documentos: `docs/05-contratos-api.md` e os três
+de fecho. O resto são testes.
+
+**Verify.** Verde. A última execução imprimiu `Test Files 73 passed (73)` e
+`Tests 1526 passed (1526)`, contra 1494 ao fim de `H-51` — 32 testes próprios.
+
+**Conferência contra a planilha real**, e os quatro números do critério de aceite
+bateram:
+
+| Medida | Valor | Critério de aceite |
+|---|---|---|
+| faixa de `ETA2` | 30/12/2025 a 09/09/2026 | idem ✅ |
+| faixa de `RG` | 05/01/2026 a 31/07/2026 | idem ✅ |
+| sem `ETA2` | 64 de 649 | 64 ✅ (caso-limite) |
+| sem `RG` | 166 de 649 | — |
+| `desembaracadosNoPeriodo` sem janela | 480 | igual a `desembaracados` |
+| o mesmo, em fevereiro | 58 | — |
+
+**Commits**, provados verdes um a um: `1508` depois do primeiro, `1514` depois do
+segundo.
+
+1. `feat(domain): a contagem por data de registro e a faixa real das datas`
+2. `feat(http): a rota declara a janela aplicada e a faixa real dos dados`
+3. `feat(web): cada cartao diz que janela conta, e o atalho a edita ali`
+4. `docs(docs): fecha H-52 no backlog, na rastreabilidade e no estado`
+5. `docs(docs): o relatório registra o PR de H-52`
+
 ---
 
 ## 3. PENDÊNCIAS PARA O DONO
@@ -145,6 +185,7 @@ da anterior e todas escrevem em `docs/06-backlog.md`,
 | # | PR | Branch | Base |
 |---|---|---|---|
 | 1 | [#69](https://github.com/rodrigo-norys/cronoscomex/pull/69) — `H-51` | `H-51/feat-canal-verde` | `main` |
+| 2 | #TBD — `H-52` | `H-52/feat-periodo-nos-cartoes` | `H-51/feat-canal-verde` |
 
 Depois do último merge, a branch `distribuicao` fica para trás e precisa ser
 sincronizada — `node --experimental-strip-types scripts/sincronizar-distribuicao.ts`.
@@ -168,3 +209,19 @@ Uma linha por decisão, para conferência por amostragem. As três primeiras sã
    descartada: recusar `nenhum` como valor fora do domínio — é o que o código já
    fazia, e teria reiniciado `categoryChangedAt` em 649 processos, desarmando
    ALE-06. A tradução é uma linha e se remove numa linha.
+
+As três seguintes são de `H-52`.
+
+4. **A janela de `desembaracadosNoPeriodo` incide sobre o conjunto filtrado, não
+   sobre a base.** O texto da história admitia as duas leituras; **RF-18 decide**
+   — todo indicador da rota responde sobre o recorte ativo. Alternativa
+   descartada: ignorar o filtro de `ETA2` para responder literalmente "quantos
+   concluímos desde fevereiro", o que faria um cartão desobedecer um filtro
+   global visível na barra. Sem filtro de período as duas coincidem, que é o
+   estado do critério de aceite.
+5. **`meta.dataRange` é medido sobre o conjunto filtrado**, e não sobre a base.
+   Mesma razão de RF-18. Consequência declarada: com janela ativa, `missing` é
+   necessariamente 0 — dentro do recorte nenhum processo está sem a data.
+6. **`filteredWithPeriod` nasceu ao lado de `filteredProcesses`**, e não no lugar
+   dele. Alternativa descartada: alargar o existente, que alcançaria as seis
+   rotas **[F]** — cinco delas sem uso para a janela.
