@@ -211,3 +211,82 @@ describe('C04 — o mesmo papel de UI tem a mesma forma', () => {
     for (const uma of ressalvas) expect(uma.text).toMatch(/border-border-subtle/)
   })
 })
+
+/**
+ * `H-46`, `R01` e `R04`. A responsividade que a estática alcança.
+ *
+ * O que ela **não** alcança é `VN-1`, em `H-47`: se a página de fato rola na
+ * horizontal a 320 px CSS só se vê no navegador. O que estas asserções guardam é
+ * o que produz aquela rolagem, e é verificável sem abrir nada.
+ *
+ * **A exigência de 320 px não vem do telefone**, e sim de `SC 1.4.10 Reflow`: o
+ * *Understanding* explica que 320 px CSS equivale a uma janela de 1280 px com
+ * zoom em 400 %. O alvo é o desktop do operador; não há dispositivo móvel no
+ * escopo.
+ */
+
+/** Toda `<table>` do conjunto, com o arquivo e a linha. */
+function tables(): Occurrence[] {
+  return occurrencesOf(/<table\b/)
+}
+
+describe('R01 — toda tabela rola dentro do próprio invólucro', () => {
+  it('encontra as tabelas — âncora contra guarda verde por vacuidade', () => {
+    // Quatro em 31/08/2026, ao fechar `H-46`: `ProcessTable`, `History`,
+    // `Performance` e `ConflictDialog`.
+    expect(tables().length).toBeGreaterThanOrEqual(4)
+  })
+
+  /**
+   * A exceção bidimensional de `SC 1.4.10` cobre a **tabela**, e não a página:
+   * sem o invólucro, ela arrasta as notas irmãs e a barra de filtros junto — e
+   * essa é a rolagem que o critério proíbe.
+   *
+   * O invólucro é procurado nas **três** linhas acima da tabela, e não na mesma:
+   * o JSX quebra a linha, e exigir os dois no mesmo texto reprovaria o padrão
+   * que `ProcessTable` já usava antes desta história.
+   */
+  it('nenhuma tabela fica fora de um contêiner com overflow-x-auto', () => {
+    const soltas = tables().filter((one) => {
+      const lines = readFileSync(one.file, 'utf-8').split('\n')
+      const before = lines.slice(Math.max(0, one.line - 4), one.line).join(' ')
+      return !/overflow-x-auto/.test(before)
+    })
+
+    expect(soltas.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
+  })
+})
+
+describe('R04 — todo grid declara o valor abaixo do breakpoint', () => {
+  /**
+   * `grid-cols-1` implícito é o valor inicial do CSS, e escrevê-lo é o que faz a
+   * intenção aparecer no código: sem ele, quem lê não sabe se uma coluna é
+   * decisão ou esquecimento.
+   *
+   * O contraexemplo que `R04` admite — `max-width: none`, valor inicial que não
+   * precisa de contraparte — não se aplica aqui: `grid-template-columns` **tem**
+   * valor abaixo do breakpoint, e ele é observável na tela.
+   */
+  it('nenhum grid tem contagem de colunas só com prefixo', () => {
+    const semBase = occurrencesOf(/\b(?:sm|md|lg|xl):grid-cols-/).filter(
+      (one) =>
+        !/\bgrid-cols-(?!\S*:)/.test(one.text.replace(/\b(?:sm|md|lg|xl):grid-cols-\S*/g, '')),
+    )
+
+    expect(semBase.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
+  })
+})
+
+describe('R03 — o texto do gráfico acompanha a fonte-base', () => {
+  /**
+   * `SC 1.4.4`. O React converte `fontSize: 12` para pixel, e pixel não
+   * acompanha a fonte-base que o operador escolheu no navegador. `width={48}` e
+   * `margin={{…}}` continuam numéricos de propósito: são **geometria** do
+   * Recharts, não tipografia.
+   */
+  it('nenhum fontSize numérico nas props do gráfico', () => {
+    const pixels = occurrencesOf(/fontSize:\s*\d/)
+
+    expect(pixels.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
+  })
+})
