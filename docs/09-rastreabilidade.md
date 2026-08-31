@@ -152,7 +152,9 @@ especificação são rastreados aqui, para que **nenhum** fique fora.
 
 ## 4. Verificação de histórias órfãs
 
-As 33 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
+As 43 histórias concluídas, e onde cada uma aparece nesta matriz. **Nenhuma
+órfã.** A contagem dizia 33 desde `H-33` e envelheceu junto com a tabela; o
+número correto é o de linhas abaixo.
 
 | História | Aparece em | Papel |
 |---|---|---|
@@ -198,6 +200,7 @@ As 33 histórias, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
 | H-40 | Cadeia base | ✅ **Concluída.** Os seis componentes de dado consomem os tokens — 46 linhas de passo bruto para zero. Corrige os três contrastes reprovados deles: a barra do ranking (2.40 → 6.90:1), o traço de "sem leitura" do cartão (1.49 → 4.77:1) e a borda ausente da severidade "erro" em `IngestionHealth`. Acrescenta `channel-red-*`, porque Canal Vermelho é dado e não severidade, e `meter-fill-hover`, cujo realce a própria correção do trilho consumira |
 | H-41 | Cadeia base | ✅ **Concluída.** A superfície de edição e a Página Detalhe consomem os tokens — 91 linhas de passo bruto para zero, sem token novo. Fecha três dos treze controles de `ACHADO 6` e a última ocorrência de `ACHADO 3`. Os seis botões desabilitados da fatia adotam `control-disabled-*`, resolvendo a contradição entre o caso-limite e o critério de aceite. `ProcessDetail` é a primeira adoção das três `@utility` fora da casca |
 | H-42 | Cadeia base, `GET /*` | ✅ **Concluída.** Fecha a onda 2: as sete páginas migradas — 77 linhas para zero — e `tests/repo/estilo.test.ts` impede o passo bruto de voltar, com duas asserções provadas por mutação. Os seis literais do Recharts saem para os tokens, e `var()` em atributo SVG foi medido no navegador, não suposto. **Corrige de passagem um defeito de `H-30`:** `GET /*` servia `text/html` para os assets, e a tela ficava branca — o `@fastify/static` enumerava o diretório no registro, e o teste que afirmava cobrir o caso media apenas o HTML |
+| H-48 | Cadeia base | ✅ **Concluída.** Abre o épico E10 com os dois mapas de negócio fora do repositório — nome real de cliente e de pessoa da equipe são configuração, nunca código (regra inviolável 8), e o repositório vai a público. Arquivo **ausente devolve lista vazia** e a aplicação sobe, ao contrário de `loadColorMap`; JSON malformado mata a partida. Medido contra a planilha real: o mapa de clientes leva 509 chaves a 124, e o de equipe cobre 649 de 649 — 559 pelo importador, 48 pelo desempate da cor e 42 sem responsável, com **zero divergências** entre as duas fontes. Nenhum campo de `Process` muda aqui: quem consome é `H-49` e `H-50` |
 
 ---
 

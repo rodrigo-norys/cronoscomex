@@ -89,6 +89,16 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 - [H-46 — Responsividade e contenção de rolagem](#h-46)
 - [H-47 — Percorrer os cinco procedimentos de navegador](#h-47)
 
+**[Épico E10 — As melhorias de uso](#e10)**
+
+- [H-48 — Os dois mapas de negócio, fora do repositório](#h-48)
+- [H-49 — Cliente consolidado, separado do processo do cliente](#h-49)
+- [H-50 — Responsável pelo importador, com a cor desempatando](#h-50)
+- [H-51 — Canal verde, e a distribuição à vista](#h-51)
+- [H-52 — Os cartões declaram o período, e ele é editável ali](#h-52)
+- [H-53 — A Página Performance diz a métrica e mostra o recorte](#h-53)
+- [H-54 — O histórico reconstrói os meses da planilha](#h-54)
+
 **[Resumo do backlog](#resumo)**
 
 ---
@@ -5193,6 +5203,549 @@ E qualquer correção de código: os cinco procedimentos produzem registro.
 
 ---
 
+<a id="e10"></a>
+
+## Épico E10 — As melhorias de uso
+
+Nasce de `docs/uso/RESULTADO.md` (31/08/2026), levantado depois de o operador
+usar o painel contra a planilha real com a intenção de trabalhar. **Não é
+auditoria de documento nem de código:** é o que apareceu na tela.
+
+**Quatro das doze observações não viraram história**, e não devem virar: eram
+perguntas sobre o que a aplicação faz — o predicado de atraso, a origem de "em
+desembaraço", a fórmula do tempo documental e a existência do filtro na Página
+Performance —, e as quatro estavam corretas. Três eram comportamento certo mal
+comunicado, e a quarta era funcionalidade existente e invisível; a resposta às
+duas últimas é `H-53`, que muda o que a tela **diz**, não o que ela calcula.
+
+**Três decisões do operador valem para o épico inteiro e não se re-litigam:**
+
+1. **O amarelo continua significando "importador fora do RJ"** (A-38, D-02). O
+   épico acrescenta canal verde, e **não** canal amarelo. Perguntado
+   explicitamente em 31/08/2026, com a alternativa à vista.
+2. **O cliente consolidado não substitui o valor da célula** — os dois campos
+   coexistem, e o antigo passa a se chamar pelo que sempre foi.
+3. **Os nomes reais são configuração, nunca código.** O repositório vai a
+   público, e a regra inviolável 8 já proíbe nome de cliente em log; nome de
+   pessoa da equipe cai na mesma regra, pelo mesmo motivo. É o que `H-48` fecha
+   antes de qualquer outra história do épico começar.
+
+**A regra inviolável 4 não é tocada em nenhuma das sete.** `H-50` usa a cor para
+desempatar **responsável**, que ela já codifica desde TD-05, e `H-51` a usa para
+**canal**, que ela já codifica desde IND-06. Nenhuma delas faz a cor inferir
+status, em lugar nenhum.
+
+---
+
+<a id="h-48"></a>
+
+### H-48 — Os dois mapas de negócio, fora do repositório
+
+> ✅ **CONCLUÍDA em 31/08/2026.** **47 testes próprios** em quatro arquivos —
+> dois de domínio e dois de carga. Suíte total de **1322 para 1369**, sem um
+> caso ajustado para acomodar a fatia. Três divergências no protocolo, todas
+> resolvidas.
+>
+> **A lista de arquivos omitia o ponto de partida, e o objetivo não fecharia
+> sem ele.** "Validação na partida" exige que alguém chame o loader, e quem
+> chama é `main()` em `src/http/server.ts` — que passa a `initStore`. Sem os três
+> arquivos acrescentados, os loaders existiriam sem consumidor. É a lição da
+> regra inviolável 7 aplicada antes de morder: ponto de injeção que a assinatura
+> de `buildServer` não tem falha em silêncio. Os campos entraram **opcionais** em
+> `StoreOptions`, e por isso nenhuma fábrica de estado dos testes precisou mudar.
+>
+> **A guarda de âncora morta reprovou o portão, e estava certa.** Os cabeçalhos
+> citavam `config/client-map.json`, que o `.gitignore` cobre: num checkout limpo
+> o arquivo não existe, e a guarda cobra existência em disco. O próprio
+> `tests/repo/contratos.test.ts` já documentava a convenção — arquivo de execução
+> não versionado se nomeia **sem** o prefixo de diretório, como `app.json` desde
+> `H-34` — com um "não conserte de volta" no comentário. A correção foi seguir a
+> convenção, não afrouxar a guarda.
+>
+> **A conferência contra a planilha real corrigiu um número que dois documentos
+> já afirmavam.** A cobertura do mapa de clientes fora escrita como "528 dos 649
+> processos"; o mapa real consolida **466**. A diferença são os 62 processos do
+> prefixo que cobre três clientes — contados como cobertos pela lista do
+> operador quando a decisão dele foi justamente **não** consolidá-los. Duas
+> decisões diferentes tinham virado uma só na prosa.
+>
+> **O desempate por cor não foi escolhido, foi derivado.** Roxo ocorre
+> exclusivamente em importador de uma pessoa, azul e bege exclusivamente em
+> importador da outra — **zero contradições em 649 linhas**. Medido antes de a
+> regra existir; sem essa medição, usar a cor como segunda fonte seria supor que
+> ela concorda. O campo `conflict` existe para a primeira divergência, que hoje
+> não há e que ninguém veria acontecer.
+>
+> **Uma pendência nasce aqui e é de `H-49`:** o operador informou que dois
+> clientes menores também respondem a um terceiro, "mas mantendo separado".
+> Cliente dentro de cliente exige hierarquia, que este formato não tem. Os três
+> ficam como clientes irmãos até `H-49` decidir a forma — acrescentar o campo
+> agora seria projetar o consumo antes de ele existir.
+
+**Objetivo:** existir um lugar para os nomes reais de cliente e de equipe que
+não seja o código nem o histórico do git, com validação na partida e exemplo
+versionado.
+
+> **Por que uma história só para dois arquivos de configuração.** `H-49` e
+> `H-50` são as duas histórias caras do épico, e ambas consomem estes mapas. Sem
+> esta fatia primeiro, cada uma inventaria o seu formato de carga, e o segundo
+> a escrever herdaria o formato do primeiro por acidente — foi assim que
+> `color-map.json` e `status-aliases.json` ganharam dois loaders com validações
+> desalinhadas.
+>
+> **O gatilho é publicação, não zelo.** Uma decisão já tomada põe este
+> repositório em público. `config/app.json` já está no `.gitignore` pelo mesmo
+> motivo, e o par `.exemplo` versionado é o padrão que `H-34` estabeleceu:
+> quem clona recebe a forma, nunca o conteúdo.
+
+**Arquivos:**
+- `config/client-map.json.exemplo` — versionado, nomes fictícios
+- `config/team-map.json.exemplo` — versionado, nomes fictícios
+- `.gitignore` — as duas entradas reais
+- `src/app/client-map-loader.ts` — carga e validação
+- `src/app/team-map-loader.ts` — carga e validação
+- `src/domain/client-mapper.ts` — a função pura de consolidação
+- `src/domain/team-mapper.ts` — a função pura de atribuição
+- `tests/app/client-map-loader.test.ts`, `tests/app/team-map-loader.test.ts`
+- `tests/domain/client-mapper.test.ts`, `tests/domain/team-mapper.test.ts`
+
+**Critérios de aceite:**
+- **Dado** `config/client-map.json` ausente, **quando** a aplicação sobe,
+  **então** ela sobe: o mapa vazio é legítimo, e todo cliente permanece como
+  está na célula. Ausência de mapa não é erro — é a instalação que ainda não
+  configurou, e ela precisa chegar ao painel (mesma regra de `H-34`).
+- **Dado** um mapa com regra cujo `match` não é `prefix` nem `contains`,
+  **então** a carga lança erro nomeando a entrada e os valores aceitos, como
+  `ColorMapError` faz.
+- **Dado** duas regras que casam a mesma chave, **então** vence a **primeira**
+  na ordem do arquivo, e a ordem é documentada no próprio JSON. Exigir
+  correspondência única recusaria o mapa real: o mesmo cliente aparece por
+  prefixo e por texto contido.
+- **Dado** `src/domain/client-mapper.ts` e `team-mapper.ts`, **então** nenhum
+  dos dois faz I/O — recebem o mapa já carregado, como `color-mapper.ts`
+  (ADR-0006).
+- **Dado** os dois `.exemplo`, **então** nenhum contém nome real de cliente,
+  importador ou pessoa, e `.github/scripts/verifica-dados-sensiveis.sh` continua
+  passando — a guarda é aquele script, rodado por `dados-sensiveis.yml`, e não um
+  teste de `tests/repo/` *(divergência 2 da fatia)*.
+
+**Casos-limite:**
+- Mapa presente e vazio (`rules: []`) → idêntico a mapa ausente, sem erro.
+- Regra com `match: "prefix"` e valor vazio → recusada na carga: casaria tudo.
+- Chave de cliente vazia → nenhuma regra casa, e ela permanece vazia; a chave
+  vazia é valor legítimo (TD-04) e continua filtrável.
+- JSON malformado → mata a partida, como `loadConfig` faz. Diferente de ausente:
+  arquivo escrito errado é engano que a tela não conserta.
+- Nome com acento no `label` → preservado; o mapa é apresentação, e `normKey`
+  não é aplicado ao rótulo.
+
+**Fora desta história:** consumir os mapas. Nenhum campo de `Process` muda
+aqui, nenhuma rota muda, e nenhuma tela muda — são `H-49` e `H-50`.
+
+**Dependências:** nenhuma.
+**Tamanho:** M (10 arquivos, 0 contrato de rota novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-49"></a>
+
+### H-49 — Cliente consolidado, separado do processo do cliente
+
+**Objetivo:** o campo Cliente responder "quem é o cliente" em vez de "qual o
+processo dele", sem perder o valor da célula.
+
+> **Medido: 649 processos produzem 509 valores distintos em CLT** — o campo
+> guarda a referência do processo daquele cliente, não o cliente
+> (`docs/uso/RESULTADO.md §2`). O ranking de clientes (IND-10) e a quebra de
+> tempo documental por cliente (IND-22) contam processos e chamam o resultado
+> de cliente; a Página Clientes apresenta isso como distribuição de carteira.
+>
+> **O antigo não é descartado, é renomeado.** Ele continua sendo a única forma
+> de achar um processo específico na Operacional, e sumir com ele trocaria um
+> defeito por outro.
+
+**Arquivos:**
+- `src/domain/types.ts` — `clientProcessRaw` e `clientProcessKey` nascem;
+  `clientKey` passa a ser o consolidado
+- `src/domain/process-builder.ts` — aplica o mapa na composição
+- `src/domain/filters.ts` — o filtro novo e o rótulo do antigo
+- `src/http/routes/filter-options.ts` — a opção nova
+- `src/http/routes/processes.ts` — projeção
+- `src/domain/process-projection.ts`
+- `src/app/process-store.ts` — injeção do mapa
+- `web/src/components/FilterBar.tsx` — o controle novo
+- `web/src/pages/ProcessDetail.tsx` — os dois campos lado a lado
+- `web/src/components/ProcessTable.tsx`
+- `docs/05-contratos-api.md`, `docs/03-modelo-dados.md` — TD-04 ganha a etapa
+- os testes correspondentes em `tests/domain/`, `tests/http/` e `web/tests/`
+
+**Critérios de aceite:**
+- **Dado** o mapa real do operador, **quando** os 649 processos são compostos,
+  **então** `clientKey` produz **124 chaves** em vez de 509: **466 processos
+  consolidados em 11 clientes**, e **183 permanecem com a chave da célula** —
+  medido em `H-48`, contra a planilha real. Não consolidar não é erro, é a
+  decisão registrada em `docs/uso/RESULTADO.md §2`, e vale para dois conjuntos
+  distintos: 62 processos de um prefixo que cobre três clientes, e 121 ainda sem
+  regra declarada.
+- **Dado** um processo cuja célula CLT vale `X-29`, **então** `clientProcessRaw`
+  vale `X-29` e `clientKey` vale a chave consolidada — os dois presentes na
+  mesma resposta, nunca um derivado no cliente (regra inviolável 6).
+- **Dado** `GET /api/filters/options`, **então** a resposta traz `clients` já
+  consolidados **e** `clientProcesses` com os valores de célula, cada um com a
+  própria contagem.
+- **Dado** `?client=<chave consolidada>`, **então** o recorte inclui todos os
+  processos daquele cliente, e a contagem bate com o ranking.
+- **Dado** mapa ausente, **então** `clientKey` é idêntico ao de hoje e a
+  aplicação se comporta como antes desta história.
+
+**Casos-limite:**
+- Prefixo que corresponde a mais de um cliente — medido: um prefixo de 62
+  processos cobre três clientes, distinguíveis só pelo importador
+  (`docs/uso/RESULTADO.md §2`) → a regra do mapa aceita qualificar por
+  importador; sem qualificação, o grupo permanece como está.
+- Célula vazia → nenhuma regra casa; `clientKey` e `clientProcessKey` ficam
+  vazios, e os 38 processos seguem filtráveis pela chave vazia.
+- Valor que casa duas regras → a primeira do arquivo vence (`H-48`).
+- Rótulo exibido: para o consolidado é o `label` do mapa; para os não cobertos
+  segue a primeira grafia encontrada (A-26).
+
+**Fora desta história:** o responsável — é `H-50`, e as duas tocam
+`process-builder.ts`. Ordem sugerida: esta primeiro, porque o campo dela é
+lido pelo desempate daquela.
+
+**Dependências:** `H-48`.
+**Tamanho:** M (13 arquivos, contrato de duas rotas alterado)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-50"></a>
+
+### H-50 — Responsável pelo importador, com a cor desempatando
+
+**Objetivo:** o campo Responsável cobrir as 649 linhas em vez de 157, e nomear
+quem de fato responde pelo processo.
+
+> **O achado que dispensou a decisão arbitrária.** A cor e a lista de
+> importadores do operador **concordam nas 649 linhas**: roxo ocorre
+> exclusivamente em importador de uma pessoa, azul e bege exclusivamente em
+> importador da outra, e não há uma única contradição
+> (`docs/uso/RESULTADO.md §3`). Por isso os 90 processos que a lista de
+> importadores não alcança — 55 num importador sem regra declarada e 35 com o
+> campo em branco — **não precisam de escolha**: os 48 que têm cor de
+> responsável recebem o que a cor já afirma, e os 42 restantes ficam sem
+> responsável, visíveis.
+>
+> **A cor não é descartada, vira campo próprio.** O que ela codifica hoje passa
+> a se chamar `colorResponsible`, com filtro próprio, porque é informação
+> diferente: uma diz quem responde, a outra diz o que o operador pintou.
+
+**Arquivos:**
+- `src/domain/types.ts` — `Responsible` deixa de ser o domínio da cor;
+  `ColorResponsible` assume as quatro chaves atuais
+- `src/domain/team-mapper.ts` — a atribuição e o desempate (de `H-48`)
+- `src/domain/process-builder.ts`
+- `src/domain/filters.ts` — dois filtros, e `matchesResponsible` migra
+- `src/domain/indicators.ts` — IND-20 e a quebra de IND-22 por responsável
+- `src/http/routes/indicators.ts`, `filter-options.ts`, `processes.ts`
+- `src/app/process-store.ts`
+- `web/src/components/FilterBar.tsx`, `web/src/pages/Performance.tsx`,
+  `web/src/pages/ProcessDetail.tsx`
+- `docs/05-contratos-api.md`, `docs/03-modelo-dados.md` (TD-05)
+- os testes correspondentes
+
+**Critérios de aceite:**
+- **Dado** o mapa real, **quando** os 649 processos são compostos, **então**
+  a atribuição por importador cobre **559**, o desempate pela cor cobre mais
+  **48**, e **42** ficam sem responsável — os três números aparecem no ranking,
+  incluindo o último (A-28: chave zerada não se esconde).
+- **Dado** um processo cujo importador está na lista de uma pessoa **e** cuja
+  cor aponta a outra, **então** a divergência vira anomalia registrada, e a
+  atribuição segue o importador. Medido: **zero ocorrências** hoje, e é
+  exatamente por isso que a regra precisa existir antes da primeira.
+- **Dado** `A-18`, **então** a subcategoria de cor continua sendo selecionada
+  junto com a principal **no filtro de `colorResponsible`** — a regra migra com
+  o campo, não desaparece.
+- **Dado** a quebra de tempo documental por responsável na Página Performance,
+  **então** ela deixa de ser dominada por `indefinido` e a ressalva de A-31 é
+  reescrita para descrever o campo novo.
+- **Dado** mapa de equipe ausente, **então** `responsible` cai inteiramente no
+  desempate por cor e o comportamento é o de hoje.
+
+**Casos-limite:**
+- Importador com sufixo de filial — medido: três importadores aparecem também
+  com sufixo (`docs/uso/RESULTADO.md §3`) → a regra casa o importador base, e o
+  sufixo não cria pessoa nova.
+- Importador em branco **e** sem cor de responsável → sem responsável, contado.
+- Pessoa declarada no mapa sem nenhum processo → aparece no ranking com zero,
+  pela mesma razão de A-28.
+- Uma pessoa marcada como destino do "todo o resto" → é regra do mapa, não do
+  código; duas pessoas marcadas assim é erro de carga (`H-48`).
+
+**Fora desta história:** trocar o significado das cores na escrita — `H-27`
+continua gravando o que grava, e o `fillId` de cada combinação não muda.
+
+**Dependências:** `H-48`. Convive com `H-49`, que toca os mesmos três arquivos
+de composição.
+**Tamanho:** M (15 arquivos, contrato de três rotas alterado)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-51"></a>
+
+### H-51 — Canal verde, e a distribuição à vista
+
+**Objetivo:** o canal deixar de ser um campo binário sobre 5 linhas e passar a
+descrever as 482 que a cor de fato classifica.
+
+> **Medido: 477 verdes, 5 vermelhas, 1 amarela e 166 sem cor de canal**
+> (`docs/uso/RESULTADO.md §4`). O mapa hoje registra `nenhum` para as 166, o que
+> **afirma** que não houve canal — quando a verdade é que a cor daquela linha
+> está ocupada dizendo outra coisa. É a regra inviolável 3 aplicada ao próprio
+> mapa de cores.
+>
+> **O amarelo não vira canal amarelo.** Decisão do operador em 31/08/2026, com
+> a alternativa à vista: ele mantém o significado de D-02 e A-38. Um canal
+> amarelo que não existe no dado seria coluna vazia prometendo informação.
+
+**Arquivos:**
+- `src/domain/types.ts` — `CustomsChannel` ganha `verde`
+- `config/color-map.json` — as nove entradas revistas
+- `src/app/color-map-loader.ts` — o domínio validado
+- `src/domain/indicators.ts` — a distribuição, ao lado de IND-06
+- `src/http/routes/indicators.ts`, `filter-options.ts`
+- `src/domain/filters.ts` — `CHANNEL_LABELS`
+- `web/src/pages/Home.tsx` — o painel de distribuição
+- `docs/03-modelo-dados.md` (TD-05), `docs/05-contratos-api.md`
+- os testes correspondentes
+
+**Critérios de aceite:**
+- **Dado** a planilha real, **então** `verde` = 477, `vermelho` = 5 e
+  `indefinido` = 167 — e a soma é 649, verificada em teste.
+- **Dado** o painel da Página Inicial, **então** ele exibe contagem **e**
+  percentual, com o denominador escrito ao lado: o percentual é sobre as **482**
+  com canal conhecido, e as 167 restantes aparecem contadas fora do percentual
+  (A-42 — fração de conjunto vazio não é zero, e denominador não sai do lado da
+  fração).
+- **Dado** a linha amarela, **então** seu canal é `indefinido` e
+  `importerOutsideRj` permanece `true`.
+- **Dado** IND-06, **então** ele continua contando só o vermelho e seu valor não
+  muda — o indicador existente não é redefinido por esta história.
+- **Dado** `PATCH .../color`, **então** as combinações graváveis continuam
+  resolvendo para o mesmo `fillId` de hoje.
+
+**Casos-limite:**
+- Cor não mapeada → `indefinido`, como hoje, e entra na quarentena. Não saber a
+  cor e saber que a cor não diz canal produzem o mesmo valor, e a distinção
+  vive na quarentena, não no campo.
+- Denominador zero (nenhum processo com canal conhecido no recorte) → o painel
+  mostra as contagens e omite o percentual, nunca `0%`.
+- Filtro `channel=nenhum` em URL salva antes desta história → o valor sai do
+  domínio e a rota responde `400 FILTRO_INVALIDO`, que é o comportamento
+  correto; a barra de filtros não oferece mais a opção.
+
+**Fora desta história:** canal amarelo, e qualquer mudança no significado do
+verde para status — a categoria continua vindo de TD-01 (regra inviolável 4).
+
+**Dependências:** nenhuma.
+**Tamanho:** M (10 arquivos, contrato de duas rotas alterado)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-52"></a>
+
+### H-52 — Os cartões declaram o período, e ele é editável ali
+
+**Objetivo:** cada cartão da Página Inicial dizer que janela está contando, e a
+janela poder ser mudada sem ir à barra de filtros.
+
+> **Doze números sem janela à vista.** O período existe — é o filtro global
+> sobre `ETA2` (RF-17) — mas vive noutra região da tela, e um cartão zerado por
+> recorte é indistinguível de um cartão zerado por ausência de dado.
+>
+> **Duas datas respondem a duas perguntas.** "Quantos chegaram desde fevereiro"
+> é `ETA2`; "quantos desembaraçamos desde fevereiro" é `registrationDate`. O
+> cartão de desembaraçados responde a primeira e é lido como a segunda
+> (`docs/uso/RESULTADO.md §5`).
+>
+> **O cartão novo é adicional, não substituto**, e é o que preserva A-12: a soma
+> das quatro categorias continua fechando com o total, e a conferência que a
+> página exibe continua válida.
+
+**Arquivos:**
+- `src/domain/indicators.ts` — a contagem por data de registro e a faixa dos dados
+- `src/http/routes/indicators.ts` — os dois blocos novos em `meta`
+- `web/src/pages/Home.tsx` — a janela em cada cartão e o seletor
+- `web/src/components/StatCard.tsx` — a linha de período
+- `web/src/hooks/useFilters.ts` — o atalho de período
+- `docs/05-contratos-api.md`
+- os testes correspondentes
+
+**Critérios de aceite:**
+- **Dado** nenhum filtro de período, **então** cada cartão declara a faixa
+  **real dos dados** para a data que ele usa — medido em 31/08/2026: `ETA2` de
+  30/12/2025 a 09/09/2026, `RG` de 05/01/2026 a 31/07/2026
+  (`docs/uso/RESULTADO.md §5`). A faixa vem do servidor: derivá-la no cliente
+  seria cálculo na tela.
+- **Dado** o seletor de período na Página Inicial, **quando** o operador o
+  altera, **então** ele escreve nos **mesmos** parâmetros `etaFrom`/`etaTo` da
+  barra de filtros — um estado só, nunca dois períodos que divergem.
+- **Dado** o cartão "Desembaraçados no período", **então** ele conta por
+  `registrationDate` dentro da janela, e o cartão diz isso no próprio rótulo.
+- **Dado** os quatro cartões de categoria, **então** a soma continua igual ao
+  total e a linha de conferência de A-12 segue presente.
+- **Dado** um recorte sem nenhum processo, **então** o cartão exibe zero **com**
+  a janela ao lado — que é exatamente o que hoje falta para distinguir os dois
+  zeros.
+
+**Casos-limite:**
+- Processo sem `ETA2` (64 de 649) → fora de qualquer janela, e o cartão de total
+  diz quantos ficaram fora. Data ausente não está dentro nem fora (A-20), e
+  omitir a contagem seria descarte silencioso.
+- `etaFrom` posterior a `etaTo` → conjunto vazio sem erro, como hoje.
+- Janela que não cobre nenhum RG → o cartão novo mostra zero com a janela ao
+  lado, nunca traço: zero medido é diferente de não medido.
+- Base sem nenhuma data preenchida → a faixa é nula e o cartão diz "sem data",
+  não uma faixa inventada.
+
+**Fora desta história:** as outras seis páginas. O período segue global e
+continua valendo para todas; o que nasce aqui é a **declaração** dele, e o
+atalho, na Inicial.
+
+**Dependências:** nenhuma.
+**Tamanho:** M (7 arquivos, contrato de uma rota alterado)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-53"></a>
+
+### H-53 — A Página Performance diz a métrica e mostra o recorte
+
+**Objetivo:** a página explicar o que mede e tornar visível o filtro que ela já
+respeita.
+
+> **Duas das quatro perguntas do levantamento morrem aqui, e nenhuma delas era
+> defeito de cálculo.** O operador perguntou qual é a métrica — está correta
+> (IND-22, A-02) — e se dava para filtrar por importador e cliente — dá, desde
+> `H-15`, pelos filtros globais (RF-18). A aplicação estava certa e muda; é a
+> variante mais barata de defeito, e a mais fácil de deixar aberta para sempre.
+>
+> **A quebra por responsável fica útil por efeito de `H-50`**, não por trabalho
+> desta fatia: com o responsável vindo do importador, ela deixa de ser dominada
+> por `indefinido`. O que esta história faz é reescrever a ressalva de A-31, que
+> hoje explica uma limitação que terá deixado de existir.
+
+**Arquivos:**
+- `web/src/pages/Performance.tsx` — a fórmula, o recorte ativo e a ressalva
+- `web/tests/Performance.test.tsx`
+
+**Critérios de aceite:**
+- **Dado** a Página Performance, **então** a fórmula do tempo documental aparece
+  escrita — a diferença entre as duas datas, na ordem de A-02 — junto do
+  agregado, e não em nota de rodapé.
+- **Dado** um filtro ativo, **então** a página declara **quais** filtros estão
+  recortando os números que ela exibe, sem recalcular nada (regra inviolável 6).
+- **Dado** nenhum filtro ativo, **então** a página diz que os números cobrem a
+  base inteira, e oferece o caminho para filtrar.
+- **Dado** as duas exclusões de A-30, **então** elas continuam contadas e
+  visíveis, com a explicação do que cada uma significa.
+- **Dado** `H-50` fechada, **então** a ressalva de A-31 descreve o campo novo.
+
+**Casos-limite:**
+- Amostra de tamanho 1 → a média aparece com a amostra ao lado, como hoje
+  (A-42). Explicar a métrica não afrouxa a exibição do denominador.
+- Filtro ativo que zera a amostra → traço, nunca zero dia, e a página diz que o
+  recorte não tem par completo de datas.
+- Texto da fórmula → é apresentação de uma regra do domínio, não a regra: nenhum
+  número desta página passa a ser calculado no cliente.
+
+**Fora desta história:** mudar IND-22, e acrescentar dimensão de quebra. A
+quinta dimensão possível — por importador — só existiria por `H-49`; se for
+desejada, é história própria.
+
+**Dependências:** `H-50`, para o último critério. Os demais fecham sem ela.
+**Tamanho:** P (2 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-54"></a>
+
+### H-54 — O histórico reconstrói os meses da planilha
+
+**Objetivo:** o gráfico mostrar os meses que a planilha datou, sem passar
+reconstrução por observação.
+
+> **Dois defeitos independentes, somados numa leitura errada.** `formatMonth`
+> produz `ago/26` para `2026-08`, e em pt-br `26/08` é dia — o operador leu o
+> rótulo como uma data. E a série tem um ponto só, porque ela vem dos eventos
+> gravados desde a primeira execução (ADR-0005, A-43).
+>
+> **A planilha tem passado datado:** `registrationDate` cobre sete meses de 2026
+> e `ETA2` cobre dez meses a partir de dez/2025 (`docs/uso/RESULTADO.md §6`).
+>
+> **A reconstrução não revoga A-43.** O que A-43 proíbe é apresentar
+> reconstrução como histórico observado. Ela não inventa o estado de cada mês:
+> usa as datas que a planilha carrega, diz na tela que é derivação, e as duas
+> séries aparecem distintas — nunca somadas, nunca emendadas numa linha só.
+
+**Arquivos:**
+- `src/domain/history.ts` — a série reconstruída, ao lado de `aggregateMonthly`
+- `src/http/routes/history.ts` — o bloco novo na resposta
+- `web/src/pages/History.tsx` — as duas séries, o rótulo e a legenda
+- `web/src/hooks/useHistory.ts`
+- `docs/05-contratos-api.md`
+- `tests/domain/history.test.ts`, `tests/http/history.test.ts`,
+  `web/tests/History.test.tsx`
+
+**Critérios de aceite:**
+- **Dado** a planilha real, **então** a série reconstruída tem ponto para cada
+  mês entre a primeira e a última data presente, e nenhum mês do intervalo fica
+  ausente — mês sem processo é ponto em zero, não buraco.
+- **Dado** o gráfico, **então** as duas séries são visualmente distintas e a
+  legenda diz qual é observada e qual é reconstruída. Emendá-las numa linha só
+  afirmaria continuidade que não existe.
+- **Dado** `2026-08`, **então** o rótulo é `ago/2026` — no eixo, na tabela e no
+  `tooltip`.
+- **Dado** um filtro ativo, **então** a ressalva existente continua valendo para
+  a série observada, e a reconstruída é recortada pelos mesmos filtros, que
+  incidem sobre a leitura de hoje.
+- **Dado** histórico gravado vazio, **então** a reconstruída aparece sozinha e a
+  tela diz que ainda não há observação — o estado vazio de `H-21` não é
+  substituído, é acompanhado.
+
+**Casos-limite:**
+- Processo sem nenhuma das duas datas (64 sem `ETA2`, 166 sem `RG`) → fora da
+  reconstrução, e a tela diz quantos ficaram fora (regra inviolável 2).
+- Mês futuro com `ETA2` — medido: 18 processos em set/2026 → a série vai até o
+  último mês datado, e o trecho futuro é marcado como previsão, não realizado.
+- Virada de ano na série → o rótulo com quatro dígitos torna a transição legível,
+  que é metade do motivo de trocá-lo.
+- Reconstrução e observação divergindo no mesmo mês → **as duas aparecem**. A
+  divergência é informação sobre a planilha, e escolher uma esconderia o que
+  `docs/uso/RESULTADO.md §6` documenta.
+
+**Fora desta história:** retroatividade do arquivo de eventos. Nada é escrito em
+`data/history.jsonl` por esta fatia — ADR-0005 continua valendo, e a
+reconstrução é derivada a cada leitura, nunca gravada.
+
+**Dependências:** nenhuma.
+**Tamanho:** M (8 arquivos, contrato de uma rota alterado)
+
+[↑ Índice](#indice)
+
+---
+
 <a id="resumo"></a>
 
 ## Resumo do backlog
@@ -5208,7 +5761,8 @@ E qualquer correção de código: os cinco procedimentos produzem registro.
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização | **H-39 ✅ … H-42 ✅, H-43 … H-47 abertas** | 1 | 8 | 0 |
-| **Total** | **47** — 42 concluídas, 5 abertas | **17** | **30** | **0** |
+| E10 — As melhorias de uso | **H-48 ✅, H-49 … H-54 abertas** | 1 | 6 | 0 |
+| **Total** | **54** — 43 concluídas, 11 abertas | **18** | **36** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até
@@ -5222,9 +5776,11 @@ continua sendo o bloco dela.
 `iniciar.cmd` nunca foi executado, e `PD-06` guarda o que falta conferir na
 máquina do operador.
 
-**Nenhuma história é G.** As duas candidatas naturais foram quebradas: a
+**Nenhuma história é G.** As três candidatas naturais foram quebradas: a
 escrita no `.xlsx` virou `H-24` (cirurgia), `H-25` (defesas) e `H-26` (comando
-ponta a ponta); os indicadores viraram cinco histórias por natureza de cálculo.
+ponta a ponta); os indicadores viraram cinco histórias por natureza de cálculo;
+e o épico E10 separou os mapas (`H-48`) dos dois campos que os consomem
+(`H-49`, `H-50`), que de outro modo seriam uma fatia só de 25 arquivos.
 
 ### Varredura de verbos de decisão em aberto
 

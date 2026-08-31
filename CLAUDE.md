@@ -111,7 +111,9 @@ src/http/      rotas Fastify (só serializam; não calculam)
 web/           SPA React (só apresenta; não calcula)
 tools/         perfilador (virada de ano), verificador de strip-types, e
                carregar-planilha.mjs para conferência contra o arquivo real
-config/        app.json, color-map.json, status-aliases.json
+config/        app.json, color-map.json, status-aliases.json, e os dois mapas
+               de negocio de H-48 — client-map.json e team-map.json, nao
+               versionados, com `.exemplo` versionado ao lado
 tests/         domain/, io/, app/, http/, fixtures/ — ambiente `node`
 web/tests/     componentes e casca — ambiente `jsdom`
 ```
@@ -172,10 +174,17 @@ fixado em `web/src/index.css`, as oito seguintes são substituição mecânica.*
 `tests/repo/estilo.test.ts` impede o passo bruto de voltar — a onda 2 fechou.**
 **`H-42` corrigiu também um defeito de `H-30`** que a verificação dela encontrou:
 `GET /*` servia os assets como `text/html`, e a tela ficava branca sem erro.
-**A próxima é `H-43`.** As ondas de
-E9 estão no cabeçalho do épico, em
+**E9 está parada em `H-43`**, e as ondas dela estão no cabeçalho do épico, em
 `docs/06-backlog.md` — `docs/07-plano-entrega.md` cobre as fases do plano
-original, e não alcança E9.
+original, e não alcança E9 nem E10.
+
+**O épico E10 nasceu do uso, não de auditoria**, em 31/08/2026: sete histórias
+levantadas por `docs/uso/RESULTADO.md`, com o operador usando o painel para
+trabalhar. **`H-48` abriu o épico** — os dois mapas de negócio fora do
+repositório, porque nome real de cliente e de pessoa da equipe são configuração e
+não código. **A próxima é `H-49`**, e ela e `H-50` consomem os mapas; as quatro
+seguintes são independentes entre si. E9 e E10 estão abertos ao mesmo tempo, e
+não se bloqueiam.
 
 > **A escrita é o ponto onde errar custa a planilha da empresa.** O subagent
 > `revisor-xml` existe desde 11/08/2026 — invoque-o antes de commitar qualquer
