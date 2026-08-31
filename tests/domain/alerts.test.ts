@@ -58,6 +58,7 @@ function process({
     clientKey: '',
     clientProcessKey: '',
     clientLabel: '',
+    clientGroupKey: '',
     importerKey: '',
     agentKey: '',
     vesselKey: '',

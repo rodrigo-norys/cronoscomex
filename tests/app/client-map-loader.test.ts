@@ -38,19 +38,23 @@ describe('loadClientMap', () => {
     // Diverge de `loadColorMap` de proposito: sem mapa de clientes a aplicacao
     // se comporta como antes de H-49, e matar a partida por um arquivo que o
     // repositorio nem versiona repetiria o circulo que H-34 desfez.
-    expect(loadClientMap(join(dir, 'nao-existe.json'))).toEqual([])
+    expect(loadClientMap(join(dir, 'nao-existe.json'))).toEqual({ clients: [], groups: [] })
   })
 
   it('devolve lista vazia para "clients" vazia, sem lancar', () => {
-    expect(loadClientMap(escrever({ version: 1, clients: [] }))).toEqual([])
+    expect(loadClientMap(escrever({ version: 1, clients: [] }))).toEqual({
+      clients: [],
+      groups: [],
+    })
   })
 
   it('carrega e normaliza as regras', () => {
     const map = loadClientMap(escrever({ version: 1, clients: [clienteValido] }))
 
-    expect(map).toEqual([
+    expect(map.clients).toEqual([
       { key: 'ALFA', label: 'Alfa', rules: [{ match: 'prefix', value: 'ALF' }] },
     ])
+    expect(map.groups).toEqual([])
   })
 
   it('usa a chave como rotulo quando "label" falta ou e vazio', () => {
@@ -58,7 +62,7 @@ describe('loadClientMap', () => {
       escrever({ version: 1, clients: [{ ...clienteValido, label: '   ' }] }),
     )
 
-    expect(map[0]?.label).toBe('alfa')
+    expect(map.clients[0]?.label).toBe('alfa')
   })
 
   it('MATA a partida em JSON malformado', () => {
@@ -106,7 +110,7 @@ describe('loadClientMap', () => {
     expect(() => loadClientMap(comVazio)).toThrow(/importer, quando presente/)
 
     const semCampo = escrever({ version: 1, clients: [clienteValido] })
-    expect(loadClientMap(semCampo)[0]?.rules[0]).not.toHaveProperty('importer')
+    expect(loadClientMap(semCampo).clients[0]?.rules[0]).not.toHaveProperty('importer')
   })
 
   it('recusa chave de cliente repetida, nomeando as duas posicoes', () => {
@@ -124,6 +128,90 @@ describe('loadClientMap', () => {
       ],
     })
 
-    expect(loadClientMap(path).map((entry) => entry.key)).toEqual(['GAMA', 'DELTA'])
+    expect(loadClientMap(path).clients.map((entry) => entry.key)).toEqual(['GAMA', 'DELTA'])
+  })
+})
+
+/**
+ * `H-55`. Os grupos sao conferidos CONTRA a lista de clientes, e e por isso que
+ * a validacao vive na mesma leitura.
+ */
+describe('loadClientMap — a secao "groups"', () => {
+  const doisClientes = [
+    { key: 'alfa', rules: [{ match: 'prefix', value: 'alf' }] },
+    { key: 'beta', rules: [{ match: 'prefix', value: 'bet' }] },
+  ]
+
+  const comGrupos = (groups: unknown): string =>
+    escrever({ version: 1, clients: doisClientes, groups })
+
+  it('carrega o grupo com os membros normalizados', () => {
+    const map = loadClientMap(
+      comGrupos([
+        {
+          key: 'grupo-um',
+          label: 'Grupo Um',
+          members: [{ client: 'alfa', label: 'Alfa (matriz)' }, { client: 'beta' }],
+        },
+      ]),
+    )
+
+    expect(map.groups).toEqual([
+      {
+        key: 'GRUPO-UM',
+        label: 'Grupo Um',
+        members: [{ client: 'ALFA', label: 'Alfa (matriz)' }, { client: 'BETA' }],
+      },
+    ])
+  })
+
+  // Sem a secao, o filtro e o de `H-49` — nenhum nivel de arvore.
+  it('trata "groups" ausente como nenhum grupo', () => {
+    expect(loadClientMap(escrever({ version: 1, clients: doisClientes })).groups).toEqual([])
+  })
+
+  /**
+   * O modo de falha provavel: o operador renomeia a chave de um cliente e o
+   * grupo passa a apontar para o nada, sem sintoma nenhum na tela.
+   */
+  it('recusa membro que aponta para cliente inexistente', () => {
+    const path = comGrupos([{ key: 'g', members: [{ client: 'gama' }] }])
+
+    expect(() => loadClientMap(path)).toThrow(/nao esta em "clients"/)
+  })
+
+  it('recusa o mesmo cliente em dois grupos', () => {
+    const path = comGrupos([
+      { key: 'um', members: [{ client: 'alfa' }] },
+      { key: 'dois', members: [{ client: 'alfa' }] },
+    ])
+
+    expect(() => loadClientMap(path)).toThrow(/no maximo um grupo/)
+  })
+
+  it('recusa chave de grupo repetida, nomeando as duas posicoes', () => {
+    const path = comGrupos([
+      { key: 'um', members: [{ client: 'alfa' }] },
+      { key: 'um', members: [{ client: 'beta' }] },
+    ])
+
+    expect(() => loadClientMap(path)).toThrow(/groups\[0\] e groups\[1\]/)
+  })
+
+  // Grupo sem membro nunca apareceria no filtro: e intencao escrita pela metade.
+  it('recusa grupo sem membros', () => {
+    expect(() => loadClientMap(comGrupos([{ key: 'um', members: [] }]))).toThrow(
+      /ao menos um cliente/,
+    )
+  })
+
+  it('usa a chave como rotulo do grupo quando "label" falta', () => {
+    const map = loadClientMap(comGrupos([{ key: 'um', members: [{ client: 'alfa' }] }]))
+
+    expect(map.groups[0]?.label).toBe('um')
+  })
+
+  it('recusa "groups" que nao e lista', () => {
+    expect(() => loadClientMap(comGrupos({ key: 'um' }))).toThrow(/precisa ser uma lista/)
   })
 })

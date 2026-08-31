@@ -1,5 +1,5 @@
 {
-  "_origem": "Formato entregue por H-48. Os NOMES aqui sao ficticios: config/client-map.json, com os reais, esta no .gitignore porque este repositorio vai a publico. Ver docs/uso/RESULTADO.md secao 2.",
+  "_origem": "Formato entregue por H-48, com a secao 'groups' de H-55. Os NOMES aqui sao ficticios: o arquivo real, client-map.json, esta no .gitignore porque este repositorio vai a publico. Ver docs/uso/RESULTADO.md secao 2.",
 
   "version": 1,
 
@@ -45,6 +45,22 @@
       "label": "Épsilon S/A",
       "_nota": "Acento no label e preservado: ele e apresentacao, e nao passa por normalizacao.",
       "rules": [{ "match": "exact", "value": "EPS" }]
+    }
+  ],
+
+  "_comentario_groups": "OPCIONAL (H-55). Reune clientes ja declarados acima num nivel de arvore DENTRO do filtro Cliente: marcar o grupo recorta todos os membros, marcar um membro recorta so ele. O grupo NAO agrupa indicador — ranking e tempo documental continuam contando cada cliente separado.",
+
+  "_comentario_groups_membro": "Cada membro aponta pela chave para uma entrada de 'clients'; apontar para cliente inexistente e erro de carga, e um cliente pertence a no maximo um grupo. O 'label' do membro e opcional e serve ao cliente que da nome ao grupo: sem ele a arvore mostraria 'Alfa > Alfa'.",
+
+  "groups": [
+    {
+      "key": "ALFA-GRUPO",
+      "label": "Alfa",
+      "members": [
+        { "client": "ALFA", "label": "Alfa (matriz)" },
+        { "client": "BETA" },
+        { "client": "EPSILON" }
+      ]
     }
   ]
 }

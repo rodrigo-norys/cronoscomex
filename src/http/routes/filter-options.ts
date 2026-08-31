@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify'
 import { store as defaultStore, type StoreAccess } from '../../app/process-store.ts'
+import type { ClientGroup } from '../../domain/client-mapper.ts'
 import {
   CATEGORY_LABELS,
   CHANNEL_LABELS,
@@ -11,6 +12,7 @@ import {
   RESPONSIBLES,
   STATUS_CATEGORIES,
 } from '../../domain/filters.ts'
+import type { Process } from '../../domain/types.ts'
 import { apiError } from '../errors.ts'
 
 /**
@@ -24,9 +26,23 @@ import { apiError } from '../errors.ts'
  * aparecem todas, inclusive zeradas, para que o operador saiba que a opcao
  * existe. Mesma razao de IND-20 exibir os quatro responsaveis.
  */
+/**
+ * Um grupo de clientes e seus membros (`H-55`), para o filtro exibir um nivel
+ * de arvore.
+ *
+ * `count` do grupo e a soma dos membros; o de cada membro e o dele. Os membros
+ * continuam aparecendo em `clients` — o grupo e camada de apresentacao do
+ * filtro, e nenhum indicador agrupa por ele.
+ */
+export interface ClientGroupOption extends FilterOption {
+  members: FilterOption[]
+}
+
 export interface FilterOptionsResponse {
   /** Clientes CONSOLIDADOS (`H-49`), rotulados pelo `label` do mapa. */
   clients: FilterOption[]
+  /** Grupos de clientes (`H-55`). Lista vazia quando o mapa nao declara nenhum. */
+  clientGroups: ClientGroupOption[]
   /**
    * Os valores da celula CLT, com a contagem propria. Sao a unica forma de
    * achar um processo especifico na Pagina Operacional, e por isso o campo
@@ -43,9 +59,57 @@ export interface FilterOptionsResponse {
   channels: FilterOption[]
 }
 
+/**
+ * A arvore de grupos, com a contagem de cada nivel.
+ *
+ * O `count` do grupo vem de `clientGroupKey`, e nao da soma dos membros: os dois
+ * batem hoje, e derivar da soma esconderia o dia em que nao baterem — membro
+ * declarado no mapa e sem processo algum, por exemplo.
+ *
+ * Grupo sem nenhum processo **aparece**, com zero, pela mesma razao de A-28: a
+ * chave existe no mapa do operador, e escondê-la faria o filtro parecer completo
+ * quando nao esta.
+ */
+function clientGroupOptions(
+  processes: readonly Process[],
+  groups: readonly ClientGroup[],
+): ClientGroupOption[] {
+  if (groups.length === 0) return []
+
+  const byClient = optionsOf(
+    processes,
+    (p) => p.clientKey,
+    (p) => p.clientLabel,
+  )
+  const clientCounts = new Map(byClient.map((option) => [option.key, option]))
+
+  const groupCounts = new Map<string, number>()
+  for (const process of processes) {
+    if (process.clientGroupKey === '') continue
+    groupCounts.set(process.clientGroupKey, (groupCounts.get(process.clientGroupKey) ?? 0) + 1)
+  }
+
+  return groups.map((group) => ({
+    key: group.key,
+    label: group.label,
+    count: groupCounts.get(group.key) ?? 0,
+    members: group.members.map((member) => {
+      const client = clientCounts.get(member.client)
+      return {
+        key: member.client,
+        // O rotulo do membro vence o do cliente: e o que distingue o cliente
+        // que da nome ao grupo do grupo em si — "Vivi > AV", nao "Vivi > Vivi".
+        label: member.label ?? client?.label ?? member.client,
+        count: client?.count ?? 0,
+      }
+    }),
+  }))
+}
+
 export function registerFilterOptionsRoute(
   app: FastifyInstance,
   store: StoreAccess = defaultStore,
+  clientGroups: readonly ClientGroup[] = [],
 ): void {
   app.get('/api/filters/options', (_request, reply) => {
     const state = store.getState()
@@ -68,6 +132,7 @@ export function registerFilterOptionsRoute(
         (p) => p.clientKey,
         (p) => p.clientLabel,
       ),
+      clientGroups: clientGroupOptions(processes, clientGroups),
       clientProcesses: optionsOf(
         processes,
         (p) => p.clientProcessKey,

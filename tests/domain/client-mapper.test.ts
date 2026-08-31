@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import {
   type ClientMapEntry,
+  indexClientGroups,
+  normalizeClientGroups,
   normalizeClientMap,
   resolveClient,
+  resolveClientGroup,
 } from '../../src/domain/client-mapper.ts'
 
 /**
@@ -110,5 +113,44 @@ describe('normalizeClientMap', () => {
     ]) as [ClientMapEntry]
 
     expect(Object.hasOwn(entry.rules[0] ?? {}, 'importer')).toBe(false)
+  })
+})
+
+/**
+ * `H-55`. O grupo e um nivel de arvore do FILTRO: ele nao entra em `clientKey`,
+ * e por isso nenhum indicador muda de valor ao ganhar um grupo.
+ */
+describe('grupos de clientes', () => {
+  const grupos = normalizeClientGroups([
+    {
+      key: 'alfa-grupo',
+      label: 'Alfa',
+      members: [{ client: 'alfa', label: 'Alfa (matriz)' }, { client: 'beta' }],
+    },
+  ])
+
+  it('normaliza a chave do grupo e a do membro, preservando o rotulo', () => {
+    expect(grupos[0]?.key).toBe('ALFA-GRUPO')
+    expect(grupos[0]?.label).toBe('Alfa')
+    expect(grupos[0]?.members.map((membro) => membro.client)).toEqual(['ALFA', 'BETA'])
+    expect(grupos[0]?.members[0]?.label).toBe('Alfa (matriz)')
+  })
+
+  it('indexa cada membro para o grupo dele', () => {
+    const index = indexClientGroups(grupos)
+
+    expect(resolveClientGroup('ALFA', index)).toBe('ALFA-GRUPO')
+    expect(resolveClientGroup('BETA', index)).toBe('ALFA-GRUPO')
+  })
+
+  // Vazio e o caso comum: a maioria dos clientes nao pertence a grupo nenhum, e
+  // `''` e chave legitima no filtro, como a celula em branco.
+  it('devolve vazio para cliente fora de qualquer grupo', () => {
+    expect(resolveClientGroup('GAMA', indexClientGroups(grupos))).toBe('')
+    expect(resolveClientGroup('ALFA', indexClientGroups([]))).toBe('')
+  })
+
+  it('membro sem label fica sem label — quem resolve a exibicao e a rota', () => {
+    expect(grupos[0]?.members[1]).not.toHaveProperty('label')
   })
 })

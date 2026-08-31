@@ -28,6 +28,7 @@ interface Fields {
   container?: string
   clientRaw?: string
   clientKey?: string
+  clientGroupKey?: string
   goodsRaw?: string
   vesselKey?: string
   eta2?: Date | null
@@ -60,6 +61,7 @@ function makeProcess(fields: Fields = {}): Process {
     clientKey: fields.clientKey ?? '',
     clientProcessKey: fields.clientKey ?? '',
     clientLabel: fields.clientRaw ?? '',
+    clientGroupKey: fields.clientGroupKey ?? '',
     importerKey: '',
     agentKey: '',
     vesselKey: fields.vesselKey ?? '',

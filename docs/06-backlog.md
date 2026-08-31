@@ -98,6 +98,7 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 - [H-52 — Os cartões declaram o período, e ele é editável ali](#h-52)
 - [H-53 — A Página Performance diz a métrica e mostra o recorte](#h-53)
 - [H-54 — O histórico reconstrói os meses da planilha](#h-54)
+- [H-55 — Grupo de clientes no filtro](#h-55)
 
 **[Resumo do backlog](#resumo)**
 
@@ -5824,6 +5825,118 @@ reconstrução é derivada a cada leitura, nunca gravada.
 
 ---
 
+<a id="h-55"></a>
+
+### H-55 — Grupo de clientes no filtro
+
+> ✅ **CONCLUÍDA em 31/08/2026.** **31 testes próprios** em sete arquivos — dois
+> de domínio, um de carga, três de rota e um de interface. Suíte total de
+> **1430 para 1461**, com quatro casos existentes ajustados: os três que fixam
+> contrato ou retorno de carga, e o que conta os controles da barra.
+>
+> **A decisão que `H-49` registrou foi revista pelo operador, e a fatia
+> registrou a revisão em vez de contradizê-la em silêncio.** Hierarquia deixou
+> de ser "campo sem pergunta" no instante em que ele pediu a árvore olhando a
+> barra de filtros.
+>
+> **O grupo NÃO virou `clientKey`, e essa é a história inteira.** Fundir os
+> membros entregaria a árvore e mudaria IND-10, IND-18 e IND-22 de quebra; o
+> operador escolheu a alternativa que não mexe em número nenhum, e o teste que
+> fixa isso é o de `GET /api/indicators`: os membros do grupo aparecem como
+> clientes separados no ranking, **e** o grupo funciona como recorte.
+>
+> **O retorno de `loadClientMap` mudou de lista para `{ clients, groups }`.** A
+> validação cruzada obriga: membro que aponta para cliente inexistente só é
+> detectável com as duas listas em mãos, e é o erro provável — o operador
+> renomeia a chave de um cliente e o grupo passa a apontar para o nada, sem
+> sintoma na tela. Três chamadores acompanharam, `tools/carregar-planilha.mjs`
+> incluído.
+>
+> **`buildServer` ganhou o nono parâmetro, com default VAZIO e não a leitura do
+> arquivo.** Um default que lesse `client-map.json` faria toda montagem de
+> servidor em teste depender do estado real do operador — a regra inviolável 7
+> aplicada antes de morder, e a mesma lição de `H-34`.
+>
+> **Medido contra a planilha real:** o grupo reúne **321** processos — 304 + 15
+> + 2 —, o recorte por grupo devolve os mesmos 321, o recorte de um membro
+> devolve 15, e as **124** chaves de cliente seguem intactas. No ranking, o topo
+> continua com **304** e os membros aparecem em linhas separadas: nenhum
+> indicador mudou de valor.
+>
+> **Um membro pode declarar `label` próprio**, e sem isso a árvore diria
+> "Vivi > Vivi" para o cliente que dá nome ao grupo.
+
+**Objetivo:** o filtro Cliente oferecer um nível de agrupamento — marcar o grupo
+seleciona todos os membros, e cada membro continua marcável sozinho —, sem que
+nenhum indicador mude de valor.
+
+> **A decisão de `H-49` foi revista, e por quem podia revê-la.** Aquela história
+> fechou dizendo que hierarquia não viraria campo, porque nenhuma tela a exigia.
+> Em 31/08/2026 o operador pediu a árvore no filtro, olhando a barra: o cliente
+> de 304 processos precisa abrir em três subdivisões selecionáveis. A pergunta
+> passou a existir, e o campo passa a ter razão de ser.
+>
+> **O grupo vale SÓ no filtro, e isso é decisão registrada.** Ranking (IND-10,
+> IND-18) e tempo documental por cliente (IND-22) seguem contando cada membro
+> separado. Fundir as chaves mudaria o valor de três indicadores para entregar
+> uma árvore de apresentação — e o operador escolheu explicitamente a alternativa
+> que não mexe em número nenhum.
+>
+> **O membro aponta para um cliente que já existe.** Nada de mover regra de
+> lugar: `groups` é uma seção irmã de `clients`, e um membro sem entrada
+> correspondente é erro de carga — o modo de falha provável é o operador renomear
+> a chave de um cliente e o grupo passar a apontar para o nada, sem sintoma na
+> tela.
+
+**Arquivos:**
+- `src/domain/client-mapper.ts` — `ClientGroup`, `indexClientGroups`,
+  `resolveClientGroup`, `normalizeClientGroups`
+- `src/domain/types.ts` — `clientGroupKey`
+- `src/domain/process-builder.ts` — `BuildDeps.clientGroups`
+- `src/domain/filters.ts` — o filtro `clientGroup`, décimo terceiro
+- `src/app/client-map-loader.ts` — a seção `groups` e a validação cruzada; o
+  retorno passa a ser `{ clients, groups }`
+- `src/app/process-store.ts` — indexa uma vez, como o mapa de cor
+- `src/http/server.ts` — ponto de injeção dos grupos em `buildServer`
+- `src/http/routes/filter-options.ts` — `clientGroups` com a contagem dos dois
+  níveis
+- `web/src/components/MultiSelect.tsx` — o segundo nível
+- `web/src/components/FilterBar.tsx`, `web/src/hooks/useFilters.ts`
+- `config/client-map.json.exemplo`
+- `docs/05-contratos-api.md`, `docs/03-modelo-dados.md`, `docs/02-requisitos.md`
+- os testes correspondentes
+
+**Critérios de aceite:**
+- **Dado** o mapa real, **quando** o filtro Cliente é aberto, **então** o grupo
+  aparece com a soma dos membros e cada membro aparece indentado com a contagem
+  própria — medido: 321 no grupo, 304 · 15 · 2 nos três membros.
+- **Dado** o grupo marcado, **então** o recorte traz os processos dos três
+  membros, e a contagem bate com a soma exibida.
+- **Dado** um membro marcado, **então** o recorte é só dele, por `?client=`.
+- **Dado** `GET /api/indicators`, **então** nenhum valor muda em relação a antes
+  desta história — o grupo não agrupa indicador.
+- **Dado** mapa sem `groups`, **então** o filtro é idêntico ao de `H-49`.
+
+**Casos-limite:**
+- Membro que aponta para cliente inexistente em `clients` → erro na carga,
+  nomeando o membro e a posição.
+- Cliente declarado em dois grupos → erro na carga; um cliente, no máximo um
+  grupo.
+- Grupo sem processo nenhum → aparece com zero, pela razão de A-28.
+- Membro sem `label` → usa o rótulo do cliente; com `label`, o do grupo vence —
+  é o que distingue o cliente que dá nome ao grupo do grupo em si.
+- Grupo e membro marcados juntos → OU dentro do parâmetro, sem processo repetido.
+
+**Fora desta história:** ranking, tempo documental e cartões, que seguem por
+cliente; segundo nível de hierarquia.
+
+**Dependências:** `H-48`, `H-49`.
+**Tamanho:** M (14 arquivos, contrato de uma rota alterado)
+
+[↑ Índice](#indice)
+
+---
+
 <a id="resumo"></a>
 
 ## Resumo do backlog
@@ -5839,8 +5952,8 @@ reconstrução é derivada a cada leitura, nunca gravada.
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização | **H-39 ✅ … H-42 ✅, H-43 … H-47 abertas** | 1 | 8 | 0 |
-| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-50 … H-54 abertas** | 1 | 6 | 0 |
-| **Total** | **54** — 44 concluídas, 10 abertas | **18** | **36** | **0** |
+| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-55 ✅, H-50 … H-54 abertas** | 1 | 7 | 0 |
+| **Total** | **55** — 45 concluídas, 10 abertas | **18** | **37** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até

@@ -42,6 +42,7 @@ function process(
     clientKey: '',
     clientProcessKey: '',
     clientLabel: '',
+    clientGroupKey: '',
     importerKey: '',
     agentKey: '',
     vesselKey: '',
@@ -500,6 +501,51 @@ describe('GET /api/indicators — os rankings de cliente falam do cliente', () =
       'Acme Comércio',
       'Beta Ltda',
     ])
+
+    await app.close()
+  })
+})
+
+/**
+ * `H-55`. O criterio de aceite que mais importa da historia: o grupo existe no
+ * dado e **nenhum indicador o usa**. Fundir os membros mudaria IND-10, IND-18 e
+ * IND-22 para entregar uma arvore de apresentacao.
+ */
+describe('GET /api/indicators — o grupo de clientes nao agrupa indicador', () => {
+  const conjunto = [
+    process(2, 'em_andamento', {
+      clientKey: 'ACME',
+      clientLabel: 'Acme Comércio',
+      clientGroupKey: 'GRUPO-UM',
+    }),
+    process(3, 'em_andamento', {
+      clientKey: 'BETA',
+      clientLabel: 'Beta Ltda',
+      clientGroupKey: 'GRUPO-UM',
+    }),
+  ]
+
+  it('conta os membros do grupo como clientes separados', async () => {
+    const app = buildServer(config, fakeStore(state({ processes: conjunto })))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/indicators' })).json()
+
+    expect(body.rankings.clients).toEqual([
+      { key: 'ACME', label: 'Acme Comércio', count: 1 },
+      { key: 'BETA', label: 'Beta Ltda', count: 1 },
+    ])
+
+    await app.close()
+  })
+
+  it('mas aceita o grupo como recorte, porque e filtro global', async () => {
+    const app = buildServer(config, fakeStore(state({ processes: conjunto })))
+
+    const body = (
+      await app.inject({ method: 'GET', url: '/api/indicators?clientGroup=GRUPO-UM' })
+    ).json()
+
+    expect(body.counts.total).toBe(2)
 
     await app.close()
   })

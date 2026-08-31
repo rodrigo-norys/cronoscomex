@@ -19,6 +19,7 @@ function filtersStub(overrides: Partial<Filters> = {}): Filters {
       multi: {
         client: [],
         clientProcess: [],
+        clientGroup: [],
         importer: [],
         vessel: [],
         agent: [],
@@ -263,5 +264,69 @@ describe('cliente e processo do cliente', () => {
     fireEvent.click(screen.getByRole('checkbox', { name: /ACME-12/ }))
 
     expect(filters.toggle).toHaveBeenCalledWith('clientProcess', 'ACME-12')
+  })
+})
+
+/**
+ * `H-55`. A arvore vive DENTRO do controle de Cliente: o grupo em cima, os
+ * membros indentados, e cada nivel escrevendo no seu proprio parametro.
+ */
+describe('grupo de clientes dentro do filtro Cliente', () => {
+  const comGrupo = () =>
+    filterOptionsFixture({
+      clients: [
+        { key: 'ACME', label: 'Acme Comércio', count: 12 },
+        { key: 'BETA', label: 'Beta Ltda', count: 5 },
+        { key: 'ZETA', label: 'Zeta', count: 3 },
+      ],
+      clientGroups: [
+        {
+          key: 'GRUPO-UM',
+          label: 'Grupo Um',
+          count: 17,
+          members: [
+            { key: 'ACME', label: 'Matriz', count: 12 },
+            { key: 'BETA', label: 'Beta Ltda', count: 5 },
+          ],
+        },
+      ],
+    })
+
+  function abrirCliente(filters = filtersStub()) {
+    render(<FilterBar filters={filters} options={comGrupo()} optionsError={null} />)
+    fireEvent.click(screen.getByRole('button', { name: /^Cliente/ }))
+    return filters
+  }
+
+  it('exibe o grupo com a soma e os membros com a contagem propria', () => {
+    abrirCliente()
+
+    expect(screen.getByRole('checkbox', { name: /Grupo Um/ })).toBeTruthy()
+    expect(screen.getByRole('checkbox', { name: /Matriz/ })).toBeTruthy()
+    expect(screen.getByText('17')).toBeTruthy()
+  })
+
+  it('marcar o grupo escreve no filtro clientGroup', () => {
+    const filters = abrirCliente()
+
+    fireEvent.click(screen.getByRole('checkbox', { name: /Grupo Um/ }))
+
+    expect(filters.toggle).toHaveBeenCalledWith('clientGroup', 'GRUPO-UM')
+  })
+
+  it('marcar um membro escreve no filtro client, como sempre', () => {
+    const filters = abrirCliente()
+
+    fireEvent.click(screen.getByRole('checkbox', { name: /Matriz/ }))
+
+    expect(filters.toggle).toHaveBeenCalledWith('client', 'ACME')
+  })
+
+  // A mesma chave nos dois lugares daria duas caixas para o mesmo cliente.
+  it('o membro NAO aparece tambem na lista solta', () => {
+    abrirCliente()
+
+    expect(screen.getAllByRole('checkbox', { name: /Beta Ltda/ })).toHaveLength(1)
+    expect(screen.getByRole('checkbox', { name: /Zeta/ })).toBeTruthy()
   })
 })

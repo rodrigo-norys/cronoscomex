@@ -183,9 +183,11 @@ levantadas por `docs/uso/RESULTADO.md`, com o operador usando o painel para
 trabalhar. **`H-48` abriu o épico** — os dois mapas de negócio fora do
 repositório, porque nome real de cliente e de pessoa da equipe são configuração e
 não código. **`H-49` fechou o primeiro consumo deles:** o campo Cliente diz quem
-é o cliente, e o valor da célula CLT continua servido ao lado. **A próxima é
-`H-50`**, a segunda que consome os mapas; as quatro seguintes são independentes
-entre si. E9 e E10 estão abertos ao mesmo tempo, e não se bloqueiam.
+é o cliente, e o valor da célula CLT continua servido ao lado. **`H-55` nasceu do
+uso da própria tela e fechou no mesmo dia** — o filtro Cliente ganhou um nível de
+árvore, e o épico passou a ter sete histórias. **A próxima é `H-50`**, a segunda
+que consome os mapas; as quatro seguintes são independentes entre si. E9 e E10
+estão abertos ao mesmo tempo, e não se bloqueiam.
 
 > **A escrita é o ponto onde errar custa a planilha da empresa.** O subagent
 > `revisor-xml` existe desde 11/08/2026 — invoque-o antes de commitar qualquer

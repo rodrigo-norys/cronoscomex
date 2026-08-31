@@ -24,6 +24,7 @@ function process(sourceRow: number, statusCategory: StatusCategory): Process {
     clientKey: '',
     clientProcessKey: '',
     clientLabel: '',
+    clientGroupKey: '',
     importerKey: '',
     agentKey: '',
     vesselKey: '',

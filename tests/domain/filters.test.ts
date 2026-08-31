@@ -24,6 +24,7 @@ interface Fields {
   eta2?: string | null
   clientKey?: string
   clientProcessKey?: string
+  clientGroupKey?: string
   clientRaw?: string
   importerKey?: string
   vesselKey?: string
@@ -42,6 +43,7 @@ function process({
   eta2 = null,
   clientKey = '',
   clientProcessKey = clientKey,
+  clientGroupKey = '',
   clientRaw = '',
   importerKey = '',
   vesselKey = '',
@@ -75,6 +77,7 @@ function process({
     clientKey,
     clientProcessKey,
     clientLabel: clientRaw,
+    clientGroupKey,
     importerKey,
     agentKey,
     vesselKey,
@@ -495,5 +498,45 @@ describe('parseFilters e hasAnyFilter — clientProcess', () => {
   it('conta como filtro ativo', () => {
     expect(hasAnyFilter(parseFilters({ clientProcess: 'ACM-29' }))).toBe(true)
     expect(hasAnyFilter(parseFilters({}))).toBe(false)
+  })
+})
+
+/**
+ * `H-55`. O grupo recorta pelos membros; a chave do cliente nao muda, e por isso
+ * os indicadores continuam contando cada um separado.
+ */
+describe('applyFilters — grupo de clientes', () => {
+  const daMatriz = process({ clientKey: 'ACME', clientGroupKey: 'GRUPO-UM' })
+  const daFilial = process({ clientKey: 'BETA', clientGroupKey: 'GRUPO-UM' })
+  const deFora = process({ clientKey: 'ZETA', clientGroupKey: '' })
+
+  const conjunto = [daMatriz, daFilial, deFora]
+
+  it('o grupo recorta todos os membros de uma vez', () => {
+    expect(applyFilters(conjunto, withFilters({ clientGroup: ['GRUPO-UM'] }))).toEqual([
+      daMatriz,
+      daFilial,
+    ])
+  })
+
+  it('o membro continua recortavel sozinho, pelo filtro de cliente', () => {
+    expect(applyFilters(conjunto, withFilters({ client: ['BETA'] }))).toEqual([daFilial])
+  })
+
+  // OU dentro do parametro, E entre parametros: grupo e membro juntos nao
+  // duplicam processo nem se anulam.
+  it('grupo e membro marcados juntos devolvem a intersecao, sem repetir', () => {
+    expect(
+      applyFilters(conjunto, withFilters({ clientGroup: ['GRUPO-UM'], client: ['ACME'] })),
+    ).toEqual([daMatriz])
+  })
+
+  it('quem nao tem grupo casa a chave vazia', () => {
+    expect(applyFilters(conjunto, withFilters({ clientGroup: [''] }))).toEqual([deFora])
+  })
+
+  it('conta como filtro ativo e sobrevive a query', () => {
+    expect(parseFilters({ clientGroup: 'GRUPO-UM' }).clientGroup).toEqual(['GRUPO-UM'])
+    expect(hasAnyFilter(parseFilters({ clientGroup: 'GRUPO-UM' }))).toBe(true)
   })
 })

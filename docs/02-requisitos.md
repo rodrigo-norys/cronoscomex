@@ -74,7 +74,7 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 
 | ID | Requisito | Histórias |
 |---|---|---|
-| RF-17 | Aplicar simultaneamente 12 filtros: Período (ETA2), Cliente, **Processo do cliente**, Importador, Navio, Agente, Mercadoria, Categoria de status, Responsável, Canal, Porto e Importador fora do RJ. Eram 11 até `H-49`, que separou o cliente consolidado do valor da célula CLT | H-15, H-49 |
+| RF-17 | Aplicar simultaneamente 13 filtros: Período (ETA2), Cliente, **Processo do cliente**, **Grupo de clientes**, Importador, Navio, Agente, Mercadoria, Categoria de status, Responsável, Canal, Porto e Importador fora do RJ. Eram 11 até `H-49`, que separou o cliente consolidado do valor da célula CLT, e 12 até `H-55`, que acrescentou o grupo. O grupo **não tem controle próprio** na barra: ele é o primeiro nível da árvore dentro de Cliente | H-15, H-49, H-55 |
 | RF-18 | Todo indicador e todo alerta respeita os filtros ativos | H-15 |
 | RF-19 | Os valores disponíveis em cada filtro são derivados do arquivo, não de lista fixa | H-15 |
 
