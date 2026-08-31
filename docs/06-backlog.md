@@ -5002,6 +5002,70 @@ quatro arquivos que `H-39` já migrou.
 
 ### H-44 — Live regions das páginas, gráfico e forced-colors
 
+> ✅ **CONCLUÍDA em 31/08/2026.** **5 testes próprios** — três em
+> `History.test.tsx` e dois em `Home.test.tsx`. Suíte total de **1566 para
+> 1571**. **Doze casos existentes mudaram de forma, nenhum de força**, e a
+> mudança deles **é** a verificação do primeiro critério: eles passaram a
+> consultar a região viva da casca, que é onde a mensagem agora é anunciada.
+> Três divergências no protocolo, e **dois pontos que a lista de arquivos não
+> nomeava**.
+>
+> **Por que um portal, e não um `role` na própria página.** Uma região declarada
+> dentro da página nasceria **junto** com o `return` antecipado, no mesmo commit
+> em que o texto chega — o `ACHADO 11` de novo, uma camada acima. Quem sobrevive
+> à troca de estado da página é o nó da casca, e é por isso que `H-43` o criou lá.
+>
+> **O texto é lido uma vez só.** O bloco visível é `aria-hidden`, e o conteúdo
+> acessível vai pelo portal. Sem isso o operador ouviria a mesma frase duas
+> vezes, uma no fluxo e outra na região viva. É por isso que os testes agora
+> contam **duas** ocorrências do mesmo texto — uma delas escondida de propósito.
+>
+> **Divergência 1 — a região da casca nasceu sem `role`.** `H-43` a criou como
+> endereço (`<div id=…>`), e um `div` sem papel não é região viva nenhuma. Um
+> defeito da própria onda, corrigido aqui. Nasceu também a **segunda** região,
+> `role="status"`: "a planilha ainda não foi lida" é contexto, e anunciá-lo como
+> `alert` cortaria o que o leitor de tela estivesse falando — a mesma razão pela
+> qual `StatusBanner` tem duas.
+>
+> **Divergência 2 — `PAGE_LIVE_REGION_ID` mudou de casa.** Vivia em `App.tsx`, e
+> as páginas importando de lá fechariam um ciclo: a casca importa as sete
+> páginas. A constante e o componente `PageAlert` vivem agora em
+> `web/src/components/PageAlert.tsx`, que não importa nada do projeto.
+>
+> **Divergência 3 — as suítes de página montam uma página sozinha**, sem casca em
+> volta, e o portal não encontra alvo. `web/tests/support/live-region.ts` monta
+> as duas regiões no `beforeEach` das sete. **Não é contornar a ausência:** é
+> reproduzir o ambiente real, onde a página sempre vive dentro da casca. Sem
+> isso, cada suíte verificaria uma árvore que não existe em execução.
+>
+> **Dois pontos fora da lista, e ambos são o primeiro critério.**
+> `History.tsx` — a nota de janela truncada — e `WorkbookSetup.tsx` — o
+> "Carregando a configuração atual…" — montavam `role="status"` já populado,
+> exatamente como as sete. A lista de arquivos nomeava outros trechos dos mesmos
+> arquivos; o critério fala das páginas inteiras.
+>
+> **`ACHADO 12` fechado com `accessibilityLayer={false}`.** Sem ele,
+> `recharts/es6/container/RootSurface.js:45` dá `tabIndex={0}` e
+> `role="application"` ao `<svg>` — **dentro** de uma subárvore `aria-hidden`. O
+> operador tabulava para um elemento que a árvore de acessibilidade não expõe, e
+> que por isso não tem nome nenhum a anunciar. O gráfico segue `aria-hidden` e a
+> tabela irmã segue com os mesmos números: a correção remove a parada, nunca a
+> alternativa textual.
+>
+> **`ACHADO 13` fechado pela espessura**, não pela cor: sob `forced-colors:
+> active` o agente de usuário substitui a cor da borda e não a espessura, e o
+> botão selecionado ficaria indistinguível dos outros dois. O `aria-pressed` já
+> resolvia o eixo programático.
+>
+> **A fatia introduziu uma corrida, e ela foi fechada antes do commit.** O portal
+> monta num **efeito**, então `findByRole('alert')` passou a resolver na região
+> vazia — que agora existe desde a montagem — antes de a mensagem chegar. Sete
+> casos ficaram não-determinísticos, e o portão reprovou de forma intermitente.
+> A correção é esperar pelo **conteúdo**, e não pelo nó: `findLiveRegion` faz
+> isso, e o portão foi executado **três vezes seguidas** verde para confirmar.
+> Não confundir com o intermitente conhecido de `src/io/`, que devolve `exit=1`
+> com zero testes falhando — este tinha teste nomeado na saída, e era meu.
+
 **Objetivo:** fechar o restante de `ACHADO 11` nas sete páginas e tirar do
 caminho de tabulação o gráfico que a árvore de acessibilidade não expõe.
 
@@ -6889,10 +6953,10 @@ superfície dobrada pelo segundo esquema.
 | E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
-| E9 — Estilização | **H-39 ✅ … H-43 ✅; H-44 … H-47 abertas** | 1 | 8 | 0 |
+| E9 — Estilização | **H-39 ✅ … H-44 ✅; H-45 … H-47 abertas** | 1 | 8 | 0 |
 | E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-52 ✅, H-53 ✅, H-54 ✅, H-55 ✅, H-56 ✅; só `H-50` aberta** | 1 | 8 | 0 |
 | E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
-| **Total** | **65** — 51 concluídas, 14 abertas | **21** | **44** | **0** |
+| **Total** | **65** — 52 concluídas, 13 abertas | **21** | **44** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até
