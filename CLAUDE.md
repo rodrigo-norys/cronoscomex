@@ -190,6 +190,20 @@ oito histórias. **A próxima é `H-50`**, a segunda
 que consome os mapas; as quatro seguintes são independentes entre si. E9 e E10
 estão abertos ao mesmo tempo, e não se bloqueiam.
 
+**O épico E11 nasceu de proposta de desenho, não de auditoria nem de uso**, em
+31/08/2026: `docs/redesign/PROPOSTA.md` transcreve o mockup *Cronos Console* e o
+épico o executa em nove histórias, `H-57` a `H-65` — a casca em navegação
+lateral, os treze filtros como chips, dois raios, densidade de 40 px, movimento
+com a redução junto, e **o modo escuro**, que `D-21` trouxe para dentro do plano
+depois de o cabeçalho de E9 tê-lo declarado fora. **Nenhum indicador muda de
+valor e nenhuma rota muda de contrato**; história de E11 que precise de campo
+novo na API está mal fatiada. **E11 vem depois de E9 e E10 inteiros**, porque
+`H-45` e `H-46` tocam os mesmos 25 arquivos, `H-47` é a linha de base da
+verificação no navegador, e `H-52` a `H-54` ainda mudam o que três telas dizem.
+**A medição já reprovou seis pares da paleta proposta**, três deles
+reintroduzindo defeitos que `H-39` e `H-40` haviam removido — é o risco `R-16`, e
+`H-57` nasce com as correções calculadas.
+
 > **A escrita é o ponto onde errar custa a planilha da empresa.** O subagent
 > `revisor-xml` existe desde 11/08/2026 — invoque-o antes de commitar qualquer
 > mudança em `src/io/xlsx-surgeon.ts`, em `src/app/write-guard.ts` ou em código
@@ -252,6 +266,11 @@ do uso. Nada aqui repete o que está lá — abra quando a linha disser.
   `docs/08-qualidade-operacao.md`.
 - **Decisões do usuário, já tomadas e não re-litigáveis:**
   `docs/10-governanca.md` §5.
+- **De onde veio cada épico posterior ao plano** — `E9` de
+  `docs/estilizacao/RESULTADO.md`, `E10` de `docs/uso/RESULTADO.md`, `E11` de
+  `docs/redesign/PROPOSTA.md`. A ordem entre eles vive no cabeçalho de cada
+  épico, e **não** em `docs/07-plano-entrega.md`, que só alcança o plano
+  original.
 
 ## Infraestrutura de agente
 
