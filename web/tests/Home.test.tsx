@@ -185,3 +185,66 @@ describe('filtros globais', () => {
     expect(api.calls.some((call) => call.startsWith('GET /api/quarantine?'))).toBe(false)
   })
 })
+
+/**
+ * `H-51`. O painel nao calcula: contagens e fracoes vem prontas da rota. O que
+ * se verifica e que o denominador aparece ao lado da fracao, e que as linhas sem
+ * canal conhecido ficam fora dela — contadas.
+ */
+describe('a distribuicao por canal', () => {
+  function painel(): HTMLElement {
+    return screen.getByRole('region', { name: 'Distribuição por canal' })
+  }
+
+  it('exibe contagem, percentual e o denominador ao lado', async () => {
+    renderHome()
+
+    await waitFor(() => expect(painel()).toBeTruthy())
+    const texto = painel().textContent ?? ''
+
+    // 477 de 482, medido na planilha real em 31/08/2026 — 98,96%, exibido com
+    // uma casa no maximo.
+    expect(texto).toContain('477')
+    expect(texto).toContain('99% de 482')
+    expect(texto).toContain('1% de 482')
+  })
+
+  // A-42: o denominador nao sai do lado da fracao, e as 167 aparecem contadas
+  // FORA dela — dilui-las afirmaria que o canal delas e conhecido.
+  it('conta as linhas sem canal conhecido fora do percentual', async () => {
+    renderHome()
+
+    await waitFor(() => expect(painel()).toBeTruthy())
+    const texto = painel().textContent ?? ''
+
+    expect(texto).toContain('167')
+    expect(texto).toMatch(/Sem canal conhecido/i)
+  })
+
+  // O caso-limite do backlog: sem denominador, o painel mostra as contagens e
+  // omite o percentual. `0%` afirmaria que nenhum processo e verde.
+  it('omite o percentual quando nenhum processo tem canal conhecido', async () => {
+    api.serveIndicators(
+      indicatorsFixture(
+        {},
+        { verde: 0, vermelho: 0, indefinido: 12, known: 0, verdeShare: null, vermelhoShare: null },
+      ),
+    )
+    renderHome()
+
+    await waitFor(() => expect(painel()).toBeTruthy())
+    const texto = painel().textContent ?? ''
+
+    expect(texto).not.toContain('%')
+    expect(texto).toContain('12')
+  })
+
+  // IND-06 continua no seu cartao, com o mesmo valor: a distribuicao acompanha
+  // o indicador, nao o substitui.
+  it('nao remove o cartao Canal Vermelho', async () => {
+    renderHome()
+
+    await waitFor(() => expect(cardsInOrder()).toHaveLength(12))
+    expect(cardsInOrder()).toContain('Canal Vermelho')
+  })
+})
