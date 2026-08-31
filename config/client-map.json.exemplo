@@ -1,0 +1,50 @@
+{
+  "_origem": "Formato entregue por H-48. Os NOMES aqui sao ficticios: config/client-map.json, com os reais, esta no .gitignore porque este repositorio vai a publico. Ver docs/uso/RESULTADO.md secao 2.",
+
+  "version": 1,
+
+  "_comentario_por_que": "A coluna CLT guarda a referencia do processo DAQUELE cliente, nao o cliente: medido em 31/08/2026, 649 processos produzem 509 valores distintos. Sem este mapa, o ranking de clientes conta processos e chama o resultado de cliente.",
+
+  "_comentario_ordem": "A PRIMEIRA regra que casa vence — percorre-se `clients` na ordem, e dentro de cada um as `rules` na ordem. Nao ha correspondencia unica: o mesmo cliente costuma aparecer por prefixo E por texto contido. Ponha o caso especifico ANTES do geral.",
+
+  "_comentario_match": "prefix = a chave comeca com o valor · contains = a chave contem o valor · exact = a chave e igual ao valor. A comparacao usa a chave normalizada de TD-04 (maiusculas, sem acento, espacos colapsados), entao escreva o valor como preferir.",
+
+  "_comentario_importer": "Campo OPCIONAL que qualifica a regra pelo importador. Existe porque um mesmo prefixo pode ser varios clientes: na planilha real um prefixo de 62 processos cobre tres, distinguiveis so pelo importador. Omita para a regra valer sempre.",
+
+  "_comentario_ausencia": "Chave que nenhuma regra casa PERMANECE como esta na celula, e isso nao e erro — nao consolidar e o resultado honesto para o cliente que ainda nao foi declarado (regra inviolavel 3). O arquivo inteiro tambem pode faltar: a aplicacao sobe e se comporta como antes de H-49.",
+
+  "clients": [
+    {
+      "key": "ALFA",
+      "label": "Alfa Comercio",
+      "_nota": "Dois prefixos, um cliente so — o caso que motivou o mapa.",
+      "rules": [
+        { "match": "prefix", "value": "ALF" },
+        { "match": "prefix", "value": "ALFA" }
+      ]
+    },
+    {
+      "key": "BETA",
+      "label": "Beta Importadora",
+      "_nota": "O nome aparece dentro de textos como '102 - BETA' e 'XYZ101 - BETA'.",
+      "rules": [{ "match": "contains", "value": "BETA" }]
+    },
+    {
+      "key": "GAMA",
+      "label": "Gama Trading",
+      "_nota": "Mesmo prefixo de DELTA — o importador desempata, e esta entrada vem ANTES por ser a mais especifica.",
+      "rules": [{ "match": "prefix", "value": "G", "importer": "IMPORTADORA UM" }]
+    },
+    {
+      "key": "DELTA",
+      "label": "Delta Ltda",
+      "rules": [{ "match": "prefix", "value": "G", "importer": "IMPORTADORA DOIS" }]
+    },
+    {
+      "key": "EPSILON",
+      "label": "Épsilon S/A",
+      "_nota": "Acento no label e preservado: ele e apresentacao, e nao passa por normalizacao.",
+      "rules": [{ "match": "exact", "value": "EPS" }]
+    }
+  ]
+}
