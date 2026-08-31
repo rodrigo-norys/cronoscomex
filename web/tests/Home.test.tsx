@@ -448,3 +448,31 @@ describe('a página anuncia pela região da casca', () => {
     expect(document.getElementById('regiao-viva-da-pagina')?.textContent).toBe('')
   })
 })
+
+/**
+ * `H-45`, `ACHADO 18` e `SC 1.4.1`. A distinção entre volume e urgência deixa de
+ * ser transmitida **apenas** por cor.
+ */
+describe('a urgência dos cartões não é só cor', () => {
+  it('os dois cartões de urgência trazem a distinção em texto', async () => {
+    renderHome()
+    await waitFor(() => expect(cardsInOrder()).toHaveLength(13))
+
+    const section = screen.getByRole('region', { name: 'Cartões-resumo' })
+    const urgentes = Array.from(section.querySelectorAll('[data-variant="urgencia"]'))
+
+    expect(urgentes).toHaveLength(2)
+    for (const cartao of urgentes) expect(cartao.textContent).toContain('Pede ação')
+  })
+
+  it('os cartões de volume não trazem o texto de urgência', async () => {
+    renderHome()
+    await waitFor(() => expect(cardsInOrder()).toHaveLength(13))
+
+    const section = screen.getByRole('region', { name: 'Cartões-resumo' })
+
+    for (const cartao of section.querySelectorAll('[data-variant="volume"]')) {
+      expect(cartao.textContent).not.toContain('Pede ação')
+    }
+  })
+})

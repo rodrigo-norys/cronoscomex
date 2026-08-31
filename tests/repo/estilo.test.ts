@@ -144,3 +144,70 @@ describe('nenhum passo bruto de paleta em web/src', () => {
     expect(hex.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
   })
 })
+
+/**
+ * `H-45`, `C04`. Um mesmo papel de UI usa a mesma combinação de raio, borda e
+ * sombra nas sete páginas.
+ *
+ * `SC 3.2.4 Consistent Identification` **incide** aqui: a determinação `Z1` do
+ * passo zero mediu URIs distintas em `web/src/router.ts`, então as sete telas
+ * são um *set of web pages*. Fosse URI única, isto seria preferência.
+ *
+ * Duas asserções, e as duas são de conjunto — a violação não existe dentro de um
+ * arquivo, é a diferença entre arquivos, e por isso `revisor-estilo` recebe a
+ * casca e as sete páginas de uma vez.
+ */
+
+/**
+ * O papel majoritário: "seção de conteúdo sobre fundo elevado".
+ *
+ * O `p-` uniforme no fim é o sinal sintático que separa esse papel do de
+ * **controle** — `input`, `select` e botão usam `px-`/`py-` assimétricos e a
+ * borda de controle, que é outro papel e outro token de propósito.
+ */
+const SECTION_ROLE = /rounded border border-\S+ bg-surface-raised p-\d/
+
+/** O papel "ressalva/fora de escopo", distinto e consistente entre si. */
+const CAVEAT_ROLE = /border-dashed border-\S+ bg-surface-sunken/
+
+describe('C04 — o mesmo papel de UI tem a mesma forma', () => {
+  it('as regexes reconhecem cada papel, e não se confundem', () => {
+    // Âncora das regexes, não do conjunto: sem isto, um erro de ancoragem faria
+    // as duas asserções abaixo passarem por nunca casarem nada — a mesma
+    // armadilha que a âncora de `C01` já cobre para o passo bruto.
+    expect(SECTION_ROLE.test('rounded border border-border-subtle bg-surface-raised p-4')).toBe(
+      true,
+    )
+    expect(SECTION_ROLE.test('rounded border border-border-strong bg-surface-raised p-6')).toBe(
+      true,
+    )
+    // Controle não é seção: `px-`/`py-` assimétricos, e borda de controle.
+    expect(
+      SECTION_ROLE.test('rounded border border-border-control bg-surface-raised px-2 py-1.5'),
+    ).toBe(false)
+    expect(CAVEAT_ROLE.test('border-dashed border-border-subtle bg-surface-sunken p-4')).toBe(true)
+    expect(CAVEAT_ROLE.test('rounded border border-border-subtle bg-surface-raised p-4')).toBe(
+      false,
+    )
+  })
+
+  it('toda seção de conteúdo usa a borda sutil, e nenhuma desvia', () => {
+    const desviantes = occurrencesOf(SECTION_ROLE).filter(
+      (one) => !/border-border-subtle/.test(one.text),
+    )
+
+    expect(desviantes.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
+  })
+
+  /**
+   * Os painéis de ressalva são papel **distinto**, e a distinção é legítima
+   * porque eles são consistentes **entre si**. O que a asserção guarda é isso:
+   * um quarto painel de ressalva com outra borda quebraria o papel.
+   */
+  it('todo painel de ressalva usa a mesma tripla', () => {
+    const ressalvas = occurrencesOf(CAVEAT_ROLE)
+
+    expect(ressalvas.length).toBeGreaterThan(0)
+    for (const uma of ressalvas) expect(uma.text).toMatch(/border-border-subtle/)
+  })
+})
