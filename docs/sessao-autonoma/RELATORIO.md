@@ -386,6 +386,21 @@ já abertos.
 ### PENDÊNCIA 1 — `H-50` não foi executada: um critério de aceite tem duas
 ### leituras, e elas produzem telas diferentes
 
+> ✅ **FECHADA em 31/08/2026, pela leitura B — `D-23`.** Sem mapa de equipe,
+> `responsible` recebe a chave de cor e a resolução declara `source: 'cor'`: o
+> campo segue mostrando os 157 de hoje. Dois fatos que esta seção não
+> registrava pesaram na decisão. **O custo declarado de B já estava pago:**
+> `TeamResolution.source` existe desde `H-48` e é exatamente o discriminador
+> que a coluna "Custo" pedia — o ranking rotula por ele, sem campo novo. E o
+> repositório já decidiu isto uma vez: `resolveClient`, de `H-49`, cai para a
+> grafia da célula e expõe `mapped: false`. **O estado sem mapa não é
+> hipotético:** `config/team-map.json` está no `.gitignore` e a distribuição
+> leva só o `.exemplo`, então a máquina do operador começa sem ele. O que B
+> piora, e a leitura A não pioraria, é o filtro Responsável nesse estado: a
+> agregação de A-18 migra para `colorResponsible`, e `colaborador1` deixa de
+> trazer `colaborador1_outros_clientes` até o mapa existir — virou caso-limite
+> de `H-50`. **`H-50` segue aberta pela Pendência 2**, que é o corte.
+
 **O que está travado.** `H-50` — Responsável pelo importador, com a cor
 desempatando. É a última história de `E10` com trabalho de servidor, e `H-53`
 depende dela para **um** dos cinco critérios.
@@ -433,6 +448,20 @@ acima.
 ---
 
 ### PENDÊNCIA 2 — `H-50` está acima do teto da régua, e o corte que proponho
+
+> ✅ **FECHADA em 31/08/2026 — `D-24`.** O corte foi aceito, e com uma correção:
+> **ele não faz a metade grande caber na régua.** `H-50a` como proposta abaixo
+> tem ~12 arquivos e três contratos, e o teto de `M` é 8 — a pendência invocava
+> a régua para justificar um corte que continuava violando-a. Contadas as 65
+> histórias, **nenhuma G existia**: o rótulo sempre foi o sinal de cortar antes
+> de executar. A decisão foi manter o corte e **declarar a metade grande como
+> G**, a primeira do backlog, em vez de forçar uma terceira fatia que deixaria
+> o Responsável fora da tela entre dois PRs, ou o campo duplicado no contrato.
+> **Os nomes mudaram:** `H-50` continua sendo a metade de servidor — o que
+> preserva as quatro âncoras dela em `src/`, `tests/` e no `.exemplo` — e o
+> resto de tela virou **`H-66`**, com número em vez de sufixo porque
+> `tests/repo/contratos.test.ts` casa `H-\d+` estrito em três asserções, e
+> `H-50a`/`H-50b` colidiria no mesmo id.
 
 A régua do backlog é explícita: **M = até 8 arquivos ou 1 contrato novo; G = acima
 disso**. `H-50` declara **15 arquivos e três rotas alteradas** — é G rotulada

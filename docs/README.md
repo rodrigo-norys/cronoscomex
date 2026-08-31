@@ -122,7 +122,7 @@ nasceram depois do plano e não têm fase atribuída:
 | Épico | Aberto em | Ordem |
 |---|---|---|
 | `E9` — Estilização | `H-43` a `H-47`; `H-39` a `H-42` fechadas | Corre em paralelo a `E10`; os dois não se bloqueiam |
-| `E10` — As melhorias de uso | `H-50` a `H-54`; `H-48`, `H-49`, `H-55` e `H-56` fechadas | idem |
+| `E10` — As melhorias de uso | abertas `H-50` — a única G do backlog — e `H-66`, que saiu do corte dela (`D-24`); `H-48`, `H-49`, `H-51` a `H-56` fechadas | idem |
 | `E11` — A casca redesenhada | `H-57` a `H-65`, todas | **Depois de `E9` e `E10` inteiros** — a razão está no cabeçalho do épico |
 
 **Três pendências fecham juntas na primeira instalação na máquina do operador**
