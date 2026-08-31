@@ -55,6 +55,8 @@ function process({
     registrationDate: null,
     docsSentDate: null,
     clientKey: normKey(client),
+    clientProcessKey: normKey(client),
+    clientLabel: client,
     importerKey: normKey(importer),
     agentKey: normKey(agent),
     vesselKey: '',

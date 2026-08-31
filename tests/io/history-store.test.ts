@@ -51,6 +51,8 @@ function process(
     registrationDate: null,
     docsSentDate: null,
     clientKey: '',
+    clientProcessKey: '',
+    clientLabel: '',
     importerKey: '',
     agentKey: '',
     vesselKey: '',

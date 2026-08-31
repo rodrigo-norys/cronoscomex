@@ -5,6 +5,7 @@ import {
   emptyFilterSet,
   FilterParseError,
   type FilterSet,
+  hasAnyFilter,
   optionsOf,
   parseFilters,
   RESPONSIBLES,
@@ -22,6 +23,7 @@ const civil = (iso: string): Date => new Date(`${iso}T00:00:00Z`)
 interface Fields {
   eta2?: string | null
   clientKey?: string
+  clientProcessKey?: string
   clientRaw?: string
   importerKey?: string
   vesselKey?: string
@@ -39,6 +41,7 @@ let nextRow = 2
 function process({
   eta2 = null,
   clientKey = '',
+  clientProcessKey = clientKey,
   clientRaw = '',
   importerKey = '',
   vesselKey = '',
@@ -70,6 +73,8 @@ function process({
     registrationDate: null,
     docsSentDate: null,
     clientKey,
+    clientProcessKey,
+    clientLabel: clientRaw,
     importerKey,
     agentKey,
     vesselKey,
@@ -438,5 +443,57 @@ describe('optionsOf — dominio derivado dos dados (A-36)', () => {
         (p) => p.clientRaw,
       ),
     ).toEqual([])
+  })
+})
+
+/**
+ * `H-49`. `client` recorta a carteira; `clientProcess` acha um processo
+ * especifico pelo valor da celula CLT. Sao perguntas distintas, e por isso dois
+ * parametros — o de hoje mudaria de resposta se acumulasse as duas.
+ */
+describe('applyFilters — cliente consolidado e processo do cliente', () => {
+  const primeiro = process({ clientKey: 'ACME', clientProcessKey: 'ACM-29', clientRaw: 'ACM-29' })
+  const segundo = process({ clientKey: 'ACME', clientProcessKey: 'ACM-30', clientRaw: 'ACM-30' })
+  const outro = process({ clientKey: 'BETA', clientProcessKey: 'BET-01', clientRaw: 'BET-01' })
+  const semCliente = process({ clientKey: '', clientProcessKey: '', clientRaw: '' })
+
+  const conjunto = [primeiro, segundo, outro, semCliente]
+
+  it('a chave consolidada recorta todos os processos do cliente', () => {
+    expect(applyFilters(conjunto, withFilters({ client: ['ACME'] }))).toEqual([primeiro, segundo])
+  })
+
+  it('a chave da celula recorta um processo so', () => {
+    expect(applyFilters(conjunto, withFilters({ clientProcess: ['ACM-29'] }))).toEqual([primeiro])
+  })
+
+  it('combina os dois em E, como qualquer par de parametros distintos', () => {
+    expect(
+      applyFilters(conjunto, withFilters({ client: ['ACME'], clientProcess: ['BET-01'] })),
+    ).toEqual([])
+  })
+
+  it('a chave vazia e valor legitimo nos dois', () => {
+    expect(applyFilters(conjunto, withFilters({ clientProcess: [''] }))).toEqual([semCliente])
+  })
+})
+
+describe('parseFilters e hasAnyFilter — clientProcess', () => {
+  it('aceita qualquer texto, como os demais de dominio aberto', () => {
+    expect(parseFilters({ clientProcess: ['ACM-29', 'ACM-30'] }).clientProcess).toEqual([
+      'ACM-29',
+      'ACM-30',
+    ])
+  })
+
+  // `?clientProcess=` e "processo do cliente em branco"; ausente nao filtra.
+  it('preserva a chave vazia e distingue do parametro ausente', () => {
+    expect(parseFilters({ clientProcess: '' }).clientProcess).toEqual([''])
+    expect(parseFilters({}).clientProcess).toEqual([])
+  })
+
+  it('conta como filtro ativo', () => {
+    expect(hasAnyFilter(parseFilters({ clientProcess: 'ACM-29' }))).toBe(true)
+    expect(hasAnyFilter(parseFilters({}))).toBe(false)
   })
 })

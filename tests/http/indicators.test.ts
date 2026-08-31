@@ -40,6 +40,8 @@ function process(
     registrationDate: null,
     docsSentDate: null,
     clientKey: '',
+    clientProcessKey: '',
+    clientLabel: '',
     importerKey: '',
     agentKey: '',
     vesselKey: '',
@@ -443,6 +445,61 @@ describe('GET /api/indicators — estado degradado (A-57)', () => {
 
     expect(resposta.statusCode).toBe(503)
     expect(resposta.json().error.message).toContain('ainda nao foi lida')
+
+    await app.close()
+  })
+})
+
+/**
+ * `H-49`. IND-10 e IND-22 agrupavam pela celula CLT e chamavam o resultado de
+ * cliente: medido, 649 processos produzem 509 valores distintos
+ * (`docs/uso/RESULTADO.md` §2).
+ */
+describe('GET /api/indicators — os rankings de cliente falam do cliente', () => {
+  const conjunto = [
+    process(2, 'em_andamento', {
+      clientKey: 'ACME',
+      clientLabel: 'Acme Comércio',
+      clientProcessKey: 'ACM-29',
+      clientRaw: 'ACM-29',
+    }),
+    process(3, 'em_andamento', {
+      clientKey: 'ACME',
+      clientLabel: 'Acme Comércio',
+      clientProcessKey: 'ACM-30',
+      clientRaw: 'ACM-30',
+    }),
+    process(4, 'em_andamento', {
+      clientKey: 'BETA',
+      clientLabel: 'Beta Ltda',
+      clientProcessKey: 'BET-01',
+      clientRaw: 'BET-01',
+    }),
+  ]
+
+  it('conta clientes, e nao processos do cliente, com o rotulo do mapa', async () => {
+    const app = buildServer(config, fakeStore(state({ processes: conjunto })))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/indicators' })).json()
+
+    expect(body.rankings.clients).toEqual([
+      { key: 'ACME', label: 'Acme Comércio', count: 2 },
+      { key: 'BETA', label: 'Beta Ltda', count: 1 },
+    ])
+
+    await app.close()
+  })
+
+  it('a quebra de tempo documental usa o mesmo agrupamento', async () => {
+    const app = buildServer(config, fakeStore(state({ processes: conjunto })))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/indicators' })).json()
+
+    expect(body.leadTimeByGroup.groupTotals.clients).toBe(2)
+    expect(body.leadTimeByGroup.clients.map((group: { label: string }) => group.label)).toEqual([
+      'Acme Comércio',
+      'Beta Ltda',
+    ])
 
     await app.close()
   })

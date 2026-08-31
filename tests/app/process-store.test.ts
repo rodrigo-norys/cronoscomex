@@ -13,6 +13,7 @@ import {
   reload,
   settle,
 } from '../../src/app/process-store.ts'
+import { normalizeClientMap } from '../../src/domain/client-mapper.ts'
 import type { ColorMapEntry } from '../../src/domain/color-mapper.ts'
 import type { RawRow } from '../../src/domain/types.ts'
 import type { ReadResult } from '../../src/io/xlsx-reader.ts'
@@ -649,5 +650,55 @@ describe('process-store — reconfiguracao do caminho (H-34)', () => {
     await expect(fresh.reconfigureWorkbook('/x.xlsx')).rejects.toThrow(
       fresh.StoreNotInitializedError,
     )
+  })
+})
+
+/**
+ * `H-49`. O mapa de `H-48` chega ao dominio pelo store, e e ele que decide se
+ * `clientKey` responde "quem e o cliente" ou "qual o processo dele".
+ */
+describe('initStore — o mapa de clientes chega a composicao', () => {
+  const linha = (client: string): RawRow => ({
+    sourceRow: 2,
+    cells: {
+      A: { value: 'FT002.26', type: 'string' },
+      B: { value: client, type: 'string' },
+    },
+    styleKey: 'none',
+  })
+
+  const lerUmaLinha = async (): Promise<ReadResult> => ({
+    rows: [linha('ACM-29')],
+    fileHash: `sha256:${'c'.repeat(64)}`,
+    readAt: new Date('2026-08-31T12:00:00Z'),
+    sheetName: '2026',
+    sheetPath: 'xl/worksheets/sheet1.xml',
+  })
+
+  it('consolida o cliente quando o mapa esta presente', async () => {
+    start({
+      readWorkbookFn: lerUmaLinha,
+      clientMap: normalizeClientMap([
+        { key: 'ACME', label: 'Acme Comércio', rules: [{ match: 'prefix', value: 'ACM' }] },
+      ]),
+    })
+    await reload()
+
+    const [process] = getState().processes
+    expect(process?.clientKey).toBe('ACME')
+    expect(process?.clientLabel).toBe('Acme Comércio')
+    expect(process?.clientProcessKey).toBe('ACM-29')
+  })
+
+  // Mapa ausente e o caso do operador que ainda nao declarou regra nenhuma:
+  // a aplicacao se comporta como antes de `H-49`, e nao como se nao houvesse
+  // cliente.
+  it('sem mapa, o cliente vale o que a celula diz', async () => {
+    start({ readWorkbookFn: lerUmaLinha })
+    await reload()
+
+    const [process] = getState().processes
+    expect(process?.clientKey).toBe('ACM-29')
+    expect(process?.clientLabel).toBe('ACM-29')
   })
 })

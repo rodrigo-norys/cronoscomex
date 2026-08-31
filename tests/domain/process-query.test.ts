@@ -58,6 +58,8 @@ function makeProcess(fields: Fields = {}): Process {
     registrationDate: fields.registrationDate ?? null,
     docsSentDate: null,
     clientKey: fields.clientKey ?? '',
+    clientProcessKey: fields.clientKey ?? '',
+    clientLabel: fields.clientRaw ?? '',
     importerKey: '',
     agentKey: '',
     vesselKey: fields.vesselKey ?? '',

@@ -145,7 +145,7 @@ export function registerIndicatorsRoute(
       clients: leadTimeByGroup(
         processes,
         (p) => p.clientKey,
-        (p) => p.clientRaw,
+        (p) => p.clientLabel,
       ),
       agents: leadTimeByGroup(
         processes,
@@ -179,7 +179,7 @@ export function registerIndicatorsRoute(
         clients: groupCount(
           processes,
           (p) => p.clientKey,
-          (p) => p.clientRaw,
+          (p) => p.clientLabel,
           config.topN,
         ),
         importers: groupCount(

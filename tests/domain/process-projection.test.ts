@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { normalizeClientMap } from '../../src/domain/client-mapper.ts'
 import { indexColorMap } from '../../src/domain/color-mapper.ts'
 import type { BuildDeps } from '../../src/domain/process-builder.ts'
 import { applyEdits, type FieldEdit } from '../../src/domain/process-projection.ts'
@@ -46,6 +47,8 @@ function process(overrides: Partial<Process> = {}): Process {
     registrationDate: null,
     docsSentDate: null,
     clientKey: 'ACME LOG',
+    clientProcessKey: 'ACME LOG',
+    clientLabel: 'ACME LOG',
     importerKey: 'IMP',
     agentKey: 'AG',
     vesselKey: 'EVER FAIR',
@@ -180,5 +183,58 @@ describe('applyEdits — o campo e o que dele deriva', () => {
 
     expect(processes[0]?.sourceRow).toBe(483)
     expect(processes[0]?.styleKey).toBe('none')
+  })
+})
+
+/**
+ * `H-49`. A projecao refaz o processo inteiro por `buildProcesses`: sem o mapa
+ * de clientes nas deps, editar QUALQUER campo devolveria o processo a chave da
+ * celula, em silencio — o consolidado sumiria da tela sem ninguem pedir.
+ */
+describe('applyEdits — o cliente consolidado atravessa a projecao', () => {
+  const comMapa: BuildDeps = {
+    ...deps,
+    clientMap: normalizeClientMap([
+      { key: 'ACME', label: 'Acme Comércio', rules: [{ match: 'prefix', value: 'ACM' }] },
+      { key: 'BETA', label: 'Beta Ltda', rules: [{ match: 'prefix', value: 'BET' }] },
+    ]),
+  }
+
+  const consolidado = process({
+    clientRaw: 'ACM-29',
+    clientKey: 'ACME',
+    clientProcessKey: 'ACM-29',
+    clientLabel: 'Acme Comércio',
+  })
+
+  it('editar outro campo NAO desconsolida o cliente', () => {
+    const { processes } = applyEdits(
+      [consolidado],
+      [edit({ field: 'portRaw', value: 'RO' })],
+      comMapa,
+    )
+
+    expect(processes[0]?.portRaw).toBe('RO')
+    expect(processes[0]?.clientKey).toBe('ACME')
+    expect(processes[0]?.clientLabel).toBe('Acme Comércio')
+  })
+
+  it('editar a celula CLT move o processo para o cliente da regra que passa a casar', () => {
+    const { processes } = applyEdits(
+      [consolidado],
+      [edit({ field: 'clientRaw', value: 'BET-01' })],
+      comMapa,
+    )
+
+    expect(processes[0]?.clientKey).toBe('BETA')
+    expect(processes[0]?.clientProcessKey).toBe('BET-01')
+    expect(processes[0]?.clientLabel).toBe('Beta Ltda')
+  })
+
+  it('sem mapa, a projecao devolve a chave da celula — o comportamento anterior', () => {
+    const { processes } = applyEdits([consolidado], [edit({ field: 'portRaw', value: 'RO' })], deps)
+
+    expect(processes[0]?.clientKey).toBe('ACM-29')
+    expect(processes[0]?.clientLabel).toBe('ACM-29')
   })
 })

@@ -125,6 +125,7 @@ export function processFixture(overrides: Partial<ProcessDto> = {}): ProcessDto 
     ref: 'FT501.26',
     sourceRow: 502,
     client: 'ACME LOG',
+    clientProcess: 'ACME-12',
     importer: 'IMPORTADORA X',
     billOfLading: 'NBSC260812',
     agent: 'B&M',
@@ -249,7 +250,7 @@ export function workbookConfigFixture(
   }
 }
 
-/** Enxuto de proposito: os nove blocos existem, com valores que cabem no
+/** Enxuto de proposito: os dez blocos existem, com valores que cabem no
  * assert. A rota real e testada em `tests/http/`, sobre a fixture. */
 export function filterOptionsFixture(
   overrides: Partial<FilterOptionsResponse> = {},
@@ -258,6 +259,10 @@ export function filterOptionsFixture(
     clients: [
       { key: 'ACME', label: 'ACME', count: 12 },
       { key: 'YRD', label: 'YRD', count: 5 },
+    ],
+    clientProcesses: [
+      { key: 'ACME-12', label: 'ACME-12', count: 1 },
+      { key: 'ACME-13', label: 'ACME-13', count: 1 },
     ],
     importers: [{ key: 'IMP', label: 'IMP', count: 3 }],
     vessels: [{ key: 'EVER FAIR', label: 'EVER FAIR', count: 2 }],
