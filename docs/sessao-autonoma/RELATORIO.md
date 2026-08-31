@@ -272,6 +272,39 @@ no DOM.
 2. `fix(web): os testes passam a esperar pelo texto, e nao pelo no`
 3. `docs(docs): fecha H-43 no backlog, na rastreabilidade e no estado`
 
+### `H-44` — Live regions das páginas, gráfico e forced-colors · PR #TBD
+
+**Branch:** `H-44/fix-live-regions-das-paginas`, saindo de
+`H-43/fix-live-regions-da-casca`. Posição 6 da pilha.
+
+**O que mudou.** As sete páginas e `WorkbookSetup` deixam de montar região viva
+já populada: o anúncio passa pela região da casca, por portal. O gráfico sai do
+caminho de tabulação, e o botão de janela ganha um canal que sobrevive a
+`forced-colors`.
+
+**Arquivos** — 19, em 3 commits. Dois nascem: `web/src/components/PageAlert.tsx`
+e `web/tests/support/live-region.ts`.
+
+**Verify.** Verde, e **executado três vezes seguidas** — ver abaixo.
+`Test Files 73 passed (73)` · `Tests 1571 passed (1571)`, contra 1566 ao fim de
+`H-43` — 5 testes próprios, mais doze casos existentes reapontados.
+
+**Sem conferência contra a planilha:** a história não toca dado nenhum.
+
+**A fatia introduziu uma corrida, e ela foi fechada antes do commit.** O portal
+monta num **efeito**, então `findByRole('alert')` passou a resolver na região
+vazia — que agora existe desde a montagem — antes de a mensagem chegar. Sete
+casos ficaram não-determinísticos e o portão reprovou de forma intermitente. A
+correção é esperar pelo **conteúdo**, não pelo nó. **Não confundir com o
+intermitente conhecido de `src/io/`**, que devolve `exit=1` com zero testes
+falhando: este tinha teste nomeado na saída, e era meu.
+
+**Commits:**
+
+1. `fix(web): as sete paginas anunciam pela regiao viva da casca`
+2. `fix(web): os testes de pagina montam a casca e esperam pelo conteudo`
+3. `docs(docs): fecha H-44 no backlog, na rastreabilidade e no estado`
+
 ---
 
 ## 3. PENDÊNCIAS PARA O DONO
@@ -416,6 +449,7 @@ da anterior e todas escrevem em `docs/06-backlog.md`,
 | 3 | [#71](https://github.com/rodrigo-norys/cronoscomex/pull/71) — `H-54` | `H-54/feat-historico-reconstruido` | `H-52/feat-periodo-nos-cartoes` |
 | 4 | [#72](https://github.com/rodrigo-norys/cronoscomex/pull/72) — `H-53` | `H-53/feat-performance-diz-a-metrica` | `H-54/feat-historico-reconstruido` |
 | 5 | [#73](https://github.com/rodrigo-norys/cronoscomex/pull/73) — `H-43` | `H-43/fix-live-regions-da-casca` | `H-53/feat-performance-diz-a-metrica` |
+| 6 | #TBD — `H-44` | `H-44/fix-live-regions-das-paginas` | `H-43/fix-live-regions-da-casca` |
 
 Depois do último merge, a branch `distribuicao` fica para trás e precisa ser
 sincronizada — `node --experimental-strip-types scripts/sincronizar-distribuicao.ts`.
@@ -483,3 +517,13 @@ A seguinte é de `H-43`.
     `PAGE_LIVE_REGION_ID`, e as páginas escreverão nela por portal. Alternativa
     descartada: um estado na casca, que faria a casca saber o que cada página tem
     a dizer — e ela não calcula nada (regra inviolável 6).
+
+As duas seguintes são de `H-44`.
+
+12. **O bloco visível das páginas ficou `aria-hidden`**, e o conteúdo acessível
+    vai pelo portal. Alternativa descartada: deixar os dois legíveis, que faria o
+    operador ouvir a mesma frase duas vezes.
+13. **As suítes de página montam as regiões da casca no `beforeEach`.**
+    Alternativa descartada: o `PageAlert` renderizar a região inline quando não
+    acha alvo — que reintroduziria o defeito no caminho de teste, e faria a suíte
+    verificar uma árvore que não existe em execução.
