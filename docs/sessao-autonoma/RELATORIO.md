@@ -305,7 +305,7 @@ falhando: este tinha teste nomeado na saída, e era meu.
 2. `fix(web): os testes de pagina montam a casca e esperam pelo conteudo`
 3. `docs(docs): fecha H-44 no backlog, na rastreabilidade e no estado`
 
-### `H-45` — Unificar papéis de UI e tirar a informação só-cor · PR #TBD
+### `H-45` — Unificar papéis de UI e tirar a informação só-cor · [PR #75](https://github.com/rodrigo-norys/cronoscomex/pull/75)
 
 **Branch:** `H-45/fix-papeis-de-ui`, saindo de
 `H-44/fix-live-regions-das-paginas`. Posição 7 da pilha.
@@ -479,7 +479,7 @@ da anterior e todas escrevem em `docs/06-backlog.md`,
 | 4 | [#72](https://github.com/rodrigo-norys/cronoscomex/pull/72) — `H-53` | `H-53/feat-performance-diz-a-metrica` | `H-54/feat-historico-reconstruido` |
 | 5 | [#73](https://github.com/rodrigo-norys/cronoscomex/pull/73) — `H-43` | `H-43/fix-live-regions-da-casca` | `H-53/feat-performance-diz-a-metrica` |
 | 6 | [#74](https://github.com/rodrigo-norys/cronoscomex/pull/74) — `H-44` | `H-44/fix-live-regions-das-paginas` | `H-43/fix-live-regions-da-casca` |
-| 7 | #TBD — `H-45` | `H-45/fix-papeis-de-ui` | `H-44/fix-live-regions-das-paginas` |
+| 7 | [#75](https://github.com/rodrigo-norys/cronoscomex/pull/75) — `H-45` | `H-45/fix-papeis-de-ui` | `H-44/fix-live-regions-das-paginas` |
 
 Depois do último merge, a branch `distribuicao` fica para trás e precisa ser
 sincronizada — `node --experimental-strip-types scripts/sincronizar-distribuicao.ts`.
