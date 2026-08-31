@@ -260,6 +260,27 @@ pt-br, sem o tipo `test`.
 **O merge acontece no GitHub, não localmente.** `branch → commits → push da
 branch → PR → merge por lá`. Mesclar na `main` antes do push **mata o PR**.
 
+**A branch `distribuicao` é a árvore que vai para a máquina do operador** — 107
+arquivos, sem `docs/`, `tests/`, `tools/` nem `.claude/`, que são 3 de cada 4
+arquivos versionados e não servem para nada em produção. Ela **não recebe PR**:
+é artefato, não revisão. Sincronize com
+`node --experimental-strip-types scripts/sincronizar-distribuicao.ts` — sem
+argumento ele confere e sai `1` se divergir; com `--aplicar` ele prepara os
+arquivos no índice e **para**, deixando commit e push para você.
+
+> **Sincronize apenas a partir da `main` mesclada**, para o operador nunca
+> receber código que o CI e a revisão do PR ainda não aceitaram. Decidido em
+> 31/08/2026, depois de `H-48` ter ido para a distribuição antes do merge.
+>
+> **O que entra não é lista escrita à mão:** é o fecho transitivo dos imports a
+> partir de `src/http/server.ts` e `web/src/main.tsx`, mais os arquivos de
+> suporte que nenhum import alcança. `README.md` e `iniciar.cmd` da raiz são
+> **exclusivos da branch** e nunca são sobrescritos — o primeiro é o guia do
+> operador, o segundo é o lançador que põe o ponto de partida na primeira pasta
+> que ele abre. Guardado por `tests/repo/distribuicao.test.ts`, que existe
+> porque arquivo faltando ali não quebra teste nem build: quebra a partida na
+> máquina do operador, longe de quem poderia consertar.
+
 **Um commit por ponto verde.** O corte não é tempo nem tamanho: é o momento em
 que uma preocupação fecha **e** o portão passa. Todo commit verde mantém o
 `git bisect` utilizável, que é o que faz o commit atômico pagar — commit
