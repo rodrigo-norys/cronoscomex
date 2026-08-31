@@ -5353,6 +5353,76 @@ aqui, nenhuma rota muda, e nenhuma tela muda — são `H-49` e `H-50`.
 
 ### H-49 — Cliente consolidado, separado do processo do cliente
 
+> ✅ **CONCLUÍDA em 31/08/2026.** **30 testes próprios** em dez arquivos — quatro
+> de domínio, três de rota, um de estado e dois de interface. Suíte total de
+> **1400 para 1430**, com três casos existentes ajustados: os dois que fixam
+> lista de chaves de contrato e o que conta os controles da barra. Oito
+> divergências no protocolo, três levadas ao usuário.
+>
+> **Faltava o campo que carrega o rótulo, e sem ele o objetivo não fechava.**
+> `clientKey` normalizado agrupa, mas não rotula: `optionsOf`, `groupCount` e
+> `leadTimeByGroup` rotulam pela primeira grafia da célula, e o grupo de 304
+> processos apareceria com a referência de um processo no lugar do nome do
+> cliente. Nasceu `clientLabel`, e com ele a regra que `resolveClient` sozinho
+> não dá: sem regra que case, o rótulo é a **grafia da célula**, nunca a chave
+> normalizada que a função devolve — `zeta comércio` não vira `ZETA COMERCIO`
+> (A-26).
+>
+> **`src/http/routes/indicators.ts` não estava na lista, e é onde o defeito da
+> história mora.** IND-10, IND-18 e a quebra de IND-22 por cliente agrupam por
+> `clientKey`: a consolidação chegaria sozinha à chave e deixaria o rótulo para
+> trás. A lista descrevia a fiação do filtro e esquecia os dois indicadores que o
+> `docs/uso/RESULTADO.md` §2 cita como motivo da história.
+>
+> **O par antigo manteve o nome, contra a letra do plano.** `clientProcessRaw`
+> não nasceu: `clientRaw` já *é* ele, e é chave de `EDITABLE_FIELDS` (coluna B) e
+> o nome gravado em `data/pending-edits.jsonl` na máquina do operador. Renomear
+> faria `isEditableField('clientRaw')` devolver `false` e o write-guard recusar a
+> fila **inteira** — o modo de falha que a fatia de `H-27` pegou. Nasceram só
+> `clientProcessKey` e `clientLabel`; o DTO expõe `client` (consolidado) e
+> `clientProcess` (célula).
+>
+> **A projeção precisava do mapa tanto quanto a ingestão**, e isso não estava em
+> critério nenhum. `applyEdits` refaz o processo por `buildProcesses`: sem
+> `clientMap` em `BuildDeps`, editar **qualquer** campo devolveria o processo à
+> chave da célula, em silêncio — o cliente consolidado sumiria da tela sem
+> ninguém pedir. `BuildDeps` ganhou o campo opcional, e os três pontos do store
+> passam a injetá-lo, `rebuildProcesses` inclusive: a comparação da escrita
+> precisa descrever o disco com os mesmos mapas da leitura.
+>
+> **O filtro passou de onze para doze**, e o número estava escrito em nove
+> lugares — RF-17, o §1.1 do contrato e sete comentários de código. Cliente
+> consolidado e processo do cliente são controles distintos porque são perguntas
+> distintas; acumular as duas no mesmo parâmetro faria o recorte da carteira
+> mudar de resposta.
+>
+> **Medido contra a planilha real, e os cinco números do critério bateram
+> exatos:** 649 processos, **509** valores distintos em CLT, **124** chaves
+> consolidadas — **466** processos em **11** clientes declarados e **183**
+> intactos, dos quais 38 de célula vazia. Rótulo: 466 de 466 com o `label` do
+> mapa, 183 de 183 com a grafia da célula. O recorte por chave consolidada bate
+> com o ranking nos **11** grupos, sem uma divergência.
+>
+> **A primeira medição errou, e o erro era da métrica.** Contar consolidação por
+> `clientKey !== clientProcessKey` deu 393 processos em 9 clientes: dois clientes
+> do mapa têm `key` igual à chave da célula que casam, e a comparação os
+> classificava como intactos. A fonte é o `mapped` de `resolveClient` — 393 + 73
+> = 466, 9 + 2 = 11. Nenhum defeito de código; um defeito de régua, do tipo que
+> teria virado número errado em três documentos.
+>
+> **O ranking de clientes deixou de ter um buraco no topo.** Medido antes:
+> `(sem valor)` era o maior grupo, com 38. Agora o topo tem **304** processos —
+> 47% da base num cliente só —, e `(sem valor)` cai para a terceira posição, com
+> os mesmos 38. A quebra de IND-22 por cliente sai de 509 grupos para **124**,
+> dos quais 18 têm amostra e 106 não.
+>
+> **A pendência que `H-48` deixou aqui não vira campo.** Dois clientes menores
+> que "também respondem a um terceiro, mas mantendo separado" continuam clientes
+> irmãos: hierarquia exige uma pergunta que nenhuma tela faz hoje, e acrescentar
+> `parent` agora seria projetar consumo antes de ele existir — o mesmo argumento
+> que adiou a decisão de `H-48` para cá. Quando existir ranking por grupo
+> econômico, é história própria.
+
 **Objetivo:** o campo Cliente responder "quem é o cliente" em vez de "qual o
 processo dele", sem perder o valor da célula.
 
@@ -5761,14 +5831,14 @@ reconstrução é derivada a cada leitura, nunca gravada.
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização | **H-39 ✅ … H-42 ✅, H-43 … H-47 abertas** | 1 | 8 | 0 |
-| E10 — As melhorias de uso | **H-48 ✅, H-49 … H-54 abertas** | 1 | 6 | 0 |
-| **Total** | **54** — 43 concluídas, 11 abertas | **18** | **36** | **0** |
+| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-50 … H-54 abertas** | 1 | 6 | 0 |
+| **Total** | **54** — 44 concluídas, 10 abertas | **18** | **36** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até
 18/08/2026 — foi a única coisa no repositório dizendo isso, contra o bloco
 `✅ CONCLUÍDA` da própria história e a linha dela em `09-rastreabilidade.md §4`.
-Com 33 de 43 fechadas, marcar uma a uma é o que envelhece; o que o leitor precisa
+Com 33 de 43 fechadas àquela altura, marcar uma a uma é o que envelhece; o que o leitor precisa
 é **onde estão as abertas**. A fonte de verdade do estado de uma história
 continua sendo o bloco dela.
 
