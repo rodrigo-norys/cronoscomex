@@ -33,7 +33,7 @@ const History = lazy(() =>
  * A casca da aplicacao (`H-15`).
  *
  * Ela hospeda as sete paginas, carrega a faixa de estado que A-57 exige em
- * **todas** elas, concentra as tres frentes de A-62, e monta os doze filtros
+ * **todas** elas, concentra as tres frentes de A-62, e monta os treze filtros
  * globais. Nao calcula nada: os 21 indicadores e os cinco alertas vem prontos
  * do servidor, ja recortados (regra inviolavel 6).
  */

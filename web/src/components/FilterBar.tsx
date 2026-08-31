@@ -3,8 +3,11 @@ import type { Filters, MultiFilterKey } from '../hooks/useFilters.ts'
 import { MultiSelect } from './MultiSelect.tsx'
 
 /**
- * Os doze filtros globais, em uma barra que vive na casca e vale para todas as
+ * Os treze filtros globais, em uma barra que vive na casca e vale para todas as
  * paginas de dado (RF-17, RF-18).
+ *
+ * Sao doze controles: `clientGroup` (`H-55`) nao tem caixa propria — ele vive
+ * DENTRO do controle de Cliente, como o primeiro nivel da arvore.
  *
  * Ela **nao filtra nada**: escreve a selecao na URL, e as paginas anexam a
  * query as proprias requisicoes. O recorte acontece no servidor, antes do
@@ -86,6 +89,13 @@ export function FilterBar({ filters, options, optionsError }: FilterBarProps) {
             options={options?.[control.source] ?? []}
             selected={selection.multi[control.key]}
             onToggle={(value) => filters.toggle(control.key, value)}
+            {...(control.key === 'client'
+              ? {
+                  groups: options?.clientGroups ?? [],
+                  selectedGroups: selection.multi.clientGroup,
+                  onToggleGroup: (value: string) => filters.toggle('clientGroup', value),
+                }
+              : {})}
           />
         ))}
 
