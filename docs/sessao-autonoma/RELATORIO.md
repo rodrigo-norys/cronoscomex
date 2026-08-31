@@ -206,6 +206,40 @@ estado vazio de `H-21`, as duas seções passaram a coexistir com o **mesmo
 como distingui-las. Pego por um teste que reprovou com "Found multiple elements
 with the role region"; `EmptyHistory` passou a receber `alone`.
 
+### `H-53` — A Página Performance diz a métrica e mostra o recorte · PR #TBD
+
+**Branch:** `H-53/feat-performance-diz-a-metrica`, saindo de
+`H-54/feat-historico-reconstruido`. Posição 4 da pilha.
+
+> **Fechada com o quinto critério declarado não-incidente.** Ele diz "Dado
+> `H-50` fechada, então…", e `H-50` não foi executada — Pendência 1. A ressalva
+> de A-31 continua descrevendo a limitação que **ainda existe**; reescrevê-la
+> agora afirmaria que ela acabou. **Não é redução de escopo:** é o critério
+> declarando que só incide depois de `H-50`, e o que sobra a fazer são dois
+> parágrafos em `ResponsibleCaveat`.
+
+**O que mudou.** A página passa a escrever a fórmula do tempo documental junto do
+agregado, e a nomear os filtros que estão recortando os números — ou a declarar
+que cobrem a base inteira.
+
+**Arquivos** — 4, em 3 commits: `web/src/pages/Performance.tsx`,
+`web/src/hooks/useFilters.ts`, `web/src/components/FilterBar.tsx` e o teste da
+página. Nenhum contrato mudou.
+
+**Verify.** Verde. `Test Files 73 passed (73)` · `Tests 1556 passed (1556)`,
+contra 1548 ao fim de `H-54` — 8 testes próprios.
+
+**Conferência contra a planilha real:** média de **12,5 dias** sobre amostra de
+**101**, com **547** sem uma das duas datas e **1** com intervalo negativo —
+101 + 547 + 1 = **649**, o total. Um recorte que zera a amostra devolve
+`averageDays: null`, nunca zero.
+
+**Commits:**
+
+1. `refactor(web): os rotulos dos filtros passam a viver numa fonte so`
+2. `feat(web): a Performance diz a metrica e mostra o recorte`
+3. `docs(docs): fecha H-53, com o quinto criterio declarado nao-incidente`
+
 ---
 
 ## 3. PENDÊNCIAS PARA O DONO
@@ -348,6 +382,7 @@ da anterior e todas escrevem em `docs/06-backlog.md`,
 | 1 | [#69](https://github.com/rodrigo-norys/cronoscomex/pull/69) — `H-51` | `H-51/feat-canal-verde` | `main` |
 | 2 | [#70](https://github.com/rodrigo-norys/cronoscomex/pull/70) — `H-52` | `H-52/feat-periodo-nos-cartoes` | `H-51/feat-canal-verde` |
 | 3 | [#71](https://github.com/rodrigo-norys/cronoscomex/pull/71) — `H-54` | `H-54/feat-historico-reconstruido` | `H-52/feat-periodo-nos-cartoes` |
+| 4 | #TBD — `H-53` | `H-53/feat-performance-diz-a-metrica` | `H-54/feat-historico-reconstruido` |
 
 Depois do último merge, a branch `distribuicao` fica para trás e precisa ser
 sincronizada — `node --experimental-strip-types scripts/sincronizar-distribuicao.ts`.
@@ -402,3 +437,9 @@ As três seguintes são de `H-54`.
    Alternativa descartada: aplicá-la às duas, que esconderia justamente o passado
    que a história existe para mostrar — a janela padrão é 12 meses e o intervalo
    das datas é 10, mas a coincidência não é garantia.
+
+A seguinte é de `H-53`.
+
+10. **`MULTI_FILTER_LABELS` nasceu em `useFilters.ts`**, e a barra passou a
+    consumi-lo. Alternativa descartada: copiar as onze strings para a Página
+    Performance, criando dois mapas que divergem no primeiro filtro renomeado.
