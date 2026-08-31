@@ -14,6 +14,7 @@ import {
 import { loadStatusAliases, StatusAliasesError } from '../app/status-aliases-loader.ts'
 import { loadTeamMap, TeamMapError } from '../app/team-map-loader.ts'
 import { initWriteGuard, retargetWatcher } from '../app/write-guard.ts'
+import type { ClientGroup } from '../domain/client-mapper.ts'
 import type { ColorMapEntry } from '../domain/color-mapper.ts'
 import { createWatcher, DEFAULT_DEBOUNCE_MS, type Watcher } from '../io/watcher.ts'
 import { registerAlertsRoute } from './routes/alerts.ts'
@@ -63,6 +64,14 @@ export function buildServer(
   openDialog?: () => Promise<string | null>,
   /** Raiz da interface compilada (H-36). Ausente, vale `dist/web`. */
   webRoot?: string,
+  /**
+   * Grupos de clientes do filtro (H-55). O padrao e a lista VAZIA, e nao a
+   * leitura do arquivo: `client-map.json` e estado real do operador, e um
+   * default que o lesse faria toda montagem de servidor em teste depender dele
+   * (regra inviolavel 7). Em producao `main` passa o mesmo mapa que o store
+   * recebeu.
+   */
+  clientGroups: readonly ClientGroup[] = [],
 ): FastifyInstance {
   // Silencioso sob teste: a saida do Vitest e o relatorio, nao o log do servidor.
   const app = Fastify({
@@ -73,9 +82,9 @@ export function buildServer(
   registerConfigRoutes(app, config, store, applyWorkbookPath, configPath, openDialog, webRoot)
   registerQuarantineRoute(app)
   registerReloadRoute(app, store)
-  registerIndicatorsRoute(app, config, store)
+  registerIndicatorsRoute(app, config, store, clientGroups)
   registerAlertsRoute(app, config, store, historyPath)
-  registerFilterOptionsRoute(app, store)
+  registerFilterOptionsRoute(app, store, clientGroups)
   registerProcessesRoute(app, config, store, historyPath)
   registerHistoryRoute(app, config, store, historyPath)
   registerEditsRoutes(app, store)
@@ -110,6 +119,9 @@ async function main(): Promise<void> {
   // Fora do `try` porque o write-guard, la embaixo, tambem registra nele.
   let logger: Logger
   let colorMap: readonly ColorMapEntry[]
+  // Fora do `try` pelo mesmo motivo do mapa de cor: a rota de opcoes, montada
+  // abaixo, precisa dos MESMOS grupos que o store recebeu.
+  let clientGroups: readonly ClientGroup[]
   try {
     config = loadConfig()
     logger = createLogger({ timezone: config.timezone })
@@ -125,11 +137,14 @@ async function main(): Promise<void> {
     // Os dois mapas de negocio (`H-48`) sao lidos na partida para que um JSON
     // escrito errado apareca aqui, e nao quando o operador abrir a Pagina
     // Clientes com o campo silenciosamente sem consolidacao.
+    const clientMap = loadClientMap()
+    clientGroups = clientMap.groups
     initStore({
       config,
       colorMap,
       statusAliases: loadStatusAliases(),
-      clientMap: loadClientMap(),
+      clientMap: clientMap.clients,
+      clientGroups: clientMap.groups,
       teamMap: loadTeamMap(),
       logger,
     })
@@ -146,8 +161,16 @@ async function main(): Promise<void> {
   // processo — `POST /api/reload` continua disponivel para nova tentativa.
   await reload()
 
-  const app = buildServer(config, defaultStore, colorMap, undefined, (path) =>
-    applyWorkbookPath(path),
+  const app = buildServer(
+    config,
+    defaultStore,
+    colorMap,
+    undefined,
+    (path) => applyWorkbookPath(path),
+    undefined,
+    undefined,
+    undefined,
+    clientGroups,
   )
 
   try {

@@ -1,10 +1,14 @@
 import { existsSync, readFileSync } from 'node:fs'
 import {
+  type ClientGroup,
+  type ClientGroupMember,
   type ClientMapEntry,
   type ClientMatch,
   type ClientRule,
+  normalizeClientGroups,
   normalizeClientMap,
 } from '../domain/client-mapper.ts'
+import { normKey } from '../domain/normalizer.ts'
 
 /**
  * Carrega e valida `client-map.json`. O I/O vive aqui, e nao em src/domain/,
@@ -38,6 +42,14 @@ const MATCHES: readonly ClientMatch[] = ['prefix', 'contains', 'exact']
 export interface ClientMapFile {
   version: number
   clients: ClientMapEntry[]
+  /** Opcional: sem ela, nenhum cliente tem grupo (`H-55`). */
+  groups?: ClientGroup[]
+}
+
+/** O que o loader devolve: as duas listas ja normalizadas e conferidas entre si. */
+export interface ClientMap {
+  clients: ClientMapEntry[]
+  groups: ClientGroup[]
 }
 
 function validateRule(raw: unknown, where: string): ClientRule {
@@ -110,8 +122,8 @@ function validateEntry(raw: unknown, position: number): ClientMapEntry {
  * `normalizeClientMap`: o caminho quente e a ingestao, e normalizar por
  * comparacao repetiria `normKey` milhares de vezes sobre texto que nao muda.
  */
-export function loadClientMap(path: string = DEFAULT_CLIENT_MAP_PATH): ClientMapEntry[] {
-  if (!existsSync(path)) return []
+export function loadClientMap(path: string = DEFAULT_CLIENT_MAP_PATH): ClientMap {
+  if (!existsSync(path)) return { clients: [], groups: [] }
 
   let parsed: unknown
   try {
@@ -143,5 +155,105 @@ export function loadClientMap(path: string = DEFAULT_CLIENT_MAP_PATH): ClientMap
     seen.set(entry.key, position)
   }
 
-  return normalizeClientMap(entries)
+  return {
+    clients: normalizeClientMap(entries),
+    groups: validateGroups(file.groups, entries, path),
+  }
+}
+
+/**
+ * Confere os grupos CONTRA a lista de clientes, e por isso vive na mesma
+ * leitura: membro que aponta para cliente inexistente e o erro provavel — o
+ * operador renomeia a chave de um cliente e o grupo fica apontando para o nada,
+ * sem sintoma nenhum na tela.
+ */
+function validateGroups(
+  raw: unknown,
+  clients: readonly ClientMapEntry[],
+  path: string,
+): ClientGroup[] {
+  if (raw === undefined) return []
+  if (!Array.isArray(raw)) {
+    throw new ClientMapError(`${path}: "groups", quando presente, precisa ser uma lista.`)
+  }
+
+  const known = new Set(clients.map((entry) => normKey(entry.key)))
+  const groupKeys = new Map<string, number>()
+  const memberOf = new Map<string, string>()
+
+  const groups = raw.map((item, position) => {
+    const where = `groups[${position}]`
+    if (!item || typeof item !== 'object') {
+      throw new ClientMapError(`${where} deve ser um objeto.`)
+    }
+    const group = item as Record<string, unknown>
+
+    const key = group.key
+    if (typeof key !== 'string' || key.trim() === '') {
+      throw new ClientMapError(`${where}.key e obrigatorio.`)
+    }
+    const normalizedKey = normKey(key)
+    const first = groupKeys.get(normalizedKey)
+    if (first !== undefined) {
+      throw new ClientMapError(
+        `Grupo repetido em ${path}: "${key}"\n` +
+          `Aparece em groups[${first}] e ${where}. Junte os membros numa entrada so.`,
+      )
+    }
+    groupKeys.set(normalizedKey, position)
+
+    if (!Array.isArray(group.members) || group.members.length === 0) {
+      throw new ClientMapError(`${where}.members precisa ser uma lista com ao menos um cliente.`)
+    }
+
+    const members = group.members.map((entry, index) => {
+      const memberWhere = `${where}.members[${index}]`
+      if (!entry || typeof entry !== 'object') {
+        throw new ClientMapError(`${memberWhere} deve ser um objeto com "client".`)
+      }
+      const member = entry as Record<string, unknown>
+
+      const client = member.client
+      if (typeof client !== 'string' || client.trim() === '') {
+        throw new ClientMapError(`${memberWhere}.client e obrigatorio.`)
+      }
+      const normalizedClient = normKey(client)
+      if (!known.has(normalizedClient)) {
+        throw new ClientMapError(
+          `${memberWhere} aponta para "${client}", que nao esta em "clients".\n` +
+            'Um grupo so reune clientes ja declarados — ele nao cria cliente novo.',
+        )
+      }
+      // Cliente em dois grupos deixaria a arvore do filtro ambigua: o operador
+      // marcaria um pai e veria a contagem do outro mudar.
+      const already = memberOf.get(normalizedClient)
+      if (already !== undefined) {
+        throw new ClientMapError(
+          `Cliente em mais de um grupo em ${path}: "${client}"\n` +
+            `Ja e membro de "${already}". Um cliente pertence a no maximo um grupo.`,
+        )
+      }
+      memberOf.set(normalizedClient, normalizedKey)
+
+      const label = member.label
+      if (label !== undefined && (typeof label !== 'string' || label.trim() === '')) {
+        throw new ClientMapError(
+          `${memberWhere}.label, quando presente, deve ser um texto nao vazio.`,
+        )
+      }
+
+      return {
+        client,
+        ...(label === undefined ? {} : { label: label as string }),
+      } satisfies ClientGroupMember
+    })
+
+    return {
+      key,
+      label: typeof group.label === 'string' && group.label.trim() !== '' ? group.label : key,
+      members,
+    } satisfies ClientGroup
+  })
+
+  return normalizeClientGroups(groups)
 }

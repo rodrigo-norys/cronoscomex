@@ -36,8 +36,15 @@ export type Responsible =
  * Canal de fiscalizacao. Apenas a COR e fonte; texto em STATUS nao classifica
  * (achado A-06). Canal Amarelo nao tem representacao estruturada, porque
  * amarelo significa importador fora do RJ (achado A-38, decisao D-02).
+ *
+ * `H-51` trocou `nenhum` por `indefinido` nas linhas que a cor nao classifica.
+ * A cor e um canal de informacao unico, disputado por tres significados: uma
+ * linha azul diz responsavel, e por isso NAO diz canal. Afirmar `nenhum` para
+ * ela era afirmar que se sabe que nao houve canal — 167 das 649 linhas, medidas
+ * em 31/08/2026 (docs/uso/RESULTADO.md secao 4). E a regra inviolavel 3
+ * aplicada ao proprio mapa de cores.
  */
-export type CustomsChannel = 'vermelho' | 'nenhum' | 'indefinido'
+export type CustomsChannel = 'verde' | 'vermelho' | 'indefinido'
 
 /** Divergencias detectadas numa linha. Vazio = linha limpa. */
 export type AnomalyCode =
@@ -106,7 +113,41 @@ export interface Process {
   readonly docsSentDate: Date | null
 
   // ---- Chaves de agrupamento ----
+  /**
+   * O cliente CONSOLIDADO (`H-49`), resolvido contra `client-map.json`.
+   *
+   * Sem mapa, ou com celula que nenhuma regra alcanca, vale exatamente
+   * `clientProcessKey` — nao consolidar e resultado legitimo, e o unico honesto
+   * para os grupos cujo cliente o operador ainda nao declarou.
+   */
   readonly clientKey: string
+  /**
+   * A chave da CELULA CLT, que guarda o processo daquele cliente e nao o
+   * cliente (`docs/uso/RESULTADO.md` secao 2). Medido: 649 processos produzem
+   * 509 valores distintos.
+   *
+   * Continua sendo a unica forma de achar um processo especifico na Pagina
+   * Operacional, e por isso o campo antigo nao some — muda de nome.
+   */
+  readonly clientProcessKey: string
+  /**
+   * O rotulo do cliente consolidado: o `label` do mapa quando alguma regra
+   * casou, e a primeira grafia da celula quando nenhuma casou (A-26).
+   *
+   * Existe porque `clientKey` e normalizado: rotular o grupo consolidado pela
+   * celula do primeiro processo dele exibiria a referencia de um processo no
+   * lugar do nome do cliente, que e o defeito que `H-49` fecha.
+   */
+  readonly clientLabel: string
+  /**
+   * O grupo de clientes a que este cliente pertence (`H-55`), ou `''` quando
+   * ele nao pertence a nenhum.
+   *
+   * **Existe so para o filtro.** Nenhum indicador agrupa por ele: fundir os
+   * membros mudaria o valor de IND-10, IND-18 e IND-22, e a decisao do operador
+   * foi manter cada cliente contado separado.
+   */
+  readonly clientGroupKey: string
   readonly importerKey: string
   readonly agentKey: string
   readonly vesselKey: string

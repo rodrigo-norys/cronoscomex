@@ -1,4 +1,9 @@
-import type { ClientMapEntry } from '../domain/client-mapper.ts'
+import {
+  type ClientGroup,
+  type ClientGroupIndex,
+  type ClientMapEntry,
+  indexClientGroups,
+} from '../domain/client-mapper.ts'
 import { type ColorMapEntry, indexColorMap, resolveFillTarget } from '../domain/color-mapper.ts'
 import { type BuildResult, buildProcesses, quarantineRate } from '../domain/process-builder.ts'
 import { applyEdits, type ProjectedEdit } from '../domain/process-projection.ts'
@@ -75,11 +80,16 @@ export interface StoreOptions {
   colorMap: readonly ColorMapEntry[]
   statusAliases: readonly string[]
   /**
-   * Mapa de clientes de `H-48`. **Opcional, e vazio e legitimo**: sem ele o
-   * cliente vale o que a celula diz, que e o comportamento anterior a `H-49`.
-   * Quem consome e `H-49` — aqui ele so chega e fica disponivel.
+   * Mapa de clientes de `H-48`, consumido por `H-49`. **Opcional, e vazio e
+   * legitimo**: sem ele o cliente vale o que a celula diz, que e o
+   * comportamento anterior a `H-49`.
    */
   clientMap?: readonly ClientMapEntry[]
+  /**
+   * Grupos de clientes de `H-55`. Indexados uma vez em `initStore`, como o mapa
+   * de cores — a alternativa varreria a lista de grupos por linha lida.
+   */
+  clientGroups?: readonly ClientGroup[]
   /** Mapa de equipe de `H-48`. Vazio faz a atribuicao cair na cor (`H-50`). */
   teamMap?: readonly TeamMember[]
   quarantinePath?: string
@@ -118,6 +128,7 @@ function emptyState(): StoreState {
 
 let options: StoreOptions | null = null
 let colorMapIndex: ReadonlyMap<string, ColorMapEntry> = new Map()
+let clientGroupIndex: ClientGroupIndex = new Map()
 let current: StoreState = emptyState()
 let inFlight: Promise<void> | null = null
 
@@ -125,6 +136,7 @@ let inFlight: Promise<void> | null = null
 export function initStore(next: StoreOptions): void {
   options = next
   colorMapIndex = indexColorMap(next.colorMap)
+  clientGroupIndex = indexClientGroups(next.clientGroups ?? [])
   current = emptyState()
   inFlight = null
 }
@@ -140,6 +152,9 @@ export function initStore(next: StoreOptions): void {
  *
  * Sem `initStore`, a projecao e pulada: nao ha `statusAliases` nem mapa de cor
  * para re-derivar, e devolver o estado vazio e o comportamento correto.
+ *
+ * O mapa de clientes viaja junto (`H-49`): a projecao refaz o processo inteiro,
+ * e sem ele uma edicao qualquer tiraria o processo do cliente consolidado.
  */
 export function getState(): StoreState {
   if (options === null || current.processes.length === 0) return { ...current }
@@ -150,6 +165,8 @@ export function getState(): StoreState {
   const { processes } = applyEdits(current.processes, toProjected(edits, options.colorMap), {
     colorMap: colorMapIndex,
     statusAliases: options.statusAliases,
+    clientMap: options.clientMap ?? [],
+    clientGroups: clientGroupIndex,
   })
 
   return { ...current, processes, pendingEdits: edits }
@@ -296,6 +313,8 @@ async function runReload(deps: StoreOptions): Promise<void> {
     const result = buildProcesses(read.rows, {
       colorMap: colorMapIndex,
       statusAliases: deps.statusAliases,
+      clientMap: deps.clientMap ?? [],
+      clientGroups: clientGroupIndex,
     })
 
     const durationMs = Math.round(performance.now() - startedAt)
@@ -444,8 +463,8 @@ export async function settle(): Promise<void> {
 }
 
 /**
- * Recompoe processos a partir de linhas cruas, com o MESMO mapa de cor e os
- * mesmos aliases da leitura corrente.
+ * Recompoe processos a partir de linhas cruas, com os MESMOS mapas de cor e de
+ * cliente e os mesmos aliases da leitura corrente.
  *
  * H-25 usa para descrever o arquivo em disco no momento da escrita, sem passar
  * por `getState` — que devolve os processos ja **projetados** com a fila, e por
@@ -459,6 +478,8 @@ export function rebuildProcesses(rows: RawRow[]): Process[] {
   return buildProcesses(rows, {
     colorMap: colorMapIndex,
     statusAliases: options.statusAliases,
+    clientMap: options.clientMap ?? [],
+    clientGroups: clientGroupIndex,
   }).processes
 }
 

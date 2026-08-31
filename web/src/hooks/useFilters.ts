@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react'
 import { replaceQuery, useQuery } from '../router.ts'
 
 /**
- * Os onze filtros globais (RF-17), com a URL como **unico** estado.
+ * Os treze filtros globais (RF-17), com a URL como **unico** estado.
  *
  * Nao ha copia em `useState`: o parametro na URL e a verdade, e o componente
  * deriva dela. Duas fontes divergiriam no primeiro `popstate` — e a URL precisa
@@ -19,6 +19,8 @@ import { replaceQuery, useQuery } from '../router.ts'
 /** Ocupam um parametro cada, com valores repetidos em OU. */
 export const MULTI_FILTERS = [
   'client',
+  'clientProcess',
+  'clientGroup',
   'importer',
   'vessel',
   'agent',
@@ -30,6 +32,29 @@ export const MULTI_FILTERS = [
 ] as const
 
 export type MultiFilterKey = (typeof MULTI_FILTERS)[number]
+
+/**
+ * O nome de cada filtro na tela, numa fonte so (`H-53`).
+ *
+ * Vive aqui, e nao em `FilterBar.tsx`, porque a Pagina Performance passou a
+ * declarar **quais** filtros estao recortando os numeros dela — e dois mapas de
+ * rotulo divergem no primeiro filtro renomeado. `clientGroup` nao tem caixa
+ * propria na barra, mas tem nome, e sem ele o recorte por grupo apareceria sem
+ * dizer o que e.
+ */
+export const MULTI_FILTER_LABELS: Readonly<Record<MultiFilterKey, string>> = {
+  category: 'Categoria',
+  client: 'Cliente',
+  clientProcess: 'Processo do cliente',
+  clientGroup: 'Grupo de clientes',
+  importer: 'Importador',
+  responsible: 'Responsável',
+  channel: 'Canal',
+  vessel: 'Navio',
+  agent: 'Agente',
+  port: 'Porto',
+  goods: 'Mercadoria',
+}
 
 export type OutsideRjSelection = '' | 'true' | 'false'
 
@@ -43,13 +68,22 @@ export interface FilterSelection {
 
 export interface Filters {
   readonly selection: FilterSelection
-  /** Quantos dos onze estao ativos. O periodo conta uma vez, tendo um extremo
+  /** Quantos dos treze estao ativos. O periodo conta uma vez, tendo um extremo
    * ou os dois — e um filtro, ainda que ocupe dois parametros. */
   readonly activeCount: number
   /** O que as paginas de `H-16` a `H-22` anexam as proprias requisicoes. */
   readonly queryString: string
   toggle(key: MultiFilterKey, value: string): void
   setRange(field: 'etaFrom' | 'etaTo', value: string): void
+  /**
+   * Os dois extremos numa escrita so (`H-52`).
+   *
+   * O seletor da Pagina Inicial escreve os MESMOS parametros que a barra de
+   * filtros — um estado so, nunca dois periodos que divergem. Dois `setRange`
+   * seguidos escreveriam sobre a mesma leitura de `query` e o segundo perderia o
+   * primeiro, porque `write` deriva o rascunho da query capturada no `useMemo`.
+   */
+  setPeriod(from: string, to: string): void
   setImporterOutsideRj(value: OutsideRjSelection): void
   clearAll(): void
 }
@@ -119,6 +153,21 @@ export function useFilters(): Filters {
     [write],
   )
 
+  const setPeriod = useCallback(
+    (from: string, to: string): void => {
+      write((draft) => {
+        for (const [field, value] of [
+          ['etaFrom', from],
+          ['etaTo', to],
+        ] as const) {
+          if (value === '') draft.delete(field)
+          else draft.set(field, value)
+        }
+      })
+    },
+    [write],
+  )
+
   const setImporterOutsideRj = useCallback(
     (value: OutsideRjSelection): void => {
       write((draft) => {
@@ -146,6 +195,7 @@ export function useFilters(): Filters {
     queryString: toSearch(query),
     toggle,
     setRange,
+    setPeriod,
     setImporterOutsideRj,
     clearAll,
   }

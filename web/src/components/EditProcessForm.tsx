@@ -123,14 +123,19 @@ export function EditProcessForm({
         </button>
       </form>
 
-      {error !== null && (
-        <p
-          role="alert"
-          className="mt-2 rounded border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg"
-        >
-          {error}
-        </p>
-      )}
+      {/* A regiao existe desde a montagem (`H-43`): um `role="alert"` que nasce
+          populado nao e anunciado, e a recusa do enfileiramento e exatamente o
+          que o operador precisa ouvir. */}
+      <p
+        role="alert"
+        className={
+          error === null
+            ? 'sr-only'
+            : 'mt-2 rounded border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg'
+        }
+      >
+        {error}
+      </p>
     </section>
   )
 }

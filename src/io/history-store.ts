@@ -139,7 +139,27 @@ const CATEGORIES: readonly string[] = [
   'desembaracado',
   'fechado_aguardando_draft',
 ]
-const CHANNELS: readonly string[] = ['vermelho', 'nenhum', 'indefinido']
+const CHANNELS: readonly string[] = ['verde', 'vermelho', 'indefinido']
+
+/**
+ * O canal que `H-51` aposentou, aceito **so na leitura** do arquivo ja gravado.
+ *
+ * O historico e append-only e sem retroatividade (ADR-0005, A-43): as linhas
+ * escritas antes de 31/08/2026 dizem `nenhum` e nenhuma delas pode ser
+ * reescrita. Recusa-las como valor fora do dominio esvaziaria o indice, e cada
+ * REF voltaria a ser "visto pela primeira vez" — o que reiniciaria
+ * `categoryChangedAt` em todos, e com ele ALE-06, o alerta de processos
+ * parados, que passaria a nao acusar nenhum.
+ *
+ * Traduzir preserva a comparacao: linha azul gravada como `nenhum` casa com a
+ * leitura de hoje, `indefinido`, e nao gera evento nenhum. As verdes geram um
+ * evento com `from` igual a `to` — que a serie mensal ignora, porque cada ponto
+ * dela e o estado ao fim do mes, e que a tela de detalhe ja filtra.
+ *
+ * **Nada e gravado com este valor.** Ele nao esta em `CustomsChannel` nem em
+ * `CUSTOMS_CHANNELS`, e a rota de filtros recusa quem o pedir.
+ */
+const LEGACY_CHANNEL = 'nenhum'
 
 /**
  * Le uma linha e devolve o evento, ou `null` se ela nao for interpretavel.
@@ -166,7 +186,9 @@ function parseEvent(line: string): StatusEvent | null {
   if (typeof ref !== 'string' || ref === '') return null
   if (typeof to !== 'string' || !CATEGORIES.includes(to)) return null
   if (from !== null && (typeof from !== 'string' || !CATEGORIES.includes(from))) return null
-  if (typeof channel !== 'string' || !CHANNELS.includes(channel)) return null
+  if (typeof channel !== 'string' || !(CHANNELS.includes(channel) || channel === LEGACY_CHANNEL)) {
+    return null
+  }
   if (typeof sourceRow !== 'number' || !Number.isInteger(sourceRow)) return null
 
   return {
@@ -174,7 +196,7 @@ function parseEvent(line: string): StatusEvent | null {
     ref,
     from: from as StatusCategory | null,
     to: to as StatusCategory,
-    channel: channel as CustomsChannel,
+    channel: (channel === LEGACY_CHANNEL ? 'indefinido' : channel) as CustomsChannel,
     sourceRow,
   }
 }

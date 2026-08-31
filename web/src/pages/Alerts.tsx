@@ -1,5 +1,6 @@
 import type { AlertsResponse } from '../api-client.ts'
 import { ALERT_LABELS, AlertRow, groupByProcess } from '../components/AlertRow.tsx'
+import { PageAlert } from '../components/PageAlert.tsx'
 import { useAlerts } from '../hooks/useAlerts.ts'
 
 /**
@@ -32,10 +33,13 @@ export function Alerts({ queryString, dataVersion }: AlertsProps) {
 
   if (state.status === 'erro') {
     return (
-      <p role="alert" className="panel-error">
+      <PageAlert
+        className="panel-error"
+        announcement={`Não foi possível carregar os alertas. ${state.message}`}
+      >
         <strong className="font-semibold">Não foi possível carregar os alertas.</strong>{' '}
         {state.message}
-      </p>
+      </PageAlert>
     )
   }
 
@@ -45,10 +49,14 @@ export function Alerts({ queryString, dataVersion }: AlertsProps) {
    */
   if (state.status === 'semLeitura') {
     return (
-      <p role="status" className="panel-no-read">
+      <PageAlert
+        tone="status"
+        className="panel-no-read"
+        announcement="Nenhuma leitura da planilha foi concluída ainda. A fila aparece assim que a primeira terminar — vazio aqui não significa ausência de pendências."
+      >
         Nenhuma leitura da planilha foi concluída ainda. A fila aparece assim que a primeira
         terminar — vazio aqui não significa ausência de pendências.
-      </p>
+      </PageAlert>
     )
   }
 

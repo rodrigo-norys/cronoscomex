@@ -17,6 +17,9 @@ interface Column {
 const COLUMNS: readonly Column[] = [
   { key: 'ref', label: 'REF', sortBy: 'ref' },
   { key: 'client', label: 'Cliente', sortBy: 'client' },
+  // O valor da celula CLT, sem ordenacao propria: `sort=client` ordena pelo
+  // cliente consolidado, e oferecer as duas ordens confundiria as colunas.
+  { key: 'clientProcess', label: 'Processo do cliente' },
   { key: 'importer', label: 'Importador' },
   { key: 'vessel', label: 'Navio', sortBy: 'vessel' },
   { key: 'eta2', label: 'ETA2', sortBy: 'eta2' },
@@ -96,6 +99,7 @@ export function ProcessTable({ items, sort, order, onSort }: ProcessTableProps) 
                 )}
               </td>
               <td className="px-3 py-2">{item.client || '—'}</td>
+              <td className="px-3 py-2 font-mono text-xs">{item.clientProcess || '—'}</td>
               <td className="px-3 py-2">{item.importer || '—'}</td>
               <td className="px-3 py-2">{item.vessel || '—'}</td>
               <td className="px-3 py-2 tabular-nums">{formatDay(item.eta2)}</td>

@@ -1,10 +1,13 @@
 import type { FilterOptionsResponse } from '../api-client.ts'
-import type { Filters, MultiFilterKey } from '../hooks/useFilters.ts'
+import { type Filters, MULTI_FILTER_LABELS, type MultiFilterKey } from '../hooks/useFilters.ts'
 import { MultiSelect } from './MultiSelect.tsx'
 
 /**
- * Os onze filtros globais, em uma barra que vive na casca e vale para todas as
+ * Os treze filtros globais, em uma barra que vive na casca e vale para todas as
  * paginas de dado (RF-17, RF-18).
+ *
+ * Sao doze controles: `clientGroup` (`H-55`) nao tem caixa propria — ele vive
+ * DENTRO do controle de Cliente, como o primeiro nivel da arvore.
  *
  * Ela **nao filtra nada**: escreve a selecao na URL, e as paginas anexam a
  * query as proprias requisicoes. O recorte acontece no servidor, antes do
@@ -13,21 +16,27 @@ import { MultiSelect } from './MultiSelect.tsx'
 
 interface MultiControl {
   readonly key: MultiFilterKey
-  readonly label: string
   readonly source: keyof FilterOptionsResponse
 }
 
-/** Os nove de multipla escolha. Ordem: quem o operador usa mais, primeiro. */
+/**
+ * Os dez de multipla escolha. Ordem: quem o operador usa mais, primeiro.
+ *
+ * "Cliente" e "Processo do cliente" sao controles distintos porque sao
+ * perguntas distintas (`H-49`): um recorta a carteira, o outro acha um processo
+ * especifico pelo valor da celula CLT.
+ */
 const MULTI_CONTROLS: readonly MultiControl[] = [
-  { key: 'category', label: 'Categoria', source: 'categories' },
-  { key: 'client', label: 'Cliente', source: 'clients' },
-  { key: 'importer', label: 'Importador', source: 'importers' },
-  { key: 'responsible', label: 'Responsável', source: 'responsible' },
-  { key: 'channel', label: 'Canal', source: 'channels' },
-  { key: 'vessel', label: 'Navio', source: 'vessels' },
-  { key: 'agent', label: 'Agente', source: 'agents' },
-  { key: 'port', label: 'Porto', source: 'ports' },
-  { key: 'goods', label: 'Mercadoria', source: 'goods' },
+  { key: 'category', source: 'categories' },
+  { key: 'client', source: 'clients' },
+  { key: 'clientProcess', source: 'clientProcesses' },
+  { key: 'importer', source: 'importers' },
+  { key: 'responsible', source: 'responsible' },
+  { key: 'channel', source: 'channels' },
+  { key: 'vessel', source: 'vessels' },
+  { key: 'agent', source: 'agents' },
+  { key: 'port', source: 'ports' },
+  { key: 'goods', source: 'goods' },
 ]
 
 interface FilterBarProps {
@@ -62,23 +71,34 @@ export function FilterBar({ filters, options, optionsError }: FilterBarProps) {
         )}
       </div>
 
-      {optionsError && (
-        <p
-          role="alert"
-          className="mb-2 rounded border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg"
-        >
-          Não foi possível carregar as opções de filtro: {optionsError}
-        </p>
-      )}
+      {/* A regiao existe desde a montagem (`H-43`). Vazia, e `sr-only`: o
+          criterio nao e ausencia do no, e ausencia de caixa vazia na tela. */}
+      <p
+        role="alert"
+        className={
+          optionsError === null
+            ? 'sr-only'
+            : 'mb-2 rounded border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg'
+        }
+      >
+        {optionsError !== null && `Não foi possível carregar as opções de filtro: ${optionsError}`}
+      </p>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
         {MULTI_CONTROLS.map((control) => (
           <MultiSelect
             key={control.key}
-            label={control.label}
+            label={MULTI_FILTER_LABELS[control.key]}
             options={options?.[control.source] ?? []}
             selected={selection.multi[control.key]}
             onToggle={(value) => filters.toggle(control.key, value)}
+            {...(control.key === 'client'
+              ? {
+                  groups: options?.clientGroups ?? [],
+                  selectedGroups: selection.multi.clientGroup,
+                  onToggleGroup: (value: string) => filters.toggle('clientGroup', value),
+                }
+              : {})}
           />
         ))}
 

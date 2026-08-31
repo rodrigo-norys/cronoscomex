@@ -203,6 +203,49 @@ export function redChannelCount(processes: readonly Process[]): number {
   return processes.filter((process) => process.customsChannel === 'vermelho').length
 }
 
+/**
+ * A distribuicao de canal (`H-51`), ao lado de IND-06 e sem redefini-lo.
+ *
+ * `known` e o denominador do percentual, e vem separado das contagens de
+ * proposito: as linhas em `indefinido` sao contadas e ficam FORA da fracao. Uma
+ * cor que diz responsavel nao diz canal, e diluir 167 linhas num percentual
+ * afirmaria que o canal delas e conhecido e nao verde.
+ *
+ * As fracoes vem do servidor ja resolvidas porque `null` quando `known` e zero
+ * e regra de dado, nao formatacao: fracao de conjunto vazio nao e zero (A-42), e
+ * deixar a tela dividir produziria `NaN` ou `0%` no primeiro recorte vazio.
+ */
+export interface ChannelDistribution {
+  readonly verde: number
+  readonly vermelho: number
+  readonly indefinido: number
+  /** `verde + vermelho` — os processos cujo canal a cor de fato classifica. */
+  readonly known: number
+  readonly verdeShare: number | null
+  readonly vermelhoShare: number | null
+}
+
+export function channelDistribution(processes: readonly Process[]): ChannelDistribution {
+  let verde = 0
+  let vermelho = 0
+  let indefinido = 0
+  for (const process of processes) {
+    if (process.customsChannel === 'verde') verde += 1
+    else if (process.customsChannel === 'vermelho') vermelho += 1
+    else indefinido += 1
+  }
+
+  const known = verde + vermelho
+  return {
+    verde,
+    vermelho,
+    indefinido,
+    known,
+    verdeShare: known === 0 ? null : verde / known,
+    vermelhoShare: known === 0 ? null : vermelho / known,
+  }
+}
+
 /** Prazo de antecedencia da documentacao, em dias (A-08). */
 export const PENDING_DOCS_HORIZON_DAYS = 10
 
@@ -245,6 +288,14 @@ export interface GroupCount {
   count: number
   /** Presente apenas no ranking de agentes (A-27). */
   overdueCount?: number
+  /**
+   * A composicao de um grupo de clientes (`H-56`), ordenada como o ranking.
+   *
+   * Presente **so** em entrada de grupo, e so no ranking de clientes: quem tem
+   * `segments` conta os membros somados, e nenhum deles aparece como linha
+   * propria — a soma das barras continua batendo com o total.
+   */
+  segments?: GroupCount[]
 }
 
 /**
@@ -275,6 +326,75 @@ export function groupCount(
   }
 
   return sortRanking([...groups.values()]).slice(0, topN)
+}
+
+/**
+ * IND-10 e IND-18 com os grupos de `H-55` colapsados numa entrada so (`H-56`).
+ *
+ * O grupo entra no ranking **no lugar** dos membros, com a contagem somada e a
+ * composicao em `segments`. Exibir os dois niveis contaria os mesmos processos
+ * duas vezes, e a soma das barras deixaria de bater com o total.
+ *
+ * A ordenacao e a mesma de `groupCount` nos dois niveis — decrescente, com
+ * desempate alfabetico pela chave (A-25) —, e o corte de `topN` passa a valer
+ * sobre as entradas **depois** do colapso: um grupo ocupa uma posicao, nao tres.
+ *
+ * `groupLabels` traz o rotulo de cada grupo, que vive no mapa e nao no
+ * `Process`: carregar nome de grupo em campo de dominio para servir uma tela
+ * repetiria o que `clientLabel` ja resolve para o cliente.
+ */
+export function groupCountWithGroups(
+  processes: readonly Process[],
+  key: (process: Process) => string,
+  label: (process: Process) => string,
+  groupOf: (process: Process) => string,
+  groupLabels: ReadonlyMap<string, string>,
+  topN: number,
+): GroupCount[] {
+  const members = new Map<string, GroupCount>()
+  const groupOfMember = new Map<string, string>()
+
+  for (const process of processes) {
+    const memberKey = key(process)
+    const existing = members.get(memberKey)
+
+    if (existing) {
+      existing.count++
+      continue
+    }
+    members.set(memberKey, { key: memberKey, label: label(process).trim(), count: 1 })
+    groupOfMember.set(memberKey, groupOf(process))
+  }
+
+  const grouped = new Map<string, GroupCount>()
+  const loose: GroupCount[] = []
+
+  for (const member of members.values()) {
+    const groupKey = groupOfMember.get(member.key) ?? ''
+    if (groupKey === '') {
+      loose.push(member)
+      continue
+    }
+
+    const group = grouped.get(groupKey)
+    if (group === undefined) {
+      grouped.set(groupKey, {
+        key: groupKey,
+        label: groupLabels.get(groupKey) ?? groupKey,
+        count: member.count,
+        segments: [member],
+      })
+      continue
+    }
+    group.count += member.count
+    group.segments?.push(member)
+  }
+
+  for (const group of grouped.values()) {
+    if (group.segments) group.segments = sortRanking(group.segments)
+  }
+
+  return sortRanking([...loose, ...grouped.values()]).slice(0, topN)
 }
 
 function sortRanking(entries: GroupCount[]): GroupCount[] {
@@ -380,6 +500,90 @@ export function clearedTodayCount(processes: readonly Process[], today: Date): n
       process.statusCategory === 'desembaracado' &&
       isWithin(process.registrationDate, today, today),
   ).length
+}
+
+/**
+ * `H-52`. Desembaracados dentro da janela, contados pela data de REGISTRO.
+ *
+ * Mesma regra de IND-16 — categoria E data de registro (A-29) —, com a janela
+ * no lugar do dia. Existe porque `desembaracados` responde "quantos dos que
+ * chegaram na janela ja concluiram" e e lido como "quantos concluimos na
+ * janela": duas perguntas, duas datas (`docs/uso/RESULTADO.md` secao 5).
+ *
+ * **A janela incide sobre o conjunto ja filtrado, e nao sobre a base.** RF-18
+ * manda todo indicador desta rota responder sobre o recorte ativo, e um cartao
+ * que ignorasse o filtro de periodo visivel na barra afirmaria um numero que a
+ * tela nao explica. Sem filtro de periodo — o caso do criterio de aceite — os
+ * dois conjuntos coincidem.
+ *
+ * Janela aberta dos dois lados conta todo processo desembaracado com RG: e o
+ * mesmo `desembaracados` menos os que nao tem data de registro.
+ */
+export function clearedInPeriodCount(
+  processes: readonly Process[],
+  from: Date | null,
+  to: Date | null,
+): number {
+  return processes.filter((process) => {
+    if (process.statusCategory !== 'desembaracado') return false
+    if (process.registrationDate === null) return false
+
+    const time = process.registrationDate.getTime()
+    if (from !== null && time < from.getTime()) return false
+    if (to !== null && time > to.getTime()) return false
+    return true
+  }).length
+}
+
+/**
+ * `H-52`. A faixa real de uma data no conjunto, para o cartao distinguir zero
+ * por recorte de zero por ausencia de dado.
+ *
+ * `missing` nao e detalhe: data ausente nao esta dentro nem fora de janela
+ * nenhuma (A-20), entao esses processos somem de qualquer recorte por periodo —
+ * e sumir sem contagem seria descarte silencioso (regra inviolavel 2). Medido
+ * em 31/08/2026: 64 dos 649 processos nao tem `ETA2` e 166 nao tem `RG`
+ * (`docs/uso/RESULTADO.md` secao 5).
+ */
+export interface DateFieldRange {
+  /** `AAAA-MM-DD`, ou `null` quando nenhum processo do conjunto tem a data. */
+  readonly from: string | null
+  readonly to: string | null
+  readonly missing: number
+}
+
+export interface DataRanges {
+  readonly eta2: DateFieldRange
+  readonly registration: DateFieldRange
+}
+
+function rangeOf(processes: readonly Process[], pick: (p: Process) => Date | null): DateFieldRange {
+  let earliest: Date | null = null
+  let latest: Date | null = null
+  let missing = 0
+
+  for (const process of processes) {
+    const date = pick(process)
+    if (date === null) {
+      missing += 1
+      continue
+    }
+    if (earliest === null || date.getTime() < earliest.getTime()) earliest = date
+    if (latest === null || date.getTime() > latest.getTime()) latest = date
+  }
+
+  return {
+    from: earliest === null ? null : toIsoDay(earliest),
+    to: latest === null ? null : toIsoDay(latest),
+    missing,
+  }
+}
+
+export function dataRanges(processes: readonly Process[]): DataRanges {
+  return {
+    eta2: rangeOf(processes, (process) => process.eta2),
+    registration: rangeOf(processes, (process) => process.registrationDate),
+  }
 }
 
 /** IND-22. Bloco `documentaryLeadTime` de GET /api/indicators. */

@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import type { AppConfig } from '../../app/config.ts'
 import { store as defaultStore, type StoreAccess } from '../../app/process-store.ts'
+import type { ClientGroup } from '../../domain/client-mapper.ts'
 import { today as currentDay, isoWeekEnd, toIsoDay } from '../../domain/date-window.ts'
 import { RESPONSIBLE_LABELS } from '../../domain/filters.ts'
 import {
@@ -12,13 +13,19 @@ import {
   arrivingToday,
   bazarShare,
   type CategoryCounts,
+  type ChannelDistribution,
+  channelDistribution,
+  clearedInPeriodCount,
   clearedTodayCount,
   countByCategory,
+  type DataRanges,
+  dataRanges,
   documentaryLeadTime,
   type ExpectedVessel,
   expectedVessels,
   type GroupCount,
   groupCount,
+  groupCountWithGroups,
   type LeadTime,
   type LeadTimeGroup,
   leadTimeByGroup,
@@ -28,7 +35,7 @@ import {
   responsibleRanking,
 } from '../../domain/indicators.ts'
 import { apiError } from '../errors.ts'
-import { filteredProcesses } from '../filter-request.ts'
+import { filteredWithPeriod } from '../filter-request.ts'
 
 /**
  * GET /api/indicators — contrato em docs/05-contratos-api.md.
@@ -46,6 +53,13 @@ export interface IndicatorsCounts extends CategoryCounts {
   documentosPendentes: number
   atrasados: number
   desembaracadosHoje: number
+  /**
+   * `H-52`. Adicional a `desembaracados`, nunca substituto: aquele conta
+   * categoria sobre o recorte de `ETA2`, este conta a data de REGISTRO dentro da
+   * janela. A soma das quatro categorias continua fechando com o total (A-12), e
+   * a linha de conferencia da Pagina Inicial segue valida.
+   */
+  desembaracadosNoPeriodo: number
 }
 
 export interface IndicatorsRankings {
@@ -84,10 +98,31 @@ export interface IndicatorsMeta {
   topN: number
   /** `null` quando nenhum processo tem mercadoria preenchida (A-34). */
   bazarShare: number | null
+  /**
+   * `H-52`. A janela que o servidor de fato aplicou, ecoada. A tela a exibe em
+   * cada cartao em vez de reler a URL: quem recortou foi o servidor, e um
+   * cartao que declarasse a janela por conta propria poderia divergir do numero
+   * que exibe.
+   */
+  period: { from: string | null; to: string | null }
+  /**
+   * `H-52`. A faixa real das duas datas no conjunto FILTRADO, com quantos
+   * processos nao tem cada uma. Sem ela, cartao zerado por recorte e cartao
+   * zerado por ausencia de dado sao indistinguiveis, e derivar a faixa no
+   * cliente seria calculo na tela (regra inviolavel 6).
+   */
+  dataRange: DataRanges
 }
 
 export interface IndicatorsResponse {
   counts: IndicatorsCounts
+  /**
+   * `H-51`. Bloco proprio, e nao mais um campo em `counts`: aquele e a lista
+   * dos indicadores do catalogo, e `counts.canalVermelho` — IND-06 — continua
+   * la, com o mesmo valor. Esta distribuicao acompanha o indicador, nao o
+   * substitui.
+   */
+  channelDistribution: ChannelDistribution
   rankings: IndicatorsRankings
   expectedVessels: ExpectedVessel[]
   /**
@@ -110,6 +145,11 @@ export function registerIndicatorsRoute(
   app: FastifyInstance,
   config: AppConfig,
   store: StoreAccess = defaultStore,
+  /**
+   * Grupos de `H-55`, para o ranking de clientes colapsar os membros (`H-56`).
+   * Padrao vazio pelo mesmo motivo de `buildServer`: teste nao le o mapa real.
+   */
+  clientGroups: readonly ClientGroup[] = [],
 ): void {
   app.get('/api/indicators', (request, reply) => {
     const state = store.getState()
@@ -132,11 +172,14 @@ export function registerIndicatorsRoute(
     // O fuso e resolvido AQUI, uma unica vez. Daqui para baixo tudo e data
     // civil ancorada em UTC, como as datas vindas da planilha (TD-03).
     const day = currentDay(config.timezone)
+    const groupLabels = new Map(clientGroups.map((group) => [group.key, group.label]))
 
     // Os filtros recortam o conjunto ANTES de qualquer calculo: todo indicador
-    // desta rota responde sobre o conjunto filtrado (RF-18).
-    const processes = filteredProcesses(request, reply, state.processes)
-    if (processes === null) return reply
+    // desta rota responde sobre o conjunto filtrado (RF-18). A janela vem junto
+    // porque `H-52` precisa dizer ao operador qual periodo cada cartao conta.
+    const recorte = filteredWithPeriod(request, reply, state.processes)
+    if (recorte === null) return reply
+    const { processes } = recorte
 
     // Uma chamada por dimensao, sem teto: o corte acontece abaixo, depois de o
     // total de grupos ser conhecido. Cortar dentro do dominio apagaria o numero
@@ -145,7 +188,7 @@ export function registerIndicatorsRoute(
       clients: leadTimeByGroup(
         processes,
         (p) => p.clientKey,
-        (p) => p.clientRaw,
+        (p) => p.clientLabel,
       ),
       agents: leadTimeByGroup(
         processes,
@@ -174,12 +217,21 @@ export function registerIndicatorsRoute(
         documentosPendentes: pendingDocsCount(processes, day),
         atrasados: overdueCount(processes, day),
         desembaracadosHoje: clearedTodayCount(processes, day),
+        // `H-52`. Adicional, nunca substituto: os quatro de categoria seguem
+        // intactos, e a soma deles continua fechando com o total (A-12).
+        desembaracadosNoPeriodo: clearedInPeriodCount(processes, recorte.from, recorte.to),
       },
+      channelDistribution: channelDistribution(processes),
       rankings: {
-        clients: groupCount(
+        // `H-56`: o grupo entra NO LUGAR dos membros, com a composicao em
+        // `segments`. Os demais rankings seguem com `groupCount` — grupo e
+        // conceito do cliente, e nao existe para importador nem mercadoria.
+        clients: groupCountWithGroups(
           processes,
           (p) => p.clientKey,
-          (p) => p.clientRaw,
+          (p) => p.clientLabel,
+          (p) => p.clientGroupKey,
+          groupLabels,
           config.topN,
         ),
         importers: groupCount(
@@ -218,6 +270,11 @@ export function registerIndicatorsRoute(
         weekEnd: toIsoDay(isoWeekEnd(day)),
         topN: config.topN,
         bazarShare: bazarShare(processes),
+        period: {
+          from: recorte.from === null ? null : toIsoDay(recorte.from),
+          to: recorte.to === null ? null : toIsoDay(recorte.to),
+        },
+        dataRange: dataRanges(processes),
       },
     }
     return reply.code(200).send(body)

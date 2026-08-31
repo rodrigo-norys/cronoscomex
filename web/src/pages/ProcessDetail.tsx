@@ -1,6 +1,7 @@
 import type { ProcessDetailResponse, ProcessDto } from '../api-client.ts'
 import { ColorFieldsForm } from '../components/ColorFieldsForm.tsx'
 import { EditProcessForm } from '../components/EditProcessForm.tsx'
+import { PageAlert } from '../components/PageAlert.tsx'
 import { PendingEditsPanel } from '../components/PendingEditsPanel.tsx'
 import { useProcessDetail } from '../hooks/useProcessDetail.ts'
 
@@ -29,8 +30,8 @@ const CATEGORY_LABELS: Readonly<Record<ProcessDto['statusCategory'], string>> = 
 }
 
 const CHANNEL_LABELS: Readonly<Record<ProcessDto['customsChannel'], string>> = {
+  verde: 'Canal Verde',
   vermelho: 'Canal Vermelho',
-  nenhum: 'Nenhum',
   indefinido: 'Indefinido',
 }
 
@@ -46,10 +47,13 @@ export function ProcessDetail({ processRef, dataVersion }: ProcessDetailProps) {
 
   if (state.status === 'erro') {
     return (
-      <p role="alert" className="panel-error">
+      <PageAlert
+        className="panel-error"
+        announcement={`Não foi possível carregar o processo. ${state.message}`}
+      >
         <strong className="font-semibold">Não foi possível carregar o processo.</strong>{' '}
         {state.message}
-      </p>
+      </PageAlert>
     )
   }
 
@@ -71,10 +75,14 @@ export function ProcessDetail({ processRef, dataVersion }: ProcessDetailProps) {
 
   if (state.status === 'semLeitura') {
     return (
-      <p role="status" className="panel-no-read">
+      <PageAlert
+        tone="status"
+        className="panel-no-read"
+        announcement="Nenhuma leitura da planilha foi concluída ainda. O processo aparece assim que a primeira terminar — a ausência aqui não significa que a REF não existe."
+      >
         Nenhuma leitura da planilha foi concluída ainda. O processo aparece assim que a primeira
         terminar — a ausência aqui não significa que a REF não existe.
-      </p>
+      </PageAlert>
     )
   }
 
@@ -142,7 +150,7 @@ function StatusBlock({
       className="rounded border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Status</h2>
-      <dl className="mt-3 grid gap-3 sm:grid-cols-3">
+      <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Field label="Texto original (STATUS)" value={process.statusRaw} mono />
         <Field label="Categoria classificada" value={CATEGORY_LABELS[process.statusCategory]} />
         <Field
@@ -165,8 +173,9 @@ function Fields({ process }: { process: ProcessDto }) {
       className="rounded border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Campos</h2>
-      <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="Cliente" value={process.client} />
+        <Field label="Processo do cliente" value={process.clientProcess} mono />
         <Field label="Importador" value={process.importer} />
         <Field label="Agente" value={process.agent} />
         <Field label="Navio" value={process.vessel} />
@@ -200,7 +209,7 @@ function OutOfScope({ process }: { process: ProcessDto }) {
       <p className="mt-1 text-xs text-text-secondary">
         Exibidos como texto puro, exatamente como estão na planilha. Nenhum indicador os usa (§2).
       </p>
-      <dl className="mt-3 grid gap-3 sm:grid-cols-3">
+      <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Field label="Coluna 13 (boleto)" value={process.boletoRaw} mono />
         <Field label="R$ enviado" value={process.paymentRaw} mono />
         <Field label="Coluna P" value={process.columnPRaw} mono />

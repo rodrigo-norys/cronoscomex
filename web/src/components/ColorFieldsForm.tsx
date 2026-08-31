@@ -26,8 +26,8 @@ const RESPONSIBLE_LABELS: Readonly<Record<string, string>> = {
 }
 
 const CHANNEL_LABELS: Readonly<Record<string, string>> = {
+  verde: 'Canal Verde',
   vermelho: 'Canal Vermelho',
-  nenhum: 'sem canal',
   indefinido: 'canal indefinido',
 }
 
@@ -115,11 +115,11 @@ export function ColorFieldsForm({
         <strong>{current === null ? 'cor não reconhecida' : describe(current)}</strong>
       </p>
 
-      {failed && (
-        <p role="alert" className="mt-2 text-sm text-text-secondary">
-          Não foi possível carregar as cores configuradas.
-        </p>
-      )}
+      {/* Os DOIS `role="alert"` deste formulario existem desde a montagem
+          (`H-43`) — este e o da recusa, mais abaixo. */}
+      <p role="alert" className={failed ? 'mt-2 text-sm text-text-secondary' : 'sr-only'}>
+        {failed && 'Não foi possível carregar as cores configuradas.'}
+      </p>
 
       {options !== null && options.length === 0 && (
         <p className="mt-2 text-sm text-text-secondary">
@@ -168,14 +168,16 @@ export function ColorFieldsForm({
         </>
       )}
 
-      {error !== null && (
-        <p
-          role="alert"
-          className="mt-2 rounded border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg"
-        >
-          {error}
-        </p>
-      )}
+      <p
+        role="alert"
+        className={
+          error === null
+            ? 'sr-only'
+            : 'mt-2 rounded border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg'
+        }
+      >
+        {error}
+      </p>
     </section>
   )
 }

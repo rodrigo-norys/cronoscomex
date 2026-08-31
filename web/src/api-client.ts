@@ -118,7 +118,7 @@ export async function getIndicators(
 /**
  * A lista de processos, ja filtrada, buscada, ordenada e paginada no servidor.
  *
- * `queryString` carrega os onze filtros globais **e** os parametros da pagina.
+ * `queryString` carrega os treze filtros globais **e** os parametros da pagina.
  * Como em `getIndicators`, ela vem pronta e e apenas anexada.
  */
 export async function getProcesses(
