@@ -3,6 +3,7 @@ import {
   agentRanking,
   bazarShare,
   groupCount,
+  groupCountWithGroups,
   isOverdue,
   responsibleRanking,
 } from '../../src/domain/indicators.ts'
@@ -19,6 +20,7 @@ interface Fields {
   importer?: string
   agent?: string
   goods?: string
+  clientGroup?: string
   eta2?: string | null
   responsible?: Responsible
   statusCategory?: StatusCategory
@@ -28,6 +30,7 @@ let nextRow = 2
 
 function process({
   client = '',
+  clientGroup = '',
   importer = '',
   agent = '',
   goods = '',
@@ -57,7 +60,7 @@ function process({
     clientKey: normKey(client),
     clientProcessKey: normKey(client),
     clientLabel: client,
-    clientGroupKey: '',
+    clientGroupKey: clientGroup,
     importerKey: normKey(importer),
     agentKey: normKey(agent),
     vesselKey: '',
@@ -302,5 +305,104 @@ describe('bazarShare — a distorcao declarada de A-34', () => {
   it('devolve null quando nenhum processo tem mercadoria', () => {
     expect(bazarShare([process({ goods: '' })])).toBeNull()
     expect(bazarShare([])).toBeNull()
+  })
+})
+
+/**
+ * `H-56`. O grupo de `H-55` entra no ranking NO LUGAR dos membros. Exibir os
+ * dois niveis contaria os mesmos processos duas vezes, e a soma das barras
+ * deixaria de bater com o total.
+ */
+describe('groupCountWithGroups — o grupo colapsa os membros', () => {
+  const ROTULOS = new Map([['GRUPO-UM', 'Grupo Um']])
+
+  const ranking = (processes: Process[], topN = 10) =>
+    groupCountWithGroups(
+      processes,
+      (p) => p.clientKey,
+      (p) => p.clientRaw,
+      (p) => p.clientGroupKey,
+      ROTULOS,
+      topN,
+    )
+
+  it('soma os membros numa entrada so, com a composicao em segments', () => {
+    const lista = ranking([
+      process({ client: 'ACME', clientGroup: 'GRUPO-UM' }),
+      process({ client: 'ACME', clientGroup: 'GRUPO-UM' }),
+      process({ client: 'BETA', clientGroup: 'GRUPO-UM' }),
+    ])
+
+    expect(lista).toEqual([
+      {
+        key: 'GRUPO-UM',
+        label: 'Grupo Um',
+        count: 3,
+        segments: [
+          { key: 'ACME', label: 'ACME', count: 2 },
+          { key: 'BETA', label: 'BETA', count: 1 },
+        ],
+      },
+    ])
+  })
+
+  it('quem nao tem grupo continua como linha propria, sem segments', () => {
+    const lista = ranking([
+      process({ client: 'ACME', clientGroup: 'GRUPO-UM' }),
+      process({ client: 'ZETA' }),
+    ])
+
+    expect(lista.map((entrada) => entrada.key)).toEqual(['GRUPO-UM', 'ZETA'])
+    expect(lista[1]).not.toHaveProperty('segments')
+  })
+
+  // A ordenacao de A-25 vale nos DOIS niveis, com desempate alfabetico.
+  it('ordena grupos e segmentos por contagem, decrescente', () => {
+    const lista = ranking([
+      process({ client: 'BETA', clientGroup: 'GRUPO-UM' }),
+      process({ client: 'ACME', clientGroup: 'GRUPO-UM' }),
+      process({ client: 'ACME', clientGroup: 'GRUPO-UM' }),
+      process({ client: 'ZETA' }),
+      process({ client: 'ZETA' }),
+      process({ client: 'ZETA' }),
+      process({ client: 'ZETA' }),
+    ])
+
+    expect(lista.map((entrada) => entrada.count)).toEqual([4, 3])
+    expect(lista[1]?.segments?.map((s) => s.key)).toEqual(['ACME', 'BETA'])
+  })
+
+  // Um grupo ocupa UMA posicao: e o que faz o corte mostrar mais clientes.
+  it('o corte de topN conta o grupo como uma entrada', () => {
+    const lista = ranking(
+      [
+        process({ client: 'ACME', clientGroup: 'GRUPO-UM' }),
+        process({ client: 'BETA', clientGroup: 'GRUPO-UM' }),
+        process({ client: 'ZETA' }),
+      ],
+      1,
+    )
+
+    expect(lista).toHaveLength(1)
+    expect(lista[0]?.key).toBe('GRUPO-UM')
+  })
+
+  it('grupo sem rotulo no mapa usa a propria chave', () => {
+    const lista = ranking([process({ client: 'ACME', clientGroup: 'DESCONHECIDO' })])
+
+    expect(lista[0]?.label).toBe('DESCONHECIDO')
+  })
+
+  it('sem grupo nenhum, o resultado e o de groupCount', () => {
+    const processes = [process({ client: 'ACME' }), process({ client: 'ACME' })]
+
+    expect(ranking(processes)).toEqual(
+      groupCount(
+        processes,
+        (p) => p.clientKey,
+        (p) => p.clientRaw,
+        10,
+      ),
+    )
   })
 })

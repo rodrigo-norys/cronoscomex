@@ -104,6 +104,7 @@ interface GroupCount {
   label: string      // primeira grafia encontrada
   count: number
   overdueCount?: number   // presente apenas no ranking de agentes (A-27)
+  segments?: GroupCount[] // H-56: a composição de um grupo de clientes
 }
 ```
 
@@ -249,7 +250,7 @@ está fora de escopo por lacuna de dado (§4 da especificação).
     "desembaracadosHoje": 0        // IND-16
   },
   "rankings": {
-    "clients":     [ /* GroupCount[] */ ],  // IND-10 e IND-18
+    "clients":     [ /* GroupCount[] — grupos com `segments` (H-56) */ ],  // IND-10 e IND-18
     "importers":   [ /* GroupCount[] */ ],  // IND-11 e IND-19
     "agents":      [ /* GroupCount[] com overdueCount */ ], // IND-17
     "goods":       [ /* GroupCount[] */ ],  // IND-13
@@ -283,6 +284,13 @@ está fora de escopo por lacuna de dado (§4 da especificação).
   }
 }
 ```
+
+Em `rankings.clients`, um grupo de clientes (`H-55`) entra **no lugar** dos
+membros: `count` é a soma e `segments` traz a composição, ordenada como o ranking.
+Exibir os dois níveis contaria os mesmos processos duas vezes, e a soma das barras
+deixaria de bater com o total. `segments` não aparece em nenhum outro ranking —
+grupo é conceito de cliente —, nem em `leadTimeByGroup.clients`, que segue por
+cliente (`H-56`).
 
 `documentaryLeadTime.averageDays` é `null` quando `sampleSize` é zero — média
 de conjunto vazio não é zero, e apresentá-la como zero seria mentir sobre o
@@ -1050,7 +1058,7 @@ requisição, então rodar o `build` com o servidor no ar dispensa reiniciá-lo.
 | `GET /api/health` | H-02, H-31, H-32, H-15 |
 | `GET /api/processes` | H-17, H-49 |
 | `GET /api/processes/:ref` | H-22 |
-| `GET /api/indicators` | H-09, H-10, H-11, H-12, H-13, H-16, H-17, H-49 |
+| `GET /api/indicators` | H-09, H-10, H-11, H-12, H-13, H-16, H-17, H-49, H-56 |
 | `GET /api/alerts` | H-14, H-29 |
 | `GET /api/history/monthly` | H-21, H-28 |
 | `GET /api/filters/options` | H-15, H-49, H-55 |

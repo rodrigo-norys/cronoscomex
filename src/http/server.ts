@@ -82,7 +82,7 @@ export function buildServer(
   registerConfigRoutes(app, config, store, applyWorkbookPath, configPath, openDialog, webRoot)
   registerQuarantineRoute(app)
   registerReloadRoute(app, store)
-  registerIndicatorsRoute(app, config, store)
+  registerIndicatorsRoute(app, config, store, clientGroups)
   registerAlertsRoute(app, config, store, historyPath)
   registerFilterOptionsRoute(app, store, clientGroups)
   registerProcessesRoute(app, config, store, historyPath)
