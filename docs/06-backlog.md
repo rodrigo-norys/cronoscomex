@@ -5824,6 +5824,53 @@ atalho, na Inicial.
 
 ### H-53 — A Página Performance diz a métrica e mostra o recorte
 
+> ✅ **CONCLUÍDA em 31/08/2026, com o quinto critério declarado não-incidente.**
+> **8 testes próprios** em `web/tests/Performance.test.tsx`. Suíte total de
+> **1548 para 1556**. Nenhum caso existente ajustado. Uma divergência no
+> protocolo, resolvida.
+>
+> **O quinto critério não foi cumprido porque a premissa dele é falsa.** Ele diz
+> "**Dado** `H-50` fechada, **então** a ressalva de A-31 descreve o campo novo".
+> `H-50` **não** foi executada — a razão está em
+> `docs/sessao-autonoma/RELATORIO.md`, Pendência 1 —, e a ressalva de `A-31`
+> continua descrevendo a limitação que **ainda existe**: o responsável vem da
+> cor, e linha verde ou vermelha não o carrega. Reescrevê-la agora afirmaria que
+> a limitação acabou. **Quando `H-50` fechar, esta linha é o que sobra a fazer**,
+> e ela é de dois parágrafos em `ResponsibleCaveat`.
+>
+> **Nenhum dos dois defeitos era de cálculo, e é isso que os torna caros.** A
+> métrica está correta desde IND-22 e o filtro funciona desde `H-15`; o que
+> faltava era a tela dizer. Aplicação certa e muda é a variante mais barata de
+> defeito e a mais fácil de deixar aberta para sempre.
+>
+> **Conferido contra a planilha real:** média de **12,5 dias** sobre amostra de
+> **101**, com **547** sem uma das duas datas e **1** com intervalo negativo —
+> e 101 + 547 + 1 = **649**, o total. Um recorte que zera a amostra devolve
+> `averageDays: null`, nunca zero.
+>
+> **A fórmula vai junto do agregado, e na ordem de A-02.** `RG − DOCS ENVIADOS`,
+> em dias inteiros; a ordem invertida produziria valor negativo, porque RG é a
+> extremidade final do intervalo. Nota de rodapé foi descartada pelo próprio
+> critério de aceite.
+>
+> **As duas exclusões de A-30 ganharam o que significam**, não só o número: um
+> número sem explicação é descarte que parece medição. E a amostra zerada passou
+> a dizer **por que** exibe traço — sem isso o traço parece falha de
+> carregamento, e não "nenhum processo do recorte tem o par completo".
+>
+> **Divergência 1 — os rótulos dos filtros viviam só na barra.** O painel de
+> recorte precisa nomear cada filtro ativo, e copiar as onze strings criaria dois
+> mapas que divergem no primeiro filtro renomeado. `MULTI_FILTER_LABELS` nasceu
+> em `web/src/hooks/useFilters.ts`, ao lado de `MULTI_FILTERS`, e
+> `web/src/components/FilterBar.tsx` passou a consumi-lo — os dois arquivos
+> estavam fora da lista da história. `clientGroup` entrou no mapa embora não
+> tenha caixa própria na barra: ele **tem** nome, e sem ele um recorte por grupo
+> apareceria sem dizer o que é.
+>
+> **Nada passou a ser calculado no cliente.** A fórmula é texto de uma regra do
+> domínio, e a lista de filtros ativos é leitura da URL — que já é o único estado
+> dos filtros desde `H-15`.
+
 **Objetivo:** a página explicar o que mede e tornar visível o filtro que ela já
 respeita.
 
@@ -6802,9 +6849,9 @@ superfície dobrada pelo segundo esquema.
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização | **H-39 ✅ … H-42 ✅, H-43 … H-47 abertas** | 1 | 8 | 0 |
-| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-52 ✅, H-54 ✅, H-55 ✅, H-56 ✅, H-50 e H-53 abertas** | 1 | 8 | 0 |
+| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-52 ✅, H-53 ✅, H-54 ✅, H-55 ✅, H-56 ✅; só `H-50` aberta** | 1 | 8 | 0 |
 | E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
-| **Total** | **65** — 49 concluídas, 16 abertas | **21** | **44** | **0** |
+| **Total** | **65** — 50 concluídas, 15 abertas | **21** | **44** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até
