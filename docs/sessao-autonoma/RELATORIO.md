@@ -162,6 +162,50 @@ segundo.
 4. `docs(docs): fecha H-52 no backlog, na rastreabilidade e no estado`
 5. `docs(docs): o relatorio registra H-52`
 
+### `H-54` — O histórico reconstrói os meses da planilha · PR #TBD
+
+**Branch:** `H-54/feat-historico-reconstruido`, saindo de
+`H-52/feat-periodo-nos-cartoes`. Posição 3 da pilha.
+
+**O que mudou.** A Página Histórico ganhou uma segunda série, derivada das datas
+que a planilha carrega, ao lado da observada e **nunca emendada** nela. E o
+rótulo do mês passou a levar o ano com quatro dígitos.
+
+**Arquivos** — 10, em 5 commits. Domínio: `src/domain/history.ts`. Servidor:
+`src/http/routes/history.ts`, `src/http/filter-request.ts`. Interface:
+`web/src/pages/History.tsx`. Documentos: `docs/05-contratos-api.md` e os três de
+fecho. O resto são testes.
+
+**Verify.** Verde. A última execução imprimiu `Test Files 73 passed (73)` e
+`Tests 1548 passed (1548)`, contra 1526 ao fim de `H-52` — 22 testes próprios.
+
+**Conferência contra a planilha real:**
+
+| Medida | Valor | Origem do número |
+|---|---|---|
+| intervalo da série | dez/2025 a set/2026 | `docs/uso/RESULTADO.md` §6 diz "dez meses a partir de dez/2025" ✅ |
+| meses cobertos | 10 | idem ✅ |
+| meses ausentes no intervalo | 0 | critério de aceite ✅ |
+| sem `ETA2` | 64 de 649 | caso-limite ✅ |
+| sem `RG` | 166 de 649 | caso-limite ✅ |
+| `ETA2` em set/2026 | 18 | caso-limite ✅ |
+| meses de previsão | só set/2026 | derivado |
+
+**Commits**, provados verdes um a um: `1535` depois do primeiro, `1540` depois do
+segundo.
+
+1. `feat(domain): a serie reconstruida das datas da planilha`
+2. `feat(http): a rota serve a reconstruida ao lado da observada`
+3. `feat(web): as duas series na tela, e o ano com quatro digitos`
+4. `docs(docs): fecha H-54 no backlog, na rastreabilidade e no estado`
+5. `docs(docs): o relatorio registra H-54`
+
+**Um defeito que a fatia criou e fechou.** Com a reconstruída acompanhando o
+estado vazio de `H-21`, as duas seções passaram a coexistir com o **mesmo
+`aria-label`** — duas landmarks homônimas na mesma página, e o leitor de tela sem
+como distingui-las. Pego por um teste que reprovou com "Found multiple elements
+with the role region"; `EmptyHistory` passou a receber `alone`.
+
 ---
 
 ## 3. PENDÊNCIAS PARA O DONO
@@ -186,6 +230,7 @@ da anterior e todas escrevem em `docs/06-backlog.md`,
 |---|---|---|---|
 | 1 | [#69](https://github.com/rodrigo-norys/cronoscomex/pull/69) — `H-51` | `H-51/feat-canal-verde` | `main` |
 | 2 | [#70](https://github.com/rodrigo-norys/cronoscomex/pull/70) — `H-52` | `H-52/feat-periodo-nos-cartoes` | `H-51/feat-canal-verde` |
+| 3 | #TBD — `H-54` | `H-54/feat-historico-reconstruido` | `H-52/feat-periodo-nos-cartoes` |
 
 Depois do último merge, a branch `distribuicao` fica para trás e precisa ser
 sincronizada — `node --experimental-strip-types scripts/sincronizar-distribuicao.ts`.
@@ -225,3 +270,18 @@ As três seguintes são de `H-52`.
 6. **`filteredWithPeriod` nasceu ao lado de `filteredProcesses`**, e não no lugar
    dele. Alternativa descartada: alargar o existente, que alcançaria as seis
    rotas **[F]** — cinco delas sem uso para a janela.
+
+As três seguintes são de `H-54`.
+
+7. **As medidas reconstruídas são estoque ao fim do mês, não fluxo mensal.**
+   Alternativa descartada: contagem por mês, que ao lado da série observada —
+   que é acumulada — pareceria despencar todo mês, e as duas não seriam
+   comparáveis no mesmo eixo.
+8. **A reconstruída não tem `canalVermelho`.** A cor é o estado de hoje e não
+   carrega data; projetá-la para trás afirmaria que a linha já era vermelha
+   naquele mês. Alternativa descartada: reconstruí-la com a cor atual, que é
+   exatamente o que a regra inviolável 3 proíbe.
+9. **`months` não recorta a reconstruída.** A janela é da série observada.
+   Alternativa descartada: aplicá-la às duas, que esconderia justamente o passado
+   que a história existe para mostrar — a janela padrão é 12 meses e o intervalo
+   das datas é 10, mas a coincidência não é garantia.
