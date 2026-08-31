@@ -75,7 +75,7 @@ seção 5.
 
 ## 2. FEITO
 
-### `H-51` — Canal verde, e a distribuição à vista · PR #TBD
+### `H-51` — Canal verde, e a distribuição à vista · [PR #69](https://github.com/rodrigo-norys/cronoscomex/pull/69)
 
 **Branch:** `H-51/feat-canal-verde`, saindo da `main`. Posição 1 da pilha.
 
@@ -138,10 +138,33 @@ meio quebra o `git bisect` que o corte atômico existe para preservar.
 
 ## 5. ORDEM DE MERGE
 
-*(preenchido a cada checkpoint)*
+**A pilha é linear. Mesclar fora de ordem gera conflito**, porque cada branch sai
+da anterior e todas escrevem em `docs/06-backlog.md`,
+`docs/09-rastreabilidade.md` e no bloco Estado do `CLAUDE.md`.
+
+| # | PR | Branch | Base |
+|---|---|---|---|
+| 1 | [#69](https://github.com/rodrigo-norys/cronoscomex/pull/69) — `H-51` | `H-51/feat-canal-verde` | `main` |
+
+Depois do último merge, a branch `distribuicao` fica para trás e precisa ser
+sincronizada — `node --experimental-strip-types scripts/sincronizar-distribuicao.ts`.
+**Esta sessão não a tocou**, porque a regra do projeto manda sincronizar apenas a
+partir da `main` mesclada, e nenhum merge aconteceu aqui.
 
 ---
 
 ## 6. O QUE EU DECIDI SOZINHO
 
-*(preenchido a cada checkpoint)*
+Uma linha por decisão, para conferência por amostragem. As três primeiras são de
+`H-51`.
+
+1. **`nenhum` sai do domínio inteiro, e não só das linhas verdes.** O critério de
+   aceite fixa `indefinido = 167`, e 167 é a soma de tudo que não é verde nem
+   vermelho. Aritmética da história, não escolha.
+2. **A distribuição é bloco de topo na resposta, não campo em `counts`.**
+   Alternativa descartada: campo em `counts`, que é a lista dos indicadores do
+   catálogo e faria a história parecer redefinir IND-06.
+3. **O histórico legado é traduzido na leitura, não recusado.** Alternativa
+   descartada: recusar `nenhum` como valor fora do domínio — é o que o código já
+   fazia, e teria reiniciado `categoryChangedAt` em 649 processos, desarmando
+   ALE-06. A tradução é uma linha e se remove numa linha.
