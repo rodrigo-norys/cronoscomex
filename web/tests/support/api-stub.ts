@@ -260,6 +260,7 @@ export function filterOptionsFixture(
       { key: 'ACME', label: 'ACME', count: 12 },
       { key: 'BETA', label: 'BETA', count: 5 },
     ],
+    clientGroups: [],
     clientProcesses: [
       { key: 'ACME-12', label: 'ACME-12', count: 1 },
       { key: 'ACME-13', label: 'ACME-13', count: 1 },

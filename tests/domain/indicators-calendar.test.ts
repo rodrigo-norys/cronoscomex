@@ -46,6 +46,7 @@ function process({ eta2 = null, vessel = '', statusCategory = 'em_andamento' }: 
     clientKey: '',
     clientProcessKey: '',
     clientLabel: '',
+    clientGroupKey: '',
     importerKey: '',
     agentKey: '',
     vesselKey: vessel.trim().toUpperCase(),

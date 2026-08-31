@@ -99,6 +99,69 @@ export function resolveClient(
 }
 
 /**
+ * Um agrupamento de clientes, exibido como um nivel de arvore no filtro
+ * (`H-55`).
+ *
+ * **O grupo vale so no filtro.** Ranking, tempo documental e cartoes continuam
+ * contando cada cliente separado — decisao do operador em 31/08/2026, e o
+ * motivo de o grupo NAO virar `clientKey`: fundir as chaves mudaria o valor de
+ * IND-10, IND-18 e IND-22 sem ninguem ter pedido.
+ *
+ * O membro aponta para uma entrada de `clients` que ja existe, pela chave. Mover
+ * regra de um lugar para o outro reescreveria o mapa do operador para entregar
+ * uma arvore de apresentacao.
+ */
+export interface ClientGroupMember {
+  /** Chave de um cliente declarado em `clients`. */
+  client: string
+  /**
+   * Rotulo do membro DENTRO do grupo. Ausente, vale o rotulo do cliente.
+   *
+   * Existe porque o cliente que da nome ao grupo precisa de um nome proprio
+   * embaixo dele: "Vivi > Vivi" nao diz nada, "Vivi > AV" diz.
+   */
+  label?: string
+}
+
+export interface ClientGroup {
+  key: string
+  label: string
+  members: readonly ClientGroupMember[]
+}
+
+/** O grupo de cada cliente, indexado pela chave dele. Um cliente, um grupo. */
+export type ClientGroupIndex = ReadonlyMap<string, string>
+
+export function indexClientGroups(groups: readonly ClientGroup[]): ClientGroupIndex {
+  const index = new Map<string, string>()
+  for (const group of groups) {
+    for (const member of group.members) index.set(member.client, group.key)
+  }
+  return index
+}
+
+/**
+ * O grupo de um cliente, ou `''` quando ele nao esta em nenhum.
+ *
+ * Vazio e o caso comum — a maioria dos clientes nao pertence a grupo —, e e
+ * chave legitima no filtro, como a celula em branco (TD-04).
+ */
+export function resolveClientGroup(clientKey: string, index: ClientGroupIndex): string {
+  return index.get(clientKey) ?? ''
+}
+
+export function normalizeClientGroups(groups: readonly ClientGroup[]): ClientGroup[] {
+  return groups.map((group) => ({
+    key: normKey(group.key),
+    label: group.label,
+    members: group.members.map((member) => ({
+      client: normKey(member.client),
+      ...(member.label === undefined ? {} : { label: member.label }),
+    })),
+  }))
+}
+
+/**
  * Normaliza os textos do mapa UMA vez, na carga.
  *
  * O caminho quente e a ingestao: 649 linhas contra dezenas de regras. Normalizar

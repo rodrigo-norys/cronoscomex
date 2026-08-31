@@ -195,7 +195,7 @@ function parseInteger(raw: string | undefined, field: string, min: number, max: 
 /**
  * GET /api/processes — contrato em `docs/05-contratos-api.md`.
  *
- * Marcada **[F]**: os doze filtros globais valem aqui, e sao aplicados **antes**
+ * Marcada **[F]**: os treze filtros globais valem aqui, e sao aplicados **antes**
  * da busca, da ordenacao e da paginacao. A ordem importa — `total` precisa ser
  * do conjunto filtrado inteiro, e paginar antes de contar daria o tamanho da
  * pagina.

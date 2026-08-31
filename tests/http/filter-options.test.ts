@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { AppConfig } from '../../src/app/config.ts'
 import type { StoreAccess, StoreState } from '../../src/app/process-store.ts'
+import { normalizeClientGroups } from '../../src/domain/client-mapper.ts'
 import type {
   CustomsChannel,
   Process,
@@ -24,6 +25,7 @@ interface Fields {
   clientKey?: string
   clientProcessKey?: string
   clientLabel?: string
+  clientGroupKey?: string
   clientRaw?: string
   goodsKey?: string
   goodsRaw?: string
@@ -61,6 +63,7 @@ function process(fields: Fields = {}): Process {
     clientKey: fields.clientKey ?? '',
     clientProcessKey: fields.clientProcessKey ?? fields.clientKey ?? '',
     clientLabel: fields.clientLabel ?? fields.clientRaw ?? '',
+    clientGroupKey: fields.clientGroupKey ?? '',
     importerKey: '',
     agentKey: '',
     vesselKey: '',
@@ -100,7 +103,7 @@ const fakeStore = (initial: StoreState): StoreAccess => ({
 })
 
 describe('GET /api/filters/options', () => {
-  it('devolve os dez blocos do contrato', async () => {
+  it('devolve os onze blocos do contrato', async () => {
     const app = buildServer(config, fakeStore(state()))
 
     const resposta = await app.inject({ method: 'GET', url: '/api/filters/options' })
@@ -110,6 +113,7 @@ describe('GET /api/filters/options', () => {
       'agents',
       'categories',
       'channels',
+      'clientGroups',
       'clientProcesses',
       'clients',
       'goods',
@@ -391,6 +395,92 @@ describe('GET /api/filters/options — cliente consolidado e processo do cliente
       { key: 'ACM-30', label: 'ACM-30', count: 1 },
       { key: 'ZETA', label: 'zeta comércio', count: 1 },
     ])
+
+    await app.close()
+  })
+})
+
+/**
+ * `H-55`. A arvore do filtro Cliente: o grupo com a soma, cada membro com a
+ * contagem propria.
+ */
+describe('GET /api/filters/options — grupos de clientes', () => {
+  const GRUPOS = normalizeClientGroups([
+    {
+      key: 'grupo-um',
+      label: 'Grupo Um',
+      members: [
+        { client: 'ACME', label: 'Matriz' },
+        { client: 'BETA' },
+        { client: 'SEM-PROCESSO' },
+      ],
+    },
+  ])
+
+  const conjunto = [
+    process({ clientKey: 'ACME', clientLabel: 'Acme Comércio', clientGroupKey: 'GRUPO-UM' }),
+    process({ clientKey: 'ACME', clientLabel: 'Acme Comércio', clientGroupKey: 'GRUPO-UM' }),
+    process({ clientKey: 'BETA', clientLabel: 'Beta Ltda', clientGroupKey: 'GRUPO-UM' }),
+    process({ clientKey: 'ZETA', clientLabel: 'Zeta', clientGroupKey: '' }),
+  ]
+
+  const servir = () =>
+    buildServer(
+      config,
+      fakeStore(state(conjunto)),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      GRUPOS,
+    )
+
+  it('serve o grupo com a soma dos membros e cada membro com a contagem propria', async () => {
+    const app = servir()
+
+    const body = (await app.inject({ method: 'GET', url: '/api/filters/options' })).json()
+
+    expect(body.clientGroups).toEqual([
+      {
+        key: 'GRUPO-UM',
+        label: 'Grupo Um',
+        count: 3,
+        members: [
+          // O `label` do membro vence o do cliente: e o que distingue o cliente
+          // que da nome ao grupo do grupo em si.
+          { key: 'ACME', label: 'Matriz', count: 2 },
+          { key: 'BETA', label: 'Beta Ltda', count: 1 },
+          // Declarado no mapa e sem processo nenhum: aparece com zero (A-28).
+          { key: 'SEM-PROCESSO', label: 'SEM-PROCESSO', count: 0 },
+        ],
+      },
+    ])
+
+    await app.close()
+  })
+
+  it('mantem os membros tambem na lista de clientes, que e o dominio do filtro', async () => {
+    const app = servir()
+
+    const body = (await app.inject({ method: 'GET', url: '/api/filters/options' })).json()
+
+    expect(body.clients.map((option: { key: string }) => option.key)).toEqual([
+      'ACME',
+      'BETA',
+      'ZETA',
+    ])
+
+    await app.close()
+  })
+
+  it('sem grupos declarados, a lista vem vazia', async () => {
+    const app = buildServer(config, fakeStore(state(conjunto)))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/filters/options' })).json()
+
+    expect(body.clientGroups).toEqual([])
 
     await app.close()
   })

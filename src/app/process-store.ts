@@ -1,4 +1,9 @@
-import type { ClientMapEntry } from '../domain/client-mapper.ts'
+import {
+  type ClientGroup,
+  type ClientGroupIndex,
+  type ClientMapEntry,
+  indexClientGroups,
+} from '../domain/client-mapper.ts'
 import { type ColorMapEntry, indexColorMap, resolveFillTarget } from '../domain/color-mapper.ts'
 import { type BuildResult, buildProcesses, quarantineRate } from '../domain/process-builder.ts'
 import { applyEdits, type ProjectedEdit } from '../domain/process-projection.ts'
@@ -80,6 +85,11 @@ export interface StoreOptions {
    * comportamento anterior a `H-49`.
    */
   clientMap?: readonly ClientMapEntry[]
+  /**
+   * Grupos de clientes de `H-55`. Indexados uma vez em `initStore`, como o mapa
+   * de cores — a alternativa varreria a lista de grupos por linha lida.
+   */
+  clientGroups?: readonly ClientGroup[]
   /** Mapa de equipe de `H-48`. Vazio faz a atribuicao cair na cor (`H-50`). */
   teamMap?: readonly TeamMember[]
   quarantinePath?: string
@@ -118,6 +128,7 @@ function emptyState(): StoreState {
 
 let options: StoreOptions | null = null
 let colorMapIndex: ReadonlyMap<string, ColorMapEntry> = new Map()
+let clientGroupIndex: ClientGroupIndex = new Map()
 let current: StoreState = emptyState()
 let inFlight: Promise<void> | null = null
 
@@ -125,6 +136,7 @@ let inFlight: Promise<void> | null = null
 export function initStore(next: StoreOptions): void {
   options = next
   colorMapIndex = indexColorMap(next.colorMap)
+  clientGroupIndex = indexClientGroups(next.clientGroups ?? [])
   current = emptyState()
   inFlight = null
 }
@@ -154,6 +166,7 @@ export function getState(): StoreState {
     colorMap: colorMapIndex,
     statusAliases: options.statusAliases,
     clientMap: options.clientMap ?? [],
+    clientGroups: clientGroupIndex,
   })
 
   return { ...current, processes, pendingEdits: edits }
@@ -301,6 +314,7 @@ async function runReload(deps: StoreOptions): Promise<void> {
       colorMap: colorMapIndex,
       statusAliases: deps.statusAliases,
       clientMap: deps.clientMap ?? [],
+      clientGroups: clientGroupIndex,
     })
 
     const durationMs = Math.round(performance.now() - startedAt)
@@ -465,6 +479,7 @@ export function rebuildProcesses(rows: RawRow[]): Process[] {
     colorMap: colorMapIndex,
     statusAliases: options.statusAliases,
     clientMap: options.clientMap ?? [],
+    clientGroups: clientGroupIndex,
   }).processes
 }
 

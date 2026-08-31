@@ -1,7 +1,7 @@
 import type { CustomsChannel, Process, Responsible, StatusCategory } from './types.ts'
 
 /**
- * Os doze filtros globais (RF-17), aplicados a toda rota marcada [F].
+ * Os treze filtros globais (RF-17), aplicados a toda rota marcada [F].
  *
  * Eram onze ate `H-49`, que separou o cliente consolidado do processo do
  * cliente: `client` recorta a carteira, `clientProcess` acha um processo
@@ -19,6 +19,8 @@ export interface FilterSet {
   client: readonly string[]
   /** Chave da celula CLT, que guarda o processo daquele cliente. */
   clientProcess: readonly string[]
+  /** Grupo de clientes (`H-55`). Seleciona todos os membros de uma vez. */
+  clientGroup: readonly string[]
   importer: readonly string[]
   vessel: readonly string[]
   agent: readonly string[]
@@ -52,6 +54,7 @@ export function emptyFilterSet(): FilterSet {
     etaTo: null,
     client: [],
     clientProcess: [],
+    clientGroup: [],
     importer: [],
     vessel: [],
     agent: [],
@@ -116,6 +119,7 @@ export function applyFilters(processes: readonly Process[], filters: FilterSet):
       matchesPeriod(process, filters.etaFrom, filters.etaTo) &&
       matchesKey(process.clientKey, filters.client) &&
       matchesKey(process.clientProcessKey, filters.clientProcess) &&
+      matchesKey(process.clientGroupKey, filters.clientGroup) &&
       matchesKey(process.importerKey, filters.importer) &&
       matchesKey(process.vesselKey, filters.vessel) &&
       matchesKey(process.agentKey, filters.agent) &&
@@ -217,7 +221,7 @@ function parseBoolean(raw: unknown, field: string): boolean | null {
  * lista vem dos dados e nao de catalogo (A-36). Valor inexistente ali produz
  * resultado vazio com `200`, que e resposta legitima.
  *
- * Os sete de dominio aberto usam `asKeyList`, que preserva a chave vazia; os
+ * Os oito de dominio aberto usam `asKeyList`, que preserva a chave vazia; os
  * demais seguem com `asList`, onde `''` e ausencia mesmo — `?category=` nao e
  * "categoria em branco", porque categoria em branco nao existe.
  */
@@ -227,6 +231,7 @@ export function parseFilters(query: Record<string, unknown>): FilterSet {
     etaTo: parseIsoDay(query.etaTo, 'etaTo'),
     client: asKeyList(query.client),
     clientProcess: asKeyList(query.clientProcess),
+    clientGroup: asKeyList(query.clientGroup),
     importer: asKeyList(query.importer),
     vessel: asKeyList(query.vessel),
     agent: asKeyList(query.agent),
@@ -240,7 +245,7 @@ export function parseFilters(query: Record<string, unknown>): FilterSet {
 }
 
 /**
- * Se algum dos doze filtros esta ativo.
+ * Se algum dos treze filtros esta ativo.
  *
  * A serie mensal de `H-28` precisa distinguir "sem filtro" de "filtro que casa
  * tudo": sem filtro ela sai inteira do arquivo, e com filtro e restrita aos REF
@@ -254,6 +259,7 @@ export function hasAnyFilter(filters: FilterSet): boolean {
     filters.importerOutsideRj !== null ||
     filters.client.length > 0 ||
     filters.clientProcess.length > 0 ||
+    filters.clientGroup.length > 0 ||
     filters.importer.length > 0 ||
     filters.vessel.length > 0 ||
     filters.agent.length > 0 ||

@@ -49,6 +49,7 @@ function process(overrides: Partial<Process> = {}): Process {
     clientKey: 'ACME LOG',
     clientProcessKey: 'ACME LOG',
     clientLabel: 'ACME LOG',
+    clientGroupKey: '',
     importerKey: 'IMP',
     agentKey: 'AG',
     vesselKey: 'EVER FAIR',

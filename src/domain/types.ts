@@ -132,6 +132,15 @@ export interface Process {
    * lugar do nome do cliente, que e o defeito que `H-49` fecha.
    */
   readonly clientLabel: string
+  /**
+   * O grupo de clientes a que este cliente pertence (`H-55`), ou `''` quando
+   * ele nao pertence a nenhum.
+   *
+   * **Existe so para o filtro.** Nenhum indicador agrupa por ele: fundir os
+   * membros mudaria o valor de IND-10, IND-18 e IND-22, e a decisao do operador
+   * foi manter cada cliente contado separado.
+   */
+  readonly clientGroupKey: string
   readonly importerKey: string
   readonly agentKey: string
   readonly vesselKey: string

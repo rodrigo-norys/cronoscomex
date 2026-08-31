@@ -1,4 +1,9 @@
-import { type ClientMapEntry, resolveClient } from './client-mapper.ts'
+import {
+  type ClientGroupIndex,
+  type ClientMapEntry,
+  resolveClient,
+  resolveClientGroup,
+} from './client-mapper.ts'
 import { type ColorMapEntry, resolveColorIndexed } from './color-mapper.ts'
 import { normKey, parseCellDate } from './normalizer.ts'
 import { classify } from './status-classifier.ts'
@@ -49,6 +54,11 @@ export interface BuildDeps {
    * qualquer campo devolveria o processo a chave da celula, em silencio.
    */
   clientMap?: readonly ClientMapEntry[]
+  /**
+   * Grupos de `H-55`, ja indexados por `indexClientGroups`. Ausente, nenhum
+   * cliente tem grupo e o filtro nao ganha nivel de arvore.
+   */
+  clientGroups?: ClientGroupIndex
 }
 
 /** Mapeamento coluna -> campo. Ver docs/03-modelo-dados.md secao 1.2. */
@@ -137,6 +147,7 @@ function buildOne(row: RawRow, deps: BuildDeps): { process: Process; unmappedCol
   const clientProcessKey = normKey(clientRaw)
   const importerKey = normKey(importerRaw)
   const client = resolveClient(clientProcessKey, importerKey, deps.clientMap ?? [])
+  const clientGroupKey = resolveClientGroup(client.key, deps.clientGroups ?? new Map())
   const agentRaw = text(row, COLUMN.agent)
   const vesselRaw = text(row, COLUMN.vessel)
   const portRaw = text(row, COLUMN.port)
@@ -165,6 +176,7 @@ function buildOne(row: RawRow, deps: BuildDeps): { process: Process; unmappedCol
     // O `label` que `resolveClient` devolve sem casar regra e a chave
     // NORMALIZADA; A-26 pede a primeira grafia encontrada, que e a celula.
     clientLabel: client.mapped ? client.label : clientRaw,
+    clientGroupKey,
     importerKey,
     agentKey: normKey(agentRaw),
     vesselKey: normKey(vesselRaw),

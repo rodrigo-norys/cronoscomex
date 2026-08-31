@@ -66,11 +66,13 @@ export async function carregarPlanilha() {
   // a conferencia mede o que a producao serve. Omiti-los faria a medicao ver um
   // cliente e um responsavel que o painel do operador nao mostra.
   const config = loadConfig()
+  const clientMap = loadClientMap()
   initStore({
     config,
     colorMap: loadColorMap(),
     statusAliases: loadStatusAliases(),
-    clientMap: loadClientMap(),
+    clientMap: clientMap.clients,
+    clientGroups: clientMap.groups,
     teamMap: loadTeamMap(),
   })
   await reload()

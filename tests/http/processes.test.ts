@@ -44,6 +44,7 @@ function process(sourceRow: number, extra: Partial<Process> = {}): Process {
     clientKey: '',
     clientProcessKey: '',
     clientLabel: '',
+    clientGroupKey: '',
     importerKey: '',
     agentKey: '',
     vesselKey: '',
@@ -635,6 +636,32 @@ describe('GET /api/processes — cliente consolidado e processo do cliente', () 
 
   it('o recorte pela celula traz um processo so', async () => {
     const body = (await get('/api/processes?clientProcess=ACM-30', conjunto)).json()
+
+    expect(body.total).toBe(1)
+    expect(body.items[0].ref).toBe('FT003.26')
+  })
+})
+
+/**
+ * `H-55`. O grupo e um recorte como qualquer outro — o que ele NAO faz e mudar
+ * a chave do cliente, e por isso os indicadores seguem intactos.
+ */
+describe('GET /api/processes — grupo de clientes', () => {
+  const conjunto = [
+    process(2, { ref: 'FT002.26', clientKey: 'ACME', clientGroupKey: 'GRUPO-UM' }),
+    process(3, { ref: 'FT003.26', clientKey: 'BETA', clientGroupKey: 'GRUPO-UM' }),
+    process(4, { ref: 'FT004.26', clientKey: 'ZETA', clientGroupKey: '' }),
+  ]
+
+  it('recorta pelos membros do grupo', async () => {
+    const body = (await get('/api/processes?clientGroup=GRUPO-UM', conjunto)).json()
+
+    expect(body.total).toBe(2)
+    expect(body.items.map((item: ProcessDto) => item.ref)).toEqual(['FT002.26', 'FT003.26'])
+  })
+
+  it('combina com o filtro de cliente em E, como qualquer par de parametros', async () => {
+    const body = (await get('/api/processes?clientGroup=GRUPO-UM&client=BETA', conjunto)).json()
 
     expect(body.total).toBe(1)
     expect(body.items[0].ref).toBe('FT003.26')

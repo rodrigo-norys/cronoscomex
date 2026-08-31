@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeClientMap } from '../../src/domain/client-mapper.ts'
+import {
+  indexClientGroups,
+  normalizeClientGroups,
+  normalizeClientMap,
+} from '../../src/domain/client-mapper.ts'
 import { type ColorMapEntry, indexColorMap } from '../../src/domain/color-mapper.ts'
 import { type BuildDeps, buildProcesses, quarantineRate } from '../../src/domain/process-builder.ts'
 import { ALL_COLUMNS } from '../../src/domain/status-classifier.ts'
@@ -337,5 +341,48 @@ describe('buildProcesses — cliente consolidado (H-49)', () => {
 
     expect(process?.clientKey).toBe('ZETA COMERCIO')
     expect(process?.clientLabel).toBe('zeta comércio')
+  })
+})
+
+/**
+ * `H-55`. O grupo acompanha o cliente CONSOLIDADO, nao a celula: e o cliente
+ * que o mapa reune, e a celula pode nem ter regra.
+ */
+describe('buildProcesses — grupo de clientes (H-55)', () => {
+  const CLIENTES = normalizeClientMap([
+    { key: 'ACME', label: 'Acme Comércio', rules: [{ match: 'prefix', value: 'ACM' }] },
+    { key: 'BETA', label: 'Beta Ltda', rules: [{ match: 'prefix', value: 'BET' }] },
+  ])
+  const GRUPOS = indexClientGroups(
+    normalizeClientGroups([
+      { key: 'GRUPO-UM', label: 'Grupo Um', members: [{ client: 'ACME' }, { client: 'BETA' }] },
+    ]),
+  )
+
+  const comGrupo: BuildDeps = { ...deps, clientMap: CLIENTES, clientGroups: GRUPOS }
+
+  it('marca o grupo do cliente consolidado', () => {
+    const process = buildProcesses([linha(2, { A: 'FT001.26', B: 'ACM-29' })], comGrupo)
+      .processes[0]
+
+    expect(process?.clientKey).toBe('ACME')
+    expect(process?.clientGroupKey).toBe('GRUPO-UM')
+  })
+
+  it('cliente fora de grupo fica com o grupo vazio', () => {
+    const process = buildProcesses([linha(2, { A: 'FT001.26', B: 'ZETA' })], comGrupo).processes[0]
+
+    expect(process?.clientKey).toBe('ZETA')
+    expect(process?.clientGroupKey).toBe('')
+  })
+
+  it('sem grupos declarados, ninguem tem grupo', () => {
+    const process = buildProcesses([linha(2, { A: 'FT001.26', B: 'ACM-29' })], {
+      ...deps,
+      clientMap: CLIENTES,
+    }).processes[0]
+
+    expect(process?.clientKey).toBe('ACME')
+    expect(process?.clientGroupKey).toBe('')
   })
 })
