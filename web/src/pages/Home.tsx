@@ -32,6 +32,14 @@ interface CardDefinition {
   readonly label: string
   readonly variant?: StatVariant
   readonly date: CardDate
+  /**
+   * O que distingue o cartao de urgencia, em TEXTO (`ACHADO 18`, `SC 1.4.1`).
+   *
+   * Ate `H-45` a distincao era so o par de cores da variante: quem nao enxerga
+   * a diferenca cromatica via doze cartoes iguais. O `hint` ja existia em
+   * `StatCard`, e nenhum cartao o usava.
+   */
+  readonly hint?: string
 }
 
 const CARDS: readonly CardDefinition[] = [
@@ -54,12 +62,19 @@ const CARDS: readonly CardDefinition[] = [
   // A-64. Fecha o bloco temporal: os anteriores dizem o que o dia trouxe ou
   // trara, este diz o que ele concluiu.
   { key: 'desembaracadosHoje', label: 'Desembaraçados hoje', date: 'nenhuma' },
-  { key: 'atrasados', label: 'Atrasados', variant: 'urgencia', date: 'eta2' },
+  {
+    key: 'atrasados',
+    label: 'Atrasados',
+    variant: 'urgencia',
+    date: 'eta2',
+    hint: 'Pede ação',
+  },
   {
     key: 'documentosPendentes',
     label: 'Documentos pendentes',
     variant: 'urgencia',
     date: 'eta2',
+    hint: 'Pede ação',
   },
 ]
 
@@ -160,6 +175,7 @@ export function Home({ health, queryString, dataVersion }: HomeProps) {
               label={card.label}
               value={counts?.[card.key] ?? null}
               {...(card.variant ? { variant: card.variant } : {})}
+              {...(card.hint ? { hint: card.hint } : {})}
               {...(period ? { period } : {})}
             />
           )

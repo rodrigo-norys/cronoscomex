@@ -40,12 +40,32 @@ export function AlertRow({ group }: { group: AlertGroup }) {
   const mostSevere = group.alerts[0]
   if (mostSevere === undefined) return null
 
+  const href = `/processo/${encodeURIComponent(group.ref)}`
+
   return (
     <li className="border-b border-border-subtle last:border-0">
-      <button
-        type="button"
-        onClick={() => navigate(`/processo/${encodeURIComponent(group.ref)}`)}
-        title={`Abrir o detalhe de ${group.ref}`}
+      {/*
+        `ACHADO 16`. Abrir o detalhe e a MESMA acao que a tabela ja oferece, e
+        aqui ela tinha outro papel — `<button>` contra `<a href>` — e outro nome
+        acessivel. `SC 3.2.4` incide porque as sete telas tem URIs distintas
+        (determinacao `Z1`), entao a consistencia deixa de ser preferencia.
+
+        O interceptador e o de `ProcessTable`: modificador pressionado abre em
+        aba nova, como qualquer link, e o clique simples navega sem recarregar.
+
+        **O `aria-label` e explicito** porque sem ele o nome acessivel seria o
+        bloco inteiro concatenado — REF, linha, ETA2, os rotulos de tipo e a
+        mensagem —, contra `"NBSC260"` na tabela. Dois nomes para a mesma acao e
+        exatamente o que `SC 3.2.4` proibe.
+      */}
+      <a
+        href={href}
+        onClick={(event) => {
+          if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+          event.preventDefault()
+          navigate(href)
+        }}
+        aria-label={`Abrir o detalhe de ${group.ref}`}
         className="flex w-full flex-col gap-1 px-1 py-2 text-left hover:bg-surface-sunken"
       >
         <span className="flex flex-wrap items-baseline gap-2">
@@ -63,11 +83,15 @@ export function AlertRow({ group }: { group: AlertGroup }) {
         </span>
 
         <span className="text-xs text-text-secondary">{mostSevere.message}</span>
-      </button>
+      </a>
     </li>
   )
 }
 
+/**
+ * `ACHADO 18`, `SC 1.4.1`. O urgente traz **prefixo textual**, e nao so o par
+ * de cores: `data-severity` nao e exposto ao usuario e nao conta como canal.
+ */
 function TypeBadge({ alert }: { alert: Alert }) {
   const urgent = alert.severity <= URGENT_SEVERITY
 
@@ -78,6 +102,7 @@ function TypeBadge({ alert }: { alert: Alert }) {
         urgent ? 'bg-state-warning-bg text-state-warning-fg' : 'bg-surface-base text-text-secondary'
       }`}
     >
+      {urgent && <span className="font-semibold">Pede ação · </span>}
       {ALERT_LABELS[alert.type]}
       {alert.daysOverdue !== null && (
         <span className="ml-1 tabular-nums">
