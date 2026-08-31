@@ -1,0 +1,45 @@
+{
+  "_origem": "Formato entregue por H-48. Os NOMES aqui sao ficticios: config/team-map.json, com os reais, esta no .gitignore. Ver docs/uso/RESULTADO.md secao 3.",
+
+  "version": 1,
+
+  "_comentario_por_que": "O responsavel vinha SO da cor da linha, e a cor cobre 157 das 649 linhas — as outras 492 ficavam em 'indefinido'. A lista de importadores de cada pessoa cobre 559, e a cor desempata parte do resto.",
+
+  "_comentario_ordem": "Avaliacao, nesta ordem: 1) importador na lista de alguem · 2) membro com 'fallback', se o importador nao for vazio · 3) cor da linha apontando um membro · 4) nada. Quem casa primeiro leva.",
+
+  "_comentario_key": "A chave e IMPESSOAL de proposito e viaja pelo dominio inteiro; o nome da pessoa fica em 'label', que so a tela le. Mesma regra que mantem nome de cliente fora do log (regra inviolavel 8).",
+
+  "_comentario_importers": "Chave do importador como aparece na planilha. Sufixo de filial e tolerado: listar 'ACME' casa tambem 'ACME - SC'. Nao ha necessidade de listar as duas grafias.",
+
+  "_comentario_colorResponsible": "O DESEMPATE, e ele foi verificado antes de existir: medido em 31/08/2026, a cor e a lista de importadores concordam nas 649 linhas — roxo so ocorre em importador de uma pessoa, azul e bege so na outra, zero contradicoes. Sem essa medicao, usar a cor aqui seria supor que ela concorda.",
+
+  "_comentario_fallback": "OPCIONAL, e no maximo um membro pode declara-lo — dois seriam uma ordem de avaliacao disfarcada de conjunto, e a carga recusa. Com ele ativo o desempate por cor nunca roda, porque nao sobra caso. NAO alcanca importador vazio: 'todo o resto' fala de importadores que existem, e varrer as linhas em branco para alguem esconderia que o campo nao foi preenchido.",
+
+  "_comentario_ausencia": "Sem este arquivo a atribuicao cai inteira no desempate por cor, que e o comportamento anterior a H-50. Processo que nao casa nada fica SEM responsavel, visivel e contado — empurra-lo para alguem produziria um numero plausivel e errado.",
+
+  "members": [
+    {
+      "key": "membro1",
+      "label": "Primeiro Nome",
+      "_nota": "Lista explicita de importadores, e a cor roxa como desempate.",
+      "importers": ["IMPORTADORA UM", "IMPORTADORA DOIS", "IMPORTADORA TRES"],
+      "colorResponsible": ["colaborador2"]
+    },
+    {
+      "key": "membro2",
+      "label": "Segundo Nome",
+      "_nota": "Azul e bege apontam para esta pessoa. 'colaborador1_outros_clientes' e subcategoria de 'colaborador1' (A-18) e vem junto.",
+      "importers": ["IMPORTADORA QUATRO", "IMPORTADORA CINCO"],
+      "colorResponsible": ["colaborador1", "colaborador1_outros_clientes"]
+    }
+  ],
+
+  "_exemplo_fallback": {
+    "_nota": "Forma alternativa do segundo membro, para quem prefere cobertura total a enxergar o que nao se sabe. Mova para 'members' se quiser usa-la — com ela, nenhum processo com importador preenchido fica sem responsavel, e nenhum passa pelo desempate por cor.",
+    "key": "membro2",
+    "label": "Segundo Nome",
+    "importers": [],
+    "colorResponsible": ["colaborador1", "colaborador1_outros_clientes"],
+    "fallback": true
+  }
+}

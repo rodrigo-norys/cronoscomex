@@ -1,5 +1,6 @@
 import { pathToFileURL } from 'node:url'
 import Fastify, { type FastifyInstance } from 'fastify'
+import { ClientMapError, loadClientMap } from '../app/client-map-loader.ts'
 import { ColorMapError, loadColorMap } from '../app/color-map-loader.ts'
 import { type AppConfig, ConfigError, loadConfig, WORKBOOK_UNSET } from '../app/config.ts'
 import { createLogger, type Logger } from '../app/logger.ts'
@@ -11,6 +12,7 @@ import {
   type StoreAccess,
 } from '../app/process-store.ts'
 import { loadStatusAliases, StatusAliasesError } from '../app/status-aliases-loader.ts'
+import { loadTeamMap, TeamMapError } from '../app/team-map-loader.ts'
 import { initWriteGuard, retargetWatcher } from '../app/write-guard.ts'
 import type { ColorMapEntry } from '../domain/color-mapper.ts'
 import { createWatcher, DEFAULT_DEBOUNCE_MS, type Watcher } from '../io/watcher.ts'
@@ -87,7 +89,21 @@ export function buildServer(
   return app
 }
 
-const STARTUP_ERRORS = [ConfigError, ColorMapError, StatusAliasesError]
+/**
+ * Erros que MATAM a partida, com mensagem em vez de pilha.
+ *
+ * Os dois mapas de `H-48` entram porque JSON malformado e engano que nenhuma
+ * tela conserta — arquivo AUSENTE nao chega aqui: os loaders devolvem lista
+ * vazia, e a aplicacao sobe sem consolidacao, que e o estado de quem ainda nao
+ * configurou (mesma regra de `H-34`).
+ */
+const STARTUP_ERRORS = [
+  ConfigError,
+  ColorMapError,
+  StatusAliasesError,
+  ClientMapError,
+  TeamMapError,
+]
 
 async function main(): Promise<void> {
   let config: AppConfig
@@ -106,10 +122,15 @@ async function main(): Promise<void> {
     // permitiriam ler e gravar por mapas diferentes se o arquivo mudasse entre
     // eles.
     colorMap = loadColorMap()
+    // Os dois mapas de negocio (`H-48`) sao lidos na partida para que um JSON
+    // escrito errado apareca aqui, e nao quando o operador abrir a Pagina
+    // Clientes com o campo silenciosamente sem consolidacao.
     initStore({
       config,
       colorMap,
       statusAliases: loadStatusAliases(),
+      clientMap: loadClientMap(),
+      teamMap: loadTeamMap(),
       logger,
     })
   } catch (error) {
