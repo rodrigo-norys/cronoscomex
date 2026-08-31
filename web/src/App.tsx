@@ -36,6 +36,13 @@ const History = lazy(() =>
  * **todas** elas, concentra as tres frentes de A-62, e monta os treze filtros
  * globais. Nao calcula nada: os 21 indicadores e os cinco alertas vem prontos
  * do servidor, ja recortados (regra inviolavel 6).
+ *
+ * **As regioes vivas existem desde a montagem** (`H-43`). A MDN e explicita:
+ * *"Do not try to dynamically add/generate an element with `role='alert'` that
+ * is already populated"* — o no nasce com o texto dentro, o leitor de tela nao
+ * tem o que comparar, e a mensagem nao e anunciada. O padrao aqui e o que
+ * `H-34` ja usava em `WorkbookSetup`: o no fica sempre no DOM, e so o texto
+ * dentro dele muda. Vazio, ele e `sr-only` — sem borda, fundo nem espacamento.
  */
 export function App() {
   const route = useRoute()
@@ -100,14 +107,22 @@ export function App() {
 
       <StatusBanner health={health} />
 
-      {healthError && (
-        <p
-          role="alert"
-          className="border-y border-state-error-border bg-state-error-bg px-6 py-3 text-sm text-state-error-fg"
-        >
-          <strong className="font-semibold">Sem contato com o servidor.</strong> {healthError}
-        </p>
-      )}
+      {/* O no e o MESMO antes e depois de `healthError` ganhar valor: so o
+          conteudo muda. Envolver isto num condicional era o `ACHADO 11`. */}
+      <p
+        role="alert"
+        className={
+          healthError === null
+            ? 'sr-only'
+            : 'border-y border-state-error-border bg-state-error-bg px-6 py-3 text-sm text-state-error-fg'
+        }
+      >
+        {healthError !== null && (
+          <>
+            <strong className="font-semibold">Sem contato com o servidor.</strong> {healthError}
+          </>
+        )}
+      </p>
 
       <main className="px-6 py-6">
         <Suspense fallback={<PageLoading />}>
@@ -125,10 +140,34 @@ export function App() {
         </Suspense>
       </main>
 
+      {/*
+        A regiao persistente das PAGINAS (`H-44`).
+
+        Ela vive aqui, e nao dentro de cada pagina, porque as sete fazem `return`
+        antecipado no estado de erro: uma regiao declarada dentro delas
+        desmontaria junto com o resto da arvore, e o leitor de tela nao teria o
+        que comparar — o mesmo `ACHADO 11`, uma camada acima.
+
+        **A casca nao conhece pagina nenhuma.** Ela expoe um endereco estavel no
+        DOM; quem escreve nele e a pagina, por portal. Trocar isto por um estado
+        na casca faria a casca saber o que cada pagina tem a dizer, e ela nao
+        calcula nada (regra inviolavel 6).
+      */}
+      <div id={PAGE_LIVE_REGION_ID} />
+
       <ConflictDialog refusal={refusal} onClose={() => setRefusal(null)} />
     </div>
   )
 }
+
+/**
+ * O endereco da regiao viva que sobrevive ao `return` antecipado das paginas.
+ *
+ * Constante exportada, e nao literal repetido: um `id` escrito duas vezes vira
+ * dois `id` diferentes no primeiro ajuste, e o portal falharia em silencio —
+ * `getElementById` devolveria `null` e a mensagem simplesmente nao apareceria.
+ */
+export const PAGE_LIVE_REGION_ID = 'regiao-viva-da-pagina'
 
 /**
  * O intervalo entre o clique e o modulo da pagina chegar. Nao e o estado

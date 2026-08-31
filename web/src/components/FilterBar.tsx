@@ -71,14 +71,18 @@ export function FilterBar({ filters, options, optionsError }: FilterBarProps) {
         )}
       </div>
 
-      {optionsError && (
-        <p
-          role="alert"
-          className="mb-2 rounded border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg"
-        >
-          Não foi possível carregar as opções de filtro: {optionsError}
-        </p>
-      )}
+      {/* A regiao existe desde a montagem (`H-43`). Vazia, e `sr-only`: o
+          criterio nao e ausencia do no, e ausencia de caixa vazia na tela. */}
+      <p
+        role="alert"
+        className={
+          optionsError === null
+            ? 'sr-only'
+            : 'mb-2 rounded border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg'
+        }
+      >
+        {optionsError !== null && `Não foi possível carregar as opções de filtro: ${optionsError}`}
+      </p>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
         {MULTI_CONTROLS.map((control) => (

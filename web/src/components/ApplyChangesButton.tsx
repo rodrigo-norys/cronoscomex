@@ -85,14 +85,19 @@ export function ApplyChangesButton({
 
   return (
     <div className="flex items-center gap-2">
-      {done !== null && (
-        <span role="status" className="text-sm text-state-success-fg">
-          {describeWritten(done.cellsWritten, done.rowsRepainted)}
-          {/* A fila ficou para tras: sem isto o operador aplicaria de novo e
-              receberia uma recusa que ele nao tem como explicar. */}
-          {done.archivedQueuePath === null && ' — confira a fila, ela não foi arquivada'}
-        </span>
-      )}
+      {/* A regiao existe desde a montagem (`H-43`): montar o `role="status"` ja
+          com o texto dentro nao produz anuncio nenhum, porque nao ha mudanca a
+          comparar. Vazia, ela e `sr-only` — sem caixa na tela. */}
+      <span role="status" className={done === null ? 'sr-only' : 'text-sm text-state-success-fg'}>
+        {done !== null && (
+          <>
+            {describeWritten(done.cellsWritten, done.rowsRepainted)}
+            {/* A fila ficou para tras: sem isto o operador aplicaria de novo e
+                receberia uma recusa que ele nao tem como explicar. */}
+            {done.archivedQueuePath === null && ' — confira a fila, ela não foi arquivada'}
+          </>
+        )}
+      </span>
       <button
         type="button"
         onClick={() => void apply()}

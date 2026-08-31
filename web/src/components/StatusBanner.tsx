@@ -115,31 +115,52 @@ function SetupLink() {
   )
 }
 
+/**
+ * As DUAS regioes vivem desde a montagem, e os sinais entram dentro delas
+ * (`H-43`).
+ *
+ * Sao duas porque os papeis sao dois: `arquivoAberto` e contexto — o operador
+ * nao precisa agir —, e os demais interrompem. Montar cada sinal com o seu
+ * `role` ja populado era o `ACHADO 11`: o no nascia com o texto, e o leitor de
+ * tela nao tinha o que comparar.
+ *
+ * **O estilo mora no filho, nunca no contentor.** Sem sinal, as duas regioes sao
+ * nos vazios sem borda, fundo nem espacamento — o criterio nao e ausencia do no,
+ * e ausencia de caixa vazia na tela.
+ */
 export function StatusBanner({ health }: { health: HealthResponse | null }) {
-  if (health === null) return null
-
-  const signals = bannerSignals(health)
-  if (signals.length === 0) return null
+  const signals = health === null ? [] : bannerSignals(health)
+  const alerts = signals.filter((signal) => signal.key !== 'arquivoAberto')
+  const status = signals.filter((signal) => signal.key === 'arquivoAberto')
 
   return (
     <div className="flex flex-col gap-px">
-      {signals.map((signal) => (
-        <div
-          key={signal.key}
-          role={signal.key === 'arquivoAberto' ? 'status' : 'alert'}
-          className={`border-y px-6 py-3 text-sm ${SIGNAL_STYLE[signal.key]}`}
-        >
-          <strong className="font-semibold">{signal.title}</strong> {signal.detail}
-          {signal.key === 'degradado' && <SetupLink />}
-          {signal.files.length > 0 && (
-            <ul className="mt-1 list-disc pl-5 font-mono text-xs">
-              {signal.files.map((file) => (
-                <li key={file}>{file}</li>
-              ))}
-            </ul>
-          )}
-        </div>
-      ))}
+      <div role="alert" className="flex flex-col gap-px">
+        {alerts.map((signal) => (
+          <Signal key={signal.key} signal={signal} />
+        ))}
+      </div>
+      <div role="status" className="flex flex-col gap-px">
+        {status.map((signal) => (
+          <Signal key={signal.key} signal={signal} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function Signal({ signal }: { signal: StatusSignal }) {
+  return (
+    <div className={`border-y px-6 py-3 text-sm ${SIGNAL_STYLE[signal.key]}`}>
+      <strong className="font-semibold">{signal.title}</strong> {signal.detail}
+      {signal.key === 'degradado' && <SetupLink />}
+      {signal.files.length > 0 && (
+        <ul className="mt-1 list-disc pl-5 font-mono text-xs">
+          {signal.files.map((file) => (
+            <li key={file}>{file}</li>
+          ))}
+        </ul>
+      )}
     </div>
   )
 }
