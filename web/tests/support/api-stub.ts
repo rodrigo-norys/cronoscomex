@@ -23,6 +23,7 @@ import type { QuarantineResponse } from '../../../src/http/routes/quarantine.ts'
 export function indicatorsFixture(
   countsOverrides: Partial<IndicatorsResponse['counts']> = {},
   channelOverrides: Partial<IndicatorsResponse['channelDistribution']> = {},
+  metaOverrides: Partial<IndicatorsResponse['meta']> = {},
 ): IndicatorsResponse {
   return {
     counts: {
@@ -40,6 +41,10 @@ export function indicatorsFixture(
       // IND-16. Zero MEDIDO, nao ausencia: o RG mais recente da planilha e
       // 31/07, e passando esse dia a funcao devolve 3.
       desembaracadosHoje: 0,
+      // `H-52`. Sem janela ativa, conta todo desembaracado com RG preenchido —
+      // 480 na categoria, 483 com RG, e os 3 de diferenca sao os que tem RG sem
+      // estar na categoria (A-29).
+      desembaracadosNoPeriodo: 480,
       ...countsOverrides,
     },
     // `H-51`. Medido em 31/08/2026 sobre a planilha real: 477 verdes, 5
@@ -79,6 +84,16 @@ export function indicatorsFixture(
       timezone: 'America/Sao_Paulo',
       weekEnd: '2026-08-09',
       bazarShare: 0.3547,
+      // `H-52`. Sem recorte por padrao — o estado do criterio de aceite que
+      // manda cada cartao declarar a faixa REAL dos dados.
+      period: { from: null, to: null },
+      // As faixas medidas na planilha real em 31/08/2026
+      // (`docs/uso/RESULTADO.md` secao 5): 64 dos 649 sem `ETA2`, 166 sem `RG`.
+      dataRange: {
+        eta2: { from: '2025-12-30', to: '2026-09-09', missing: 64 },
+        registration: { from: '2026-01-05', to: '2026-07-31', missing: 166 },
+      },
+      ...metaOverrides,
     },
   }
 }

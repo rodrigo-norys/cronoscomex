@@ -247,7 +247,8 @@ está fora de escopo por lacuna de dado (§4 da especificação).
     "chegando15Dias": 0,           // IND-09
     "documentosPendentes": 0,      // IND-14
     "atrasados": 0,                // IND-15
-    "desembaracadosHoje": 0        // IND-16
+    "desembaracadosHoje": 0,       // IND-16
+    "desembaracadosNoPeriodo": 0   // H-52 — por RG, adicional a desembaracados
   },
   "channelDistribution": {         // H-51 — acompanha IND-06, não o redefine
     "verde": 0,
@@ -288,7 +289,12 @@ está fora de escopo por lacuna de dado (§4 da especificação).
     "today": "2026-08-03",
     "timezone": "America/Sao_Paulo",
     "weekEnd": "2026-08-09",
-    "bazarShare": null
+    "bazarShare": null,
+    "period": { "from": null, "to": null },          // H-52 — a janela aplicada
+    "dataRange": {                                   // H-52 — a faixa real
+      "eta2":         { "from": "2025-12-30", "to": "2026-09-09", "missing": 64 },
+      "registration": { "from": "2026-01-05", "to": "2026-07-31", "missing": 166 }
+    }
   }
 }
 ```
@@ -304,6 +310,23 @@ cliente (`H-56`).
 de conjunto vazio não é zero, e apresentá-la como zero seria mentir sobre o
 dado (A-42). `bazarShare` acompanha IND-13 para tornar visível a distorção
 declarada em A-34.
+
+`counts.desembaracadosNoPeriodo` (`H-52`) é **adicional** a `desembaracados`,
+nunca substituto: aquele conta a categoria sobre o recorte de `ETA2`, este conta
+a data de **registro** dentro da janela — duas datas, duas perguntas. A soma das
+quatro categorias continua fechando com o total, e a linha de conferência de A-12
+segue válida. Como todo indicador desta rota, ele responde sobre o conjunto
+**filtrado** (RF-18): a janela incide sobre o recorte ativo, não sobre a base.
+
+`meta.period` ecoa a janela que o servidor de fato aplicou, e `meta.dataRange`
+traz a faixa real das duas datas **no conjunto filtrado**, com quantos processos
+não têm cada uma. Os dois existem para o cartão distinguir zero por recorte de
+zero por ausência de dado: derivar a faixa no cliente seria cálculo na tela, e
+`missing` está lá porque data ausente não está dentro nem fora de janela nenhuma
+(A-20) — some de qualquer recorte por período, e sumir sem contagem seria
+descarte silencioso. `from` e `to` são `null` quando nenhum processo do conjunto
+tem a data; a tela diz "sem data", nunca uma faixa inventada. Medido em
+31/08/2026 sobre a planilha real: 64 dos 649 sem `ETA2`, 166 sem `RG`.
 
 `channelDistribution` (`H-51`) é bloco próprio, e não um campo em `counts`:
 `counts.canalVermelho` é IND-06 e continua com o mesmo valor. `known` é

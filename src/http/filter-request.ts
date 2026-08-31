@@ -30,6 +30,37 @@ export function filteredProcesses(
 }
 
 /**
+ * O recorte E a janela que o produziu, para a rota que precisa dizer ao
+ * operador **qual** periodo esta contando (`H-52`).
+ *
+ * Existe ao lado de `filteredProcesses`, e nao no lugar dele: alargar aquele
+ * alcancaria as seis rotas **[F]**, e cinco delas nao tem uso para a janela.
+ * Reparsear a query dentro da rota devolveria o mesmo objeto por outro caminho,
+ * duplicando o tratamento de `400 FILTRO_INVALIDO` que este modulo existe para
+ * concentrar.
+ */
+export function filteredWithPeriod(
+  request: FastifyRequest,
+  reply: FastifyReply,
+  processes: readonly Process[],
+): { processes: readonly Process[]; from: Date | null; to: Date | null } | null {
+  try {
+    const filters = parseFilters(request.query as Record<string, unknown>)
+    return {
+      processes: applyFilters(processes, filters),
+      from: filters.etaFrom,
+      to: filters.etaTo,
+    }
+  } catch (error) {
+    if (error instanceof FilterParseError) {
+      reply.code(400).send(apiError('FILTRO_INVALIDO', error.message))
+      return null
+    }
+    throw error
+  }
+}
+
+/**
  * Os REF que os filtros da query selecionam, para as rotas **[F]** que recortam
  * algo que nao e a lista de processos — hoje so a serie mensal de `H-28`.
  *
