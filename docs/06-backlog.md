@@ -5128,6 +5128,50 @@ de rolagem da tabela (`ACHADO 19`) — onda 5, `H-46`.
 
 ### H-45 — Unificar papéis de UI e tirar a informação só-cor
 
+> ✅ **CONCLUÍDA em 31/08/2026.** **11 testes próprios** — seis em
+> `Alerts.test.tsx`, dois em `Home.test.tsx` e três em `tests/repo/estilo.test.ts`.
+> Suíte total de **1571 para 1582**. Três casos existentes reapontados para o
+> papel novo. Uma divergência no protocolo, resolvida.
+>
+> **O primeiro critério já vinha satisfeito, e o trabalho foi travá-lo.** Os
+> quatro desviantes de `ACHADO 15` usavam `border-slate-300`; `H-42` migrou o
+> conjunto inteiro para tokens e, ao fazê-lo, alinhou os quatro em
+> `--color-border-subtle` **de passagem**. Confirmar isso e seguir deixaria o
+> desvio livre para voltar no primeiro arquivo novo — que é exatamente a razão de
+> `tests/repo/estilo.test.ts` existir. A guarda ganhou `C04`, com duas asserções
+> de conjunto e **prova por mutação**: trocar a borda de `Placeholders.tsx:33`
+> reprova a suíte.
+>
+> **O sinal sintático que separa os dois papéis é o `p-` uniforme.** A primeira
+> versão da regex pegava `input` e `select`, que também são
+> `rounded border … bg-surface-raised` — mas com `px-`/`py-` assimétricos e
+> `--color-border-control`. Papel diferente, token diferente, e a guarda tem de
+> saber disso.
+>
+> **`ACHADO 16` — a mesma ação tinha dois papéis e dois nomes.** Abrir o detalhe
+> era `<a href>` na tabela e `<button>` no alerta. `SC 3.2.4` incide porque a
+> determinação `Z1` mediu URIs distintas, então a consistência deixa de ser
+> preferência. O `AlertRow` passou a usar o **mesmo** interceptador da tabela —
+> modificador pressionado abre em aba nova, como qualquer link — e ganhou
+> `aria-label` explícito: sem ele o nome acessível seria o bloco inteiro
+> concatenado, contra `"NBSC260"` na tabela.
+>
+> **`ACHADO 18` — a urgência era só cor, em dois lugares.** O badge urgente
+> ganhou o prefixo "Pede ação"; `data-severity` continua onde estava e **não**
+> conta como canal, porque não é exposto ao usuário. E os dois cartões de
+> urgência passaram a usar a `hint` que `StatCard` já oferecia desde `H-16` e que
+> nenhum cartão usava.
+>
+> **Divergência 1 — `tests/repo/estilo.test.ts` não estava na lista.** A história
+> nomeia sete arquivos de `web/src/`, e nenhum lugar onde travar um critério
+> composicional. A guarda do épico é o lugar natural: ela já existe para `C01` e
+> `C02`, roda no `verify` e no CI, e não tem lista fixa — acrescentar arquivo
+> muda a expectativa sozinho.
+>
+> **Os três painéis `border-dashed` continuam distintos**, e a segunda asserção
+> guarda isso: papel "ressalva" é legítimo **porque** os três são consistentes
+> entre si. Um quarto com outra borda quebraria o papel, e agora reprova.
+
 **Objetivo:** o mesmo papel de UI ter a mesma forma nas sete telas, a mesma ação
 ter o mesmo nome e papel, e nenhuma urgência ser transmitida apenas por cor.
 
@@ -6953,10 +6997,10 @@ superfície dobrada pelo segundo esquema.
 | E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
-| E9 — Estilização | **H-39 ✅ … H-44 ✅; H-45 … H-47 abertas** | 1 | 8 | 0 |
+| E9 — Estilização | **H-39 ✅ … H-45 ✅; H-46 e H-47 abertas** | 1 | 8 | 0 |
 | E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-52 ✅, H-53 ✅, H-54 ✅, H-55 ✅, H-56 ✅; só `H-50` aberta** | 1 | 8 | 0 |
 | E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
-| **Total** | **65** — 52 concluídas, 13 abertas | **21** | **44** | **0** |
+| **Total** | **65** — 53 concluídas, 12 abertas | **21** | **44** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até

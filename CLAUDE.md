@@ -178,8 +178,9 @@ fixado em `web/src/index.css`, as oito seguintes são substituição mecânica.*
 as regiões vivas passam a existir no DOM antes de receberem mensagem, e a região
 persistente que as páginas usarão nasceu ali, e **`H-44` a consumiu nas sete
 páginas, tirou a parada órfã do gráfico e trocou o canal de cor do botão de
-janela pela espessura da borda.** **E9 está em `H-45`**, e as ondas dela estão no
-cabeçalho do épico, em
+janela pela espessura da borda.** **`H-45` unificou os papéis de UI e tirou a
+informação só-cor**, e a guarda de estilo ganhou `C04` para o desvio não voltar.
+**E9 está em `H-46`**, e as ondas dela estão no cabeçalho do épico, em
 `docs/06-backlog.md` — `docs/07-plano-entrega.md` cobre as fases do plano
 original, e não alcança E9 nem E10.
 
