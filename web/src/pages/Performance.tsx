@@ -1,4 +1,5 @@
 import type { IndicatorsResponse } from '../api-client.ts'
+import { PageAlert } from '../components/PageAlert.tsx'
 import { RankingBar } from '../components/RankingBar.tsx'
 import {
   type FilterSelection,
@@ -69,19 +70,26 @@ export function Performance({ queryString, dataVersion }: PerformanceProps) {
 
   if (state.status === 'erro') {
     return (
-      <p role="alert" className="panel-error">
+      <PageAlert
+        className="panel-error"
+        announcement={`Não foi possível carregar a performance. ${state.message}`}
+      >
         <strong className="font-semibold">Não foi possível carregar a performance.</strong>{' '}
         {state.message}
-      </p>
+      </PageAlert>
     )
   }
 
   if (state.status === 'semLeitura') {
     return (
-      <p role="status" className="panel-no-read">
+      <PageAlert
+        tone="status"
+        className="panel-no-read"
+        announcement="Nenhuma leitura da planilha foi concluída ainda. Os tempos aparecem assim que a primeira terminar — traço aqui não significa zero dia."
+      >
         Nenhuma leitura da planilha foi concluída ainda. Os tempos aparecem assim que a primeira
         terminar — traço aqui não significa zero dia.
-      </p>
+      </PageAlert>
     )
   }
 

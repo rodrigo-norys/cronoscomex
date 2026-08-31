@@ -3,6 +3,7 @@ import type { ApplyRefusal, HealthResponse } from './api-client.ts'
 import { ApplyChangesButton } from './components/ApplyChangesButton.tsx'
 import { ConflictDialog } from './components/ConflictDialog.tsx'
 import { FilterBar } from './components/FilterBar.tsx'
+import { PAGE_LIVE_REGION_ID, PAGE_LIVE_STATUS_ID } from './components/PageAlert.tsx'
 import { RefreshButton } from './components/RefreshButton.tsx'
 import { StatusBanner } from './components/StatusBanner.tsx'
 import { useAppData } from './hooks/useAppData.ts'
@@ -153,21 +154,13 @@ export function App() {
         na casca faria a casca saber o que cada pagina tem a dizer, e ela nao
         calcula nada (regra inviolavel 6).
       */}
-      <div id={PAGE_LIVE_REGION_ID} />
+      <div id={PAGE_LIVE_REGION_ID} role="alert" />
+      <div id={PAGE_LIVE_STATUS_ID} role="status" />
 
       <ConflictDialog refusal={refusal} onClose={() => setRefusal(null)} />
     </div>
   )
 }
-
-/**
- * O endereco da regiao viva que sobrevive ao `return` antecipado das paginas.
- *
- * Constante exportada, e nao literal repetido: um `id` escrito duas vezes vira
- * dois `id` diferentes no primeiro ajuste, e o portal falharia em silencio —
- * `getElementById` devolveria `null` e a mensagem simplesmente nao apareceria.
- */
-export const PAGE_LIVE_REGION_ID = 'regiao-viva-da-pagina'
 
 /**
  * O intervalo entre o clique e o modulo da pagina chegar. Nao e o estado

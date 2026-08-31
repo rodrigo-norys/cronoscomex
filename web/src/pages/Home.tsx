@@ -1,5 +1,6 @@
 import type { HealthResponse, IndicatorsResponse } from '../api-client.ts'
 import { IngestionHealth } from '../components/IngestionHealth.tsx'
+import { LiveAnnouncement, PageAlert } from '../components/PageAlert.tsx'
 import { StatCard, type StatVariant } from '../components/StatCard.tsx'
 import { type FilterSelection, useFilters } from '../hooks/useFilters.ts'
 import { useIndicators, useQuarantine } from '../hooks/useIndicators.ts'
@@ -118,10 +119,13 @@ export function Home({ health, queryString, dataVersion }: HomeProps) {
 
   if (state.status === 'erro') {
     return (
-      <p role="alert" className="panel-error">
+      <PageAlert
+        className="panel-error"
+        announcement={`Não foi possível carregar os indicadores. ${state.message}`}
+      >
         <strong className="font-semibold">Não foi possível carregar os indicadores.</strong>{' '}
         {state.message}
-      </p>
+      </PageAlert>
     )
   }
 
@@ -131,10 +135,14 @@ export function Home({ health, queryString, dataVersion }: HomeProps) {
   return (
     <div className="flex flex-col gap-6">
       {state.status === 'semLeitura' && (
-        <p role="status" className="panel-no-read">
+        <PageAlert
+          tone="status"
+          className="panel-no-read"
+          announcement="Nenhuma leitura da planilha foi concluída ainda. Os cartões aparecem assim que a primeira terminar."
+        >
           Nenhuma leitura da planilha foi concluída ainda. Os cartões aparecem assim que a primeira
           terminar — os traços não significam zero.
-        </p>
+        </PageAlert>
       )}
 
       <PeriodPicker
@@ -317,23 +325,34 @@ function CategorySum({ counts }: { counts: IndicatorsResponse['counts'] }) {
   const matches = sum === counts.total
 
   return (
-    <p
-      className={`rounded border px-4 py-2 text-sm ${
-        matches
-          ? 'border-border-subtle bg-surface-raised text-text-secondary'
-          : 'border-state-error-border bg-state-error-bg'
-      }`}
-      {...(matches ? {} : { role: 'alert' })}
-    >
-      Soma das 4 categorias: <strong className="tabular-nums">{sum.toLocaleString('pt-BR')}</strong>{' '}
-      · Total: <strong className="tabular-nums">{counts.total.toLocaleString('pt-BR')}</strong>
-      {matches ? (
-        <span className="ml-2 text-text-muted">conferem</span>
-      ) : (
-        <span className="ml-2 font-semibold text-state-error-fg">
-          NÃO conferem — há processo fora das quatro categorias
-        </span>
+    <>
+      {/* Este `<p>` existe SEMPRE e so muda de tom; acrescentar `role="alert"`
+          a ele quando a soma quebra criaria uma regiao ja populada — o mesmo
+          `ACHADO 11` por outro caminho, e era o que a linha de `:114` fazia por
+          spread condicional. Quem anuncia e a regiao viva da casca. */}
+      <p
+        className={`rounded border px-4 py-2 text-sm ${
+          matches
+            ? 'border-border-subtle bg-surface-raised text-text-secondary'
+            : 'border-state-error-border bg-state-error-bg'
+        }`}
+      >
+        Soma das 4 categorias:{' '}
+        <strong className="tabular-nums">{sum.toLocaleString('pt-BR')}</strong> · Total:{' '}
+        <strong className="tabular-nums">{counts.total.toLocaleString('pt-BR')}</strong>
+        {matches ? (
+          <span className="ml-2 text-text-muted">conferem</span>
+        ) : (
+          <span className="ml-2 font-semibold text-state-error-fg">
+            NÃO conferem — há processo fora das quatro categorias
+          </span>
+        )}
+      </p>
+      {!matches && (
+        <LiveAnnouncement
+          text={`A soma das 4 categorias é ${sum}, e o total é ${counts.total}. Elas NÃO conferem — há processo fora das quatro categorias.`}
+        />
       )}
-    </p>
+    </>
   )
 }

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { ConfigFieldReport, ConfigFieldSource } from '../../../src/app/config.ts'
 import type { WorkbookConfigResponse } from '../../../src/http/routes/config.ts'
 import type { HealthResponse } from '../api-client.ts'
+import { LiveAnnouncement } from '../components/PageAlert.tsx'
 import { useWorkbookConfig } from '../hooks/useWorkbookConfig.ts'
 
 /**
@@ -120,16 +121,36 @@ export function WorkbookSetup({
         </p>
       )}
 
+      {/* Montado condicionalmente, o `role` nascia ja populado — mesmo
+          `ACHADO 11`. O bloco visivel fica, e quem anuncia e a regiao viva. */}
       {state.status === 'carregando' && (
-        <p role="status" className="mt-4 text-sm text-text-muted">
-          Carregando a configuração atual…
-        </p>
+        <>
+          <p aria-hidden="true" className="mt-4 text-sm text-text-muted">
+            Carregando a configuração atual…
+          </p>
+          <LiveAnnouncement text="Carregando a configuração atual." tone="status" />
+        </>
       )}
 
+      {/*
+        A carga da configuracao falhou. `H-44`: o bloco e renderizado
+        condicionalmente e nao carrega `role` — anuncia-lo por aqui criaria a
+        regiao ja populada de `ACHADO 11`. Quem anuncia e a regiao viva da casca.
+
+        As DUAS regioes desta tela, logo abaixo, ja estao corretas desde `H-34`:
+        elas existem fora do condicional e so o texto muda. Sao padrao a
+        preservar, nunca a "corrigir".
+      */}
       {state.status === 'erro' && (
-        <p className="mt-4 rounded border border-state-error-border bg-state-error-bg p-3 text-sm text-state-error-fg">
-          Não foi possível ler a configuração atual: {state.message}
-        </p>
+        <>
+          <p
+            aria-hidden="true"
+            className="mt-4 rounded border border-state-error-border bg-state-error-bg p-3 text-sm text-state-error-fg"
+          >
+            Não foi possível ler a configuração atual: {state.message}
+          </p>
+          <LiveAnnouncement text={`Não foi possível ler a configuração atual: ${state.message}`} />
+        </>
       )}
 
       {state.status === 'pronto' && (

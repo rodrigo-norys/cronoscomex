@@ -1,6 +1,7 @@
 import type { ProcessDetailResponse, ProcessDto } from '../api-client.ts'
 import { ColorFieldsForm } from '../components/ColorFieldsForm.tsx'
 import { EditProcessForm } from '../components/EditProcessForm.tsx'
+import { PageAlert } from '../components/PageAlert.tsx'
 import { PendingEditsPanel } from '../components/PendingEditsPanel.tsx'
 import { useProcessDetail } from '../hooks/useProcessDetail.ts'
 
@@ -46,10 +47,13 @@ export function ProcessDetail({ processRef, dataVersion }: ProcessDetailProps) {
 
   if (state.status === 'erro') {
     return (
-      <p role="alert" className="panel-error">
+      <PageAlert
+        className="panel-error"
+        announcement={`Não foi possível carregar o processo. ${state.message}`}
+      >
         <strong className="font-semibold">Não foi possível carregar o processo.</strong>{' '}
         {state.message}
-      </p>
+      </PageAlert>
     )
   }
 
@@ -71,10 +75,14 @@ export function ProcessDetail({ processRef, dataVersion }: ProcessDetailProps) {
 
   if (state.status === 'semLeitura') {
     return (
-      <p role="status" className="panel-no-read">
+      <PageAlert
+        tone="status"
+        className="panel-no-read"
+        announcement="Nenhuma leitura da planilha foi concluída ainda. O processo aparece assim que a primeira terminar — a ausência aqui não significa que a REF não existe."
+      >
         Nenhuma leitura da planilha foi concluída ainda. O processo aparece assim que a primeira
         terminar — a ausência aqui não significa que a REF não existe.
-      </p>
+      </PageAlert>
     )
   }
 

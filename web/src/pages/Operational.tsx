@@ -1,4 +1,5 @@
 import { ArrivalCalendar } from '../components/ArrivalCalendar.tsx'
+import { PageAlert } from '../components/PageAlert.tsx'
 import { ProcessTable } from '../components/ProcessTable.tsx'
 import { useIndicators } from '../hooks/useIndicators.ts'
 import { useProcesses } from '../hooks/useProcesses.ts'
@@ -31,17 +32,24 @@ export function Operational({ queryString, dataVersion }: OperationalProps) {
       <Controls query={query} />
 
       {processes.status === 'semLeitura' && (
-        <p role="status" className="panel-no-read">
+        <PageAlert
+          tone="status"
+          className="panel-no-read"
+          announcement="Nenhuma leitura da planilha foi concluída ainda. A tabela aparece assim que a primeira terminar — vazio aqui não significa nenhum processo."
+        >
           Nenhuma leitura da planilha foi concluída ainda. A tabela aparece assim que a primeira
           terminar — vazio aqui não significa nenhum processo.
-        </p>
+        </PageAlert>
       )}
 
       {processes.status === 'erro' && (
-        <p role="alert" className="panel-error">
+        <PageAlert
+          className="panel-error"
+          announcement={`Não foi possível carregar os processos. ${processes.message}`}
+        >
           <strong className="font-semibold">Não foi possível carregar os processos.</strong>{' '}
           {processes.message}
-        </p>
+        </PageAlert>
       )}
 
       <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">

@@ -10,6 +10,7 @@ import {
   YAxis,
 } from 'recharts'
 import type { MonthlyHistoryResponse } from '../api-client.ts'
+import { PageAlert } from '../components/PageAlert.tsx'
 import { useHistory } from '../hooks/useHistory.ts'
 
 /**
@@ -97,19 +98,26 @@ export function History({ queryString, dataVersion }: HistoryProps) {
 
   if (state.status === 'erro') {
     return (
-      <p role="alert" className="panel-error">
+      <PageAlert
+        className="panel-error"
+        announcement={`Não foi possível carregar o histórico. ${state.message}`}
+      >
         <strong className="font-semibold">Não foi possível carregar o histórico.</strong>{' '}
         {state.message}
-      </p>
+      </PageAlert>
     )
   }
 
   if (state.status === 'semLeitura') {
     return (
-      <p role="status" className="panel-no-read">
+      <PageAlert
+        tone="status"
+        className="panel-no-read"
+        announcement="Nenhuma leitura da planilha foi concluída ainda. A série aparece assim que a primeira terminar — gráfico vazio aqui não significa zero processo."
+      >
         Nenhuma leitura da planilha foi concluída ainda. A série aparece assim que a primeira
         terminar — gráfico vazio aqui não significa zero processo.
-      </p>
+      </PageAlert>
     )
   }
 
@@ -238,10 +246,16 @@ function WindowPicker({
           type="button"
           aria-pressed={option === months}
           onClick={() => onChange(option)}
-          className={`rounded border px-3 py-1 text-sm font-medium ${
+          /*
+            `ACHADO 13`. A ESPESSURA da borda e o canal nao-cromatico: sob
+            `forced-colors: active` o agente de usuario substitui a cor, e o
+            selecionado ficaria indistinguivel dos outros dois. O `aria-pressed`
+            acima ja resolve o eixo programatico; isto resolve o visual.
+          */
+          className={`rounded px-3 py-1 text-sm font-medium ${
             option === months
-              ? 'border-action-bg bg-action-bg text-action-fg'
-              : 'border-border-control text-text-secondary hover:border-border-strong'
+              ? 'border-2 border-action-bg bg-action-bg text-action-fg'
+              : 'border border-border-control text-text-secondary hover:border-border-strong'
           }`}
         >
           {option} meses
@@ -315,7 +329,22 @@ function MonthlySeries({
 
       <div aria-hidden="true" className="mt-3 h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={points} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
+          {/*
+            `ACHADO 12`. Sem isto, `recharts/es6/container/RootSurface.js:45` da
+            `tabIndex={0}` e `role="application"` ao `<svg>` — dentro de uma
+            subarvore `aria-hidden="true"`. O operador tabula para um elemento
+            que a arvore de acessibilidade nao expoe, e que por isso nao tem nome
+            nenhum a anunciar: uma parada orfa.
+
+            O grafico segue `aria-hidden`, e a tabela irma continua carregando os
+            mesmos numeros — a correcao remove a parada, nunca a alternativa
+            textual.
+          */}
+          <LineChart
+            data={points}
+            margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
+            accessibilityLayer={false}
+          >
             <CartesianGrid
               stroke="var(--color-chart-grid)"
               strokeDasharray="3 3"
@@ -451,12 +480,19 @@ function VolumeNote() {
   )
 }
 
-/** Recorte que nao se anuncia e descarte silencioso (regra inviolavel 2). */
+/**
+ * Recorte que nao se anuncia e descarte silencioso (regra inviolavel 2).
+ *
+ * O bloco e montado condicionalmente, entao o `role` que ele carregava nascia ja
+ * populado — o mesmo `ACHADO 11` das outras seis paginas, num ponto que a lista
+ * de `H-44` nao nomeava. Quem anuncia agora e a regiao viva da casca.
+ */
 function TruncatedNote({ months, pointCount }: { months: number; pointCount: number }) {
   return (
-    <p
-      role="status"
+    <PageAlert
+      tone="status"
       className="rounded border border-state-warning-border bg-state-warning-bg px-4 py-3 text-xs text-state-warning-fg"
+      announcement={`A janela pedida — ${months} meses — é maior que o histórico existente. A série mostra os ${pointCount} ${pointCount === 1 ? 'mês' : 'meses'} que há.`}
     >
       A janela pedida — <strong className="font-semibold">{months} meses</strong> — é maior que o
       histórico existente. A série mostra os{' '}
@@ -464,7 +500,7 @@ function TruncatedNote({ months, pointCount }: { months: number; pointCount: num
         {pointCount} {pointCount === 1 ? 'mês' : 'meses'}
       </strong>{' '}
       que há, e começa onde o histórico começou.
-    </p>
+    </PageAlert>
   )
 }
 
