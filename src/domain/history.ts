@@ -207,3 +207,102 @@ export function aggregateMonthly(
 
   return { series: series.slice(-months), truncated: series.length < months }
 }
+
+/**
+ * `H-54`. Um ponto da serie RECONSTRUIDA, derivada das datas da planilha.
+ *
+ * As duas medidas sao **estoque ao fim do mes**, a mesma grandeza de
+ * `MonthlyPoint` — sem isso as series nao seriam comparaveis no mesmo eixo. Um
+ * processo com `ETA2` em fevereiro conta em fevereiro e em todo mes seguinte.
+ *
+ * **Nao ha `canalVermelho` aqui, e a ausencia e deliberada.** A cor e o estado
+ * de HOJE e nao carrega data: projeta-la para tras afirmaria que a linha ja era
+ * vermelha naquele mes, que e exatamente o que a regra inviolavel 3 proibe.
+ */
+export interface ReconstructedPoint {
+  /** `AAAA-MM`. */
+  month: string
+  /** Processos com `ETA2` ate o fim do mes. */
+  chegados: number
+  /** Processos com data de registro ate o fim do mes. */
+  desembaracados: number
+  /** Mes posterior ao mes corrente — o dado existe, o mes ainda nao aconteceu. */
+  forecast: boolean
+}
+
+export interface ReconstructedSeries {
+  points: ReconstructedPoint[]
+  /** Sem `ETA2`: fora de `chegados` em todos os meses (regra inviolavel 2). */
+  missingEta2: number
+  /** Sem data de registro: fora de `desembaracados` em todos os meses. */
+  missingRegistration: number
+}
+
+/** `AAAA-MM` de uma data CIVIL da planilha, que ja vem ancorada em UTC (TD-03). */
+function monthOfCivil(date: Date): string {
+  return date.toISOString().slice(0, 7)
+}
+
+/**
+ * A serie reconstruida a partir das datas que a planilha carrega (`H-54`).
+ *
+ * **Nao revoga A-43.** O que A-43 proibe e apresentar reconstrucao como
+ * historico observado; ela nao inventa o estado de cada mes, e a rota a entrega
+ * num bloco separado justamente para as duas nunca serem emendadas numa linha
+ * so. Quem diz qual e qual e a tela.
+ *
+ * Cobre **todo** mes entre a primeira e a ultima data presente, inclusive os
+ * vazios: mes sem processo e ponto em zero, nao buraco — buraco no eixo sugere
+ * dado faltando onde ha dado medido.
+ *
+ * O intervalo vem das datas, e nao da janela da pagina: a planilha tem passado
+ * datado, e cortar pela janela esconderia justamente o que a historia existe
+ * para mostrar. Medido em 31/08/2026: `registrationDate` cobre sete meses de
+ * 2026 e `ETA2` cobre dez a partir de dez/2025 (`docs/uso/RESULTADO.md` secao 6).
+ */
+export function reconstructMonthly(
+  processes: readonly Process[],
+  today: Date,
+  timezone: string,
+): ReconstructedSeries {
+  const arrivals: string[] = []
+  const clearances: string[] = []
+  let missingEta2 = 0
+  let missingRegistration = 0
+
+  for (const process of processes) {
+    if (process.eta2 === null) missingEta2 += 1
+    else arrivals.push(monthOfCivil(process.eta2))
+
+    if (process.registrationDate === null) missingRegistration += 1
+    else clearances.push(monthOfCivil(process.registrationDate))
+  }
+
+  const all = [...arrivals, ...clearances].sort()
+  const first = all[0]
+  const last = all[all.length - 1]
+  if (first === undefined || last === undefined) {
+    return { points: [], missingEta2, missingRegistration }
+  }
+
+  const arrivalsByMonth = countByMonth(arrivals)
+  const clearancesByMonth = countByMonth(clearances)
+  const currentMonth = monthOf(today, timezone)
+
+  const points: ReconstructedPoint[] = []
+  let chegados = 0
+  let desembaracados = 0
+  for (let month = first; month <= last; month = addMonth(month)) {
+    chegados += arrivalsByMonth.get(month) ?? 0
+    desembaracados += clearancesByMonth.get(month) ?? 0
+    points.push({ month, chegados, desembaracados, forecast: month > currentMonth })
+  }
+
+  return { points, missingEta2, missingRegistration }
+}
+
+function countByMonth(months: readonly string[]): Map<string, number> {
+  const counts = new Map<string, number>()
+  for (const month of months) counts.set(month, (counts.get(month) ?? 0) + 1)
+  return counts
+}
