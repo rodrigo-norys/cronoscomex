@@ -55,6 +55,7 @@ export interface Process {
   readonly clientKey: string              // cliente CONSOLIDADO (H-49, TD-04.1)
   readonly clientProcessKey: string       // chave da célula CLT — o processo do cliente
   readonly clientLabel: string            // rótulo do consolidado: label do mapa, ou a grafia da célula
+  readonly clientGroupKey: string         // grupo do filtro (H-55, TD-04.2); '' fora de grupo
   readonly importerKey: string
   readonly agentKey: string
   readonly vesselKey: string
@@ -276,6 +277,29 @@ ser vários. Inferir aqui seria adivinhar (regra inviolável 3).
 `resolveClient` devolve a chave nos dois campos quando nada casa; quem escolhe a
 grafia é `process-builder.ts`, para não trocar `zeta comércio` por
 `ZETA COMERCIO` na tela.
+
+### TD-04.2 — Grupo de clientes, só no filtro (`H-55`)
+
+A seção `groups` de `client-map.json` reúne clientes **já declarados** em
+`clients` num nível de árvore do filtro Cliente. `clientGroupKey` é o grupo do
+cliente consolidado, ou `''` quando ele não pertence a nenhum.
+
+| Situação | `clientKey` | `clientGroupKey` |
+|---|---|---|
+| Cliente membro de um grupo | inalterado | a chave do grupo |
+| Cliente fora de qualquer grupo | inalterado | `''` |
+| Sem `groups` no arquivo | inalterado | `''` |
+
+**`clientKey` nunca muda por causa do grupo**, e é isso que separa esta tabela
+de TD-04.1: o grupo não consolida, ele agrupa a *seleção*. Ranking (IND-10,
+IND-18) e tempo documental por cliente (IND-22) seguem contando cada membro
+separado — decisão do operador em 31/08/2026, ao escolher entre a árvore que
+muda os indicadores e a que não muda.
+
+Erros de carga, todos verificados contra a lista de clientes: membro que aponta
+para cliente inexistente, cliente declarado em dois grupos, chave de grupo
+repetida, grupo sem membros. Um membro pode declarar `label` próprio — é o que
+distingue o cliente que dá nome ao grupo do grupo em si.
 
 ### TD-05 — Chave de estilo e mapeamento de cor
 

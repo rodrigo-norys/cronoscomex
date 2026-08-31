@@ -12,7 +12,7 @@ Sem autenticação (RNF-32): o processo escuta somente em loopback (RNF-29).
 
 ### 1.1. Filtros globais
 
-Doze parâmetros de consulta, todos opcionais, aplicáveis às rotas marcadas
+Treze parâmetros de consulta, todos opcionais, aplicáveis às rotas marcadas
 **[F]**. Quando ausentes, nenhum filtro é aplicado. Valores múltiplos são
 repetidos (`?client=A&client=B`) e combinados em **OU** dentro do mesmo
 parâmetro, **E** entre parâmetros distintos.
@@ -23,6 +23,7 @@ parâmetro, **E** entre parâmetros distintos.
 | `etaTo` | `string` | Data ISO `AAAA-MM-DD`. Compara com ETA2, inclusivo |
 | `client` | `string[]` | Chave do **cliente consolidado** (`H-49`), resolvida contra `client-map.json`. Sem mapa, ou sem regra que case, é a própria chave de CLT |
 | `clientProcess` | `string[]` | Chave normalizada da célula CLT — o processo daquele cliente (`H-49`). Domínio aberto |
+| `clientGroup` | `string[]` | Chave de um grupo de clientes (`H-55`). Recorta todos os membros de uma vez; `''` seleciona quem não está em grupo nenhum |
 | `importer` | `string[]` | Chave normalizada de IMPORTADOR |
 | `vessel` | `string[]` | Chave normalizada de NAVIO |
 | `agent` | `string[]` | Chave normalizada de AGENTE |
@@ -414,9 +415,17 @@ Valores disponíveis para cada filtro, derivados do arquivo, não de lista fixa
 distintas — quem é o cliente, e qual o processo dele —, e por isso duas listas
 (`H-49`).
 
+`clientGroups` é o nível de árvore do filtro Cliente (`H-55`): o `count` do
+grupo vem de `clientGroupKey`, o de cada membro é o do próprio cliente, e o
+`label` do membro — quando o mapa o declara — vence o do cliente. **Os membros
+continuam em `clients`**: o grupo é camada do filtro, e nenhum indicador agrupa
+por ele. Lista vazia quando o mapa não declara grupo nenhum.
+
 ```jsonc
 {
   "clients":         [ { "key": "ACME", "label": "ACME", "count": 0 } ],
+  "clientGroups":    [ { "key": "ACME-GRUPO", "label": "Acme", "count": 0,
+                         "members": [ { "key": "ACME", "label": "Matriz", "count": 0 } ] } ],
   "clientProcesses": [ { "key": "ACME-29", "label": "ACME-29", "count": 0 } ],
   "importers": [], "vessels": [], "agents": [], "goods": [], "ports": [],
   "categories":  [ { "key": "desembaracado", "label": "Desembaraçado", "count": 0 } ],
@@ -1044,7 +1053,7 @@ requisição, então rodar o `build` com o servidor no ar dispensa reiniciá-lo.
 | `GET /api/indicators` | H-09, H-10, H-11, H-12, H-13, H-16, H-17, H-49 |
 | `GET /api/alerts` | H-14, H-29 |
 | `GET /api/history/monthly` | H-21, H-28 |
-| `GET /api/filters/options` | H-15, H-49 |
+| `GET /api/filters/options` | H-15, H-49, H-55 |
 | `GET /api/quarantine` | H-07 |
 | `POST /api/reload` | H-08 |
 | `POST /api/edits`, `GET`, `DELETE` | H-23 |
