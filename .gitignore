@@ -17,6 +17,12 @@ data/
 # Configuracao com caminho local
 config/app.json
 
+# Mapas de negocio: nome real de cliente e de pessoa da equipe (regra
+# inviolavel 8). O que este repositorio guarda sao os `.exemplo`, com nomes
+# ficticios e o formato inteiro documentado — ver H-48
+config/client-map.json
+config/team-map.json
+
 # Node
 node_modules/
 dist/

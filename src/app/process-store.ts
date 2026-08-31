@@ -1,6 +1,8 @@
+import type { ClientMapEntry } from '../domain/client-mapper.ts'
 import { type ColorMapEntry, indexColorMap, resolveFillTarget } from '../domain/color-mapper.ts'
 import { type BuildResult, buildProcesses, quarantineRate } from '../domain/process-builder.ts'
 import { applyEdits, type ProjectedEdit } from '../domain/process-projection.ts'
+import type { TeamMember } from '../domain/team-mapper.ts'
 import type { Process, RawRow } from '../domain/types.ts'
 import {
   consolidated,
@@ -72,6 +74,14 @@ export interface StoreOptions {
   config: AppConfig
   colorMap: readonly ColorMapEntry[]
   statusAliases: readonly string[]
+  /**
+   * Mapa de clientes de `H-48`. **Opcional, e vazio e legitimo**: sem ele o
+   * cliente vale o que a celula diz, que e o comportamento anterior a `H-49`.
+   * Quem consome e `H-49` — aqui ele so chega e fica disponivel.
+   */
+  clientMap?: readonly ClientMapEntry[]
+  /** Mapa de equipe de `H-48`. Vazio faz a atribuicao cair na cor (`H-50`). */
+  teamMap?: readonly TeamMember[]
   quarantinePath?: string
   /** Ponto de injecao para teste; em producao, `data/history.jsonl`. */
   historyPath?: string
