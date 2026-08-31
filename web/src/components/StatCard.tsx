@@ -15,6 +15,15 @@ interface StatCardProps {
   value: number | null
   variant?: StatVariant
   hint?: string
+  /**
+   * `H-52`. A janela que este numero esta contando, ja escrita pela pagina.
+   *
+   * Sem ela, cartao zerado por recorte e cartao zerado por ausencia de dado sao
+   * o mesmo `0` na tela — e o periodo vivia so na barra de filtros, noutra
+   * regiao. O cartao nao a deriva: recebe pronta, porque quem recortou foi o
+   * servidor.
+   */
+  period?: string
 }
 
 const VARIANT_STYLE: Record<StatVariant, string> = {
@@ -27,7 +36,7 @@ const VALUE_STYLE: Record<StatVariant, string> = {
   urgencia: 'text-state-warning-fg',
 }
 
-export function StatCard({ label, value, variant = 'volume', hint }: StatCardProps) {
+export function StatCard({ label, value, variant = 'volume', hint, period }: StatCardProps) {
   const loading = value === null
 
   return (
@@ -44,6 +53,11 @@ export function StatCard({ label, value, variant = 'volume', hint }: StatCardPro
       ) : (
         <p className={`mt-1 text-3xl font-semibold tabular-nums ${VALUE_STYLE[variant]}`}>
           {value.toLocaleString('pt-BR')}
+        </p>
+      )}
+      {period && (
+        <p className="mt-1 text-xs text-text-secondary" data-period="">
+          {period}
         </p>
       )}
       {hint && <p className="mt-1 text-xs text-text-muted">{hint}</p>}

@@ -52,6 +52,15 @@ export interface Filters {
   readonly queryString: string
   toggle(key: MultiFilterKey, value: string): void
   setRange(field: 'etaFrom' | 'etaTo', value: string): void
+  /**
+   * Os dois extremos numa escrita so (`H-52`).
+   *
+   * O seletor da Pagina Inicial escreve os MESMOS parametros que a barra de
+   * filtros — um estado so, nunca dois periodos que divergem. Dois `setRange`
+   * seguidos escreveriam sobre a mesma leitura de `query` e o segundo perderia o
+   * primeiro, porque `write` deriva o rascunho da query capturada no `useMemo`.
+   */
+  setPeriod(from: string, to: string): void
   setImporterOutsideRj(value: OutsideRjSelection): void
   clearAll(): void
 }
@@ -121,6 +130,21 @@ export function useFilters(): Filters {
     [write],
   )
 
+  const setPeriod = useCallback(
+    (from: string, to: string): void => {
+      write((draft) => {
+        for (const [field, value] of [
+          ['etaFrom', from],
+          ['etaTo', to],
+        ] as const) {
+          if (value === '') draft.delete(field)
+          else draft.set(field, value)
+        }
+      })
+    },
+    [write],
+  )
+
   const setImporterOutsideRj = useCallback(
     (value: OutsideRjSelection): void => {
       write((draft) => {
@@ -148,6 +172,7 @@ export function useFilters(): Filters {
     queryString: toSearch(query),
     toggle,
     setRange,
+    setPeriod,
     setImporterOutsideRj,
     clearAll,
   }

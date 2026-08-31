@@ -34,6 +34,7 @@ function filtersStub(overrides: Partial<Filters> = {}): Filters {
     queryString: '',
     toggle: vi.fn(),
     setRange: vi.fn(),
+    setPeriod: vi.fn(),
     setImporterOutsideRj: vi.fn(),
     clearAll: vi.fn(),
     ...overrides,
