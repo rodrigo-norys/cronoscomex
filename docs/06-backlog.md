@@ -5238,6 +5238,48 @@ adotado em `H-41` e `H-42`, para não abrir os mesmos oito arquivos duas vezes.
 
 ### H-46 — Responsividade e contenção de rolagem
 
+> ✅ **CONCLUÍDA em 31/08/2026.** **5 testes próprios**, todos em
+> `tests/repo/estilo.test.ts`. Suíte total de **1582 para 1586**. Nenhum caso
+> existente ajustado. Uma divergência no protocolo, resolvida.
+>
+> **As três correções são estáticas, e por isso foram travadas em guarda, não
+> só aplicadas.** Cada uma reprova sob mutação: tirar o `overflow-x-auto` do
+> diálogo, tirar a base de um grid, ou devolver `fontSize: 12` — as três
+> derrubam a suíte, e a reversão a devolve ao verde. Sem isso, a próxima tabela
+> ou grid nasceria com o mesmo defeito e ninguém saberia.
+>
+> **Três tabelas contidas**, pelo padrão que `ProcessTable` já usava: `History`,
+> as quatro quebras de `Performance` e as cinco colunas de `ConflictDialog`. A
+> exceção bidimensional de `SC 1.4.10` cobre a **tabela**, e não a página — sem o
+> invólucro ela arrasta as notas irmãs e a barra de filtros junto, que é
+> exatamente a rolagem que o critério proíbe.
+>
+> **Sete grids ganharam `grid-cols-1` explícito.** O valor implícito é o inicial
+> do CSS, e escrevê-lo é o que faz a intenção aparecer no código: sem ele, quem
+> lê não sabe se uma coluna é decisão ou esquecimento. Os **quatro** que já
+> tinham base — `FilterBar`, `Alerts`, `Home` e `IngestionHealth` — não foram
+> tocados.
+>
+> **`fontSize` dos eixos passou de `12` para `'0.75rem'`.** O React converte o
+> número para pixel, e pixel não acompanha a fonte-base que o operador escolheu
+> no navegador (`SC 1.4.4`). `width={48}` e `margin={{…}}` continuam numéricos de
+> propósito: são **geometria** do Recharts, não tipografia — o caso-limite do
+> backlog.
+>
+> **Divergência 1 — o comentário JSX não cabe onde eu o pus.** Um `{/* … */}`
+> logo depois de `{condicao && (` é sintaxe inválida, e o `typecheck` pegou. O
+> comentário do `ConflictDialog` foi para **antes** do condicional, que é onde
+> ele descreve a decisão inteira em vez de metade dela.
+>
+> **A guarda de tabela procura o invólucro nas três linhas ACIMA**, e não na
+> mesma. O JSX quebra a linha, e exigir os dois no mesmo texto reprovaria o
+> padrão que `ProcessTable` já usava antes desta história — a guarda teria
+> nascido vermelha, e guarda que nasce vermelha é desligada, não obedecida.
+>
+> **O quarto critério não é desta fatia, e o backlog diz isso.** A verificação
+> visual a 320 px é `VN-1`, em `H-47`: o que se pode afirmar aqui é que nada no
+> código **produz** aquela rolagem, e é isso que as guardas garantem.
+
 **Objetivo:** a página nunca rolar na horizontal por causa de uma tabela, e o
 texto do gráfico acompanhar a fonte-base do operador.
 
@@ -6997,10 +7039,10 @@ superfície dobrada pelo segundo esquema.
 | E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
-| E9 — Estilização | **H-39 ✅ … H-45 ✅; H-46 e H-47 abertas** | 1 | 8 | 0 |
+| E9 — Estilização | **H-39 ✅ … H-46 ✅; só `H-47` aberta, e ela exige navegador** | 1 | 8 | 0 |
 | E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-52 ✅, H-53 ✅, H-54 ✅, H-55 ✅, H-56 ✅; só `H-50` aberta** | 1 | 8 | 0 |
 | E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
-| **Total** | **65** — 53 concluídas, 12 abertas | **21** | **44** | **0** |
+| **Total** | **65** — 54 concluídas, 11 abertas | **21** | **44** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até

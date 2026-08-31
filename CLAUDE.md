@@ -179,8 +179,10 @@ as regiões vivas passam a existir no DOM antes de receberem mensagem, e a regi�
 persistente que as páginas usarão nasceu ali, e **`H-44` a consumiu nas sete
 páginas, tirou a parada órfã do gráfico e trocou o canal de cor do botão de
 janela pela espessura da borda.** **`H-45` unificou os papéis de UI e tirou a
-informação só-cor**, e a guarda de estilo ganhou `C04` para o desvio não voltar.
-**E9 está em `H-46`**, e as ondas dela estão no cabeçalho do épico, em
+informação só-cor**, e **`H-46` fechou a responsividade** — as três correções
+estáticas viraram guarda em `tests/repo/estilo.test.ts`, cada uma provada por
+mutação. **E9 está em `H-47`, que exige navegador e não é executável sem ele**;
+as ondas do épico estão no cabeçalho dele, em
 `docs/06-backlog.md` — `docs/07-plano-entrega.md` cobre as fases do plano
 original, e não alcança E9 nem E10.
 
