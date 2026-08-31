@@ -52,7 +52,7 @@ export function Operational({ queryString, dataVersion }: OperationalProps) {
         </PageAlert>
       )}
 
-      <div className="grid gap-4 lg:grid-cols-[1fr_20rem]">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_20rem]">
         <div className="flex flex-col gap-3">
           {processes.status === 'pronto' ? (
             <>

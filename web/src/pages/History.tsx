@@ -353,13 +353,13 @@ function MonthlySeries({
             <XAxis
               dataKey="month"
               tickFormatter={formatMonth}
-              tick={{ fill: 'var(--color-chart-axis)', fontSize: 12 }}
+              tick={{ fill: 'var(--color-chart-axis)', fontSize: '0.75rem' }}
               stroke="var(--color-chart-axis)"
             />
             <YAxis
               allowDecimals={false}
               width={48}
-              tick={{ fill: 'var(--color-chart-axis)', fontSize: 12 }}
+              tick={{ fill: 'var(--color-chart-axis)', fontSize: '0.75rem' }}
               stroke="var(--color-chart-axis)"
             />
             <Tooltip
@@ -401,43 +401,49 @@ function MonthlySeries({
           nao e legivel por leitor de tela, e omitir a reconstruida aqui deixaria
           metade da informacao so no desenho. Traco onde a serie nao tem o mes —
           ausencia de ponto nao e zero. */}
-      <table className="mt-4 w-full text-sm">
-        <caption className="sr-only">
-          Volume, desembaraçados e Canal Vermelho ao fim de cada mês, observados e reconstruídos
-        </caption>
-        <thead>
-          <tr className="border-b border-border-subtle text-left text-xs text-text-muted">
-            <th className="pb-1 font-medium">mês</th>
-            {MEASURES.map((measure) => (
-              <th key={measure.key} className="pb-1 text-right font-medium">
-                {measure.label}
-              </th>
-            ))}
-            {RECONSTRUCTED_MEASURES.map((measure) => (
-              <th key={measure.key} className="pb-1 text-right font-medium">
-                {measure.label}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {points.map((point) => (
-            <tr key={point.month} className="border-b border-border-subtle last:border-0">
-              <td className="py-1">
-                <time dateTime={point.month}>{formatMonth(point.month)}</time>
-              </td>
-              {[...MEASURES, ...RECONSTRUCTED_MEASURES].map((measure) => {
-                const value = point[measure.key]
-                return (
-                  <td key={measure.key} className="py-1 text-right tabular-nums">
-                    {value === undefined ? '—' : value.toLocaleString('pt-BR')}
-                  </td>
-                )
-              })}
+      {/* `ACHADO 19`. A exceção bidimensional de `SC 1.4.10` cobre a TABELA,
+          e não a página: sem o invólucro, ela arrasta as notas irmãs e a
+          barra de filtros para a rolagem horizontal. Mesmo padrão que
+          `ProcessTable` já usa. */}
+      <div className="overflow-x-auto">
+        <table className="mt-4 w-full text-sm">
+          <caption className="sr-only">
+            Volume, desembaraçados e Canal Vermelho ao fim de cada mês, observados e reconstruídos
+          </caption>
+          <thead>
+            <tr className="border-b border-border-subtle text-left text-xs text-text-muted">
+              <th className="pb-1 font-medium">mês</th>
+              {MEASURES.map((measure) => (
+                <th key={measure.key} className="pb-1 text-right font-medium">
+                  {measure.label}
+                </th>
+              ))}
+              {RECONSTRUCTED_MEASURES.map((measure) => (
+                <th key={measure.key} className="pb-1 text-right font-medium">
+                  {measure.label}
+                </th>
+              ))}
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {points.map((point) => (
+              <tr key={point.month} className="border-b border-border-subtle last:border-0">
+                <td className="py-1">
+                  <time dateTime={point.month}>{formatMonth(point.month)}</time>
+                </td>
+                {[...MEASURES, ...RECONSTRUCTED_MEASURES].map((measure) => {
+                  const value = point[measure.key]
+                  return (
+                    <td key={measure.key} className="py-1 text-right tabular-nums">
+                      {value === undefined ? '—' : value.toLocaleString('pt-BR')}
+                    </td>
+                  )
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   )
 }

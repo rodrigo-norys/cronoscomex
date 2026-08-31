@@ -106,7 +106,7 @@ export function Clients({ queryString, dataVersion }: ClientsProps) {
         por ele e abrir a Página Operacional.
       </p>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {RANKINGS.map((ranking) => (
           <RankingBar
             key={ranking.source}

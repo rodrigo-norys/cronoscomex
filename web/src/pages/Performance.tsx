@@ -105,7 +105,7 @@ export function Performance({ queryString, dataVersion }: PerformanceProps) {
 
       <Aggregate leadTime={documentaryLeadTime} />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {BREAKDOWNS.map((breakdown) => (
           <LeadTimeTable
             key={breakdown.source}
@@ -118,7 +118,7 @@ export function Performance({ queryString, dataVersion }: PerformanceProps) {
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         <RankingBar
           title="Agentes"
           entries={rankings.agents}
@@ -313,32 +313,40 @@ function LeadTimeTable({ title, unit, groups, total, shown }: LeadTimeTableProps
         <p className="mt-3 text-sm text-text-secondary">Nenhum {unit} no recorte atual.</p>
       ) : (
         <>
-          <table className="mt-3 w-full text-sm">
-            <thead>
-              <tr className="border-b border-border-subtle text-left text-xs text-text-muted">
-                <th className="pb-1 font-medium">{unit}</th>
-                <th className="pb-1 text-right font-medium">média</th>
-                <th className="pb-1 text-right font-medium">amostra</th>
-                <th className="pb-1 text-right font-medium">processos</th>
-              </tr>
-            </thead>
-            <tbody>
-              {groups.map((group) => (
-                <tr key={group.key} className="border-b border-border-subtle last:border-0">
-                  <td className="max-w-0 truncate py-1 pr-2">
-                    {group.label === '' ? '(sem valor)' : group.label}
-                  </td>
-                  <td className="py-1 text-right tabular-nums">{formatDays(group.averageDays)}</td>
-                  <td className="py-1 text-right tabular-nums text-text-muted">
-                    {group.sampleSize.toLocaleString('pt-BR')}
-                  </td>
-                  <td className="py-1 text-right tabular-nums text-text-muted">
-                    {group.count.toLocaleString('pt-BR')}
-                  </td>
+          {/* `ACHADO 19`. A exceção bidimensional de `SC 1.4.10` cobre a
+              TABELA, e não a página: sem o invólucro, as quatro quebras
+              arrastam as notas irmãs e a barra de filtros para a rolagem
+              horizontal. Mesmo padrão que `ProcessTable` já usa. */}
+          <div className="overflow-x-auto">
+            <table className="mt-3 w-full text-sm">
+              <thead>
+                <tr className="border-b border-border-subtle text-left text-xs text-text-muted">
+                  <th className="pb-1 font-medium">{unit}</th>
+                  <th className="pb-1 text-right font-medium">média</th>
+                  <th className="pb-1 text-right font-medium">amostra</th>
+                  <th className="pb-1 text-right font-medium">processos</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {groups.map((group) => (
+                  <tr key={group.key} className="border-b border-border-subtle last:border-0">
+                    <td className="max-w-0 truncate py-1 pr-2">
+                      {group.label === '' ? '(sem valor)' : group.label}
+                    </td>
+                    <td className="py-1 text-right tabular-nums">
+                      {formatDays(group.averageDays)}
+                    </td>
+                    <td className="py-1 text-right tabular-nums text-text-muted">
+                      {group.sampleSize.toLocaleString('pt-BR')}
+                    </td>
+                    <td className="py-1 text-right tabular-nums text-text-muted">
+                      {group.count.toLocaleString('pt-BR')}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           {total > shown && (
             <p className="mt-2 text-xs text-text-muted">

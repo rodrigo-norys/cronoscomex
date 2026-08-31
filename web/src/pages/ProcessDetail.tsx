@@ -150,7 +150,7 @@ function StatusBlock({
       className="rounded border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Status</h2>
-      <dl className="mt-3 grid gap-3 sm:grid-cols-3">
+      <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Field label="Texto original (STATUS)" value={process.statusRaw} mono />
         <Field label="Categoria classificada" value={CATEGORY_LABELS[process.statusCategory]} />
         <Field
@@ -173,7 +173,7 @@ function Fields({ process }: { process: ProcessDto }) {
       className="rounded border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Campos</h2>
-      <dl className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+      <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         <Field label="Cliente" value={process.client} />
         <Field label="Processo do cliente" value={process.clientProcess} mono />
         <Field label="Importador" value={process.importer} />
@@ -209,7 +209,7 @@ function OutOfScope({ process }: { process: ProcessDto }) {
       <p className="mt-1 text-xs text-text-secondary">
         Exibidos como texto puro, exatamente como estão na planilha. Nenhum indicador os usa (§2).
       </p>
-      <dl className="mt-3 grid gap-3 sm:grid-cols-3">
+      <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
         <Field label="Coluna 13 (boleto)" value={process.boletoRaw} mono />
         <Field label="R$ enviado" value={process.paymentRaw} mono />
         <Field label="Coluna P" value={process.columnPRaw} mono />
