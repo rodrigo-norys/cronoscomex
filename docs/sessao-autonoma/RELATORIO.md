@@ -3,6 +3,17 @@
 Sessão sem supervisão humana. O dono não esteve disponível durante a execução;
 toda decisão tomada aqui está registrada, e as que exigiam ele ficaram abertas.
 
+> **Resumo em cinco linhas.** **Oito histórias fechadas** — `H-51`, `H-52`,
+> `H-54` e `H-53` de `E10`; `H-43` a `H-46` de `E9` — em **oito PRs encadeados**,
+> #69 a #76, que se mesclam **nesta ordem** e geram conflito fora dela. **Onze
+> ficaram abertas:** `H-50` por uma decisão que é sua (Pendência 1), `H-47` por
+> exigir navegador (Pendência 3), e as nove de `E11` por dependerem de `H-47`.
+> **Três pendências aguardam você**, e a primeira já vem com os números medidos e
+> uma recomendação. A suíte foi de **1474 para 1586 testes**, verde em toda
+> história. **O mais arriscado que fiz** foi mudar a leitura do arquivo de
+> histórico em `H-51`: ele é append-only, e recusar o valor legado teria
+> desarmado ALE-06 em 649 processos — a alternativa está registrada na decisão 3.
+
 **Baseline da árvore**, medido antes da primeira linha de código, com
 `npm run verify` na `main` em `0c3a2bc`: **73 arquivos de teste, 1474 testes,
 tudo verde** — lint, `strip-types`, `typecheck`, `test` e `build`.
@@ -334,7 +345,7 @@ contra 1571 ao fim de `H-44` — 11 testes próprios.
 2. `fix(repo): a guarda de estilo passa a travar o papel de UI (C04)`
 3. `docs(docs): fecha H-45 no backlog, na rastreabilidade e no estado`
 
-### `H-46` — Responsividade e contenção de rolagem · PR #TBD
+### `H-46` — Responsividade e contenção de rolagem · [PR #76](https://github.com/rodrigo-norys/cronoscomex/pull/76)
 
 **Branch:** `H-46/fix-responsividade`, saindo de `H-45/fix-papeis-de-ui`.
 Posição 8 da pilha, e a **última alcançável** — `H-47` exige navegador.
@@ -492,15 +503,67 @@ sessão — depende de `H-46`, que é a última que consigo entregar em `E9`.
 
 ## 4. NÃO FEITO
 
-*(preenchido no fechamento)*
+**11 histórias ficaram abertas**, e as três razões são distintas.
+
+### 4.1 Uma parou por decisão que é sua
+
+| História | Motivo exato |
+|---|---|
+| `H-50` — Responsável pelo importador | O quinto critério de aceite tem **duas leituras**, e elas produzem telas diferentes com o mapa de equipe ausente. Está na **Pendência 1**, com os três números já medidos (559 · 48 · 42) e uma recomendação. É também a única acima do teto da régua — o corte proposto está na **Pendência 2** |
+
+### 4.2 Uma exige navegador, e este ambiente não tem
+
+| História | Motivo exato |
+|---|---|
+| `H-47` — Percorrer os cinco procedimentos de navegador | Zoom de 400 %, indicador de foco visível, ordem de tabulação real e razão de contraste **sob alfa**. Nenhum é computável estaticamente. O procedimento que falta está na **Pendência 3**, em cinco linhas executáveis |
+
+**O que eu fiz em vez de contornar:** as partes de `H-45` e `H-46` que **são**
+computáveis viraram guarda em `tests/repo/estilo.test.ts`, cada uma provada por
+mutação. `VN-1` a `VN-4` e `VN-6` continuam devendo o que só o navegador
+responde, mas o que os produziria está travado.
+
+### 4.3 Nove ficaram por dependência transitiva
+
+As nove histórias de `E11` — `H-57` a `H-65`. O cabeçalho do épico declara que
+ele vem **depois de `E9` e `E10` inteiros**, e `H-47` é a linha de base da
+verificação no navegador. Com ela aberta, `E11` inteiro é inalcançável, e o
+mandato desta sessão já o excluía da partida.
+
+`H-65`, dentro de `E11`, tem o mesmo bloqueio de `H-47` por natureza própria.
+
+---
+
+## 4.4 Estado do repositório ao fim da sessão
+
+- **A `main` está intacta em `0c3a2bc`**, o mesmo commit em que a sessão começou.
+  Nada foi commitado nela, e nenhum merge aconteceu.
+- **A branch `distribuicao` ficou para trás**, e **não foi sincronizada de
+  propósito**: a regra do projeto manda sincronizar apenas a partir da `main`
+  **mesclada**, e nenhum merge aconteceu aqui. Depois de mesclar os oito PRs,
+  rode `node --experimental-strip-types scripts/sincronizar-distribuicao.ts`
+  para conferir, e com `--aplicar` para preparar.
+- **O arquivo de permissões de `.claude/` continua modificado e não commitado**,
+  exatamente como estava antes da sessão. É a configuração que você deixou para
+  ela; nenhuma branch o carrega.
+- **Nenhum arquivo foi apagado** durante a sessão.
+- **Nada foi gravado na planilha real, em `data/` ou em `config/app.json`.** Os
+  três scripts de conferência vivem no scratchpad e só leem.
 
 ---
 
 ## 5. ORDEM DE MERGE
 
-**A pilha é linear. Mesclar fora de ordem gera conflito**, porque cada branch sai
-da anterior e todas escrevem em `docs/06-backlog.md`,
-`docs/09-rastreabilidade.md` e no bloco Estado do `CLAUDE.md`.
+**A pilha é linear, e mesclar fora de ordem gera conflito.** Cada branch sai da
+anterior, e todas escrevem em `docs/06-backlog.md`, `docs/09-rastreabilidade.md`
+e no bloco Estado do `CLAUDE.md` — os mesmos três arquivos, em toda história.
+
+**Cada PR tem base no anterior**, e não na `main`. Ao mesclar o #69, o GitHub
+reaponta o #70 para a `main` sozinho, e assim por diante: basta mesclar **de cima
+para baixo** e não mexer nas bases.
+
+> **O `verify` de cada PR roda contra a base dele**, não contra a `main`. Como
+> nenhum merge aconteceu na sessão, os oito passaram sobre a árvore acumulada — e
+> é assim que eles vão para a `main`, um de cada vez.
 
 | # | PR | Branch | Base |
 |---|---|---|---|
@@ -511,7 +574,7 @@ da anterior e todas escrevem em `docs/06-backlog.md`,
 | 5 | [#73](https://github.com/rodrigo-norys/cronoscomex/pull/73) — `H-43` | `H-43/fix-live-regions-da-casca` | `H-53/feat-performance-diz-a-metrica` |
 | 6 | [#74](https://github.com/rodrigo-norys/cronoscomex/pull/74) — `H-44` | `H-44/fix-live-regions-das-paginas` | `H-43/fix-live-regions-da-casca` |
 | 7 | [#75](https://github.com/rodrigo-norys/cronoscomex/pull/75) — `H-45` | `H-45/fix-papeis-de-ui` | `H-44/fix-live-regions-das-paginas` |
-| 8 | #TBD — `H-46` | `H-46/fix-responsividade` | `H-45/fix-papeis-de-ui` |
+| 8 | [#76](https://github.com/rodrigo-norys/cronoscomex/pull/76) — `H-46` | `H-46/fix-responsividade` | `H-45/fix-papeis-de-ui` |
 
 Depois do último merge, a branch `distribuicao` fica para trás e precisa ser
 sincronizada — `node --experimental-strip-types scripts/sincronizar-distribuicao.ts`.
@@ -522,8 +585,9 @@ partir da `main` mesclada, e nenhum merge aconteceu aqui.
 
 ## 6. O QUE EU DECIDI SOZINHO
 
-Uma linha por decisão, para conferência por amostragem. As três primeiras são de
-`H-51`.
+**15 decisões**, todas reversíveis e nenhuma do tipo que o protocolo me proíbe —
+as que eram do terceiro tipo viraram as Pendências 1 e 2. Uma linha por decisão,
+para conferência por amostragem. As três primeiras são de `H-51`.
 
 1. **`nenhum` sai do domínio inteiro, e não só das linhas verdes.** O critério de
    aceite fixa `indefinido = 167`, e 167 é a soma de tudo que não é verde nem
