@@ -5,6 +5,15 @@
 Cada fase termina em software **utilizável por quem usa a planilha hoje**.
 Nenhuma fase entrega apenas infraestrutura.
 
+> **As cinco fases cobrem o plano original, e só ele.** Os épicos que nasceram
+> depois — `E8` (configuração alcançável), `E9` (estilização), `E10` (melhorias
+> de uso) e `E11` (a casca redesenhada) — **não têm fase atribuída**, e a ordem
+> entre eles vive no cabeçalho de cada épico, em `06-backlog.md`. A regra vigente
+> em 31/08/2026: `E9` e `E10` estão abertos ao mesmo tempo e não se bloqueiam;
+> **`E11` vem depois dos dois**, porque `H-45` e `H-46` tocam os mesmos 25
+> arquivos que ele reescreve, `H-47` é a linha de base da verificação no
+> navegador, e `H-52` a `H-54` ainda mudam o que três telas dizem.
+
 ### Fase 0 — Perfilamento ✅ CONCLUÍDA em 03/08/2026
 
 | | |
@@ -368,6 +377,16 @@ materializando.
 | **Mitigação preventiva** | O algoritmo de TD-05.1 **reutiliza** um `xf` existente sempre que possível, e só acrescenta quando não há. Nenhum `xf` anterior é modificado, logo nenhuma célula fora da edição muda de aparência |
 | **Contingência** | Se a validação pós-escrita falhar, o backup é restaurado automaticamente (`H-25`). Este é o único ponto do projeto em que `xl/styles.xml` é tocado, e apenas na Fase 4 |
 
+### R-16 · O redesenho reintroduz os defeitos de contraste que `E9` fechou — score 12 (**novo, revelado ao alinhar `E11`**)
+
+| | |
+|---|---|
+| **Probabilidade** | 4 — **já ocorreu**, antes de qualquer código: seis pares da paleta proposta reprovam, e três deles são exatamente os tokens que `H-39` e `H-40` corrigiram (`text-muted` volta de 4,77:1 para 3,35:1; `border-control`, de 4,77:1 para 1,59:1) |
+| **Impacto** | 3 — regressão de acessibilidade sem sintoma visível, num projeto cuja guarda automática não a alcança |
+| **Gatilho observável** | Valor de token alterado em `web/src/index.css` sem a conta de contraste ao lado. `tests/repo/estilo.test.ts` proíbe **passo bruto de paleta**, e não valor de token com contraste insuficiente — o defeito passa verde |
+| **Mitigação preventiva** | `H-57` nasce com os seis valores corrigidos já calculados (`redesign/PROPOSTA.md §2.2`), pelo mesmo desenho de `H-39`; e acrescenta a asserção de par completo por esquema, provada por mutação |
+| **Contingência** | `H-65` reexecuta os seis procedimentos de navegador **nos dois esquemas** — é lá que aparece o que a estática não vê, como cor resolvida sobre o véu do diálogo |
+
 ### Mapa de riscos
 
 Scores revistos após `H-01` (03/08/2026).
@@ -379,6 +398,7 @@ Scores revistos após `H-01` (03/08/2026).
 | 12 | R-04 Sujeira nos dados legados | reduzido na prática: 0 REF duplicada, 0 REF vazia, quarentena esperada 0% |
 | 12 | R-06 Conflito de sincronização do OneDrive | inalterado |
 | 12 | R-13 Credenciais na aba CNPJ | **novo** |
+| 12 | R-16 Redesenho regride o contraste de `E9` | **novo** — seis pares já reprovados na paleta proposta |
 | 10 | R-08 Corrupção na gravação | inalterado |
 | — | R-09 ExcelJS sem manutenção | **fechado por `H-33`** — a dependência saiu do projeto |
 | 9 | R-14 Virada de ano | **novo** |

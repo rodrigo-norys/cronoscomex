@@ -187,6 +187,8 @@ Todos os valores abaixo, exceto RNF-02, têm origem **medido**. Detalhe em
 | RNF-28 | Navegador alvo | Edge ou Chrome, versão corrente | Premissa |
 | RNF-29 | Interface de rede do servidor | Apenas `127.0.0.1`. O processo **não** escuta em interface externa | Decisão de segurança, ADR-0002 |
 | RNF-30 | Fuso horário de todo cálculo de data | `America/Sao_Paulo` | Decisão, A-07 — P-10 |
+| RNF-42 | Esquemas de cor da interface | **Dois** — claro e escuro, escolhidos por `prefers-color-scheme`. Sem alternância manual | Decisão, D-21 |
+| RNF-43 | Origem das fontes da interface | **O próprio repositório** (`web/public/fonts/`), com `@font-face` local. Nenhuma requisição a CDN | Derivado de RNF-34 e RNF-31 |
 
 ### 2.7. Segurança e privacidade
 
