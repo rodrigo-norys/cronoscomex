@@ -15,7 +15,7 @@ const MAPA: ColorMapEntry[] = [
     fillId: 2,
     label: 'Verde (tom A)',
     responsible: 'indefinido',
-    customsChannel: 'nenhum',
+    customsChannel: 'verde',
     importerOutsideRj: false,
   },
   {
@@ -23,7 +23,7 @@ const MAPA: ColorMapEntry[] = [
     fillId: 12,
     label: 'Verde (tom B)',
     responsible: 'indefinido',
-    customsChannel: 'nenhum',
+    customsChannel: 'verde',
     importerOutsideRj: false,
   },
   {
@@ -31,7 +31,7 @@ const MAPA: ColorMapEntry[] = [
     fillId: 8,
     label: 'Azul',
     responsible: 'colaborador1',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: false,
   },
   {
@@ -39,7 +39,7 @@ const MAPA: ColorMapEntry[] = [
     fillId: 27,
     label: 'Roxo (tom A)',
     responsible: 'colaborador2',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: false,
   },
   {
@@ -47,7 +47,7 @@ const MAPA: ColorMapEntry[] = [
     fillId: 11,
     label: 'Roxo (tom B)',
     responsible: 'colaborador2',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: false,
   },
   {
@@ -55,7 +55,7 @@ const MAPA: ColorMapEntry[] = [
     fillId: 9,
     label: 'Bege',
     responsible: 'colaborador1_outros_clientes',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: false,
   },
   {
@@ -71,7 +71,7 @@ const MAPA: ColorMapEntry[] = [
     fillId: 10,
     label: 'Amarelo forte',
     responsible: 'indefinido',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: true,
   },
   {
@@ -79,7 +79,7 @@ const MAPA: ColorMapEntry[] = [
     fillId: 13,
     label: 'Branco (do tema)',
     responsible: 'indefinido',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: false,
   },
 ]
@@ -104,32 +104,38 @@ describe('resolveColor — as 9 cores reais', () => {
     expect(r.responsible).toBe('indefinido')
   })
 
-  // Decisao do usuario sobre A-38: amarelo e localizacao, nao canal.
-  it('amarelo indica importador fora do RJ e canal NENHUM', () => {
+  // Decisao do usuario sobre A-38, reafirmada em 31/08/2026 com a alternativa a
+  // vista: amarelo e localizacao, nao canal. `H-51` acrescentou canal verde e
+  // NAO canal amarelo — a cor da unica linha amarela esta ocupada dizendo outra
+  // coisa, e por isso o canal dela e desconhecido, nao ausente.
+  it('amarelo indica importador fora do RJ e canal INDEFINIDO', () => {
     const r = resolveColor('argb:FFFFFF00', MAPA)
 
     expect(r.importerOutsideRj).toBe(true)
-    expect(r.customsChannel).toBe('nenhum')
+    expect(r.customsChannel).toBe('indefinido')
   })
 
+  // O branco e o unico que sobrou neutro nos tres campos depois de `H-51`, e e
+  // por isso que ele deixou de colapsar com o verde em `representableTargets`.
   it('branco do tema mapeia com todos os derivados neutros', () => {
     const r = resolveColor('theme:0|tint:0.0000', MAPA)
 
     expect(r.mapped).toBe(true)
     expect(r.responsible).toBe('indefinido')
-    expect(r.customsChannel).toBe('nenhum')
+    expect(r.customsChannel).toBe('indefinido')
     expect(r.importerOutsideRj).toBe(false)
   })
 
-  // Verde NAO deriva responsavel nem status: a cor jamais infere categoria.
-  // Medido: 66 linhas com STATUS vazio contra 1 linha branca (A-04, A-54).
-  it('verde nao deriva responsavel nem canal', () => {
+  // Verde deriva canal (`H-51`) e NAO deriva responsavel nem status: a cor
+  // jamais infere categoria. Medido: 66 linhas com STATUS vazio contra 1 linha
+  // branca (A-04, A-54).
+  it('verde deriva canal verde e nao deriva responsavel', () => {
     for (const chave of ['argb:FF00FF00', 'argb:FF00FF0D']) {
       const r = resolveColor(chave, MAPA)
 
       expect(r.mapped).toBe(true)
       expect(r.responsible).toBe('indefinido')
-      expect(r.customsChannel).toBe('nenhum')
+      expect(r.customsChannel).toBe('verde')
     }
   })
 
@@ -208,15 +214,15 @@ describe('resolveColorIndexed', () => {
 /**
  * A volta — da combinacao para a cor que a escrita grava (`H-27`).
  *
- * O mapa real NAO e uma bijecao: tres entradas casam com
- * `indefinido/nenhum/false` e duas com `colaborador2/nenhum/false` (A-48).
+ * O mapa real NAO e uma bijecao: duas entradas casam com
+ * `indefinido/verde/false` e duas com `colaborador2/indefinido/false` (A-48).
  * Exigir correspondencia unica, como o contrato dizia ate `H-27`, recusaria o
  * verde — 477 das 649 linhas (medido em `H-01`, 03/08/2026).
  */
 describe('resolveFillTarget', () => {
   it('devolve a entrada da combinacao com uma cor so', () => {
     const alvo = resolveFillTarget(
-      { responsible: 'colaborador1', customsChannel: 'nenhum', importerOutsideRj: false },
+      { responsible: 'colaborador1', customsChannel: 'indefinido', importerOutsideRj: false },
       MAPA,
     )
 
@@ -226,11 +232,11 @@ describe('resolveFillTarget', () => {
 
   it('devolve a PRIMEIRA entrada quando mais de uma casa — o tom canonico', () => {
     const roxo = resolveFillTarget(
-      { responsible: 'colaborador2', customsChannel: 'nenhum', importerOutsideRj: false },
+      { responsible: 'colaborador2', customsChannel: 'indefinido', importerOutsideRj: false },
       MAPA,
     )
     const verde = resolveFillTarget(
-      { responsible: 'indefinido', customsChannel: 'nenhum', importerOutsideRj: false },
+      { responsible: 'indefinido', customsChannel: 'verde', importerOutsideRj: false },
       MAPA,
     )
 
@@ -250,7 +256,7 @@ describe('resolveFillTarget', () => {
   it('devolve null com mapa vazio, sem lancar erro', () => {
     expect(
       resolveFillTarget(
-        { responsible: 'indefinido', customsChannel: 'nenhum', importerOutsideRj: false },
+        { responsible: 'indefinido', customsChannel: 'indefinido', importerOutsideRj: false },
         [],
       ),
     ).toBeNull()
@@ -258,7 +264,11 @@ describe('resolveFillTarget', () => {
 })
 
 describe('representableTargets', () => {
-  it('reduz as 9 entradas reais as 6 combinacoes distintas', () => {
+  // Eram 6 ate `H-51`. O branco compartilhava a tupla `indefinido/nenhum/false`
+  // com os dois verdes e colapsava neles; com o verde declarando canal, os dois
+  // deixaram de coincidir e o branco virou alvo proprio — gravando `fillId` 13,
+  // que e o branco do tema. Nenhum `fillId` ja alcancavel mudou.
+  it('reduz as 9 entradas reais as 7 combinacoes distintas', () => {
     expect(representableTargets(MAPA).map((entry) => entry.label)).toEqual([
       'Verde (tom A)',
       'Azul',
@@ -266,7 +276,18 @@ describe('representableTargets', () => {
       'Bege',
       'Vermelho',
       'Amarelo forte',
+      'Branco (do tema)',
     ])
+  })
+
+  it('o alvo branco grava o fillId do branco do tema, e nao o do verde', () => {
+    const branco = resolveFillTarget(
+      { responsible: 'indefinido', customsChannel: 'indefinido', importerOutsideRj: false },
+      MAPA,
+    )
+
+    expect(branco?.fillId).toBe(13)
+    expect(branco?.label).toBe('Branco (do tema)')
   })
 
   /**
@@ -274,10 +295,14 @@ describe('representableTargets', () => {
    * tom canonico, e oferecer "Branco" na tela para gravar verde seria dizer o
    * que o codigo nao faz.
    */
+  // Os dois tons B seguem fora, pelo motivo de sempre: A-48 os unifica no tom
+  // canonico, e rotular uma opcao "Verde (tom B)" gravando o tom A seria a tela
+  // afirmando o que o codigo nao faz. O branco saiu desta lista em `H-51` e
+  // ganhou asserção propria acima — a exclusao dele nunca foi regra, era
+  // consequencia de compartilhar a tupla com o verde.
   it('deixa de fora os tons que a escrita nao produz', () => {
     const rotulos = representableTargets(MAPA).map((entry) => entry.label)
 
-    expect(rotulos).not.toContain('Branco (do tema)')
     expect(rotulos).not.toContain('Verde (tom B)')
     expect(rotulos).not.toContain('Roxo (tom B)')
   })

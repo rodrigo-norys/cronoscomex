@@ -55,7 +55,7 @@ const COLOR_MAP: ColorMapEntry[] = [
     fillId: 0,
     label: 'Branco',
     responsible: 'indefinido',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: false,
   },
   {
@@ -63,7 +63,7 @@ const COLOR_MAP: ColorMapEntry[] = [
     fillId: 2,
     label: 'Verde (tom A)',
     responsible: 'indefinido',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: false,
   },
   {
@@ -71,14 +71,14 @@ const COLOR_MAP: ColorMapEntry[] = [
     fillId: 8,
     label: 'Azul',
     responsible: 'colaborador1',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: false,
   },
 ]
 
 const AZUL: ColorTarget = {
   responsible: 'colaborador1',
-  customsChannel: 'nenhum',
+  customsChannel: 'indefinido',
   importerOutsideRj: false,
 }
 const STATUS_ALIASES = ['DESEMBARACADA', 'DESEMBARCADA']

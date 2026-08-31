@@ -26,7 +26,7 @@ afterEach(() => {
 
 const VERDE: ColorTarget = {
   responsible: 'indefinido',
-  customsChannel: 'nenhum',
+  customsChannel: 'verde',
   importerOutsideRj: false,
 }
 
@@ -59,8 +59,8 @@ describe('o menu de cores', () => {
 
     expect(opcoes.map((opcao) => opcao.textContent)).toEqual([
       'Selecione…',
-      'Verde (tom A) — sem responsável · sem canal',
-      'Azul — Colaborador 1 · sem canal',
+      'Verde (tom A) — sem responsável · Canal Verde',
+      'Azul — Colaborador 1 · canal indefinido',
     ])
   })
 
@@ -95,7 +95,7 @@ describe('enfileirar a troca', () => {
     await screen.findAllByRole('option')
 
     fireEvent.change(screen.getByRole('combobox'), {
-      target: { value: 'colaborador1|nenhum|false' },
+      target: { value: 'colaborador1|indefinido|false' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Enfileirar' }))
 
@@ -120,7 +120,7 @@ describe('enfileirar a troca', () => {
     await screen.findAllByRole('option')
 
     fireEvent.change(screen.getByRole('combobox'), {
-      target: { value: 'colaborador1|nenhum|false' },
+      target: { value: 'colaborador1|indefinido|false' },
     })
     fireEvent.click(screen.getByRole('button', { name: 'Enfileirar' }))
 
@@ -162,11 +162,11 @@ describe('o que a tela afirma', () => {
   it('mostra o que a cor atual da linha diz', async () => {
     renderForm({
       responsible: 'colaborador1',
-      customsChannel: 'nenhum',
+      customsChannel: 'indefinido',
       importerOutsideRj: false,
     })
 
-    expect(within(await bloco()).getByText('Colaborador 1 · sem canal')).toBeTruthy()
+    expect(within(await bloco()).getByText('Colaborador 1 · canal indefinido')).toBeTruthy()
   })
 
   /**

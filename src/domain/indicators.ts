@@ -203,6 +203,49 @@ export function redChannelCount(processes: readonly Process[]): number {
   return processes.filter((process) => process.customsChannel === 'vermelho').length
 }
 
+/**
+ * A distribuicao de canal (`H-51`), ao lado de IND-06 e sem redefini-lo.
+ *
+ * `known` e o denominador do percentual, e vem separado das contagens de
+ * proposito: as linhas em `indefinido` sao contadas e ficam FORA da fracao. Uma
+ * cor que diz responsavel nao diz canal, e diluir 167 linhas num percentual
+ * afirmaria que o canal delas e conhecido e nao verde.
+ *
+ * As fracoes vem do servidor ja resolvidas porque `null` quando `known` e zero
+ * e regra de dado, nao formatacao: fracao de conjunto vazio nao e zero (A-42), e
+ * deixar a tela dividir produziria `NaN` ou `0%` no primeiro recorte vazio.
+ */
+export interface ChannelDistribution {
+  readonly verde: number
+  readonly vermelho: number
+  readonly indefinido: number
+  /** `verde + vermelho` — os processos cujo canal a cor de fato classifica. */
+  readonly known: number
+  readonly verdeShare: number | null
+  readonly vermelhoShare: number | null
+}
+
+export function channelDistribution(processes: readonly Process[]): ChannelDistribution {
+  let verde = 0
+  let vermelho = 0
+  let indefinido = 0
+  for (const process of processes) {
+    if (process.customsChannel === 'verde') verde += 1
+    else if (process.customsChannel === 'vermelho') vermelho += 1
+    else indefinido += 1
+  }
+
+  const known = verde + vermelho
+  return {
+    verde,
+    vermelho,
+    indefinido,
+    known,
+    verdeShare: known === 0 ? null : verde / known,
+    vermelhoShare: known === 0 ? null : vermelho / known,
+  }
+}
+
 /** Prazo de antecedencia da documentacao, em dias (A-08). */
 export const PENDING_DOCS_HORIZON_DAYS = 10
 

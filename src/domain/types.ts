@@ -36,8 +36,15 @@ export type Responsible =
  * Canal de fiscalizacao. Apenas a COR e fonte; texto em STATUS nao classifica
  * (achado A-06). Canal Amarelo nao tem representacao estruturada, porque
  * amarelo significa importador fora do RJ (achado A-38, decisao D-02).
+ *
+ * `H-51` trocou `nenhum` por `indefinido` nas linhas que a cor nao classifica.
+ * A cor e um canal de informacao unico, disputado por tres significados: uma
+ * linha azul diz responsavel, e por isso NAO diz canal. Afirmar `nenhum` para
+ * ela era afirmar que se sabe que nao houve canal — 167 das 649 linhas, medidas
+ * em 31/08/2026 (docs/uso/RESULTADO.md secao 4). E a regra inviolavel 3
+ * aplicada ao proprio mapa de cores.
  */
-export type CustomsChannel = 'vermelho' | 'nenhum' | 'indefinido'
+export type CustomsChannel = 'verde' | 'vermelho' | 'indefinido'
 
 /** Divergencias detectadas numa linha. Vazio = linha limpa. */
 export type AnomalyCode =

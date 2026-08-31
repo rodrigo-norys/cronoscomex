@@ -51,7 +51,7 @@ function colorCommand(overrides: Partial<ColorEditCommand> = {}): ColorEditComma
     kind: 'color',
     ref: 'FT533.26',
     sourceRow: 483,
-    target: { responsible: 'colaborador2', customsChannel: 'nenhum', importerOutsideRj: false },
+    target: { responsible: 'colaborador2', customsChannel: 'indefinido', importerOutsideRj: false },
     label: 'Roxo (tom A)',
     previousStyleKey: 'argb:FF00FF00',
     previousLabel: 'Verde (tom A)',
@@ -353,7 +353,11 @@ describe('edicao de cor', () => {
     enqueue(colorCommand(), queuePath)
     enqueue(
       colorCommand({
-        target: { responsible: 'colaborador1', customsChannel: 'nenhum', importerOutsideRj: false },
+        target: {
+          responsible: 'colaborador1',
+          customsChannel: 'indefinido',
+          importerOutsideRj: false,
+        },
         label: 'Azul',
       }),
       queuePath,

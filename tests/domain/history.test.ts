@@ -24,7 +24,7 @@ const SP = 'America/Sao_Paulo'
 function process(
   sourceRow: number,
   statusCategory: StatusCategory,
-  customsChannel: CustomsChannel = 'nenhum',
+  customsChannel: CustomsChannel = 'indefinido',
 ): Process {
   return {
     sourceRow,
@@ -67,7 +67,7 @@ function event(
   ts: string,
   to: StatusCategory,
   from: StatusCategory | null = null,
-  channel: CustomsChannel = 'nenhum',
+  channel: CustomsChannel = 'indefinido',
 ): StatusEvent {
   return { ts, ref, from, to, channel, sourceRow: 10 }
 }
@@ -75,7 +75,7 @@ function event(
 function seen(
   category: StatusCategory,
   categoryChangedAt: string,
-  channel: CustomsChannel = 'nenhum',
+  channel: CustomsChannel = 'indefinido',
 ): LastSeen {
   return { category, channel, categoryChangedAt }
 }
@@ -90,7 +90,7 @@ describe('diffEvents', () => {
         ref: 'FT010.26',
         from: null,
         to: 'em_andamento',
-        channel: 'nenhum',
+        channel: 'indefinido',
         sourceRow: 10,
       },
     ])
@@ -259,7 +259,7 @@ describe('aggregateMonthly', () => {
     const { series } = aggregateMonthly(
       [
         event('A', '2026-10-01T12:00:00.000Z', 'em_andamento', null, 'vermelho'),
-        event('B', '2026-10-02T12:00:00.000Z', 'em_andamento', null, 'nenhum'),
+        event('B', '2026-10-02T12:00:00.000Z', 'em_andamento', null, 'indefinido'),
       ],
       1,
       hoje,
@@ -273,7 +273,7 @@ describe('aggregateMonthly', () => {
     const { series } = aggregateMonthly(
       [
         event('A', '2026-09-01T12:00:00.000Z', 'em_andamento', null, 'vermelho'),
-        event('A', '2026-10-01T12:00:00.000Z', 'em_andamento', 'em_andamento', 'nenhum'),
+        event('A', '2026-10-01T12:00:00.000Z', 'em_andamento', 'em_andamento', 'indefinido'),
       ],
       2,
       hoje,

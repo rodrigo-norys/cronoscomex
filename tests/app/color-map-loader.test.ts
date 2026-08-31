@@ -12,7 +12,7 @@ const entradaValida = {
   fillId: 8,
   label: 'Azul',
   responsible: 'colaborador1',
-  customsChannel: 'nenhum',
+  customsChannel: 'indefinido',
   importerOutsideRj: false,
 }
 

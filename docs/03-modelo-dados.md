@@ -25,7 +25,7 @@ export type Responsible =
   | 'colaborador1_outros_clientes'
   | 'indefinido'
 
-export type CustomsChannel = 'vermelho' | 'nenhum' | 'indefinido'
+export type CustomsChannel = 'verde' | 'vermelho' | 'indefinido'
 
 export interface Process {
   /** Número da linha na planilha (1-based, como o Excel exibe). Chave de escrita. */
@@ -329,13 +329,13 @@ estrutura:**
   "version": 1,
   "anchorColumn": "A",
   "entries": [
-    { "styleKey": "argb:FF0070C0", "label": "Azul",         "responsible": "colaborador1",                 "customsChannel": "nenhum",  "importerOutsideRj": false, "styleId": 12 },
-    { "styleKey": "argb:FF7030A0", "label": "Roxo",         "responsible": "colaborador2",                   "customsChannel": "nenhum",  "importerOutsideRj": false, "styleId": 13 },
-    { "styleKey": "argb:FF00B050", "label": "Verde",        "responsible": "indefinido",             "customsChannel": "nenhum",  "importerOutsideRj": false, "styleId": 14 },
-    { "styleKey": "argb:FFFF0000", "label": "Vermelho",     "responsible": "indefinido",             "customsChannel": "vermelho","importerOutsideRj": false, "styleId": 15 },
-    { "styleKey": "argb:FFFFFF00", "label": "Amarelo forte","responsible": "indefinido",             "customsChannel": "nenhum",  "importerOutsideRj": true,  "styleId": 16 },
-    { "styleKey": "argb:FFF5F0DC", "label": "Bege",         "responsible": "colaborador1_outros_clientes", "customsChannel": "nenhum",  "importerOutsideRj": false, "styleId": 17 },
-    { "styleKey": "none",          "label": "Branco",       "responsible": "indefinido",             "customsChannel": "nenhum",  "importerOutsideRj": false, "styleId": 0  }
+    { "styleKey": "argb:FF0070C0", "label": "Azul",         "responsible": "colaborador1",                 "customsChannel": "indefinido", "importerOutsideRj": false, "styleId": 12 },
+    { "styleKey": "argb:FF7030A0", "label": "Roxo",         "responsible": "colaborador2",                   "customsChannel": "indefinido", "importerOutsideRj": false, "styleId": 13 },
+    { "styleKey": "argb:FF00B050", "label": "Verde",        "responsible": "indefinido",             "customsChannel": "verde",      "importerOutsideRj": false, "styleId": 14 },
+    { "styleKey": "argb:FFFF0000", "label": "Vermelho",     "responsible": "indefinido",             "customsChannel": "vermelho",   "importerOutsideRj": false, "styleId": 15 },
+    { "styleKey": "argb:FFFFFF00", "label": "Amarelo forte","responsible": "indefinido",             "customsChannel": "indefinido", "importerOutsideRj": true,  "styleId": 16 },
+    { "styleKey": "argb:FFF5F0DC", "label": "Bege",         "responsible": "colaborador1_outros_clientes", "customsChannel": "indefinido", "importerOutsideRj": false, "styleId": 17 },
+    { "styleKey": "none",          "label": "Branco",       "responsible": "indefinido",             "customsChannel": "indefinido", "importerOutsideRj": false, "styleId": 0  }
   ]
 }
 ```
@@ -347,15 +347,29 @@ Taxa de `COR_NAO_MAPEADA` esperada: **0%**.
 
 | Chave de estilo | `fillId` | Linhas | `responsible` | `customsChannel` | `importerOutsideRj` |
 |---|---|---|---|---|---|
-| `argb:FF00FF00` | 2 | 258 | indefinido | nenhum | false |
-| `argb:FF00FF0D` | 12 | 219 | indefinido | nenhum | false |
-| `argb:FF5B9BD5` | 8 | 120 | **colaborador1** | nenhum | false |
-| `argb:FFA74F7B` | 27 | 31 | **colaborador2** | nenhum | false |
-| `argb:FFFFE599` | 9 | 9 | **colaborador1_outros_clientes** | nenhum | false |
+| `argb:FF00FF00` | 2 | 258 | indefinido | **verde** | false |
+| `argb:FF00FF0D` | 12 | 219 | indefinido | **verde** | false |
+| `argb:FF5B9BD5` | 8 | 120 | **colaborador1** | indefinido | false |
+| `argb:FFA74F7B` | 27 | 31 | **colaborador2** | indefinido | false |
+| `argb:FFFFE599` | 9 | 9 | **colaborador1_outros_clientes** | indefinido | false |
 | `argb:FFFF0000` | 7 | 5 | indefinido | **vermelho** | false |
-| `argb:FFA64D79` | 11 | 5 | **colaborador2** | nenhum | false |
-| `argb:FFFFFF00` | 10 | 1 | indefinido | nenhum | **true** |
-| `theme:0\|tint:0.0000` | 13 | 1 | indefinido | nenhum | false |
+| `argb:FFA64D79` | 11 | 5 | **colaborador2** | indefinido | false |
+| `argb:FFFFFF00` | 10 | 1 | indefinido | indefinido | **true** |
+| `theme:0\|tint:0.0000` | 13 | 1 | indefinido | indefinido | false |
+
+**O canal foi revisto por `H-51` em 31/08/2026.** A cor é um canal de informação
+único, disputado por três significados: linha azul diz responsável, e por isso
+**não** diz canal. Registrar `nenhum` nela afirmava que se sabia não ter havido
+canal — o valor saiu do domínio, e `indefinido` tomou o lugar. Distribuição
+medida: **verde 477 · vermelho 5 · indefinido 167**, somando as 649. O amarelo
+**mantém** `importerOutsideRj` e não vira canal amarelo (D-02, A-38): um canal
+que não existe no dado seria coluna vazia prometendo informação.
+
+Um efeito na **escrita**, que nenhum `fillId` sofreu: o branco compartilhava a
+tupla `indefinido|nenhum|false` com os dois verdes e colapsava neles em
+`representableTargets`. Com o verde declarando canal, os dois deixaram de
+coincidir, e o branco virou o **sétimo** alvo gravável — gravando `fillId` 13,
+que é o branco do tema. Nenhuma combinação já alcançável mudou de `fillId`.
 
 Os dois verdes e os dois roxos são **entradas separadas apontando para o mesmo
 significado** (A-48) — não há limiar de distância, apenas duas linhas no mapa.
@@ -429,7 +443,7 @@ Append-only, uma linha JSON por evento. Escrito ao final de cada leitura, para
 os processos cuja categoria **ou canal** diferiram do último estado conhecido.
 
 ```jsonc
-{"ts":"2026-08-03T14:22:31.004Z","ref":"FT498.26","from":"em_andamento","to":"desembaracado","channel":"nenhum","sourceRow":475}
+{"ts":"2026-08-03T14:22:31.004Z","ref":"FT498.26","from":"em_andamento","to":"desembaracado","channel":"verde","sourceRow":475}
 {"ts":"2026-08-03T14:22:31.004Z","ref":"FT533.26","from":null,"to":"em_desembaraco","channel":"vermelho","sourceRow":483}
 ```
 
@@ -452,6 +466,16 @@ append-only: mês que passa sem registro não se recupera depois.
 contagem de dias parados (ALE-06) considera apenas os eventos em que a categoria
 de fato mudou — se considerasse todos, trocar a cor de uma linha zeraria o
 contador e o alerta deixaria de disparar.
+
+**A leitura aceita um valor que a escrita não produz.** Linhas gravadas antes de
+`H-51` (31/08/2026) dizem `channel: "nenhum"`, e o arquivo é append-only: nenhuma
+delas pode ser reescrita. Elas são lidas como `indefinido`, que é o que o
+domínio novo produz para as mesmas cores. Recusá-las esvaziaria o índice, e cada
+REF voltaria a ser visto pela primeira vez — o que reiniciaria a contagem de dias
+parados em todos os processos, desarmando ALE-06 justamente no dia da mudança. As
+linhas verdes, essas, geram **um** evento com `from` igual a `to`, porque o canal
+delas de fato passou a ser conhecido; a série mensal não o vê, já que cada ponto
+dela é o estado ao fim do mês, e a tela de detalhe já filtra esse formato.
 
 **Destrava:** ALE-06 ("Processos parados", via `ts` do último evento de cada
 REF) e a Página Histórico (série mensal por agregação dos eventos). Resolve

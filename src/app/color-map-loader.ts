@@ -19,7 +19,7 @@ const RESPONSIBLE: readonly Responsible[] = [
   'colaborador1_outros_clientes',
   'indefinido',
 ]
-const CHANNEL: readonly CustomsChannel[] = ['vermelho', 'nenhum', 'indefinido']
+const CHANNEL: readonly CustomsChannel[] = ['verde', 'vermelho', 'indefinido']
 
 export interface ColorMapFile {
   version: number

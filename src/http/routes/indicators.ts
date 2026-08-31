@@ -13,6 +13,8 @@ import {
   arrivingToday,
   bazarShare,
   type CategoryCounts,
+  type ChannelDistribution,
+  channelDistribution,
   clearedTodayCount,
   countByCategory,
   documentaryLeadTime,
@@ -90,6 +92,13 @@ export interface IndicatorsMeta {
 
 export interface IndicatorsResponse {
   counts: IndicatorsCounts
+  /**
+   * `H-51`. Bloco proprio, e nao mais um campo em `counts`: aquele e a lista
+   * dos indicadores do catalogo, e `counts.canalVermelho` — IND-06 — continua
+   * la, com o mesmo valor. Esta distribuicao acompanha o indicador, nao o
+   * substitui.
+   */
+  channelDistribution: ChannelDistribution
   rankings: IndicatorsRankings
   expectedVessels: ExpectedVessel[]
   /**
@@ -183,6 +192,7 @@ export function registerIndicatorsRoute(
         atrasados: overdueCount(processes, day),
         desembaracadosHoje: clearedTodayCount(processes, day),
       },
+      channelDistribution: channelDistribution(processes),
       rankings: {
         // `H-56`: o grupo entra NO LUGAR dos membros, com a composicao em
         // `segments`. Os demais rankings seguem com `groupCount` — grupo e

@@ -33,7 +33,7 @@ function process({
   eta2 = null,
   docsSent = null,
   statusCategory = 'em_andamento',
-  customsChannel = 'nenhum',
+  customsChannel = 'indefinido',
   ref,
 }: Fields): Process {
   const row = nextRow++

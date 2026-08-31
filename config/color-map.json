@@ -15,9 +15,9 @@
       "fillId": 2,
       "label": "Verde (tom A)",
       "rowsAtProfiling": 258,
-      "significado": "Processo desembaracado. NAO deriva nenhum campo: a cor jamais infere status. Comprovado em A-54: ha 66 linhas com STATUS vazio e apenas 1 linha branca.",
+      "significado": "Processo desembaracado E Canal Verde (H-51). Deriva customsChannel=verde e mais nada: a cor jamais infere status. Comprovado em A-54: ha 66 linhas com STATUS vazio e apenas 1 linha branca.",
       "responsible": "indefinido",
-      "customsChannel": "nenhum",
+      "customsChannel": "verde",
       "importerOutsideRj": false
     },
     {
@@ -25,9 +25,9 @@
       "fillId": 12,
       "label": "Verde (tom B)",
       "rowsAtProfiling": 219,
-      "significado": "Mesmo significado do tom A. Tons distintos ocupam blocos contiguos (linhas 2-263 e 264-483), padrao de pintura em momentos diferentes. Unificados por decisao do usuario (achado A-48).",
+      "significado": "Mesmo significado do tom A, canal verde incluido. Tons distintos ocupam blocos contiguos (linhas 2-263 e 264-483), padrao de pintura em momentos diferentes. Unificados por decisao do usuario (achado A-48).",
       "responsible": "indefinido",
-      "customsChannel": "nenhum",
+      "customsChannel": "verde",
       "importerOutsideRj": false
     },
     {
@@ -37,7 +37,7 @@
       "rowsAtProfiling": 120,
       "significado": "Processos do Colaborador 1.",
       "responsible": "colaborador1",
-      "customsChannel": "nenhum",
+      "customsChannel": "indefinido",
       "importerOutsideRj": false
     },
     {
@@ -47,7 +47,7 @@
       "rowsAtProfiling": 31,
       "significado": "Processos do Colaborador 2.",
       "responsible": "colaborador2",
-      "customsChannel": "nenhum",
+      "customsChannel": "indefinido",
       "importerOutsideRj": false
     },
     {
@@ -57,7 +57,7 @@
       "rowsAtProfiling": 5,
       "significado": "Mesmo significado do tom A. Unificado por decisao do usuario (achado A-48).",
       "responsible": "colaborador2",
-      "customsChannel": "nenhum",
+      "customsChannel": "indefinido",
       "importerOutsideRj": false
     },
     {
@@ -67,7 +67,7 @@
       "rowsAtProfiling": 9,
       "significado": "Processos do Colaborador 1 pertencentes a outros clientes. Subcategoria de Colaborador 1 (achado A-18): o filtro Responsavel=Colaborador 1 seleciona colaborador1 E colaborador1_outros_clientes.",
       "responsible": "colaborador1_outros_clientes",
-      "customsChannel": "nenhum",
+      "customsChannel": "indefinido",
       "importerOutsideRj": false
     },
     {
@@ -87,7 +87,7 @@
       "rowsAtProfiling": 1,
       "significado": "Importador localizado fora do RJ. Decisao do usuario sobre o achado A-38: a unica linha amarela tem CANAL AMARELO no STATUS por coincidencia, nao por regra.",
       "responsible": "indefinido",
-      "customsChannel": "nenhum",
+      "customsChannel": "indefinido",
       "importerOutsideRj": true
     },
     {
@@ -97,14 +97,14 @@
       "rowsAtProfiling": 1,
       "significado": "Processo em desembaracamento, segundo a secao 3 da especificacao. NAO deriva nenhum campo. Medido: apenas 1 linha em 649, contra 66 com STATUS vazio (achado A-54).",
       "responsible": "indefinido",
-      "customsChannel": "nenhum",
+      "customsChannel": "indefinido",
       "importerOutsideRj": false
     }
   ],
 
   "_dominios": {
     "responsible": ["colaborador1", "colaborador2", "colaborador1_outros_clientes", "indefinido"],
-    "customsChannel": ["vermelho", "nenhum", "indefinido"],
+    "customsChannel": ["verde", "vermelho", "indefinido"],
     "importerOutsideRj": [true, false]
   },
 
@@ -113,6 +113,8 @@
     "ESCRITA (H-27): trocar o styleId inteiro DESTRUIRIA borda e fonte da linha. A escrita troca apenas o fillId, preservando fontId, borderId e numFmtId do cellXf original. Ver achado A-49.",
     "Chave ausente deste mapa: a linha ENTRA nos indicadores de volume com responsible e customsChannel em 'indefinido' e importerOutsideRj em null, e aparece na quarentena com motivo COR_NAO_MAPEADA. Nunca e descartada em silencio.",
     "NAO ha tolerancia nem aproximacao por proximidade de cor. Os tons A e B sao entradas SEPARADAS que apontam para o mesmo significado - nao ha limiar de distancia. Ver ADR-0003.",
-    "Cobertura medida em 03/08/2026: as 9 entradas cobrem 649 de 649 linhas com REF preenchido (100%). Taxa de COR_NAO_MAPEADA esperada: 0%."
+    "Cobertura medida em 03/08/2026: as 9 entradas cobrem 649 de 649 linhas com REF preenchido (100%). Taxa de COR_NAO_MAPEADA esperada: 0%.",
+    "CANAL (H-51, 31/08/2026): a cor e um canal de informacao unico disputado por tres significados, entao linha azul, roxa, bege, amarela ou branca NAO diz canal - customsChannel e 'indefinido', nunca 'nenhum'. Distribuicao medida: verde 477, vermelho 5, indefinido 167, soma 649. O amarelo MANTEM importerOutsideRj e nao vira canal amarelo (D-02, A-38).",
+    "EFEITO DE H-51 NA ESCRITA: o branco deixou de colapsar com o verde em representableTargets - as duas entradas compartilhavam a tupla 'indefinido|nenhum|false' e agora diferem no canal. Sao 7 alvos gravaveis, contra 6 antes, e o novo grava fillId 13, que e o branco do tema. Nenhum fillId existente mudou."
   ]
 }

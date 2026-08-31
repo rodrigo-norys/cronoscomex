@@ -52,7 +52,7 @@ function process({
   portKey = '',
   statusCategory = 'em_andamento',
   responsible = 'indefinido',
-  customsChannel = 'nenhum',
+  customsChannel = 'indefinido',
   importerOutsideRj = null,
 }: Fields): Process {
   const row = nextRow++
@@ -264,7 +264,7 @@ describe('parseFilters — dominios fechados', () => {
       'colaborador1_outros_clientes',
       'indefinido',
     ])
-    expect(CUSTOMS_CHANNELS).toEqual(['vermelho', 'nenhum', 'indefinido'])
+    expect(CUSTOMS_CHANNELS).toEqual(['verde', 'vermelho', 'indefinido'])
   })
 
   it('aceita valor dentro do dominio', () => {

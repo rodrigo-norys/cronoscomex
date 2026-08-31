@@ -29,7 +29,7 @@ let path: string
 function process(
   ref: string,
   statusCategory: StatusCategory,
-  customsChannel: CustomsChannel = 'nenhum',
+  customsChannel: CustomsChannel = 'indefinido',
   sourceRow = 10,
 ): Process {
   return {
@@ -214,9 +214,9 @@ describe('recordChanges — casos-limite', () => {
     writeFileSync(
       path,
       [
-        '{"ts":"2026-08-17T12:00:00.000Z","ref":"A","from":null,"to":"em_andamento","channel":"nenhum","sourceRow":10}',
+        '{"ts":"2026-08-17T12:00:00.000Z","ref":"A","from":null,"to":"em_andamento","channel":"indefinido","sourceRow":10}',
         '{"ts":"2026-08-17T12:00:00',
-        '{"ts":"2026-08-17T12:00:00.000Z","ref":"B","from":null,"to":"desembaracado","channel":"nenhum","sourceRow":11}',
+        '{"ts":"2026-08-17T12:00:00.000Z","ref":"B","from":null,"to":"desembaracado","channel":"indefinido","sourceRow":11}',
         '',
       ].join('\n'),
       'utf-8',
@@ -241,7 +241,7 @@ describe('recordChanges — casos-limite', () => {
   it('descarta a linha cuja categoria nao pertence ao dominio', () => {
     writeFileSync(
       path,
-      `{"ts":"2026-08-17T12:00:00.000Z","ref":"A","from":null,"to":"inventada","channel":"nenhum","sourceRow":10}\n`,
+      `{"ts":"2026-08-17T12:00:00.000Z","ref":"A","from":null,"to":"inventada","channel":"indefinido","sourceRow":10}\n`,
       'utf-8',
     )
 
@@ -251,6 +251,51 @@ describe('recordChanges — casos-limite', () => {
     })
 
     expect(events[0]?.from).toBeNull()
+  })
+
+  /**
+   * A compatibilidade que `H-51` precisou dar ao arquivo ja gravado.
+   *
+   * O historico e append-only: as linhas escritas antes de 31/08/2026 dizem
+   * `nenhum`, e recusa-las esvaziaria o indice — todo REF voltaria a ser visto
+   * pela primeira vez, e `categoryChangedAt` reiniciaria em 649 processos,
+   * zerando ALE-06. Lidas como `indefinido`, elas casam com o que a leitura de
+   * hoje produz para as linhas azul, roxa, bege, amarela e branca.
+   */
+  it('le o canal `nenhum` de antes de H-51 como `indefinido`, sem gerar evento', () => {
+    writeFileSync(
+      path,
+      `{"ts":"2026-08-17T12:00:00.000Z","ref":"A","from":null,"to":"em_andamento","channel":"nenhum","sourceRow":10}\n`,
+      'utf-8',
+    )
+
+    const events = recordChanges([process('A', 'em_andamento', 'indefinido')], {
+      path,
+      now: new Date('2026-08-18T12:00:00.000Z'),
+    })
+
+    expect(events).toEqual([])
+  })
+
+  // A contrapartida: a linha verde muda de canal, e o evento sai com `from`
+  // igual a `to`. A serie mensal nao o ve — cada ponto dela e o estado ao fim do
+  // mes, nao a contagem de eventos — e a tela de detalhe o filtra.
+  it('emite evento sem transicao de categoria quando so o canal muda', () => {
+    writeFileSync(
+      path,
+      `{"ts":"2026-08-17T12:00:00.000Z","ref":"A","from":null,"to":"desembaracado","channel":"nenhum","sourceRow":10}\n`,
+      'utf-8',
+    )
+
+    const events = recordChanges([process('A', 'desembaracado', 'verde')], {
+      path,
+      now: new Date('2026-08-18T12:00:00.000Z'),
+    })
+
+    expect(events).toHaveLength(1)
+    expect(events[0]?.from).toBe('desembaracado')
+    expect(events[0]?.to).toBe('desembaracado')
+    expect(events[0]?.channel).toBe('verde')
   })
 
   /**
@@ -264,7 +309,7 @@ describe('recordChanges — casos-limite', () => {
       const ref = refs[i % 3] as string
       const categoria = i % 2 === 0 ? 'em_andamento' : 'em_desembaraco'
       blocos.push(
-        `{"ts":"2026-08-17T12:00:00.000Z","ref":"${ref}","from":null,"to":"${categoria}","channel":"nenhum","sourceRow":10}`,
+        `{"ts":"2026-08-17T12:00:00.000Z","ref":"${ref}","from":null,"to":"${categoria}","channel":"indefinido","sourceRow":10}`,
       )
     }
     writeFileSync(path, `${blocos.join('\n')}\n`, 'utf-8')
@@ -422,7 +467,7 @@ describe('monthlySeries', () => {
     const blocos: string[] = []
     for (let i = 0; i < 2_000; i += 1) {
       blocos.push(
-        `{"ts":"2026-08-17T12:00:00.000Z","ref":"REF${i}","from":null,"to":"em_andamento","channel":"nenhum","sourceRow":${i}}`,
+        `{"ts":"2026-08-17T12:00:00.000Z","ref":"REF${i}","from":null,"to":"em_andamento","channel":"indefinido","sourceRow":${i}}`,
       )
     }
     writeFileSync(path, `${blocos.join('\n')}\n`, 'utf-8')
@@ -435,7 +480,7 @@ describe('monthlySeries', () => {
   it('enxerga a linha final sem quebra de linha ao fim do arquivo', () => {
     appendFileSync(
       path,
-      '{"ts":"2026-08-17T12:00:00.000Z","ref":"A","from":null,"to":"em_andamento","channel":"nenhum","sourceRow":10}',
+      '{"ts":"2026-08-17T12:00:00.000Z","ref":"A","from":null,"to":"em_andamento","channel":"indefinido","sourceRow":10}',
       'utf-8',
     )
 

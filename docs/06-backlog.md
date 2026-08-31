@@ -5592,6 +5592,63 @@ de composição.
 
 ### H-51 — Canal verde, e a distribuição à vista
 
+> ✅ **CONCLUÍDA em 31/08/2026.** **20 testes próprios** em seis arquivos —
+> sete de domínio, quatro na rota de indicadores, dois nas opções de filtro, dois
+> no `history-store`, um em `color-mapper` e quatro na Página Inicial. Suíte
+> total de **1474 para 1494**. Nenhuma asserção foi afrouxada: os casos
+> existentes que mudaram de texto mudaram porque o domínio mudou sob eles — o
+> valor `nenhum` deixou de existir —, e o único que trocou de sinal, a exclusão
+> do branco dos alvos graváveis, ganhou em troca a asserção positiva com o
+> `fillId` medido. Conferido contra a planilha real: **verde 477 ·
+> vermelho 5 · indefinido 167**, somando as 649, denominador **482**, e IND-06
+> intacto em **5** — os quatro números do critério de aceite, medidos e não
+> derivados. Três divergências no protocolo, todas resolvidas.
+>
+> **O valor `nenhum` saiu do domínio inteiro, e não só das linhas verdes.** O
+> critério de aceite fixa `indefinido = 167`, e 167 é a soma de tudo que não é
+> verde nem vermelho — azul, roxo, bege, amarelo e branco. A cor é um canal de
+> informação único disputado por três significados: uma linha azul diz
+> responsável, e por isso **não** diz canal. `nenhum` afirmava saber que não
+> houve canal.
+>
+> **Divergência 1 — dois consumidores fora da lista de arquivos.**
+> `web/src/pages/ProcessDetail.tsx` e `web/src/components/ColorFieldsForm.tsx`
+> têm cada um a sua tabela de rótulos de canal, com o literal `nenhum`. A lista
+> da história previa `filters.ts` e mais nada; trocar o tipo exportado alcança
+> todo consumidor, que é exatamente a pergunta que o protocolo de fatia manda
+> fazer.
+>
+> **Divergência 2 — o branco virou o sétimo alvo gravável, sem ninguém pedir.**
+> `representableTargets` colapsa entradas pela tupla
+> `responsible|customsChannel|importerOutsideRj`, e o branco compartilhava
+> `indefinido|nenhum|false` com os dois verdes. Com o verde declarando canal, os
+> dois deixaram de coincidir e o branco passou a ser oferecido no seletor de cor,
+> gravando `fillId` 13 — o branco do tema, rotulado pelo que é. **Nenhum `fillId`
+> já alcançável mudou**, que é o que o critério de aceite exige. É consequência
+> aritmética dos números da história, não escolha: o teste que afirmava a
+> exclusão do branco virou teste afirmando a inclusão, com o `fillId` medido.
+>
+> **Divergência 3 — o histórico gravado, que é append-only e não estava na
+> lista.** `src/io/history-store.ts` duplicava o domínio numa lista literal, e o
+> arquivo do operador tem `channel: "nenhum"` em toda linha já escrita. Recusá-lo
+> como valor fora do domínio esvaziaria o índice, e **cada REF voltaria a ser
+> visto pela primeira vez** — o que reiniciaria `categoryChangedAt` em todos e
+> desarmaria ALE-06, o alerta de processos parados, justamente no dia da
+> mudança. A leitura passa a traduzir o valor legado para `indefinido`; nada é
+> gravado com ele. Efeito medido em três pontos: a série mensal não o vê, porque
+> cada ponto dela é o **estado ao fim do mês** e não a contagem de eventos; a
+> tela de detalhe já filtra evento com `from` igual a `to`; e `nextSeen` só move
+> `categoryChangedAt` quando a categoria muda. Sobram as 477 linhas verdes, que
+> geram um evento cada — invisível nas três superfícies.
+>
+> **A distribuição é bloco próprio na resposta, e não campo em `counts`.**
+> `counts` é a lista dos indicadores do catálogo, e `counts.canalVermelho` —
+> IND-06 — continua lá com o mesmo valor: a história acompanha o indicador, não
+> o redefine. As duas frações vêm resolvidas do servidor porque `null` com
+> denominador zero é regra de dado (A-42), não formatação; deixar a tela dividir
+> produziria `0%` no primeiro recorte vazio, afirmando que nenhum processo é
+> verde.
+
 **Objetivo:** o canal deixar de ser um campo binário sobre 5 linhas e passar a
 descrever as 482 que a cor de fato classifica.
 
@@ -6650,9 +6707,9 @@ superfície dobrada pelo segundo esquema.
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização | **H-39 ✅ … H-42 ✅, H-43 … H-47 abertas** | 1 | 8 | 0 |
-| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-55 ✅, H-56 ✅, H-50 … H-54 abertas** | 1 | 8 | 0 |
+| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-55 ✅, H-56 ✅, H-50 · H-52 … H-54 abertas** | 1 | 8 | 0 |
 | E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
-| **Total** | **65** — 46 concluídas, 19 abertas | **21** | **44** | **0** |
+| **Total** | **65** — 47 concluídas, 18 abertas | **21** | **44** | **0** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até

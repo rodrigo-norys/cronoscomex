@@ -29,8 +29,8 @@ const CATEGORY_LABELS: Readonly<Record<ProcessDto['statusCategory'], string>> = 
 }
 
 const CHANNEL_LABELS: Readonly<Record<ProcessDto['customsChannel'], string>> = {
+  verde: 'Canal Verde',
   vermelho: 'Canal Vermelho',
-  nenhum: 'Nenhum',
   indefinido: 'Indefinido',
 }
 

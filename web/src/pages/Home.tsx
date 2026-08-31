@@ -89,8 +89,78 @@ export function Home({ health, queryString, dataVersion }: HomeProps) {
 
       {counts && <CategorySum counts={counts} />}
 
+      {state.status === 'pronto' && (
+        <ChannelPanel distribution={state.indicators.channelDistribution} />
+      )}
+
       <IngestionHealth health={health} quarantine={quarantine} />
     </div>
+  )
+}
+
+/**
+ * A distribuicao de canal (`H-51`).
+ *
+ * **O denominador aparece ao lado da fracao, e nao embaixo dela** (A-42): o
+ * percentual e sobre os processos cujo canal a cor classifica, e as linhas em
+ * `indefinido` sao contadas separadamente, fora da conta. Sao 167 das 649 na
+ * planilha real, medidas em 31/08/2026 — dilui-las no percentual afirmaria que
+ * o canal delas e conhecido.
+ *
+ * Nada e calculado aqui: as contagens e as duas fracoes vem prontas de
+ * `GET /api/indicators` (regra inviolavel 6). Formatar `null` como travessao e
+ * apresentacao; decidir que ele e `null` foi do dominio.
+ */
+function ChannelPanel({
+  distribution,
+}: {
+  distribution: IndicatorsResponse['channelDistribution']
+}) {
+  const rows = [
+    { label: 'Canal Verde', count: distribution.verde, share: distribution.verdeShare },
+    { label: 'Canal Vermelho', count: distribution.vermelho, share: distribution.vermelhoShare },
+  ]
+
+  return (
+    <section
+      aria-label="Distribuição por canal"
+      className="rounded border border-border-subtle bg-surface-raised px-4 py-3"
+    >
+      <h2 className="text-sm font-semibold text-text-primary">Distribuição por canal</h2>
+      <p className="mt-1 text-sm text-text-secondary">
+        Percentual sobre os{' '}
+        <strong className="tabular-nums">{distribution.known.toLocaleString('pt-BR')}</strong>{' '}
+        processos com canal conhecido.
+      </p>
+
+      <ul className="mt-2 flex flex-col gap-1">
+        {rows.map((row) => (
+          <li key={row.label} className="text-sm text-text-primary">
+            {row.label}:{' '}
+            <strong className="tabular-nums">{row.count.toLocaleString('pt-BR')}</strong>
+            <span className="ml-2 text-text-secondary">
+              {row.share === null ? (
+                '—'
+              ) : (
+                <>
+                  <span className="tabular-nums">
+                    {(row.share * 100).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%
+                  </span>{' '}
+                  de {distribution.known.toLocaleString('pt-BR')}
+                </>
+              )}
+            </span>
+          </li>
+        ))}
+      </ul>
+
+      <p className="mt-2 text-sm text-text-muted">
+        Sem canal conhecido:{' '}
+        <strong className="tabular-nums">{distribution.indefinido.toLocaleString('pt-BR')}</strong>{' '}
+        — a cor dessas linhas diz responsável ou localização do importador, e por isso não diz
+        canal. Elas ficam fora do percentual, contadas.
+      </p>
+    </section>
   )
 }
 

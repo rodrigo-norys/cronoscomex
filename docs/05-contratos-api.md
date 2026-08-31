@@ -30,7 +30,7 @@ parâmetro, **E** entre parâmetros distintos.
 | `goods` | `string[]` | Chave normalizada de MERCADORIA |
 | `category` | `string[]` | `desembaracado` · `em_desembaraco` · `em_andamento` · `fechado_aguardando_draft` |
 | `responsible` | `string[]` | `colaborador1` · `colaborador2` · `colaborador1_outros_clientes` · `indefinido`. O valor `colaborador1` seleciona **também** `colaborador1_outros_clientes` (A-18) |
-| `channel` | `string[]` | `vermelho` · `nenhum` · `indefinido` |
+| `channel` | `string[]` | `verde` · `vermelho` · `indefinido` |
 | `port` | `string[]` | Chave normalizada de ETA. Domínio aberto (A-36) |
 | `importerOutsideRj` | `boolean` | `true` · `false` |
 
@@ -249,6 +249,14 @@ está fora de escopo por lacuna de dado (§4 da especificação).
     "atrasados": 0,                // IND-15
     "desembaracadosHoje": 0        // IND-16
   },
+  "channelDistribution": {         // H-51 — acompanha IND-06, não o redefine
+    "verde": 0,
+    "vermelho": 0,
+    "indefinido": 0,
+    "known": 0,
+    "verdeShare": null,
+    "vermelhoShare": null
+  },
   "rankings": {
     "clients":     [ /* GroupCount[] — grupos com `segments` (H-56) */ ],  // IND-10 e IND-18
     "importers":   [ /* GroupCount[] */ ],  // IND-11 e IND-19
@@ -296,6 +304,15 @@ cliente (`H-56`).
 de conjunto vazio não é zero, e apresentá-la como zero seria mentir sobre o
 dado (A-42). `bazarShare` acompanha IND-13 para tornar visível a distorção
 declarada em A-34.
+
+`channelDistribution` (`H-51`) é bloco próprio, e não um campo em `counts`:
+`counts.canalVermelho` é IND-06 e continua com o mesmo valor. `known` é
+`verde + vermelho` — o denominador das duas frações, escrito ao lado delas —, e
+`indefinido` fica **fora** do percentual, contado: a cor daquelas linhas está
+ocupada dizendo responsável ou localização do importador, e por isso não diz
+canal. `verdeShare` e `vermelhoShare` são `null` quando `known` é zero, pela
+mesma razão de `averageDays` (A-42). Medido em 31/08/2026 sobre a planilha
+real: 477, 5 e 167, somando as 649 linhas.
 
 `arrivalCalendar` é o calendário da Página Operacional (`H-17`): as chegadas de
 **hoje a hoje + 15 dias**, agrupadas por dia e, dentro do dia, por navio. É um

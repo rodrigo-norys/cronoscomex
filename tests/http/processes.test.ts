@@ -52,7 +52,7 @@ function process(sourceRow: number, extra: Partial<Process> = {}): Process {
     goodsKey: '',
     statusCategory: 'em_andamento' as StatusCategory,
     responsible: 'indefinido',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: null,
     styleKey: 'none',
     anomalies: [],
@@ -518,7 +518,12 @@ describe('GET /api/processes/:ref — historico no detalhe', () => {
   let dir: string
   let historyPath: string
 
-  function event(ts: string, to: StatusCategory, from: StatusCategory | null, channel = 'nenhum') {
+  function event(
+    ts: string,
+    to: StatusCategory,
+    from: StatusCategory | null,
+    channel = 'indefinido',
+  ) {
     return JSON.stringify({ ts, ref: 'FT002.26', from, to, channel, sourceRow: 2 })
   }
 

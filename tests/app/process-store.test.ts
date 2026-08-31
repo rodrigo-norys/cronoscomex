@@ -24,7 +24,7 @@ const COLOR_MAP: ColorMapEntry[] = [
     fillId: 0,
     label: 'Branco',
     responsible: 'indefinido',
-    customsChannel: 'nenhum',
+    customsChannel: 'indefinido',
     importerOutsideRj: false,
   },
 ]
