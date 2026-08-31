@@ -186,9 +186,11 @@ não código. **`H-49` fechou o primeiro consumo deles:** o campo Cliente diz qu
 é o cliente, e o valor da célula CLT continua servido ao lado. **`H-55` e `H-56` nasceram do
 uso da própria tela e fecharam no mesmo dia** — o filtro Cliente ganhou um nível
 de árvore, e o ranking passou a mostrar o grupo com a composição; o épico foi a
-oito histórias. **A próxima é `H-50`**, a segunda
-que consome os mapas; as quatro seguintes são independentes entre si. E9 e E10
-estão abertos ao mesmo tempo, e não se bloqueiam.
+oito histórias. **`H-51` acrescentou o canal verde** — o campo deixou de ser
+binário sobre 5 linhas, `nenhum` saiu do domínio, e a Página Inicial mostra a
+distribuição com o denominador ao lado. **A próxima é `H-50`**, a segunda que
+consome os mapas; as três seguintes são independentes entre si. E9 e E10 estão
+abertos ao mesmo tempo, e não se bloqueiam.
 
 **O épico E11 nasceu de proposta de desenho, não de auditoria nem de uso**, em
 31/08/2026: `docs/redesign/PROPOSTA.md` transcreve o mockup *Cronos Console* e o
