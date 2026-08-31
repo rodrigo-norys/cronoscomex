@@ -338,6 +338,10 @@ inviolável não vai para cá.
 
 **Hooks** (`.claude/hooks/`). `guard-dados-sensiveis.sh` (`PreToolUse`) bloqueia
 o que pode publicar dado de cliente e falha **fechado**.
+`conferir-distribuicao.sh` (`PostToolUse`) avisa, depois de `git pull` ou
+`git merge` **com a `main` em HEAD**, que a branch `distribuicao` ficou para
+trás — mede e reporta, nunca sincroniza sozinho. Falha **aberto**, e é barato:
+filtra o comando por regex antes de olhar a árvore.
 `conferir-alinhamento.sh` (`ConfigChange`) avisa quando existe skill, subagente
 ou hook que este arquivo não menciona, **e quando uma peça já criada continua
 com o gatilho em aberto na tabela de marcos** — mencionar e marcar são coisas
