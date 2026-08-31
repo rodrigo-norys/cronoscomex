@@ -305,6 +305,35 @@ falhando: este tinha teste nomeado na saída, e era meu.
 2. `fix(web): os testes de pagina montam a casca e esperam pelo conteudo`
 3. `docs(docs): fecha H-44 no backlog, na rastreabilidade e no estado`
 
+### `H-45` — Unificar papéis de UI e tirar a informação só-cor · PR #TBD
+
+**Branch:** `H-45/fix-papeis-de-ui`, saindo de
+`H-44/fix-live-regions-das-paginas`. Posição 7 da pilha.
+
+**O que mudou.** Abrir o detalhe passa a ser a mesma ação, com o mesmo papel e o
+mesmo nome, nas duas telas que a oferecem; e a urgência ganha canal textual em
+dois lugares onde era só cor.
+
+**O primeiro critério já vinha satisfeito, e o trabalho foi travá-lo.** `H-42`
+alinhou os quatro desviantes de `ACHADO 15` **de passagem**, ao migrar o conjunto
+para tokens. Confirmar isso e seguir deixaria o desvio livre para voltar no
+primeiro arquivo novo — que é a razão de `tests/repo/estilo.test.ts` existir. A
+guarda ganhou `C04`, com duas asserções de conjunto e **prova por mutação**.
+
+**Arquivos** — 6, em 3 commits: `web/src/components/AlertRow.tsx`,
+`web/src/pages/Home.tsx`, `tests/repo/estilo.test.ts` e dois testes de interface.
+
+**Verify.** Verde. `Test Files 73 passed (73)` · `Tests 1582 passed (1582)`,
+contra 1571 ao fim de `H-44` — 11 testes próprios.
+
+**Sem conferência contra a planilha:** a história não toca dado nenhum.
+
+**Commits:**
+
+1. `fix(web): a mesma acao com o mesmo papel, e a urgencia em texto`
+2. `fix(repo): a guarda de estilo passa a travar o papel de UI (C04)`
+3. `docs(docs): fecha H-45 no backlog, na rastreabilidade e no estado`
+
 ---
 
 ## 3. PENDÊNCIAS PARA O DONO
@@ -450,6 +479,7 @@ da anterior e todas escrevem em `docs/06-backlog.md`,
 | 4 | [#72](https://github.com/rodrigo-norys/cronoscomex/pull/72) — `H-53` | `H-53/feat-performance-diz-a-metrica` | `H-54/feat-historico-reconstruido` |
 | 5 | [#73](https://github.com/rodrigo-norys/cronoscomex/pull/73) — `H-43` | `H-43/fix-live-regions-da-casca` | `H-53/feat-performance-diz-a-metrica` |
 | 6 | [#74](https://github.com/rodrigo-norys/cronoscomex/pull/74) — `H-44` | `H-44/fix-live-regions-das-paginas` | `H-43/fix-live-regions-da-casca` |
+| 7 | #TBD — `H-45` | `H-45/fix-papeis-de-ui` | `H-44/fix-live-regions-das-paginas` |
 
 Depois do último merge, a branch `distribuicao` fica para trás e precisa ser
 sincronizada — `node --experimental-strip-types scripts/sincronizar-distribuicao.ts`.
@@ -527,3 +557,10 @@ As duas seguintes são de `H-44`.
     Alternativa descartada: o `PageAlert` renderizar a região inline quando não
     acha alvo — que reintroduziria o defeito no caminho de teste, e faria a suíte
     verificar uma árvore que não existe em execução.
+
+A seguinte é de `H-45`.
+
+14. **`C04` foi travado em `tests/repo/estilo.test.ts`**, que não estava na lista
+    de arquivos. Alternativa descartada: confirmar que `H-42` já alinhara os
+    quatro desviantes e seguir — o que deixaria o desvio livre para voltar no
+    primeiro arquivo novo.
