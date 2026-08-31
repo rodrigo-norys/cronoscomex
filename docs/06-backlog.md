@@ -5416,6 +5416,14 @@ aqui, nenhuma rota muda, e nenhuma tela muda — são `H-49` e `H-50`.
 > os mesmos 38. A quebra de IND-22 por cliente sai de 509 grupos para **124**,
 > dos quais 18 têm amostra e 106 não.
 >
+> **A guarda de âncora morta reprovou o CI, e o portão local não a reproduz.**
+> `src/domain/types.ts` citava `config/client-map.json`; o arquivo está no
+> `.gitignore`, então existe na máquina de quem já o configurou e **não** no
+> checkout limpo do CI. `H-48` aprendeu isso e o cabeçalho da própria guarda o
+> documenta — o comentário nomeia o arquivo **sem** o prefixo de diretório. A
+> lição que faltava é outra: `npm run verify` verde não é prova de CI verde
+> quando a asserção depende de arquivo não versionado.
+>
 > **A pendência que `H-48` deixou aqui não vira campo.** Dois clientes menores
 > que "também respondem a um terceiro, mas mantendo separado" continuam clientes
 > irmãos: hierarquia exige uma pergunta que nenhuma tela faz hoje, e acrescentar

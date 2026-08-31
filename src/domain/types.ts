@@ -107,7 +107,7 @@ export interface Process {
 
   // ---- Chaves de agrupamento ----
   /**
-   * O cliente CONSOLIDADO (`H-49`), resolvido contra `config/client-map.json`.
+   * O cliente CONSOLIDADO (`H-49`), resolvido contra `client-map.json`.
    *
    * Sem mapa, ou com celula que nenhuma regra alcanca, vale exatamente
    * `clientProcessKey` — nao consolidar e resultado legitimo, e o unico honesto
