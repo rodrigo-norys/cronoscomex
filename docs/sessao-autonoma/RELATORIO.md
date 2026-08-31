@@ -210,7 +210,124 @@ with the role region"; `EmptyHistory` passou a receber `alone`.
 
 ## 3. PENDÊNCIAS PARA O DONO
 
-*(preenchido a cada checkpoint)*
+Numeradas, com o custo de cada opção e uma recomendação. Nenhuma bloqueia os PRs
+já abertos.
+
+### PENDÊNCIA 1 — `H-50` não foi executada: um critério de aceite tem duas
+### leituras, e elas produzem telas diferentes
+
+**O que está travado.** `H-50` — Responsável pelo importador, com a cor
+desempatando. É a última história de `E10` com trabalho de servidor, e `H-53`
+depende dela para **um** dos cinco critérios.
+
+**Por que parei.** O quinto critério diz:
+
+> **Dado** mapa de equipe ausente, **então** `responsible` cai inteiramente no
+> desempate por cor e o comportamento é o de hoje.
+
+Com o mapa ausente, `resolveTeam` — que `H-48` já entregou pronto e testado —
+devolve `UNASSIGNED` para **todos**: o passo 3, o desempate por cor, procura um
+membro cujo `colorResponsible` case, e sem mapa não há membro nenhum. Então
+"cair no desempate por cor" não acontece, e "o comportamento é o de hoje"
+tampouco: hoje `responsible` tem valor em 157 das 649 linhas, e passaria a ter em
+zero.
+
+As duas leituras possíveis:
+
+| # | Leitura | O que a tela mostra sem mapa | Custo |
+|---|---|---|---|
+| **A** | `resolveTeam` puro, sem exceção | 649 processos "sem responsável"; `colorResponsible` continua dizendo o que a cor diz, em campo próprio | O campo Responsável fica vazio numa instalação sem mapa — inclusive na **primeira** execução na máquina do operador, antes de ele escrever o mapa. É regressão visível contra o estado de hoje |
+| **B** | Sem mapa, `responsible` recebe o valor de `colorResponsible` | O de hoje: 157 com valor, 492 indefinido | Os dois domínios se misturam — `responsible` passa a poder conter chave de cor (`colaborador1`) **ou** chave de membro do mapa, e o rótulo do ranking teria de saber de qual das duas veio |
+
+**Recomendação: B**, com o domínio declarado como união explícita e o ranking
+rotulando pela origem. É o que o critério literalmente pede, e é o que evita uma
+regressão na primeira execução — exatamente o cenário de `PD-01`, em que o
+operador chega sem nenhum mapa escrito. **Mas a decisão é sua**: ela muda o que a
+tela afirma ao operador, e o protocolo desta sessão me proíbe de tomá-la.
+
+**O que já está medido, para a decisão sair barata.** Rodei `resolveTeam` contra
+a planilha real e o `config/team-map.json` desta máquina, com chaves impessoais:
+
+| Medida | Valor | O critério de aceite pede |
+|---|---:|---|
+| atribuição por importador | 559 | 559 ✅ |
+| desempate pela cor | 48 | 48 ✅ |
+| sem responsável | 42 | 42 ✅ |
+| conflitos importador × cor | 0 | "zero ocorrências hoje" ✅ |
+| membros no mapa | 2 | — |
+| algum com `fallback` | não | — |
+
+**Os três números do critério batem exatamente.** O que falta é só a decisão
+acima.
+
+---
+
+### PENDÊNCIA 2 — `H-50` está acima do teto da régua, e o corte que proponho
+
+A régua do backlog é explícita: **M = até 8 arquivos ou 1 contrato novo; G = acima
+disso**. `H-50` declara **15 arquivos e três rotas alteradas** — é G rotulada
+como M. Proponho cortá-la em duas:
+
+**`H-50a` — o campo muda de fonte** (servidor inteiro, ~12 arquivos, 3 contratos)
+
+- `src/domain/types.ts`: `ColorResponsible` assume as quatro chaves de cor;
+  `Responsible` passa a ser o domínio **aberto** do mapa.
+- `src/domain/process-builder.ts`: chama `resolveTeam`, que já existe.
+- `src/domain/filters.ts`: dois filtros; `matchesResponsible` — a regra A-18, de
+  subcategoria — **migra** para `colorResponsible`, que é onde ela sempre
+  pertenceu.
+- `src/domain/indicators.ts`: IND-20 e a quebra de IND-22 passam a contar pelo
+  responsável novo.
+- `src/app/process-store.ts`, e as rotas `indicators.ts`, `filter-options.ts`,
+  `processes.ts`.
+- `web/src/pages/ProcessDetail.tsx`: obrigado pelo `typecheck`, porque o domínio
+  deixa de ser fechado.
+- `docs/05-contratos-api.md`, `docs/03-modelo-dados.md`.
+
+**`H-50b` — o filtro da cor na tela** (~4 arquivos, 0 contrato novo — **P**)
+
+- `web/src/components/FilterBar.tsx`: o controle do filtro `colorResponsible`,
+  que leva os filtros globais de 13 a 14.
+- `web/src/pages/Performance.tsx`: a ressalva de A-31 reescrita para descrever o
+  campo novo — que é também o quinto critério de `H-53`.
+
+**Por que este corte e não outro.** Tentei três, e os outros dois não fecham
+verdes sozinhos: separar o campo do indicador é impossível, porque IND-20 e
+IND-22 leem `process.responsible` e mudam junto; e criar `colorResponsible` antes
+de virar `responsible` produziria **dois filtros idênticos** na barra durante a
+primeira metade — confusão entregue ao operador, não valor.
+
+**`H-50a` fecha verde sozinha**, e é a metade que a Pendência 1 bloqueia.
+
+---
+
+### PENDÊNCIA 3 — `H-47` exige navegador, e trava `E11` inteiro
+
+**O que está travado.** `H-47` — percorrer os cinco procedimentos de navegador —
+e, por transitividade, as nove histórias de `E11`.
+
+**Por quê.** Os cinco procedimentos não são computáveis estaticamente, e este
+ambiente não tem navegador. É proibido instalar um, e marcá-los como feitos por
+raciocínio seria exatamente o que o mandato desta sessão chama de pior falha
+possível.
+
+**O procedimento exato que falta**, para você rodar em minutos. Suba a aplicação
+com `npm run dev` e percorra as sete URIs em cada item:
+
+| # | O que fazer | O que registrar em `docs/estilizacao/RESULTADO.md` |
+|---|---|---|
+| `VN-1` | Janela de 1280 px CSS, zoom em 400 % (que é o equivalente a 320 px de `SC 1.4.10`) | Toda rolagem horizontal que **não** seja de tabela contida nem do `ResponsiveContainer`, com a página e o elemento |
+| `VN-2` | O mesmo percurso em 200 %, repetido com a fonte padrão do navegador em "Muito grande" | Texto cortado ou controle fora da tela |
+| `VN-3` | `Tab` por todas as paradas das sete páginas | Indicador de foco visível em cada uma, inclusive botões sobre fundo escuro e controles dentro de `overflow`. **Confirmar que a parada órfã do gráfico sumiu** — depende de `H-44` |
+| `VN-4` | Comparar a sequência de `Tab` com a ordem visual | Divergência por grid, e onde o foco cai após navegação programática |
+| `VN-6` | Conta-gotas sobre o pixel do texto e do fundo em `ConflictDialog.tsx:73`, `MultiSelect.tsx:85` e `PendingEditsPanel.tsx:90` | A razão de contraste medida das três. **Inventar valor sob alfa violaria a regra inviolável 3** |
+
+`VN-5` (forced colors) já estava fora de `H-47` por decisão do próprio backlog:
+exige Windows, e vira `PD-07`.
+
+**Recomendação:** rodar `VN-1` a `VN-4` e `VN-6` numa sessão sua de ~30 min,
+depois de mesclar os PRs de `E9`. `H-47` não depende de código nenhum desta
+sessão — depende de `H-46`, que é a última que consigo entregar em `E9`.
 
 ---
 
