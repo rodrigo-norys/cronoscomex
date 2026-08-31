@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { AppConfig } from '../../src/app/config.ts'
 import type { StoreAccess, StoreState } from '../../src/app/process-store.ts'
+import { normalizeClientGroups } from '../../src/domain/client-mapper.ts'
 import { today } from '../../src/domain/date-window.ts'
 import type { Process, StatusCategory } from '../../src/domain/types.ts'
 import { buildServer } from '../../src/http/server.ts'
@@ -507,11 +508,11 @@ describe('GET /api/indicators — os rankings de cliente falam do cliente', () =
 })
 
 /**
- * `H-55`. O criterio de aceite que mais importa da historia: o grupo existe no
- * dado e **nenhum indicador o usa**. Fundir os membros mudaria IND-10, IND-18 e
- * IND-22 para entregar uma arvore de apresentacao.
+ * `H-55` criou o grupo sem tocar em indicador; **`H-56` reviu essa decisao para
+ * o ranking de clientes**, e so para ele: o grupo entra NO LUGAR dos membros,
+ * com a composicao em `segments`. IND-22 segue por cliente.
  */
-describe('GET /api/indicators — o grupo de clientes nao agrupa indicador', () => {
+describe('GET /api/indicators — o grupo de clientes no ranking', () => {
   const conjunto = [
     process(2, 'em_andamento', {
       clientKey: 'ACME',
@@ -525,21 +526,72 @@ describe('GET /api/indicators — o grupo de clientes nao agrupa indicador', () 
     }),
   ]
 
-  it('conta os membros do grupo como clientes separados', async () => {
-    const app = buildServer(config, fakeStore(state({ processes: conjunto })))
+  const GRUPOS = normalizeClientGroups([
+    { key: 'grupo-um', label: 'Grupo Um', members: [{ client: 'ACME' }, { client: 'BETA' }] },
+  ])
+
+  const servir = () =>
+    buildServer(
+      config,
+      fakeStore(state({ processes: conjunto })),
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      undefined,
+      GRUPOS,
+    )
+
+  it('colapsa os membros numa entrada de grupo, com a composicao em segments', async () => {
+    const app = servir()
 
     const body = (await app.inject({ method: 'GET', url: '/api/indicators' })).json()
 
     expect(body.rankings.clients).toEqual([
-      { key: 'ACME', label: 'Acme Comércio', count: 1 },
-      { key: 'BETA', label: 'Beta Ltda', count: 1 },
+      {
+        key: 'GRUPO-UM',
+        label: 'Grupo Um',
+        count: 2,
+        segments: [
+          { key: 'ACME', label: 'Acme Comércio', count: 1 },
+          { key: 'BETA', label: 'Beta Ltda', count: 1 },
+        ],
+      },
     ])
 
     await app.close()
   })
 
-  it('mas aceita o grupo como recorte, porque e filtro global', async () => {
-    const app = buildServer(config, fakeStore(state({ processes: conjunto })))
+  // A soma das barras continua batendo com o total: exibir grupo E membros
+  // contaria os mesmos processos duas vezes.
+  it('nao repete os membros como linhas proprias', async () => {
+    const app = servir()
+
+    const body = (await app.inject({ method: 'GET', url: '/api/indicators' })).json()
+
+    expect(body.rankings.clients).toHaveLength(1)
+    expect(
+      body.rankings.clients.reduce((soma: number, item: { count: number }) => soma + item.count, 0),
+    ).toBe(body.counts.total)
+
+    await app.close()
+  })
+
+  // IND-22 nao entrou na revisao: la a pergunta e sobre prazo de documento, e o
+  // agrupamento por carteira nao ajuda a responde-la.
+  it('a quebra de tempo documental segue por cliente', async () => {
+    const app = servir()
+
+    const body = (await app.inject({ method: 'GET', url: '/api/indicators' })).json()
+
+    expect(body.leadTimeByGroup.groupTotals.clients).toBe(2)
+
+    await app.close()
+  })
+
+  it('e aceita o grupo como recorte, porque continua sendo filtro global', async () => {
+    const app = servir()
 
     const body = (
       await app.inject({ method: 'GET', url: '/api/indicators?clientGroup=GRUPO-UM' })

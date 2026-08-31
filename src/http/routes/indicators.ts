@@ -1,6 +1,7 @@
 import type { FastifyInstance } from 'fastify'
 import type { AppConfig } from '../../app/config.ts'
 import { store as defaultStore, type StoreAccess } from '../../app/process-store.ts'
+import type { ClientGroup } from '../../domain/client-mapper.ts'
 import { today as currentDay, isoWeekEnd, toIsoDay } from '../../domain/date-window.ts'
 import { RESPONSIBLE_LABELS } from '../../domain/filters.ts'
 import {
@@ -19,6 +20,7 @@ import {
   expectedVessels,
   type GroupCount,
   groupCount,
+  groupCountWithGroups,
   type LeadTime,
   type LeadTimeGroup,
   leadTimeByGroup,
@@ -110,6 +112,11 @@ export function registerIndicatorsRoute(
   app: FastifyInstance,
   config: AppConfig,
   store: StoreAccess = defaultStore,
+  /**
+   * Grupos de `H-55`, para o ranking de clientes colapsar os membros (`H-56`).
+   * Padrao vazio pelo mesmo motivo de `buildServer`: teste nao le o mapa real.
+   */
+  clientGroups: readonly ClientGroup[] = [],
 ): void {
   app.get('/api/indicators', (request, reply) => {
     const state = store.getState()
@@ -132,6 +139,7 @@ export function registerIndicatorsRoute(
     // O fuso e resolvido AQUI, uma unica vez. Daqui para baixo tudo e data
     // civil ancorada em UTC, como as datas vindas da planilha (TD-03).
     const day = currentDay(config.timezone)
+    const groupLabels = new Map(clientGroups.map((group) => [group.key, group.label]))
 
     // Os filtros recortam o conjunto ANTES de qualquer calculo: todo indicador
     // desta rota responde sobre o conjunto filtrado (RF-18).
@@ -176,10 +184,15 @@ export function registerIndicatorsRoute(
         desembaracadosHoje: clearedTodayCount(processes, day),
       },
       rankings: {
-        clients: groupCount(
+        // `H-56`: o grupo entra NO LUGAR dos membros, com a composicao em
+        // `segments`. Os demais rankings seguem com `groupCount` — grupo e
+        // conceito do cliente, e nao existe para importador nem mercadoria.
+        clients: groupCountWithGroups(
           processes,
           (p) => p.clientKey,
           (p) => p.clientLabel,
+          (p) => p.clientGroupKey,
+          groupLabels,
           config.topN,
         ),
         importers: groupCount(

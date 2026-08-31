@@ -245,6 +245,14 @@ export interface GroupCount {
   count: number
   /** Presente apenas no ranking de agentes (A-27). */
   overdueCount?: number
+  /**
+   * A composicao de um grupo de clientes (`H-56`), ordenada como o ranking.
+   *
+   * Presente **so** em entrada de grupo, e so no ranking de clientes: quem tem
+   * `segments` conta os membros somados, e nenhum deles aparece como linha
+   * propria — a soma das barras continua batendo com o total.
+   */
+  segments?: GroupCount[]
 }
 
 /**
@@ -275,6 +283,75 @@ export function groupCount(
   }
 
   return sortRanking([...groups.values()]).slice(0, topN)
+}
+
+/**
+ * IND-10 e IND-18 com os grupos de `H-55` colapsados numa entrada so (`H-56`).
+ *
+ * O grupo entra no ranking **no lugar** dos membros, com a contagem somada e a
+ * composicao em `segments`. Exibir os dois niveis contaria os mesmos processos
+ * duas vezes, e a soma das barras deixaria de bater com o total.
+ *
+ * A ordenacao e a mesma de `groupCount` nos dois niveis — decrescente, com
+ * desempate alfabetico pela chave (A-25) —, e o corte de `topN` passa a valer
+ * sobre as entradas **depois** do colapso: um grupo ocupa uma posicao, nao tres.
+ *
+ * `groupLabels` traz o rotulo de cada grupo, que vive no mapa e nao no
+ * `Process`: carregar nome de grupo em campo de dominio para servir uma tela
+ * repetiria o que `clientLabel` ja resolve para o cliente.
+ */
+export function groupCountWithGroups(
+  processes: readonly Process[],
+  key: (process: Process) => string,
+  label: (process: Process) => string,
+  groupOf: (process: Process) => string,
+  groupLabels: ReadonlyMap<string, string>,
+  topN: number,
+): GroupCount[] {
+  const members = new Map<string, GroupCount>()
+  const groupOfMember = new Map<string, string>()
+
+  for (const process of processes) {
+    const memberKey = key(process)
+    const existing = members.get(memberKey)
+
+    if (existing) {
+      existing.count++
+      continue
+    }
+    members.set(memberKey, { key: memberKey, label: label(process).trim(), count: 1 })
+    groupOfMember.set(memberKey, groupOf(process))
+  }
+
+  const grouped = new Map<string, GroupCount>()
+  const loose: GroupCount[] = []
+
+  for (const member of members.values()) {
+    const groupKey = groupOfMember.get(member.key) ?? ''
+    if (groupKey === '') {
+      loose.push(member)
+      continue
+    }
+
+    const group = grouped.get(groupKey)
+    if (group === undefined) {
+      grouped.set(groupKey, {
+        key: groupKey,
+        label: groupLabels.get(groupKey) ?? groupKey,
+        count: member.count,
+        segments: [member],
+      })
+      continue
+    }
+    group.count += member.count
+    group.segments?.push(member)
+  }
+
+  for (const group of grouped.values()) {
+    if (group.segments) group.segments = sortRanking(group.segments)
+  }
+
+  return sortRanking([...loose, ...grouped.values()]).slice(0, topN)
 }
 
 function sortRanking(entries: GroupCount[]): GroupCount[] {
