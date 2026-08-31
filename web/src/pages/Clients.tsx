@@ -105,7 +105,11 @@ export function Clients({ queryString, dataVersion }: ClientsProps) {
             title={ranking.title}
             entries={rankings[ranking.source]}
             emptyMessage={ranking.emptyMessage}
-            onSelect={(value) => selectAndOpen(ranking.filter, value)}
+            // `H-56`: a linha do grupo recorta por `clientGroup`; o nome de um
+            // componente, acima da barra, recorta o cliente dele.
+            onSelect={(value, isGroup) =>
+              selectAndOpen(isGroup ? 'clientGroup' : ranking.filter, value)
+            }
             {...(ranking.source === 'goods'
               ? { caveat: <BazarCaveat share={meta.bazarShare} /> }
               : {})}

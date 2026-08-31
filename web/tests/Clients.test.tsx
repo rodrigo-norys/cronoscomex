@@ -248,3 +248,91 @@ describe('filtros globais', () => {
     expect(api.calls).toContain('GET /api/indicators?category=em_andamento')
   })
 })
+
+/**
+ * `H-56`. A barra do grupo: uma linha, com os componentes nomeados acima dela e
+ * a largura dividida entre eles.
+ */
+describe('grupo de clientes no ranking', () => {
+  const comGrupo = () =>
+    serveRankings({
+      clients: [
+        {
+          key: 'GRUPO-UM',
+          label: 'Grupo Um',
+          count: 321,
+          segments: [
+            { key: 'ALFA', label: 'Alfa', count: 304 },
+            { key: 'BETA', label: 'Beta', count: 15 },
+            { key: 'GAMA', label: 'Gama', count: 2 },
+          ],
+        },
+        { key: 'ZETA', label: 'Zeta', count: 40 },
+      ],
+    })
+
+  /**
+   * Cada componente e uma linha, e nao um rotulo dentro da barra: medido, o
+   * menor deles ocupa 0,6% da largura, e nenhum texto cabe la.
+   */
+  it('da uma linha propria a cada componente, com nome e contagem', async () => {
+    comGrupo()
+    renderPage()
+
+    const clientes = within(await ranking('Clientes'))
+
+    expect(await clientes.findByText('Grupo Um')).toBeTruthy()
+    // O nome acessivel sai sem espaco entre rotulo e contagem — os dois sao
+    // spans irmaos, e isso vale para toda linha de ranking desde `H-18`.
+    expect(clientes.getByRole('button', { name: /Alfa\s*304/ })).toBeTruthy()
+    expect(clientes.getByRole('button', { name: /Beta\s*15/ })).toBeTruthy()
+    expect(clientes.getByRole('button', { name: /Gama\s*2/ })).toBeTruthy()
+  })
+
+  // A hierarquia e estrutural, nao so visual: a sublista e o que o leitor de
+  // tela usa para dizer que Beta esta DENTRO de Grupo Um.
+  it('aninha os componentes numa sublista sob o grupo', async () => {
+    comGrupo()
+    renderPage()
+
+    const clientes = within(await ranking('Clientes'))
+    const listas = clientes.getAllByRole('list')
+
+    expect(listas.length).toBeGreaterThan(1)
+    expect(within(listas[1] as HTMLElement).getAllByRole('listitem')).toHaveLength(3)
+  })
+
+  // Uma barra por grupo: os membros nao viram linhas proprias, senao a soma das
+  // barras contaria os mesmos processos duas vezes.
+  it('nao repete os componentes como linhas do ranking', async () => {
+    comGrupo()
+    renderPage()
+
+    const clientes = within(await ranking('Clientes'))
+
+    expect(clientes.getAllByRole('listitem')).toHaveLength(5)
+    expect(clientes.queryByTitle(/Filtrar por Alfa e abrir/)).toBeTruthy()
+  })
+
+  it('clicar na barra do grupo filtra por clientGroup', async () => {
+    comGrupo()
+    renderPage()
+
+    const clientes = within(await ranking('Clientes'))
+    fireEvent.click(clientes.getByTitle(/Filtrar por Grupo Um/))
+
+    expect(window.location.search).toContain('clientGroup=GRUPO-UM')
+    expect(window.location.pathname).toBe('/operacional')
+  })
+
+  it('clicar num componente filtra o cliente dele', async () => {
+    comGrupo()
+    renderPage()
+
+    const clientes = within(await ranking('Clientes'))
+    fireEvent.click(clientes.getByTitle(/Filtrar por Beta/))
+
+    expect(window.location.search).toContain('client=BETA')
+    expect(window.location.search).not.toContain('clientGroup')
+  })
+})

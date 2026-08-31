@@ -15,7 +15,7 @@ interface RankingBarProps {
    * serem perguntas diferentes. Clicar numa linha de 120 e cair numa tela de 129
    * faria o operador desconfiar do numero certo.
    */
-  onSelect?: (key: string) => void
+  onSelect?: (key: string, isGroup: boolean) => void
   /** Fica sob o titulo, antes da lista: ressalva lida depois nao ressalva nada. */
   caveat?: ReactNode
   /** Metrica ao lado da contagem — o `overdueCount` de A-27 em `H-19`. */
@@ -61,6 +61,27 @@ export function RankingBar({
                 {...(onSelect ? { onSelect } : {})}
                 {...(secondary ? { secondary } : {})}
               />
+
+              {/* Os membros de um grupo (`H-56`) viram linhas proprias,
+                  indentadas e na MESMA escala do ranking: nome e numero ficam
+                  legiveis por menor que seja a fatia, e a comparacao com os
+                  demais clientes continua valendo. Rotular dentro da barra
+                  empilhada nao serve aqui — medido, o menor membro ocupa 0,6%
+                  da largura. */}
+              {entry.segments !== undefined && entry.segments.length > 0 && (
+                <ul>
+                  {entry.segments.map((segment) => (
+                    <li key={segment.key}>
+                      <RankingRow
+                        entry={segment}
+                        largest={largest}
+                        nested
+                        {...(onSelect ? { onSelect } : {})}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              )}
             </li>
           ))}
         </ol>
@@ -79,41 +100,55 @@ function RankingRow({
   largest,
   onSelect,
   secondary,
+  nested = false,
 }: {
   entry: RankingEntry
   largest: number
-  onSelect?: (key: string) => void
+  onSelect?: (key: string, isGroup: boolean) => void
   secondary?: (entry: RankingEntry) => ReactNode
+  /** Membro de um grupo (`H-56`): recuado, mais baixo, e nunca um grupo. */
+  nested?: boolean
 }) {
   const label = displayLabel(entry)
   const share = largest === 0 ? 0 : (entry.count / largest) * 100
+  const isGroup = (entry.segments?.length ?? 0) > 0
 
   const content = (
     <>
-      <span className="w-40 shrink-0 truncate text-sm text-text-secondary group-hover:text-text-primary">
+      <span
+        className={`w-40 shrink-0 truncate text-sm group-hover:text-text-primary ${
+          nested ? 'pl-5 text-xs text-text-muted' : 'text-text-secondary'
+        }`}
+      >
         {label}
       </span>
-      <span className="h-4 grow rounded-sm bg-meter-track">
+      <span className={`grow rounded-sm bg-meter-track ${nested ? 'h-2' : 'h-4'}`}>
         <span
           className="block h-full rounded-sm bg-meter-fill group-hover:bg-meter-fill-hover"
           style={{ width: `${share}%` }}
         />
       </span>
-      <span className="w-12 shrink-0 text-right text-sm tabular-nums text-text-secondary">
+      <span
+        className={`w-12 shrink-0 text-right tabular-nums ${
+          nested ? 'text-xs text-text-muted' : 'text-sm text-text-secondary'
+        }`}
+      >
         {entry.count.toLocaleString('pt-BR')}
       </span>
       {secondary && <span className="w-24 shrink-0 text-right text-xs">{secondary(entry)}</span>}
     </>
   )
 
-  const shared = 'group flex w-full items-center gap-3 rounded px-1 py-1 text-left'
+  const shared = `group flex w-full items-center gap-3 rounded px-1 text-left ${
+    nested ? 'py-0.5' : 'py-1'
+  }`
 
   if (onSelect === undefined) return <span className={shared}>{content}</span>
 
   return (
     <button
       type="button"
-      onClick={() => onSelect(entry.key)}
+      onClick={() => onSelect(entry.key, isGroup)}
       title={`Filtrar por ${label} e abrir na Página Operacional`}
       className={`${shared} hover:bg-surface-sunken`}
     >
