@@ -57,17 +57,28 @@ export async function carregarPlanilha() {
   const { loadConfig } = await modulo('src/app/config.ts')
   const { loadColorMap } = await modulo('src/app/color-map-loader.ts')
   const { loadStatusAliases } = await modulo('src/app/status-aliases-loader.ts')
+  const { loadClientMap } = await modulo('src/app/client-map-loader.ts')
+  const { loadTeamMap } = await modulo('src/app/team-map-loader.ts')
   const { getState, initStore, reload } = await modulo('src/app/process-store.ts')
   const dateWindow = await modulo('src/domain/date-window.ts')
 
+  // Os dois mapas de `H-48` entram aqui pelo mesmo motivo que os outros tres:
+  // a conferencia mede o que a producao serve. Omiti-los faria a medicao ver um
+  // cliente e um responsavel que o painel do operador nao mostra.
   const config = loadConfig()
-  initStore({ config, colorMap: loadColorMap(), statusAliases: loadStatusAliases() })
+  initStore({
+    config,
+    colorMap: loadColorMap(),
+    statusAliases: loadStatusAliases(),
+    clientMap: loadClientMap(),
+    teamMap: loadTeamMap(),
+  })
   await reload()
 
   const estado = getState()
 
   // O dominio inteiro vem junto para o script nao precisar de mais um import
-  // por indicador medido. Sao seis modulos e o custo e uma resolucao de ESM.
+  // por indicador medido. Sao oito modulos e o custo e uma resolucao de ESM.
   const dominio = {
     dateWindow,
     indicators: await modulo('src/domain/indicators.ts'),
@@ -75,6 +86,8 @@ export async function carregarPlanilha() {
     filters: await modulo('src/domain/filters.ts'),
     normalizer: await modulo('src/domain/normalizer.ts'),
     types: await modulo('src/domain/types.ts'),
+    clientMapper: await modulo('src/domain/client-mapper.ts'),
+    teamMapper: await modulo('src/domain/team-mapper.ts'),
   }
 
   return {
