@@ -513,6 +513,7 @@ CORREÇÃO: Envolver as três tabelas no mesmo `<div className="overflow-x-auto"
   "MAJORITÁRIO" AQUI É POR INTENÇÃO, NÃO POR CONTAGEM: 1 local aplica o padrão e 3 não.
   O padrão é nomeado pelo comentário que o documenta em ProcessTable.tsx:52-53.
   A largura resolvida a 320px CSS não é computável estaticamente — ver [VN-1].
+  MEDIDA em 31/08/2026 (H-47): a contenção resolve, e a página não rola aqui.
 ```
 
 ```
@@ -586,6 +587,41 @@ VEREDITO: VERIFICAR NO NAVEGADOR — procedimento:
 ```
 
 ```
+[VN-1] DESFECHO — executado em 31/08/2026 (H-47) · 2 ACHADOS
+MÉTODO:   Chrome 151 headless via CDP, viewport de 320 px CSS — equivalente de layout
+          a 1280 px com zoom 400%. Sete URIs, uma REF real da aba 2026. Servido por
+          dist/web em :5173 (o caso-limite da história declara os dois equivalentes).
+          Critério: scrollWidth da raiz > clientWidth, e o elemento culpado é o mais
+          externo que ultrapassa SEM ancestral que contenha a rolagem.
+APROVADAS: / · /operacional · /clientes · /alertas · /historico — scrollWidth 320 = 320.
+          Em /operacional 1368 elementos e em /historico 47 ultrapassam a borda, e
+          NENHUM faz a página rolar: estão dentro de overflow-x-auto. É a exceção
+          bidimensional de SC 1.4.10, e não é achado.
+          O suspeito 5(a) — FilterBar com grid-cols-2, dois <input type="date"> e um
+          <select> — NÃO reprovou em nenhuma das sete. O endereço do item 5(a) mudou:
+          FilterBar.tsx:68 → :87 (o grid); os date estão em :111 e :121, o select em :133.
+
+ACHADO VN-1/A — /performance rola 385 px num viewport de 320.
+  Elemento: <span class="w-24 shrink-0 text-right text-xs"> em RankingBar.tsx:138,
+  o slot `secondary`. 10 ocorrências, uma por linha do ranking; todas com right=385.
+  Causa: as larguras fixas da linha somam mais que 320 — w-40 do rótulo (160) +
+  w-12 da contagem (48) + w-24 do secundário (96) + 3 gaps de 12 = 340, antes da
+  barra. O `shrink-0` impede o colapso.
+  Por que só aqui: Performance.tsx:127 é a ÚNICA que passa `secondary`
+  (<OverdueBadge>). As demais páginas usam o mesmo componente e passam.
+
+ACHADO VN-1/B — /processo/<ref> rola 572 px num viewport de 320, quase o dobro.
+  Elemento: <label class="flex grow flex-col gap-1 text-xs ... sm:max-w-sm"> em
+  ColorFieldsForm.tsx:133, com 531 px de largura.
+  Causa: o <select> filho é dimensionado pela maior <option> — "Verde (tom A) — sem
+  responsável · Canal Verde" —, e essa largura é imposta pelo UA, não pelo CSS. O
+  limite `sm:max-w-sm` só incide a partir de 640 px, então abaixo do breakpoint não
+  há limite nenhum. É o modo de falha que o item 5(a) previa, no <select> da Página
+  Detalhe e não nos <input type="date"> da barra.
+  Prova visual capturada: o controle rompe a borda direita do próprio cartão.
+```
+
+```
 [VN-2] RESIZE TEXT
 BALDE:    DE EXECUÇÃO
 FONTE:    WCAG 2.2 SC 1.4.4 Resize Text (AA) — https://www.w3.org/TR/WCAG22/#resize-text
@@ -599,6 +635,42 @@ VEREDITO: VERIFICAR NO NAVEGADOR — procedimento:
   4. Repetir com o tamanho de fonte padrão do Chrome em "Muito grande"
      (chrome://settings/appearance) em vez de zoom — é onde o `fontSize: 12` do
      ACHADO 21 deixa de escalar.
+```
+
+```
+[VN-2] DESFECHO — executado em 31/08/2026 (H-47) · 1 ACHADO + confirmação de H-46
+MÉTODO:   viewport 640 px (equivalente a 1280 a 200%) e, na segunda passada,
+          Page.setFontSizes {standard: 24} — o mesmo mecanismo por trás de
+          chrome://settings/appearance em "Muito grande". Sete URIs em cada.
+
+CONFIRMA H-46 — a correção do ACHADO 21 funciona em campo.
+  O tick do eixo mede 12px com fonte-base 16 e 18px com fonte-base 24: o
+  `fontSize: '0.75rem'` de History.tsx:356 e :362 escala. Com o `fontSize: 12`
+  numérico anterior mediria 12px nas duas — é exatamente esta medição que separa
+  as duas formas, e ela não era computável estaticamente.
+
+APROVADO a 200% com fonte padrão: nenhuma das sete páginas rola horizontalmente.
+  Alvos nomeados no procedimento, todos medidos e conformes nos três cenários
+  (200%/16, 200%/24, 400%/16): o painel `max-h-72` de MultiSelect.tsx:141 nunca sai
+  da tela e nunca precisa rolar (scrollHeight = clientHeight); o ArrivalCalendar
+  cabe sempre (592 · 568 · 272 px de largura, sempre dentro do viewport).
+
+COM FONTE 24 px, /processo/<ref> volta a rolar — 846 px num viewport de 640.
+  É o MESMO elemento de VN-1/B (ColorFieldsForm.tsx:133), agora com 785 px. Aqui o
+  `sm:max-w-sm` ESTÁ ativo e ainda assim não protege: `max-w-sm` é 24rem, e rem
+  acompanha a fonte-base — 24 × 24 = 576 px. Não é achado novo; é o mesmo, e a
+  medição mostra que o limite escolhido não resolve o caso que ele parecia cobrir.
+
+ACHADO VN-2/A — o truncamento de Performance.tsx cresce com a ampliação.
+  Elemento: as células `.max-w-0.truncate` da tabela de tempo documental.
+  Medido, de 34 células: 7 truncadas a 100% (1280/16) · 8 a 200% (640/16) ·
+  14 com fonte "Muito grande". NENHUMA tem atributo `title`, então o texto
+  completo não tem caminho — os valores mais longos da coluna
+  aparecem cortados sem recurso.
+  SC 1.4.4 pede que ampliar até 200% não custe conteúdo; aqui o conteúdo perdido
+  dobra. O truncamento a 100% é design da tabela; o crescimento é o achado.
+  Não é o mesmo caso de Clients.tsx: lá o `.w-40.truncate` corta 1 de 33 células
+  nos três cenários — constante, não degrada, e não é achado.
 ```
 
 ```
@@ -625,6 +697,37 @@ VEREDITO: VERIFICAR NO NAVEGADOR — procedimento:
 ```
 
 ```
+[VN-3] DESFECHO — executado em 31/08/2026 (H-47) · APROVADO · 1 item não exercido
+MÉTODO:   Tab real por Input.dispatchKeyEvent nas sete páginas, do primeiro
+          controle até dar a volta. 467 paradas percorridas — / 24 · /operacional 196 ·
+          /clientes 54 · /performance 31 · /alertas 126 · /historico 24 · /processo 12.
+          Nota de método: o <input type="date"> do Chrome consome vários Tab entre
+          os subcampos internos sem trocar activeElement; a primeira execução leu
+          isso como fim do ciclo e parou em 19 paradas por página.
+
+APROVADO — indicador visível em 467 de 467 paradas.
+  Forma única em todas: outline `auto 1px rgb(16, 16, 16)`, o anel padrão do UA.
+  Zero anel autoral (confirma ACHADO 14) e zero parada sem anel: a cascata do
+  conjunto não remove o indicador em lugar nenhum, inclusive sobre os fundos
+  escuros e dentro dos contêineres com overflow que o procedimento nomeia.
+APROVADO SC 2.4.11 — zero paradas com o anel recortado por ancestral com overflow
+  (folga < 2 px em relação à caixa do contêiner em nenhuma delas). O cabeçalho
+  não é sticky, e nada mais obscurece o foco.
+
+CONFIRMA H-44 — a parada de tabulação órfã do ACHADO 12 não existe mais.
+  Zero paradas dentro de [aria-hidden="true"] nas sete páginas, e zero paradas em
+  <svg> em /historico. O item 4 deste procedimento pedia observar o foco pousando
+  no gráfico; ele não pousa mais.
+
+NÃO EXERCIDO — item 6, o escape de Tab do ConflictDialog.
+  Abrir o diálogo exige aplicar edições com a planilha real alterada, e nada nesta
+  história pode gravar na planilha do operador. O que se pode afirmar sem executar
+  já estava no próprio procedimento: não há focus trap no código de
+  ConflictDialog.tsx. O comportamento em execução fica DEVENDO, e não é declarado
+  aprovado — silêncio aqui seria a falha que o corpus chama de grave.
+```
+
+```
 [VN-4] ORDEM DE LEITURA
 BALDE:    DE EXECUÇÃO
 FONTE:    WCAG 2.2 SC 1.3.2 Meaningful Sequence (A) e SC 2.4.3 Focus Order (A) —
@@ -641,6 +744,32 @@ VEREDITO: VERIFICAR NO NAVEGADOR — procedimento:
   4. Registrar a posição do foco depois de clicar numa linha de RankingBar
      (Clients.tsx:112 → navigate('/operacional')) — a navegação programática não move o
      foco, e a página troca sob o cursor de teclado.
+```
+
+```
+[VN-4] DESFECHO — executado em 31/08/2026 (H-47) · 1 ACHADO
+MÉTODO:   a mesma tabulação de VN-3, com a posição de cada parada em coordenada de
+          DOCUMENTO (left+scrollX, top+scrollY). Nota de método: a primeira análise
+          usou coordenada de viewport e acusou 35 inversões nas sete páginas — todas
+          artefato da rolagem que o próprio Tab provoca. Nenhuma era real.
+
+APROVADO — a ordem de tabulação é a ordem do DOM nas sete páginas, sem exceção,
+  o que confirma em execução o inventário estático (0 order-*, 0 flex-*-reverse,
+  0 grid-flow-*, 0 tabIndex positivo).
+APROVADO o item 3 — uma única transição não-monotônica, e ela é correta:
+  em /clientes, a parada #33 (x=41, y=778) salta para #34 (x=665, y=430). É o
+  `lg:grid-cols-2` de Clients.tsx:109: a tabulação percorre a coluna esquerda
+  inteira antes da direita. São duas listas independentes lado a lado, e lê-las uma
+  de cada vez preserva o significado — mesmo caso que o procedimento já declarava
+  correto para Operational.tsx. Não é achado.
+
+ACHADO VN-4/A — o foco é perdido na navegação programática.
+  Medido em /clientes: com o foco numa linha do ranking (<button>, rótulo do
+  cliente), o clique dispara navigate('/operacional'); a rota troca e
+  document.activeElement passa a ser o <body>.
+  Efeito: quem navega por teclado perde a posição e recomeça a tabulação do início
+  da página nova — 196 paradas, em /operacional. É SC 2.4.3, e é exatamente o que
+  o item 4 deste procedimento mandava registrar.
 ```
 
 ```
@@ -665,6 +794,14 @@ VEREDITO: VERIFICAR NO NAVEGADOR — procedimento:
      (e) ProcessTable.tsx:74 `hover:bg-slate-50` e MultiSelect.tsx:112 `hover:bg-slate-100` —
          realce de linha só por fundo.
   4. Repetir com um tema de alto contraste claro e um escuro.
+```
+
+```
+[VN-5] DESFECHO — NÃO EXECUTADO, por decisão do backlog · vira PD-07
+Exige Windows → Configurações → Acessibilidade → Temas de Contraste, e o
+desenvolvimento é em Linux. H-47 o declara fora da fatia desde que nasceu, e ele
+fecha na primeira instalação na máquina do operador, junto de PD-01, PD-05 e PD-06.
+Os cinco alvos nomeados acima continuam válidos e nenhum foi verificado.
 ```
 
 ```
@@ -694,6 +831,49 @@ VEREDITO: VERIFICAR NO NAVEGADOR — procedimento:
      componente de interface inativo.
 ```
 
+```
+[VN-6] DESFECHO — executado em 31/08/2026 (H-47) · 1 REPROVAÇÃO em 3 alvos
+MÉTODO:   amostragem do pixel RENDERIZADO, que é o conta-gotas do procedimento.
+          Screenshot PNG do Chrome, e em cada caixa de texto: fundo = cor mais
+          frequente da região, glifo = pixel mais distante dela em luminância.
+          Razão pela fórmula da WCAG sobre os dois valores lidos. Nenhum número
+          abaixo foi computado por composição algébrica.
+          Nota de método: a primeira leitura usou "pixel mais escuro da caixa", o
+          que devolve o FUNDO quando o texto é claro sobre escuro — deu 1.00:1 no
+          MultiSelect selecionado, que é impossível, e foi refeita.
+ENDEREÇOS REANCORADOS: MultiSelect.tsx:85 → :133 · PendingEditsPanel.tsx:90 → :92 ·
+          ConflictDialog.tsx:73 permanece, e a cor literal `bg-slate-900/40` virou o
+          token `bg-overlay-scrim`, oklch(20.8% 0.042 265.755 / 0.4) em index.css:85 —
+          o alfa 0.4 foi preservado na migração de H-40.
+
+APROVADO  MultiSelect.tsx:133 `text-xs opacity-80`, nos dois estados que o
+          procedimento pede:
+          · selecionado, sobre o gatilho escuro — glifo RGB(197,201,177) sobre
+            RGB(29,41,61) = 8.60:1
+          · não selecionado, o caret sobre fundo claro — glifo RGB(106,118,137)
+            sobre RGB(255,255,255) = 4.60:1
+          Os dois passam AA para texto normal (4.5:1). O segundo passa por margem
+          de 0.10, e é o candidato a quebrar em qualquer ajuste de tom.
+
+REPROVA   PendingEditsPanel.tsx:92 `line-through opacity-60` — 3.27:1.
+          Glifo RGB(175,130,97) sobre o painel RGB(255,251,235). O texto é `text-sm`
+          (14 px), então o limiar é 4.5:1 e falta 1.23. É o valor ANTERIOR de uma
+          edição enfileirada — informação que o operador usa para conferir o que
+          vai gravar na planilha.
+          O número é conservador: a amostra foi feita com o glifo ampliado, que
+          reduz antialiasing; a 14 px reais a razão medida seria igual ou pior.
+
+MEDIDO    ConflictDialog.tsx:73 `bg-overlay-scrim` sobre os dois fundos pedidos,
+          com o scrim aplicado e o conteúdo por baixo:
+          · sobre /operacional (tabela), uma celula de texto da tabela: 17.83:1 → 7.04:1
+          · sobre /historico (gráfico), rótulo "fev/2026": 4.76:1 → 3.29:1
+          O texto sob o scrim em /historico cai abaixo de 4.5:1. Conteúdo obscurecido
+          por diálogo modal é convencionalmente inativo, e SC 1.4.3 trata de texto
+          ativo — por isso fica registrado como MEDIDO e não como reprovação. O
+          número existe para a decisão, que não é desta fatia.
+          O painel do diálogo é opaco: o texto dele não passa por alfa.
+```
+
 ---
 
 # CRITÉRIO DE PARADA — DESFECHO DAS 40 REGRAS
@@ -716,7 +896,7 @@ VEREDITO: VERIFICAR NO NAVEGADOR — procedimento:
 | **A14** | sem achado — `App.tsx:127-153` é `<nav aria-label="Páginas">` + `<a href aria-current="page">`; 0 `role="tab"`, 0 `role="tablist"`, 0 `role="tabpanel"` no conjunto. É o contraexemplo literal de A14: navegação de links, não híbrido. O APG Tabs não incide |
 | **A15** | sem achado — 0 `sticky` no conjunto; o único `fixed` é `ConflictDialog.tsx:73` `fixed inset-0`, que é o overlay do diálogo modal e cobre a tela por definição. Nenhum elemento da casca é sticky/fixed, logo não há o que obscurecer foco por rolagem |
 | **A16** | sem achado — 0 ocorrências de `tabIndex` de qualquer sinal escritas no conjunto (o `tabIndex={0}` do ACHADO 12 é injetado pelo Recharts, e está reportado ali) |
-| **A17** | ACHADO 13; parte não determinada estaticamente em **[VN-5]** item 3(a) |
+| **A17** | ACHADO 13; parte não determinada estaticamente em **[VN-5]** item 3(a) — **continua em aberto**, agora como `PD-07`: exige Windows |
 | **C01** | ACHADO 1 |
 | **C02** | ACHADO 8 |
 | **C03** | sem achado — 1 único `style={{}}` no conjunto, `RankingBar.tsx:96` `style={{ width: \`${share}%\` }}`, que é o contraexemplo literal de C03 (barra de progresso com valor genuinamente dinâmico) |
@@ -727,7 +907,7 @@ VEREDITO: VERIFICAR NO NAVEGADOR — procedimento:
 | **C08** | sem achado — exatamente **um** `<h1>` na árvore renderizada (`App.tsx:59`), em todas as sete páginas. Sequências: Início `h1 → h2(Filtros) → h3×12(StatCard) → h2(IngestionHealth)`; Alertas `h1 → h2 → h3×6 → h2`; Operacional/Clientes/Desempenho/Histórico `h1 → h2 → h2…`; Detalhe do Processo `h1 → h2…` (a barra de filtros é ocultada em `App.tsx:52`, e a página não tem `h3`). Nenhum salto de nível. 0 `h4`/`h5`/`h6`. Nenhum `<div>` tipografado funcionando como título — os valores grandes (`StatCard.tsx:45`, `Alerts.tsx:142`, `Performance.tsx:130`) são dado, não título. **Acoplamento a registrar sem ser achado:** os `h3` de Início e Alertas dependem do `h2` "Filtros" da casca (`FilterBar.tsx:45`) para a sequência não saltar; se a barra de filtros passar a ser ocultada nessas duas páginas, C08 quebra |
 | **C09** | ACHADO 17 |
 | **C10** | ACHADOS 9, 10 |
-| **R01** | ACHADO 19 (parte estática) + **[VN-1]** (parte de execução) |
+| **R01** | ACHADO 19 (parte estática) + **[VN-1]** (parte de execução, **executada em 31/08/2026**: as três tabelas contidas por `H-46` não fazem página nenhuma rolar; os dois achados de reflow são outros — `RankingBar.tsx:138` em /performance e `ColorFieldsForm.tsx:133` em /processo) |
 | **R02** | sem achado — nenhuma largura fixa acima de 320 px sem contenção: `MultiSelect.tsx:93` `w-64` = 256 px; `RankingBar.tsx:90` `w-40` = 160 px; `ConflictDialog.tsx:78` `w-full max-w-3xl` já cede; `Operational.tsx:50` `20rem` = 320 px só a partir de `lg:` |
 | **R03** | ACHADO 21 |
 | **R04** | ACHADO 20 |
@@ -825,6 +1005,11 @@ ONDA 7 — VERIFICAÇÃO MANUAL
 DEPENDE DE: ondas 1 a 6
 ARQUIVOS TOCADOS: 0
 ACHADOS: [VN-1] · [VN-2] · [VN-3] · [VN-4] · [VN-5] · [VN-6]
+EXECUTADA EM 31/08/2026 por H-47: cinco dos seis percorridos, com desfecho escrito em
+  cada bloco. VN-5 fica com PD-07, por exigir Windows. Cinco achados novos —
+  VN-1/A, VN-1/B, VN-2/A, VN-4/A e a reprovação de contraste de VN-6 —, e duas
+  correções confirmadas em campo: H-44 (a parada órfã sumiu) e H-46 (o eixo escala).
+  Um item não exercido e declarado: o escape de foco do ConflictDialog.
 PORQUE VEM AQUI: as ondas 2, 4 e 5 mudam cor resolvida, contêiner e rolagem — verificar
   antes verificaria um estado que vai deixar de existir.
 ```

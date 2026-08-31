@@ -88,6 +88,11 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 - [H-45 — Unificar papéis de UI e tirar a informação só-cor](#h-45)
 - [H-46 — Responsividade e contenção de rolagem](#h-46)
 - [H-47 — Percorrer os cinco procedimentos de navegador](#h-47)
+- [H-67 — A linha do ranking cabe em 320 px](#h-67)
+- [H-68 — O seletor de cor cabe na tela do celular](#h-68)
+- [H-69 — O texto cortado da tabela tem caminho de volta](#h-69)
+- [H-70 — O foco sobrevive à navegação programática](#h-70)
+- [H-71 — O valor anterior da edição é legível](#h-71)
 
 **[Épico E10 — As melhorias de uso](#e10)**
 
@@ -100,6 +105,7 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 - [H-54 — O histórico reconstrói os meses da planilha](#h-54)
 - [H-55 — Grupo de clientes no filtro](#h-55)
 - [H-56 — O ranking de clientes mostra o grupo com a composição](#h-56)
+- [H-66 — O filtro da cor de responsável na tela](#h-66)
 
 **[Épico E11 — A casca redesenhada](#e11)**
 
@@ -5341,6 +5347,61 @@ breakpoints e sistema de grid como requisito.
 
 ### H-47 — Percorrer os cinco procedimentos de navegador
 
+> ✅ **CONCLUÍDA em 31/08/2026.** **Zero testes próprios** — a história produz
+> registro, não código, e a suíte fica em **1586**, a mesma de `H-46`. Cinco dos
+> seis procedimentos percorridos em Chrome 151 por CDP, com desfecho escrito em
+> cada bloco de `docs/estilizacao/RESULTADO.md`. **Cinco achados novos**, um por
+> história: `H-67` a `H-71`. Quatro divergências no protocolo, todas resolvidas.
+>
+> **Duas correções anteriores confirmadas em campo, e é isso que a história
+> comprou.** `H-44`: zero paradas de `Tab` dentro de `aria-hidden` e zero no
+> `<svg>` em `/historico`, nas **467** paradas percorridas — a parada órfã do
+> `ACHADO 12` não existe mais. `H-46`: o tick do eixo mede **12 px** com
+> fonte-base 16 e **18 px** com fonte-base 24 — o `'0.75rem'` escala, e o
+> `fontSize: 12` numérico anterior mediria 12 nas duas. Nenhuma das duas era
+> computável estaticamente, e era exatamente por isso que elas fecharam devendo.
+>
+> **O que passou, e o número importa tanto quanto o achado:** indicador de foco
+> visível em **467 de 467** paradas, com forma única (`outline auto 1px`) e
+> nenhum recortado por `overflow`; a ordem de tabulação é a do DOM nas sete
+> páginas; as três tabelas contidas por `H-46` não fazem página nenhuma rolar —
+> em `/operacional` 1368 elementos ultrapassam a borda e a página fica em 320,
+> que é a exceção bidimensional de `SC 1.4.10` funcionando; e a barra de
+> filtros, **suspeito nº 1 do roteiro**, não reprovou em lugar nenhum.
+>
+> **Divergência 1 — o roteiro apontava para código que não existe mais.** As
+> oito fatias de `E9` moveram tudo sob os procedimentos: das seis referências
+> conferidas, **cinco** apontavam para outro código — `MultiSelect.tsx:85` virou
+> um `addEventListener`, `PendingEditsPanel.tsx:90` virou um `<strong>`,
+> `FilterBar.tsx:68` virou o botão "Limpar". O critério de aceite de `VN-6`
+> **nomeia as três linhas antigas**, então reancorar era condição para o critério
+> ser verificável, não higiene. Os endereços velho → novo estão no desfecho.
+>
+> **Divergência 2 — colisão em `PD-07`.** A história reserva esse número para
+> `VN-5`, e ele havia sido usado no mesmo dia para a pendência dos mapas de
+> negócio. Os mapas passaram a `PD-08`.
+>
+> **Divergência 3 — o método é emulação, e a equivalência foi declarada item a
+> item.** Viewport de 320 px em vez de zoom 400% (equivalente de layout, não de
+> tamanho aparente) e `Page.setFontSizes` em vez de `chrome://settings/appearance`
+> (o mesmo mecanismo). Onde a equivalência não valia, o item ficou **não
+> exercido** em vez de aprovado: o escape de `Tab` do `ConflictDialog` exigiria
+> aplicar edições com a planilha real alterada, e nada aqui grava na planilha do
+> operador.
+>
+> **Divergência 4 — a lista de um arquivo virou dois**, com as cinco histórias
+> dos achados. Era previsto no protocolo e o caso-limite manda: achado vira
+> história própria, não correção embutida.
+>
+> **Duas medições minhas estavam erradas e foram refeitas antes de virarem
+> registro.** A primeira leitura de ordem de tabulação acusou 35 inversões nas
+> sete páginas — todas artefato de coordenada de viewport sob a rolagem que o
+> próprio `Tab` provoca; com coordenada de documento sobra **uma**, e ela é
+> correta. E a primeira amostragem de pixel usou "o mais escuro da caixa", que
+> devolve o **fundo** quando o texto é claro sobre escuro: deu 1.00:1 no
+> `MultiSelect`, que é impossível. As duas notas de método estão no documento,
+> porque quem repetir o procedimento vai cair nas mesmas.
+
 **Objetivo:** executar no navegador o que não é computável estaticamente, e
 registrar o resultado de cada procedimento ao lado do achado que o gerou.
 
@@ -5403,6 +5464,251 @@ E qualquer correção de código: os cinco procedimentos produzem registro.
 
 **Dependências:** H-39, H-40, H-41, H-42, H-43, H-44, H-45, H-46
 **Tamanho:** P (1 arquivo, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-67"></a>
+
+### H-67 — A linha do ranking cabe em 320 px
+
+**Objetivo:** a Página Performance parar de rolar horizontalmente na largura que
+`SC 1.4.10` exige.
+
+> **Medido por `VN-1` em 31/08/2026, no navegador.** A 320 px CSS efetivos a
+> página tem `scrollWidth` **385**, e o culpado é o `<span class="w-24 shrink-0">`
+> do slot `secondary` — 10 ocorrências, uma por linha do ranking. As larguras
+> fixas somam antes da barra: `w-40` do rótulo (160) + `w-12` da contagem (48) +
+> `w-24` do secundário (96) + três `gap-3` (36) = **340**, e o `shrink-0` proíbe
+> o colapso.
+>
+> **`RankingBar` não é culpada sozinha**, e é isso que decide a correção:
+> `Performance.tsx:127` é a **única** página que passa `secondary`, e as outras
+> seis usam o mesmo componente e passam a 320 px. Consertar o componente para
+> todos mudaria seis telas que não têm defeito.
+
+**Arquivos:**
+- `web/src/components/RankingBar.tsx` — a largura do slot `secondary`
+- `web/src/pages/Performance.tsx` — se a correção for do lado de quem passa
+- `web/tests/Performance.test.tsx`
+
+**Critérios de aceite:**
+- **Dado** viewport de 320 px CSS, **quando** `/performance` é aberta, **então**
+  `document.scrollingElement.scrollWidth` é 320 — o valor medido hoje é 385.
+- **Dado** as outras seis páginas, **então** nenhuma muda de largura: elas já
+  passavam, e a correção não pode alcançá-las.
+- **Dado** a linha do ranking a 320 px, **então** o secundário continua legível —
+  esconder o número resolveria a rolagem descartando informação.
+
+**Casos-limite:**
+- Secundário com o texto mais longo medido (`43 atrasados`) → é o que produz os
+  96 px de hoje; a correção precisa caber com ele, não com o menor.
+- Ranking sem `secondary` → nada muda, e as seis páginas provam.
+
+**Fora desta história:** os outros quatro achados de navegador — `H-68` a `H-71`.
+
+**Dependências:** `H-47`, que mediu.
+**Tamanho:** P (3 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-68"></a>
+
+### H-68 — O seletor de cor cabe na tela do celular
+
+**Objetivo:** a Página Detalhe parar de rolar 572 px num viewport de 320.
+
+> **Medido por `VN-1` em 31/08/2026.** É a pior das duas rolagens: `scrollWidth`
+> **572** contra 320 — o controle rompe a borda do próprio cartão, e a prova
+> visual está no desfecho de `VN-1` em `docs/estilizacao/RESULTADO.md`.
+>
+> **A causa não é uma classe errada, é a largura que o navegador impõe.** O
+> `<select>` é dimensionado pela maior `<option>` — "Verde (tom A) — sem
+> responsável · Canal Verde" —, e nenhum CSS de largura foi declarado abaixo do
+> breakpoint: `sm:max-w-sm` só incide a partir de 640 px.
+>
+> **E o limite existente não protege nem onde incide.** `VN-2` mediu a mesma
+> página com a fonte-base em 24 px: `scrollWidth` **846** contra 640, com o
+> `sm:max-w-sm` **ativo** — porque `max-w-sm` é 24rem, e rem acompanha a fonte.
+> Um limite em `rem` não contém um controle cuja largura vem do texto.
+
+**Arquivos:**
+- `web/src/components/ColorFieldsForm.tsx` — a largura do `<label>` e do `<select>`
+- `web/tests/ColorFieldsForm.test.tsx`
+
+**Critérios de aceite:**
+- **Dado** viewport de 320 px CSS, **quando** `/processo/<ref>` é aberta, **então**
+  `scrollWidth` é 320 — hoje é 572.
+- **Dado** viewport de 640 px com fonte-base de 24 px, **então** `scrollWidth` é
+  640 — hoje é 846.
+- **Dado** o rótulo mais longo do mapa de cores, **então** ele continua
+  selecionável e identificável: truncar a opção a ponto de duas ficarem iguais
+  trocaria uma rolagem por uma escolha errada na planilha.
+
+**Casos-limite:**
+- Mapa de cores com rótulo mais longo que os nove de hoje → a correção não pode
+  depender do comprimento atual.
+- `<select>` fechado e aberto → a lista aberta é desenhada pelo UA e não obedece
+  ao CSS da página; o critério é sobre a caixa fechada.
+
+**Fora desta história:** os outros quatro achados — `H-67`, `H-69`, `H-70`, `H-71`.
+
+**Dependências:** `H-47`, que mediu.
+**Tamanho:** P (2 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-69"></a>
+
+### H-69 — O texto cortado da tabela tem caminho de volta
+
+**Objetivo:** o conteúdo que a tabela de tempo documental trunca deixar de ser
+inalcançável, e parar de crescer quando o operador amplia.
+
+> **Medido por `VN-2` em 31/08/2026, nos três cenários.** Das 34 células
+> `.max-w-0.truncate`, ficam truncadas **7** a 100%, **8** a 200% e **14** com a
+> fonte do navegador em "Muito grande". Nenhuma delas tem atributo `title`.
+>
+> **São duas coisas, e só a segunda é violação.** Truncar a 100% é o design da
+> tabela e continua legítimo; o que `SC 1.4.4` cobra é que ampliar até 200% não
+> custe conteúdo — e aqui o conteúdo perdido dobra, e os valores cortados não
+> têm recurso nenhum: `title` não existe em nenhuma das 34 células.
+>
+> **A Página Clientes não tem o defeito, e serve de contraprova:** o
+> `.w-40.truncate` de lá corta 1 de 33 células nos três cenários — constante, não
+> degrada.
+
+**Arquivos:**
+- `web/src/pages/Performance.tsx` — o caminho para o texto completo
+- `web/tests/Performance.test.tsx`
+
+**Critérios de aceite:**
+- **Dado** a fonte-base em 24 px, **então** o número de células truncadas não
+  cresce em relação a 100% — hoje vai de 7 para 14.
+- **Dado** uma célula truncada, **então** o texto completo é alcançável sem
+  mouse: `title` sozinho não é lido por teclado e não basta.
+- **Dado** uma célula que cabe, **então** nada é acrescentado a ela.
+
+**Casos-limite:**
+- Valor vazio na célula → não ganha rótulo de "texto completo" para conteúdo que
+  não existe.
+- Valor exatamente na largura da coluna → não é truncado, e o teste usa a
+  medição, não a classe declarada.
+
+**Fora desta história:** os outros quatro achados — `H-67`, `H-68`, `H-70`, `H-71`.
+
+**Dependências:** `H-47`, que mediu.
+**Tamanho:** P (2 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-70"></a>
+
+### H-70 — O foco sobrevive à navegação programática
+
+**Objetivo:** quem navega por teclado não recomeçar do zero ao abrir um recorte
+pelo ranking.
+
+> **Medido por `VN-4` em 31/08/2026.** Com o foco numa linha do ranking de
+> `/clientes`, o clique dispara `navigate('/operacional')`: a rota troca e
+> `document.activeElement` passa a ser o **`<body>`**. O procedimento previa
+> exatamente isto — "a navegação programática não move o foco, e a página troca
+> sob o cursor de teclado".
+>
+> **O custo é medido, não estimado:** `/operacional` tem **196** paradas de
+> tabulação, e é onde o operador cai. É `SC 2.4.3`.
+>
+> **Não é defeito do roteiro de `D-16`**, e sim de uma decisão que ele nunca
+> tomou: mover o foco depois de uma troca de rota é comportamento que nem o
+> `react-router` dá de graça.
+
+**Arquivos:**
+- `web/src/pages/Clients.tsx` — a origem da navegação
+- `web/src/router.ts` ou `web/src/App.tsx` — onde o foco passa a ser posto
+- `web/tests/App.test.tsx`
+
+**Critérios de aceite:**
+- **Dado** o foco numa linha do ranking, **quando** ela é acionada, **então**
+  depois da troca de rota o foco está num elemento identificável da página nova,
+  e não no `<body>`.
+- **Dado** a navegação pelos links da casca, **então** nada muda: ali o foco já
+  está onde o usuário o pôs.
+- **Dado** um leitor de tela, **então** a mudança de página é anunciada — mover o
+  foco em silêncio troca um defeito por outro.
+
+**Casos-limite:**
+- Rota que falha ao carregar (`lazy`) → o foco não pode ser posto num nó que
+  ainda não existe.
+- Navegação pelo botão "voltar" do navegador → é `popstate`, não navegação
+  programática, e o critério não incide.
+
+**Fora desta história:** os outros quatro achados — `H-67` a `H-69` e `H-71`.
+
+**Dependências:** `H-47`, que mediu.
+**Tamanho:** P (3 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-71"></a>
+
+### H-71 — O valor anterior da edição é legível
+
+**Objetivo:** o texto que o operador confere antes de gravar na planilha alcançar
+o contraste que `AA` exige.
+
+> **Medido por `VN-6` em 31/08/2026, por amostragem do pixel renderizado.** O
+> `line-through opacity-60` de `PendingEditsPanel.tsx:92` mede **3.27:1** — glifo
+> `RGB(175,130,97)` sobre o painel `RGB(255,251,235)`. O texto é `text-sm`, 14 px,
+> então o limiar é **4.5:1**: faltam 1.23.
+>
+> **O número é conservador.** A amostra foi feita com o glifo ampliado, que reduz
+> antialiasing; a 14 px reais a razão medida é igual ou pior.
+>
+> **É o valor ANTERIOR de uma edição enfileirada** — o que o operador lê para
+> conferir o que vai ser gravado no arquivo da empresa. Ilegível aqui não é
+> incômodo estético.
+>
+> **Os outros dois alvos de alfa passaram**, e ficam registrados porque um deles
+> quase não passa: `MultiSelect.tsx:133` mede 8.60:1 sobre o gatilho escuro e
+> **4.60:1** sobre o fundo claro — margem de 0.10 sobre o limiar.
+
+**Arquivos:**
+- `web/src/components/PendingEditsPanel.tsx` — o par de classes do valor anterior
+- `web/src/index.css` — se a correção for no token de aviso
+- `web/tests/PendingEditsPanel.test.tsx`
+
+**Critérios de aceite:**
+- **Dado** o valor anterior sobre o painel de aviso, **então** a razão medida é
+  ≥ 4.5:1 — hoje é 3.27:1.
+- **Dado** o valor **novo**, ao lado dele, **então** ele continua distinguível do
+  anterior: os dois legíveis e iguais entre si apagariam qual é qual.
+- **Dado** o token de aviso, **se** ele mudar, **então** os outros consumidores
+  dele são medidos junto — `H-40` já provou que token compartilhado muda mais
+  tela do que a lista da história prevê.
+
+**Casos-limite:**
+- `opacity` removida em favor de cor sólida → o `line-through` sozinho precisa
+  seguir dizendo "anterior", porque a distinção não pode ficar só na cor
+  (`ACHADO 18`).
+- Edição cujo valor anterior é vazio → não há texto a contrastar, e a linha diz
+  outra coisa.
+
+**Fora desta história:** os outros quatro achados — `H-67` a `H-70`. E o
+contraste do conteúdo **sob** o scrim do `ConflictDialog`, medido por `VN-6` em
+7.04:1 sobre a tabela e 3.29:1 sobre o gráfico: conteúdo obscurecido por diálogo
+modal é inativo, e mexer nele é decisão que `H-47` deixou registrada, não aberta.
+
+**Dependências:** `H-47`, que mediu.
+**Tamanho:** P (3 arquivos, 0 contrato novo)
 
 [↑ Índice](#indice)
 
@@ -5735,8 +6041,8 @@ quem de fato responde pelo processo.
 - `src/domain/indicators.ts` — IND-20 e a quebra de IND-22 por responsável
 - `src/http/routes/indicators.ts`, `filter-options.ts`, `processes.ts`
 - `src/app/process-store.ts`
-- `web/src/components/FilterBar.tsx`, `web/src/pages/Performance.tsx`,
-  `web/src/pages/ProcessDetail.tsx`
+- `web/src/pages/ProcessDetail.tsx` — obrigado pelo `typecheck`, porque o
+  domínio de `Responsible` deixa de ser fechado
 - `docs/05-contratos-api.md`, `docs/03-modelo-dados.md` (TD-05)
 - os testes correspondentes
 
@@ -5751,12 +6057,17 @@ quem de fato responde pelo processo.
   exatamente por isso que a regra precisa existir antes da primeira.
 - **Dado** `A-18`, **então** a subcategoria de cor continua sendo selecionada
   junto com a principal **no filtro de `colorResponsible`** — a regra migra com
-  o campo, não desaparece.
+  o campo, não desaparece. O controle na barra é `H-66`; aqui a
+  regra migra no domínio e na rota de opções.
 - **Dado** a quebra de tempo documental por responsável na Página Performance,
-  **então** ela deixa de ser dominada por `indefinido` e a ressalva de A-31 é
-  reescrita para descrever o campo novo.
-- **Dado** mapa de equipe ausente, **então** `responsible` cai inteiramente no
-  desempate por cor e o comportamento é o de hoje.
+  **então** ela deixa de ser dominada por `indefinido` — por efeito do campo,
+  sem trabalho de tela. **A ressalva de A-31 é `H-66`**, e com ela o quinto
+  critério de `H-53`.
+- **Dado** mapa de equipe ausente — arquivo inexistente ou sem membros —,
+  **então** `responsible` recebe a chave de cor da linha e a resolução declara
+  `source: 'cor'`: o campo mostra o que mostra hoje, **157** preenchidos, e o
+  domínio é a união das chaves de membro com as de cor, habitada só neste
+  estado (`D-23`).
 
 **Casos-limite:**
 - Importador com sufixo de filial — medido: três importadores aparecem também
@@ -5767,13 +6078,30 @@ quem de fato responde pelo processo.
   pela mesma razão de A-28.
 - Uma pessoa marcada como destino do "todo o resto" → é regra do mapa, não do
   código; duas pessoas marcadas assim é erro de carga (`H-48`).
+- Mapa ausente **e** filtro Responsável em uso → a agregação de A-18 migrou
+  para `colorResponsible`, então `colaborador1` deixa de trazer
+  `colaborador1_outros_clientes` enquanto não houver mapa. Consequência
+  declarada de `D-23`, não defeito.
 
-**Fora desta história:** trocar o significado das cores na escrita — `H-27`
-continua gravando o que grava, e o `fillId` de cada combinação não muda.
+**Fora desta história:** o controle do filtro `colorResponsible` na barra e a
+ressalva de A-31 na Página Performance — são `H-66`. E trocar o significado das
+cores na escrita: `H-27` continua gravando o que grava, e o `fillId` de cada
+combinação não muda.
+
+> **A história é G, e o rótulo é deliberado.** Ela declarava `M (15 arquivos,
+> contrato de três rotas alterado)` desde que nasceu, e isso é G pela régua do
+> topo deste arquivo. `H-66` tira dela os três de tela e a deixa em 12 —
+> **ainda acima do teto**. Os cortes que a fariam caber em `M` foram tentados e
+> custam mais do que economizam: separar o campo do indicador é impossível,
+> porque IND-20 e IND-22 leem `process.responsible` e mudam junto; e fatiar o
+> domínio antes das rotas deixaria um intervalo com o Responsável fora da tela,
+> entre dois PRs, ou com o campo duplicado no contrato. **É a primeira G do
+> backlog**, e a régua está fazendo o trabalho dela: avisar que a fatia é longa,
+> não forçar um corte pior (`D-24`).
 
 **Dependências:** `H-48`. Convive com `H-49`, que toca os mesmos três arquivos
-de composição.
-**Tamanho:** M (15 arquivos, contrato de três rotas alterado)
+de composição. O quinto critério está decidido em `D-23`.
+**Tamanho:** G (12 arquivos, contrato de três rotas alterado)
 
 [↑ Índice](#indice)
 
@@ -6022,12 +6350,13 @@ atalho, na Inicial.
 >
 > **O quinto critério não foi cumprido porque a premissa dele é falsa.** Ele diz
 > "**Dado** `H-50` fechada, **então** a ressalva de A-31 descreve o campo novo".
-> `H-50` **não** foi executada — a razão está em
-> `docs/sessao-autonoma/RELATORIO.md`, Pendência 1 —, e a ressalva de `A-31`
-> continua descrevendo a limitação que **ainda existe**: o responsável vem da
-> cor, e linha verde ou vermelha não o carrega. Reescrevê-la agora afirmaria que
-> a limitação acabou. **Quando `H-50` fechar, esta linha é o que sobra a fazer**,
-> e ela é de dois parágrafos em `ResponsibleCaveat`.
+> `H-50` **não** foi executada — a Pendência 1 que a travava foi decidida em
+> 31/08/2026 (`D-23`), e a Pendência 2 a cortou (`D-24`) —, e a ressalva de
+> `A-31` continua descrevendo a limitação que **ainda existe**: o responsável
+> vem da cor, e linha verde ou vermelha não o carrega. Reescrevê-la agora
+> afirmaria que a limitação acabou. **A linha que sobra é `H-66`**, dois
+> parágrafos em `ResponsibleCaveat`, e ela nasceu do corte justamente por ser
+> isto: o resto de tela de uma história de servidor.
 >
 > **Nenhum dos dois defeitos era de cálculo, e é isso que os torna caros.** A
 > métrica está correta desde IND-22 e o filtro funciona desde `H-15`; o que
@@ -6091,6 +6420,7 @@ respeita.
 - **Dado** as duas exclusões de A-30, **então** elas continuam contadas e
   visíveis, com a explicação do que cada uma significa.
 - **Dado** `H-50` fechada, **então** a ressalva de A-31 descreve o campo novo.
+  **O trabalho é `H-66`**, que nasceu do corte de `H-50` e carrega este critério.
 
 **Casos-limite:**
 - Amostra de tamanho 1 → a média aparece com a amostra ao lado, como hoje
@@ -6104,7 +6434,8 @@ respeita.
 quinta dimensão possível — por importador — só existiria por `H-49`; se for
 desejada, é história própria.
 
-**Dependências:** `H-50`, para o último critério. Os demais fecham sem ela.
+**Dependências:** `H-66` — e, por trás dela, `H-50` —, para o último critério.
+Os demais fecham sem as duas.
 **Tamanho:** P (2 arquivos, 0 contrato novo)
 
 [↑ Índice](#indice)
@@ -6429,6 +6760,57 @@ mercadoria — grupo é conceito de cliente.
 
 **Dependências:** `H-55`.
 **Tamanho:** M (7 arquivos, contrato de uma rota alterado)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-66"></a>
+
+### H-66 — O filtro da cor de responsável na tela
+
+**Objetivo:** o operador recortar por *o que a linha está pintada*, e a Página
+Performance dizer qual campo a quebra usa.
+
+> **Nasce do corte de `H-50`**, decidido em 31/08/2026 (`D-24`). `H-50` faz o
+> campo mudar de fonte no servidor inteiro e é G; o que sobra de tela cabe em
+> **P** e fecha sozinho. O campo `colorResponsible` já existe quando esta começa
+> — ela só o expõe.
+>
+> **Ela fecha o quinto critério de `H-53`**, que ficou declarado não-incidente
+> em 31/08/2026 por depender do campo novo. É o único critério aberto de uma
+> história já concluída.
+
+**Arquivos:**
+- `web/src/components/FilterBar.tsx` — o controle de `colorResponsible`, que
+  leva os filtros globais de 13 a 14
+- `web/src/pages/Performance.tsx` — a ressalva de A-31 reescrita para descrever
+  o campo novo
+- os testes correspondentes
+
+**Critérios de aceite:**
+- **Dado** a barra de filtros, **quando** ela é montada, **então** há **14**
+  controles, e o novo recorta por cor de responsável sem tocar o filtro
+  Responsável, que agora recorta por pessoa.
+- **Dado** `A-18`, **quando** a cor principal é selecionada no controle novo,
+  **então** a subcategoria vem junto — a regra viaja com o campo, e o teste usa
+  os valores concretos de TD-05.
+- **Dado** a Página Performance, **então** a ressalva de A-31 descreve o campo
+  novo em vez da limitação que `H-50` removeu, fechando o quinto critério de
+  `H-53`.
+
+**Casos-limite:**
+- Nenhum processo com cor de responsável no recorte → o controle aparece com as
+  opções vazias, e não some: controle que desaparece esconde que o recorte
+  zerou (A-28).
+- Os dois filtros ativos ao mesmo tempo, apontando pessoas diferentes →
+  interseção, sem tratamento especial: são campos independentes.
+
+**Fora desta história:** o campo, o domínio e as rotas — são `H-50`, e esta não
+começa antes dela.
+
+**Dependências:** `H-50`.
+**Tamanho:** P (3 arquivos, 0 contrato novo)
 
 [↑ Índice](#indice)
 
@@ -7039,10 +7421,10 @@ superfície dobrada pelo segundo esquema.
 | E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
-| E9 — Estilização | **H-39 ✅ … H-46 ✅; só `H-47` aberta, e ela exige navegador** | 1 | 8 | 0 |
-| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-52 ✅, H-53 ✅, H-54 ✅, H-55 ✅, H-56 ✅; só `H-50` aberta** | 1 | 8 | 0 |
+| E9 — Estilização | **H-39 ✅ … H-47 ✅; `H-67` a `H-71` abertas, os cinco achados que `H-47` mediu no navegador** | 6 | 8 | 0 |
+| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-52 ✅, H-53 ✅, H-54 ✅, H-55 ✅, H-56 ✅; abertas `H-50` — a única G do backlog — e `H-66`, que saiu do corte dela** | 2 | 7 | 1 |
 | E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
-| **Total** | **65** — 54 concluídas, 11 abertas | **21** | **44** | **0** |
+| **Total** | **71** — 55 concluídas, 16 abertas | **27** | **43** | **1** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até
@@ -7060,7 +7442,8 @@ máquina do operador.
 escrita no `.xlsx` virou `H-24` (cirurgia), `H-25` (defesas) e `H-26` (comando
 ponta a ponta); os indicadores viraram cinco histórias por natureza de cálculo;
 e o épico E10 separou os mapas (`H-48`) dos dois campos que os consomem
-(`H-49`, `H-50`), que de outro modo seriam uma fatia só de 25 arquivos.
+(`H-49`, `H-50`), que de outro modo seriam uma fatia só de 25 arquivos. `H-50`
+foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 
 ### Varredura de verbos de decisão em aberto
 
