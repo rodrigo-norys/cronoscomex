@@ -272,7 +272,7 @@ no DOM.
 2. `fix(web): os testes passam a esperar pelo texto, e nao pelo no`
 3. `docs(docs): fecha H-43 no backlog, na rastreabilidade e no estado`
 
-### `H-44` — Live regions das páginas, gráfico e forced-colors · PR #TBD
+### `H-44` — Live regions das páginas, gráfico e forced-colors · [PR #74](https://github.com/rodrigo-norys/cronoscomex/pull/74)
 
 **Branch:** `H-44/fix-live-regions-das-paginas`, saindo de
 `H-43/fix-live-regions-da-casca`. Posição 6 da pilha.
@@ -449,7 +449,7 @@ da anterior e todas escrevem em `docs/06-backlog.md`,
 | 3 | [#71](https://github.com/rodrigo-norys/cronoscomex/pull/71) — `H-54` | `H-54/feat-historico-reconstruido` | `H-52/feat-periodo-nos-cartoes` |
 | 4 | [#72](https://github.com/rodrigo-norys/cronoscomex/pull/72) — `H-53` | `H-53/feat-performance-diz-a-metrica` | `H-54/feat-historico-reconstruido` |
 | 5 | [#73](https://github.com/rodrigo-norys/cronoscomex/pull/73) — `H-43` | `H-43/fix-live-regions-da-casca` | `H-53/feat-performance-diz-a-metrica` |
-| 6 | #TBD — `H-44` | `H-44/fix-live-regions-das-paginas` | `H-43/fix-live-regions-da-casca` |
+| 6 | [#74](https://github.com/rodrigo-norys/cronoscomex/pull/74) — `H-44` | `H-44/fix-live-regions-das-paginas` | `H-43/fix-live-regions-da-casca` |
 
 Depois do último merge, a branch `distribuicao` fica para trás e precisa ser
 sincronizada — `node --experimental-strip-types scripts/sincronizar-distribuicao.ts`.
