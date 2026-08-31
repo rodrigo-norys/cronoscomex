@@ -162,7 +162,7 @@ segundo.
 4. `docs(docs): fecha H-52 no backlog, na rastreabilidade e no estado`
 5. `docs(docs): o relatorio registra H-52`
 
-### `H-54` — O histórico reconstrói os meses da planilha · PR #TBD
+### `H-54` — O histórico reconstrói os meses da planilha · [PR #71](https://github.com/rodrigo-norys/cronoscomex/pull/71)
 
 **Branch:** `H-54/feat-historico-reconstruido`, saindo de
 `H-52/feat-periodo-nos-cartoes`. Posição 3 da pilha.
@@ -230,7 +230,7 @@ da anterior e todas escrevem em `docs/06-backlog.md`,
 |---|---|---|---|
 | 1 | [#69](https://github.com/rodrigo-norys/cronoscomex/pull/69) — `H-51` | `H-51/feat-canal-verde` | `main` |
 | 2 | [#70](https://github.com/rodrigo-norys/cronoscomex/pull/70) — `H-52` | `H-52/feat-periodo-nos-cartoes` | `H-51/feat-canal-verde` |
-| 3 | #TBD — `H-54` | `H-54/feat-historico-reconstruido` | `H-52/feat-periodo-nos-cartoes` |
+| 3 | [#71](https://github.com/rodrigo-norys/cronoscomex/pull/71) — `H-54` | `H-54/feat-historico-reconstruido` | `H-52/feat-periodo-nos-cartoes` |
 
 Depois do último merge, a branch `distribuicao` fica para trás e precisa ser
 sincronizada — `node --experimental-strip-types scripts/sincronizar-distribuicao.ts`.
