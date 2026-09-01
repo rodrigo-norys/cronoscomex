@@ -29,7 +29,7 @@ import { NAV_PAGES, navigate, type Route } from '../router.ts'
 
 const FOOTER_PAGE_ID = 'workbookSetup'
 
-const ITEM_BASE = 'block rounded-control border-l-2 px-3 py-2 text-sm font-medium'
+const ITEM_BASE = 'motion-tint block rounded-control border-l-2 px-3 py-2 text-sm font-medium'
 
 /**
  * O item corrente, e o unico lugar do conjunto onde o acento pinta fundo.

@@ -479,4 +479,22 @@ describe('densidade e número na tabela (H-61)', () => {
     expect(chip.className).toContain('rounded-full')
     expect(chip.className).toContain('bg-channel-red-bg')
   })
+
+  /**
+   * `H-64`. A linha e o unico realce sob cursor da pagina, e o papel de
+   * movimento acompanha o `hover:` que ja existia. O que a duracao vale, e que
+   * ela cai sob reducao, e do CSS — `tests/repo/estilo.test.ts` cobra la.
+   */
+  it('a linha nomeia o papel de movimento junto do realce', async () => {
+    renderPage()
+
+    const linhas = await screen.findAllByRole('row')
+    const corpo = linhas.filter((linha) => linha.closest('tbody') !== null)
+
+    expect(corpo.length).toBeGreaterThan(0)
+    for (const linha of corpo) {
+      expect(linha.className).toContain('hover:bg-surface-hover')
+      expect(linha.className).toContain('motion-tint')
+    }
+  })
 })
