@@ -89,7 +89,13 @@ export function PendingEditsPanel({
               <li key={edit.id} className="flex flex-wrap items-baseline gap-2 text-sm">
                 <strong className="text-state-warning-fg">{labelOf(edit)}</strong>
                 <span className="text-state-warning-fg">
-                  <span className="line-through opacity-60">{previousOf(edit)}</span> →{' '}
+                  {/* Sem `opacity`: o valor anterior e o que o operador confere
+                      antes de gravar, e a 60% ele media 3.23:1 sobre o painel
+                      de aviso, contra o limiar de 4.5 que `text-sm` exige
+                      (`VN-6`, `H-71`). Solido mede 8.73:1. O que separa
+                      anterior de novo passa a ser so o par risco/negrito, e
+                      nenhum dos dois e cor — que e o que `ACHADO 18` pede. */}
+                  <span className="line-through">{previousOf(edit)}</span> →{' '}
                   <strong>{nextOf(edit)}</strong>
                 </span>
                 <button

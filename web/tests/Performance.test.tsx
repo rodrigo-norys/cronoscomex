@@ -248,6 +248,86 @@ describe('ranking de agentes — IND-17 com overdueCount (A-27)', () => {
   })
 })
 
+/**
+ * `H-67`. Com `secondary` a linha do ranking tem QUATRO slots de largura fixa —
+ * `w-40` do rótulo, `w-12` da contagem, `w-24` do secundário e três `gap-3` —,
+ * somando 348 px antes da barra. A 320 px CSS a página rolava até **385**
+ * (`VN-1/A`), porque `shrink-0` proíbe o colapso.
+ *
+ * A correção empilha, e **só onde há `secondary`**: `Performance.tsx` é a única
+ * das sete páginas que o passa. As outras seis usam o mesmo componente e já
+ * passavam a 320 — alcançá-las mudaria seis telas sem defeito, que é o que o
+ * segundo critério de aceite proíbe. **jsdom não faz layout**: o que se afirma
+ * aqui é qual ramo cada linha recebe. Medido em Chrome 151 ao fechar a
+ * história: 385 → 305 a 320 px, e a 1280 px a linha continua única, com o
+ * rótulo em 160 px — idêntica ao que era.
+ */
+describe('a linha do ranking a 320 px', () => {
+  function comAgente(overdueCount: number) {
+    const base = indicatorsFixture()
+    api.serveIndicators({
+      ...base,
+      rankings: {
+        ...base.rankings,
+        agents: [{ key: 'BM', label: 'B&M', count: 246, overdueCount }],
+      },
+    })
+    renderPage()
+  }
+
+  it('deixa o rótulo tomar a linha inteira quando há secundário', async () => {
+    comAgente(7)
+
+    const rotulo = within(await section('Agentes')).getByText('B&M')
+
+    expect(rotulo.className).toContain('w-full')
+    expect(rotulo.className).toContain('sm:w-40')
+  })
+
+  it('permite a quebra só na linha que tem secundário', async () => {
+    comAgente(7)
+
+    const linha = within(await section('Agentes')).getByText('B&M').parentElement
+
+    expect(linha?.className).toContain('flex-wrap')
+  })
+
+  /**
+   * O segundo critério de aceite, e é ele que justifica a correção estar no
+   * ramo condicional em vez de na linha. O ranking por responsável não passa
+   * `secondary`, como as outras seis páginas — e nenhum recebe a quebra.
+   */
+  it('não alcança o ranking sem secundário, que já cabia', async () => {
+    const base = indicatorsFixture()
+    api.serveIndicators({
+      ...base,
+      rankings: {
+        ...base.rankings,
+        responsible: [{ key: 'colaborador1', label: 'Colaborador 1', count: 120 }],
+      },
+    })
+    renderPage()
+
+    const rotulo = within(await section('Responsáveis')).getByText('Colaborador 1')
+
+    expect(rotulo.className).toContain('w-40')
+    expect(rotulo.className).not.toContain('w-full')
+    expect(rotulo.parentElement?.className).not.toContain('flex-wrap')
+  })
+
+  /**
+   * O caso-limite da história: `43 atrasados` é o texto mais longo medido, e é
+   * ele que produz os 96 px do slot. Medido no navegador ao fechar: 76,0 px de
+   * 96 — cabe, e mesmo `9.999 atrasados` cabe, em 93,1. Empilhar não custou o
+   * número, que é o que o terceiro critério de aceite exige.
+   */
+  it('mantém o secundário mais longo na tela, em vez de escondê-lo', async () => {
+    comAgente(43)
+
+    expect(within(await section('Agentes')).getByText('43 atrasados')).toBeTruthy()
+  })
+})
+
 describe('ranking por responsavel — IND-20', () => {
   it('exibe as quatro chaves, inclusive a zerada (A-17, A-28)', async () => {
     const base = indicatorsFixture()

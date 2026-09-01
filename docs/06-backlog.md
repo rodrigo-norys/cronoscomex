@@ -25,10 +25,10 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
-| E9 — Estilização | **H-39 ✅ … H-47 ✅ e H-68 ✅; `H-67`, `H-69` a `H-72` abertas, os cinco achados que restam** | 7 | 8 | 0 |
+| E9 — Estilização | **H-39 ✅ … H-47 ✅, H-67 ✅, H-68 ✅ e H-71 ✅; `H-69`, `H-70` e `H-72` abertas** | 7 | 8 | 0 |
 | E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-52 ✅, H-53 ✅, H-54 ✅, H-55 ✅, H-56 ✅; abertas `H-50` — a única G do backlog — e `H-66`, que saiu do corte dela** | 2 | 7 | 1 |
 | E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
-| **Total** | **72** — 56 concluídas, 16 abertas | **28** | **43** | **1** |
+| **Total** | **72** — 58 concluídas, 14 abertas | **28** | **43** | **1** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -130,11 +130,11 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-45 — Unificar papéis de UI e tirar a informação só-cor](#h-45) ✅
 - [H-46 — Responsividade e contenção de rolagem](#h-46) ✅
 - [H-47 — Percorrer os cinco procedimentos de navegador](#h-47) ✅
-- [H-67 — A linha do ranking cabe em 320 px](#h-67)
+- [H-67 — A linha do ranking cabe em 320 px](#h-67) ✅
 - [H-68 — O seletor de cor cabe na tela do celular](#h-68) ✅
 - [H-69 — O texto cortado da tabela tem caminho de volta](#h-69)
 - [H-70 — O foco sobrevive à navegação programática](#h-70)
-- [H-71 — O valor anterior da edição é legível](#h-71)
+- [H-71 — O valor anterior da edição é legível](#h-71) ✅
 - [H-72 — A aba corrente sobrevive ao alto contraste](#h-72)
 
 **[Épico E10 — As melhorias de uso](#e10)**
@@ -5516,6 +5516,41 @@ E qualquer correção de código: os cinco procedimentos produzem registro.
 
 ### H-67 — A linha do ranking cabe em 320 px
 
+> ✅ **CONCLUÍDA em 31/08/2026.** **4 testes próprios**, suíte em **1602**.
+> `/performance` vai de **385** para **305 = 305** num viewport de 320, e as
+> **sete** páginas foram medidas juntas, antes e depois: as outras seis estavam
+> em 305 e continuam em 305. O antes reproduz `VN-1/A` exatamente, culpado
+> incluído — o `<span class="w-24 shrink-0">` em `right: 385`.
+>
+> **A correção empilha em vez de encolher, e a escolha é o achado.** Duas
+> alternativas foram medidas e descartadas: reduzir o rótulo a `w-24` deixaria
+> a soma em 321 contra 305 — ainda rolaria —, e deixar o `flex-wrap` livre
+> punha a barra em **43 px** com o número descendo junto. O que ficou dá ao
+> rótulo a linha inteira abaixo de 640: linha 1 com o nome em 215 px, linha 2
+> com barra 47 + contagem 48 + secundário 96. **Nada é cortado em nenhum dos
+> dois.**
+>
+> **O segundo critério não é asserção, é medição.** Os dois ramos condicionam a
+> `secondary`, que só `Performance.tsx` passa. Medido no computado: o ranking
+> Responsáveis e o de Clientes ficam `flexWrap: nowrap` com rótulo de 160 px
+> **nas duas larguras**, e a 1280 px o próprio ranking de Agentes volta a uma
+> linha só, com os mesmos 160 px e 28 px de altura de antes. A correção não
+> alcança tela nenhuma que não tivesse o defeito.
+>
+> **O caso-limite fechou com folga maior que a esperada.** `43 atrasados`, o
+> texto mais longo medido, ocupa **76,0 px** dos 96 do slot; `9.999 atrasados`
+> — acima de qualquer valor possível nas 649 linhas — ocupa 93,1 e ainda cabe,
+> sem a página rolar. A primeira medição deu 96/96 para todos os cinco textos,
+> inclusive o impossível: era o `scrollWidth` do pai não enxergando o filho
+> inline. **O número absurdo foi refeito antes de virar prova.**
+>
+> **Divergências:** nenhuma. A lista de arquivos estava completa, e
+> `Performance.tsx` acabou não sendo tocada — o backlog já a condicionava a "se
+> a correção for do lado de quem passa". `/nova-pagina` foi invocada pelo
+> despacho textual da fatia e **não incide**: nenhum dos caminhos que ela
+> obriga — `api-client.ts`, `web/src/hooks/`, `api-stub.ts`, `App.tsx`,
+> `App.test.tsx` — entra numa correção de CSS de página já montada.
+
 **Objetivo:** a Página Performance parar de rolar horizontalmente na largura que
 `SC 1.4.10` exige.
 
@@ -5740,6 +5775,47 @@ pelo ranking.
 <a id="h-71"></a>
 
 ### H-71 — O valor anterior da edição é legível
+
+> ✅ **CONCLUÍDA em 31/08/2026.** **3 testes próprios**, suíte em **1598**.
+> **3.23:1 → 8.73:1**, medido em Chrome 151 com o `oklch` dos tokens resolvido
+> pelo próprio navegador e a opacidade composta pelo compositor, não por
+> aritmética escrita à mão. O antes reproduz `VN-6` — glifo `RGB(176,131,98)`
+> sobre `RGB(255,251,235)`, contra os `RGB(175,130,97)` que a amostragem de
+> pixel registrou; 1 unidade por canal de diferença, e o número daqui é o mais
+> conservador dos dois.
+>
+> **A correção é tirar `opacity-60`, e nada mais.** Nenhum token muda, e é isso
+> que torna o terceiro critério de aceite **não-incidente em vez de pulado**:
+> os três valores de `state-warning-*` foram lidos do `documentElement` depois
+> da mudança e estão idênticos ao `index.css`. `web/src/index.css` não foi
+> tocado — a lista de arquivos já o condicionava a "se a correção for no token".
+>
+> **O segundo critério passa por dois canais, nenhum deles cor.** Anterior e
+> novo ficam na mesma cor; o que os separa é `line-through` num e peso 700 no
+> outro, medidos no computado. Cor sozinha violaria `ACHADO 18`, e forma
+> sozinha era o risco que o critério nomeava.
+>
+> **Varredura de irmãos, porque o achado podia não ser único.** Nas três páginas
+> medidas — Detalhe com o painel aberto, Inicial e Operacional — **zero** textos
+> abaixo do limiar. Os únicos com `opacity < 1` que restam são as 10 setas `▾`
+> do `MultiSelect`, em **4.55:1**: `VN-6` as registrou em 4.60:1 e elas seguem
+> passando, intactas, como convinha a quem não mexeu no token delas.
+>
+> **Divergência 1 (fiação, resolvida):** o backlog lista
+> `web/tests/PendingEditsPanel.test.tsx`, **que não existe** — o painel é coberto
+> por `web/tests/ProcessDetail.test.tsx`, e foi lá que os três testes entraram.
+> Alternativa descartada: criar o arquivo que o plano nomeia, o que espalharia a
+> cobertura do mesmo componente por dois lugares sem ganho.
+>
+> **Divergência 2 (fiação, resolvida), e ela custou uma restauração à mão.** O
+> harness de medição precisava de edição enfileirada, e `POST /api/edits` gravou
+> em `data/pending-edits.jsonl` **da raiz**: `buildServer` não repassa
+> `queuePath` a `registerEditsRoutes`, cujo default é relativo ao cwd. A fila do
+> operador foi restaurada byte a byte — 247 bytes, uma edição de 14/08 já
+> descartada em 14/08, então nada se perdeu —, e o harness passou a rodar com o
+> **cwd** numa área própria. A suíte nunca esteve exposta: `tests/http/edits.test.ts`
+> registra a rota direto, com `queuePath` injetado. **O buraco é de quem monta
+> por `buildServer`**, e virou pendência para o dono no relatório da sessão.
 
 **Objetivo:** o texto que o operador confere antes de gravar na planilha alcançar
 o contraste que `AA` exige.
