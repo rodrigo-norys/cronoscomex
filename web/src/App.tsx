@@ -149,7 +149,7 @@ export function App() {
           className={
             healthError === null
               ? 'sr-only'
-              : 'border-b border-state-error-border bg-state-error-bg px-6 py-3 text-sm text-state-error-fg'
+              : 'border-y border-state-error-border bg-state-error-bg px-6 py-3 text-sm text-state-error-fg'
           }
         >
           {healthError !== null && (

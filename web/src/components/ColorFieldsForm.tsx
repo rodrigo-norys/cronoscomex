@@ -153,7 +153,7 @@ export function ColorFieldsForm({
             <button
               type="submit"
               disabled={busy || chosen === ''}
-              className="rounded-control border border-action-bg bg-action-bg px-3 py-1.5 text-sm font-medium text-action-fg disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
+              className="button-primary px-3 py-1.5"
             >
               {busy ? 'Enfileirando…' : 'Enfileirar'}
             </button>

@@ -105,13 +105,30 @@ const SIGNAL_STYLE: Record<SignalKey, string> = {
  */
 function SetupLink() {
   return (
-    <button
-      type="button"
-      onClick={() => navigate(WORKBOOK_SETUP_PAGE.path)}
+    /*
+      **`<a href>`, e nao `<button>`** (`H-75`, `ACHADO 6`). Navegar e navegar:
+      era o unico dos TRES acessos a `/configuracao` que usava outro papel, e
+      `SC 4.1.2` mais a falha `F31` de `SC 3.2.4` incidem porque as sete telas
+      tem URIs distintas. Como `<button>`, `Ctrl`+clique e o botao do meio nao
+      abriam em outra aba, e o endereco nao aparecia na barra de estado.
+
+      O nome tambem convergiu: os tres dizem "Configuracao", o rotulo canonico
+      de `router.ts`. Alinhar por `aria-label` estava fora — o nome acessivel
+      precisa CONTER o texto visivel (`SC 2.5.3`).
+
+      O interceptador de modificador e o de `ProcessTable`.
+    */
+    <a
+      href={WORKBOOK_SETUP_PAGE.path}
+      onClick={(event) => {
+        if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
+        event.preventDefault()
+        navigate(WORKBOOK_SETUP_PAGE.path)
+      }}
       className="ml-2 rounded-control border border-state-warning-fg px-2 py-0.5 font-medium text-state-warning-fg text-xs hover:bg-state-warning-bg"
     >
-      Conferir a planilha configurada
-    </button>
+      Configuração
+    </a>
   )
 }
 

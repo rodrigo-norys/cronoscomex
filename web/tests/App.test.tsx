@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from '../src/App.tsx'
 import { PAGE_LIVE_REGION_ID } from '../src/components/PageAlert.tsx'
-import { NAV_PAGES } from '../src/router.ts'
+import { NAV_PAGES, WORKBOOK_SETUP_PAGE } from '../src/router.ts'
 import { type ApiStub, healthFixture, indicatorsFixture, stubApi } from './support/api-stub.ts'
 
 /**
@@ -26,6 +26,26 @@ afterEach(() => {
 
 function nav(): HTMLElement {
   return screen.getByRole('navigation', { name: 'Páginas' })
+}
+
+/**
+ * Os TRES acessos a `/configuracao` tem o mesmo nome desde `H-75` — e e o
+ * ponto do `ACHADO 6`. O que os distingue passou a ser o contexto no DOM, e
+ * `findAllByRole` sozinho voltaria com o da lateral, que monta primeiro: os
+ * outros dois dependem da resposta de `/api/health`.
+ */
+async function acessoAConfiguracao(onde: 'lateral' | 'painel' | 'faixa'): Promise<HTMLElement> {
+  const dentroDe = (link: HTMLElement): boolean => {
+    if (onde === 'lateral') return link.closest('nav') !== null
+    if (onde === 'faixa') return link.closest('[role="alert"]') !== null
+    return link.closest('nav') === null && link.closest('[role="alert"]') === null
+  }
+
+  return waitFor(() => {
+    const achado = screen.getAllByRole('link', { name: 'Configuração' }).find(dentroDe)
+    if (achado === undefined) throw new Error(`nenhum acesso a configuracao em ${onde}`)
+    return achado
+  })
 }
 
 describe('casca', () => {
@@ -112,7 +132,11 @@ describe('casca', () => {
     it('leva a configuracao pelo painel de saude', async () => {
       render(<App />)
 
-      const link = await screen.findByRole('link', { name: /a planilha configurada/i })
+      // `H-75`, `ACHADO 6`: os TRÊS acessos dizem "Configuração", o rótulo
+      // canônico de `router.ts` — então o que os distingue é o CONTEXTO, e não
+      // mais o nome. `findAll` sozinho voltaria com o da lateral, que monta
+      // primeiro; o painel de saúde depende da resposta de `/api/health`.
+      const link = await acessoAConfiguracao('painel')
       fireEvent.click(link)
 
       expect(await screen.findByRole('region', { name: /Configuração da planilha/i })).toBeTruthy()
@@ -132,10 +156,39 @@ describe('casca', () => {
       )
       render(<App />)
 
-      const botao = await screen.findByRole('button', { name: /conferir a planilha configurada/i })
-      fireEvent.click(botao)
+      // **Link, e não botão** (`H-75`, `ACHADO 6`): navegar é navegar, e era o
+      // único dos três acessos com outro papel. Como `<button>`, `Ctrl`+clique
+      // não abria em outra aba nem mostrava o endereço.
+      const acesso = await acessoAConfiguracao('faixa')
+      fireEvent.click(acesso)
 
       expect(await screen.findByRole('region', { name: /Configuração da planilha/i })).toBeTruthy()
+    })
+
+    /**
+     * `H-75`, `ACHADO 6`, falha `F31` de `SC 3.2.4`. Os TRÊS acessos à mesma
+     * página são `<a href>` e dizem "Configuração" — o rótulo canônico de
+     * `router.ts`. Antes, um deles era `<button>` e os três tinham nomes
+     * diferentes.
+     */
+    it('os três acessos à configuração são link, e têm o mesmo nome', async () => {
+      api.serve(
+        healthFixture({
+          state: 'degradado',
+          degradedReason: 'A planilha nao pode ser lida.',
+          lastReadAt: '2026-08-07T10:00:00.000Z',
+        }),
+      )
+      render(<App />)
+
+      await acessoAConfiguracao('painel')
+      const acessos = screen.getAllByRole('link', { name: 'Configuração' })
+
+      expect(acessos).toHaveLength(3)
+      for (const acesso of acessos) {
+        expect(acesso.tagName).toBe('A')
+        expect(acesso.getAttribute('href')).toBe(WORKBOOK_SETUP_PAGE.path)
+      }
     })
 
     /** Nao e uma visao do dado: um recorte ali nao teria sobre o que incidir. */

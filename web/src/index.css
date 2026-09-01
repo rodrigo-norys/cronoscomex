@@ -345,6 +345,27 @@
 }
 
 /*
+ * A pele do botao de acao primaria, repetida em CINCO lugares (`H-75`,
+ * `ACHADO 4`): `ApplyChangesButton`, `ConflictDialog`, `EditProcessForm`,
+ * `ColorFieldsForm` e a Pagina Configuracao.
+ *
+ * **O que divergia nao era detalhe:** a borda existia em 3 dos 5 e o `hover` em
+ * 2 dos 5 — o mesmo papel com dois desenhos e dois comportamentos sob o cursor,
+ * e `SC 3.2.4` incide porque as sete telas tem URIs distintas.
+ *
+ * **O espacamento NAO entra, de proposito.** `C04` alcanca forma — raio, borda,
+ * sombra —, e o botao do dialogo usa `px-4 py-2` por ser confirmacao de painel
+ * modal. Engolir o `padding` aqui redimensionaria um controle sem que regra
+ * nenhuma pedisse.
+ */
+@utility button-primary {
+  @apply rounded-control border border-action-bg bg-action-bg text-sm font-medium text-action-fg;
+  @apply hover:bg-action-bg-hover;
+  @apply disabled:cursor-not-allowed disabled:border-control-disabled-bg;
+  @apply disabled:bg-control-disabled-bg disabled:text-control-disabled-fg;
+}
+
+/*
  * Movimento (`H-64`). Duas duracoes, uma curva, e nada entre elas.
  *
  * **Declarado aqui, e nunca no `.tsx`.** `--radius-*` e `--ease-*` sao
