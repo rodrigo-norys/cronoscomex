@@ -180,6 +180,7 @@ async function alvoDaPagina(portaCdp) {
  *
  * @param {{url: string, viewport?: {width: number, height: number},
  *          esquema?: 'light'|'dark', coresForcadas?: boolean,
+ *          movimentoReduzido?: boolean, apontadorFino?: boolean,
  *          fonteBase?: number, deviceScaleFactor?: number}} opcoes
  * @param {(pagina: object) => Promise<unknown>} fn
  */
@@ -189,6 +190,8 @@ export async function comNavegador(opcoes, fn) {
     viewport,
     esquema,
     coresForcadas = false,
+    movimentoReduzido = false,
+    apontadorFino = false,
     fonteBase,
     deviceScaleFactor = 1,
   } = opcoes
@@ -202,6 +205,20 @@ export async function comNavegador(opcoes, fn) {
     '--no-first-run',
     '--no-default-browser-check',
     '--disable-gpu',
+    // `hover:` do Tailwind v4 vive dentro de `@media (hover: hover)`, e o
+    // headless nao declara apontador nenhum: as duas features respondem `false`
+    // e NENHUM utilitario de cursor entra, ainda que `:hover` case. Medido em
+    // 01/09/2026, e e a explicacao do que `PD-07` registrou como "precisa de
+    // cursor real" — `Emulation.setEmulatedMedia` nao alcanca estas duas, que
+    // sao capacidade do dispositivo e nao preferencia do usuario.
+    //
+    // Os numeros sao os enums do Blink: `HoverType` HOVER = 2, `PointerType`
+    // FINE = 4. E o que o mouse do operador declara.
+    ...(apontadorFino
+      ? [
+          '--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4',
+        ]
+      : []),
     'about:blank',
   ])
   chrome.stderr.resume()
@@ -230,6 +247,7 @@ export async function comNavegador(opcoes, fn) {
     const features = []
     if (esquema) features.push({ name: 'prefers-color-scheme', value: esquema })
     if (coresForcadas) features.push({ name: 'forced-colors', value: 'active' })
+    if (movimentoReduzido) features.push({ name: 'prefers-reduced-motion', value: 'reduce' })
     if (features.length > 0) {
       await conexao.enviar('Emulation.setEmulatedMedia', { features })
     }
