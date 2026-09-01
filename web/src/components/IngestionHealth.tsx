@@ -90,8 +90,10 @@ export function IngestionHealth({ health, quarantine }: IngestionHealthProps) {
         leitura — e trocar a planilha e a acao seguinte natural de quem conclui
         que esta lendo o arquivo errado.
       */}
+      {/* O nome do link e "Configuracao" nos TRES acessos (`H-75`, `ACHADO 6`):
+          a frase e que se acomoda ao rotulo canonico, e nao o contrario. */}
       <p className="mt-3 text-sm text-text-secondary">
-        Lendo{' '}
+        Lendo a planilha apontada em{' '}
         <a
           href={WORKBOOK_SETUP_PAGE.path}
           onClick={(event) => {
@@ -101,7 +103,7 @@ export function IngestionHealth({ health, quarantine }: IngestionHealthProps) {
           }}
           className="underline hover:text-text-primary"
         >
-          a planilha configurada
+          Configuração
         </a>{' '}
         — clique para conferir o caminho ou apontar outro arquivo.
       </p>
