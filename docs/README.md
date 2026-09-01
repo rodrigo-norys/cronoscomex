@@ -42,7 +42,7 @@ Leia nesta ordem. Cada documento pressupõe o anterior.
 | 4 | [03-modelo-dados.md](03-modelo-dados.md) | Modelo em memória, arquivos locais e **as 7 tabelas de decisão** (TD-01 a TD-06 + TD-05.1) | H-04, H-05, H-06, H-07, H-27 |
 | 5 | [04-arquitetura.md](04-arquitetura.md) | Diagramas de contexto, containers e componentes; estrutura de diretórios | H-02 |
 | 6 | [05-contratos-api.md](05-contratos-api.md) | Rotas, schemas, códigos de erro e campos editáveis | Qualquer rota |
-| 7 | [06-backlog.md](06-backlog.md) | **65 histórias executáveis** em 11 épicos, com contrato, aceite e casos-limite — 46 concluídas | — |
+| 7 | [06-backlog.md](06-backlog.md) | **72 histórias executáveis** em 11 épicos, com contrato, aceite e casos-limite — 55 concluídas | — |
 | 8 | [07-plano-entrega.md](07-plano-entrega.md) | 5 fases, grafo de dependências, caminho crítico e **16 riscos** — `R-03` encerrado por `H-01`, `R-09` por `H-33`, `R-16` aberto por `E11`. **As fases cobrem o plano original e só ele** | Planejar a ordem |
 | 9 | [08-qualidade-operacao.md](08-qualidade-operacao.md) | Testes, ingestão, observabilidade, LGPD e build | Escrever testes |
 | 10 | [09-rastreabilidade.md](09-rastreabilidade.md) | Matriz de 28 linhas: indicador/alerta → história → teste → status | Verificar cobertura |
@@ -116,18 +116,20 @@ em `src/`; por que uma guarda existe, no cabeçalho do próprio script ou teste.
 atingido com folga: as 649 linhas da aba `2026` são aceitas com **0% de
 quarentena** (`H-07`), contra o limite de 2% de RNF-24.
 
-**46 das 65 histórias estão concluídas.** As 19 abertas estão em três épicos que
+**55 das 72 histórias estão concluídas.** As 17 abertas estão em três épicos que
 nasceram depois do plano e não têm fase atribuída:
 
 | Épico | Aberto em | Ordem |
 |---|---|---|
-| `E9` — Estilização | `H-43` a `H-47`; `H-39` a `H-42` fechadas | Corre em paralelo a `E10`; os dois não se bloqueiam |
+| `E9` — Estilização | abertas `H-67` a `H-72`, os seis achados que `H-47` mediu no navegador; `H-39` a `H-47` fechadas | Corre em paralelo a `E10`; os dois não se bloqueiam |
 | `E10` — As melhorias de uso | abertas `H-50` — a única G do backlog — e `H-66`, que saiu do corte dela (`D-24`); `H-48`, `H-49`, `H-51` a `H-56` fechadas | idem |
 | `E11` — A casca redesenhada | `H-57` a `H-65`, todas | **Depois de `E9` e `E10` inteiros** — a razão está no cabeçalho do épico |
 
-**Três pendências fecham juntas na primeira instalação na máquina do operador**
-— `PD-01`, `PD-05` e `PD-06`. Estão no `CLAUDE.md` da raiz, com o gatilho e a
-lista do que falta conferir em cada uma.
+**Cinco pendências convergem para a primeira instalação na máquina do operador**
+— `PD-01`, `PD-05`, `PD-06`, `PD-07` e `PD-08`. Estão no `CLAUDE.md` da raiz,
+com o gatilho de cada uma. **Duas não exigem Windows e podem cair antes:**
+`PD-05` precisa de qualquer Excel, e dois dos três itens de `PD-07` precisam de
+uma planilha de teste alterada e de um navegador com cursor.
 
 **O que cada história mediu e decidiu está no bloco `✅ CONCLUÍDA` dela**, em
 [06-backlog.md](06-backlog.md) — é lá que o registro técnico vive, não aqui. O

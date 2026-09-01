@@ -502,6 +502,17 @@ primeira metade — confusão entregue ao operador, não valor.
 
 ### PENDÊNCIA 3 — `H-47` exige navegador, e trava `E11` inteiro
 
+> ✅ **FECHADA em 31/08/2026.** `H-47` foi executada em Chrome 151 por CDP, na
+> própria máquina de desenvolvimento — **a premissa de que faltava navegador era
+> de mandato, não de ambiente**, e o dono autorizou. Cinco procedimentos
+> percorridos, com desfecho escrito em cada bloco. **`VN-5` também caiu em
+> seguida**, contra o que esta seção afirma abaixo: o Chrome emula
+> `forced-colors: active` no Linux, e quatro dos cinco alvos foram medidos — o
+> que restou é `PD-07`. Seis achados viraram `H-67` a `H-72`, e duas correções
+> anteriores ficaram **confirmadas em campo**: `H-44` e `H-46`. Com `H-47`
+> fechada, as nove histórias de `E11` deixam de estar bloqueadas por ela — mas
+> continuam depois de `E9` e `E10`, que é dependência de outra natureza.
+
 **O que está travado.** `H-47` — percorrer os cinco procedimentos de navegador —
 e, por transitividade, as nove histórias de `E11`.
 
