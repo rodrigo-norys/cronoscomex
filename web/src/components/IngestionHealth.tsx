@@ -27,7 +27,7 @@ export function IngestionHealth({ health, quarantine }: IngestionHealthProps) {
   return (
     <section
       aria-label="Saúde da ingestão"
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Saúde da ingestão</h2>
 
@@ -53,19 +53,43 @@ export function IngestionHealth({ health, quarantine }: IngestionHealthProps) {
 
       {/* A regiao existe desde a montagem (`H-43`), e so o texto dentro dela
           muda: um `role="alert"` que nasce populado nao e anunciado. */}
+      {/*
+        `H-61`. A severidade passa a ser **faixa lateral mais icone**, e nao o
+        contentor inteiro tingido: e a mesma forma de `AlertRow`, e o que separa
+        severidade de canal por FORMA em vez de matiz (regra inviolavel 4).
+
+        O texto continua dizendo tudo — `SC 1.4.1` —, e o icone se soma a ele.
+        `forced-colors:border-l-4` engrossa sob o modo forcado, onde a cor da
+        faixa e substituida pelo UA e so a espessura sobrevive.
+      */}
       <p
         role="alert"
         className={
           overLimit
-            ? 'mt-3 rounded border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg'
+            ? 'mt-3 flex items-start gap-2 rounded-container border border-state-error-border border-l-4 border-l-state-error-fg bg-state-error-bg px-3 py-2 text-sm text-state-error-fg forced-colors:border-l-4'
             : 'sr-only'
         }
       >
         {overLimit && (
           <>
-            <strong className="font-semibold">Acima do limite de 2%.</strong> A carga precisa ser
-            revista antes de os números serem usados: linhas não interpretadas não entram em
-            indicador nenhum.
+            <svg
+              aria-hidden="true"
+              viewBox="0 0 16 16"
+              className="mt-0.5 size-4 shrink-0"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+            >
+              <path d="M8 2.5 14.5 13.5h-13z" strokeLinejoin="round" />
+              <path d="M8 6.5v3.5" />
+              <circle cx="8" cy="11.75" r="0.6" fill="currentColor" stroke="none" />
+            </svg>
+            <span>
+              <strong className="font-semibold">Acima do limite de 2%.</strong> A carga precisa ser
+              revista antes de os números serem usados: linhas não interpretadas não entram em
+              indicador nenhum.
+            </span>
           </>
         )}
       </p>
@@ -119,7 +143,7 @@ function Metric({
     <div>
       <dt className="text-xs text-text-muted">{label}</dt>
       <dd
-        className={`tabular-nums ${emphasis ? 'font-semibold text-state-error-fg' : 'text-text-primary'}`}
+        className={`font-mono tabular-nums ${emphasis ? 'font-semibold text-state-error-fg' : 'text-text-primary'}`}
       >
         {value}
       </dd>

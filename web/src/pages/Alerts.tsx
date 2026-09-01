@@ -80,7 +80,7 @@ export function Alerts({ queryString, dataVersion }: AlertsProps) {
 
       <section
         aria-label="Fila de alertas"
-        className="rounded border border-border-subtle bg-surface-raised p-4"
+        className="rounded-container border border-border-subtle bg-surface-raised p-4"
       >
         <h2 className="text-sm font-semibold text-text-secondary">
           {groups.length === 0
@@ -139,7 +139,7 @@ function TypeCounts({
           <article
             key={type}
             aria-label={ALERT_LABELS[type]}
-            className="rounded border border-border-subtle bg-surface-raised p-3"
+            className="rounded-container border border-border-subtle bg-surface-raised p-3"
           >
             <h3 className="text-xs font-medium text-text-muted">{ALERT_LABELS[type]}</h3>
             {measurable ? (

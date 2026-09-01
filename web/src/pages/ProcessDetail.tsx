@@ -55,7 +55,7 @@ export function ProcessDetail({ processRef, dataVersion }: ProcessDetailProps) {
     return (
       <section
         aria-label="Processo não encontrado"
-        className="rounded border border-border-subtle bg-surface-raised p-8"
+        className="rounded-container border border-border-subtle bg-surface-raised p-8"
       >
         <h2 className="text-lg font-semibold text-text-secondary">Processo não encontrado</h2>
         <p className="mt-2 text-sm text-text-secondary">
@@ -118,7 +118,7 @@ function Identification({ process }: { process: ProcessDto }) {
   return (
     <section
       aria-label="Identificação"
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="font-mono text-xl font-semibold">{process.ref}</h2>
       <p className="mt-1 text-xs text-text-muted">Linha {process.sourceRow} da planilha</p>
@@ -140,7 +140,7 @@ function StatusBlock({
   return (
     <section
       aria-label="Status"
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Status</h2>
       <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -163,7 +163,7 @@ function Fields({ process }: { process: ProcessDto }) {
   return (
     <section
       aria-label="Campos do processo"
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Campos</h2>
       <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -216,7 +216,7 @@ function Anomalies({ items }: { items: ProcessDetailResponse['anomalies'] }) {
   return (
     <section
       aria-label="Anomalias"
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Anomalias</h2>
 
@@ -264,7 +264,7 @@ function StatusHistory({
   return (
     <section
       aria-label="Histórico de categoria"
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Histórico de categoria</h2>
 

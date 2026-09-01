@@ -320,7 +320,7 @@
  * que os dois passos de borda marcavam antes, e ela nao se perde aqui.
  */
 @utility panel-loading {
-  @apply rounded border border-border-subtle bg-surface-raised p-6 text-sm text-text-muted;
+  @apply rounded-container border border-border-subtle bg-surface-raised p-6 text-sm text-text-muted;
 }
 
 @utility panel-error {
@@ -328,5 +328,5 @@
 }
 
 @utility panel-no-read {
-  @apply rounded border border-border-control bg-surface-raised p-4 text-sm;
+  @apply rounded-container border border-border-control bg-surface-raised p-4 text-sm;
 }

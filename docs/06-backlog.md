@@ -27,8 +27,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização ✅ | **H-39 … H-47 e H-67 … H-72, todas concluídas** | 7 | 8 | 0 |
 | E10 — As melhorias de uso ✅ | **H-48 … H-56 e H-66, todas concluídas.** `H-50` é a única G do backlog | 2 | 7 | 1 |
-| E11 — A casca redesenhada | **H-57 ✅, H-58 ✅, H-59 ✅, H-60 ✅; H-61 … H-65 abertas** | 3 | 6 | 0 |
-| **Total** | **72** — 67 concluídas, 5 abertas | **28** | **43** | **1** |
+| E11 — A casca redesenhada | **H-57 ✅, H-58 ✅, H-59 ✅, H-60 ✅, H-61 ✅; H-62 … H-65 abertas** | 3 | 6 | 0 |
+| **Total** | **72** — 68 concluídas, 4 abertas | **28** | **43** | **1** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -156,7 +156,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-58 — As duas famílias de fonte, servidas do repositório](#h-58) ✅
 - [H-59 — Navegação lateral e topo de uma linha](#h-59) ✅
 - [H-60 — Os quatorze filtros como chips em popover](#h-60) ✅
-- [H-61 — Forma, densidade e número nos componentes de dado](#h-61)
+- [H-61 — Forma, densidade e número nos componentes de dado](#h-61) ✅
 - [H-62 — Forma e número na superfície de edição e no detalhe](#h-62)
 - [H-63 — Forma e número nas sete páginas, e a guarda de forma](#h-63)
 - [H-64 — Movimento curto, com a redução nascendo junto](#h-64)
@@ -7724,6 +7724,55 @@ o contrato de `GET /api/filter-options`.
 
 ### H-61 — Forma, densidade e número nos componentes de dado
 
+> ✅ **CONCLUÍDA em 01/09/2026.** **8 testes próprios** em
+> `web/tests/Operational.test.tsx` e `Alerts.test.tsx`. Suíte total de **1683
+> para 1691**, com dois casos existentes ajustados — os que consultavam texto que
+> passou a viver em dois elementos por causa do mono.
+>
+> **A fatia é de seis arquivos e tocou 15, e a razão é `C04`.** O critério 4 pede
+> `radius-control`/`radius-container` nos seis; mas o papel "seção de conteúdo"
+> existe em **13** arquivos, e `C04` — de `H-45`, `SC 3.2.4` — é guarda **de
+> conjunto**: converter 4 e deixar 9 daria duas formas para o mesmo papel, e ela
+> reprovaria com razão. Converti **todo** raio nos seis, e **só a linha do papel
+> de seção** nos outros nove — 19 linhas, uma expressão por ocorrência. A regex
+> de `C04` passou a exigir `rounded-container`, e agora **reprova o valor
+> antigo**: é o que impede um arquivo novo de nascer com o raio de antes.
+>
+> **A guarda de "dois raios e nada entre eles" NÃO entra aqui, e o número diz por
+> quê.** Escrita e rodada, ela nasce **vermelha**: sobram **47 `rounded`, 2
+> `rounded-sm` e 1 `rounded-lg` em 17 arquivos** fora da fatia. `H-45` já fixou o
+> precedente — *"guarda que nasce vermelha é desligada, não obedecida"* —, então
+> ela vai para `H-63`, onde os arquivos convergem e ela pode passar.
+>
+> **O segundo critério é não-incidente, e não foi reduzido.** Ele pede que as
+> ações da linha apareçam sob cursor e foco; `ProcessTable` **não tem ações de
+> linha** — o único controle é o link da REF, e escondê-lo seria esconder o
+> acesso ao detalhe. Criar ação nova é funcionalidade que nenhum critério pede.
+> Mesmo tratamento que `H-53` deu ao quinto critério dela.
+>
+> **O caso-limite de valor longo era real, e foi medido antes de corrigir.** A
+> linha tinha `h-10`, mas `height` numa `<tr>` é **mínimo**: medido em Chrome
+> 151, a célula de Categoria quebrava em **seis retângulos de texto** — o rótulo
+> mais o chip de canal não cabiam juntos — e esticava a linha de 40 para **57
+> px**. Texto livre passou a truncar com o valor completo no `title`; valor curto
+> usa `nowrap` e alarga a coluna, que a tabela já sabe rolar (`R01`). Depois:
+> **todas as linhas em 40 px**, contentor em **12 px**.
+>
+> **A razão trilho/preenchimento do medidor, nos dois esquemas:** **5,57** no
+> claro e **5,89** no escuro, contra um piso de 3:1. É o único canal da
+> comparação entre linhas do ranking (`H-40`), e por isso o caso-limite manda
+> medi-la nos dois.
+>
+> **Severidade e canal deixam de se distinguir por matiz.** Canal é pílula
+> preenchida com rótulo escrito — a **única exceção declarada** aos dois raios;
+> severidade é faixa lateral mais ícone SVG inline, sem dependência nova. **O
+> prefixo textual de `H-45` fica**, e a prova por mutação mostra por quê: removê-lo
+> reprova os testes de `ACHADO 18`, que já existiam. O ícone se soma ao texto,
+> nunca o substitui.
+>
+> **"Sem faixa alternada" já era verdade** quando a fatia começou; virou asserção
+> para não voltar.
+
 **Objetivo:** os seis componentes que apresentam dado adotarem os dois raios, a
 linha de 40 px, o mono onde há número e o alinhamento à direita.
 
@@ -7888,6 +7937,12 @@ raio solto e a sombra voltem.
 
 **Fora desta história:** movimento; qualquer mudança de largura de contêiner ou
 de breakpoint que o corpus não sustente — o mesmo corte de `H-46`.
+
+> **Herda de `H-61` a guarda de "dois raios, e nada entre eles".** Ela foi
+> escrita e rodada em `H-61`, e nasce **vermelha** enquanto houver raio antigo:
+> medido em 01/09/2026, sobravam **47 `rounded`, 2 `rounded-sm` e 1
+> `rounded-lg` em 17 arquivos**. `H-45` fixou o precedente — guarda que nasce
+> vermelha é desligada, não obedecida —, e é aqui que os arquivos convergem.
 
 **Dependências:** `H-61`, `H-62`.
 **Tamanho:** M (8 arquivos, 0 contrato novo)

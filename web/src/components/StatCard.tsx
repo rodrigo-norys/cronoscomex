@@ -41,7 +41,7 @@ export function StatCard({ label, value, variant = 'volume', hint, period }: Sta
 
   return (
     <article
-      className={`rounded border p-4 ${VARIANT_STYLE[variant]}`}
+      className={`rounded-container border p-4 ${VARIANT_STYLE[variant]}`}
       data-variant={variant}
       aria-busy={loading}
     >
@@ -49,9 +49,9 @@ export function StatCard({ label, value, variant = 'volume', hint, period }: Sta
       {loading ? (
         // Um traco, e nao `0`: zero medido e zero por falta de leitura sao
         // coisas diferentes, e o cartao e o unico lugar que pode dizer qual.
-        <p className="mt-1 text-3xl font-semibold text-text-muted">—</p>
+        <p className="mt-1 font-mono text-3xl font-semibold text-text-muted">—</p>
       ) : (
-        <p className={`mt-1 text-3xl font-semibold tabular-nums ${VALUE_STYLE[variant]}`}>
+        <p className={`mt-1 font-mono text-3xl font-semibold tabular-nums ${VALUE_STYLE[variant]}`}>
           {value.toLocaleString('pt-BR')}
         </p>
       )}

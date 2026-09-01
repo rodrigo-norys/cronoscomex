@@ -36,14 +36,71 @@ export const ALERT_LABELS: Readonly<Record<AlertType, string>> = {
 /** Severidade 1–3 pede ação; 4–6 é aviso. A escala vem de A-41 e é fixa. */
 const URGENT_SEVERITY = 3
 
+/**
+ * Severidade como FORMA, e não só matiz (`H-61`, `D-22`).
+ *
+ * O chip de canal é pílula preenchida com rótulo escrito; a severidade é faixa
+ * lateral mais ícone. Os dois sistemas deixam de se distinguir pela cor, que é
+ * o que a **regra inviolável 4** protege: canal é dado aduaneiro (IND-06),
+ * severidade é gravidade, e nenhum dos dois infere o outro.
+ *
+ * **O prefixo textual de `H-45` fica.** Ele é o canal que `SC 1.4.1` exige, e o
+ * ícone se SOMA a ele — trocar um pelo outro devolveria o achado `ACHADO 18`,
+ * com a informação de urgência dependendo de enxergar um desenho.
+ *
+ * SVG inline, e não biblioteca de ícones: o plano não prevê a dependência.
+ * `currentColor` faz o traço sobreviver a `forced-colors: active`, onde o UA
+ * substitui a paleta do autor.
+ */
+function SeverityIcon({ urgent }: { urgent: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 16 16"
+      className="mt-0.5 size-4 shrink-0"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+    >
+      {urgent ? (
+        // Triangulo de atencao: contorno fechado, legivel a 16 px.
+        <>
+          <path d="M8 2.5 14.5 13.5h-13z" strokeLinejoin="round" />
+          <path d="M8 6.5v3.5" />
+          <circle cx="8" cy="11.75" r="0.6" fill="currentColor" stroke="none" />
+        </>
+      ) : (
+        <>
+          <circle cx="8" cy="8" r="6" />
+          <path d="M8 5.5v3.5" />
+          <circle cx="8" cy="11" r="0.6" fill="currentColor" stroke="none" />
+        </>
+      )}
+    </svg>
+  )
+}
+
 export function AlertRow({ group }: { group: AlertGroup }) {
   const mostSevere = group.alerts[0]
   if (mostSevere === undefined) return null
 
   const href = `/processo/${encodeURIComponent(group.ref)}`
+  const urgent = mostSevere.severity <= URGENT_SEVERITY
 
   return (
-    <li className="border-b border-border-subtle last:border-0">
+    /*
+      A faixa lateral carrega a severidade do grupo — a do alerta MAIS severo,
+      que e o primeiro da lista (o servidor ja ordenou). `forced-colors:border-l-4`
+      engrossa sob o modo forcado, onde a cor da faixa e substituida pelo UA e so
+      a espessura sobrevive — mesma tecnica de `H-72` e `H-59`.
+    */
+    <li
+      data-urgent={urgent}
+      className={`border-b border-l-4 border-b-border-subtle last:border-b-0 forced-colors:border-l-4 ${
+        urgent ? 'border-l-state-warning-border' : 'border-l-transparent'
+      }`}
+    >
       {/*
         `ACHADO 16`. Abrir o detalhe e a MESMA acao que a tabela ja oferece, e
         aqui ela tinha outro papel — `<button>` contra `<a href>` — e outro nome
@@ -69,10 +126,16 @@ export function AlertRow({ group }: { group: AlertGroup }) {
         className="flex w-full flex-col gap-1 px-1 py-2 text-left hover:bg-surface-sunken"
       >
         <span className="flex flex-wrap items-baseline gap-2">
+          <SeverityIcon urgent={urgent} />
           <span className="font-mono text-sm font-medium text-text-primary">{group.ref}</span>
-          <span className="text-xs text-text-muted">linha {group.sourceRow}</span>
           <span className="text-xs text-text-muted">
-            ETA2 {group.eta2 === null ? '—' : formatDay(group.eta2)}
+            linha <span className="font-mono tabular-nums">{group.sourceRow}</span>
+          </span>
+          <span className="text-xs text-text-muted">
+            ETA2{' '}
+            <span className="font-mono tabular-nums">
+              {group.eta2 === null ? '—' : formatDay(group.eta2)}
+            </span>
           </span>
         </span>
 
@@ -98,7 +161,7 @@ function TypeBadge({ alert }: { alert: Alert }) {
   return (
     <span
       data-severity={alert.severity}
-      className={`rounded px-2 py-0.5 text-xs ${
+      className={`rounded-control px-2 py-0.5 text-xs ${
         urgent ? 'bg-state-warning-bg text-state-warning-fg' : 'bg-surface-base text-text-secondary'
       }`}
     >

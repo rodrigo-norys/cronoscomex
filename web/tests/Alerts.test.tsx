@@ -144,7 +144,9 @@ describe('agrupamento por processo (A-60)', () => {
     const linhas = await within(await fila()).findAllByRole('listitem')
 
     expect(within(linhas[0] as HTMLElement).getByText(/10\/08\/2026/)).toBeTruthy()
-    expect(within(linhas[1] as HTMLElement).getByText(/ETA2 —/)).toBeTruthy()
+    // Pelo conteúdo da linha, e não pelo nó: `H-61` pôs a data num `<span>`
+    // próprio para aplicar mono, então o texto vive em dois elementos.
+    expect((linhas[1] as HTMLElement).textContent).toContain('ETA2 —')
   })
 })
 
@@ -436,5 +438,67 @@ describe('a urgência não é só cor', () => {
 
     expect(badge.getAttribute('data-severity')).toBe('1')
     expect(badge.textContent).toContain('Pede ação')
+  })
+})
+
+/**
+ * `H-61`, `D-22`. Severidade como **forma**, não só matiz.
+ *
+ * Canal aduaneiro e severidade são sistemas diferentes — IND-06 contra A-41 —, e
+ * a **regra inviolável 4** proíbe que a cor decida qual é qual. Os dois passam a
+ * se distinguir pela forma: canal é pílula preenchida com rótulo escrito;
+ * severidade é faixa lateral mais ícone.
+ */
+describe('severidade como faixa lateral e ícone (H-61)', () => {
+  it('marca a linha urgente com faixa lateral, e a não urgente sem ela', async () => {
+    serve({
+      items: [
+        alert({ ref: 'URGENTE', severity: 1 }),
+        alert({ ref: 'AVISO', sourceRow: 9, severity: 5, type: 'chegadas_7_dias' }),
+      ],
+    })
+    renderPage()
+
+    const linhas = await within(await fila()).findAllByRole('listitem')
+
+    expect(linhas[0]?.getAttribute('data-urgent')).toBe('true')
+    expect(linhas[0]?.className).toContain('border-l-state-warning-border')
+    expect(linhas[1]?.getAttribute('data-urgent')).toBe('false')
+    expect(linhas[1]?.className).toContain('border-l-transparent')
+  })
+
+  /**
+   * A espessura é o canal que sobrevive a `forced-colors: active`, onde o UA
+   * substitui a cor da faixa — mesma técnica de `H-72` e `H-59`.
+   */
+  it('engrossa a faixa sob forced-colors, nas duas severidades', async () => {
+    serve({
+      items: [
+        alert({ severity: 1 }),
+        alert({ ref: 'B-2', sourceRow: 9, severity: 5, type: 'chegadas_7_dias' }),
+      ],
+    })
+    renderPage()
+
+    for (const linha of await within(await fila()).findAllByRole('listitem')) {
+      expect(linha.className).toContain('forced-colors:border-l-4')
+    }
+  })
+
+  /**
+   * **O ícone se soma ao prefixo textual de `H-45`, nunca o substitui.** Trocar
+   * um pelo outro devolveria `ACHADO 18`: a urgência dependendo de enxergar um
+   * desenho, contra `SC 1.4.1`.
+   */
+  it('mantém o prefixo textual ao lado do ícone', async () => {
+    serve({ items: [alert({ ref: 'URGENTE', severity: 1 })] })
+    renderPage()
+
+    const linha = (await within(await fila()).findAllByRole('listitem'))[0] as HTMLElement
+
+    expect(linha.textContent).toContain('Pede ação')
+    // O ícone é decorativo: quem carrega a informação é o texto.
+    const icone = linha.querySelector('svg')
+    expect(icone?.getAttribute('aria-hidden')).toBe('true')
   })
 })

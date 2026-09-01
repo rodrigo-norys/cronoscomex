@@ -45,7 +45,7 @@ interface ProcessTableProps {
 export function ProcessTable({ items, sort, order, onSort }: ProcessTableProps) {
   if (items.length === 0) {
     return (
-      <p className="rounded border border-border-subtle bg-surface-raised p-6 text-sm text-text-secondary">
+      <p className="rounded-container border border-border-subtle bg-surface-raised p-6 text-sm text-text-secondary">
         Nenhum processo corresponde ao recorte atual.
       </p>
     )
@@ -54,7 +54,7 @@ export function ProcessTable({ items, sort, order, onSort }: ProcessTableProps) 
   return (
     // A tabela e larga; o scroll fica NELA, para a pagina nunca rolar na
     // horizontal e levar o cabecalho junto.
-    <div className="overflow-x-auto rounded border border-border-subtle bg-surface-raised">
+    <div className="overflow-x-auto rounded-container border border-border-subtle bg-surface-raised">
       <table className="w-full text-sm">
         <caption className="sr-only">Processos</caption>
         <thead className="border-b border-border-subtle bg-surface-sunken">
@@ -72,11 +72,20 @@ export function ProcessTable({ items, sort, order, onSort }: ProcessTableProps) 
         </thead>
         <tbody>
           {items.map((item) => (
+            /*
+              `h-10` sao 2.5rem — 40 px na fonte-base padrao, e **relativo**, entao
+              a linha acompanha o operador que amplia (`SC 1.4.4`). Altura
+              declarada, e nao consequencia do `py-2`: sem ela a linha crescia com
+              o conteudo mais alto, e a tabela perdia o ritmo vertical.
+
+              **Sem faixa alternada**, e isso ja era verdade: o realce e o cursor,
+              nao a paridade da linha. A assercao existe para nao voltar.
+            */
             <tr
               key={item.ref}
-              className="border-b border-border-subtle last:border-0 hover:bg-surface-sunken"
+              className="h-10 border-b border-border-subtle last:border-0 hover:bg-surface-hover"
             >
-              <td className="px-3 py-2 font-mono">
+              <td className="px-3 whitespace-nowrap font-mono">
                 <a
                   href={`/processo/${encodeURIComponent(item.ref)}`}
                   onClick={(event) => {
@@ -92,23 +101,40 @@ export function ProcessTable({ items, sort, order, onSort }: ProcessTableProps) 
                 {item.hasPendingEdits && (
                   <span
                     title="Tem edições pendentes de aplicação"
-                    className="ml-1 rounded bg-state-warning-bg px-1 text-xs text-state-warning-fg"
+                    className="ml-1 rounded-control bg-state-warning-bg px-1 text-xs text-state-warning-fg"
                   >
                     ●
                   </span>
                 )}
               </td>
-              <td className="px-3 py-2">{item.client || '—'}</td>
-              <td className="px-3 py-2 font-mono text-xs">{item.clientProcess || '—'}</td>
-              <td className="px-3 py-2">{item.importer || '—'}</td>
-              <td className="px-3 py-2">{item.vessel || '—'}</td>
-              <td className="px-3 py-2 tabular-nums">{formatDay(item.eta2)}</td>
-              <td className="px-3 py-2 font-mono text-xs">{item.billOfLading || '—'}</td>
-              <td className="px-3 py-2 font-mono text-xs">{item.container || '—'}</td>
-              <td className="px-3 py-2">
+              {/*
+                **A linha de 40 px nao cresce, e nao corta dado em silencio.**
+                Texto livre trunca com o valor completo no `title`; valor curto
+                — REF, data, categoria — usa `nowrap` e alarga a coluna, que a
+                tabela ja sabe rolar (`R01`). Medido em 01/09/2026: a celula de
+                Categoria quebrava em SEIS retangulos de texto e esticava a linha
+                para 57 px, porque o rotulo e o chip de canal nao cabiam juntos.
+              */}
+              <Text value={item.client} />
+              <Text value={item.clientProcess} mono />
+              <Text value={item.importer} />
+              <Text value={item.vessel} />
+              <td className="px-3 font-mono text-xs whitespace-nowrap tabular-nums">
+                {formatDay(item.eta2)}
+              </td>
+              <Text value={item.billOfLading} mono />
+              <Text value={item.container} mono />
+              <td className="px-3 whitespace-nowrap">
                 <span className="whitespace-nowrap">{CATEGORY_LABELS[item.statusCategory]}</span>
+                {/*
+                  **A unica excecao aos dois raios, e ela e declarada.** O chip de
+                  canal e pilula — `rounded-full` —, porque a forma o separa da
+                  severidade: canal e DADO aduaneiro (IND-06), severidade e
+                  gravidade, e a regra inviolavel 4 nao deixa a cor decidir qual e
+                  qual. Chip preenchido com rotulo ESCRITO, nunca so matiz.
+                */}
                 {item.customsChannel === 'vermelho' && (
-                  <span className="ml-1 rounded bg-channel-red-bg px-1.5 py-0.5 text-xs text-channel-red-fg">
+                  <span className="ml-1 rounded-full bg-channel-red-bg px-2 py-0.5 text-xs text-channel-red-fg">
                     Canal Vermelho
                   </span>
                 )}
@@ -139,7 +165,7 @@ function HeaderCell({
     <th
       scope="col"
       {...(ariaSort ? { 'aria-sort': ariaSort } : {})}
-      className="px-3 py-2 text-left font-medium text-text-secondary"
+      className="h-10 px-3 text-left font-medium text-text-secondary"
     >
       {column.sortBy === undefined ? (
         column.label
@@ -156,6 +182,24 @@ function HeaderCell({
         </button>
       )}
     </th>
+  )
+}
+
+/**
+ * Celula de texto livre: trunca por CSS e guarda o valor inteiro no `title`.
+ *
+ * `max-w` e obrigatorio — `truncate` sozinho nao tem sobre o que incidir numa
+ * celula que o algoritmo de tabela dimensiona pelo conteudo.
+ */
+function Text({ value, mono = false }: { value: string; mono?: boolean }) {
+  const cheio = value !== ''
+  return (
+    <td
+      className={`max-w-48 truncate px-3 ${mono ? 'font-mono text-xs' : ''}`}
+      {...(cheio ? { title: value } : {})}
+    >
+      {value || '—'}
+    </td>
   )
 }
 

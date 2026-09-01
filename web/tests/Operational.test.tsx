@@ -298,7 +298,8 @@ describe('calendario de chegadas', () => {
 
     const calendario = await screen.findByRole('region', { name: 'Calendário de chegadas' })
     expect(within(calendario).getByText('13/08/2026')).toBeTruthy()
-    expect(within(calendario).getByText('7 processos')).toBeTruthy()
+    // Idem: a contagem ganhou `<span>` próprio para o mono (`H-61`).
+    expect(calendario.textContent).toContain('7 processos')
     expect(within(calendario).getByText('EVER LEADER')).toBeTruthy()
   })
 
@@ -373,5 +374,109 @@ describe('cliente consolidado e processo do cliente', () => {
     expect(colunas.some((texto) => texto?.includes('Processo do cliente'))).toBe(true)
     expect(screen.getByText('Acme Comércio')).toBeTruthy()
     expect(screen.getByText('ACM-29')).toBeTruthy()
+  })
+})
+
+/**
+ * `H-61`, `D-22`. Densidade e número na tabela de processos.
+ *
+ * A linha tinha altura por consequência do `py-2` — ela crescia com o conteúdo
+ * mais alto, e a tabela perdia o ritmo vertical. Passou a ter altura declarada
+ * em unidade **relativa**, que é o que a faz acompanhar quem amplia (`SC 1.4.4`).
+ */
+describe('densidade e número na tabela (H-61)', () => {
+  it('declara a altura da linha em unidade relativa, e não em pixel', async () => {
+    api.serveProcesses(processesFixture())
+    renderPage()
+
+    const linhas = await screen.findAllByRole('row')
+    const corpo = linhas.filter((linha) => linha.closest('tbody') !== null)
+
+    expect(corpo.length).toBeGreaterThan(0)
+    // `h-10` são 2.5rem — 40 px na fonte-base padrão, e relativo a ela.
+    for (const linha of corpo) expect(linha.className).toContain('h-10')
+  })
+
+  /**
+   * **Sem faixa alternada.** Já era verdade quando `H-61` começou, e a asserção
+   * existe para que não volte: o realce da linha é o cursor, não a paridade.
+   */
+  it('não usa faixa alternada em nenhuma linha', async () => {
+    api.serveProcesses(processesFixture())
+    renderPage()
+
+    const linhas = await screen.findAllByRole('row')
+
+    for (const linha of linhas) {
+      expect(linha.className).not.toMatch(/\b(odd|even):/)
+      expect(linha.className).not.toMatch(/\bnth-/)
+    }
+  })
+
+  /**
+   * REF e data em mono com `tabular-nums`: sem largura fixa de dígito, as datas
+   * de linhas vizinhas não se alinham e a coluna deixa de ser comparável.
+   */
+  it('serve REF e data em mono, com dígito de largura fixa', async () => {
+    api.serveProcesses(processesFixture())
+    renderPage()
+
+    const primeira = (await screen.findAllByRole('row')).find(
+      (linha) => linha.closest('tbody') !== null,
+    ) as HTMLElement
+    const celulas = [...primeira.querySelectorAll('td')]
+
+    // A primeira célula é a REF; a de ETA2 é a que traz `tabular-nums`.
+    expect(celulas[0]?.className).toContain('font-mono')
+    const data = celulas.find((celula) => celula.className.includes('tabular-nums'))
+    expect(data?.className).toContain('font-mono')
+  })
+
+  /**
+   * O caso-limite da história: **a linha não cresce nem corta em silêncio.**
+   * Medido em Chrome 151 antes da correção: a célula de Categoria quebrava em
+   * seis retângulos de texto — o rótulo mais o chip de canal não cabiam juntos —
+   * e esticava a linha de 40 para **57 px**. Texto livre passou a truncar com o
+   * valor completo no `title`; valor curto usa `nowrap` e alarga a coluna, que a
+   * tabela já sabe rolar (`R01`).
+   */
+  it('trunca o texto livre guardando o valor completo, e não quebra o curto', async () => {
+    const base = processesFixture()
+    const longo = 'IMPORTADORA COM RAZAO SOCIAL DEMASIADAMENTE EXTENSA LTDA ME'
+    api.serveProcesses({
+      ...base,
+      items: [{ ...(base.items[0] as (typeof base.items)[number]), importer: longo }],
+    })
+    renderPage()
+
+    const celula = await screen.findByTitle(longo)
+
+    expect(celula.className).toContain('truncate')
+    expect(celula.className).toMatch(/max-w-/)
+    // A categoria e o chip ficam na mesma linha, custe largura à coluna.
+    const categoria = (await screen.findAllByRole('row'))
+      .filter((linha) => linha.closest('tbody') !== null)
+      .flatMap((linha) => [...linha.querySelectorAll('td')])
+      .at(-1)
+    expect(categoria?.className).toContain('whitespace-nowrap')
+  })
+
+  /**
+   * O chip de canal é **pílula preenchida com rótulo escrito**, e essa é a
+   * única exceção aos dois raios. A forma o separa da severidade sem depender
+   * de matiz — regra inviolável 4: canal é dado, severidade é gravidade.
+   */
+  it('serve o canal como pílula com rótulo escrito, não só como cor', async () => {
+    const base = processesFixture()
+    api.serveProcesses({
+      ...base,
+      items: [{ ...(base.items[0] as (typeof base.items)[number]), customsChannel: 'vermelho' }],
+    })
+    renderPage()
+
+    const chip = await screen.findByText('Canal Vermelho')
+
+    expect(chip.className).toContain('rounded-full')
+    expect(chip.className).toContain('bg-channel-red-bg')
   })
 })

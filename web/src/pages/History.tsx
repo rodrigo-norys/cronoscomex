@@ -210,7 +210,7 @@ function EmptyHistory({ alone }: { alone: boolean }) {
   return (
     <section
       aria-label={alone ? 'Evolução mensal' : 'Histórico observado'}
-      className="rounded border border-border-subtle bg-surface-raised p-6 text-sm"
+      className="rounded-container border border-border-subtle bg-surface-raised p-6 text-sm"
     >
       <h2 className="text-base font-semibold text-text-secondary">
         Ainda não há histórico registrado.
@@ -323,7 +323,7 @@ function MonthlySeries({
   return (
     <section
       aria-label="Evolução mensal"
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Evolução mensal</h2>
 
