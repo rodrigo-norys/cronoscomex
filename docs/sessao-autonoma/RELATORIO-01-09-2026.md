@@ -34,8 +34,8 @@ desvio:
 | # | História | Estado | PR |
 |---|---|---|---|
 | 1 | `H-68` — o `<select>` cabe em 320 px | ✅ | #81 |
-| 2 | `H-71` — o valor anterior é legível | ✅ | #82 |
-| 3 | `H-67` — a linha do ranking cabe em 320 px | ✅ | #83 |
+| 2 | `H-71` — o valor anterior é legível | ✅ | #82, reenviado pelo #87 |
+| 3 | `H-67` — a linha do ranking cabe em 320 px | ✅ | #83, reenviado pelo #87 |
 | 4 | `H-69` — o texto cortado tem caminho de volta | ✅ | #84 |
 | 5 | `H-72` — a aba corrente sobrevive ao alto contraste | ✅ | #85 |
 | 6 | `H-70` — o foco sobrevive à navegação programática | ✅ | #86 |
@@ -81,7 +81,7 @@ rodado antes de aceitar o número.
 
 **3 testes próprios.** Suíte: 1592 → **1595**.
 
-### `H-71` — O valor anterior da edição é legível · PR #82
+### `H-71` — O valor anterior da edição é legível · PR #82, reenviado pelo #87
 
 | | Glifo | Fundo | Razão |
 |---|---|---|---|
@@ -104,7 +104,7 @@ setas `▾` do `MultiSelect` seguem em **4.55:1**, onde `VN-6` as deixou.
 
 **3 testes próprios**, 2 provados por mutação. Suíte: **1598**.
 
-### `H-67` — A linha do ranking cabe em 320 px · PR #83
+### `H-67` — A linha do ranking cabe em 320 px · PR #83, reenviado pelo #87
 
 As **sete** páginas medidas juntas, antes e depois. `/performance` de **385**
 para **305**; as outras seis em 305 nos dois momentos.
@@ -200,7 +200,25 @@ devolveu `moveuOFoco: true`. O teste é que estava errado: `document.body.focus(
 
 ## 3. PENDÊNCIAS PARA VOCÊ
 
-### Pendência 1 — `buildServer` não repassa `queuePath`, e isso escreveu na fila real
+### Pendência 1 — `buildServer` não repassava `queuePath` · ✅ **RESOLVIDA em 01/09/2026**
+
+> **Fechada depois dos merges**, na branch `fix/http-queue-path-injetavel`. A
+> assinatura passou a expor `queuePath` e a repassá-lo a `registerEditsRoutes`;
+> `main` continua sem passar, no default compartilhado com o write-guard, que é
+> o que os mantém apontando para um arquivo só.
+>
+> **Três testes de guarda, e a prova por mutação foi literal:** ao remover o
+> repasse, a suíte gravou **três edições na fila real do operador** — 247 → 748
+> bytes —, reproduzindo o acidente que originou a pendência. A fila foi
+> restaurada, e com o repasse de volta a suíte a deixa nos 247 bytes.
+>
+> **Por que a defesa aqui é diferente da de `H-28` e `H-34`.** Aqueles dois
+> **recusam** o default sob `NODE_ENV=test`. Este não pode: a fila é escrita
+> legítima em produção, e recusá-la mataria a aplicação. A defesa possível é
+> provar que o caminho injetado chega — e a asserção que morde é a que compara
+> `data/pending-edits.jsonl` antes e depois.
+
+O diagnóstico original, mantido para registro:
 
 **O que aconteceu.** O harness de `H-71` precisava de edição enfileirada, e
 `POST /api/edits` gravou em `data/pending-edits.jsonl` **da raiz do projeto** —
@@ -224,15 +242,11 @@ direto, com `queuePath` injetado, exatamente para não depender disto. Quem cai 
 buraco é quem monta por `buildServer` — produção, onde o default está certo, e
 qualquer harness futuro.
 
-| Opção | Custo | Efeito |
-|---|---|---|
-| **A — expor `queuePath` em `buildServer` e repassá-lo** ← recomendada | história P: `server.ts`, `main`, e o comentário de `server.ts:229` que explica por que os dois pontos de injeção coincidem | fecha o buraco na assinatura, e o comentário passa a descrever uma coincidência **declarada** em vez de acidental |
-| B — deixar como está | zero | o próximo harness repete o acidente; desta vez não custou nada, e essa é a única razão |
-
-**Recomendação: A.** O comentário de `server.ts:229` argumenta que divergir os
-caminhos do guard e das rotas seria pior — e está certo. Expor o parâmetro **não
-os diverge**: quem passar um passa para os dois, e quem não passar continua no
-default compartilhado.
+**Foi a opção A**, recomendada na abertura: expor `queuePath` em `buildServer` e
+repassá-lo. O comentário de `main` argumentava que divergir os caminhos do guard
+e das rotas seria pior — e está certo. Expor o parâmetro **não os diverge**: quem
+passa um passa para os dois, e quem não passa — `main` — continua no default
+compartilhado. O comentário foi reescrito para dizer isso.
 
 ### Pendência 2 — o harness de medição por CDP não é versionado
 
@@ -265,25 +279,46 @@ que é remendo e não solução.
 
 ---
 
-## 5. ORDEM DE MERGE — e ela não é sugestão
+## 5. ORDEM DE MERGE — o que eu afirmei, o que estava errado, e como terminou
 
-Pilha linear. Cada PR tem base no anterior; ao mesclar um, o GitHub reaponta o
-seguinte. **Fora desta ordem, os três documentos conflitam** —
-`docs/06-backlog.md`, `docs/09-rastreabilidade.md` e o bloco Estado do
-`CLAUDE.md` são tocados por todas as seis.
+> **Esta seção foi reescrita em 01/09/2026, depois dos merges.** O que ela dizia
+> era falso, e custou dois merges no lugar errado. A versão original afirmava:
+> *"Cada PR tem base no anterior; ao mesclar um, o GitHub reaponta o seguinte."*
+>
+> **O GitHub só reaponta um PR filho quando a branch base é DELETADA no merge**,
+> e `delete_branch_on_merge` estava **desligado** neste repositório. Eu não
+> conferi a configuração antes de afirmar o comportamento — afirmei o caso feliz
+> como se fosse regra.
+>
+> **O que aconteceu, e não custou trabalho nenhum:** o #82 foi mesclado dentro
+> de `H-68/...` e o #83 dentro de `H-71/...`, em vez da `main`. Nada se perdeu —
+> os commits estavam nas branches, íntegros. O conserto foi ligar
+> `delete_branch_on_merge` e abrir o **#87** a partir de `H-71/...`, que a essa
+> altura já acumulava `H-71` **e** `H-67`; as duas entraram juntas.
 
+**A ordem em que a pilha efetivamente entrou na `main`:**
+
+| Merge | PR | Conteúdo | Destino real |
+|---|---|---|---|
+| 1 | #81 | `H-68` | `main` ✓ |
+| — | #82 | `H-71` | `H-68/...` ✗ — reenviado pelo #87 |
+| — | #83 | `H-67` | `H-71/...` ✗ — reenviado pelo #87 |
+| 2 | **#87** | `H-71` + `H-67` | `main` ✓ |
+| 3 | #84 | `H-69` | `main` ✓ |
+| 4 | #85 | `H-72` | `main` ✓ |
+| 5 | #86 | `H-70` | `main` ✓ |
+
+**A lição, para a próxima pilha:** com `delete_branch_on_merge` ligado a cascata
+se corrige sozinha, mas ela propaga a base **do PR mesclado** — se essa base for
+uma branch, o filho herda a branch. A regra à prova de erro é uma só: **mescle
+apenas o PR que mostrar `base: main`**, e confira com
+
+```bash
+gh pr list --state open --json number,baseRefName \
+  --jq '.[] | "#\(.number) base=\(.baseRefName)"'
 ```
-#81  H-68  ← main
-#82  H-71  ← H-68
-#83  H-67  ← H-71
-#84  H-69  ← H-67
-#85  H-72  ← H-69
-#86  H-70  ← H-72
-```
 
-**Estado do CI na hora em que este relatório foi escrito:** #81 a #85 com
-`verify` e `dados-sensiveis` **passando**; #86 recém-enviado, com os dois
-`pending`. Confira o #86 antes de mesclar a pilha.
+Todos os seis PRs passaram `verify` e `dados-sensiveis` antes do merge.
 
 ---
 

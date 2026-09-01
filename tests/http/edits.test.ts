@@ -6,13 +6,23 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { StoreAccess, StoreState } from '../../src/app/process-store.ts'
 import type { Process } from '../../src/domain/types.ts'
 import { registerEditsRoutes } from '../../src/http/routes/edits.ts'
+import { buildServer } from '../../src/http/server.ts'
+import { DEFAULT_QUEUE_PATH } from '../../src/io/edit-queue.ts'
 
 /**
  * As quatro rotas de edicao. **Nenhuma toca o `.xlsx`** — e o teste prova, ao
  * apontar a fila para um arquivo temporario e nao carregar planilha nenhuma.
  *
  * Monta a instancia sem `buildServer` pelo mesmo motivo do teste da quarentena:
- * e o que permite passar o caminho da fila.
+ * o registrador da rota e o menor pedaco que responde pelo comportamento, e
+ * montar o servidor inteiro traria store, mapa de cor e rota estatica para um
+ * teste que so quer a fila.
+ *
+ * **Ate 01/09/2026 este bloco dizia outra coisa** — que so sem `buildServer` era
+ * possivel passar o caminho da fila. Era verdade, e era um defeito: a assinatura
+ * nao expunha `queuePath`, entao quem montava o servidor inteiro escrevia em
+ * `data/pending-edits.jsonl` da raiz. O ultimo `describe` deste arquivo e a
+ * guarda que impede a regressao.
  */
 
 let directory: string
@@ -489,6 +499,104 @@ describe('a fila e imutavel enquanto a escrita acontece', () => {
 
     expect((await app.inject({ method: 'GET', url: '/api/edits' })).statusCode).toBe(200)
 
+    await app.close()
+  })
+})
+
+/**
+ * A fila e injetavel **tambem por `buildServer`**, e nao so pelo registrador da
+ * rota.
+ *
+ * Custou um acidente: em 01/09/2026 um harness de medicao montou o servidor
+ * inteiro para exercer a Pagina Detalhe, e `POST /api/edits` gravou quatro
+ * edicoes e um descarte total na fila do OPERADOR — `data/pending-edits.jsonl`
+ * da raiz, porque o default e relativo ao cwd. A fila foi restaurada byte a
+ * byte e nada se perdeu, mas o ponto de injecao existia em
+ * `registerEditsRoutes` desde `H-27` e a assinatura de `buildServer` nao o
+ * repassava.
+ *
+ * E o mesmo modo de falha da regra inviolavel 7 que `history-store` (`H-28`) e
+ * `saveWorkbookPath` (`H-34`) ja pagaram. Os outros dois se defendem
+ * **recusando** o default sob `NODE_ENV=test`; este nao pode — a fila e escrita
+ * legitima em producao, e recusa-la mataria a aplicacao. A defesa possivel e a
+ * que esta aqui: provar que o caminho chega.
+ */
+describe('buildServer repassa o caminho da fila', () => {
+  function servidor(caminho?: string) {
+    return buildServer(
+      {
+        workbookPath: join(directory, 'nao-existe.xlsx'),
+        sheetName: '2026',
+        headerRow: 1,
+        firstDataRow: 2,
+        port: 0,
+        stalledDaysThreshold: 15,
+        topN: 10,
+        timezone: 'America/Sao_Paulo',
+      },
+      { getState: () => state(), reload: async () => undefined },
+      [],
+      join(directory, 'history.jsonl'),
+      undefined,
+      join(directory, 'app.json'),
+      undefined,
+      join(directory, 'sem-interface'),
+      [],
+      caminho,
+    )
+  }
+
+  it('escreve no arquivo injetado, e nao no default da raiz', async () => {
+    const app = servidor(queuePath)
+
+    const resposta = await app.inject({
+      method: 'POST',
+      url: '/api/edits',
+      payload: { ref: 'FT533.26', field: 'container', value: 'MSKU7654321' },
+    })
+
+    expect(resposta.statusCode).toBe(201)
+    expect(readFileSync(queuePath, 'utf-8')).toContain('MSKU7654321')
+    await app.close()
+  })
+
+  /**
+   * A leitura tem de enxergar o mesmo arquivo que a escrita. Repassar o caminho
+   * a uma rota e nao as outras deixaria a tela mostrando fila vazia enquanto o
+   * arquivo enche — que foi exatamente o sintoma no harness, antes do conserto.
+   */
+  it('serve a mesma fila que acabou de escrever', async () => {
+    const app = servidor(queuePath)
+    await app.inject({
+      method: 'POST',
+      url: '/api/edits',
+      payload: { ref: 'FT533.26', field: 'container', value: 'MSKU7654321' },
+    })
+
+    const resposta = await app.inject({ method: 'GET', url: '/api/edits' })
+
+    expect(JSON.parse(resposta.body).count).toBe(1)
+    await app.close()
+  })
+
+  /**
+   * **A asserção que morde de verdade.** Sem o repasse, o `POST` cai no default
+   * relativo ao cwd — `data/pending-edits.jsonl` da raiz do projeto, o arquivo
+   * do operador. O teste roda a partir da raiz, entao e literalmente aquele
+   * arquivo que estaria em risco.
+   */
+  it('nao cria nada em data/ ao escrever na fila injetada', async () => {
+    const antes = existsSync(DEFAULT_QUEUE_PATH) ? readFileSync(DEFAULT_QUEUE_PATH, 'utf-8') : null
+    const app = servidor(queuePath)
+
+    await app.inject({
+      method: 'POST',
+      url: '/api/edits',
+      payload: { ref: 'FT533.26', field: 'container', value: 'MSKU7654321' },
+    })
+
+    const depois = existsSync(DEFAULT_QUEUE_PATH) ? readFileSync(DEFAULT_QUEUE_PATH, 'utf-8') : null
+    expect(depois).toBe(antes)
     await app.close()
   })
 })
