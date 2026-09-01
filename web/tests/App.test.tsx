@@ -34,10 +34,17 @@ describe('casca', () => {
    * passou de seis para sete itens em `H-38`, e um literal so avisaria disso
    * reprovando — sem dizer se a pagina nova entrou ou se outra sumiu.
    */
-  it('monta o cabecalho e todas as paginas do menu', async () => {
+  /**
+   * `H-59` trocou o que o `h1` diz. Ele era o nome do PRODUTO, repetido nas
+   * sete telas, e passou a ser o nome da PAGINA — que e o que `SC 2.4.6` pede
+   * de um cabecalho: descrever o topico. O produto continua visivel, na
+   * lateral, onde nao compete com o conteudo por hierarquia.
+   */
+  it('monta o cabecalho da pagina e todas as paginas do menu', async () => {
     render(<App />)
 
-    expect(screen.getByRole('heading', { name: 'CronosComex' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Início' })).toBeTruthy()
+    expect(within(nav()).getByText('CronosComex')).toBeTruthy()
     expect(within(nav()).getAllByRole('link')).toHaveLength(NAV_PAGES.length)
     expect(await screen.findByText('07/08/2026')).toBeTruthy()
   })
@@ -260,7 +267,7 @@ describe('a aba corrente sob alto contraste', () => {
   it('dá à aba corrente uma espessura que a substituição de paleta não apaga', () => {
     const corrente = abas().find((aba) => aba.getAttribute('aria-current') === 'page')
 
-    expect(corrente?.className).toContain('forced-colors:border-b-4')
+    expect(corrente?.className).toContain('forced-colors:border-l-4')
   })
 
   /**
@@ -272,7 +279,7 @@ describe('a aba corrente sob alto contraste', () => {
     const outras = abas().filter((aba) => aba.getAttribute('aria-current') !== 'page')
 
     expect(outras).toHaveLength(NAV_PAGES.length - 1)
-    for (const aba of outras) expect(aba.className).not.toContain('forced-colors:border-b-4')
+    for (const aba of outras) expect(aba.className).not.toContain('forced-colors:border-l-4')
   })
 
   /**
@@ -295,9 +302,9 @@ describe('a aba corrente sob alto contraste', () => {
   it('não mexe no modo normal: a compensação é condicionada junto com a borda', () => {
     const corrente = abas().find((aba) => aba.getAttribute('aria-current') === 'page')
 
-    expect(corrente?.className).toContain('forced-colors:pb-1.5')
-    expect(corrente?.className).toContain('py-2')
-    expect(corrente?.className).not.toMatch(/(^|\s)pb-1\.5/)
+    expect(corrente?.className).toContain('forced-colors:pl-2.5')
+    expect(corrente?.className).toContain('px-3')
+    expect(corrente?.className).not.toMatch(/(^|\s)pl-2\.5/)
   })
 })
 
@@ -490,7 +497,7 @@ describe('resposta fora do contrato', () => {
     render(<App />)
 
     expect(await screen.findByText('—')).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'CronosComex' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Início' })).toBeTruthy()
     expect(nav()).toBeTruthy()
   })
 })
@@ -582,5 +589,71 @@ describe('as regiões vivas da casca', () => {
     await screen.findByText('07/08/2026')
 
     expect(container.querySelector(`#${PAGE_LIVE_REGION_ID}`)).toBeTruthy()
+  })
+})
+
+/**
+ * `H-59`, `D-22`. O eixo passa a ser lateral, e o topo guarda UMA linha.
+ *
+ * A casca empilhava quatro faixas antes do primeiro dado — título com ações,
+ * navegação, filtros e faixa de estado. Medido em Chrome 151 ao fechar: **um**
+ * `<header>` acima do conteúdo nas sete rotas, e zero estouro horizontal em 320,
+ * 360, 768, 1024, 1280 e 1440 px — 42 medições.
+ */
+describe('a casca de eixo lateral', () => {
+  it('serve a navegação numa coluna, e um único header acima do conteúdo', () => {
+    const { container } = render(<App />)
+
+    expect(container.querySelectorAll('header')).toHaveLength(1)
+    expect(nav()).toBeTruthy()
+    expect(within(nav()).getAllByRole('link')).toHaveLength(NAV_PAGES.length)
+  })
+
+  /**
+   * `H-38` fechou a tela inalcançável: o único acesso a `/configuracao` era
+   * digitar o endereço, e depois de apontar a planilha o operador a perdia. Ela
+   * mudou de lugar aqui, e mudar de lugar não pode ser deixar de existir.
+   */
+  it('mantém Configuração na lateral, separada dos seis destinos de dado', () => {
+    render(<App />)
+    const barra = nav()
+
+    // A separação é ESTRUTURAL, e não de ordem: os seis destinos de dado são
+    // filhos diretos, e Configuração vive no rodapé. Testar só a posição
+    // passaria com os sete numa lista corrida, que é o que a história desfaz.
+    const principais = [...barra.querySelectorAll(':scope > a')]
+    const rodape = [...barra.querySelectorAll(':scope > div > a')]
+
+    expect(principais).toHaveLength(NAV_PAGES.length - 1)
+    expect(principais.map((link) => link.textContent)).not.toContain('Configuração')
+    expect(rodape.map((link) => link.textContent)).toEqual(['Configuração'])
+  })
+
+  /**
+   * `SC 2.4.1 Bypass Blocks`. A lateral, o topo e os filtros vêm antes do
+   * conteúdo e se repetem nas sete telas — 20 paradas de tabulação até o
+   * primeiro dado. Medido no navegador: o salto é a **primeira** parada, mede
+   * 122×20 px ao receber foco, e leva ao `main` com o rótulo da página.
+   */
+  it('oferece salto para o conteúdo, apontando para a landmark da página', () => {
+    const { container } = render(<App />)
+    const salto = screen.getByRole('link', { name: 'Ir para o conteúdo' })
+
+    expect(salto.getAttribute('href')).toBe('#conteudo')
+    expect(container.querySelector('main')?.id).toBe('conteudo')
+    // `sr-only` sem `focus:not-sr-only` seria um salto que ninguém consegue ver.
+    expect(salto.className).toContain('focus:not-sr-only')
+  })
+
+  /**
+   * A faixa de estado e o `healthError` continuam existindo em **todas** as
+   * páginas (A-57): mudaram de lugar, não de existência. É o caso-limite que a
+   * história nomeia, e o modo de falha de uma reorganização de casca.
+   */
+  it('mantém a região de erro do servidor viva desde a montagem', () => {
+    const { container } = render(<App />)
+    const alertas = [...container.querySelectorAll('[role="alert"]')]
+
+    expect(alertas.some((no) => no.className.includes('sr-only'))).toBe(true)
   })
 })

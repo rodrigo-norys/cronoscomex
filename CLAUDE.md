@@ -128,18 +128,20 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**64 das 72 histórias concluídas.** O que cada uma aprendeu — número medido,
+**65 das 72 histórias concluídas.** O que cada uma aprendeu — número medido,
 defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
 `docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
 em aberto. **Este bloco diz só o que está aberto.**
 
 **`E9` e `E10` fecharam em 01/09/2026.** Resta **um épico**:
 
-- **`E11` — Casca redesenhada.** `H-57` ✅; restam `H-58` a `H-65`. O grafo está
-  no cabeçalho do épico: `H-58` pode sair agora, depois `H-59 → H-60` e
-  `H-61`/`H-62 → H-63 → H-64 → H-65`. **A paleta já está entregue e medida** —
-  as seis correções de `docs/redesign/PROPOSTA.md §2.2` entraram em `H-57`, e o
-  risco `R-16` fechou.
+- **`E11` — Casca redesenhada.** `H-57` ✅ e `H-59` ✅; restam `H-58` e `H-60` a
+  `H-65`. **A paleta está entregue e medida** — as seis correções de
+  `docs/redesign/PROPOSTA.md §2.2` entraram em `H-57`, e o risco `R-16` fechou.
+  **`H-58` está bloqueada por falta dos `.woff2` da IBM Plex**: `curl` e `wget`
+  são negados, a fonte não existe na máquina, e `@fontsource` é dependência que
+  o plano recusa. Ela **não** bloqueia `H-60` a `H-65`, que não tocam
+  tipografia — a dependência no grafo do épico é de onda, não de conteúdo.
 
 **A medição no navegador é `tools/medir-navegador.mjs`**, versionada em
 01/09/2026 depois de ser reconstruída do zero em duas sessões. Ela sobe a

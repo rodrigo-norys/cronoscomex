@@ -52,7 +52,16 @@ export function Operational({ queryString, dataVersion }: OperationalProps) {
         </PageAlert>
       )}
 
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_20rem]">
+      {/*
+        `minmax(0,1fr)`, e nao `1fr`: `1fr` e `minmax(auto,1fr)`, e o `auto`
+        minimo e a largura INTRINSECA da tabela — o grid entao recusa encolher e
+        empurra o conteudo para fora da tela (`SC 1.4.10`). Medido em
+        01/09/2026: com `1fr` o documento estourava entre 1024 px, onde `lg:`
+        liga, e ~1240 px; `H-59` estreitou a coluna em 216 px e levou o estouro
+        ate 1440. O `overflow-x-auto` de `R01` esta na tabela e nao alcanca
+        isto: quem se recusa a encolher e a TRILHA do grid, acima dele.
+      */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex flex-col gap-3">
           {processes.status === 'pronto' ? (
             <>

@@ -27,8 +27,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização ✅ | **H-39 … H-47 e H-67 … H-72, todas concluídas** | 7 | 8 | 0 |
 | E10 — As melhorias de uso ✅ | **H-48 … H-56 e H-66, todas concluídas.** `H-50` é a única G do backlog | 2 | 7 | 1 |
-| E11 — A casca redesenhada | **H-57 ✅; H-58 … H-65 abertas** | 3 | 6 | 0 |
-| **Total** | **72** — 64 concluídas, 8 abertas | **28** | **43** | **1** |
+| E11 — A casca redesenhada | **H-57 ✅, H-59 ✅; H-58 e H-60 … H-65 abertas** | 3 | 6 | 0 |
+| **Total** | **72** — 65 concluídas, 7 abertas | **28** | **43** | **1** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -154,7 +154,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 
 - [H-57 — O par escuro da camada de tema](#h-57) ✅
 - [H-58 — As duas famílias de fonte, servidas do repositório](#h-58)
-- [H-59 — Navegação lateral e topo de uma linha](#h-59)
+- [H-59 — Navegação lateral e topo de uma linha](#h-59) ✅
 - [H-60 — Os quatorze filtros como chips em popover](#h-60)
 - [H-61 — Forma, densidade e número nos componentes de dado](#h-61)
 - [H-62 — Forma e número na superfície de edição e no detalhe](#h-62)
@@ -7455,6 +7455,52 @@ declarada em token e nenhuma requisição externa.
 <a id="h-59"></a>
 
 ### H-59 — Navegação lateral e topo de uma linha
+
+> ✅ **CONCLUÍDA em 01/09/2026.** **6 testes próprios** em `web/tests/App.test.tsx`
+> e `tests/repo/estilo.test.ts`. Suíte total de **1661 para 1667**, com quatro
+> casos existentes ajustados: o do cabeçalho, os dois de `forced-colors` e o do
+> traço.
+>
+> **Uma faixa horizontal acima do conteúdo, e zero estouro.** Medido em Chrome
+> 151 nas **sete rotas × seis larguras** — 320, 360, 768, 1024, 1280 e 1440 px:
+> **42 medições, um `<header>` em cada, zero estouros**.
+>
+> **`router.ts` NÃO foi tocado, e continua em 97 linhas de código.** O backlog
+> mandava `NAV_PAGES` ganhar "o que a lateral precisa exibir", e a separação
+> entre destino de dado e rodapé é **apresentação**: ela vive em
+> `AppSidebar.tsx`. Acrescentá-la ao roteador teria disparado o gatilho de
+> `D-16` — três linhas de folga — por causa de um dado que não é de roteamento.
+>
+> **O defeito que a fatia revelou é preexistente, e foi medido nos dois lados.**
+> `lg:grid-cols-[1fr_20rem]` na Página Operacional estourava o documento entre
+> 1024 px, onde `lg:` liga, e ~1240 px: `1fr` é `minmax(auto,1fr)`, e o `auto`
+> mínimo é a largura intrínseca da tabela. A casca lateral estreitou a coluna em
+> 216 px e levou o estouro até 1440 — **revelando**, não criando. O
+> `overflow-x-auto` de `R01` não alcança isto: quem se recusa a encolher é a
+> trilha do grid, acima da tabela. Corrigido com `minmax(0,1fr)`, e
+> `tests/repo/estilo.test.ts` passa a reprovar a trilha rígida.
+>
+> **O canal não-cromático de `H-72` sobreviveu à migração de eixo.** Ele estava
+> na borda INFERIOR das abas e passou para a ESQUERDA da lateral. Medido sob
+> `forced-colors: active` emulado: a corrente em **4 px**, as outras seis em
+> **2 px**. A primeira tentativa o pôs em todos os sete itens, e o teste de
+> `H-72` pegou — o canal só distingue se for exclusivo da corrente.
+>
+> **O salto para o conteúdo entrou, e ele já faltava antes desta história.**
+> `SC 2.4.1`: são **20 paradas de tabulação** até o primeiro dado — sete da
+> lateral, duas do topo, onze dos filtros —, repetidas nas sete telas. Medido no
+> navegador: o salto é a primeira parada, mede 122×20 px ao receber foco, e leva
+> ao `main` com o rótulo da página.
+>
+> **O `h1` mudou de significado, e é melhoria.** Era o nome do PRODUTO, repetido
+> nas sete telas; passou a ser o nome da PÁGINA, que é o que `SC 2.4.6` pede de
+> um cabeçalho. O produto continua visível, na lateral, onde não compete com o
+> conteúdo por hierarquia.
+>
+> **Sem contagem ao lado do item**, e o caso-limite autoriza: o único número
+> servido à casca é `rowsAccepted`, que ignora o recorte — exibi-lo ao lado de
+> Operacional afirmaria 649 com o filtro em 12. Contagem por página exigiria
+> campo novo na API, que o épico proíbe.
 
 **Objetivo:** o operador ver dado sem descer quatro faixas — a navegação vai
 para a lateral, e o topo guarda contexto e ação numa linha só.
