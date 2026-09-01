@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { enqueueEdit } from '../api-client.ts'
+import { SeverityIcon, severityBand } from './SeverityMark.tsx'
 
 /**
  * O formulário de edição de um processo (`H-23`).
@@ -93,7 +94,7 @@ export function EditProcessForm({
               setValue('')
               setError(null)
             }}
-            className="rounded border border-border-control bg-surface-raised px-2 py-1.5 text-sm text-text-primary"
+            className="rounded-control border border-border-control bg-surface-raised px-2 py-1.5 text-sm text-text-primary"
           >
             {FIELDS.map((option) => (
               <option key={option.field} value={option.field}>
@@ -110,14 +111,14 @@ export function EditProcessForm({
             value={value}
             onChange={(event) => setValue(event.target.value)}
             placeholder={isDate ? '' : 'deixe vazio para esvaziar a célula'}
-            className="rounded border border-border-control bg-surface-raised px-3 py-1.5 text-sm text-text-primary"
+            className="rounded-control border border-border-control bg-surface-raised px-3 py-1.5 text-sm text-text-primary"
           />
         </label>
 
         <button
           type="submit"
           disabled={busy}
-          className="rounded border border-action-bg bg-action-bg px-3 py-1.5 text-sm font-medium text-action-fg disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
+          className="rounded-control border border-action-bg bg-action-bg px-3 py-1.5 text-sm font-medium text-action-fg disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
         >
           {busy ? 'Enfileirando…' : 'Enfileirar'}
         </button>
@@ -131,10 +132,15 @@ export function EditProcessForm({
         className={
           error === null
             ? 'sr-only'
-            : 'mt-2 rounded border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg'
+            : `mt-2 flex items-start gap-2 rounded-container border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg ${severityBand('error')}`
         }
       >
-        {error}
+        {error !== null && (
+          <>
+            <SeverityIcon tone="error" />
+            <span>{error}</span>
+          </>
+        )}
       </p>
     </section>
   )

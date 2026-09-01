@@ -27,8 +27,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização ✅ | **H-39 … H-47 e H-67 … H-72, todas concluídas** | 7 | 8 | 0 |
 | E10 — As melhorias de uso ✅ | **H-48 … H-56 e H-66, todas concluídas.** `H-50` é a única G do backlog | 2 | 7 | 1 |
-| E11 — A casca redesenhada | **H-57 ✅, H-58 ✅, H-59 ✅, H-60 ✅, H-61 ✅; H-62 … H-65 abertas** | 3 | 6 | 0 |
-| **Total** | **72** — 68 concluídas, 4 abertas | **28** | **43** | **1** |
+| E11 — A casca redesenhada | **H-57 ✅ … H-62 ✅; H-63, H-64 e H-65 abertas** | 3 | 6 | 0 |
+| **Total** | **72** — 69 concluídas, 3 abertas | **28** | **43** | **1** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -157,7 +157,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-59 — Navegação lateral e topo de uma linha](#h-59) ✅
 - [H-60 — Os quatorze filtros como chips em popover](#h-60) ✅
 - [H-61 — Forma, densidade e número nos componentes de dado](#h-61) ✅
-- [H-62 — Forma e número na superfície de edição e no detalhe](#h-62)
+- [H-62 — Forma e número na superfície de edição e no detalhe](#h-62) ✅
 - [H-63 — Forma e número nas sete páginas, e a guarda de forma](#h-63)
 - [H-64 — Movimento curto, com a redução nascendo junto](#h-64)
 - [H-65 — Percorrer os procedimentos de navegador nos dois esquemas](#h-65)
@@ -7835,6 +7835,48 @@ linha de 40 px, o mono onde há número e o alinhamento à direita.
 <a id="h-62"></a>
 
 ### H-62 — Forma e número na superfície de edição e no detalhe
+
+> ✅ **CONCLUÍDA em 01/09/2026.** **2 testes próprios**, mais uma asserção de
+> papel em `tests/repo/estilo.test.ts`. Suíte total de **1691 para 1693**, com um
+> caso existente ajustado. **O primeiro critério devolve zero:**
+> `grep -r 'shadow-' web/src` não encontra nada — a última sombra do conjunto
+> saiu.
+>
+> **O critério 2 REPROVOU na primeira medição, e é o achado da fatia.** Sem a
+> sombra, o que separa o diálogo do véu é a borda; medido em Chrome 151 contra o
+> véu **composto** — alfa resolvido pelo compositor, não multiplicado à mão —,
+> `border-border-strong` deu **1,91:1** no claro, contra o piso de **3:1** que o
+> critério pede. O motivo é geométrico, não de escolha: um cinza médio fica
+> **entre** o painel branco e o véu, e não contrasta com os dois.
+>
+> **Nasceu daí o único token que existe por causa do que está ATRÁS do
+> elemento:** `--color-border-modal`, escuro no claro e claro no escuro. Medido
+> depois: **4,12:1** no claro e **5,66:1** no escuro. `D-21` obriga os dois
+> esquemas, e a guarda de `H-57` cobra — a prova por mutação mostra isso:
+> remover o par escuro do token novo reprova a asserção de `H-57`.
+>
+> **O painel modal virou papel declarado em `C04`.** Ele passou a casar
+> `SECTION_ROLE` e usa borda diferente, então a guarda de `H-45` reprovou — com
+> razão. O sinal sintático é `max-h-[`: só o modal limita a própria altura à
+> viewport, porque só ele não rola com a página. E a asserção não o deixa sem
+> regra: ele **tem** de usar `border-border-modal`.
+>
+> **O padrão de severidade virou componente, e isso não estava na lista.**
+> `H-61` pôs faixa lateral mais ícone em dois lugares; esta fatia precisava dele
+> em mais quatro — os painéis de erro de `EditProcessForm`, `ColorFieldsForm`,
+> `WorkbookSetup` e `ConflictDialog`. Copiar doze linhas de `path` seis vezes
+> garante que a sexta divirja, então nasceu `web/src/components/SeverityMark.tsx`
+> e os dois de `H-61` passaram a consumi-lo.
+>
+> **Os 21 raios crus foram classificados pelo que o elemento É**, e não pelo
+> espaçamento: `<input>`, `<select>` e `<button>` viram `rounded-control` — 12
+> ocorrências —, painel e mensagem viram `rounded-container` — 9. O critério de
+> `px-`/`py-` assimétrico do corpus não decidia os painéis de mensagem, que são
+> blocos de texto com espaçamento de controle.
+>
+> **Três coisas já eram verdade** e viraram asserção: as três colunas fora de
+> escopo do detalhe já estavam em mono, a sombra do `MultiSelect` já tinha saído
+> em `H-60`, e os botões desabilitados seguem em `control-disabled-*`.
 
 **Objetivo:** os seis arquivos onde o operador escreve e confere adotarem os
 dois raios, a elevação por borda e o mono onde há número.

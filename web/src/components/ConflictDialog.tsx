@@ -1,4 +1,5 @@
 import type { ApplyRefusal } from '../api-client.ts'
+import { SeverityIcon, severityBand } from './SeverityMark.tsx'
 
 /**
  * O nome da coluna como ela aparece NA PLANILHA, e nao o identificador de
@@ -75,7 +76,17 @@ export function ConflictDialog({ refusal, onClose }: ConflictDialogProps) {
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="conflito-titulo"
-        className="max-h-[80vh] w-full max-w-3xl overflow-auto rounded-lg bg-surface-raised p-6 shadow-xl"
+        /*
+          `H-62`. **A ultima sombra do conjunto sai aqui**, e este era o caso em
+          que ela parecia indispensavel: o que separava o painel do veu era o
+          desfoque. Passa a ser a BORDA — `border-border-strong` mede 5,06:1
+          sobre `surface-raised` no claro e 5,04:1 no escuro (`H-57`) — mais o
+          `overlay-scrim`, que tem alfa proprio por esquema desde `H-57`, porque
+          o mesmo preto a 40% sobre fundo escuro nao escurece nada.
+
+          `D-22`: zero sombra, e a separacao de superficie e borda de 1 px.
+        */
+        className="max-h-[80vh] w-full max-w-3xl overflow-auto rounded-container border border-border-modal bg-surface-raised p-6"
       >
         <h2 id="conflito-titulo" className="text-lg font-semibold text-text-primary">
           {titulo}
@@ -84,9 +95,14 @@ export function ConflictDialog({ refusal, onClose }: ConflictDialogProps) {
         <p className="mt-2 text-sm text-text-secondary">{refusal.message}</p>
 
         {refusal.restored && refusal.backupPath !== null && (
-          <p className="mt-3 rounded border border-state-warning-border bg-state-warning-bg px-3 py-2 text-sm text-state-warning-fg">
-            A planilha foi restaurada automaticamente da cópia de segurança em{' '}
-            <code className="font-mono text-xs">{refusal.backupPath}</code>.
+          <p
+            className={`mt-3 flex items-start gap-2 rounded-container border border-state-warning-border bg-state-warning-bg px-3 py-2 text-sm text-state-warning-fg ${severityBand('warning')}`}
+          >
+            <SeverityIcon tone="warning" />
+            <span>
+              A planilha foi restaurada automaticamente da cópia de segurança em{' '}
+              <code className="font-mono text-xs">{refusal.backupPath}</code>.
+            </span>
           </p>
         )}
 
@@ -94,10 +110,15 @@ export function ConflictDialog({ refusal, onClose }: ConflictDialogProps) {
             nao pode ser reposto. Sem este aviso o operador fica com uma planilha
             possivelmente invalida e nenhuma instrucao. */}
         {refusal.fileAtRisk && refusal.backupPath !== null && (
-          <p className="mt-3 rounded border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg">
-            <strong className="font-semibold">A planilha não pôde ser restaurada.</strong> O arquivo
-            em disco pode estar inválido. Feche o Excel e reponha manualmente a partir da cópia de
-            segurança em <code className="font-mono text-xs">{refusal.backupPath}</code>.
+          <p
+            className={`mt-3 flex items-start gap-2 rounded-container border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg ${severityBand('error')}`}
+          >
+            <SeverityIcon tone="error" />
+            <span>
+              <strong className="font-semibold">A planilha não pôde ser restaurada.</strong> O
+              arquivo em disco pode estar inválido. Feche o Excel e reponha manualmente a partir da
+              cópia de segurança em <code className="font-mono text-xs">{refusal.backupPath}</code>.
+            </span>
           </p>
         )}
 
@@ -171,7 +192,7 @@ export function ConflictDialog({ refusal, onClose }: ConflictDialogProps) {
           <button
             type="button"
             onClick={onClose}
-            className="rounded bg-action-bg px-4 py-2 text-sm font-medium text-action-fg hover:bg-action-bg-hover"
+            className="rounded-control bg-action-bg px-4 py-2 text-sm font-medium text-action-fg hover:bg-action-bg-hover"
           >
             Entendi
           </button>

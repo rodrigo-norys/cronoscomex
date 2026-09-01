@@ -115,6 +115,18 @@
   --color-border-subtle: #e4e6ea;
   --color-border-control: #8b8d92;
   --color-border-strong: #6a6f77;
+  /*
+   * A borda do painel MODAL, e o unico token que existe por causa do que esta
+   * ATRAS do elemento (`H-62`).
+   *
+   * `H-62` tirou a ultima sombra do conjunto, e o que separa o dialogo do veu
+   * passou a ser a borda. `border-strong` nao serve aqui, e a medicao diz por
+   * que: no claro ela mede **1,91:1** contra o veu composto, contra um piso de
+   * 3:1. O motivo e geometrico — um cinza medio fica ENTRE o painel branco e o
+   * veu, e nao contrasta com os dois. Este token e escuro no claro e claro no
+   * escuro, sempre contra o veu.
+   */
+  --color-border-modal: #3a3d42;
 
   /*
    * Acao primaria. O acento deixa de ser neutro e passa a ser indigo (`D-22`),
@@ -267,6 +279,7 @@
     --color-border-subtle: #23262c;
     --color-border-control: #606369;
     --color-border-strong: #81878f;
+    --color-border-modal: #81878f;
 
     --color-action-bg: #4c5fc9;
     --color-action-bg-hover: #5c6ed6;

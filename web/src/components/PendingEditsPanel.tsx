@@ -72,7 +72,7 @@ export function PendingEditsPanel({
   return (
     <section
       aria-label="Edições pendentes"
-      className="rounded border border-state-warning-border bg-state-warning-bg p-4"
+      className="rounded-container border border-state-warning-border bg-state-warning-bg p-4"
     >
       <h2 className="text-sm font-semibold text-state-warning-fg">
         Edições pendentes deste processo
@@ -102,7 +102,7 @@ export function PendingEditsPanel({
                   type="button"
                   disabled={busy}
                   onClick={() => void run(() => discardEdit(edit.id))}
-                  className="rounded border border-state-warning-fg px-2 py-0.5 text-xs text-state-warning-fg disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
+                  className="rounded-control border border-state-warning-fg px-2 py-0.5 text-xs text-state-warning-fg disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
                 >
                   Descartar
                 </button>
@@ -122,7 +122,7 @@ export function PendingEditsPanel({
           type="button"
           disabled={busy}
           onClick={() => void run(discardAllEdits)}
-          className="mt-3 rounded border border-state-warning-fg px-3 py-1 text-xs font-medium text-state-warning-fg disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
+          className="mt-3 rounded-control border border-state-warning-fg px-3 py-1 text-xs font-medium text-state-warning-fg disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
         >
           Esvaziar a fila inteira — de <strong>todos</strong> os processos
         </button>
