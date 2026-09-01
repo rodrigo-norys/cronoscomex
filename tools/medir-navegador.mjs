@@ -281,7 +281,10 @@ export async function comNavegador(opcoes, fn) {
   } finally {
     conexao?.fechar()
     chrome.kill('SIGKILL')
-    rmSync(perfil, { recursive: true, force: true })
+    // `maxRetries` porque o Chrome ainda escreve no cache quando o sinal chega:
+    // sem ele, `rmSync` derruba a medicao com `ENOTEMPTY` DEPOIS de ela ter
+    // dado certo — e o erro parece defeito do que se estava medindo.
+    rmSync(perfil, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 })
   }
 }
 
