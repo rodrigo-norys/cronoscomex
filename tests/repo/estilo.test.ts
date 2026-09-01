@@ -290,3 +290,70 @@ describe('R03 — o texto do gráfico acompanha a fonte-base', () => {
     expect(pixels.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
   })
 })
+
+/**
+ * `H-57`, `D-21`. Todo token de COR tem valor nos dois esquemas.
+ *
+ * O modo de falha é silencioso e assimétrico: um token declarado só no claro
+ * não some no escuro — ele **mantém o valor claro**, e a tela escura ganha uma
+ * mancha branca que ninguém vê até abrir o sistema em modo escuro. Nenhum teste
+ * de componente pega isso, porque o valor existe e o utilitário resolve.
+ *
+ * A recíproca também reprova, e é o caso-limite do backlog: raio, velocidade e
+ * curva **não** são cor, e duplicá-los sob a media query seria ruído que a
+ * próxima fatia copiaria. Por isso a asserção compara os dois conjuntos nos
+ * dois sentidos, e não só "tudo que está no claro está no escuro".
+ */
+const CSS = readFileSync('web/src/index.css', 'utf-8')
+
+/** Os nomes de variável declarados dentro de um bloco delimitado por chaves. */
+function tokensDe(fonte: string): string[] {
+  return [...fonte.matchAll(/^\s*(--[a-z0-9-]+):/gm)].map((one) => one[1] as string)
+}
+
+function bloco(marcador: string): string {
+  const inicio = CSS.indexOf(marcador)
+  if (inicio === -1) throw new Error(`bloco ${marcador} nao encontrado em web/src/index.css`)
+
+  let profundidade = 0
+  for (let i = CSS.indexOf('{', inicio); i < CSS.length; i++) {
+    if (CSS[i] === '{') profundidade++
+    else if (CSS[i] === '}' && --profundidade === 0) return CSS.slice(inicio, i)
+  }
+  throw new Error(`bloco ${marcador} nao fecha`)
+}
+
+describe('D-21 — todo token de cor tem par no esquema escuro', () => {
+  const claros = tokensDe(bloco('@theme static'))
+  const escuros = tokensDe(bloco('@media (prefers-color-scheme: dark)'))
+
+  it('encontra os dois blocos — âncora contra guarda verde por vacuidade', () => {
+    // 44 tokens de cor em 01/09/2026, ao fechar `H-57`. O piso é folgado: o que
+    // ele pega é o parser que parou de casar, não token a mais ou a menos.
+    expect(claros.length).toBeGreaterThan(30)
+    expect(escuros.length).toBeGreaterThan(30)
+  })
+
+  it('nenhum token de cor fica sem valor no escuro', () => {
+    const semPar = claros.filter(
+      (token) => token.startsWith('--color-') && !escuros.includes(token),
+    )
+
+    expect(semPar).toEqual([])
+  })
+
+  it('nenhum token do escuro deixa de existir no claro', () => {
+    expect(escuros.filter((token) => !claros.includes(token))).toEqual([])
+  })
+
+  // Raio, velocidade e curva não mudam porque o sistema está escuro.
+  it('nenhum token que não seja cor aparece sob a media query', () => {
+    expect(escuros.filter((token) => !token.startsWith('--color-'))).toEqual([])
+  })
+
+  // `color-scheme` sozinho decide a cor das barras de rolagem e dos controles
+  // nativos — os quatro `input type="date"` e os três `select` do conjunto.
+  it('declara os dois esquemas em color-scheme', () => {
+    expect(/:root\s*\{[^}]*color-scheme:\s*light dark/.test(CSS)).toBe(true)
+  })
+})
