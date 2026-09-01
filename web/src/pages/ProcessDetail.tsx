@@ -35,13 +35,6 @@ const CHANNEL_LABELS: Readonly<Record<ProcessDto['customsChannel'], string>> = {
   indefinido: 'Indefinido',
 }
 
-const RESPONSIBLE_LABELS: Readonly<Record<ProcessDto['responsible'], string>> = {
-  colaborador1: 'Colaborador 1',
-  colaborador2: 'Colaborador 2',
-  colaborador1_outros_clientes: 'Colaborador 1 — outros clientes',
-  indefinido: 'Indefinido',
-}
-
 export function ProcessDetail({ processRef, dataVersion }: ProcessDetailProps) {
   const { state, refresh } = useProcessDetail(processRef, dataVersion)
 
@@ -104,7 +97,7 @@ export function ProcessDetail({ processRef, dataVersion }: ProcessDetailProps) {
           process.importerOutsideRj === null
             ? null
             : {
-                responsible: process.responsible,
+                responsible: process.colorResponsible,
                 customsChannel: process.customsChannel,
                 importerOutsideRj: process.importerOutsideRj,
               }
@@ -187,7 +180,7 @@ function Fields({ process }: { process: ProcessDto }) {
         <Field label="Registro (RG)" value={formatDay(process.registrationDate)} />
         <Field label="Docs enviados" value={formatDay(process.docsSentDate)} />
         <Field label="Canal" value={CHANNEL_LABELS[process.customsChannel]} />
-        <Field label="Responsável" value={RESPONSIBLE_LABELS[process.responsible]} />
+        <Field label="Responsável" value={process.responsibleLabel} />
         <Field label="Importador fora do RJ" value={formatBoolean(process.importerOutsideRj)} />
       </dl>
     </section>

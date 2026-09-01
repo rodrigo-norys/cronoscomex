@@ -492,3 +492,44 @@ describe('cliente consolidado e processo do cliente', () => {
     expect(within(campos).getByText('ACM-29')).toBeTruthy()
   })
 })
+
+/**
+ * `H-50`. O nome do responsavel vem RESOLVIDO do servidor: a chave sai do mapa
+ * de equipe, que nao e versionado, entao nenhuma tabela no cliente a traduz.
+ */
+describe('responsavel', () => {
+  it('exibe o rotulo que o servidor resolveu, e nao a chave', async () => {
+    api.serveProcessDetail(
+      processDetailFixture({
+        process: processFixture({ responsible: 'membro1', responsibleLabel: 'Primeiro' }),
+      }),
+    )
+    renderPage()
+
+    const campos = await bloco('Campos do processo')
+
+    expect(within(campos).getByText('Responsável')).toBeTruthy()
+    expect(within(campos).getByText('Primeiro')).toBeTruthy()
+    expect(within(campos).queryByText('membro1')).toBeNull()
+  })
+
+  // O formulario de cor descreve a COR, e nao a pessoa: passar `responsible`
+  // ali marcaria a opcao errada no menu — defeito que o `typecheck` pegou.
+  it('descreve a cor da linha pela cor, e nao pela pessoa', async () => {
+    api.serveProcessDetail(
+      processDetailFixture({
+        process: processFixture({
+          responsible: 'membro1',
+          responsibleLabel: 'Primeiro',
+          colorResponsible: 'colaborador2',
+          importerOutsideRj: false,
+        }),
+      }),
+    )
+    renderPage()
+
+    const corDaLinha = await bloco('Alterar cor da linha')
+
+    expect(within(corDaLinha).getByText(/Colaborador 2/)).toBeTruthy()
+  })
+})

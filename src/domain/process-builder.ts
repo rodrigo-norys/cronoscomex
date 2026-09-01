@@ -7,6 +7,7 @@ import {
 import { type ColorMapEntry, resolveColorIndexed } from './color-mapper.ts'
 import { normKey, parseCellDate } from './normalizer.ts'
 import { classify } from './status-classifier.ts'
+import { resolveTeam, type TeamMember } from './team-mapper.ts'
 import type { AnomalyCode, Process, QuarantineReason, RawCell, RawRow } from './types.ts'
 
 /**
@@ -59,6 +60,17 @@ export interface BuildDeps {
    * cliente tem grupo e o filtro nao ganha nivel de arvore.
    */
   clientGroups?: ClientGroupIndex
+  /**
+   * Mapa de equipe de `H-48`, consumido por `H-50`, ja normalizado na carga.
+   *
+   * Ausente ou vazio, `responsible` vale a chave de cor da linha e a resolucao
+   * declara `source: 'cor'` (`D-23`) — o comportamento anterior a `H-50`, e o
+   * estado com que o operador recebe a aplicacao.
+   *
+   * **A projecao de `H-23` precisa dele tanto quanto a ingestao**, pelo mesmo
+   * motivo de `clientMap`: ela refaz o processo inteiro por `buildProcesses`.
+   */
+  teamMap?: readonly TeamMember[]
 }
 
 /** Mapeamento coluna -> campo. Ver docs/03-modelo-dados.md secao 1.2. */
@@ -148,6 +160,8 @@ function buildOne(row: RawRow, deps: BuildDeps): { process: Process; unmappedCol
   const importerKey = normKey(importerRaw)
   const client = resolveClient(clientProcessKey, importerKey, deps.clientMap ?? [])
   const clientGroupKey = resolveClientGroup(client.key, deps.clientGroups ?? new Map())
+  const team = resolveTeam(importerKey, color.responsible, deps.teamMap ?? [])
+  if (team.conflict) anomalies.add('RESPONSAVEL_DIVERGENTE')
   const agentRaw = text(row, COLUMN.agent)
   const vesselRaw = text(row, COLUMN.vessel)
   const portRaw = text(row, COLUMN.port)
@@ -183,7 +197,9 @@ function buildOne(row: RawRow, deps: BuildDeps): { process: Process; unmappedCol
     portKey: normKey(portRaw),
     goodsKey: normKey(goodsRaw),
     statusCategory: classification.category,
-    responsible: color.responsible,
+    responsible: team.key,
+    responsibleLabel: team.label,
+    colorResponsible: color.responsible,
     customsChannel: color.customsChannel,
     importerOutsideRj: color.importerOutsideRj,
     styleKey: row.styleKey,
@@ -343,6 +359,11 @@ export function describeAnomaly(code: AnomalyCode, process: Process): string {
       return `styleKey=${process.styleKey}`
     case 'VARIANTE_STATUS_PROXIMA':
       return `STATUS proximo de uma grafia catalogada: "${process.statusRaw}"`
+    case 'RESPONSAVEL_DIVERGENTE':
+      // Chaves, nunca nomes: `responsible` e impessoal e o nome vive no
+      // `label`, que sai de arquivo nao versionado (regra inviolavel 8). Este
+      // texto vai para o relatorio de anomalias e para a tela de detalhe.
+      return `o importador atribui a "${process.responsible}"; a cor "${process.colorResponsible}" aponta outra pessoa`
   }
 }
 

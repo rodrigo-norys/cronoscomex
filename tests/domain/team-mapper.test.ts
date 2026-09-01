@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { normalizeTeamMap, resolveTeam, type TeamMember } from '../../src/domain/team-mapper.ts'
+import {
+  knownResponsibles,
+  normalizeTeamMap,
+  resolveTeam,
+  type TeamMember,
+} from '../../src/domain/team-mapper.ts'
 
 /**
  * H-48. A atribuicao pura, sem I/O.
@@ -84,8 +89,19 @@ describe('resolveTeam', () => {
     expect(resolveTeam('IMPORTADORA UM', 'colaborador2', map).conflict).toBe(false)
   })
 
-  it('cai na cor inteiramente quando o mapa esta vazio', () => {
-    expect(resolveTeam('IMPORTADORA UM', 'colaborador1', []).source).toBe('nenhum')
+  // `D-23`: sem mapa nao ha membro em quem casar, e devolver `UNASSIGNED` nas
+  // 649 linhas esvaziaria o campo justamente na primeira execucao do operador.
+  it('devolve a propria chave de cor quando o mapa esta vazio', () => {
+    expect(resolveTeam('IMPORTADORA UM', 'colaborador1', [])).toEqual({
+      key: 'colaborador1',
+      label: 'Colaborador 1',
+      source: 'cor',
+      conflict: false,
+    })
+  })
+
+  it('devolve indefinido quando o mapa esta vazio e a cor nao diz responsavel', () => {
+    expect(resolveTeam('QUALQUER', 'indefinido', []).key).toBe('indefinido')
   })
 })
 
@@ -143,5 +159,38 @@ describe('normalizeTeamMap', () => {
     expect(membro.importers).toEqual(['IMPORTADORA UM'])
     expect(membro.label).toBe('Antônio')
     expect(membro.fallback).toBe(true)
+  })
+})
+
+/**
+ * `H-50`. As chaves que o ranking e a rota de opcoes exibem, incluindo as
+ * zeradas — A-28.
+ */
+describe('knownResponsibles', () => {
+  it('sem mapa, o dominio e o das quatro cores (D-23)', () => {
+    expect(knownResponsibles([])).toEqual([
+      { key: 'colaborador1', label: 'Colaborador 1' },
+      { key: 'colaborador2', label: 'Colaborador 2' },
+      { key: 'colaborador1_outros_clientes', label: 'Colaborador 1 — outros clientes' },
+      { key: 'indefinido', label: 'Indefinido' },
+    ])
+  })
+
+  it('com mapa, sao os membros mais a chave sem responsavel', () => {
+    expect(knownResponsibles(map)).toEqual([
+      { key: 'membro1', label: 'Primeiro' },
+      { key: 'membro2', label: 'Segundo' },
+      { key: '', label: 'Sem responsável' },
+    ])
+  })
+
+  // O caso-limite de `H-50`: a pessoa existe no mapa do operador mesmo sem
+  // processo algum, e o ranking a exibe com zero.
+  it('inclui o membro que nenhuma regra alcanca', () => {
+    const semRegraAlcancavel = normalizeTeamMap([
+      { key: 'membro9', label: 'Nono', importers: ['importadora nove'], colorResponsible: [] },
+    ])
+
+    expect(knownResponsibles(semRegraAlcancavel).map((o) => o.key)).toContain('membro9')
   })
 })

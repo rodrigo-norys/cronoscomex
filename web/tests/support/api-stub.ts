@@ -180,7 +180,9 @@ export function processFixture(overrides: Partial<ProcessDto> = {}): ProcessDto 
     docsSentDate: null,
     statusRaw: 'EM ANDAMENTO',
     statusCategory: 'em_andamento',
-    responsible: 'colaborador1',
+    responsible: 'membro1',
+    responsibleLabel: 'Membro 1',
+    colorResponsible: 'colaborador1',
     customsChannel: 'indefinido',
     importerOutsideRj: false,
     boletoRaw: '',
@@ -319,7 +321,11 @@ export function filterOptionsFixture(
       { key: 'em_andamento', label: 'Em andamento', count: 103 },
       { key: 'desembaracado', label: 'Desembaraçado', count: 480 },
     ],
-    responsible: [{ key: 'colaborador1', label: 'Colaborador 1', count: 20 }],
+    responsible: [
+      { key: 'membro1', label: 'Membro 1', count: 20 },
+      { key: '', label: 'Sem responsável', count: 3 },
+    ],
+    colorResponsible: [{ key: 'colaborador1', label: 'Colaborador 1', count: 20 }],
     channels: [{ key: 'vermelho', label: 'Canal Vermelho', count: 5 }],
     ...overrides,
   }

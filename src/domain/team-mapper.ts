@@ -1,5 +1,10 @@
+import {
+  COLOR_RESPONSIBLE_LABELS,
+  COLOR_RESPONSIBLES,
+  UNASSIGNED_RESPONSIBLE_LABEL,
+} from './filters.ts'
 import { normKey } from './normalizer.ts'
-import type { Responsible } from './types.ts'
+import type { ColorResponsible } from './types.ts'
 
 /**
  * Atribuicao do processo a uma pessoa da equipe, pelo IMPORTADOR, com a cor da
@@ -32,7 +37,7 @@ export interface TeamMember {
   /** Chaves de importador desta pessoa, ja normalizadas na carga. */
   importers: readonly string[]
   /** Cores de responsavel que apontam para ela, no desempate. */
-  colorResponsible: readonly Responsible[]
+  colorResponsible: readonly ColorResponsible[]
   /**
    * Recebe todo importador que nenhuma outra lista reivindica.
    *
@@ -85,6 +90,7 @@ function ownsImporter(member: TeamMember, importerKey: string): boolean {
  *
  * Ordem de avaliacao, e ela e obrigatoria:
  *
+ * 0. Mapa VAZIO — a cor bruta, sem membro nenhum. Ver abaixo.
  * 1. Importador declarado na lista de alguem.
  * 2. Membro marcado como `fallback`, se houver e o importador nao for vazio.
  * 3. Cor da linha, quando ela aponta um membro — o desempate de §3.
@@ -94,12 +100,28 @@ function ownsImporter(member: TeamMember, importerKey: string): boolean {
  * afirmacao sobre importadores que existem; 35 linhas sem importador nao sao o
  * resto de nada, e varre-las para uma pessoa esconderia que o campo esta em
  * branco — que e informacao sobre a planilha (regra inviolavel 2).
+ *
+ * **A regra 0 e `D-23`, e ela nao e caso particular da 3.** Sem membros, a
+ * regra 3 nao tem em quem casar e devolveria `UNASSIGNED` nas 649 linhas — o
+ * campo Responsavel ficaria vazio na primeira execucao, que e o estado com que
+ * o operador recebe a aplicacao (o arquivo esta no `.gitignore`). Devolver a
+ * propria chave de cor mantem os 157 preenchidos de antes de `H-50`, e o
+ * `source: 'cor'` diz de onde vieram.
  */
 export function resolveTeam(
   importerKey: string,
-  colorResponsible: Responsible,
+  colorResponsible: ColorResponsible,
   map: readonly TeamMember[],
 ): TeamResolution {
+  if (map.length === 0) {
+    return {
+      key: colorResponsible,
+      label: COLOR_RESPONSIBLE_LABELS[colorResponsible],
+      source: 'cor',
+      conflict: false,
+    }
+  }
+
   const byImporter = map.find((member) => ownsImporter(member, importerKey))
   const byColor = map.find((member) => member.colorResponsible.includes(colorResponsible))
 
@@ -121,6 +143,28 @@ export function resolveTeam(
     return { key: byColor.key, label: byColor.label, source: 'cor', conflict: false }
   }
   return UNASSIGNED
+}
+
+/**
+ * Todas as chaves que `resolveTeam` pode devolver, com o rotulo de cada uma.
+ *
+ * Existe para o ranking de IND-20 e para a rota de opcoes exibirem a chave
+ * ZERADA: pessoa declarada no mapa e sem processo algum aparece, pela mesma
+ * razao de A-28. Derivar as chaves dos processos carregados faria essa pessoa
+ * sumir da tela, e o operador leria a ausencia como "nao existe" em vez de
+ * "nao tem processo".
+ *
+ * Sem mapa, o dominio e o das cores — e o estado de `D-23`, onde `responsible`
+ * carrega a chave de cor. Com mapa, e o dos membros mais a chave vazia.
+ */
+export function knownResponsibles(map: readonly TeamMember[]): { key: string; label: string }[] {
+  if (map.length === 0) {
+    return COLOR_RESPONSIBLES.map((key) => ({ key, label: COLOR_RESPONSIBLE_LABELS[key] }))
+  }
+  return [
+    ...map.map((member) => ({ key: member.key, label: member.label })),
+    { key: '', label: UNASSIGNED_RESPONSIBLE_LABEL },
+  ]
 }
 
 /** Normaliza as chaves de importador UMA vez, na carga. O `label` nao passa. */

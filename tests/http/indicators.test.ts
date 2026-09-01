@@ -3,6 +3,7 @@ import type { AppConfig } from '../../src/app/config.ts'
 import type { StoreAccess, StoreState } from '../../src/app/process-store.ts'
 import { normalizeClientGroups } from '../../src/domain/client-mapper.ts'
 import { today } from '../../src/domain/date-window.ts'
+import { normalizeTeamMap } from '../../src/domain/team-mapper.ts'
 import type { Process, StatusCategory } from '../../src/domain/types.ts'
 import { buildServer } from '../../src/http/server.ts'
 
@@ -51,6 +52,8 @@ function process(
     goodsKey: '',
     statusCategory,
     responsible: 'indefinido',
+    responsibleLabel: 'Indefinido',
+    colorResponsible: 'indefinido',
     customsChannel: 'indefinido',
     importerOutsideRj: null,
     styleKey: 'none',
@@ -192,6 +195,80 @@ describe('GET /api/indicators', () => {
     expect(indefinido.label).toBe('Indefinido')
 
     await app.close()
+  })
+
+  /**
+   * `H-50`. Com mapa de equipe, IND-20 conta PESSOAS — e exibe a que nao tem
+   * processo algum, pela mesma razao de A-28.
+   */
+  describe('IND-20 com o mapa de equipe (H-50)', () => {
+    const equipe = normalizeTeamMap([
+      { key: 'membro1', label: 'Primeiro', importers: ['importadora um'], colorResponsible: [] },
+      { key: 'membro2', label: 'Segundo', importers: ['importadora dois'], colorResponsible: [] },
+    ])
+    const comEquipe = (processes: Process[]) =>
+      buildServer(
+        config,
+        fakeStore(state({ processes })),
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        [],
+        undefined,
+        equipe,
+      )
+
+    it('conta por pessoa e exibe a pessoa sem processo com zero', async () => {
+      const app = comEquipe([
+        process(2, 'em_andamento', { responsible: 'membro1', responsibleLabel: 'Primeiro' }),
+        process(3, 'em_andamento', { responsible: '', responsibleLabel: '' }),
+      ])
+
+      const body = (await app.inject({ method: 'GET', url: '/api/indicators' })).json()
+
+      expect(body.rankings.responsible).toContainEqual({
+        key: 'membro1',
+        label: 'Primeiro',
+        count: 1,
+      })
+      expect(body.rankings.responsible).toContainEqual({
+        key: 'membro2',
+        label: 'Segundo',
+        count: 0,
+      })
+      expect(body.rankings.responsible).toContainEqual({
+        key: '',
+        label: 'Sem responsável',
+        count: 1,
+      })
+
+      await app.close()
+    })
+
+    // IND-22 por responsavel deixa de ser dominado por uma unica chave, por
+    // efeito do campo — sem trabalho de tela.
+    it('quebra IND-22 pela pessoa, com o rotulo legivel', async () => {
+      const app = comEquipe([
+        process(2, 'desembaracado', {
+          responsible: 'membro1',
+          responsibleLabel: 'Primeiro',
+          docsSentDate: new Date('2026-01-01T00:00:00Z'),
+          registrationDate: new Date('2026-01-11T00:00:00Z'),
+        }),
+      ])
+
+      const body = (await app.inject({ method: 'GET', url: '/api/indicators' })).json()
+      const grupo = body.leadTimeByGroup.responsible.find(
+        (g: { key: string }) => g.key === 'membro1',
+      )
+
+      expect(grupo).toMatchObject({ label: 'Primeiro', averageDays: 10, sampleSize: 1 })
+
+      await app.close()
+    })
   })
 })
 

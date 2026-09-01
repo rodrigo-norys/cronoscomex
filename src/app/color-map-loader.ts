@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
 import type { ColorMapEntry } from '../domain/color-mapper.ts'
-import type { CustomsChannel, Responsible } from '../domain/types.ts'
+import type { ColorResponsible, CustomsChannel } from '../domain/types.ts'
 
 /**
  * Carrega e valida config/color-map.json. O I/O vive aqui, e nao em
@@ -13,7 +13,7 @@ export class ColorMapError extends Error {
   override readonly name = 'ColorMapError'
 }
 
-const RESPONSIBLE: readonly Responsible[] = [
+const RESPONSIBLE: readonly ColorResponsible[] = [
   'colaborador1',
   'colaborador2',
   'colaborador1_outros_clientes',
@@ -47,7 +47,7 @@ function validateEntry(raw: unknown, position: number): ColorMapEntry {
         'O valor real vem do relatorio de H-01 (tools/profile_workbook.py).',
     )
   }
-  const responsible = entry.responsible as Responsible
+  const responsible = entry.responsible as ColorResponsible
   if (!RESPONSIBLE.includes(responsible)) {
     throw new ColorMapError(
       `${where}.responsible invalido: ${String(responsible)}. Valores: ${RESPONSIBLE.join(', ')}.`,

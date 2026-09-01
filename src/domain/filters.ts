@@ -1,11 +1,13 @@
-import type { CustomsChannel, Process, Responsible, StatusCategory } from './types.ts'
+import type { ColorResponsible, CustomsChannel, Process, StatusCategory } from './types.ts'
 
 /**
- * Os treze filtros globais (RF-17), aplicados a toda rota marcada [F].
+ * Os quatorze filtros globais (RF-17), aplicados a toda rota marcada [F].
  *
  * Eram onze ate `H-49`, que separou o cliente consolidado do processo do
  * cliente: `client` recorta a carteira, `clientProcess` acha um processo
- * especifico pelo que a celula CLT diz.
+ * especifico pelo que a celula CLT diz. `H-50` acrescentou o decimo quarto,
+ * pela mesma razao: `responsible` diz quem responde, `colorResponsible` diz o
+ * que o operador pintou.
  *
  * **OU dentro do parametro, E entre parametros distintos.** `client=A&client=B`
  * seleciona quem for A ou B; acrescentar `category=em_andamento` restringe esse
@@ -26,7 +28,10 @@ export interface FilterSet {
   agent: readonly string[]
   goods: readonly string[]
   category: readonly StatusCategory[]
-  responsible: readonly Responsible[]
+  /** Chave da pessoa responsavel (`H-50`). Dominio ABERTO: vem do mapa de equipe. */
+  responsible: readonly string[]
+  /** O que a cor da linha diz (`H-50`). Dominio fechado, e leva a agregacao de A-18. */
+  colorResponsible: readonly ColorResponsible[]
   channel: readonly CustomsChannel[]
   port: readonly string[]
   importerOutsideRj: boolean | null
@@ -39,7 +44,7 @@ export const STATUS_CATEGORIES: readonly StatusCategory[] = [
   'fechado_aguardando_draft',
 ]
 
-export const RESPONSIBLES: readonly Responsible[] = [
+export const COLOR_RESPONSIBLES: readonly ColorResponsible[] = [
   'colaborador1',
   'colaborador2',
   'colaborador1_outros_clientes',
@@ -61,6 +66,7 @@ export function emptyFilterSet(): FilterSet {
     goods: [],
     category: [],
     responsible: [],
+    colorResponsible: [],
     channel: [],
     port: [],
     importerOutsideRj: null,
@@ -70,14 +76,21 @@ export function emptyFilterSet(): FilterSet {
 /**
  * `colaborador1` seleciona TAMBEM `colaborador1_outros_clientes` (A-18).
  *
+ * **A regra migrou com o campo em `H-50`**, e nao desapareceu: ela sempre foi
+ * sobre a COR — as duas chaves sao dois tons que o operador pinta para a mesma
+ * pessoa. O filtro de `responsible` nao precisa dela, porque as duas cores
+ * resolvem para o mesmo membro do mapa.
+ *
  * O ranking de IND-20 faz o oposto e exibe as duas separadas: sao perguntas
  * diferentes. O ranking mostra a distribuicao; o filtro recorta o trabalho de
  * uma pessoa, e os clientes dela continuam sendo dela.
  */
-function matchesResponsible(process: Process, selected: readonly Responsible[]): boolean {
+function matchesColorResponsible(process: Process, selected: readonly ColorResponsible[]): boolean {
   if (selected.length === 0) return true
-  if (selected.includes(process.responsible)) return true
-  return selected.includes('colaborador1') && process.responsible === 'colaborador1_outros_clientes'
+  if (selected.includes(process.colorResponsible)) return true
+  return (
+    selected.includes('colaborador1') && process.colorResponsible === 'colaborador1_outros_clientes'
+  )
 }
 
 /** Lista vazia nao filtra. Chave vazia e valor legitimo, e casa com `''`. */
@@ -126,7 +139,8 @@ export function applyFilters(processes: readonly Process[], filters: FilterSet):
       matchesKey(process.goodsKey, filters.goods) &&
       matchesKey(process.portKey, filters.port) &&
       (filters.category.length === 0 || filters.category.includes(process.statusCategory)) &&
-      matchesResponsible(process, filters.responsible) &&
+      matchesKey(process.responsible, filters.responsible) &&
+      matchesColorResponsible(process, filters.colorResponsible) &&
       (filters.channel.length === 0 || filters.channel.includes(process.customsChannel)) &&
       matchesOutsideRj(process, filters.importerOutsideRj),
   )
@@ -221,9 +235,16 @@ function parseBoolean(raw: unknown, field: string): boolean | null {
  * lista vem dos dados e nao de catalogo (A-36). Valor inexistente ali produz
  * resultado vazio com `200`, que e resposta legitima.
  *
- * Os oito de dominio aberto usam `asKeyList`, que preserva a chave vazia; os
+ * Os nove de dominio aberto usam `asKeyList`, que preserva a chave vazia; os
  * demais seguem com `asList`, onde `''` e ausencia mesmo — `?category=` nao e
  * "categoria em branco", porque categoria em branco nao existe.
+ *
+ * **`responsible` mudou de lado em `H-50`**: era fechado, com quatro chaves
+ * validadas, e passou a aberto — `?responsible=xyz` deixa de dar
+ * `400 FILTRO_INVALIDO` e devolve conjunto vazio com `200`. A chave sai do mapa
+ * de equipe, que nao e versionado, entao nao ha catalogo contra o que validar
+ * (mesmo argumento de A-36 para cliente e porto). E `''` e chave legitima: sao
+ * os 42 processos sem responsavel.
  */
 export function parseFilters(query: Record<string, unknown>): FilterSet {
   return {
@@ -237,7 +258,8 @@ export function parseFilters(query: Record<string, unknown>): FilterSet {
     agent: asKeyList(query.agent),
     goods: asKeyList(query.goods),
     category: parseEnum(query.category, 'category', STATUS_CATEGORIES),
-    responsible: parseEnum(query.responsible, 'responsible', RESPONSIBLES),
+    responsible: asKeyList(query.responsible),
+    colorResponsible: parseEnum(query.colorResponsible, 'colorResponsible', COLOR_RESPONSIBLES),
     channel: parseEnum(query.channel, 'channel', CUSTOMS_CHANNELS),
     port: asKeyList(query.port),
     importerOutsideRj: parseBoolean(query.importerOutsideRj, 'importerOutsideRj'),
@@ -245,7 +267,7 @@ export function parseFilters(query: Record<string, unknown>): FilterSet {
 }
 
 /**
- * Se algum dos treze filtros esta ativo.
+ * Se algum dos quatorze filtros esta ativo.
  *
  * A serie mensal de `H-28` precisa distinguir "sem filtro" de "filtro que casa
  * tudo": sem filtro ela sai inteira do arquivo, e com filtro e restrita aos REF
@@ -266,6 +288,7 @@ export function hasAnyFilter(filters: FilterSet): boolean {
     filters.goods.length > 0 ||
     filters.category.length > 0 ||
     filters.responsible.length > 0 ||
+    filters.colorResponsible.length > 0 ||
     filters.channel.length > 0 ||
     filters.port.length > 0
   )
@@ -295,12 +318,15 @@ export const CATEGORY_LABELS: Readonly<Record<StatusCategory, string>> = {
   fechado_aguardando_draft: 'Fechado — aguardando draft',
 }
 
-export const RESPONSIBLE_LABELS: Readonly<Record<Responsible, string>> = {
+export const COLOR_RESPONSIBLE_LABELS: Readonly<Record<ColorResponsible, string>> = {
   colaborador1: 'Colaborador 1',
   colaborador2: 'Colaborador 2',
   colaborador1_outros_clientes: 'Colaborador 1 — outros clientes',
   indefinido: 'Indefinido',
 }
+
+/** Rotulo de `responsible` vazio. A ausencia tem nome, e ela aparece (A-28). */
+export const UNASSIGNED_RESPONSIBLE_LABEL = 'Sem responsável'
 
 export const CHANNEL_LABELS: Readonly<Record<CustomsChannel, string>> = {
   verde: 'Canal Verde',
@@ -321,13 +347,37 @@ export function fixedOptions<T extends string>(
   labels: Readonly<Record<T, string>>,
   keyOf: (process: Process) => T,
 ): FilterOption[] {
-  const counts = new Map<string, number>(domain.map((key) => [key, 0]))
+  return labelledOptions(
+    processes,
+    domain.map((key) => ({ key, label: labels[key] })),
+    keyOf,
+  )
+}
+
+/**
+ * Como `fixedOptions`, mas o dominio chega ja rotulado — para o que so e
+ * fechado em execucao.
+ *
+ * `H-50` precisa disto: as chaves de responsavel vem de `config/team-map.json`,
+ * entao nenhuma tabela escrita no codigo as traduz, e mesmo assim as zeradas
+ * precisam aparecer — pessoa declarada no mapa e sem processo algum e o caso que
+ * A-28 manda exibir, e escondê-la faria o filtro parecer completo quando nao esta.
+ *
+ * A contagem ignora chave fora do dominio: com mapa de equipe, toda chave de
+ * processo e um membro ou a vazia, e as duas estao la.
+ */
+export function labelledOptions(
+  processes: readonly Process[],
+  domain: readonly { key: string; label: string }[],
+  keyOf: (process: Process) => string,
+): FilterOption[] {
+  const counts = new Map<string, number>(domain.map(({ key }) => [key, 0]))
   for (const process of processes) {
     const key = keyOf(process)
     counts.set(key, (counts.get(key) ?? 0) + 1)
   }
 
-  return domain.map((key) => ({ key, label: labels[key], count: counts.get(key) ?? 0 }))
+  return domain.map(({ key, label }) => ({ key, label, count: counts.get(key) ?? 0 }))
 }
 
 /**

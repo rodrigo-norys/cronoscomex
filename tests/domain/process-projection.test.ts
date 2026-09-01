@@ -57,6 +57,8 @@ function process(overrides: Partial<Process> = {}): Process {
     goodsKey: 'BAZAR',
     statusCategory: 'em_andamento',
     responsible: 'indefinido',
+    responsibleLabel: 'Indefinido',
+    colorResponsible: 'indefinido',
     customsChannel: 'indefinido',
     importerOutsideRj: null,
     styleKey: 'none',

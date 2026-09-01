@@ -167,6 +167,7 @@ export function getState(): StoreState {
     statusAliases: options.statusAliases,
     clientMap: options.clientMap ?? [],
     clientGroups: clientGroupIndex,
+    teamMap: options.teamMap ?? [],
   })
 
   return { ...current, processes, pendingEdits: edits }
@@ -315,6 +316,7 @@ async function runReload(deps: StoreOptions): Promise<void> {
       statusAliases: deps.statusAliases,
       clientMap: deps.clientMap ?? [],
       clientGroups: clientGroupIndex,
+      teamMap: deps.teamMap ?? [],
     })
 
     const durationMs = Math.round(performance.now() - startedAt)
@@ -480,6 +482,7 @@ export function rebuildProcesses(rows: RawRow[]): Process[] {
     statusAliases: options.statusAliases,
     clientMap: options.clientMap ?? [],
     clientGroups: clientGroupIndex,
+    teamMap: options.teamMap ?? [],
   }).processes
 }
 

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   applyFilters,
+  COLOR_RESPONSIBLES,
   CUSTOMS_CHANNELS,
   emptyFilterSet,
   FilterParseError,
@@ -8,13 +9,12 @@ import {
   hasAnyFilter,
   optionsOf,
   parseFilters,
-  RESPONSIBLES,
   STATUS_CATEGORIES,
 } from '../../src/domain/filters.ts'
 import type {
+  ColorResponsible,
   CustomsChannel,
   Process,
-  Responsible,
   StatusCategory,
 } from '../../src/domain/types.ts'
 
@@ -32,7 +32,9 @@ interface Fields {
   goodsKey?: string
   portKey?: string
   statusCategory?: StatusCategory
-  responsible?: Responsible
+  responsible?: string
+  responsibleLabel?: string
+  colorResponsible?: ColorResponsible
   customsChannel?: CustomsChannel
   importerOutsideRj?: boolean | null
 }
@@ -52,6 +54,8 @@ function process({
   portKey = '',
   statusCategory = 'em_andamento',
   responsible = 'indefinido',
+  responsibleLabel = 'Indefinido',
+  colorResponsible = 'indefinido',
   customsChannel = 'indefinido',
   importerOutsideRj = null,
 }: Fields): Process {
@@ -85,6 +89,8 @@ function process({
     goodsKey,
     statusCategory,
     responsible,
+    responsibleLabel,
+    colorResponsible,
     customsChannel,
     importerOutsideRj,
     styleKey: 'none',
@@ -134,15 +140,17 @@ describe('applyFilters — combinacao entre parametros', () => {
   })
 })
 
-describe('applyFilters — responsavel inclui a subcategoria (A-18)', () => {
-  const dele = process({ responsible: 'colaborador1' })
-  const outrosClientes = process({ responsible: 'colaborador1_outros_clientes' })
-  const doOutro = process({ responsible: 'colaborador2' })
+// A regra migrou COM O CAMPO em `H-50`: ela sempre foi sobre a cor — dois tons
+// que o operador pinta para a mesma pessoa.
+describe('applyFilters — a cor do responsavel inclui a subcategoria (A-18)', () => {
+  const dele = process({ colorResponsible: 'colaborador1' })
+  const outrosClientes = process({ colorResponsible: 'colaborador1_outros_clientes' })
+  const doOutro = process({ colorResponsible: 'colaborador2' })
 
   it('colaborador1 seleciona tambem colaborador1_outros_clientes', () => {
     const resultado = applyFilters(
       [dele, outrosClientes, doOutro],
-      withFilters({ responsible: ['colaborador1'] }),
+      withFilters({ colorResponsible: ['colaborador1'] }),
     )
 
     expect(resultado).toEqual([dele, outrosClientes])
@@ -152,7 +160,7 @@ describe('applyFilters — responsavel inclui a subcategoria (A-18)', () => {
   it('colaborador1_outros_clientes nao seleciona colaborador1', () => {
     const resultado = applyFilters(
       [dele, outrosClientes],
-      withFilters({ responsible: ['colaborador1_outros_clientes'] }),
+      withFilters({ colorResponsible: ['colaborador1_outros_clientes'] }),
     )
 
     expect(resultado).toEqual([outrosClientes])
@@ -161,10 +169,42 @@ describe('applyFilters — responsavel inclui a subcategoria (A-18)', () => {
   it('colaborador2 nao arrasta ninguem', () => {
     const resultado = applyFilters(
       [dele, outrosClientes, doOutro],
-      withFilters({ responsible: ['colaborador2'] }),
+      withFilters({ colorResponsible: ['colaborador2'] }),
     )
 
     expect(resultado).toEqual([doOutro])
+  })
+})
+
+// `H-50`. O filtro da pessoa e de dominio aberto e NAO agrega: as duas cores de
+// A-18 ja resolveram para o mesmo membro antes de chegar aqui.
+describe('applyFilters — responsavel e a pessoa, nao a cor', () => {
+  const daPessoa = process({ responsible: 'membro1', colorResponsible: 'colaborador1' })
+  const daOutra = process({ responsible: 'membro2', colorResponsible: 'colaborador2' })
+  const semDono = process({ responsible: '', colorResponsible: 'indefinido' })
+
+  it('recorta pela chave da pessoa', () => {
+    expect(
+      applyFilters([daPessoa, daOutra, semDono], withFilters({ responsible: ['membro1'] })),
+    ).toEqual([daPessoa])
+  })
+
+  // Os 42 sem responsavel sao um recorte legitimo: chave vazia e valor de
+  // dominio, e e o que torna o buraco investigavel.
+  it('recorta os processos sem responsavel pela chave vazia', () => {
+    expect(applyFilters([daPessoa, daOutra, semDono], withFilters({ responsible: [''] }))).toEqual([
+      semDono,
+    ])
+  })
+
+  // Os dois filtros sao independentes: E entre parametros distintos.
+  it('combina com o filtro da cor sem que um implique o outro', () => {
+    expect(
+      applyFilters(
+        [daPessoa, daOutra],
+        withFilters({ responsible: ['membro1'], colorResponsible: ['colaborador2'] }),
+      ),
+    ).toEqual([])
   })
 })
 
@@ -258,7 +298,7 @@ describe('applyFilters — chave vazia e valor legitimo', () => {
 describe('parseFilters — dominios fechados', () => {
   it('fixa os dominios catalogados', () => {
     expect(STATUS_CATEGORIES).toHaveLength(4)
-    expect(RESPONSIBLES).toEqual([
+    expect(COLOR_RESPONSIBLES).toEqual([
       'colaborador1',
       'colaborador2',
       'colaborador1_outros_clientes',
@@ -283,8 +323,15 @@ describe('parseFilters — dominios fechados', () => {
     expect(() => parseFilters({ channel: 'roxo' })).toThrow(FilterParseError)
   })
 
-  it('recusa responsavel fora do dominio', () => {
-    expect(() => parseFilters({ responsible: 'ninguem' })).toThrow(FilterParseError)
+  it('recusa cor de responsavel fora do dominio', () => {
+    expect(() => parseFilters({ colorResponsible: 'ninguem' })).toThrow(FilterParseError)
+  })
+
+  // `H-50` abriu o dominio de `responsible`: a chave vem do mapa de equipe, que
+  // nao e versionado, entao nao ha catalogo contra o que validar (A-36).
+  it('aceita qualquer chave de responsavel, inclusive a vazia', () => {
+    expect(parseFilters({ responsible: 'membro9' }).responsible).toEqual(['membro9'])
+    expect(parseFilters({ responsible: '' }).responsible).toEqual([''])
   })
 
   it('nomeia o campo e o valor recusados', () => {

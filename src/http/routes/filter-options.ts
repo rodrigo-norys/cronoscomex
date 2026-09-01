@@ -4,14 +4,16 @@ import type { ClientGroup } from '../../domain/client-mapper.ts'
 import {
   CATEGORY_LABELS,
   CHANNEL_LABELS,
+  COLOR_RESPONSIBLE_LABELS,
+  COLOR_RESPONSIBLES,
   CUSTOMS_CHANNELS,
   type FilterOption,
   fixedOptions,
+  labelledOptions,
   optionsOf,
-  RESPONSIBLE_LABELS,
-  RESPONSIBLES,
   STATUS_CATEGORIES,
 } from '../../domain/filters.ts'
+import { knownResponsibles, type TeamMember } from '../../domain/team-mapper.ts'
 import type { Process } from '../../domain/types.ts'
 import { apiError } from '../errors.ts'
 
@@ -24,7 +26,11 @@ import { apiError } from '../errors.ts'
  *
  * Os tres campos de dominio FECHADO sao a excecao, e por bom motivo: as chaves
  * aparecem todas, inclusive zeradas, para que o operador saiba que a opcao
- * existe. Mesma razao de IND-20 exibir os quatro responsaveis.
+ * existe. Mesma razao de IND-20 exibir a chave de responsavel sem processo.
+ *
+ * `responsible` e o caso do meio, desde `H-50`: o dominio e fechado, mas so em
+ * execucao — quem o define e `config/team-map.json`. Por isso ele passa por
+ * `labelledOptions`, e nao por `fixedOptions` nem por `optionsOf`.
  */
 /**
  * Um grupo de clientes e seus membros (`H-55`), para o filtro exibir um nivel
@@ -55,7 +61,16 @@ export interface FilterOptionsResponse {
   goods: FilterOption[]
   ports: FilterOption[]
   categories: FilterOption[]
+  /**
+   * As pessoas do mapa de equipe (`H-50`), mais a chave vazia — os processos
+   * sem responsavel. Pessoa sem processo algum aparece com zero (A-28).
+   *
+   * Sem mapa de equipe sao as quatro chaves de cor, e nao ha diferenca visivel
+   * em relacao a `colorResponsible`: e o estado de `D-23`.
+   */
   responsible: FilterOption[]
+  /** O que a cor da linha diz (`H-50`). Dominio fechado, quatro chaves. */
+  colorResponsible: FilterOption[]
   channels: FilterOption[]
 }
 
@@ -110,7 +125,9 @@ export function registerFilterOptionsRoute(
   app: FastifyInstance,
   store: StoreAccess = defaultStore,
   clientGroups: readonly ClientGroup[] = [],
+  teamMap: readonly TeamMember[] = [],
 ): void {
+  const responsibles = knownResponsibles(teamMap)
   app.get('/api/filters/options', (_request, reply) => {
     const state = store.getState()
 
@@ -169,7 +186,13 @@ export function registerFilterOptionsRoute(
         CATEGORY_LABELS,
         (p) => p.statusCategory,
       ),
-      responsible: fixedOptions(processes, RESPONSIBLES, RESPONSIBLE_LABELS, (p) => p.responsible),
+      responsible: labelledOptions(processes, responsibles, (p) => p.responsible),
+      colorResponsible: fixedOptions(
+        processes,
+        COLOR_RESPONSIBLES,
+        COLOR_RESPONSIBLE_LABELS,
+        (p) => p.colorResponsible,
+      ),
       channels: fixedOptions(processes, CUSTOMS_CHANNELS, CHANNEL_LABELS, (p) => p.customsChannel),
     }
     return reply.code(200).send(body)

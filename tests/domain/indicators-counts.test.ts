@@ -32,6 +32,8 @@ function process(sourceRow: number, statusCategory: StatusCategory): Process {
     goodsKey: '',
     statusCategory,
     responsible: 'indefinido',
+    responsibleLabel: 'Indefinido',
+    colorResponsible: 'indefinido',
     customsChannel: 'indefinido',
     importerOutsideRj: null,
     styleKey: 'none',

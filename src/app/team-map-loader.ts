@@ -1,6 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { normalizeTeamMap, type TeamMember } from '../domain/team-mapper.ts'
-import type { Responsible } from '../domain/types.ts'
+import type { ColorResponsible } from '../domain/types.ts'
 
 /**
  * Carrega e valida `team-map.json`. O I/O vive aqui (ADR-0006).
@@ -23,7 +23,7 @@ export class TeamMapError extends Error {
   override readonly name = 'TeamMapError'
 }
 
-const COLOR_RESPONSIBLE: readonly Responsible[] = [
+const COLOR_RESPONSIBLE: readonly ColorResponsible[] = [
   'colaborador1',
   'colaborador2',
   'colaborador1_outros_clientes',
@@ -48,14 +48,14 @@ function validateStringList(raw: unknown, where: string): string[] {
   })
 }
 
-function validateColorResponsible(raw: unknown, where: string): Responsible[] {
+function validateColorResponsible(raw: unknown, where: string): ColorResponsible[] {
   return validateStringList(raw, where).map((value, index) => {
     if (!(COLOR_RESPONSIBLE as readonly string[]).includes(value)) {
       throw new TeamMapError(
         `${where}[${index}] invalido: ${value}. Valores: ${COLOR_RESPONSIBLE.join(', ')}.`,
       )
     }
-    return value as Responsible
+    return value as ColorResponsible
   })
 }
 
