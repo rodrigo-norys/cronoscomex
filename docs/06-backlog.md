@@ -25,10 +25,10 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
-| E9 — Estilização | **H-39 ✅ … H-47 ✅, H-67 ✅, H-68 ✅ e H-71 ✅; `H-69`, `H-70` e `H-72` abertas** | 7 | 8 | 0 |
+| E9 — Estilização | **H-39 ✅ … H-47 ✅, H-67 ✅, H-68 ✅, H-69 ✅ e H-71 ✅; `H-70` e `H-72` abertas** | 7 | 8 | 0 |
 | E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-52 ✅, H-53 ✅, H-54 ✅, H-55 ✅, H-56 ✅; abertas `H-50` — a única G do backlog — e `H-66`, que saiu do corte dela** | 2 | 7 | 1 |
 | E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
-| **Total** | **72** — 58 concluídas, 14 abertas | **28** | **43** | **1** |
+| **Total** | **72** — 59 concluídas, 13 abertas | **28** | **43** | **1** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -132,7 +132,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-47 — Percorrer os cinco procedimentos de navegador](#h-47) ✅
 - [H-67 — A linha do ranking cabe em 320 px](#h-67) ✅
 - [H-68 — O seletor de cor cabe na tela do celular](#h-68) ✅
-- [H-69 — O texto cortado da tabela tem caminho de volta](#h-69)
+- [H-69 — O texto cortado da tabela tem caminho de volta](#h-69) ✅
 - [H-70 — O foco sobrevive à navegação programática](#h-70)
 - [H-71 — O valor anterior da edição é legível](#h-71) ✅
 - [H-72 — A aba corrente sobrevive ao alto contraste](#h-72)
@@ -5680,6 +5680,41 @@ E qualquer correção de código: os cinco procedimentos produzem registro.
 <a id="h-69"></a>
 
 ### H-69 — O texto cortado da tabela tem caminho de volta
+
+> ✅ **CONCLUÍDA em 31/08/2026.** **3 testes próprios**, suíte em **1605**.
+> **Zero células cortadas nos quatro cenários de ampliação**, contra 31 a 100%
+> e 41 a 640 px com fonte 24 na mesma amostra. O rótulo passa a quebrar em
+> linhas e a coluna toma o espaço que as três numéricas não usam.
+>
+> **A correção elimina o truncamento em vez de dar reflexo a ele, e isso é
+> obrigatório, não preferência.** O primeiro critério — o truncamento não
+> crescer com a ampliação — **não é satisfazível mantendo o corte**: o texto
+> escala com a fonte e o container não, então em algum aperto de largura sempre
+> sobra menos coluna. Quatro variantes foram medidas, e as outras três falham:
+> `max-w-0 break-words` deixa 27 cortadas a 640/24 e a linha em 193 px de
+> altura; `w-[18ch] truncate` zera o corte mas faz a **tabela** rolar; e
+> `w-[18ch] break-words` mede idêntico à escolhida, porque `width` numa `<td>`
+> de tabela auto-layout é sugestão que o navegador descartou — classe morta.
+>
+> **O segundo critério fica satisfeito de forma mais forte do que pedia.** Ele
+> queria o texto completo alcançável sem mouse; agora ele está **na tela**, e
+> nenhuma célula precisa de `title` — que o Chrome não revela por teclado — nem
+> de parada de tabulação, que somaria uma por linha à ordem que `H-47` aprovou
+> em 467 de 467. O terceiro critério é o mesmo fato: **0 `title` e 0 focáveis**,
+> medidos, em toda célula.
+>
+> **O número de `VN-2` não foi reproduzido, e o motivo fica registrado.** `VN-2`
+> mediu 7 · 8 · 14 sobre as 34 células da planilha real, que o mandato desta
+> sessão proíbe abrir. A primeira tentativa com a fixture deu 7 · 7 · **5** — o
+> truncamento **caindo** com a fonte, o oposto do achado —, porque 16 células com
+> números de um dígito não fazem a coluna do rótulo encolher. O cenário foi
+> recriado no DOM com 68 células, rótulos de 3 a 40 caracteres e números de três
+> dígitos, e aí a mecânica apareceu: 31 · 31 · 28 · **41**. **O que reproduz o
+> achado é o aperto de largura junto com a fonte**, não a fonte sozinha — a
+> 1280 px com fonte 24 a coluna dobra e o corte até diminui.
+>
+> **Divergências:** nenhuma. A lista de arquivos estava completa e `H-67`, que
+> tocou a mesma página, não colidiu — ela mexeu em `RankingBar.tsx`.
 
 **Objetivo:** o conteúdo que a tabela de tempo documental trunca deixar de ser
 inalcançável, e parar de crescer quando o operador amplia.
