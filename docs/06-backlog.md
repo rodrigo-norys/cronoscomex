@@ -28,8 +28,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E9 — Estilização ✅ | **H-39 … H-47 e H-67 … H-72, todas concluídas** | 7 | 8 | 0 |
 | E10 — As melhorias de uso ✅ | **H-48 … H-56 e H-66, todas concluídas.** `H-50` é a única G do backlog | 2 | 7 | 1 |
 | E11 — A casca redesenhada ✅ | **H-57 … H-65, todas concluídas** | 3 | 6 | 0 |
-| E12 — Os achados da revisão de estilo | **H-73 ✅, H-74 ✅; H-75 e H-76 abertas** | 2 | 1 | 1 |
-| **Total** | **76** — 74 concluídas, 2 abertas | **30** | **44** | **2** |
+| E12 — Os achados da revisão de estilo | **H-73 ✅ … H-75 ✅; H-76 aberta** | 2 | 1 | 1 |
+| **Total** | **76** — 75 concluídas, 1 aberta | **30** | **44** | **2** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -167,7 +167,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 
 - [H-73 — A faixa de severidade no token certo](#h-73) ✅
 - [H-74 — As quatro correções locais](#h-74) ✅
-- [H-75 — Um papel de UI, uma forma e um nome](#h-75)
+- [H-75 — Um papel de UI, uma forma e um nome](#h-75) ✅
 - [H-76 — A coluna Navio cabe no que ela mostra](#h-76)
 
 
@@ -8525,6 +8525,53 @@ compartilhar `App.tsx` com `H-75`.
 <a id="h-75"></a>
 
 ### H-75 — Um papel de UI, uma forma e um nome
+
+> ✅ **CONCLUÍDA em 01/09/2026.** **7 asserções próprias** — 5 em
+> `tests/repo/estilo.test.ts` e 2 de componente. Suíte de **1723 para 1730**.
+>
+> **`ACHADO 4` — o que divergia não era detalhe.** A borda existia em **3 dos
+> 5** botões primários e o `hover` em **2 dos 5**: o mesmo papel com dois
+> desenhos e dois comportamentos sob o cursor. Medido depois da extração, em
+> Chrome 151 nos dois esquemas: **uma forma só** — `1px` de borda, peso `500`,
+> raio `6px` —, com a cor variando apenas entre habilitado e `:disabled`.
+>
+> **O espaçamento ficou de fora da `@utility`, e é decisão.** `C04` alcança
+> forma — raio, borda, sombra —, e o botão do diálogo usa `px-4 py-2` por ser
+> confirmação de painel modal. Engolir o `padding` redimensionaria um controle
+> sem que regra nenhuma pedisse.
+>
+> **`ACHADO 6` — alinhar por `aria-label` estava fora, e a razão é normativa.**
+> `SC 2.5.3` exige que o nome acessível **contenha** o texto visível, então dar
+> `aria-label="Configuração"` a um link que diz "a planilha configurada" seria
+> trocar uma falha por outra. **A frase é que se acomodou ao rótulo canônico**:
+> "Lendo a planilha apontada em **Configuração**". Medido: dois acessos
+> alcançáveis, os **dois** `<a href>`, **um único nome**, e zero botões
+> navegando. O terceiro só aparece em estado degradado.
+>
+> **Três links com o mesmo nome na mesma página é a consequência, e é o que
+> `SC 3.2.4` pede.** O efeito colateral apareceu no teste: `findAllByRole`
+> passou a devolver o da lateral, que monta primeiro, e os outros dois dependem
+> da resposta de `/api/health`. O que os distingue passou a ser o **contexto no
+> DOM**, e o teste ganhou um auxiliar para isso.
+>
+> **`ACHADO 7` — o nome contém o texto visível**, medido: `aria-label` responde
+> "Abrir o detalhe de FT101.26" sobre o texto "FT101.26".
+>
+> **A guarda de `C04` não precisa de lista de exceção**, e isso foi projetado.
+> Dois elementos usam `bg-action-bg` com `text-action-fg` e **não** são o papel —
+> o link de salto, que é link, e o seletor de janela, que é controle de seleção
+> com `aria-pressed`. Nenhum dos dois traz `font-medium` **na mesma linha**: o do
+> seletor vive na base do template, fora do ramo de cor. A assinatura é a
+> **tripla**, e a mutação reprova as duas asserções de uma vez.
+>
+> **Quatro testes provavam os nomes antigos** e foram atualizados — dois pelo
+> nome do link de configuração, dois pelo nome acessível da REF.
+>
+> **Duas limitações declaradas, e as duas são da fixture:** a faixa de estado
+> degradado e o terceiro acesso à configuração **só existem quando a planilha
+> não pode ser lida**, e nenhuma fixture versionada produz isso. Os dois ficam
+> cobertos por teste de componente, com o estado montado à mão.
+
 
 **Objetivo:** o mesmo papel de interface ter a mesma forma e o mesmo nome
 acessível nas sete páginas.
