@@ -194,12 +194,28 @@ function HeaderCell({
  *
  * `max-w` e obrigatorio — `truncate` sozinho nao tem sobre o que incidir numa
  * celula que o algoritmo de tabela dimensiona pelo conteudo.
+ *
+ * **`max-w-56` e nao `max-w-48`, e a medicao e o que decide** (`H-76`,
+ * `ACHADO 12`). Contra a planilha real: dos **3591** valores de texto livre
+ * destas seis colunas, **81 eram cortados** — e **80 estavam em Navio**, cujo
+ * maior valor mede 196 px contra os 168 de orcamento que `max-w-48` deixava.
+ * O outro e um valor de Processo do cliente, com 173 px. Nao era "a tabela
+ * trunca": era uma coluna estreita demais.
+ *
+ * **Subir o teto nao alarga as outras quatro.** `max-w` e TETO, e o algoritmo
+ * de tabela dimensiona pelo conteudo: Cliente para em 116 px, Importador em 98,
+ * BL em 134 e Conteiner em 108, com ou sem este valor. So muda quem estava
+ * sendo cortado.
+ *
+ * **E `truncate` continua, e nao `break-words`.** `H-69` fez essa troca na
+ * Performance e mediu o ganho la; aqui ela desfaria a linha de 40 px de `H-61`
+ * — `truncate` traz `white-space: nowrap`, e e ele que segura a altura.
  */
 function Text({ value, mono = false }: { value: string; mono?: boolean }) {
   const cheio = value !== ''
   return (
     <td
-      className={`max-w-48 truncate px-3 ${mono ? 'font-mono text-xs' : ''}`}
+      className={`max-w-56 truncate px-3 ${mono ? 'font-mono text-xs' : ''}`}
       {...(cheio ? { title: value } : {})}
     >
       {value || '—'}
