@@ -45,7 +45,10 @@ export function StatCard({ label, value, variant = 'volume', hint, period }: Sta
       data-variant={variant}
       aria-busy={loading}
     >
-      <h3 className="text-xs font-medium tracking-wide text-text-muted uppercase">{label}</h3>
+      {/* `h2`, e nao `h3` (`H-74`, `ACHADO 1`): a secao dos cartoes nao tem
+          titulo proprio, entao o `h1` da `TopBar` desceria direto para `h3` —
+          falha `F43` de `SC 1.3.1`. O tamanho e do `text-xs`, nao do nivel. */}
+      <h2 className="text-xs font-medium tracking-wide text-text-muted uppercase">{label}</h2>
       {loading ? (
         // Um traco, e nao `0`: zero medido e zero por falta de leitura sao
         // coisas diferentes, e o cartao e o unico lugar que pode dizer qual.
