@@ -358,7 +358,7 @@ export function fixedOptions<T extends string>(
  * Como `fixedOptions`, mas o dominio chega ja rotulado — para o que so e
  * fechado em execucao.
  *
- * `H-50` precisa disto: as chaves de responsavel vem de `config/team-map.json`,
+ * `H-50` precisa disto: as chaves de responsavel vem de `team-map.json`,
  * entao nenhuma tabela escrita no codigo as traduz, e mesmo assim as zeradas
  * precisam aparecer — pessoa declarada no mapa e sem processo algum e o caso que
  * A-28 manda exibir, e escondê-la faria o filtro parecer completo quando nao esta.

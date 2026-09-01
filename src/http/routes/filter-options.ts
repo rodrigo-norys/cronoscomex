@@ -29,7 +29,7 @@ import { apiError } from '../errors.ts'
  * existe. Mesma razao de IND-20 exibir a chave de responsavel sem processo.
  *
  * `responsible` e o caso do meio, desde `H-50`: o dominio e fechado, mas so em
- * execucao — quem o define e `config/team-map.json`. Por isso ele passa por
+ * execucao — quem o define e `team-map.json`. Por isso ele passa por
  * `labelledOptions`, e nao por `fixedOptions` nem por `optionsOf`.
  */
 /**
