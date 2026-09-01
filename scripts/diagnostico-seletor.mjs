@@ -83,8 +83,18 @@ if (forms.erro) {
 ok(`carregou em ${forms.ms} ms`)
 
 passo('a sessao tem area de trabalho?', 'processo sem estacao grafica nunca mostra janela')
+// O `Add-Type` e obrigatorio AQUI tambem: cada chamada de `powershell()` e um
+// processo novo, entao o carregamento do passo 2 nao atravessa. Sem ele o passo
+// reprovava com `TypeNotFound` — um falso negativo que dizia "sem area de
+// trabalho" quando a causa era o proprio diagnostico. Medido em 31/08/2026, na
+// maquina do operador: e justamente este passo que separa "nao tem desktop" de
+// "tem desktop e o dialogo falha", e quebrado ele tirava do diagnostico o poder
+// de isolar.
 const desktop = await powershell(
-  '[Console]::Out.Write([System.Windows.Forms.SystemInformation]::UserInteractive)',
+  `
+Add-Type -AssemblyName System.Windows.Forms
+[Console]::Out.Write([System.Windows.Forms.SystemInformation]::UserInteractive)
+`,
   15_000,
 )
 if (desktop.erro) falhou(desktop.erro.message)

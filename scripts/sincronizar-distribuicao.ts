@@ -65,6 +65,12 @@ const SUPORTE = [
   'scripts/esperar-porta.mjs',
   'scripts/porta.mjs',
 
+  // O diagnostico do seletor de arquivos, que `PD-06` manda rodar NA MAQUINA DO
+  // OPERADOR quando o dialogo de `H-37` nao abre. Ficou de fora ate 31/08/2026,
+  // e o efeito foi medido la: a ferramenta que isola o unico defeito conhecido
+  // da pendencia nao existia na maquina onde o defeito acontece.
+  'scripts/diagnostico-seletor.mjs',
+
   // A interface: o HTML hospedeiro, a configuracao do Vite e os tipos dele.
   // O CSS nao entra aqui — `main.tsx` o importa, e o fecho o alcanca.
   'web/index.html',
