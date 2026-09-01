@@ -18,12 +18,26 @@ delas não existe dentro de um arquivo, é a diferença entre arquivos.
 em disco e sem consumidores. O revisor declarou isso por conta própria, o que é
 o comportamento correto.
 
-> **Três dos 14 já foram fechados**, em `H-65`, porque caíam em arquivo que a
-> história estava tocando — `ACHADO 3` (faixa do alerta sob `forced-colors`),
-> `ACHADO 8` (glifo do chip, 4,38:1) e `ACHADO 13` (o popover a 320 px, que
-> virou o procedimento `VN-1/POPOVER`). O registro deles está em
-> `docs/redesign/VERIFICACAO.md`. **Os 11 restantes seguem abertos**, e este
-> documento é o lugar deles.
+> **Os 14 estão fechados, e este documento é o registro de como.**
+>
+> **Três fecharam em `H-65`**, por caírem em arquivo que a história estava
+> tocando — `ACHADO 3` (faixa do alerta sob `forced-colors`), `ACHADO 8` (glifo
+> do chip, 4,38:1) e `ACHADO 13` (o popover a 320 px, que virou o procedimento
+> `VN-1/POPOVER`). O registro está em `docs/redesign/VERIFICACAO.md`.
+>
+> **Dez viraram `E12`**, executado em 01/09/2026 nas quatro ondas que o plano
+> abaixo desenha — `H-73` a `H-76`. **`ACHADO 14` não virou história**: o
+> próprio revisor o marca como não normativo, e aposentar dois degraus de
+> espaçamento com 2 e 3 ocorrências é arrumação, não correção.
+>
+> **Três correções propostas estavam certas no diagnóstico e erradas no
+> remédio**, e a medição de cada uma está no bloco `✅ CONCLUÍDA` da história:
+>
+> | Achado | O que a medição mudou |
+> |---|---|
+> | **2** | `<SeverityIcon tone="warning"/>` renderiza o **círculo**, e colapsaria os dois glifos da fila de alertas — urgente e não urgente com o mesmo desenho. O triângulo ficou; só a faixa mudou, de 1,60:1 para **5,92:1** e **8,93:1** |
+> | **6** | Alinhar os nomes por `aria-label` violaria `SC 2.5.3`, que exige que o nome acessível **contenha** o texto visível. Quem se acomodou ao rótulo canônico foi a frase |
+> | **12** | Não era "a tabela trunca": dos **3591** valores de texto livre, **81** eram cortados e **80 estavam numa coluna só**. Alargar o teto de Navio resolveu sem desfazer a densidade de 40 px que `break-words` teria custado |
 
 ## Aferição do método, executada pelo revisor antes de qualquer razão
 
@@ -46,7 +60,7 @@ razões saem deles diretamente.
   presente.** 44 tokens de cor com par escuro. `C01` e `D01` não estão violadas
   por construção.
 
-## Os 11 achados abertos
+## Os 11 achados que sobraram para `E12` — todos fechados
 
 | # | Regra | Onde | O quê |
 |---|---|---|---|
@@ -112,20 +126,27 @@ precisam, e o par escuro já está guardado por teste.
 `ACHADO 4` recomenda extrair `@utility button-primary`, e o revisor observa que
 extraí-la antes da onda 2 congelaria um par de cor que ainda vai mudar.
 
-## Recomendação
+## Recomendação — executada em 01/09/2026
 
-**Vira um épico `E12`, com uma história por onda** — quatro histórias, 15
-arquivos distintos. É a forma que `E9`, `E10` e `E11` já tiveram, e o plano de
-ondas é a fatiação pronta.
+**Virou o épico `E12`, uma história por onda**, na ordem que a tabela acima
+desenha. É a forma que `E9`, `E10` e `E11` já tiveram, e o plano de ondas era a
+fatiação pronta.
 
-**Dois têm precedência sobre o resto**, e por motivos diferentes:
+| Onda | História | Achados |
+|---|---|---|
+| 2 | `H-73` — a faixa de severidade no token certo | 2 |
+| 3 | `H-74` — as quatro correções locais | 1, 9, 10, 11 |
+| 4 | `H-75` — um papel de UI, uma forma e um nome | 4, 5, 6, 7 |
+| 5 | `H-76` — a coluna Navio cabe no que ela mostra | 12 |
 
-- **`ACHADO 2`** é o único com uma razão de contraste **abaixo do piso**: 1,60:1
-  contra 3:1. As três cópias do ícone são o mesmo defeito, e a correção é
-  consumir `severityBand` e `SeverityIcon`, que já existem.
-- **`ACHADO 1`** é salto de nível de título, custa duas linhas e é falha
-  nomeada da WCAG (`F43`).
+**A ordem virou linear na execução**, e não por gosto: `App.tsx` aparece em duas
+histórias e `IngestionHealth.tsx` em duas, então ondas paralelas poriam os dois
+arquivos em duas branches ao mesmo tempo.
 
-**`ACHADO 14` não deve ser executado como reprovação** — o próprio revisor o
-marca como não normativo, e aposentar dois degraus de espaçamento com 2 e 3
-ocorrências é arrumação, não correção.
+**`ACHADO 2` teve precedência**, por ser o único com razão de contraste abaixo
+do piso — 1,60:1 contra 3:1 —, e a correção eliminou de quebra as três cópias do
+ícone.
+
+**`ACHADO 14` não foi executado**, e a decisão fica registrada: o próprio
+revisor o marca como não normativo, e aposentar dois degraus de espaçamento com
+2 e 3 ocorrências é arrumação, não correção.

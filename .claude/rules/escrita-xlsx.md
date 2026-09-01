@@ -35,28 +35,33 @@ aplicação **diz** ao operador sobre a escrita, mande a tela junto.
 Ele não tem `Edit` nem `Write`, e é invocado **sem** o raciocínio de quem
 escreveu o código: começar cego é o mecanismo, não efeito colateral.
 
-## A premissa de formato que ainda não foi confirmada — `PD-05`
+## A cadeia de cálculo, e a premissa que foi REFUTADA — `PD-05`, fechada em 01/09/2026
 
-Falta observar que o Excel emite o atributo `i` apenas na **primeira** entrada
-de `xl/calcChain.xml`, com as seguintes herdando a aba. É o que a especificação
-OOXML descreve e o que `removeFromCalcChain` pressupõe ao repassar o índice, mas
-nunca foi visto num arquivo que o Excel tenha gerado sozinho — as três entradas
-de `tests/fixtures/formulas.xlsx` foram escolhidas por nós.
+A pendência supunha que o Excel emite o atributo `i` apenas na **primeira**
+entrada de `xl/calcChain.xml`, com as seguintes herdando a aba — o que a
+especificação OOXML permite, e o que a fixture `formulas.xlsx` reproduz.
 
-**O resto já está coberto:** a fixture leva `l="1"` na segunda entrada desde
-14/08/2026 — a forma com atributo além de `r`, que era exatamente o que escondia
-o defeito de repasse do `i` —, os outros 18 componentes do zip vêm do Excel real,
-e `removeFromCalcChain` **não enumera atributos**: preserva o bloco inteiro,
-então `s`, `t` e `a` viajam junto sem tratamento. A saída foi aberta no Excel
-real em 13/08/2026, sem aviso de reparo e com o recálculo produzindo as datas
-dependentes.
+**Medido em dois arquivos que o Excel gerou sozinho, e os dois refutam:**
 
-**Risco baixo, e medido:** em 17/08/2026 a planilha real não tem
-`xl/calcChain.xml` — o Excel só emite a parte quando há fórmula, e nenhuma das
-quatro abas tem uma. O código é hoje inalcançável em produção, e passa a ser
-alcançável no dia em que alguém escrever uma fórmula na aba `2026`.
+| Origem | entradas | com `i` | índices de aba |
+|---|---|---|---|
+| `Microsoft Excel` (desktop) | **705** | **705** | `1` e `3`, com `l` e `s` misturados |
+| `Microsoft Excel Online` | 2 | 2 | `1` |
 
-**Como fechar**, em dois minutos e em qualquer máquina com Excel: planilha nova,
-uma fórmula, salvar, copiar para `tests/fixtures/`. Se a via for o Excel Online,
-**confira a forma da cadeia** antes de tratar o arquivo como representativo —
-supor representatividade é o que produziu o defeito anterior.
+O Excel **repete `i` em toda entrada**. A omissão é permitida pela
+especificação, não praticada por ele.
+
+**`removeFromCalcChain` nunca dependeu da premissa, e é o que salva.** Ela só
+injeta o índice quando a entrada seguinte **não** tem o seu — a conferência que o
+`revisor-xml` pediu. Sem ela, a forma real do Excel produziria `i` **duplicado**:
+XML malformado, e o arquivo abriria pedindo reparo. `tests/io/xlsx-surgeon.test.ts`
+cobre as duas formas, e a mutação que remove a conferência reprova as duas.
+
+**Nenhuma fixture nova foi versionada, e a razão é dado pessoal.** O arquivo do
+Excel Online que teria servido — saída da nossa própria fixture, reaberta e
+salva pelo Excel — carrega comentário encadeado com nome de pessoa. A evidência
+está na medição e no teste de regressão, não num artefato novo.
+
+**A fixture `formulas.xlsx` continua com a forma de herança de propósito**: é
+ela que exercita o repasse do índice ponta a ponta, e a especificação a permite.
+O que mudou é que agora se sabe que ela **não** é a forma que o Excel emite.

@@ -521,6 +521,49 @@ describe('applyCellEdits — achados da revisão adversarial', () => {
     expect(cadeia).toContain('<c r="A1" l="1" i="1"/>')
   })
 
+  /**
+   * **A forma que o Excel realmente emite, e ela refuta a premissa de `PD-05`**
+   * (01/09/2026).
+   *
+   * A pendência supunha que o Excel emite `i` apenas na PRIMEIRA entrada, com
+   * as seguintes herdando a aba — o que a especificação OOXML permite. Medido em
+   * dois arquivos que o Excel gerou sozinho, um do **desktop** e outro do
+   * **Excel Online**: os dois emitem `i` em **todas** as entradas. O do desktop
+   * tem **705 entradas, 705 com `i`**, em dois índices de aba (`1` e `3`) e com
+   * `l` e `s` misturados.
+   *
+   * A entrada deste teste reproduz essa forma. **Nenhum `i` é injetado**, porque
+   * cada entrada já tem o seu — e injetar produziria atributo duplicado, que é
+   * XML malformado e o Excel recusaria com pedido de reparo.
+   *
+   * O caso da herança continua coberto pelos testes acima: a especificação
+   * permite omitir `i`, e um formatador ou outro produtor pode fazê-lo.
+   */
+  it('preserva a cadeia na forma que o Excel emite — `i` em toda entrada', () => {
+    const comoOExcelEmite =
+      '<c r="L57" i="3" l="1"/><c r="N9" i="3"/><c r="F57" i="3"/>' +
+      '<c r="K51" i="3" s="1"/><c r="I3" i="1"/><c r="I4" i="1"/>'
+    const comCadeia = withEntry(
+      fixture('formatado.xlsx'),
+      CALC_CHAIN_PATH,
+      '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+        `<calcChain xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">${comoOExcelEmite}</calcChain>`,
+    )
+
+    const { buffer } = applyCellEdits(
+      comCadeia,
+      [{ sourceRow: 9, column: 'N', value: 'VALOR FIXO' }],
+      SHEET_PATH,
+    )
+    const cadeia = textOf(buffer, CALC_CHAIN_PATH)
+
+    expect(cadeia).not.toContain('r="N9"')
+    // As cinco restantes intactas, e nenhuma com `i` duplicado.
+    expect(cadeia).toContain('<c r="L57" i="3" l="1"/><c r="F57" i="3"/>')
+    expect(cadeia).toContain('<c r="K51" i="3" s="1"/><c r="I3" i="1"/><c r="I4" i="1"/>')
+    expect(/i="[^"]*"[^>]*i="/.test(cadeia)).toBe(false)
+  })
+
   // A seguinte com `i` proprio nao herda nada: sobrescreve-lo trocaria a aba
   // dela, que e o mesmo defeito na direcao oposta.
   it('não sobrescreve o `i` próprio da entrada seguinte', () => {
