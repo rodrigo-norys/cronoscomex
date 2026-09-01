@@ -27,8 +27,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização ✅ | **H-39 … H-47 e H-67 … H-72, todas concluídas** | 7 | 8 | 0 |
 | E10 — As melhorias de uso ✅ | **H-48 … H-56 e H-66, todas concluídas.** `H-50` é a única G do backlog | 2 | 7 | 1 |
-| E11 — A casca redesenhada | **H-57 ✅ … H-62 ✅; H-63, H-64 e H-65 abertas** | 3 | 6 | 0 |
-| **Total** | **72** — 69 concluídas, 3 abertas | **28** | **43** | **1** |
+| E11 — A casca redesenhada | **H-57 ✅ … H-63 ✅; H-64 e H-65 abertas** | 3 | 6 | 0 |
+| **Total** | **72** — 70 concluídas, 2 abertas | **28** | **43** | **1** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -158,7 +158,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-60 — Os quatorze filtros como chips em popover](#h-60) ✅
 - [H-61 — Forma, densidade e número nos componentes de dado](#h-61) ✅
 - [H-62 — Forma e número na superfície de edição e no detalhe](#h-62) ✅
-- [H-63 — Forma e número nas sete páginas, e a guarda de forma](#h-63)
+- [H-63 — Forma e número nas sete páginas, e a guarda de forma](#h-63) ✅
 - [H-64 — Movimento curto, com a redução nascendo junto](#h-64)
 - [H-65 — Percorrer os procedimentos de navegador nos dois esquemas](#h-65)
 
@@ -7935,6 +7935,47 @@ dois raios, a elevação por borda e o mono onde há número.
 <a id="h-63"></a>
 
 ### H-63 — Forma e número nas sete páginas, e a guarda de forma
+
+> ✅ **CONCLUÍDA em 01/09/2026.** **6 asserções próprias** em
+> `tests/repo/estilo.test.ts` — as quatro que a história pede, mais a âncora de
+> regex e a de densidade. Suíte total de **1693 para 1698**. **A onda 3 fecha
+> aqui.**
+>
+> **Os dois raios, medidos no navegador e não no código.** Percorridas as sete
+> rotas em Chrome 151, `getComputedStyle` sobre todo elemento de `main`, `nav` e
+> `header`: **os raios distintos do conjunto inteiro são `6px` e `12px`** —
+> contra as 81 ocorrências que `docs/estilizacao/RESULTADO.md` mediu, 77 delas
+> no mesmo valor de 4 px. **Zero sombras e zero estouros** nas mesmas sete.
+>
+> **A guarda entra aqui porque só aqui pode passar.** Ela foi escrita em `H-61`
+> e nascia vermelha: sobravam 47 `rounded`, 2 `rounded-sm` e 1 `rounded-lg` em
+> 17 arquivos. Esta fatia converteu os últimos **26**, em 11 arquivos, e as
+> quatro asserções **reprovam sob mutação** — raio solto, sombra, peso acima de
+> 600 e fonte em unidade absoluta, cada uma injetada em `Home.tsx` e cada uma
+> reprovando a sua.
+>
+> **O único `font-bold` do conjunto era um comentário meu**, de `H-58`,
+> afirmando que havia zero. A guarda passou a exigir o contexto de utilitário —
+> `className=` ou `@apply` —, porque contar prosa faria ela reprovar a própria
+> documentação. É a segunda vez na sessão que um `grep` de critério casa a
+> explicação em vez do defeito.
+>
+> **A densidade não tinha chegado a Performance e History**, e a medição
+> mostrou: **29 px** contra os 40 de `H-61`. Corrigido, as **seis** tabelas do
+> conjunto medem 40 px, todas dentro do invólucro de rolagem de `R01`.
+>
+> **Um erro meu que a medição pegou, e que vale registrar:** rodei
+> `npm run build >/dev/null 2>&1`, o build **falhou** com erro de sintaxe — um
+> comentário JSX posto como primeiro filho de um `map` —, e eu continuei medindo
+> a build anterior por três rodadas. O sintoma era `h-10` no código e 29 px na
+> tela. **Silenciar a saída de um comando que pode falhar é o que transformou um
+> erro de dois minutos em três medições enganosas.**
+>
+> **Os quatro casos-limite conferidos:** o `style={{}}` de `RankingBar`
+> sobreviveu — a guarda olha utilitário, não atributo —; a pílula de canal segue
+> exceção declarada, reconhecida pelo nome do utilitário; o gráfico lê os tokens
+> por `var()`, como `H-42` deixou; e as páginas vazias seguem com estado vazio
+> afirmativo.
 
 **Objetivo:** fechar a onda 3 com as sete páginas na forma nova, e impedir que o
 raio solto e a sombra voltem.
