@@ -1,4 +1,4 @@
-import { readdirSync, readFileSync } from 'node:fs'
+import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 /**
@@ -388,5 +388,79 @@ describe('SC 1.4.10 — trilha de grid explícita encolhe até zero', () => {
     })
 
     expect(rigidas.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
+  })
+})
+
+/**
+ * `H-58`, RNF-34 e RNF-43. Nenhuma origem externa em `web/`.
+ *
+ * **O modo de falha é o silêncio.** Uma fonte por CDN não quebra a tela: ela
+ * cai para a pilha do sistema, sem erro nenhum, e a interface simplesmente
+ * parece outra. A máquina do operador pode estar sem internet — é um dos
+ * caminhos infelizes de `PD-06` —, e nesse cenário o defeito só apareceria como
+ * "a tipografia está estranha", meses depois.
+ *
+ * O escopo inclui `web/index.html`, que `interfaceFiles()` não alcança: ele não
+ * é `.ts` nem `.tsx`, e é exatamente onde um `<link rel="stylesheet">` para
+ * `fonts.googleapis.com` entraria.
+ */
+const ORIGEM_EXTERNA = /https?:\/\/(?!localhost|127\.0\.0\.1)/
+
+describe('RNF-34 — nenhuma origem externa na interface', () => {
+  const html = readFileSync('web/index.html', 'utf-8')
+
+  it('a regex reconhece a origem externa e ignora o caminho local', () => {
+    expect(ORIGEM_EXTERNA.test('<link href="https://fonts.googleapis.com/css2?family=X">')).toBe(
+      true,
+    )
+    expect(ORIGEM_EXTERNA.test('src: url("/fonts/IBMPlexSans-Regular.woff2")')).toBe(false)
+    // O harness de medição fala com o próprio servidor, e isso não é saída.
+    expect(ORIGEM_EXTERNA.test('http://127.0.0.1:5199/api/health')).toBe(false)
+  })
+
+  /**
+   * **`web/src/index.css` entra explicitamente**, e não por `interfaceFiles()`:
+   * aquele coletor só junta `.ts` e `.tsx`, e o `@font-face` mora no CSS. Sem
+   * esta linha a guarda passaria com a fonte voltando para o CDN — medido por
+   * mutação ao escrever o teste, que reprovou pela asserção errada.
+   */
+  it('nenhum arquivo de web/src cita origem externa, o CSS incluído', () => {
+    const externas = occurrencesOf(ORIGEM_EXTERNA)
+    const noCss = readFileSync('web/src/index.css', 'utf-8')
+      .split('\n')
+      .map((text, index) => ({ file: 'web/src/index.css', line: index + 1, text: text.trim() }))
+      .filter((one) => ORIGEM_EXTERNA.test(one.text))
+
+    expect([...externas, ...noCss].map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual(
+      [],
+    )
+  })
+
+  it('web/index.html não carrega nada de fora', () => {
+    const linhas = html
+      .split('\n')
+      .map((text, index) => ({ text: text.trim(), line: index + 1 }))
+      .filter((one) => ORIGEM_EXTERNA.test(one.text))
+
+    expect(linhas.map((one) => `web/index.html:${one.line} — ${one.text}`)).toEqual([])
+  })
+
+  /**
+   * As seis faces existem em disco. Sem esta asserção, apagar um `.woff2` da
+   * distribuição passaria — o `@font-face` continuaria declarado, o navegador
+   * cairia na reserva, e nada reclamaria.
+   */
+  it('cada @font-face aponta para um arquivo que existe', () => {
+    const css = readFileSync('web/src/index.css', 'utf-8')
+    const urls = [...css.matchAll(/url\("(\/fonts\/[^"]+)"\)/g)].map((one) => one[1] as string)
+
+    expect(urls).toHaveLength(6)
+    expect(urls.filter((url) => !existsSync(`web/public${url}`))).toEqual([])
+  })
+
+  // O repositório vai a público, e IBM Plex é OFL: a licença acompanha.
+  it('a licença acompanha os arquivos de fonte', () => {
+    expect(existsSync('web/public/fonts/LICENSE.txt')).toBe(true)
+    expect(readFileSync('web/public/fonts/LICENSE.txt', 'utf-8')).toContain('SIL OPEN FONT LICENSE')
   })
 })

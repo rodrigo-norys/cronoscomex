@@ -188,7 +188,7 @@ Todos os valores abaixo, exceto RNF-02, têm origem **medido**. Detalhe em
 | RNF-29 | Interface de rede do servidor | Apenas `127.0.0.1`. O processo **não** escuta em interface externa | Decisão de segurança, ADR-0002 |
 | RNF-30 | Fuso horário de todo cálculo de data | `America/Sao_Paulo` | Decisão, A-07 — P-10 |
 | RNF-42 | Esquemas de cor da interface | **Dois** — claro e escuro, escolhidos por `prefers-color-scheme`. Sem alternância manual. Entregue em `H-57`: **44 tokens de cor**, todos com par, e `tests/repo/estilo.test.ts` reprova quem declarar um só. Medido no navegador nos dois esquemas, **zero reprovações** de contraste | **medido**, D-21 |
-| RNF-43 | Origem das fontes da interface | **O próprio repositório** (`web/public/fonts/`), com `@font-face` local. Nenhuma requisição a CDN | Derivado de RNF-34 e RNF-31 |
+| RNF-43 | Origem das fontes da interface | **O próprio repositório** (`web/public/fonts/`), com `@font-face` local. Nenhuma requisição a CDN. Entregue em `H-58`: IBM Plex Sans e Mono, pesos 400/500/600, **347 KB**, licença OFL 1.1 ao lado. Medido no navegador: **zero** requisições externas, `Content-Type: font/woff2` | **medido**, derivado de RNF-34 e RNF-31 |
 
 ### 2.7. Segurança e privacidade
 

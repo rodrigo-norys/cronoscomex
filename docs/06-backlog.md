@@ -27,8 +27,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização ✅ | **H-39 … H-47 e H-67 … H-72, todas concluídas** | 7 | 8 | 0 |
 | E10 — As melhorias de uso ✅ | **H-48 … H-56 e H-66, todas concluídas.** `H-50` é a única G do backlog | 2 | 7 | 1 |
-| E11 — A casca redesenhada | **H-57 ✅, H-59 ✅, H-60 ✅; H-58 e H-61 … H-65 abertas** | 3 | 6 | 0 |
-| **Total** | **72** — 66 concluídas, 6 abertas | **28** | **43** | **1** |
+| E11 — A casca redesenhada | **H-57 ✅, H-58 ✅, H-59 ✅, H-60 ✅; H-61 … H-65 abertas** | 3 | 6 | 0 |
+| **Total** | **72** — 67 concluídas, 5 abertas | **28** | **43** | **1** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -153,7 +153,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 **[Épico E11 — A casca redesenhada](#e11)**
 
 - [H-57 — O par escuro da camada de tema](#h-57) ✅
-- [H-58 — As duas famílias de fonte, servidas do repositório](#h-58)
+- [H-58 — As duas famílias de fonte, servidas do repositório](#h-58) ✅
 - [H-59 — Navegação lateral e topo de uma linha](#h-59) ✅
 - [H-60 — Os quatorze filtros como chips em popover](#h-60) ✅
 - [H-61 — Forma, densidade e número nos componentes de dado](#h-61)
@@ -7400,6 +7400,57 @@ escolhendo qual vale, sem que nenhum componente mude de linha.
 <a id="h-58"></a>
 
 ### H-58 — As duas famílias de fonte, servidas do repositório
+
+> ✅ **CONCLUÍDA em 01/09/2026.** **5 testes próprios** em
+> `tests/repo/estilo.test.ts`. Suíte total de **1678 para 1683**, sem nenhum
+> caso existente ajustado. **Sete arquivos versionados** em
+> `web/public/fonts/` — seis `.woff2` e o `LICENSE.txt` —, **347 KB**.
+>
+> **Ela ficou bloqueada por um dia, e o motivo era ambiental.** `curl` e `wget`
+> estão no `deny` de `.claude/settings.json`, a IBM Plex não está instalada
+> nesta máquina, e `@fontsource` é dependência que o backlog recusa — não havia
+> caminho para obter os binários. **O dono os baixou**, e a história saiu como
+> `P`, no tamanho declarado. Contornar a negação por `node -e "fetch(…)"` teria
+> funcionado e foi recusado: a negação existe para que nenhuma via de rede passe
+> sem portão (`D-19`), e escolher qual respeitar a esvazia.
+>
+> **Os dois casos-limite já eram verdade, e foram medidos:** o conjunto tem
+> **zero** `font-bold` e **zero** `italic`. O teto de 600 e a ausência de
+> itálico não custam nada hoje — e declarar só os pesos que existem em arquivo
+> evita que o navegador **sintetize** o que falta, engordando o traço.
+>
+> **Medido no navegador, com a aplicação servindo a build:**
+>
+> - **zero requisições externas** — todas as `.woff2` saem do próprio origin
+> - servidas com `Content-Type: font/woff2` e a assinatura `wOF2` nos quatro
+>   primeiros bytes, isto é, o arquivo chega íntegro e não é HTML de erro
+> - `document.fonts` reporta as seis faces; o `h1` computa
+>   `font-family: "IBM Plex Sans"`
+> - a largura de `CronosComex 0123456789` mede **199,87 px** na Plex contra
+>   **195,69 px** na reserva — se a fonte não tivesse carregado, as duas seriam
+>   iguais
+> - `IBM Plex Mono` 500 e 600 ficam `unloaded`, e isso está **certo**: nenhum
+>   elemento os usa ainda. O 400 já carrega, porque `Placeholders.tsx` e
+>   `WorkbookSetup.tsx` usam `font-mono`. `H-61` a `H-63` acordam os outros dois
+>
+> **Uma mutação revelou falha na própria guarda, e é o achado desta fatia.**
+> Trocar o `url()` local por `fonts.gstatic.com` reprovou — mas **pelo teste
+> errado**, o de existência do arquivo. A razão: `interfaceFiles()` só coleta
+> `.ts` e `.tsx`, e o `@font-face` mora em `web/src/index.css`. A guarda de
+> origem externa **não cobria o CSS**, que é justamente onde um CDN entraria.
+> Corrigida, ela passou a reprovar pelos dois.
+>
+> **O `grep` do primeiro critério devolve uma linha, e ela é prosa.** É o
+> comentário de `index.css` explicando que o mockup carrega de
+> `fonts.googleapis.com` e o produto não pode. Não é requisição, e a guarda
+> distingue: ela exige `https?://`.
+>
+> **O 200 em `/fonts/NaoExiste.woff2` não é defeito**, e foi conferido com
+> controle: `.js` inexistente e rota de SPA devolvem o mesmo. É o catch-all de
+> `static.ts`, deliberado — *"o servidor não conhece as rotas do cliente, e não
+> deve conhecer"*. O efeito prático está correto: a fonte ausente chega como
+> `text/html`, o navegador recusa decodificar, e o `font-display: swap` cai na
+> reserva.
 
 **Objetivo:** IBM Plex Sans e IBM Plex Mono disponíveis sem rede, com a pilha
 declarada em token e nenhuma requisição externa.

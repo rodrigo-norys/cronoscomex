@@ -128,20 +128,19 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**66 das 72 histórias concluídas.** O que cada uma aprendeu — número medido,
+**67 das 72 histórias concluídas.** O que cada uma aprendeu — número medido,
 defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
 `docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
 em aberto. **Este bloco diz só o que está aberto.**
 
 **`E9` e `E10` fecharam em 01/09/2026.** Resta **um épico**:
 
-- **`E11` — Casca redesenhada.** `H-57` ✅, `H-59` ✅ e `H-60` ✅; restam `H-58` e
-  `H-61` a `H-65`. **A paleta está entregue e medida** — as seis correções de
-  `docs/redesign/PROPOSTA.md §2.2` entraram em `H-57`, e o risco `R-16` fechou.
-  **`H-58` está bloqueada por falta dos `.woff2` da IBM Plex**: `curl` e `wget`
-  são negados, a fonte não existe na máquina, e `@fontsource` é dependência que
-  o plano recusa. Ela **não** bloqueia `H-60` a `H-65`, que não tocam
-  tipografia — a dependência no grafo do épico é de onda, não de conteúdo.
+- **`E11` — Casca redesenhada.** A onda 1 e a onda 2 fecharam — `H-57`, `H-58`,
+  `H-59` e `H-60` —, e restam `H-61` a `H-65`, **nenhuma bloqueada**. `H-61` e
+  `H-62` podem sair em paralelo. A paleta está entregue e medida: as seis
+  correções de `docs/redesign/PROPOSTA.md §2.2` entraram em `H-57`, e o risco
+  `R-16` fechou. As duas famílias vivem em `web/public/fonts/` desde `H-58` —
+  **nenhuma requisição externa**, e o `LICENSE.txt` da OFL acompanha.
 
 **A medição no navegador é `tools/medir-navegador.mjs`**, versionada em
 01/09/2026 depois de ser reconstruída do zero em duas sessões. Ela sobe a

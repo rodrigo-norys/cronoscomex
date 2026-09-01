@@ -1,6 +1,71 @@
 @import "tailwindcss";
 
 /**
+ * As duas familias, servidas do PROPRIO repositorio (`H-58`, RNF-43).
+ *
+ * **O mockup carrega de `fonts.googleapis.com`, e o produto nao pode.**
+ * RNF-34 proibe CDN e telemetria, RNF-31 diz que nenhum dado sai da maquina em
+ * execucao, e a maquina do operador pode estar sem internet — e um dos caminhos
+ * infelizes de `PD-06`. Fonte por CDN falharia **calada**: a tipografia cairia
+ * para a pilha do sistema sem erro nenhum, e ninguem saberia.
+ *
+ * **Sem dependencia npm.** Os `.woff2` sao versionados em `web/public/fonts/` e
+ * o `@font-face` e escrito a mao; `@fontsource` resolveria o mesmo com uma
+ * dependencia que o plano nao preve. `LICENSE.txt` acompanha os arquivos —
+ * IBM Plex e OFL 1.1, e o repositorio vai a publico.
+ *
+ * **Tres pesos, e nao quatro.** 400, 500 e 600. O teto e decisao da proposta, e
+ * hoje ja e verdade: medido em 01/09/2026, o conjunto tem **zero** `font-bold`
+ * e **zero** `italic`. Peso que nao existe em arquivo o navegador sintetiza,
+ * engordando o traco — declarar so o que existe evita isso.
+ *
+ * `font-display: swap`, nunca `block`: `block` esconde o texto durante a carga,
+ * que e regressao de percepcao sem ganho nenhum.
+ */
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("/fonts/IBMPlexSans-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("/fonts/IBMPlexSans-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("/fonts/IBMPlexSans-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/IBMPlexMono-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/IBMPlexMono-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/IBMPlexMono-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/**
  * Camada de tema (`H-39`), com o par escuro de cada cor (`H-57`).
  *
  * Todo utilitario de cor do conjunto passa por aqui: nenhum `.tsx` volta a
@@ -147,6 +212,20 @@
    * Dois raios e nada entre eles (`D-22`). `--ease-brand` e nao `--ease` porque
    * `--ease-*` e namespace do Tailwind: sem sufixo ele nao gera utilitario.
    */
+  /*
+   * A pilha de reserva e REAL, e nao `sans-serif` sozinho: a fonte pode nao
+   * carregar — arquivo removido da distribuicao, cache frio, disco lento —, e o
+   * que o operador ve nesse caso e a reserva. `ui-sans-serif` e `ui-monospace`
+   * pedem a fonte de INTERFACE do sistema, que e o que a casca quer; os nomes
+   * seguintes cobrem o Windows do operador e o Linux daqui.
+   */
+  --font-sans:
+    "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  --font-mono:
+    "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+
   --radius-control: 6px;
   --radius-container: 12px;
 
