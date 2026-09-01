@@ -8,6 +8,7 @@ import {
   responsibleRanking,
 } from '../../src/domain/indicators.ts'
 import { normKey } from '../../src/domain/normalizer.ts'
+import { knownResponsibles } from '../../src/domain/team-mapper.ts'
 import type { Process, Responsible, StatusCategory } from '../../src/domain/types.ts'
 
 /** Data civil ancorada em UTC, como as vindas da planilha (TD-03). */
@@ -68,6 +69,8 @@ function process({
     goodsKey: normKey(goods),
     statusCategory,
     responsible,
+    responsibleLabel: responsible,
+    colorResponsible: 'indefinido',
     customsChannel: 'indefinido',
     importerOutsideRj: null,
     styleKey: 'none',
@@ -235,9 +238,17 @@ describe('agentRanking — IND-17 com overdueCount (A-27)', () => {
   })
 })
 
-describe('responsibleRanking — IND-20 com as quatro chaves (A-28)', () => {
-  it('devolve as quatro chaves, inclusive as zeradas', () => {
-    const lista = responsibleRanking([process({ responsible: 'colaborador1' })])
+describe('responsibleRanking — IND-20 com as chaves conhecidas (A-28)', () => {
+  // As chaves vem do mapa de equipe, e nao dos processos: `H-50`. Sem mapa, o
+  // dominio e o das cores, que e o estado de `D-23`.
+  const semMapa = knownResponsibles([])
+  const comMapa = knownResponsibles([
+    { key: 'membro1', label: 'Membro 1', importers: ['ACME'], colorResponsible: [] },
+    { key: 'membro2', label: 'Membro 2', importers: ['BETA'], colorResponsible: [] },
+  ])
+
+  it('devolve as quatro chaves de cor sem mapa de equipe, inclusive as zeradas', () => {
+    const lista = responsibleRanking([process({ responsible: 'colaborador1' })], semMapa)
 
     expect(lista.map((g) => g.key).sort()).toEqual([
       'colaborador1',
@@ -248,32 +259,51 @@ describe('responsibleRanking — IND-20 com as quatro chaves (A-28)', () => {
     expect(lista.find((g) => g.key === 'colaborador2')?.count).toBe(0)
   })
 
-  // O peso de 'indefinido' mede quanto da planilha nao tem responsavel
-  // identificavel pela cor. Escondê-lo faria o ranking parecer completo.
-  it('mantem indefinido visivel e ordenado por contagem', () => {
-    const lista = responsibleRanking([
-      process({ responsible: 'indefinido' }),
-      process({ responsible: 'indefinido' }),
-      process({ responsible: 'colaborador1' }),
-    ])
+  // O peso da chave vazia mede quanto da planilha nao tem dono — o papel que
+  // 'indefinido' cumpria ate `H-50`. Escondê-la faria o ranking parecer completo.
+  it('mantem a chave sem responsavel visivel e ordenada por contagem', () => {
+    const lista = responsibleRanking(
+      [
+        process({ responsible: '' }),
+        process({ responsible: '' }),
+        process({ responsible: 'membro1' }),
+      ],
+      comMapa,
+    )
 
-    expect(lista[0]).toMatchObject({ key: 'indefinido', count: 2 })
-    expect(lista[1]).toMatchObject({ key: 'colaborador1', count: 1 })
+    expect(lista[0]).toMatchObject({ key: '', label: 'Sem responsável', count: 2 })
+    expect(lista[1]).toMatchObject({ key: 'membro1', count: 1 })
   })
 
-  // O filtro faz o oposto (A-18); o ranking mostra a distribuicao real.
-  it('mantem colaborador1 e colaborador1_outros_clientes separadas', () => {
-    const lista = responsibleRanking([
-      process({ responsible: 'colaborador1' }),
-      process({ responsible: 'colaborador1_outros_clientes' }),
-    ])
+  // O caso-limite de `H-50`: pessoa declarada no mapa e sem processo algum
+  // aparece, pela mesma razao de A-28.
+  it('exibe com zero a pessoa do mapa que nao tem processo', () => {
+    const lista = responsibleRanking([process({ responsible: 'membro1' })], comMapa)
 
-    expect(lista.find((g) => g.key === 'colaborador1')?.count).toBe(1)
-    expect(lista.find((g) => g.key === 'colaborador1_outros_clientes')?.count).toBe(1)
+    expect(lista.find((g) => g.key === 'membro2')).toEqual({
+      key: 'membro2',
+      label: 'Membro 2',
+      count: 0,
+    })
   })
 
-  it('devolve as quatro chaves zeradas para conjunto vazio', () => {
-    const lista = responsibleRanking([])
+  // O rotulo do processo cobre a chave que o mapa nao declara — mapa trocado
+  // entre a leitura e o pedido. Nunca a chave crua na tela.
+  it('usa o rotulo do processo para chave fora do mapa', () => {
+    const lista = responsibleRanking(
+      [{ ...process({ responsible: 'membro3' }), responsibleLabel: 'Membro 3' }],
+      comMapa,
+    )
+
+    expect(lista.find((g) => g.key === 'membro3')).toEqual({
+      key: 'membro3',
+      label: 'Membro 3',
+      count: 1,
+    })
+  })
+
+  it('devolve as chaves conhecidas zeradas para conjunto vazio', () => {
+    const lista = responsibleRanking([], semMapa)
 
     expect(lista).toHaveLength(4)
     expect(lista.every((g) => g.count === 0)).toBe(true)

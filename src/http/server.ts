@@ -16,6 +16,7 @@ import { loadTeamMap, TeamMapError } from '../app/team-map-loader.ts'
 import { initWriteGuard, retargetWatcher } from '../app/write-guard.ts'
 import type { ClientGroup } from '../domain/client-mapper.ts'
 import type { ColorMapEntry } from '../domain/color-mapper.ts'
+import type { TeamMember } from '../domain/team-mapper.ts'
 import { createWatcher, DEFAULT_DEBOUNCE_MS, type Watcher } from '../io/watcher.ts'
 import { registerAlertsRoute } from './routes/alerts.ts'
 import { registerApplyRoute } from './routes/apply.ts'
@@ -89,6 +90,12 @@ export function buildServer(
    * inteiro.
    */
   queuePath?: string,
+  /**
+   * Mapa de equipe (`H-48`), para as rotas de indicadores e de opcoes exibirem
+   * a pessoa sem processo algum (`H-50`, A-28). Padrao vazio pelo mesmo motivo
+   * de `clientGroups`: `team-map.json` e estado real do operador.
+   */
+  teamMap: readonly TeamMember[] = [],
 ): FastifyInstance {
   // Silencioso sob teste: a saida do Vitest e o relatorio, nao o log do servidor.
   const app = Fastify({
@@ -99,9 +106,9 @@ export function buildServer(
   registerConfigRoutes(app, config, store, applyWorkbookPath, configPath, openDialog, webRoot)
   registerQuarantineRoute(app)
   registerReloadRoute(app, store)
-  registerIndicatorsRoute(app, config, store, clientGroups)
+  registerIndicatorsRoute(app, config, store, clientGroups, teamMap)
   registerAlertsRoute(app, config, store, historyPath)
-  registerFilterOptionsRoute(app, store, clientGroups)
+  registerFilterOptionsRoute(app, store, clientGroups, teamMap)
   registerProcessesRoute(app, config, store, historyPath)
   registerHistoryRoute(app, config, store, historyPath)
   registerEditsRoutes(app, store, queuePath)
@@ -139,6 +146,8 @@ async function main(): Promise<void> {
   // Fora do `try` pelo mesmo motivo do mapa de cor: a rota de opcoes, montada
   // abaixo, precisa dos MESMOS grupos que o store recebeu.
   let clientGroups: readonly ClientGroup[]
+  // Idem: as duas rotas precisam do MESMO mapa de equipe que o store recebeu.
+  let teamMap: readonly TeamMember[]
   try {
     config = loadConfig()
     logger = createLogger({ timezone: config.timezone })
@@ -156,13 +165,14 @@ async function main(): Promise<void> {
     // Clientes com o campo silenciosamente sem consolidacao.
     const clientMap = loadClientMap()
     clientGroups = clientMap.groups
+    teamMap = loadTeamMap()
     initStore({
       config,
       colorMap,
       statusAliases: loadStatusAliases(),
       clientMap: clientMap.clients,
       clientGroups: clientMap.groups,
-      teamMap: loadTeamMap(),
+      teamMap,
       logger,
     })
   } catch (error) {
@@ -188,6 +198,8 @@ async function main(): Promise<void> {
     undefined,
     undefined,
     clientGroups,
+    undefined,
+    teamMap,
   )
 
   try {

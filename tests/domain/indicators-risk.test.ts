@@ -63,6 +63,8 @@ function process({
     goodsKey: '',
     statusCategory,
     responsible: 'indefinido',
+    responsibleLabel: 'Indefinido',
+    colorResponsible: 'indefinido',
     customsChannel,
     importerOutsideRj: null,
     styleKey: 'none',

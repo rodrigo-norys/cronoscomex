@@ -12,8 +12,9 @@ Sem autenticação (RNF-32): o processo escuta somente em loopback (RNF-29).
 
 ### 1.1. Filtros globais
 
-Treze parâmetros de consulta, todos opcionais, aplicáveis às rotas marcadas
-**[F]**. Quando ausentes, nenhum filtro é aplicado. Valores múltiplos são
+Catorze parâmetros de consulta, todos opcionais, aplicáveis às rotas marcadas
+**[F]**. Eram treze até `H-50`, que separou a pessoa responsável do que a cor
+diz. Quando ausentes, nenhum filtro é aplicado. Valores múltiplos são
 repetidos (`?client=A&client=B`) e combinados em **OU** dentro do mesmo
 parâmetro, **E** entre parâmetros distintos.
 
@@ -29,7 +30,8 @@ parâmetro, **E** entre parâmetros distintos.
 | `agent` | `string[]` | Chave normalizada de AGENTE |
 | `goods` | `string[]` | Chave normalizada de MERCADORIA |
 | `category` | `string[]` | `desembaracado` · `em_desembaraco` · `em_andamento` · `fechado_aguardando_draft` |
-| `responsible` | `string[]` | `colaborador1` · `colaborador2` · `colaborador1_outros_clientes` · `indefinido`. O valor `colaborador1` seleciona **também** `colaborador1_outros_clientes` (A-18) |
+| `responsible` | `string[]` | Chave da **pessoa** responsável (`H-50`), vinda de `config/team-map.json`. **Domínio aberto** (A-36): a lista não é versionada, e valor desconhecido devolve conjunto vazio com `200`, nunca `400`. `''` seleciona os processos sem responsável. Sem mapa de equipe, as chaves são as quatro de `colorResponsible` (`D-23`) |
+| `colorResponsible` | `string[]` | `colaborador1` · `colaborador2` · `colaborador1_outros_clientes` · `indefinido` — o que a **cor da linha** diz (`H-50`). O valor `colaborador1` seleciona **também** `colaborador1_outros_clientes` (A-18): a regra migrou com o campo, porque sempre foi sobre a cor |
 | `channel` | `string[]` | `verde` · `vermelho` · `indefinido` |
 | `port` | `string[]` | Chave normalizada de ETA. Domínio aberto (A-36) |
 | `importerOutsideRj` | `boolean` | `true` · `false` |
@@ -89,7 +91,9 @@ interface ProcessDto {
   docsSentDate: string | null
   statusRaw: string              // texto original, exibido só no detalhe
   statusCategory: StatusCategory
-  responsible: Responsible
+  responsible: Responsible        // H-50 — chave da pessoa; '' quando ninguém responde
+  responsibleLabel: string        // H-50 — o nome, resolvido no servidor
+  colorResponsible: ColorResponsible  // H-50 — o que a cor da linha diz
   customsChannel: CustomsChannel
   importerOutsideRj: boolean | null
   boletoRaw: string              // fora de escopo, apenas exibição
@@ -281,7 +285,7 @@ está fora de escopo por lacuna de dado (§4 da especificação).
     "clients":     [ /* LeadTimeGroup[] */ ],  // cortada em meta.topN
     "agents":      [ /* LeadTimeGroup[] */ ],  // cortada em meta.topN
     "vessels":     [ /* LeadTimeGroup[] */ ],  // cortada em meta.topN
-    "responsible": [ /* LeadTimeGroup[] */ ],  // inteira — 4 chaves fixas (A-28)
+    "responsible": [ /* LeadTimeGroup[] */ ],  // inteira — uma por pessoa (H-50)
     "groupTotals": { "clients": 0, "agents": 0, "vessels": 0, "responsible": 0 }
   },
   "meta": {
@@ -509,7 +513,9 @@ por ele. Lista vazia quando o mapa não declara grupo nenhum.
   "clientProcesses": [ { "key": "ACME-29", "label": "ACME-29", "count": 0 } ],
   "importers": [], "vessels": [], "agents": [], "goods": [], "ports": [],
   "categories":  [ { "key": "desembaracado", "label": "Desembaraçado", "count": 0 } ],
-  "responsible": [ { "key": "colaborador1", "label": "Colaborador 1", "count": 0 } ],
+  "responsible": [ { "key": "membro1", "label": "Primeiro", "count": 0 },
+                   { "key": "", "label": "Sem responsável", "count": 0 } ],
+  "colorResponsible": [ { "key": "colaborador1", "label": "Colaborador 1", "count": 0 } ],
   "channels":    [ { "key": "vermelho", "label": "Canal Vermelho", "count": 0 } ]
 }
 ```
@@ -735,9 +741,12 @@ chaves, `anomalies`, `sourceRow`, `ref`.
 outro processo, o que a aplicação não faz — criação de linha nova está fora de
 escopo (§3.2 de `00-visao-escopo.md`).
 
-Os campos derivados de cor (`responsible`, `customsChannel`,
+Os campos derivados de cor (`colorResponsible`, `customsChannel`,
 `importerOutsideRj`) são editáveis pela rota dedicada abaixo, e **não** por
-`POST /api/edits`: eles não têm coluna própria, e a gravação é troca de estilo
+`POST /api/edits`. **`responsible` não é editável por rota nenhuma** desde
+`H-50`: ele deriva do importador contra `config/team-map.json`, e mudá-lo é
+editar o mapa. O corpo de `PATCH .../color` mantém a chave `responsible`, onde o
+contexto já é a cor: eles não têm coluna própria, e a gravação é troca de estilo
 da linha, não de valor de célula (`H-27`).
 
 ---

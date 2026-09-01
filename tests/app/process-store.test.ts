@@ -15,6 +15,7 @@ import {
 } from '../../src/app/process-store.ts'
 import { normalizeClientMap } from '../../src/domain/client-mapper.ts'
 import type { ColorMapEntry } from '../../src/domain/color-mapper.ts'
+import { normalizeTeamMap } from '../../src/domain/team-mapper.ts'
 import type { RawRow } from '../../src/domain/types.ts'
 import type { ReadResult } from '../../src/io/xlsx-reader.ts'
 
@@ -700,5 +701,58 @@ describe('initStore — o mapa de clientes chega a composicao', () => {
     const [process] = getState().processes
     expect(process?.clientKey).toBe('ACM-29')
     expect(process?.clientLabel).toBe('ACM-29')
+  })
+})
+
+/**
+ * `H-50`. O mapa de equipe precisa chegar ao `buildProcesses` — sem isso o
+ * campo Responsavel volta a ser a cor, em silencio. Mesmo modo de falha que
+ * `clientMap` teve em `H-49`.
+ */
+describe('initStore — o mapa de equipe chega a composicao (H-50)', () => {
+  const linhaComImportador = (importer: string): RawRow => ({
+    sourceRow: 2,
+    cells: {
+      A: { value: 'FT002.26', type: 'string' },
+      C: { value: importer, type: 'string' },
+    },
+    styleKey: 'none',
+  })
+
+  const lerUmaLinha = async (): Promise<ReadResult> => ({
+    rows: [linhaComImportador('IMPORTADORA UM')],
+    fileHash: `sha256:${'d'.repeat(64)}`,
+    readAt: new Date('2026-09-01T12:00:00Z'),
+    sheetName: '2026',
+    sheetPath: 'xl/worksheets/sheet1.xml',
+  })
+
+  it('atribui a pessoa quando o mapa esta presente', async () => {
+    start({
+      readWorkbookFn: lerUmaLinha,
+      teamMap: normalizeTeamMap([
+        {
+          key: 'membro1',
+          label: 'Primeiro',
+          importers: ['importadora um'],
+          colorResponsible: [],
+        },
+      ]),
+    })
+    await reload()
+
+    const [process] = getState().processes
+    expect(process?.responsible).toBe('membro1')
+    expect(process?.responsibleLabel).toBe('Primeiro')
+  })
+
+  // `D-23`: sem mapa o campo mostra o que a cor mostra, e nao fica vazio.
+  it('sem mapa, o responsavel vale a chave de cor', async () => {
+    start({ readWorkbookFn: lerUmaLinha })
+    await reload()
+
+    const [process] = getState().processes
+    expect(process?.responsible).toBe('indefinido')
+    expect(process?.colorResponsible).toBe('indefinido')
   })
 })

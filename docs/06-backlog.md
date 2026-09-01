@@ -26,9 +26,9 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização ✅ | **H-39 … H-47 e H-67 … H-72, todas concluídas** | 7 | 8 | 0 |
-| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-52 ✅, H-53 ✅, H-54 ✅, H-55 ✅, H-56 ✅; abertas `H-50` — a única G do backlog — e `H-66`, que saiu do corte dela** | 2 | 7 | 1 |
+| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-50 ✅ — a única G do backlog —, H-51 ✅, H-52 ✅, H-53 ✅, H-54 ✅, H-55 ✅, H-56 ✅; aberta `H-66`, que saiu do corte de `H-50`** | 2 | 7 | 1 |
 | E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
-| **Total** | **72** — 61 concluídas, 11 abertas | **28** | **43** | **1** |
+| **Total** | **72** — 62 concluídas, 10 abertas | **28** | **43** | **1** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -141,7 +141,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 
 - [H-48 — Os dois mapas de negócio, fora do repositório](#h-48) ✅
 - [H-49 — Cliente consolidado, separado do processo do cliente](#h-49) ✅
-- [H-50 — Responsável pelo importador, com a cor desempatando](#h-50)
+- [H-50 — Responsável pelo importador, com a cor desempatando](#h-50) ✅
 - [H-51 — Canal verde, e a distribuição à vista](#h-51) ✅
 - [H-52 — Os cartões declaram o período, e ele é editável ali](#h-52) ✅
 - [H-53 — A Página Performance diz a métrica e mostra o recorte](#h-53) ✅
@@ -6333,7 +6333,60 @@ lido pelo desempate daquela.
 
 ### H-50 — Responsável pelo importador, com a cor desempatando
 
-**Objetivo:** o campo Responsável cobrir as 649 linhas em vez de 157, e nomear
+> ✅ **CONCLUÍDA em 01/09/2026.** **29 testes próprios** em oito arquivos — três
+> de domínio, três de rota, um de estado e um de interface. Suíte total de
+> **1616 para 1645**, com seis casos existentes ajustados: os dois que fixam
+> lista de chaves de contrato, os dois de A-18 que migraram de campo, o de mapa
+> vazio em `resolveTeam` e o do domínio fechado em `parseFilters`. **Os três
+> números do primeiro critério de aceite bateram exatamente** contra a planilha
+> real: **559** pelo importador, **48** pelo desempate da cor, **42** sem
+> responsável, com **zero** divergências entre as duas fontes — o mesmo que
+> `H-48` mediu, agora pelo caminho que a aplicação percorre.
+>
+> **O documento de origem afirmava 157, e o número é 165.** O objetivo desta
+> história dizia "cobrir as 649 em vez de 157", copiado de
+> `docs/uso/RESULTADO.md §3`. A medição de 01/09/2026 deu `colaborador1` 120 ·
+> `colaborador2` 36 · `colaborador1_outros_clientes` 9 · `indefinido` 484 —
+> **165 preenchidos**, e a tabela do próprio §3 sempre somou 165 (36+72+9+13+35),
+> como TD-05 desde `H-01`. Erro de aritmética no texto, não de medição, e
+> **nenhuma conclusão dele muda**. Corrigido em `docs/uso/RESULTADO.md`, em
+> TD-05 e em `D-23`, que o repetia de segunda mão. Achado documentado, não
+> correção silenciosa (regra inviolável 1).
+>
+> **Quatro divergências de fiação, todas resolvidas.** (1) O 2º critério pede
+> que a divergência importador↔cor "vire anomalia registrada" e nenhum
+> `AnomalyCode` servia: nasceu `RESPONSAVEL_DIVERGENTE`, com o texto citando as
+> duas chaves impessoais. (2) `src/http/server.ts` não estava na lista, e as
+> duas rotas passaram a precisar do mapa de equipe para A-28 — parâmetro extra,
+> pelo precedente de `clientGroups`; descartado expor `teamMembers` em
+> `StoreState`, que viaja no health. (3) `ColorTarget.responsible` **não** foi
+> renomeado: ele descreve a cor a gravar, e renomeá-lo mudaria uma **quarta**
+> rota (`PATCH .../color`) e `config/color-map.json` — só o tipo virou
+> `ColorResponsible`, e nenhum `fillId` mudou. (4) **`colorResponsible` teve de
+> entrar no `ProcessDto`**, contra o que a fatia planejara: `ProcessDetail`
+> monta o `ColorTarget` atual a partir do processo, e sem o campo passaria a
+> chave da **pessoa** como se fosse cor — o menu marcaria a opção errada. Quem
+> pegou foi o `typecheck`, e o teste que fixa isso está em
+> `web/tests/ProcessDetail.test.tsx`.
+>
+> **As quatro guardas novas foram provadas por mutação:** remover a anomalia de
+> divergência, remover a queda para a cor sem mapa (`D-23`), derivar
+> `knownResponsibles` dos processos em vez do mapa, e tirar a agregação de A-18
+> do filtro de cor — cada uma reprova exatamente os testes que a cobrem, e
+> nenhuma passa despercebida.
+>
+> **A ressalva de A-31 na Página Performance fica errada até `H-66`.** Ela diz
+> "o responsável vem da cor da linha, e linha vermelha ou verde não o carrega",
+> e a partir daqui isso é falso. Reescrevê-la aqui era o que `D-24` cortou para
+> `H-66`, e o intervalo é de um PR.
+>
+> **Fora do que o backlog previa, e deliberado:** `responsible` deixou de ser
+> editável por rota nenhuma — ele deriva do mapa, e mudá-lo é editar o mapa. O
+> filtro dele passou de fechado a aberto, então `?responsible=xyz` devolve
+> conjunto vazio com `200` em vez de `400 FILTRO_INVALIDO`; `colorResponsible`
+> herdou a validação.
+
+**Objetivo:** o campo Responsável cobrir as 649 linhas em vez de 165, e nomear
 quem de fato responde pelo processo.
 
 > **O achado que dispensou a decisão arbitrária.** A cor e a lista de
@@ -6383,7 +6436,7 @@ quem de fato responde pelo processo.
   critério de `H-53`.
 - **Dado** mapa de equipe ausente — arquivo inexistente ou sem membros —,
   **então** `responsible` recebe a chave de cor da linha e a resolução declara
-  `source: 'cor'`: o campo mostra o que mostra hoje, **157** preenchidos, e o
+  `source: 'cor'`: o campo mostra o que mostra hoje, **165** preenchidos, e o
   domínio é a união das chaves de membro com as de cor, habitada só neste
   estado (`D-23`).
 

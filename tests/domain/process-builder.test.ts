@@ -7,6 +7,7 @@ import {
 import { type ColorMapEntry, indexColorMap } from '../../src/domain/color-mapper.ts'
 import { type BuildDeps, buildProcesses, quarantineRate } from '../../src/domain/process-builder.ts'
 import { ALL_COLUMNS } from '../../src/domain/status-classifier.ts'
+import { normalizeTeamMap } from '../../src/domain/team-mapper.ts'
 import type { RawCell, RawRow } from '../../src/domain/types.ts'
 
 const ENTRADAS: ColorMapEntry[] = [
@@ -384,5 +385,103 @@ describe('buildProcesses — grupo de clientes (H-55)', () => {
 
     expect(process?.clientKey).toBe('ACME')
     expect(process?.clientGroupKey).toBe('')
+  })
+})
+
+/**
+ * `H-50`. O responsavel deixa de ser a cor e passa a ser a pessoa, com a cor
+ * desempatando — e a cor vira campo proprio.
+ */
+describe('buildProcesses — responsavel pela pessoa (H-50)', () => {
+  const EQUIPE = normalizeTeamMap([
+    {
+      key: 'membro1',
+      label: 'Primeiro',
+      importers: ['importadora um'],
+      colorResponsible: ['colaborador2'],
+    },
+    {
+      key: 'membro2',
+      label: 'Segundo',
+      importers: ['importadora dois'],
+      colorResponsible: ['colaborador1'],
+    },
+  ])
+  const comEquipe: BuildDeps = { ...deps, teamMap: EQUIPE }
+
+  it('atribui pelo importador e guarda a cor em campo proprio', () => {
+    const process = buildProcesses(
+      [linha(2, { A: 'FT001.26', C: 'IMPORTADORA UM' }, 'argb:FF5B9BD5')],
+      comEquipe,
+    ).processes[0]
+
+    expect(process?.responsible).toBe('membro1')
+    expect(process?.responsibleLabel).toBe('Primeiro')
+    // A cor azul continua dizendo `colaborador1`, e agora diz so isso.
+    expect(process?.colorResponsible).toBe('colaborador1')
+  })
+
+  // Medido: tres importadores aparecem tambem com sufixo (docs/uso/RESULTADO.md §3).
+  it('atribui a mesma pessoa ao importador com sufixo de filial', () => {
+    const process = buildProcesses(
+      [linha(2, { A: 'FT001.26', C: 'IMPORTADORA UM - SC' })],
+      comEquipe,
+    ).processes[0]
+
+    expect(process?.responsible).toBe('membro1')
+  })
+
+  it('desempata pela cor o importador que nenhuma lista alcanca', () => {
+    const process = buildProcesses(
+      [linha(2, { A: 'FT001.26', C: 'IMPORTADORA SEM DONO' }, 'argb:FF5B9BD5')],
+      comEquipe,
+    ).processes[0]
+
+    expect(process?.responsible).toBe('membro2')
+  })
+
+  // Os 42 que ficam sem responsavel, visiveis (regra inviolavel 3).
+  it('deixa sem responsavel quem nao tem importador na lista nem cor', () => {
+    const process = buildProcesses([linha(2, { A: 'FT001.26' })], comEquipe).processes[0]
+
+    expect(process?.responsible).toBe('')
+    expect(process?.responsibleLabel).toBe('')
+    expect(process?.colorResponsible).toBe('indefinido')
+  })
+
+  // Medido: ZERO ocorrencias em 31/08/2026. A anomalia existe para a primeira.
+  it('registra anomalia quando o importador e a cor apontam pessoas diferentes', () => {
+    const resultado = buildProcesses(
+      [linha(2, { A: 'FT001.26', C: 'IMPORTADORA UM' }, 'argb:FF5B9BD5')],
+      comEquipe,
+    )
+
+    expect(resultado.processes[0]?.responsible).toBe('membro1')
+    expect(resultado.processes[0]?.anomalies).toContain('RESPONSAVEL_DIVERGENTE')
+    expect(resultado.anomalies[0]?.detail).toBe(
+      'o importador atribui a "membro1"; a cor "colaborador1" aponta outra pessoa',
+    )
+  })
+
+  it('nao registra anomalia quando as duas fontes concordam', () => {
+    const resultado = buildProcesses(
+      [linha(2, { A: 'FT001.26', C: 'IMPORTADORA DOIS' }, 'argb:FF5B9BD5')],
+      comEquipe,
+    )
+
+    expect(resultado.processes[0]?.responsible).toBe('membro2')
+    expect(resultado.processes[0]?.anomalies).not.toContain('RESPONSAVEL_DIVERGENTE')
+  })
+
+  // `D-23`: sem mapa o campo mostra o que a cor mostra hoje.
+  it('sem mapa de equipe, o responsavel vale a chave de cor', () => {
+    const process = buildProcesses(
+      [linha(2, { A: 'FT001.26', C: 'IMPORTADORA UM' }, 'argb:FF5B9BD5')],
+      deps,
+    ).processes[0]
+
+    expect(process?.responsible).toBe('colaborador1')
+    expect(process?.responsibleLabel).toBe('Colaborador 1')
+    expect(process?.colorResponsible).toBe('colaborador1')
   })
 })

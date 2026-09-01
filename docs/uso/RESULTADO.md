@@ -82,11 +82,22 @@ própria seria adivinhar (regra inviolável 3).
 O achado de maior consequência do levantamento, e o que dispensou uma decisão
 que parecia arbitrária.
 
-O responsável hoje vem **só** da cor da linha (TD-05, A-17): das 649, apenas
-**157** carregam cor de responsável e **492** ficam em `indefinido`. O operador
+O responsável vinha **só** da cor da linha (TD-05, A-17): das 649, apenas
+**165** carregam cor de responsável e **484** ficam em `indefinido`. O operador
 descreveu uma regra paralela, por importador, que atribui **559** processos a
 duas pessoas e deixa 90 sem regra — 55 num importador que não está em nenhuma
 das duas listas, e 35 com o campo em branco.
+
+> **Este parágrafo dizia `157` e `492` até 01/09/2026, e os dois estavam
+> errados** — erro de aritmética, não de medição. A tabela logo abaixo, escrita
+> na mesma sessão, sempre somou 36 + 72 + 9 + 13 + 35 = **165**, e TD-05 conta
+> as mesmas 165 por chave de estilo desde `H-01` (120 azul + 31 + 5 roxo + 9
+> bege). Conferido contra a planilha real em 01/09/2026, ao implementar `H-50`:
+> `colaborador1` 120 · `colaborador2` 36 · `colaborador1_outros_clientes` 9 ·
+> `indefinido` 484. **Nenhuma conclusão desta seção muda** — os 559, 48 e 42 são
+> medidos por outro caminho e foram reconferidos com o mesmo valor. O número
+> errado sobreviveu porque nenhuma frase dizia o que ele contava (rule
+> `documentacao.md`), e `D-23` o repetiu de segunda mão.
 
 **As duas fontes não se contradizem em nenhuma das 649 linhas:**
 

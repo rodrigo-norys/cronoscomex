@@ -3,7 +3,6 @@ import type { AppConfig } from '../../app/config.ts'
 import { store as defaultStore, type StoreAccess } from '../../app/process-store.ts'
 import type { ClientGroup } from '../../domain/client-mapper.ts'
 import { today as currentDay, isoWeekEnd, toIsoDay } from '../../domain/date-window.ts'
-import { RESPONSIBLE_LABELS } from '../../domain/filters.ts'
 import {
   type ArrivalDay,
   agentRanking,
@@ -34,6 +33,7 @@ import {
   redChannelCount,
   responsibleRanking,
 } from '../../domain/indicators.ts'
+import { knownResponsibles, type TeamMember } from '../../domain/team-mapper.ts'
 import { apiError } from '../errors.ts'
 import { filteredWithPeriod } from '../filter-request.ts'
 
@@ -150,7 +150,13 @@ export function registerIndicatorsRoute(
    * Padrao vazio pelo mesmo motivo de `buildServer`: teste nao le o mapa real.
    */
   clientGroups: readonly ClientGroup[] = [],
+  /**
+   * Mapa de equipe de `H-48`, para IND-20 exibir a pessoa sem processo algum
+   * (`H-50`). Padrao vazio pelo mesmo motivo de `clientGroups`.
+   */
+  teamMap: readonly TeamMember[] = [],
 ): void {
+  const responsibles = knownResponsibles(teamMap)
   app.get('/api/indicators', (request, reply) => {
     const state = store.getState()
 
@@ -203,7 +209,7 @@ export function registerIndicatorsRoute(
       responsible: leadTimeByGroup(
         processes,
         (p) => p.responsible,
-        (p) => RESPONSIBLE_LABELS[p.responsible],
+        (p) => p.responsibleLabel,
       ),
     }
 
@@ -247,7 +253,7 @@ export function registerIndicatorsRoute(
           (p) => p.goodsRaw,
           config.topN,
         ),
-        responsible: responsibleRanking(processes),
+        responsible: responsibleRanking(processes, responsibles),
       },
       expectedVessels: expectedVessels(processes, day),
       arrivalCalendar: arrivalCalendar(processes, day),

@@ -42,7 +42,7 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 | IND-17 | Ranking de agentes | `count agrupado por norm(AGENTE)`, desc, com coluna de atrasados | H-11, H-19 |
 | IND-18 | Ranking de clientes | Top 10 de IND-10 | H-11 |
 | IND-19 | Ranking de importadores | Top 10 de IND-11 | H-11 |
-| IND-20 | Ranking por responsável | `count agrupado por responsible` (4 valores) | H-11, H-19 |
+| IND-20 | Ranking por responsável | `count` agrupado por `responsible` — uma chave por pessoa do mapa de equipe, mais a chave vazia. Eram 4 valores fixos, vindos da cor, até `H-50` | H-11, H-19, H-50 |
 | IND-21 | Tempo médio até desembaraço | **Fora de escopo.** Exige data de presença de carga, que não existe e não será criada | — |
 | IND-22 | Tempo médio de envio documental | `avg(RG − DOCS_ENVIADOS)` em dias, pares completos, intervalos negativos excluídos | H-13 |
 
@@ -74,7 +74,7 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 
 | ID | Requisito | Histórias |
 |---|---|---|
-| RF-17 | Aplicar simultaneamente 13 filtros: Período (ETA2), Cliente, **Processo do cliente**, **Grupo de clientes**, Importador, Navio, Agente, Mercadoria, Categoria de status, Responsável, Canal, Porto e Importador fora do RJ. Eram 11 até `H-49`, que separou o cliente consolidado do valor da célula CLT, e 12 até `H-55`, que acrescentou o grupo. O grupo **não tem controle próprio** na barra: ele é o primeiro nível da árvore dentro de Cliente | H-15, H-49, H-55 |
+| RF-17 | Aplicar simultaneamente 14 filtros: Período (ETA2), Cliente, **Processo do cliente**, **Grupo de clientes**, Importador, Navio, Agente, Mercadoria, Categoria de status, Responsável, **Cor do responsável**, Canal, Porto e Importador fora do RJ. Eram 11 até `H-49`, que separou o cliente consolidado do valor da célula CLT, 12 até `H-55`, que acrescentou o grupo, e 13 até `H-50`, que separou a pessoa responsável do que a cor diz. **Dois não têm controle próprio** na barra: o grupo é o primeiro nível da árvore dentro de Cliente, e a cor do responsável ganha controle em `H-66` — até lá ela existe na API e não na tela | H-15, H-49, H-55, H-50, H-66 |
 | RF-18 | Todo indicador e todo alerta respeita os filtros ativos | H-15 |
 | RF-19 | Os valores disponíveis em cada filtro são derivados do arquivo, não de lista fixa | H-15 |
 

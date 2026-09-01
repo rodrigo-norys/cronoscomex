@@ -52,6 +52,8 @@ function process(sourceRow: number, extra: Partial<Process> = {}): Process {
     goodsKey: '',
     statusCategory: 'em_andamento' as StatusCategory,
     responsible: 'indefinido',
+    responsibleLabel: 'Indefinido',
+    colorResponsible: 'indefinido',
     customsChannel: 'indefinido',
     importerOutsideRj: null,
     styleKey: 'none',
@@ -110,6 +112,7 @@ describe('GET /api/processes — envelope', () => {
       'boletoRaw',
       'client',
       'clientProcess',
+      'colorResponsible',
       'columnPRaw',
       'container',
       'customsChannel',
@@ -124,11 +127,44 @@ describe('GET /api/processes — envelope', () => {
       'ref',
       'registrationDate',
       'responsible',
+      'responsibleLabel',
       'sourceRow',
       'statusCategory',
       'statusRaw',
       'vessel',
     ])
+  })
+
+  /**
+   * `H-50`. Os tres campos viajam juntos e dizem coisas diferentes: a chave da
+   * pessoa, o nome dela, e o que a cor da linha diz.
+   */
+  it('serve a pessoa, o rotulo dela e a cor em campos distintos', async () => {
+    const body = (
+      await get('/api/processes', [
+        process(2, {
+          responsible: 'membro1',
+          responsibleLabel: 'Primeiro',
+          colorResponsible: 'colaborador2',
+        }),
+      ])
+    ).json()
+
+    expect(body.items[0]).toMatchObject({
+      responsible: 'membro1',
+      responsibleLabel: 'Primeiro',
+      colorResponsible: 'colaborador2',
+    })
+  })
+
+  // Os 42 sem responsavel: a chave vazia e valor de dominio, e a interface
+  // exibe o traco do proprio componente em vez de um rotulo inventado.
+  it('serve chave e rotulo vazios para o processo sem responsavel', async () => {
+    const body = (
+      await get('/api/processes', [process(2, { responsible: '', responsibleLabel: '' })])
+    ).json()
+
+    expect(body.items[0]).toMatchObject({ responsible: '', responsibleLabel: '' })
   })
 
   it('serializa datas como AAAA-MM-DD, e ausencia como null', async () => {

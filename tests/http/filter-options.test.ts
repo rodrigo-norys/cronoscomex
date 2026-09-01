@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest'
 import type { AppConfig } from '../../src/app/config.ts'
 import type { StoreAccess, StoreState } from '../../src/app/process-store.ts'
 import { normalizeClientGroups } from '../../src/domain/client-mapper.ts'
+import { normalizeTeamMap } from '../../src/domain/team-mapper.ts'
 import type {
+  ColorResponsible,
   CustomsChannel,
   Process,
-  Responsible,
   StatusCategory,
 } from '../../src/domain/types.ts'
 import { buildServer } from '../../src/http/server.ts'
@@ -32,7 +33,9 @@ interface Fields {
   portKey?: string
   portRaw?: string
   statusCategory?: StatusCategory
-  responsible?: Responsible
+  responsible?: string
+  responsibleLabel?: string
+  colorResponsible?: ColorResponsible
   customsChannel?: CustomsChannel
   eta2?: Date | null
   importerOutsideRj?: boolean | null
@@ -71,6 +74,8 @@ function process(fields: Fields = {}): Process {
     goodsKey: fields.goodsKey ?? '',
     statusCategory: fields.statusCategory ?? 'em_andamento',
     responsible: fields.responsible ?? 'indefinido',
+    responsibleLabel: fields.responsibleLabel ?? 'Indefinido',
+    colorResponsible: fields.colorResponsible ?? 'indefinido',
     customsChannel: fields.customsChannel ?? 'indefinido',
     importerOutsideRj: fields.importerOutsideRj ?? null,
     styleKey: 'none',
@@ -103,7 +108,7 @@ const fakeStore = (initial: StoreState): StoreAccess => ({
 })
 
 describe('GET /api/filters/options', () => {
-  it('devolve os onze blocos do contrato', async () => {
+  it('devolve os doze blocos do contrato', async () => {
     const app = buildServer(config, fakeStore(state()))
 
     const resposta = await app.inject({ method: 'GET', url: '/api/filters/options' })
@@ -116,6 +121,7 @@ describe('GET /api/filters/options', () => {
       'clientGroups',
       'clientProcesses',
       'clients',
+      'colorResponsible',
       'goods',
       'importers',
       'ports',
@@ -184,8 +190,14 @@ describe('GET /api/filters/options', () => {
     await app.close()
   })
 
+  // Sem mapa de equipe o dominio de `responsible` e o das cores — `D-23`.
   it('devolve os quatro responsaveis e os tres canais, com rotulo em pt-br', async () => {
-    const app = buildServer(config, fakeStore(state([process({ responsible: 'colaborador1' })])))
+    const app = buildServer(
+      config,
+      fakeStore(
+        state([process({ responsible: 'colaborador1', colorResponsible: 'colaborador1' })]),
+      ),
+    )
 
     const body = (await app.inject({ method: 'GET', url: '/api/filters/options' })).json()
 
@@ -199,6 +211,114 @@ describe('GET /api/filters/options', () => {
     expect(body.channels.map((o: { label: string }) => o.label)).toContain('Canal Vermelho')
 
     await app.close()
+  })
+
+  /**
+   * `H-50`. Com mapa de equipe as opcoes sao as PESSOAS, mais a chave vazia —
+   * e a cor ganha bloco proprio, que continua fechado nas quatro chaves.
+   */
+  describe('responsavel e cor do responsavel (H-50)', () => {
+    const equipe = normalizeTeamMap([
+      { key: 'membro1', label: 'Primeiro', importers: ['importadora um'], colorResponsible: [] },
+      { key: 'membro2', label: 'Segundo', importers: ['importadora dois'], colorResponsible: [] },
+    ])
+    const comEquipe = (processes: Process[]) =>
+      buildServer(
+        config,
+        fakeStore(state(processes)),
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        undefined,
+        [],
+        undefined,
+        equipe,
+      )
+
+    it('oferece as pessoas do mapa e a chave sem responsavel', async () => {
+      const app = comEquipe([
+        process({ responsible: 'membro1', responsibleLabel: 'Primeiro' }),
+        process({ responsible: '', responsibleLabel: '' }),
+      ])
+
+      const body = (await app.inject({ method: 'GET', url: '/api/filters/options' })).json()
+
+      expect(body.responsible).toEqual([
+        { key: 'membro1', label: 'Primeiro', count: 1 },
+        // O caso-limite de `H-50`: pessoa do mapa sem processo algum aparece
+        // com zero, pela mesma razao de A-28.
+        { key: 'membro2', label: 'Segundo', count: 0 },
+        { key: '', label: 'Sem responsável', count: 1 },
+      ])
+
+      await app.close()
+    })
+
+    it('serve a cor do responsavel em bloco proprio, com as quatro chaves', async () => {
+      const app = comEquipe([process({ responsible: 'membro1', colorResponsible: 'colaborador2' })])
+
+      const body = (await app.inject({ method: 'GET', url: '/api/filters/options' })).json()
+
+      expect(body.colorResponsible).toHaveLength(4)
+      expect(body.colorResponsible).toContainEqual({
+        key: 'colaborador2',
+        label: 'Colaborador 2',
+        count: 1,
+      })
+
+      await app.close()
+    })
+
+    // Os dois filtros sao independentes: E entre parametros distintos.
+    it('recorta por pessoa e por cor sem que um implique o outro', async () => {
+      const app = comEquipe([
+        process({ responsible: 'membro1', colorResponsible: 'colaborador1' }),
+        process({ responsible: 'membro2', colorResponsible: 'colaborador1' }),
+      ])
+
+      const porPessoa = (
+        await app.inject({ method: 'GET', url: '/api/indicators?responsible=membro1' })
+      ).json()
+      const porCor = (
+        await app.inject({ method: 'GET', url: '/api/indicators?colorResponsible=colaborador1' })
+      ).json()
+
+      expect(porPessoa.counts.total).toBe(1)
+      expect(porCor.counts.total).toBe(2)
+
+      await app.close()
+    })
+
+    // `H-50` abriu o dominio: chave desconhecida devolve conjunto vazio com
+    // 200, e nao mais `400 FILTRO_INVALIDO`.
+    it('aceita chave de responsavel desconhecida com 200 e conjunto vazio', async () => {
+      const app = comEquipe([process({ responsible: 'membro1' })])
+
+      const resposta = await app.inject({
+        method: 'GET',
+        url: '/api/indicators?responsible=ninguem',
+      })
+
+      expect(resposta.statusCode).toBe(200)
+      expect(resposta.json().counts.total).toBe(0)
+
+      await app.close()
+    })
+
+    it('recusa cor de responsavel fora do dominio', async () => {
+      const app = comEquipe([process({})])
+
+      const resposta = await app.inject({
+        method: 'GET',
+        url: '/api/indicators?colorResponsible=roxo',
+      })
+
+      expect(resposta.statusCode).toBe(400)
+
+      await app.close()
+    })
   })
 
   /**
