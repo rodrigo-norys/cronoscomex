@@ -778,3 +778,61 @@ describe('A10 — todo movimento tem contraparte de redução', () => {
     expect(css).toContain(REDUCAO)
   })
 })
+
+/**
+ * `C10` — um nivel de severidade, um par de cor; e o glifo definido uma vez
+ * (`H-73`).
+ *
+ * O conjunto chegou a **tres** copias do mesmo `path` de triangulo — em
+ * `SeverityMark`, em `AlertRow` e em `IngestionHealth` —, e a duas cores para a
+ * mesma faixa: `state-warning-fg` na compartilhada e `state-warning-border` na
+ * de `AlertRow`, que media **1,60:1** no claro contra o piso de 3:1 de
+ * `SC 1.4.11`.
+ *
+ * **`H-62` ja tinha escrito no cabecalho de `SeverityMark` que o padrao aparece
+ * em seis lugares.** Aparecia; quatro consumiam. Esta guarda e o que impede a
+ * afirmacao de voltar a ser intencao.
+ */
+
+/** O `path` do triangulo de atencao. Um arquivo pode desenha-lo; os outros importam. */
+const TRIANGULO = /d="M8 2\.5 14\.5 13\.5h-13z"/
+
+/** Faixa de severidade pintada com o token de BORDA em vez do de texto. */
+const FAIXA_COM_BORDA = /border-l-state-(error|warning|info)-border/
+
+describe('C10 — a severidade tem um par de cor e um glifo', () => {
+  it('as duas regexes reconhecem o defeito e ignoram o vizinho', () => {
+    expect(TRIANGULO.test('<path d="M8 2.5 14.5 13.5h-13z" strokeLinejoin="round" />')).toBe(true)
+    expect(TRIANGULO.test('<path d="M8 6.5v3.5" />')).toBe(false)
+    expect(FAIXA_COM_BORDA.test("'border-l-state-warning-border'")).toBe(true)
+    // O contorno do painel usa o MESMO token, e e legitimo: ele delimita, nao
+    // marca severidade. So o `border-l-` e faixa.
+    expect(FAIXA_COM_BORDA.test("'border border-state-warning-border'")).toBe(false)
+    expect(FAIXA_COM_BORDA.test("'border-l-state-warning-fg'")).toBe(false)
+  })
+
+  it('o glifo de severidade é desenhado em um arquivo só', () => {
+    const desenham = occurrencesOf(TRIANGULO).map((one) => one.file)
+
+    expect([...new Set(desenham)]).toEqual(['web/src/components/SeverityMark.tsx'])
+  })
+
+  it('nenhuma faixa de severidade usa o token de borda', () => {
+    const faixas = occurrencesOf(FAIXA_COM_BORDA)
+
+    expect(faixas.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
+  })
+
+  /**
+   * A contraparte da guarda acima: `severityBand` precisa **ser usada**. Sem
+   * isto, apagar as tres chamadas deixaria as duas assercoes verdes por
+   * vacuidade — nao ha faixa errada quando nao ha faixa nenhuma.
+   */
+  it('encontra os consumidores da faixa compartilhada', () => {
+    const consomem = FILES.filter((file) =>
+      /severityBand\(/.test(semComentarios(readFileSync(file, 'utf-8'))),
+    )
+
+    expect(consomem.length).toBeGreaterThanOrEqual(6)
+  })
+})
