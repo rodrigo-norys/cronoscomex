@@ -695,6 +695,22 @@ Esta lista é entrega, não sobra.
 | **`autoMemoryEnabled: false`** | **Não adotar** | A memória automática é reinjetada do disco após compactação (§2.1) — é um dos poucos lugares persistentes que existem. Numa cadeia de 18 sessões isso tem valor. A decisão D-5 da auditoria anterior chega à mesma conclusão por outro caminho |
 | **`defaultMode` diferente de `default`** | **Não adotar** | `acceptEdits` alcança `mv`/`cp` sobre a planilha real; `auto`, `dontAsk` e `bypassPermissions` mudam o regime inteiro num projeto sem git. LAC-5 entrega o ganho relevante com escopo estreito |
 
+> **SUPERADO EM 31/08/2026 — `.claude/rules/` foi adotado.** A linha acima
+> recomendava não adotar, e o argumento central — regra com `paths:` não
+> sobrevive à compactação — **é falso, e a documentação oficial o desmente**:
+> rules com `paths:` recarregam quando o Claude volta a ler arquivo que casa o
+> glob, e o hook `InstructionsLoaded` expõe `load_reason: compact`. A
+> recomendação de 04/08/2026 foi construída sobre uma premissa errada. O outro
+> lado
+> da conta também mudou: o `CLAUDE.md` chegou a 6400 palavras carregadas em **toda** sessão,
+> e três assuntos dele só interessam a quem abre arquivos específicos. Hoje há
+> cinco rules, e elas valem ~1750 palavras que deixaram de ser carregadas
+> sempre. **A fragilidade foi aceita conscientemente, não esquecida:** rule é
+> contexto e não configuração aplicada, e quem garante continua sendo a asserção
+> em `tests/repo/`, que cobra uma menção no `CLAUDE.md` para cada peça de
+> `.claude/`. Regra inviolável não migrou.
+
+
 ---
 
 ## 8. Anexo — artefatos prontos para colar

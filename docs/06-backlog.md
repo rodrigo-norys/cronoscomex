@@ -93,6 +93,7 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 - [H-69 — O texto cortado da tabela tem caminho de volta](#h-69)
 - [H-70 — O foco sobrevive à navegação programática](#h-70)
 - [H-71 — O valor anterior da edição é legível](#h-71)
+- [H-72 — A aba corrente sobrevive ao alto contraste](#h-72)
 
 **[Épico E10 — As melhorias de uso](#e10)**
 
@@ -5714,6 +5715,56 @@ modal é inativo, e mexer nele é decisão que `H-47` deixou registrada, não ab
 
 ---
 
+<a id="h-72"></a>
+
+### H-72 — A aba corrente sobrevive ao alto contraste
+
+**Objetivo:** o operador que usa tema de alto contraste enxergar em que página
+está.
+
+> **Medido por `VN-5` em 31/08/2026, por emulação de `forced-colors`.** Fora do
+> modo forçado, as abas de `App.tsx:196` têm duas cores de borda — a corrente com
+> o token, as outras `rgba(0,0,0,0)`. Dentro dele há **uma**: as sete ficam com
+> `border-bottom: 2px solid rgb(255,255,0)`, porque o UA pinta `border-transparent`
+> como pinta qualquer outra borda.
+>
+> **É a pergunta que o procedimento declarava em aberto**, e a resposta é a pior
+> das duas: "se substituir, as abas ficam idênticas e só o `aria-current` resta".
+> Ele serve o leitor de tela e não serve quem enxerga.
+>
+> **`H-44` já resolveu este problema uma vez, no botão de janela**, trocando o
+> canal de cor pela espessura da borda — e `VN-5` mediu que aquela correção
+> **sobrevive** ao alto contraste. A mesma técnica se aplica aqui.
+
+**Arquivos:**
+- `web/src/App.tsx` — o estado visual da aba corrente
+- `web/tests/App.test.tsx`
+
+**Critérios de aceite:**
+- **Dado** `forced-colors: active`, **então** a aba corrente é distinguível das
+  outras seis por um canal que sobrevive à substituição de paleta — espessura,
+  posição ou texto, nunca só cor.
+- **Dado** o modo normal, **então** a aparência de hoje não regride: a barra de
+  navegação continua com o mesmo peso visual.
+- **Dado** o leitor de tela, **então** o `aria-current="page"` permanece — o canal
+  novo se soma a ele, não o substitui.
+
+**Casos-limite:**
+- As sete abas, e não seis: `Configuração` nasceu em `H-38` e conta.
+- Aba corrente em viewport estreito → o canal novo não pode reintroduzir a
+  rolagem que `H-46` tirou.
+
+**Fora desta história:** os outros alvos de `VN-5`. O item (d) do
+`ConflictDialog` e o item (e) do realce de linha continuam em `PD-07`, por
+exigirem respectivamente a planilha alterada e um cursor real.
+
+**Dependências:** `H-47`, que mediu.
+**Tamanho:** P (2 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
 <a id="e10"></a>
 
 ## Épico E10 — As melhorias de uso
@@ -7421,10 +7472,10 @@ superfície dobrada pelo segundo esquema.
 | E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
-| E9 — Estilização | **H-39 ✅ … H-47 ✅; `H-67` a `H-71` abertas, os cinco achados que `H-47` mediu no navegador** | 6 | 8 | 0 |
+| E9 — Estilização | **H-39 ✅ … H-47 ✅; `H-67` a `H-72` abertas, os seis achados medidos no navegador** | 7 | 8 | 0 |
 | E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-52 ✅, H-53 ✅, H-54 ✅, H-55 ✅, H-56 ✅; abertas `H-50` — a única G do backlog — e `H-66`, que saiu do corte dela** | 2 | 7 | 1 |
 | E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
-| **Total** | **71** — 55 concluídas, 16 abertas | **27** | **43** | **1** |
+| **Total** | **72** — 55 concluídas, 17 abertas | **28** | **43** | **1** |
 
 **O ✅ marca o épico, não a história.** As marcas por história congelaram em
 07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até

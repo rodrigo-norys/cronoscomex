@@ -797,11 +797,57 @@ VEREDITO: VERIFICAR NO NAVEGADOR — procedimento:
 ```
 
 ```
-[VN-5] DESFECHO — NÃO EXECUTADO, por decisão do backlog · vira PD-07
-Exige Windows → Configurações → Acessibilidade → Temas de Contraste, e o
-desenvolvimento é em Linux. H-47 o declara fora da fatia desde que nasceu, e ele
-fecha na primeira instalação na máquina do operador, junto de PD-01, PD-05 e PD-06.
-Os cinco alvos nomeados acima continuam válidos e nenhum foi verificado.
+[VN-5] DESFECHO — PARCIALMENTE EXECUTADO em 31/08/2026 · 1 ACHADO · resto em PD-07
+MÉTODO:   `Emulation.setEmulatedMedia` com `forced-colors: active`, em Chrome 151
+          headless no Linux. **A premissa de que este procedimento exige Windows
+          estava errada:** a media query casa (`matchMedia('(forced-colors: active)')`
+          devolve `true`) e o UA substitui a paleta do autor exatamente como no
+          sistema. O que o Windows dá a mais é a PALETA NOMINAL (Aquático e os
+          demais) e o par claro/escuro do item 4 — verificação de segunda ordem,
+          porque o que este procedimento pergunta não é que cor o tema pinta, e sim
+          se o desenho sobrevive quando as cores do autor são descartadas.
+ENDEREÇOS REANCORADOS: os oito citados no procedimento estavam podres, e sete
+          apontavam para outro código. Hoje: (a) App.tsx:196 · (b) History.tsx:257 ·
+          (c) AlertRow.tsx:102 e StatCard.tsx:31 · (d) ConflictDialog.tsx:78 e
+          MultiSelect.tsx:141 · (e) ProcessTable.tsx:77 e MultiSelect.tsx:158.
+
+ACHADO VN-5/A — item 3(a), e é a pergunta que o procedimento deixou em aberto.
+  O procedimento dizia: "Determinar aqui se o UA preserva `transparent`: se
+  preservar, o estado sobrevive; se substituir, as abas ficam idênticas".
+  **Medido: substitui.** Em `forced-colors`, as SETE abas de App.tsx:196 ficam com
+  `border-bottom: 2px solid rgb(255, 255, 0)` — a mesma. Fora do modo forçado há
+  duas cores distintas (a corrente com o token, as outras `rgba(0,0,0,0)`); dentro
+  dele há **uma**. O `border-transparent` é pintado como qualquer outra borda.
+  Sobra o `aria-current="page"` de App.tsx:187, que serve o leitor de tela e não
+  serve quem enxerga: o operador em alto contraste não vê em que página está.
+  (São sete abas, e não as seis que o procedimento supunha — `Configuração` nasceu
+  em `H-38`.)
+
+APROVADO (b) — item 3(b), e confirma `H-44` pela segunda vez em campo.
+  O botão de janela selecionado mantém `border-width: 2px` contra `1px` dos outros,
+  e o fundo vai a `rgb(0,0,0)` contra `rgba(0,0,0,0)`. A troca do canal de cor pela
+  espessura da borda, que `H-44` fez por causa do `ACHADO 13`, é exatamente o que
+  sobrevive aqui — o canal que ela substituiu não teria sobrevivido.
+APROVADO (c) — item 3(c), e confirma `H-45`.
+  **105 de 105** itens da Página Alertas trazem o prefixo textual `Pede ação · …`.
+  O canal é texto, então `forced-colors` não o alcança. A urgência deixou de ser
+  só-cor em `H-45`, e é por isso que este alvo passa.
+APROVADO (d), parcialmente — item 3(d).
+  O `shadow-lg` de MultiSelect.tsx:141 vira `box-shadow: none`, como esperado, e
+  resta `border: 1px solid rgb(255,255,255)`: o painel continua separado do fundo.
+  **O ConflictDialog não foi medido** — abri-lo exige aplicar edições com a planilha
+  real alterada, e nada nesta verificação grava na planilha do operador. Fica em
+  PD-07, junto do mesmo item que `VN-3` deixou devendo.
+
+NÃO VERIFICÁVEL NESTE AMBIENTE (e) — item 3(e), o realce de linha só por fundo.
+  O Chrome headless não aplica as regras `:hover` ao estilo computado nem ao
+  render, mesmo com o cursor sobre o elemento e `el.matches(':hover')` devolvendo
+  `true`: duas capturas, com o mouse fora e sobre a linha, são idênticas pixel a
+  pixel. **Provado que é do ambiente e não da aplicação** com um controle — um
+  `<button>` com `hover:bg-*` também não muda, e a regra
+  `hover\:bg-surface-sunken:hover{background-color:var(--color-surface-sunken)}`
+  existe no CSS compilado. Sem o controle, isto teria virado um achado falso.
+  Fica em PD-07, e precisa de navegador com cursor real.
 ```
 
 ```
@@ -896,7 +942,7 @@ MEDIDO    ConflictDialog.tsx:73 `bg-overlay-scrim` sobre os dois fundos pedidos,
 | **A14** | sem achado — `App.tsx:127-153` é `<nav aria-label="Páginas">` + `<a href aria-current="page">`; 0 `role="tab"`, 0 `role="tablist"`, 0 `role="tabpanel"` no conjunto. É o contraexemplo literal de A14: navegação de links, não híbrido. O APG Tabs não incide |
 | **A15** | sem achado — 0 `sticky` no conjunto; o único `fixed` é `ConflictDialog.tsx:73` `fixed inset-0`, que é o overlay do diálogo modal e cobre a tela por definição. Nenhum elemento da casca é sticky/fixed, logo não há o que obscurecer foco por rolagem |
 | **A16** | sem achado — 0 ocorrências de `tabIndex` de qualquer sinal escritas no conjunto (o `tabIndex={0}` do ACHADO 12 é injetado pelo Recharts, e está reportado ali) |
-| **A17** | ACHADO 13; parte não determinada estaticamente em **[VN-5]** item 3(a) — **continua em aberto**, agora como `PD-07`: exige Windows |
+| **A17** | ACHADO 13; parte não determinada estaticamente em **[VN-5]** item 3(a) — **determinada em 31/08/2026 por emulação**: o UA SUBSTITUI `transparent`, e as sete abas ficam idênticas. Virou `H-72`. O que resta em `PD-07` é a paleta nominal do Windows |
 | **C01** | ACHADO 1 |
 | **C02** | ACHADO 8 |
 | **C03** | sem achado — 1 único `style={{}}` no conjunto, `RankingBar.tsx:96` `style={{ width: \`${share}%\` }}`, que é o contraexemplo literal de C03 (barra de progresso com valor genuinamente dinâmico) |

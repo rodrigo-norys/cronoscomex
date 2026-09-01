@@ -11,8 +11,9 @@ Nenhuma fase entrega apenas infraestrutura.
 > entre eles vive no cabeçalho de cada épico, em `06-backlog.md`. A regra vigente
 > em 31/08/2026: `E9` e `E10` estão abertos ao mesmo tempo e não se bloqueiam;
 > **`E11` vem depois dos dois**, porque `H-45` e `H-46` tocam os mesmos 25
-> arquivos que ele reescreve, `H-47` é a linha de base da verificação no
-> navegador, e `H-52` a `H-54` ainda mudam o que três telas dizem.
+> arquivos que ele reescreve, `H-47` era a linha de base da verificação no
+> navegador — **e ela fechou em 31/08/2026**, deixando `H-67` a `H-72` no lugar
+> —, e `H-50` ainda muda o que três telas dizem.
 
 ### Fase 0 — Perfilamento ✅ CONCLUÍDA em 03/08/2026
 
