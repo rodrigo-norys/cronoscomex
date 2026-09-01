@@ -326,4 +326,26 @@ describe('as recusas', () => {
     expect(dialogo.textContent).not.toContain('Nenhuma célula foi gravada')
     expect(nomeAcessivelDo(dialogo)).toBe('Não foi possível concluir')
   })
+
+  /**
+   * `H-62`, `D-22`. **A última sombra do conjunto sai aqui**, e o diálogo era o
+   * caso em que ela parecia indispensável.
+   *
+   * O que o separa do véu passou a ser a borda. Medido em Chrome 151 contra o véu
+   * **composto** — o alfa resolvido pelo compositor, não multiplicado à mão:
+   * **4,12:1** no claro e **5,66:1** no escuro, contra o piso de 3:1 do critério.
+   * `border-border-strong` media **1,91** no claro, e o motivo é geométrico: um
+   * cinza médio fica ENTRE o painel branco e o véu, e não contrasta com os dois.
+   */
+  describe('o diálogo sem sombra (H-62)', () => {
+    it('separa-se do véu por borda, e não por sombra', async () => {
+      await aplicarERecusar(409, 'EXCEL_ABERTO', 'A planilha esta aberta no Excel.')
+
+      const dialogo = await screen.findByRole('alertdialog')
+
+      expect(dialogo.className).not.toMatch(/shadow-/)
+      expect(dialogo.className).toContain('border-border-modal')
+      expect(dialogo.className).toContain('rounded-container')
+    })
+  })
 })

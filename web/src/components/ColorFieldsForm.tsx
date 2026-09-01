@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { type ColorOption, type ColorTarget, enqueueColor, getColorOptions } from '../api-client.ts'
+import { SeverityIcon, severityBand } from './SeverityMark.tsx'
 
 /**
  * Os três campos que só existem como cor — responsável, canal e localização do
@@ -138,7 +139,7 @@ export function ColorFieldsForm({
                   setChosen(event.target.value)
                   setError(null)
                 }}
-                className="w-full rounded border border-border-control bg-surface-raised px-2 py-1.5 text-sm text-text-primary"
+                className="w-full rounded-control border border-border-control bg-surface-raised px-2 py-1.5 text-sm text-text-primary"
               >
                 <option value="">Selecione…</option>
                 {options.map((option) => (
@@ -152,7 +153,7 @@ export function ColorFieldsForm({
             <button
               type="submit"
               disabled={busy || chosen === ''}
-              className="rounded border border-action-bg bg-action-bg px-3 py-1.5 text-sm font-medium text-action-fg disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
+              className="rounded-control border border-action-bg bg-action-bg px-3 py-1.5 text-sm font-medium text-action-fg disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
             >
               {busy ? 'Enfileirando…' : 'Enfileirar'}
             </button>
@@ -173,10 +174,15 @@ export function ColorFieldsForm({
         className={
           error === null
             ? 'sr-only'
-            : 'mt-2 rounded border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg'
+            : `mt-2 flex items-start gap-2 rounded-container border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg ${severityBand('error')}`
         }
       >
-        {error}
+        {error !== null && (
+          <>
+            <SeverityIcon tone="error" />
+            <span>{error}</span>
+          </>
+        )}
       </p>
     </section>
   )

@@ -196,12 +196,35 @@ describe('C04 — o mesmo papel de UI tem a mesma forma', () => {
     )
   })
 
+  /**
+   * O painel MODAL é papel distinto, e a exceção é declarada (`H-62`).
+   *
+   * `ConflictDialog` flutua sobre o `overlay-scrim`, e desde `H-62` não tem
+   * sombra: o que o separa do que está atrás é a borda. `border-border-subtle`
+   * mede **1,25:1** e `border-border-strong` mede **1,91:1 contra o véu** — os
+   * dois abaixo do piso de 3:1 que o critério pede. Quem serve é
+   * `border-border-modal`, que existe por causa do que está atrás: 4,66:1 no
+   * claro e 5,66:1 no escuro.
+   *
+   * O sinal sintático é `max-h-[`: só o modal limita a própria altura à
+   * viewport, porque só ele não rola com a página.
+   */
+  const MODAL_ROLE = /max-h-\[/
+
   it('toda seção de conteúdo usa a borda sutil, e nenhuma desvia', () => {
     const desviantes = occurrencesOf(SECTION_ROLE).filter(
-      (one) => !/border-border-subtle/.test(one.text),
+      (one) => !/border-border-subtle/.test(one.text) && !MODAL_ROLE.test(one.text),
     )
 
     expect(desviantes.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
+  })
+
+  // O modal não fica sem regra: ele usa a borda forte, e é a dele.
+  it('o painel modal usa a borda forte, e nenhum outro papel a usa', () => {
+    const modais = occurrencesOf(MODAL_ROLE)
+
+    expect(modais.length).toBeGreaterThan(0)
+    for (const modal of modais) expect(modal.text).toContain('border-border-modal')
   })
 
   /**

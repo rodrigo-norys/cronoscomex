@@ -176,9 +176,9 @@ function Fields({ process }: { process: ProcessDto }) {
         <Field label="Mercadoria" value={process.goods} />
         <Field label="BL" value={process.billOfLading} mono />
         <Field label="Container" value={process.container} mono />
-        <Field label="ETA2" value={formatDay(process.eta2)} />
-        <Field label="Registro (RG)" value={formatDay(process.registrationDate)} />
-        <Field label="Docs enviados" value={formatDay(process.docsSentDate)} />
+        <Field label="ETA2" value={formatDay(process.eta2)} mono />
+        <Field label="Registro (RG)" value={formatDay(process.registrationDate)} mono />
+        <Field label="Docs enviados" value={formatDay(process.docsSentDate)} mono />
         <Field label="Canal" value={CHANNEL_LABELS[process.customsChannel]} />
         <Field label="Responsável" value={process.responsibleLabel} />
         <Field label="Importador fora do RJ" value={formatBoolean(process.importerOutsideRj)} />
@@ -196,7 +196,7 @@ function OutOfScope({ process }: { process: ProcessDto }) {
   return (
     <section
       aria-label="Campos fora de escopo"
-      className="rounded border border-dashed border-border-subtle bg-surface-sunken p-4"
+      className="rounded-container border border-dashed border-border-subtle bg-surface-sunken p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Fora de escopo para indicadores</h2>
       <p className="mt-1 text-xs text-text-secondary">
@@ -229,7 +229,7 @@ function Anomalies({ items }: { items: ProcessDetailResponse['anomalies'] }) {
           {items.map((anomaly) => (
             <li
               key={anomaly.code}
-              className="rounded border border-state-warning-border bg-state-warning-bg px-3 py-2 text-sm"
+              className="rounded-container border border-state-warning-border bg-state-warning-bg px-3 py-2 text-sm"
             >
               <strong className="font-mono text-xs text-state-warning-fg">{anomaly.code}</strong>
               <p className="text-state-warning-fg">{anomaly.detail}</p>
@@ -302,7 +302,11 @@ function Field({ label, value, mono }: { label: string; value: string; mono?: bo
   return (
     <div>
       <dt className="text-xs text-text-muted">{label}</dt>
-      <dd className={`text-sm ${mono ? 'font-mono' : ''} ${value === '' ? 'text-text-muted' : ''}`}>
+      {/* `tabular-nums` viaja com o mono: data e numero so se comparam entre
+          linhas quando o digito tem largura fixa (`H-62`). */}
+      <dd
+        className={`text-sm ${mono ? 'font-mono tabular-nums' : ''} ${value === '' ? 'text-text-muted' : ''}`}
+      >
         {value === '' ? '—' : value}
       </dd>
     </div>

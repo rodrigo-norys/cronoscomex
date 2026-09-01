@@ -3,6 +3,7 @@ import type { ConfigFieldReport, ConfigFieldSource } from '../../../src/app/conf
 import type { WorkbookConfigResponse } from '../../../src/http/routes/config.ts'
 import type { HealthResponse } from '../api-client.ts'
 import { LiveAnnouncement } from '../components/PageAlert.tsx'
+import { SeverityIcon, severityBand } from '../components/SeverityMark.tsx'
 import { useWorkbookConfig } from '../hooks/useWorkbookConfig.ts'
 
 /**
@@ -145,9 +146,10 @@ export function WorkbookSetup({
         <>
           <p
             aria-hidden="true"
-            className="mt-4 rounded border border-state-error-border bg-state-error-bg p-3 text-sm text-state-error-fg"
+            className={`mt-4 flex items-start gap-2 rounded-container border border-state-error-border bg-state-error-bg p-3 text-sm text-state-error-fg ${severityBand('error')}`}
           >
-            Não foi possível ler a configuração atual: {state.message}
+            <SeverityIcon tone="error" />
+            <span>Não foi possível ler a configuração atual: {state.message}</span>
           </p>
           <LiveAnnouncement text={`Não foi possível ler a configuração atual: ${state.message}`} />
         </>
@@ -163,7 +165,7 @@ export function WorkbookSetup({
               id="workbook-path"
               name="workbookPath"
               type="text"
-              className="min-w-64 flex-1 rounded border border-border-control px-3 py-2 font-mono text-sm"
+              className="min-w-64 flex-1 rounded-control border border-border-control px-3 py-2 font-mono text-sm"
               value={path}
               onChange={(event) => setPath(event.target.value)}
             />
@@ -180,7 +182,7 @@ export function WorkbookSetup({
               type="button"
               onClick={() => void onBrowse()}
               disabled={browsing}
-              className="rounded border border-border-control px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-surface-base disabled:cursor-progress disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
+              className="rounded-control border border-border-control px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-surface-base disabled:cursor-progress disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
             >
               {browsing ? 'Escolhendo…' : 'Escolher arquivo…'}
             </button>
@@ -207,7 +209,7 @@ export function WorkbookSetup({
           <button
             type="submit"
             disabled={saving || path.trim() === ''}
-            className="mt-4 rounded border border-action-bg bg-action-bg px-3 py-1.5 text-sm font-medium text-action-fg disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
+            className="mt-4 rounded-control border border-action-bg bg-action-bg px-3 py-1.5 text-sm font-medium text-action-fg disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
           >
             {saving ? 'Carregando a planilha…' : 'Carregar esta planilha'}
           </button>
@@ -319,7 +321,7 @@ function StartupChecklist({
         <button
           type="button"
           onClick={onRecheck}
-          className="rounded border border-border-control px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-surface-base"
+          className="rounded-control border border-border-control px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-surface-base"
         >
           Atualizar
         </button>
@@ -412,7 +414,7 @@ function ConfigInventory({ config }: { config: WorkbookConfigResponse }) {
         corporativo — que e longo por natureza — empurraria a pagina inteira para
         os lados.
       */}
-      <div className="mt-2 overflow-x-auto rounded border border-border-subtle bg-surface-raised">
+      <div className="mt-2 overflow-x-auto rounded-container border border-border-subtle bg-surface-raised">
         <table className="w-full text-left text-sm">
           <thead className="border-border-subtle border-b text-xs text-text-secondary uppercase">
             <tr>

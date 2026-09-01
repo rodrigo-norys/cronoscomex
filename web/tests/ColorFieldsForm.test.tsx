@@ -131,7 +131,10 @@ describe('enfileirar a troca', () => {
       'Essa combinacao nao tem cor correspondente na planilha.',
     )
 
-    expect(recusa.getAttribute('role')).toBe('alert')
+    // Pelo ancestral: `H-62` pôs o texto num `<span>` ao lado do ícone de
+    // severidade, então o nó que casa o texto não é mais o da região. O que
+    // importa continua sendo o mesmo — a mensagem vive DENTRO do `role="alert"`.
+    expect(recusa.closest('[role="alert"]')).not.toBeNull()
     expect(enfileirou).toBe(0)
   })
 })
