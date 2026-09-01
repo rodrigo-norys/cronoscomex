@@ -28,8 +28,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E9 — Estilização ✅ | **H-39 … H-47 e H-67 … H-72, todas concluídas** | 7 | 8 | 0 |
 | E10 — As melhorias de uso ✅ | **H-48 … H-56 e H-66, todas concluídas.** `H-50` é a única G do backlog | 2 | 7 | 1 |
 | E11 — A casca redesenhada ✅ | **H-57 … H-65, todas concluídas** | 3 | 6 | 0 |
-| E12 — Os achados da revisão de estilo | **H-73 ✅; H-74 a H-76 abertas** | 2 | 1 | 1 |
-| **Total** | **76** — 73 concluídas, 3 abertas | **30** | **44** | **2** |
+| E12 — Os achados da revisão de estilo | **H-73 ✅, H-74 ✅; H-75 e H-76 abertas** | 2 | 1 | 1 |
+| **Total** | **76** — 74 concluídas, 2 abertas | **30** | **44** | **2** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -166,7 +166,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 **[Épico E12 — Os achados da revisão de estilo](#e12)**
 
 - [H-73 — A faixa de severidade no token certo](#h-73) ✅
-- [H-74 — As quatro correções locais](#h-74)
+- [H-74 — As quatro correções locais](#h-74) ✅
 - [H-75 — Um papel de UI, uma forma e um nome](#h-75)
 - [H-76 — A coluna Navio cabe no que ela mostra](#h-76)
 
@@ -8422,6 +8422,54 @@ e o ícone existir uma vez.
 <a id="h-74"></a>
 
 ### H-74 — As quatro correções locais
+
+> ✅ **CONCLUÍDA em 01/09/2026.** **10 asserções próprias**, suíte de **1713
+> para 1723**. Os quatro achados fechados, e os quatro medidos.
+>
+> **`ACHADO 1` — zero saltos nas sete rotas, e um `h1` em cada.** Medido em
+> Chrome 151 sobre a sequência de títulos de cada página: `1` seguido só de `2`,
+> nas sete. Antes, `StatCard` e o cartão de contagem de `/alertas` desciam do
+> `h1` da `TopBar` direto para `h3` — falha `F43` de `SC 1.3.1`. **A guarda é
+> composicional e mora em `web/tests/paginas-montadas.test.tsx`**: o defeito não
+> existe dentro de um arquivo, e é o único teste que monta as sete páginas
+> **dentro da casca** — as irmãs montam a página sozinha, sem o `h1` que faz o
+> salto existir.
+>
+> **`ACHADO 9` — `min-h-6`, e não `py-1`.** A caixa aninhada media **20 px** com
+> `py-0.5` sobre `text-xs`, e o `<ul>` não tem `gap`: dois vizinhos a 20 px de
+> centro a centro, e círculos de 24 px se intersectam. `min-h-6` resolve
+> `calc(0.25rem * 6)` = **24 px** no CSS servido, e é **relativo** — acompanha a
+> ampliação. `py-1` também resolveria, com 28 px, mas apagaria o recuo menor que
+> distingue o aninhado da linha de topo.
+>
+> **`ACHADO 11` — o defeito era a orfandade, não a parada.** Medido: `/historico`
+> vai de **26 para 27 paradas**, com **zero órfãs e zero sem nome** nos dois
+> esquemas, e o `<svg>` respondendo `role="application"` e "Gráfico da evolução
+> mensal". `H-46` matou a parada desligando a camada; com o `aria-hidden` fora e
+> um nome no gráfico, ela deixa de ser órfã e passa a ser legítima. A tabela irmã
+> nunca esteve em jogo.
+>
+> **Dois testes provavam o comportamento que esta história reverte**, e foram
+> reescritos: um cobrava que o gráfico estivesse dentro de `aria-hidden`, o outro
+> que não houvesse `role="application"` nenhum.
+>
+> **`ACHADO 10` custou uma lição de fiação.** Tirar o `role="status"` do nó que
+> nasce populado é uma linha; anunciar pela região viva da casca duplicou o texto
+> na tela e **reprovou 17 testes** de uma vez, todos por
+> `Found multiple elements`. O padrão do projeto já resolvia: `WorkbookSetup`
+> deixa o bloco visível `aria-hidden` e dá ao anúncio uma **frase**, não o
+> rótulo. Os dois textos passam a diferir de propósito.
+>
+> **O `fallback` só existe em `/historico`.** A asserção nasceu em `/`, onde ele
+> nunca aparece — é a única rota carregada sob demanda, porque o Recharts
+> responde por 374 dos 634 kB do pacote.
+>
+> **Uma limitação declarada:** o `<svg>` do Recharts **não existe em jsdom** —
+> `ResponsiveContainer` mede o pai, e ali todo retângulo é zero. O teste de
+> componente afirma o invólucro; a parada nomeada foi medida no navegador. Pelo
+> mesmo motivo, o alvo aninhado do ranking é afirmado por classe: nenhuma fixture
+> versionada produz grupo de clientes, então o ramo não renderiza.
+
 
 **Objetivo:** fechar os quatro achados que não referenciam token nenhum e não
 dependem uns dos outros.
