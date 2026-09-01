@@ -44,7 +44,7 @@ export function RankingBar({
   return (
     <section
       aria-label={title}
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">{title}</h2>
       {caveat}
@@ -122,21 +122,31 @@ function RankingRow({
           quando ha `secondary`**, e so `Performance.tsx` o passa: as outras
           seis paginas que usam este componente nao recebem nem o `flex-wrap`,
           e por isso nao mudam. */}
+      {/* `title` porque o rotulo TRUNCA, e trunca nos dois tamanhos de fonte:
+          medido em `H-65`/`VN-2` a 1280 px, 160 px visiveis para 200
+          necessarios no padrao e 240 para 300 em "Muito grande" — a proporcao e
+          a mesma, o que cresce e o deficit. Sem ele o nome consolidado do
+          colaborador some sem aviso, e a regra ja estava fixada em
+          `ProcessTable`: texto livre que trunca guarda o valor inteiro. */}
       <span
+        title={label}
         className={`shrink-0 truncate text-sm group-hover:text-text-primary ${
           secondary ? 'w-full sm:w-40' : 'w-40'
         } ${nested ? 'pl-5 text-xs text-text-muted' : 'text-text-secondary'}`}
       >
         {label}
       </span>
-      <span className={`grow rounded-sm bg-meter-track ${nested ? 'h-2' : 'h-4'}`}>
+      {/* Raio de controle tambem na barra: ela nao e contentor, e `D-22` nao
+          admite valor intermediario. Na barra fina o efeito e quase o de uma
+          pilula, e isso e consequencia do raio unico, nao excecao. */}
+      <span className={`grow rounded-control bg-meter-track ${nested ? 'h-2' : 'h-4'}`}>
         <span
-          className="block h-full rounded-sm bg-meter-fill group-hover:bg-meter-fill-hover"
+          className="block h-full rounded-control bg-meter-fill group-hover:bg-meter-fill-hover"
           style={{ width: `${share}%` }}
         />
       </span>
       <span
-        className={`w-12 shrink-0 text-right tabular-nums ${
+        className={`w-12 shrink-0 text-right font-mono tabular-nums ${
           nested ? 'text-xs text-text-muted' : 'text-sm text-text-secondary'
         }`}
       >
@@ -146,9 +156,16 @@ function RankingRow({
     </>
   )
 
-  const shared = `group flex w-full items-center gap-3 rounded px-1 text-left ${
+  // `min-h-6` sao 24 px, e e `SC 2.5.8` (`H-74`, `ACHADO 9`): com `py-0.5`
+  // sobre `text-xs` a caixa media **20 px**, e o `<ul>` nao tem `gap` — dois
+  // membros vizinhos ficavam a 20 px de centro a centro, e circulos de 24 px
+  // centrados em cada um se intersectam, o que nao satisfaz a excecao Spacing.
+  //
+  // `min-h` e nao `py-1`: o recuo menor e o que distingue o aninhado da linha
+  // de topo, que ja mede 28 px e passa.
+  const shared = `group flex w-full items-center gap-3 rounded-control px-1 text-left ${
     secondary ? 'flex-wrap' : ''
-  } ${nested ? 'py-0.5' : 'py-1'}`
+  } ${nested ? 'min-h-6 py-0.5' : 'py-1'}`
 
   if (onSelect === undefined) return <span className={shared}>{content}</span>
 

@@ -220,7 +220,7 @@ function PeriodPicker({
   return (
     <section
       aria-label="Período"
-      className="flex flex-wrap items-end gap-3 rounded border border-border-subtle bg-surface-raised px-4 py-3"
+      className="flex flex-wrap items-end gap-3 rounded-container border border-border-subtle bg-surface-raised px-4 py-3"
     >
       <label className="flex flex-col gap-1 text-xs text-text-secondary">
         Período (ETA2) — de
@@ -228,7 +228,7 @@ function PeriodPicker({
           type="date"
           value={selection.etaFrom}
           onChange={(event) => setPeriod(event.target.value, selection.etaTo)}
-          className="rounded border border-border-control px-2 py-1 text-sm text-text-primary"
+          className="rounded-control border border-border-control px-2 py-1 text-sm text-text-primary"
         />
       </label>
       <label className="flex flex-col gap-1 text-xs text-text-secondary">
@@ -237,7 +237,7 @@ function PeriodPicker({
           type="date"
           value={selection.etaTo}
           onChange={(event) => setPeriod(selection.etaFrom, event.target.value)}
-          className="rounded border border-border-control px-2 py-1 text-sm text-text-primary"
+          className="rounded-control border border-border-control px-2 py-1 text-sm text-text-primary"
         />
       </label>
 
@@ -245,7 +245,7 @@ function PeriodPicker({
         <button
           type="button"
           onClick={() => setPeriod('', '')}
-          className="rounded border border-border-control px-3 py-1 text-sm text-text-primary"
+          className="rounded-control border border-border-control px-3 py-1 text-sm text-text-primary"
         >
           Todo o período
         </button>
@@ -288,7 +288,7 @@ function ChannelPanel({
   return (
     <section
       aria-label="Distribuição por canal"
-      className="rounded border border-border-subtle bg-surface-raised px-4 py-3"
+      className="rounded-container border border-border-subtle bg-surface-raised px-4 py-3"
     >
       <h2 className="text-sm font-semibold text-text-primary">Distribuição por canal</h2>
       <p className="mt-1 text-sm text-text-secondary">
@@ -347,7 +347,7 @@ function CategorySum({ counts }: { counts: IndicatorsResponse['counts'] }) {
           `ACHADO 11` por outro caminho, e era o que a linha de `:114` fazia por
           spread condicional. Quem anuncia e a regiao viva da casca. */}
       <p
-        className={`rounded border px-4 py-2 text-sm ${
+        className={`rounded-control border px-4 py-2 text-sm ${
           matches
             ? 'border-border-subtle bg-surface-raised text-text-secondary'
             : 'border-state-error-border bg-state-error-bg'

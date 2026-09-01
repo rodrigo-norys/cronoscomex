@@ -80,7 +80,7 @@ export function Alerts({ queryString, dataVersion }: AlertsProps) {
 
       <section
         aria-label="Fila de alertas"
-        className="rounded border border-border-subtle bg-surface-raised p-4"
+        className="rounded-container border border-border-subtle bg-surface-raised p-4"
       >
         <h2 className="text-sm font-semibold text-text-secondary">
           {groups.length === 0
@@ -139,9 +139,11 @@ function TypeCounts({
           <article
             key={type}
             aria-label={ALERT_LABELS[type]}
-            className="rounded border border-border-subtle bg-surface-raised p-3"
+            className="rounded-container border border-border-subtle bg-surface-raised p-3"
           >
-            <h3 className="text-xs font-medium text-text-muted">{ALERT_LABELS[type]}</h3>
+            {/* `h2` pelo mesmo motivo de `StatCard` (`H-74`): "Alertas por tipo"
+                e `aria-label` de secao, nao titulo — nao ha `h2` acima. */}
+            <h2 className="text-xs font-medium text-text-muted">{ALERT_LABELS[type]}</h2>
             {measurable ? (
               <p className="mt-1 text-2xl font-semibold tabular-nums">{counts[type]}</p>
             ) : (
@@ -182,7 +184,7 @@ function StalledNote({
   return (
     <section
       aria-label="Processos parados"
-      className="rounded border border-dashed border-border-subtle bg-surface-sunken p-4 text-xs text-text-secondary"
+      className="rounded-container border border-dashed border-border-subtle bg-surface-sunken p-4 text-xs text-text-secondary"
     >
       {measurable ? (
         <p>

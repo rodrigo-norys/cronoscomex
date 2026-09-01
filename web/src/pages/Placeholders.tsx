@@ -16,7 +16,7 @@ export function PendingPage({
   processRef?: string | null
 }) {
   return (
-    <section className="rounded border border-dashed border-border-subtle bg-surface-sunken p-8">
+    <section className="rounded-container border border-dashed border-border-subtle bg-surface-sunken p-8">
       <h2 className="text-lg font-semibold text-text-secondary">{page.label}</h2>
       <p className="mt-2 text-sm text-text-secondary">
         Página ainda não implementada. Ela chega em <strong>{page.story}</strong>.
@@ -30,7 +30,7 @@ export function PendingPage({
 
 export function NotFoundPage() {
   return (
-    <section className="rounded border border-border-subtle bg-surface-raised p-8">
+    <section className="rounded-container border border-border-subtle bg-surface-raised p-8">
       <h2 className="text-lg font-semibold text-text-secondary">Página não encontrada</h2>
       <p className="mt-2 text-sm text-text-secondary">
         O endereço digitado não corresponde a nenhuma página do painel.

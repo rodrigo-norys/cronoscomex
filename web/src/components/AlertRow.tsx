@@ -1,5 +1,6 @@
 import type { AlertsResponse } from '../api-client.ts'
 import { navigate } from '../router.ts'
+import { SeverityIcon, severityBand } from './SeverityMark.tsx'
 
 type Alert = AlertsResponse['items'][number]
 type AlertType = Alert['type']
@@ -41,9 +42,36 @@ export function AlertRow({ group }: { group: AlertGroup }) {
   if (mostSevere === undefined) return null
 
   const href = `/processo/${encodeURIComponent(group.ref)}`
+  const urgent = mostSevere.severity <= URGENT_SEVERITY
 
   return (
-    <li className="border-b border-border-subtle last:border-0">
+    /*
+      A faixa lateral carrega a severidade do grupo — a do alerta MAIS severo,
+      que e o primeiro da lista (o servidor ja ordenou).
+
+      **A cor da faixa vem de `severityBand`, e nao mais de um token proprio**
+      (`H-73`, `ACHADO 2`): `state-warning-border` media **1,60:1** no claro e
+      **1,94:1** no escuro contra a superficie, sob o piso de 3:1 de
+      `SC 1.4.11`. `state-warning-fg`, que e o que a faixa compartilhada usa,
+      mede 5,92 e 8,93.
+
+      **Quem engrossa sob o modo forcado e o ramo NAO urgente, que some** — o
+      urgente ja esta no maximo. `H-65` mediu a variante antiga sem efeito: ela
+      repetia o valor da base, e as DEZ linhas de `/alertas` mediam `4px`
+      urgentes e nao urgentes. O `pl` devolve os 4 px e viaja na MESMA variante,
+      como em `H-59`.
+
+      A informacao nunca esteve so aqui: o prefixo "Pede acao · " de `H-45`
+      sobrevive ao modo forcado por ser texto. A faixa e canal REDUNDANTE.
+    */
+    <li
+      data-urgent={urgent}
+      className={`border-b border-b-border-subtle last:border-b-0 ${
+        urgent
+          ? severityBand('warning')
+          : 'border-l-4 border-l-transparent forced-colors:border-l-0 forced-colors:pl-1'
+      }`}
+    >
       {/*
         `ACHADO 16`. Abrir o detalhe e a MESMA acao que a tabela ja oferece, e
         aqui ela tinha outro papel — `<button>` contra `<a href>` — e outro nome
@@ -69,10 +97,23 @@ export function AlertRow({ group }: { group: AlertGroup }) {
         className="flex w-full flex-col gap-1 px-1 py-2 text-left hover:bg-surface-sunken"
       >
         <span className="flex flex-wrap items-baseline gap-2">
+          {/*
+            **O glifo segue o tom, e o tom do urgente e `error`** (`H-73`). A
+            correcao do revisor mandava `tone="warning"` nos dois — a faixa E o
+            icone —, e isso colapsaria os dois glifos: urgente e nao urgente
+            passariam a mostrar o mesmo circulo, perdendo um canal em vez de
+            ganhar consistencia. O triangulo e o que distingue, e ele fica.
+          */}
+          <SeverityIcon tone={urgent ? 'error' : 'warning'} />
           <span className="font-mono text-sm font-medium text-text-primary">{group.ref}</span>
-          <span className="text-xs text-text-muted">linha {group.sourceRow}</span>
           <span className="text-xs text-text-muted">
-            ETA2 {group.eta2 === null ? '—' : formatDay(group.eta2)}
+            linha <span className="font-mono tabular-nums">{group.sourceRow}</span>
+          </span>
+          <span className="text-xs text-text-muted">
+            ETA2{' '}
+            <span className="font-mono tabular-nums">
+              {group.eta2 === null ? '—' : formatDay(group.eta2)}
+            </span>
           </span>
         </span>
 
@@ -98,7 +139,7 @@ function TypeBadge({ alert }: { alert: Alert }) {
   return (
     <span
       data-severity={alert.severity}
-      className={`rounded px-2 py-0.5 text-xs ${
+      className={`rounded-control px-2 py-0.5 text-xs ${
         urgent ? 'bg-state-warning-bg text-state-warning-fg' : 'bg-surface-base text-text-secondary'
       }`}
     >

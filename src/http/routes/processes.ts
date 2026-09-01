@@ -17,6 +17,7 @@ import {
 } from '../../domain/process-query.ts'
 import type {
   AnomalyCode,
+  ColorResponsible,
   CustomsChannel,
   Process,
   Responsible,
@@ -58,7 +59,26 @@ export interface ProcessDto {
   docsSentDate: string | null
   statusRaw: string
   statusCategory: StatusCategory
+  /**
+   * A chave da pessoa responsavel (`H-50`). `''` quando ninguem responde pelo
+   * processo, e ela e chave legitima no filtro.
+   *
+   * **Dominio aberto:** vem de `team-map.json`, que nao e versionado. A
+   * interface NAO a traduz — o nome vem em `responsibleLabel`, resolvido no
+   * servidor, porque nenhuma tabela escrita no cliente conhece a equipe.
+   */
   responsible: Responsible
+  /** O nome legivel de `responsible`. `''` quando nao ha responsavel. */
+  responsibleLabel: string
+  /**
+   * O que a COR da linha diz sobre responsavel (`H-50`).
+   *
+   * **Nao e redundante com `responsible`:** e o valor que o formulario de cor
+   * do detalhe precisa para dizer que cor a linha tem hoje. Sem ele, `H-50`
+   * passaria a chave da pessoa como se fosse cor, e o menu marcaria a opcao
+   * errada — defeito que o `typecheck` pegou ao fechar a fatia.
+   */
+  colorResponsible: ColorResponsible
   customsChannel: CustomsChannel
   importerOutsideRj: boolean | null
   boletoRaw: string
@@ -142,6 +162,8 @@ function toDto(process: Process, hasPendingEdits = false): ProcessDto {
     statusRaw: process.statusRaw,
     statusCategory: process.statusCategory,
     responsible: process.responsible,
+    responsibleLabel: process.responsibleLabel,
+    colorResponsible: process.colorResponsible,
     customsChannel: process.customsChannel,
     importerOutsideRj: process.importerOutsideRj,
     boletoRaw: process.boletoRaw,

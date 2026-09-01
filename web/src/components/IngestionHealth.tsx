@@ -1,5 +1,6 @@
 import type { HealthResponse, QuarantineResponse } from '../api-client.ts'
 import { navigate, WORKBOOK_SETUP_PAGE } from '../router.ts'
+import { SeverityIcon, severityBand } from './SeverityMark.tsx'
 
 /**
  * Painel de saude da ingestao (RF-16).
@@ -27,7 +28,7 @@ export function IngestionHealth({ health, quarantine }: IngestionHealthProps) {
   return (
     <section
       aria-label="Saúde da ingestão"
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Saúde da ingestão</h2>
 
@@ -53,19 +54,32 @@ export function IngestionHealth({ health, quarantine }: IngestionHealthProps) {
 
       {/* A regiao existe desde a montagem (`H-43`), e so o texto dentro dela
           muda: um `role="alert"` que nasce populado nao e anunciado. */}
+      {/*
+        `H-61`. A severidade passa a ser **faixa lateral mais icone**, e nao o
+        contentor inteiro tingido: e a mesma forma de `AlertRow`, e o que separa
+        severidade de canal por FORMA em vez de matiz (regra inviolavel 4).
+
+        O texto continua dizendo tudo — `SC 1.4.1` —, e o icone se soma a ele.
+
+        **A faixa e o icone vem de `SeverityMark`** (`H-73`): eram declarados a
+        mao aqui, e a copia do `path` do triangulo era a terceira do conjunto.
+      */}
       <p
         role="alert"
         className={
           overLimit
-            ? 'mt-3 rounded border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg'
+            ? `mt-3 flex items-start gap-2 rounded-container border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg ${severityBand('error')}`
             : 'sr-only'
         }
       >
         {overLimit && (
           <>
-            <strong className="font-semibold">Acima do limite de 2%.</strong> A carga precisa ser
-            revista antes de os números serem usados: linhas não interpretadas não entram em
-            indicador nenhum.
+            <SeverityIcon tone="error" />
+            <span>
+              <strong className="font-semibold">Acima do limite de 2%.</strong> A carga precisa ser
+              revista antes de os números serem usados: linhas não interpretadas não entram em
+              indicador nenhum.
+            </span>
           </>
         )}
       </p>
@@ -76,8 +90,10 @@ export function IngestionHealth({ health, quarantine }: IngestionHealthProps) {
         leitura — e trocar a planilha e a acao seguinte natural de quem conclui
         que esta lendo o arquivo errado.
       */}
+      {/* O nome do link e "Configuracao" nos TRES acessos (`H-75`, `ACHADO 6`):
+          a frase e que se acomoda ao rotulo canonico, e nao o contrario. */}
       <p className="mt-3 text-sm text-text-secondary">
-        Lendo{' '}
+        Lendo a planilha apontada em{' '}
         <a
           href={WORKBOOK_SETUP_PAGE.path}
           onClick={(event) => {
@@ -87,7 +103,7 @@ export function IngestionHealth({ health, quarantine }: IngestionHealthProps) {
           }}
           className="underline hover:text-text-primary"
         >
-          a planilha configurada
+          Configuração
         </a>{' '}
         — clique para conferir o caminho ou apontar outro arquivo.
       </p>
@@ -119,7 +135,7 @@ function Metric({
     <div>
       <dt className="text-xs text-text-muted">{label}</dt>
       <dd
-        className={`tabular-nums ${emphasis ? 'font-semibold text-state-error-fg' : 'text-text-primary'}`}
+        className={`font-mono tabular-nums ${emphasis ? 'font-semibold text-state-error-fg' : 'text-text-primary'}`}
       >
         {value}
       </dd>

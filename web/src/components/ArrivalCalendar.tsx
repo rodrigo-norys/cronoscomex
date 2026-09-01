@@ -16,7 +16,7 @@ export function ArrivalCalendar({ days }: { days: readonly ArrivalDay[] }) {
   return (
     <section
       aria-label="Calendário de chegadas"
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Chegadas nos próximos 15 dias</h2>
 
@@ -29,18 +29,19 @@ export function ArrivalCalendar({ days }: { days: readonly ArrivalDay[] }) {
           {days.map((day) => (
             <li key={day.eta2} className="border-l-2 border-border-subtle pl-3">
               <div className="flex items-baseline gap-2">
-                <time dateTime={day.eta2} className="font-medium tabular-nums">
+                <time dateTime={day.eta2} className="font-mono font-medium tabular-nums">
                   {formatDay(day.eta2)}
                 </time>
                 <span className="text-xs text-text-muted">
-                  {day.processCount} {day.processCount === 1 ? 'processo' : 'processos'}
+                  <span className="font-mono tabular-nums">{day.processCount}</span>{' '}
+                  {day.processCount === 1 ? 'processo' : 'processos'}
                 </span>
               </div>
               <ul className="mt-1 flex flex-col gap-0.5">
                 {day.vessels.map((vessel) => (
                   <li key={vessel.vesselKey} className="flex justify-between gap-3 text-sm">
                     <span className="truncate">{vessel.vesselLabel}</span>
-                    <span className="shrink-0 tabular-nums text-text-muted">
+                    <span className="shrink-0 text-right font-mono tabular-nums text-text-muted">
                       {vessel.processCount}
                     </span>
                   </li>

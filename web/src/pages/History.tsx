@@ -170,7 +170,7 @@ function ReconstructionNote({
   const previsao = reconstructed.points.filter((point) => point.forecast)
 
   return (
-    <p className="rounded border border-border-subtle bg-surface-sunken px-4 py-3 text-xs text-text-secondary">
+    <p className="rounded-container border border-border-subtle bg-surface-sunken px-4 py-3 text-xs text-text-secondary">
       A série <strong className="font-semibold">reconstruída</strong> é derivada das datas que a
       planilha carrega, e não do que a aplicação observou — as duas aparecem separadas de propósito,
       e divergirem num mês é informação sobre a planilha, não erro.{' '}
@@ -210,7 +210,7 @@ function EmptyHistory({ alone }: { alone: boolean }) {
   return (
     <section
       aria-label={alone ? 'Evolução mensal' : 'Histórico observado'}
-      className="rounded border border-border-subtle bg-surface-raised p-6 text-sm"
+      className="rounded-container border border-border-subtle bg-surface-raised p-6 text-sm"
     >
       <h2 className="text-base font-semibold text-text-secondary">
         Ainda não há histórico registrado.
@@ -237,7 +237,7 @@ function WindowPicker({
   onChange: (next: WindowMonths) => void
 }) {
   return (
-    <fieldset className="flex flex-wrap items-center gap-2 rounded border border-border-subtle bg-surface-raised px-4 py-3">
+    <fieldset className="flex flex-wrap items-center gap-2 rounded-container border border-border-subtle bg-surface-raised px-4 py-3">
       <legend className="sr-only">Janela da série</legend>
       <span className="text-sm text-text-secondary">Janela:</span>
       {WINDOWS.map((option) => (
@@ -252,7 +252,7 @@ function WindowPicker({
             selecionado ficaria indistinguivel dos outros dois. O `aria-pressed`
             acima ja resolve o eixo programatico; isto resolve o visual.
           */
-          className={`rounded px-3 py-1 text-sm font-medium ${
+          className={`rounded-control px-3 py-1 text-sm font-medium ${
             option === months
               ? 'border-2 border-action-bg bg-action-bg text-action-fg'
               : 'border border-border-control text-text-secondary hover:border-border-strong'
@@ -323,27 +323,33 @@ function MonthlySeries({
   return (
     <section
       aria-label="Evolução mensal"
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Evolução mensal</h2>
 
-      <div aria-hidden="true" className="mt-3 h-72 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          {/*
-            `ACHADO 12`. Sem isto, `recharts/es6/container/RootSurface.js:45` da
-            `tabIndex={0}` e `role="application"` ao `<svg>` — dentro de uma
-            subarvore `aria-hidden="true"`. O operador tabula para um elemento
-            que a arvore de acessibilidade nao expoe, e que por isso nao tem nome
-            nenhum a anunciar: uma parada orfa.
+      {/*
+        **O grafico deixou de ser `aria-hidden`** (`H-74`, `ACHADO 11`).
 
-            O grafico segue `aria-hidden`, e a tabela irma continua carregando os
-            mesmos numeros — a correcao remove a parada, nunca a alternativa
-            textual.
-          */}
+        `ACHADO 12` mediu a parada de tabulacao ORFA: `RootSurface` da
+        `tabIndex={0}` e `role="application"` ao `<svg>`, e dentro de uma
+        subarvore `aria-hidden` isso vira um foco que a arvore de acessibilidade
+        nao expoe — sem nome nenhum a anunciar. `H-46` matou a parada desligando
+        a camada.
+
+        **O defeito era a orfandade, nao a parada.** Com o `aria-hidden` fora e
+        um nome no proprio grafico, ela deixa de ser orfa: passa a ser uma parada
+        legitima, anunciada, com a navegacao por ponto que a camada oferece.
+        Medido em `H-65`: `/historico` vai de 26 para 27 paradas.
+
+        A tabela irma continua carregando os mesmos numeros — a alternativa
+        textual nunca esteve em jogo.
+      */}
+      <div className="mt-3 h-72 w-full">
+        <ResponsiveContainer width="100%" height="100%">
           <LineChart
+            aria-label="Gráfico da evolução mensal"
             data={points}
             margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
-            accessibilityLayer={false}
           >
             <CartesianGrid
               stroke="var(--color-chart-grid)"
@@ -426,8 +432,9 @@ function MonthlySeries({
             </tr>
           </thead>
           <tbody>
+            {/* `h-10` — a densidade de `H-61`, em unidade relativa. */}
             {points.map((point) => (
-              <tr key={point.month} className="border-b border-border-subtle last:border-0">
+              <tr key={point.month} className="h-10 border-b border-border-subtle last:border-0">
                 <td className="py-1">
                   <time dateTime={point.month}>{formatMonth(point.month)}</time>
                 </td>
@@ -453,7 +460,7 @@ function StartNote({ startedAt }: { startedAt: string | null }) {
   if (startedAt === null) return null
 
   return (
-    <p className="rounded border border-border-subtle bg-surface-sunken px-4 py-3 text-xs text-text-secondary">
+    <p className="rounded-container border border-border-subtle bg-surface-sunken px-4 py-3 text-xs text-text-secondary">
       O histórico começou em <strong className="font-semibold">{formatInstant(startedAt)}</strong>,
       quando a aplicação passou a registrar as mudanças.{' '}
       <strong>Não há dado anterior a essa data</strong> — a planilha guarda o estado de hoje, e
@@ -474,7 +481,7 @@ function StartNote({ startedAt }: { startedAt: string | null }) {
  */
 function VolumeNote() {
   return (
-    <p className="rounded border border-border-subtle bg-surface-sunken px-4 py-3 text-xs text-text-secondary">
+    <p className="rounded-container border border-border-subtle bg-surface-sunken px-4 py-3 text-xs text-text-secondary">
       <strong className="font-semibold">
         Volume conta os processos que a aplicação já observou
       </strong>{' '}
@@ -497,7 +504,7 @@ function TruncatedNote({ months, pointCount }: { months: number; pointCount: num
   return (
     <PageAlert
       tone="status"
-      className="rounded border border-state-warning-border bg-state-warning-bg px-4 py-3 text-xs text-state-warning-fg"
+      className="rounded-container border border-state-warning-border bg-state-warning-bg px-4 py-3 text-xs text-state-warning-fg"
       announcement={`A janela pedida — ${months} meses — é maior que o histórico existente. A série mostra os ${pointCount} ${pointCount === 1 ? 'mês' : 'meses'} que há.`}
     >
       A janela pedida — <strong className="font-semibold">{months} meses</strong> — é maior que o
@@ -517,7 +524,7 @@ function TruncatedNote({ months, pointCount }: { months: number; pointCount: num
  */
 function FilterCaveat() {
   return (
-    <p className="rounded border border-border-subtle bg-surface-sunken px-4 py-3 text-xs text-text-secondary">
+    <p className="rounded-container border border-border-subtle bg-surface-sunken px-4 py-3 text-xs text-text-secondary">
       Há filtro ativo, e o histórico guarda apenas a REF de cada processo. Os filtros são resolvidos
       contra a leitura atual da planilha: a série descreve o passado dos processos que casam{' '}
       <strong className="font-semibold">hoje</strong>. Um processo cujo navio mudou aparece sob o

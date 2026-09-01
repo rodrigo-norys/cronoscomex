@@ -106,7 +106,7 @@ export function pageOf(route: Route): PageDefinition | null {
 let pendingPageFocus = false
 
 /**
- * Troca de pagina **preservando a query**, que e onde os treze filtros globais
+ * Troca de pagina **preservando a query**, que e onde os quatorze filtros globais
  * vivem — trocar de pagina nunca limpa o recorte que o operador montou.
  *
  * `pushState` nao emite evento nenhum, entao o `popstate` sintetico e o que faz

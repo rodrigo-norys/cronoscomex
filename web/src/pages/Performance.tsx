@@ -186,7 +186,7 @@ function ActiveScope({
   return (
     <section
       aria-label="Recorte ativo"
-      className="rounded border border-border-subtle bg-surface-sunken px-4 py-3 text-xs text-text-secondary"
+      className="rounded-container border border-border-subtle bg-surface-sunken px-4 py-3 text-xs text-text-secondary"
     >
       {activeCount === 0 ? (
         <p>
@@ -224,7 +224,7 @@ function Aggregate({ leadTime }: { leadTime: IndicatorsResponse['documentaryLead
   return (
     <section
       aria-label="Tempo médio de envio documental"
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Tempo médio de envio documental</h2>
 
@@ -305,7 +305,7 @@ function LeadTimeTable({ title, unit, groups, total, shown }: LeadTimeTableProps
   return (
     <section
       aria-label={title}
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">{title}</h2>
 
@@ -328,8 +328,10 @@ function LeadTimeTable({ title, unit, groups, total, shown }: LeadTimeTableProps
                 </tr>
               </thead>
               <tbody>
+                {/* `h-10` — a densidade de `H-61`, em unidade relativa, para a
+                    linha acompanhar quem amplia (`SC 1.4.4`). */}
                 {groups.map((group) => (
-                  <tr key={group.key} className="border-b border-border-subtle last:border-0">
+                  <tr key={group.key} className="h-10 border-b border-border-subtle last:border-0">
                     {/* `VN-2` mediu o truncamento CRESCENDO com a ampliacao,
                         e nenhuma das celulas tinha `title` — o texto cortado
                         nao tinha recurso nenhum (`H-69`). `max-w-0` espremia a
@@ -357,7 +359,6 @@ function LeadTimeTable({ title, unit, groups, total, shown }: LeadTimeTableProps
               </tbody>
             </table>
           </div>
-
           {total > shown && (
             <p className="mt-2 text-xs text-text-muted">
               Exibindo {shown} de {total.toLocaleString('pt-BR')} grupos, os de maior amostra.
@@ -381,17 +382,23 @@ function OverdueBadge({ overdue }: { overdue: number | undefined }) {
 }
 
 /**
- * Por que a linha não leva à Operacional, e por que `Indefinido` é o maior
- * grupo. A-31 e R-02: a cor da linha é a única fonte do responsável, e linha
- * vermelha ou verde a perde — 477 verdes, medido.
+ * De onde vem o responsavel, e o que significa a linha sem ele.
+ *
+ * **Este texto dizia o contrario ate `H-66`**, e estava certo enquanto disse: a
+ * cor era a unica fonte, linha vermelha ou verde perdia o responsavel (A-31,
+ * R-02), e `Indefinido` liderava com 484 dos 649. `H-50` trocou a fonte para o
+ * importador, e a limitacao de A-31 deixou de valer para este campo — ela
+ * continua valendo para a COR, que agora e o outro filtro da barra.
  */
 function ResponsibleCaveat() {
   return (
-    <p className="mt-2 rounded border border-border-subtle bg-surface-sunken px-3 py-2 text-xs text-text-secondary">
-      O responsável vem da cor da linha, e linha vermelha ou verde não o carrega (A-31) — por isso{' '}
-      <strong>Indefinido</strong> costuma liderar. As linhas não são clicáveis: o filtro por
-      Colaborador 1 seleciona também os outros clientes dele (A-18), e o recorte não bateria com a
-      contagem acima.
+    <p className="mt-2 rounded-container border border-border-subtle bg-surface-sunken px-3 py-2 text-xs text-text-secondary">
+      O responsável vem do <strong>importador</strong>, e a cor da linha decide o que a lista de
+      importadores não alcança. <strong>Sem responsável</strong> é o processo que não tem nem uma
+      coisa nem a outra — ele aparece aqui de propósito, porque escondê-lo faria o ranking parecer
+      completo. Para recortar por <strong>o que a linha está pintada</strong>, use o filtro Cor do
+      responsável na barra do topo: ele responde outra pergunta, e uma linha vermelha ou verde não a
+      responde (A-31).
     </p>
   )
 }
@@ -401,7 +408,7 @@ function OutOfScopeNote({ topN }: { topN: number }) {
   return (
     <section
       aria-label="Fora de escopo"
-      className="rounded border border-dashed border-border-subtle bg-surface-sunken p-4 text-xs text-text-secondary"
+      className="rounded-container border border-dashed border-border-subtle bg-surface-sunken p-4 text-xs text-text-secondary"
     >
       <p>
         <strong className="font-semibold text-text-secondary">

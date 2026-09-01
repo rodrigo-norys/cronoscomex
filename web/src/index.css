@@ -1,128 +1,329 @@
 @import "tailwindcss";
 
 /**
- * Camada de tema (`H-39`).
+ * As duas familias, servidas do PROPRIO repositorio (`H-58`, RNF-43).
+ *
+ * **O mockup carrega de `fonts.googleapis.com`, e o produto nao pode.**
+ * RNF-34 proibe CDN e telemetria, RNF-31 diz que nenhum dado sai da maquina em
+ * execucao, e a maquina do operador pode estar sem internet — e um dos caminhos
+ * infelizes de `PD-06`. Fonte por CDN falharia **calada**: a tipografia cairia
+ * para a pilha do sistema sem erro nenhum, e ninguem saberia.
+ *
+ * **Sem dependencia npm.** Os `.woff2` sao versionados em `web/public/fonts/` e
+ * o `@font-face` e escrito a mao; `@fontsource` resolveria o mesmo com uma
+ * dependencia que o plano nao preve. `LICENSE.txt` acompanha os arquivos —
+ * IBM Plex e OFL 1.1, e o repositorio vai a publico.
+ *
+ * **Tres pesos, e nao quatro.** 400, 500 e 600. O teto e decisao da proposta, e
+ * hoje ja e verdade: medido em 01/09/2026, o conjunto tem **zero** `font-bold`
+ * e **zero** `italic`. Peso que nao existe em arquivo o navegador sintetiza,
+ * engordando o traco — declarar so o que existe evita isso.
+ *
+ * `font-display: swap`, nunca `block`: `block` esconde o texto durante a carga,
+ * que e regressao de percepcao sem ganho nenhum.
+ */
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("/fonts/IBMPlexSans-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("/fonts/IBMPlexSans-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Sans";
+  src: url("/fonts/IBMPlexSans-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/IBMPlexMono-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/IBMPlexMono-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "IBM Plex Mono";
+  src: url("/fonts/IBMPlexMono-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/**
+ * Camada de tema (`H-39`), com o par escuro de cada cor (`H-57`).
  *
  * Todo utilitario de cor do conjunto passa por aqui: nenhum `.tsx` volta a
- * citar passo de paleta. Os valores nao sao copia do que havia antes — os tres
- * que reprovavam contraste nascem ja corrigidos, para que a substituicao das
- * oito fatias seguintes carregue a correcao junto em vez de virar uma segunda
- * passada pelos mesmos arquivos.
+ * citar passo de paleta. Os valores nao sao copia do que havia antes — os que
+ * reprovavam contraste nascem ja corrigidos, para que a substituicao das fatias
+ * seguintes carregue a correcao junto em vez de virar uma segunda passada pelos
+ * mesmos arquivos. Foi assim em `H-39`, com tres, e em `H-57`, com seis.
  *
- * As contas estao em `docs/estilizacao/RESULTADO.md`; as razoes citadas abaixo
- * foram reconferidas contra a paleta 4.3.3 instalada, ao abrir `H-39`.
+ * As contas de `E9` estao em `docs/estilizacao/RESULTADO.md`; as de `E11`, em
+ * `docs/redesign/PROPOSTA.md` §2.2. As razoes citadas abaixo foram **medidas no
+ * navegador** por `tools/medir-navegador.mjs`, nos dois esquemas, ao fechar
+ * `H-57` — e nao calculadas a mao: quem resolve `oklch()` e compoe alfa e o
+ * compositor, nao a formula.
  *
  * `static` porque o Tailwind so emite a variavel que ele ve usada num
  * utilitario, e os tokens de grafico serao lidos por `var()` dentro do JS das
  * props do Recharts, onde ele nao enxerga. Sem isto, o token existiria no
  * fonte e nao no CSS servido — e a cor sumiria sem erro nenhum.
+ *
+ * **`static`, e nunca `inline`, tambem por causa do par escuro** (regra `D05`
+ * do corpus): com `inline` o utilitario grava o VALOR em vez de referenciar a
+ * variavel, e o bloco de override sob a media query nao teria efeito nenhum.
  */
 @theme static {
-  /* Superficies: slate-100, branco e slate-50. */
-  --color-surface-base: oklch(96.8% 0.007 247.896);
+  /* Superficies. `hover` e token novo (`H-57`): o realce de linha da tabela. */
+  --color-surface-base: #fbfbfc;
   --color-surface-raised: #ffffff;
-  --color-surface-sunken: oklch(98.4% 0.003 247.858);
+  --color-surface-sunken: #f4f5f7;
+  --color-surface-hover: #f0f2f5;
 
   /*
-   * Texto: slate-900 e slate-600 seguem como estavam. `muted` sai de slate-400
-   * e slate-300 — 2.63:1 e 1.49:1 sobre `surface-raised`, contra um piso de
-   * 4.5:1 — e assume slate-500, que mede 4.77:1 ali. Sobre `surface-base` ele
-   * cai para 4.35:1: nessa superficie quem vale e `--color-text-secondary`.
+   * Texto. `muted` NAO adota o `#868d97` do mockup: ele mede 3.35:1 sobre
+   * `surface-raised`, contra um piso de 4.5:1 — exatamente o defeito que `H-39`
+   * corrigiu, de volta. `#6a6f77` mede 5.06:1 (PROPOSTA §2.2).
    */
-  --color-text-primary: oklch(20.8% 0.042 265.755);
-  --color-text-secondary: oklch(44.6% 0.043 257.281);
-  --color-text-muted: oklch(55.4% 0.046 257.417);
+  --color-text-primary: #14161a;
+  --color-text-secondary: #545a63;
+  --color-text-muted: #6a6f77;
 
   /*
-   * Bordas: `control` e a que delimita campo e botao, e o piso dela e 3:1.
-   * Vinha de slate-300, que mede 1.35:1 sobre `surface-base` — a borda que
-   * informa onde o campo comeca era praticamente invisivel. slate-500 mede
-   * 4.35:1 ali e 4.77:1 sobre `surface-raised`.
+   * Bordas. `control` delimita campo e botao, e o piso dela e 3:1
+   * (`SC 1.4.11`); `strong` e o degrau acima. Os dois valores do mockup
+   * reprovavam — 1.59:1 e 2.63:1 —, e os candidatos de PROPOSTA §2.2 entram no
+   * lugar. `subtle` **nao tem piso**: e separacao de superficie, nao limite de
+   * componente, e 1.25:1 ali esta correto.
    */
-  --color-border-subtle: oklch(92.9% 0.013 255.508);
-  --color-border-strong: oklch(27.9% 0.041 260.031);
-  --color-border-control: oklch(55.4% 0.046 257.417);
+  --color-border-subtle: #e4e6ea;
+  --color-border-control: #8b8d92;
+  --color-border-strong: #6a6f77;
+  /*
+   * A borda do painel MODAL, e o unico token que existe por causa do que esta
+   * ATRAS do elemento (`H-62`).
+   *
+   * `H-62` tirou a ultima sombra do conjunto, e o que separa o dialogo do veu
+   * passou a ser a borda. `border-strong` nao serve aqui, e a medicao diz por
+   * que: no claro ela mede **1,91:1** contra o veu composto, contra um piso de
+   * 3:1. O motivo e geometrico — um cinza medio fica ENTRE o painel branco e o
+   * veu, e nao contrasta com os dois. Este token e escuro no claro e claro no
+   * escuro, sempre contra o veu.
+   */
+  --color-border-modal: #3a3d42;
 
-  /* Acao primaria: slate-800, slate-700 no hover, branco por cima (14.66:1). */
-  --color-action-bg: oklch(27.9% 0.041 260.031);
-  --color-action-bg-hover: oklch(37.2% 0.044 257.287);
+  /*
+   * Acao primaria. O acento deixa de ser neutro e passa a ser indigo (`D-22`),
+   * em botao primario e item ativo — e em lugar nenhum mais: nunca em titulo,
+   * borda ou icone. `soft` e token novo, o fundo do item ativo da navegacao.
+   */
+  --color-action-bg: #3d4eac;
+  --color-action-bg-hover: #34449a;
   --color-action-fg: #ffffff;
+  --color-action-soft: #eceefa;
 
   /*
-   * Severidade: um trio por nivel, e nenhum local escolhe o seu. Os desviantes
-   * que a auditoria nomeia — borda mais forte aqui, contentor ausente ali —
-   * desaparecem por nao haver mais onde divergir.
+   * Severidade: um trio por nivel, e nenhum local escolhe o seu.
+   *
+   * O mockup **nao** declara `state-*-border`, porque ali a severidade e faixa
+   * lateral e nao contentor com borda. O token fica: `IngestionHealth` e as
+   * tres `@utility` de painel o consomem, e retira-lo seria mudanca de
+   * comportamento disfarcada de troca de valor. Ele nao carrega piso de 3:1 —
+   * quem delimita controle e `border-control`, e o painel ja se distingue pelo
+   * fundo e pelo texto.
    */
-  --color-state-error-bg: oklch(97.1% 0.013 17.38);
-  --color-state-error-border: oklch(80.8% 0.114 19.571);
-  --color-state-error-fg: oklch(39.6% 0.141 25.723);
+  --color-state-error-bg: #fdf2f1;
+  --color-state-error-border: #eab3ad;
+  --color-state-error-fg: #b03028;
 
-  --color-state-warning-bg: oklch(98.7% 0.022 95.277);
-  --color-state-warning-border: oklch(87.9% 0.169 91.605);
-  --color-state-warning-fg: oklch(41.4% 0.112 45.904);
+  --color-state-warning-bg: #fdf7ec;
+  --color-state-warning-border: #e6c98c;
+  --color-state-warning-fg: #8a5a06;
 
-  --color-state-info-bg: oklch(97.7% 0.013 236.62);
-  --color-state-info-border: oklch(82.8% 0.111 230.318);
-  --color-state-info-fg: oklch(39.1% 0.09 240.876);
+  --color-state-info-bg: #eef5fc;
+  --color-state-info-border: #aecdea;
+  --color-state-info-fg: #1f5c9e;
 
-  --color-state-success-fg: oklch(50.8% 0.118 165.612);
+  --color-state-success-fg: #1a7444;
 
   /*
-   * Controle desabilitado. Os dois padroes anteriores derrubavam o botao
-   * contra a pagina — 2.32:1 com `opacity-40`, 1.36:1 com slate-300 —, e foi
-   * assim que o unico chamado a acao da tela de primeira execucao sumiu numa
-   * sessao remota. slate-500 mede 4.35:1 contra `surface-base`, e o branco por
-   * cima, 4.77:1.
+   * Controle desabilitado. `SC 1.4.3` e `SC 1.4.11` isentam componente inativo,
+   * e mesmo assim o par e legivel: os dois padroes anteriores derrubavam o
+   * botao contra a pagina — 2.32:1 com `opacity-40`, 1.36:1 com slate-300 —, e
+   * foi assim que o unico chamado a acao da tela de primeira execucao sumiu
+   * numa sessao remota.
    */
-  --color-control-disabled-bg: oklch(55.4% 0.046 257.417);
+  --color-control-disabled-bg: #8b8d92;
   --color-control-disabled-fg: #ffffff;
 
   /*
-   * Veu do dialogo: slate-900 a 40%, o mesmo valor resolvido de antes. A cor
-   * efetiva depende do que esta pintado atras, e por isso ela e medida no
-   * navegador ([VN-6]) — aqui houve renomeacao, nao recoloracao.
+   * Veu do dialogo. **O par escuro nao e o mesmo alfa** (`H-57`): o mesmo preto
+   * a 40% sobre um fundo ja escuro nao escurece nada, e o dialogo perderia a
+   * separacao do que esta atras. No escuro ele fica mais opaco.
    */
-  --color-overlay-scrim: oklch(20.8% 0.042 265.755 / 0.4);
+  --color-overlay-scrim: rgb(20 22 26 / 0.4);
 
   /*
-   * Grafico. As tres series ficam nos valores ja medidos; eixo e grade saem de
-   * literal hexadecimal para a paleta da versao instalada, que e onde estavam
-   * derivando — dois dos tres literais eram passo da v3.
+   * Grafico. `series-1` acompanha o acento; as outras duas ficam nos valores ja
+   * medidos, e o escuro delas clareia para nao sumir contra `surface-raised`.
    */
-  --color-chart-series-1: #4f46e5;
-  --color-chart-series-2: #0d9488;
-  --color-chart-series-3: #dc2626;
-  --color-chart-axis: oklch(55.4% 0.046 257.417);
-  --color-chart-grid: oklch(92.9% 0.013 255.508);
+  --color-chart-series-1: #3d4eac;
+  --color-chart-series-2: #0d7d72;
+  --color-chart-series-3: #c2261c;
+  --color-chart-axis: #6a6f77;
+  --color-chart-grid: #e4e6ea;
 
   /*
-   * Medidor do ranking: a barra e o unico canal da comparacao entre linhas, e
-   * o preenchimento media 2.40:1 contra o trilho. slate-600 mede 6.90:1.
+   * Medidor do ranking: a barra e o unico canal da comparacao entre linhas
+   * (`H-40`), entao o que importa e a razao entre PREENCHIMENTO e TRILHO — e
+   * ela e medida nos dois esquemas, nao so contra a superficie.
    *
-   * O tom de foco existe porque a correcao acima consumiu o que era o realce:
-   * a barra ia de slate-400 para slate-600 sob o cursor, e slate-600 virou o
-   * estado normal. Sem um passo alem, o realce da linha desapareceria (`H-40`).
+   * O tom de foco existe porque a correcao de `H-40` consumiu o que era o
+   * realce: sem um passo alem, o realce da linha desapareceria.
    */
-  --color-meter-track: oklch(96.8% 0.007 247.896);
-  --color-meter-fill: oklch(44.6% 0.043 257.281);
-  --color-meter-fill-hover: oklch(27.9% 0.041 260.031);
+  --color-meter-track: #e4e6ea;
+  --color-meter-fill: #545a63;
+  --color-meter-fill-hover: #14161a;
 
   /*
-   * Canal Vermelho e DADO, nao severidade (IND-06): a auditoria nao o listou
-   * entre os locais de erro, e reusar `state-error-*` faria o badge do canal
-   * seguir uma futura mudanca no vermelho de erro sem motivo nenhum (`H-40`).
+   * Canal aduaneiro e DADO, nao severidade (IND-06, regra inviolavel 4): reusar
+   * `state-error-*` faria o badge do canal seguir uma futura mudanca no
+   * vermelho de erro sem motivo nenhum (`H-40`). Verde e ambar sao tokens novos
+   * de `H-57`, e o verde coincide com o que `H-51` ja introduziu no dominio.
    */
-  --color-channel-red-bg: oklch(93.6% 0.032 17.717);
-  --color-channel-red-fg: oklch(39.6% 0.141 25.723);
+  --color-channel-red-bg: #fbe3e1;
+  --color-channel-red-fg: #99271f;
+
+  --color-channel-green-bg: #e3f4e9;
+  --color-channel-green-fg: #14653a;
+
+  --color-channel-amber-bg: #fbeed4;
+  --color-channel-amber-fg: #7a4e05;
+
+  /*
+   * Forma e movimento. **Nao tem par por esquema, e a guarda cobra isso**: o
+   * raio de um botao nao muda porque o sistema esta escuro, e duplica-los sob a
+   * media query seria ruido que a proxima fatia copiaria.
+   *
+   * Dois raios e nada entre eles (`D-22`). `--ease-brand` e nao `--ease` porque
+   * `--ease-*` e namespace do Tailwind: sem sufixo ele nao gera utilitario.
+   */
+  /*
+   * A pilha de reserva e REAL, e nao `sans-serif` sozinho: a fonte pode nao
+   * carregar — arquivo removido da distribuicao, cache frio, disco lento —, e o
+   * que o operador ve nesse caso e a reserva. `ui-sans-serif` e `ui-monospace`
+   * pedem a fonte de INTERFACE do sistema, que e o que a casca quer; os nomes
+   * seguintes cobrem o Windows do operador e o Linux daqui.
+   */
+  --font-sans:
+    "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+  --font-mono:
+    "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+
+  --radius-control: 6px;
+  --radius-container: 12px;
+
+  --speed-fast: 110ms;
+  --speed-base: 170ms;
+  --ease-brand: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /*
  * Sem isto, as barras de rolagem e os controles nativos de formulario — os
  * quatro `input type="date"` e os tres `select` do conjunto — nao recebem o
- * esquema que o restante da interface declara.
+ * esquema que o restante da interface declara. **`light dark` desde `H-57`**:
+ * com `light` sozinho, o campo de data continuaria branco numa tela escura.
  */
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
+}
+
+/*
+ * O par escuro (`D-21`). **Quem escolhe e o sistema** — nao ha alternancia
+ * manual, e por isso nao ha `@custom-variant`: a variante `dark:` da v4 resolve
+ * para esta mesma media query sozinha (regra `D04` do corpus, que por isso NAO
+ * incide).
+ *
+ * So cor entra aqui. Raio, velocidade e curva ficam de fora de proposito, e
+ * `tests/repo/estilo.test.ts` reprova quem os duplicar.
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface-base: #0b0c0e;
+    --color-surface-raised: #131519;
+    --color-surface-sunken: #0f1114;
+    --color-surface-hover: #1b1e24;
+
+    --color-text-primary: #eaecef;
+    --color-text-secondary: #9ba2ac;
+    --color-text-muted: #81878f;
+
+    --color-border-subtle: #23262c;
+    --color-border-control: #606369;
+    --color-border-strong: #81878f;
+    --color-border-modal: #81878f;
+
+    --color-action-bg: #4c5fc9;
+    --color-action-bg-hover: #5c6ed6;
+    --color-action-fg: #ffffff;
+    --color-action-soft: #1c2140;
+
+    --color-state-error-bg: #2a1614;
+    --color-state-error-border: #5a2b26;
+    --color-state-error-fg: #f08a80;
+
+    --color-state-warning-bg: #261c0c;
+    --color-state-warning-border: #57431b;
+    --color-state-warning-fg: #e0ad4e;
+
+    --color-state-info-bg: #101f2d;
+    --color-state-info-border: #264259;
+    --color-state-info-fg: #74b3ee;
+
+    --color-state-success-fg: #58c98a;
+
+    --color-control-disabled-bg: #4a4e55;
+    --color-control-disabled-fg: #c9ccd1;
+
+    --color-overlay-scrim: rgb(0 0 0 / 0.62);
+
+    --color-chart-series-1: #8c9bf0;
+    --color-chart-series-2: #3fc9bb;
+    --color-chart-series-3: #f0736b;
+    --color-chart-axis: #81878f;
+    --color-chart-grid: #23262c;
+
+    --color-meter-track: #23262c;
+    --color-meter-fill: #9ba2ac;
+    --color-meter-fill-hover: #eaecef;
+
+    --color-channel-red-bg: #2e1815;
+    --color-channel-red-fg: #f0908a;
+
+    --color-channel-green-bg: #12291d;
+    --color-channel-green-fg: #63d296;
+
+    --color-channel-amber-bg: #2b2110;
+    --color-channel-amber-fg: #e2b25f;
+  }
 }
 
 /*
@@ -132,13 +333,121 @@
  * que os dois passos de borda marcavam antes, e ela nao se perde aqui.
  */
 @utility panel-loading {
-  @apply rounded border border-border-subtle bg-surface-raised p-6 text-sm text-text-muted;
+  @apply rounded-container border border-border-subtle bg-surface-raised p-6 text-sm text-text-muted;
 }
 
 @utility panel-error {
-  @apply rounded border border-state-error-border bg-state-error-bg p-4 text-sm text-state-error-fg;
+  @apply rounded-container border border-state-error-border bg-state-error-bg p-4 text-sm text-state-error-fg;
 }
 
 @utility panel-no-read {
-  @apply rounded border border-border-control bg-surface-raised p-4 text-sm;
+  @apply rounded-container border border-border-control bg-surface-raised p-4 text-sm;
+}
+
+/*
+ * A pele do botao de acao primaria, repetida em CINCO lugares (`H-75`,
+ * `ACHADO 4`): `ApplyChangesButton`, `ConflictDialog`, `EditProcessForm`,
+ * `ColorFieldsForm` e a Pagina Configuracao.
+ *
+ * **O que divergia nao era detalhe:** a borda existia em 3 dos 5 e o `hover` em
+ * 2 dos 5 — o mesmo papel com dois desenhos e dois comportamentos sob o cursor,
+ * e `SC 3.2.4` incide porque as sete telas tem URIs distintas.
+ *
+ * **O espacamento NAO entra, de proposito.** `C04` alcanca forma — raio, borda,
+ * sombra —, e o botao do dialogo usa `px-4 py-2` por ser confirmacao de painel
+ * modal. Engolir o `padding` aqui redimensionaria um controle sem que regra
+ * nenhuma pedisse.
+ */
+@utility button-primary {
+  @apply rounded-control border border-action-bg bg-action-bg text-sm font-medium text-action-fg;
+  @apply hover:bg-action-bg-hover;
+  @apply disabled:cursor-not-allowed disabled:border-control-disabled-bg;
+  @apply disabled:bg-control-disabled-bg disabled:text-control-disabled-fg;
+}
+
+/*
+ * Movimento (`H-64`). Duas duracoes, uma curva, e nada entre elas.
+ *
+ * **Declarado aqui, e nunca no `.tsx`.** `--radius-*` e `--ease-*` sao
+ * namespaces do Tailwind e por isso geram `rounded-control` e `ease-brand`;
+ * `--speed-*` nao e namespace nenhum — `duration-fast` NAO existe, e a
+ * alternativa seria repetir `duration-[var(--speed-fast)]` em cada consumidor.
+ * Com as utilidades abaixo o `.tsx` nomeia o papel, e a guarda pode cobrar
+ * **zero** utilitario de movimento fora deste arquivo, que e o criterio de
+ * aceite escrito de forma verificavel.
+ *
+ * A regra de reducao fecha o arquivo, e a ordem importa: as tres regras de
+ * movimento sao NAO-LAYERED, entao quem vem depois vence com a mesma
+ * especificidade. `@utility` cai em `@layer utilities`, e qualquer regra fora
+ * de camada ja o supera.
+ */
+
+/*
+ * Cor sob o cursor. **Nao cai sob reducao de movimento, de proposito**: `A10`
+ * trata de MOVIMENTO, e o contraexemplo do corpus e explicito — `transition-colors`
+ * nao e movimento. Anular esta seria obedecer a uma regra que nao existe e
+ * tirar do operador o unico retorno visual de que a linha esta sob o cursor.
+ */
+@utility motion-tint {
+  transition:
+    color var(--speed-fast) var(--ease-brand),
+    background-color var(--speed-fast) var(--ease-brand),
+    border-color var(--speed-fast) var(--ease-brand);
+}
+
+/*
+ * Superficie que aparece — hoje so o popover do chip. `--speed-base` e nao
+ * `--speed-fast` porque a superficie e maior que um controle: 110 ms num painel
+ * de 16 rem le como salto, e nao como abertura.
+ */
+@utility motion-surface {
+  animation: surface-appear var(--speed-base) var(--ease-brand);
+}
+
+@keyframes surface-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}
+
+/*
+ * O recuo do controle pressionado. 2,5% e o suficiente para o dedo confirmar
+ * que o clique pegou, e pouco o bastante para nao deslocar o rotulo.
+ *
+ * `:not(:disabled)` porque controle inativo nao responde a nada, e a isencao
+ * de `SC 1.4.3` para componente inativo tem a mesma raiz: o que nao age nao
+ * precisa confirmar acao.
+ */
+button:not(:disabled) {
+  transition: transform var(--speed-fast) var(--ease-brand);
+}
+
+button:not(:disabled):active {
+  transform: scale(0.975);
+}
+
+/*
+ * A contraparte de `A10`, e ela nasce no mesmo commit que o movimento.
+ *
+ * Cada seletor que se move acima aparece aqui anulado, e
+ * `tests/repo/estilo.test.ts` compara as duas listas: movimento sem contraparte
+ * reprova pelo NOME do seletor que ficou de fora.
+ */
+@media (prefers-reduced-motion: reduce) {
+  button:not(:disabled) {
+    transition: none;
+  }
+
+  button:not(:disabled):active {
+    transform: none;
+  }
+
+  /*
+   * O estado final e o MESMO — o painel aparece inteiro e opaco. O que cai e a
+   * interpolacao, nao a revelacao.
+   */
+  .motion-surface {
+    animation: none;
+  }
 }

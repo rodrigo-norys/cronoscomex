@@ -1,4 +1,4 @@
-import type { CustomsChannel, Responsible } from './types.ts'
+import type { ColorResponsible, CustomsChannel } from './types.ts'
 
 /**
  * Traducao da chave de estilo nos tres campos que so existem como cor —
@@ -25,13 +25,13 @@ export interface ColorMapEntry {
    */
   fillId: number
   label: string
-  responsible: Responsible
+  responsible: ColorResponsible
   customsChannel: CustomsChannel
   importerOutsideRj: boolean
 }
 
 export interface ColorResolution {
-  responsible: Responsible
+  responsible: ColorResponsible
   customsChannel: CustomsChannel
   /** `null` quando a cor nao foi reconhecida: nao e o mesmo que "dentro do RJ". */
   importerOutsideRj: boolean | null
@@ -81,7 +81,7 @@ export function resolveColor(styleKey: string, map: readonly ColorMapEntry[]): C
  * nao conhece.
  */
 export interface ColorTarget {
-  responsible: Responsible
+  responsible: ColorResponsible
   customsChannel: CustomsChannel
   importerOutsideRj: boolean
 }

@@ -16,21 +16,44 @@ export type StatusCategory =
   | 'fechado_aguardando_draft'
 
 /**
- * Responsavel pelo processo. Derivado EXCLUSIVAMENTE da cor da linha.
+ * O que a COR da linha codifica sobre responsavel (TD-05, A-17).
  *
  * `colaborador1_outros_clientes` e subcategoria de `colaborador1`: o filtro
- * "Responsavel = Colaborador 1" seleciona os dois (achado A-18).
+ * "Cor do responsavel = Colaborador 1" seleciona os dois (achado A-18).
  *
  * As chaves sao deliberadamente impessoais. A planilha identifica o responsavel
  * pelo nome proprio; o dominio nao precisa disso para nada, e carregar nome de
  * pessoa num tipo publico contraria a mesma regra que proibe nome de cliente em
  * log (regra inviolavel 8).
+ *
+ * Ate `H-50` este tipo se chamava `Responsible` e era o unico. Ele deixou de
+ * ser, porque a cor e o importador respondem perguntas diferentes: uma diz o
+ * que o operador pintou, a outra diz quem responde pelo processo.
  */
-export type Responsible =
+export type ColorResponsible =
   | 'colaborador1'
   | 'colaborador2'
   | 'colaborador1_outros_clientes'
   | 'indefinido'
+
+/**
+ * A pessoa que responde pelo processo (`H-50`), atribuida pelo IMPORTADOR com a
+ * cor desempatando o que a lista de importadores nao alcanca — `resolveTeam`.
+ *
+ * **Dominio ABERTO, e por isso e `string`:** a chave vem de
+ * `team-map.json`, que nao e versionado (regra inviolavel 8). Ate `H-50`
+ * eram quatro chaves fixas, e fecha-lo agora exigiria escrever no codigo os
+ * membros da equipe do operador.
+ *
+ * Dois valores tem significado proprio:
+ *  - `''` — sem responsavel. Medido: 42 dos 649, sem importador na lista e sem
+ *    cor de responsavel (docs/uso/RESULTADO.md §3). Chave vazia e valor de
+ *    dominio, nunca ausencia de dado.
+ *  - uma chave de `ColorResponsible` — apenas enquanto NAO houver mapa de
+ *    equipe (`D-23`). Nesse estado o campo mostra o que a cor diz, que e o
+ *    comportamento anterior a `H-50`, e a resolucao declara `source: 'cor'`.
+ */
+export type Responsible = string
 
 /**
  * Canal de fiscalizacao. Apenas a COR e fonte; texto em STATUS nao classifica
@@ -54,6 +77,15 @@ export type AnomalyCode =
   | 'DATA_SEM_ANO'
   | 'COR_NAO_MAPEADA'
   | 'VARIANTE_STATUS_PROXIMA'
+  /**
+   * O importador atribui o processo a uma pessoa e a cor da linha aponta outra
+   * (`H-50`). O importador vence, e a divergencia fica visivel.
+   *
+   * Medido: ZERO ocorrencias em 31/08/2026 (docs/uso/RESULTADO.md §3), e e
+   * exatamente por isso que o codigo precisa existir antes da primeira — ela
+   * seria uma atribuicao errada que ninguem veria acontecer.
+   */
+  | 'RESPONSAVEL_DIVERGENTE'
 
 /** Motivos de rejeicao para o relatorio de quarentena. Ver TD-06. */
 export type QuarantineReason = 'REF_AUSENTE' | 'REF_DUPLICADA' | 'COR_NAO_MAPEADA'
@@ -156,7 +188,24 @@ export interface Process {
 
   // ---- Derivados ----
   readonly statusCategory: StatusCategory
+  /**
+   * A pessoa que responde pelo processo (`H-50`). `''` quando ninguem responde.
+   *
+   * Ate `H-50` este campo era a cor, e a cor passou a ser `colorResponsible`.
+   * Medido em 31/08/2026: a cor preenchia 157 das 649; o importador preenche
+   * 559, o desempate pela cor mais 48, e 42 ficam sem responsavel.
+   */
   readonly responsible: Responsible
+  /**
+   * O rotulo legivel de `responsible` — o nome da pessoa, quando ha mapa.
+   *
+   * Existe pela mesma razao de `clientLabel`: a chave e impessoal e o nome vive
+   * em arquivo nao versionado, entao nenhuma tabela escrita no codigo consegue
+   * traduzi-la. `''` quando nao ha responsavel.
+   */
+  readonly responsibleLabel: string
+  /** O que a cor da linha diz sobre responsavel — campo proprio desde `H-50`. */
+  readonly colorResponsible: ColorResponsible
   readonly customsChannel: CustomsChannel
   /** `null` quando a cor nao foi reconhecida: diferente de "dentro do RJ". */
   readonly importerOutsideRj: boolean | null

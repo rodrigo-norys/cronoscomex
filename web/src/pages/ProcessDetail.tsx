@@ -35,13 +35,6 @@ const CHANNEL_LABELS: Readonly<Record<ProcessDto['customsChannel'], string>> = {
   indefinido: 'Indefinido',
 }
 
-const RESPONSIBLE_LABELS: Readonly<Record<ProcessDto['responsible'], string>> = {
-  colaborador1: 'Colaborador 1',
-  colaborador2: 'Colaborador 2',
-  colaborador1_outros_clientes: 'Colaborador 1 — outros clientes',
-  indefinido: 'Indefinido',
-}
-
 export function ProcessDetail({ processRef, dataVersion }: ProcessDetailProps) {
   const { state, refresh } = useProcessDetail(processRef, dataVersion)
 
@@ -62,7 +55,7 @@ export function ProcessDetail({ processRef, dataVersion }: ProcessDetailProps) {
     return (
       <section
         aria-label="Processo não encontrado"
-        className="rounded border border-border-subtle bg-surface-raised p-8"
+        className="rounded-container border border-border-subtle bg-surface-raised p-8"
       >
         <h2 className="text-lg font-semibold text-text-secondary">Processo não encontrado</h2>
         <p className="mt-2 text-sm text-text-secondary">
@@ -104,7 +97,7 @@ export function ProcessDetail({ processRef, dataVersion }: ProcessDetailProps) {
           process.importerOutsideRj === null
             ? null
             : {
-                responsible: process.responsible,
+                responsible: process.colorResponsible,
                 customsChannel: process.customsChannel,
                 importerOutsideRj: process.importerOutsideRj,
               }
@@ -125,7 +118,7 @@ function Identification({ process }: { process: ProcessDto }) {
   return (
     <section
       aria-label="Identificação"
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="font-mono text-xl font-semibold">{process.ref}</h2>
       <p className="mt-1 text-xs text-text-muted">Linha {process.sourceRow} da planilha</p>
@@ -147,7 +140,7 @@ function StatusBlock({
   return (
     <section
       aria-label="Status"
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Status</h2>
       <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -170,7 +163,7 @@ function Fields({ process }: { process: ProcessDto }) {
   return (
     <section
       aria-label="Campos do processo"
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Campos</h2>
       <dl className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -183,11 +176,11 @@ function Fields({ process }: { process: ProcessDto }) {
         <Field label="Mercadoria" value={process.goods} />
         <Field label="BL" value={process.billOfLading} mono />
         <Field label="Container" value={process.container} mono />
-        <Field label="ETA2" value={formatDay(process.eta2)} />
-        <Field label="Registro (RG)" value={formatDay(process.registrationDate)} />
-        <Field label="Docs enviados" value={formatDay(process.docsSentDate)} />
+        <Field label="ETA2" value={formatDay(process.eta2)} mono />
+        <Field label="Registro (RG)" value={formatDay(process.registrationDate)} mono />
+        <Field label="Docs enviados" value={formatDay(process.docsSentDate)} mono />
         <Field label="Canal" value={CHANNEL_LABELS[process.customsChannel]} />
-        <Field label="Responsável" value={RESPONSIBLE_LABELS[process.responsible]} />
+        <Field label="Responsável" value={process.responsibleLabel} />
         <Field label="Importador fora do RJ" value={formatBoolean(process.importerOutsideRj)} />
       </dl>
     </section>
@@ -203,7 +196,7 @@ function OutOfScope({ process }: { process: ProcessDto }) {
   return (
     <section
       aria-label="Campos fora de escopo"
-      className="rounded border border-dashed border-border-subtle bg-surface-sunken p-4"
+      className="rounded-container border border-dashed border-border-subtle bg-surface-sunken p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Fora de escopo para indicadores</h2>
       <p className="mt-1 text-xs text-text-secondary">
@@ -223,7 +216,7 @@ function Anomalies({ items }: { items: ProcessDetailResponse['anomalies'] }) {
   return (
     <section
       aria-label="Anomalias"
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Anomalias</h2>
 
@@ -236,7 +229,7 @@ function Anomalies({ items }: { items: ProcessDetailResponse['anomalies'] }) {
           {items.map((anomaly) => (
             <li
               key={anomaly.code}
-              className="rounded border border-state-warning-border bg-state-warning-bg px-3 py-2 text-sm"
+              className="rounded-container border border-state-warning-border bg-state-warning-bg px-3 py-2 text-sm"
             >
               <strong className="font-mono text-xs text-state-warning-fg">{anomaly.code}</strong>
               <p className="text-state-warning-fg">{anomaly.detail}</p>
@@ -271,7 +264,7 @@ function StatusHistory({
   return (
     <section
       aria-label="Histórico de categoria"
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Histórico de categoria</h2>
 
@@ -309,7 +302,11 @@ function Field({ label, value, mono }: { label: string; value: string; mono?: bo
   return (
     <div>
       <dt className="text-xs text-text-muted">{label}</dt>
-      <dd className={`text-sm ${mono ? 'font-mono' : ''} ${value === '' ? 'text-text-muted' : ''}`}>
+      {/* `tabular-nums` viaja com o mono: data e numero so se comparam entre
+          linhas quando o digito tem largura fixa (`H-62`). */}
+      <dd
+        className={`text-sm ${mono ? 'font-mono tabular-nums' : ''} ${value === '' ? 'text-text-muted' : ''}`}
+      >
         {value === '' ? '—' : value}
       </dd>
     </div>

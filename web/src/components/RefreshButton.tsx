@@ -14,7 +14,7 @@ export function RefreshButton({ onRefresh, busy }: RefreshButtonProps) {
       type="button"
       onClick={() => void onRefresh()}
       disabled={busy}
-      className="rounded border border-border-control px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-surface-base disabled:cursor-progress disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
+      className="rounded-control border border-border-control px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-surface-base disabled:cursor-progress disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
     >
       {busy ? 'Atualizando…' : 'Atualizar'}
     </button>

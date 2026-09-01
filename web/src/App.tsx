@@ -1,11 +1,15 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { ApplyRefusal, HealthResponse } from './api-client.ts'
-import { ApplyChangesButton } from './components/ApplyChangesButton.tsx'
+import { AppSidebar } from './components/AppSidebar.tsx'
 import { ConflictDialog } from './components/ConflictDialog.tsx'
 import { FilterBar } from './components/FilterBar.tsx'
-import { PAGE_LIVE_REGION_ID, PAGE_LIVE_STATUS_ID } from './components/PageAlert.tsx'
-import { RefreshButton } from './components/RefreshButton.tsx'
+import {
+  LiveAnnouncement,
+  PAGE_LIVE_REGION_ID,
+  PAGE_LIVE_STATUS_ID,
+} from './components/PageAlert.tsx'
 import { StatusBanner } from './components/StatusBanner.tsx'
+import { TopBar } from './components/TopBar.tsx'
 import { useAppData } from './hooks/useAppData.ts'
 import { useFilterOptions } from './hooks/useFilterOptions.ts'
 import { useFilters } from './hooks/useFilters.ts'
@@ -17,14 +21,7 @@ import { Performance } from './pages/Performance.tsx'
 import { NotFoundPage, PendingPage } from './pages/Placeholders.tsx'
 import { ProcessDetail } from './pages/ProcessDetail.tsx'
 import { WorkbookSetup } from './pages/WorkbookSetup.tsx'
-import {
-  consumePendingPageFocus,
-  NAV_PAGES,
-  navigate,
-  pageOf,
-  type Route,
-  useRoute,
-} from './router.ts'
+import { consumePendingPageFocus, pageOf, type Route, useRoute } from './router.ts'
 
 /**
  * A Pagina Historico e a unica que importa o Recharts, e ele responde por 374
@@ -41,9 +38,15 @@ const History = lazy(() =>
  * A casca da aplicacao (`H-15`).
  *
  * Ela hospeda as sete paginas, carrega a faixa de estado que A-57 exige em
- * **todas** elas, concentra as tres frentes de A-62, e monta os treze filtros
+ * **todas** elas, concentra as tres frentes de A-62, e monta os quatorze filtros
  * globais. Nao calcula nada: os 21 indicadores e os cinco alertas vem prontos
  * do servidor, ja recortados (regra inviolavel 6).
+ *
+ * **O eixo e lateral desde `H-59`** (`D-22`). Eram quatro faixas horizontais
+ * antes do primeiro dado — titulo com acoes, navegacao, filtros e faixa de
+ * estado —, e passou a ser uma coluna de navegacao mais UMA faixa acima do
+ * conteudo. A faixa de estado e o `healthError` continuam existindo em todas as
+ * paginas (A-57): mudaram de lugar, nao de existencia.
  *
  * **As regioes vivas existem desde a montagem** (`H-43`). A MDN e explicita:
  * *"Do not try to dynamically add/generate an element with `role='alert'` that
@@ -98,78 +101,96 @@ export function App() {
     route.pageId !== 'notFound'
 
   return (
-    <div className="min-h-screen bg-surface-base font-sans text-text-primary">
-      <header className="border-b border-border-subtle bg-surface-raised">
-        <div className="flex flex-wrap items-baseline justify-between gap-4 px-6 pt-5 pb-3">
-          <div>
-            <h1 className="text-xl font-semibold">CronosComex</h1>
-            <p className="text-sm text-text-muted">Painel operacional de desembaraço aduaneiro</p>
-          </div>
-          <div className="flex items-center gap-3">
-            {health && (
-              <span className="text-sm text-text-muted">
-                Dados de <time dateTime={health.today}>{formatDay(health.today)}</time>
-              </span>
-            )}
-            <ApplyChangesButton
-              pendingCount={health?.pendingEditsCount ?? 0}
-              onApplied={refresh}
-              onRefused={setRefusal}
-            />
-            <RefreshButton onRefresh={refresh} busy={refreshing} />
-          </div>
-        </div>
-        {!firstRun && <MainNav route={route} />}
+    <div className="min-h-screen bg-surface-base font-sans text-text-primary sm:flex">
+      {/*
+        `SC 2.4.1 Bypass Blocks`. A lateral, o topo e a barra de filtros vem
+        ANTES do conteudo no DOM e se repetem nas sete telas — 20 paradas de
+        tabulacao para chegar ao primeiro dado, medidas em 01/09/2026. O salto
+        e o unico jeito de o operador de teclado passar por elas.
+        **Ele ja faltava antes de `H-59`**, com as sete abas horizontais; a
+        historia o pede porque e aqui que a ordem de foco e redesenhada.
+
+        Visivel so ao receber foco: quem usa o mouse nunca o ve, e quem tabula o
+        encontra primeiro. Esconde-lo com `hidden` o tiraria da ordem.
+      */}
+      <a
+        href="#conteudo"
+        className="sr-only rounded-control bg-action-bg px-3 py-2 text-sm text-action-fg focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-10"
+      >
+        Ir para o conteúdo
+      </a>
+
+      {/* A lateral nao aparece na primeira execucao, pelo mesmo motivo de antes:
+          nao ha dado a navegar, e o operador precisa apontar a planilha. */}
+      {!firstRun && <AppSidebar route={route} />}
+
+      {/* `min-w-0` e obrigatorio: sem ele o filho flex assume `min-width: auto`
+          e uma tabela larga empurra a coluna para fora, que e o defeito que
+          `SC 1.4.10` cobra e `R01` ja tratou dentro de cada pagina. */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <TopBar
+          title={pageOf(route)?.label ?? 'CronosComex'}
+          health={health}
+          refreshing={refreshing}
+          onRefresh={refresh}
+          onRefused={setRefusal}
+        />
+
         {showFilters && (
           <FilterBar filters={filters} options={options} optionsError={optionsError} />
         )}
-      </header>
 
-      <StatusBanner health={health} />
+        <StatusBanner health={health} />
 
-      {/* O no e o MESMO antes e depois de `healthError` ganhar valor: so o
-          conteudo muda. Envolver isto num condicional era o `ACHADO 11`. */}
-      <p
-        role="alert"
-        className={
-          healthError === null
-            ? 'sr-only'
-            : 'border-y border-state-error-border bg-state-error-bg px-6 py-3 text-sm text-state-error-fg'
-        }
-      >
-        {healthError !== null && (
-          <>
-            <strong className="font-semibold">Sem contato com o servidor.</strong> {healthError}
-          </>
-        )}
-      </p>
-
-      {/*
-        `H-70`. `VN-4` mediu o foco caindo no `<body>` depois de abrir um
-        recorte pelo ranking — 196 paradas de tabulacao pela frente em
-        `/operacional`, e `SC 2.4.3`. O alvo e a landmark da casca, e nao um no
-        da pagina: ela existe mesmo enquanto o `Suspense` mostra o fallback, o
-        que resolve por construcao o caso-limite da rota `lazy` que ainda nao
-        montou. O `aria-label` acompanha a pagina, e e ele que o leitor de tela
-        anuncia ao receber o foco — mover o foco em silencio trocaria um defeito
-        por outro. `tabIndex={-1}` nao acrescenta parada: as 467 que `H-47`
-        aprovou seguem 467.
-      */}
-      <main ref={mainRef} tabIndex={-1} aria-label={pageOf(route)?.label} className="px-6 py-6">
-        <Suspense fallback={<PageLoading />}>
-          {firstRun ? (
-            <WorkbookSetup dataVersion={dataVersion} firstRun onSaved={applyHealth} />
-          ) : (
-            <PageOutlet
-              route={route}
-              dataVersion={dataVersion}
-              health={health}
-              queryString={filters.queryString}
-              onWorkbookSaved={applyHealth}
-            />
+        {/* O no e o MESMO antes e depois de `healthError` ganhar valor: so o
+            conteudo muda. Envolver isto num condicional era o `ACHADO 11`. */}
+        <p
+          role="alert"
+          className={
+            healthError === null
+              ? 'sr-only'
+              : 'border-y border-state-error-border bg-state-error-bg px-6 py-3 text-sm text-state-error-fg'
+          }
+        >
+          {healthError !== null && (
+            <>
+              <strong className="font-semibold">Sem contato com o servidor.</strong> {healthError}
+            </>
           )}
-        </Suspense>
-      </main>
+        </p>
+
+        {/*
+          `H-70`. `VN-4` mediu o foco caindo no `<body>` depois de abrir um
+          recorte pelo ranking — 196 paradas de tabulacao pela frente em
+          `/operacional`, e `SC 2.4.3`. O alvo e a landmark da casca, e nao um no
+          da pagina: ela existe mesmo enquanto o `Suspense` mostra o fallback, o
+          que resolve por construcao o caso-limite da rota `lazy` que ainda nao
+          montou. O `aria-label` acompanha a pagina, e e ele que o leitor de tela
+          anuncia ao receber o foco — mover o foco em silencio trocaria um
+          defeito por outro. `tabIndex={-1}` nao acrescenta parada.
+        */}
+        <main
+          id="conteudo"
+          ref={mainRef}
+          tabIndex={-1}
+          aria-label={pageOf(route)?.label}
+          className="px-6 py-6"
+        >
+          <Suspense fallback={<PageLoading />}>
+            {firstRun ? (
+              <WorkbookSetup dataVersion={dataVersion} firstRun onSaved={applyHealth} />
+            ) : (
+              <PageOutlet
+                route={route}
+                dataVersion={dataVersion}
+                health={health}
+                queryString={filters.queryString}
+                onWorkbookSaved={applyHealth}
+              />
+            )}
+          </Suspense>
+        </main>
+      </div>
 
       {/*
         A regiao persistente das PAGINAS (`H-44`).
@@ -180,9 +201,7 @@ export function App() {
         que comparar — o mesmo `ACHADO 11`, uma camada acima.
 
         **A casca nao conhece pagina nenhuma.** Ela expoe um endereco estavel no
-        DOM; quem escreve nele e a pagina, por portal. Trocar isto por um estado
-        na casca faria a casca saber o que cada pagina tem a dizer, e ela nao
-        calcula nada (regra inviolavel 6).
+        DOM; quem escreve nele e a pagina, por portal.
       */}
       <div id={PAGE_LIVE_REGION_ID} role="alert" />
       <div id={PAGE_LIVE_STATUS_ID} role="status" />
@@ -199,54 +218,23 @@ export function App() {
  */
 function PageLoading() {
   return (
-    <p role="status" className="panel-loading">
-      Carregando página…
-    </p>
-  )
-}
+    <>
+      {/*
+        **Sem `role="status"` aqui** (`H-74`, `ACHADO 10`). Este no e o
+        `fallback` do `<Suspense>`: ele NASCE com a mensagem dentro, e regiao
+        viva que ja chega populada nao e anunciada — e o mesmo `ACHADO 11` que
+        criou as duas regioes persistentes da casca, uma camada abaixo.
 
-function MainNav({ route }: { route: Route }) {
-  return (
-    <nav aria-label="Páginas" className="flex flex-wrap gap-1 px-4">
-      {NAV_PAGES.map((page) => {
-        const current = page.id === route.pageId
-        return (
-          <a
-            key={page.id}
-            href={page.path}
-            aria-current={current ? 'page' : undefined}
-            onClick={(event) => {
-              // Clique simples navega pelo History API; modificador e botao do
-              // meio continuam sendo do navegador — abrir em outra aba e um
-              // gesto legitimo, e sequestra-lo seria pior que nao rotear.
-              if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
-              event.preventDefault()
-              // `keepFocus`: a UNICA navegacao que nao move o foco (`H-70`).
-              // Quem clicou no link ja esta com o foco nele, e arrasta-lo para
-              // a landmark faria o operador de teclado perder o menu.
-              navigate(page.path, { keepFocus: true })
-            }}
-            /*
-              `H-72`. Sob `forced-colors: active` o agente de usuario pinta
-              `border-transparent` como pinta qualquer outra borda, e as SETE
-              abas ficam com a mesma — `VN-5` mediu uma unica assinatura, e so o
-              `aria-current` restava, que serve o leitor de tela e nao serve
-              quem enxerga. A ESPESSURA e o canal nao-cromatico, a mesma tecnica
-              que `H-44` usou no botao de janela e que `VN-5` mediu sobrevivendo.
-              O `pb` compensa os 2 px a mais para a linha de base do texto nao
-              se mexer, e a variante mantem o modo normal intocado.
-            */
-            className={`border-b-2 px-3 py-2 text-sm font-medium ${
-              current
-                ? 'border-border-strong text-text-primary forced-colors:border-b-4 forced-colors:pb-1.5'
-                : 'border-transparent text-text-muted hover:text-text-primary'
-            }`}
-          >
-            {page.label}
-          </a>
-        )
-      })}
-    </nav>
+        Quem anuncia e `PAGE_LIVE_STATUS_ID`, que esta montado desde o primeiro
+        render e recebe o texto por portal. O bloco visivel fica `aria-hidden`
+        para o leitor nao ouvir a mesma coisa duas vezes — mesmo par de
+        `WorkbookSetup`, e por isso os dois textos diferem.
+      */}
+      <p aria-hidden="true" className="panel-loading">
+        Carregando página…
+      </p>
+      <LiveAnnouncement text="Carregando a página." tone="status" />
+    </>
   )
 }
 
@@ -318,21 +306,4 @@ function PageOutlet({ route, dataVersion, health, queryString, onWorkbookSaved }
   }
 
   return <PendingPage key={dataVersion} page={page} processRef={route.ref} />
-}
-
-/**
- * Campo ausente vira travessao, nunca excecao.
- *
- * O tipo diz `string`, mas ele descreve o contrato, nao a resposta que chegou:
- * dado de rede nao e verificado em execucao. Um servidor de versao anterior —
- * medido, com o `--watch` servindo codigo velho — devolvia o corpo **sem**
- * `today`, e `undefined.split` derrubava a casca inteira, com a faixa de estado
- * e a navegacao junto. Tela branca e o pior dos buracos invisiveis (regra 3).
- */
-function formatDay(isoDay: string | undefined): string {
-  const parts = isoDay?.split('-')
-  if (parts === undefined || parts.length !== 3) return '—'
-
-  const [year, month, day] = parts
-  return `${day}/${month}/${year}`
 }

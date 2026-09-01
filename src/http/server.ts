@@ -16,6 +16,7 @@ import { loadTeamMap, TeamMapError } from '../app/team-map-loader.ts'
 import { initWriteGuard, retargetWatcher } from '../app/write-guard.ts'
 import type { ClientGroup } from '../domain/client-mapper.ts'
 import type { ColorMapEntry } from '../domain/color-mapper.ts'
+import type { TeamMember } from '../domain/team-mapper.ts'
 import { createWatcher, DEFAULT_DEBOUNCE_MS, type Watcher } from '../io/watcher.ts'
 import { registerAlertsRoute } from './routes/alerts.ts'
 import { registerApplyRoute } from './routes/apply.ts'
@@ -72,6 +73,29 @@ export function buildServer(
    * recebeu.
    */
   clientGroups: readonly ClientGroup[] = [],
+  /**
+   * Fila de edicoes. Ausente, vale o default de `edit-queue`, que e o certo em
+   * producao — e o MESMO que o write-guard resolve, o que os mantem apontando
+   * para um arquivo so.
+   *
+   * **O ponto de injecao ja existia em `registerEditsRoutes`, e esta assinatura
+   * nao o expunha.** Quem monta por `buildServer` nao tinha como redirecionar a
+   * fila, e o default e relativo ao cwd: em 01/09/2026 um harness de medicao
+   * gravou quatro edicoes e um descarte total na fila do operador, restaurada a
+   * mao. E o mesmo modo de falha da regra inviolavel 7 que `H-28` e `H-34`
+   * pagaram, num terceiro caminho de escrita — e o unico que faltava.
+   *
+   * A suite nunca dependeu disto: `tests/http/edits.test.ts` registra a rota
+   * direto, com o caminho injetado. O buraco era de quem monta o servidor
+   * inteiro.
+   */
+  queuePath?: string,
+  /**
+   * Mapa de equipe (`H-48`), para as rotas de indicadores e de opcoes exibirem
+   * a pessoa sem processo algum (`H-50`, A-28). Padrao vazio pelo mesmo motivo
+   * de `clientGroups`: `team-map.json` e estado real do operador.
+   */
+  teamMap: readonly TeamMember[] = [],
 ): FastifyInstance {
   // Silencioso sob teste: a saida do Vitest e o relatorio, nao o log do servidor.
   const app = Fastify({
@@ -82,12 +106,12 @@ export function buildServer(
   registerConfigRoutes(app, config, store, applyWorkbookPath, configPath, openDialog, webRoot)
   registerQuarantineRoute(app)
   registerReloadRoute(app, store)
-  registerIndicatorsRoute(app, config, store, clientGroups)
+  registerIndicatorsRoute(app, config, store, clientGroups, teamMap)
   registerAlertsRoute(app, config, store, historyPath)
-  registerFilterOptionsRoute(app, store, clientGroups)
+  registerFilterOptionsRoute(app, store, clientGroups, teamMap)
   registerProcessesRoute(app, config, store, historyPath)
   registerHistoryRoute(app, config, store, historyPath)
-  registerEditsRoutes(app, store)
+  registerEditsRoutes(app, store, queuePath)
   registerProcessColorRoute(app, store, colorMap)
   registerApplyRoute(app)
 
@@ -122,6 +146,8 @@ async function main(): Promise<void> {
   // Fora do `try` pelo mesmo motivo do mapa de cor: a rota de opcoes, montada
   // abaixo, precisa dos MESMOS grupos que o store recebeu.
   let clientGroups: readonly ClientGroup[]
+  // Idem: as duas rotas precisam do MESMO mapa de equipe que o store recebeu.
+  let teamMap: readonly TeamMember[]
   try {
     config = loadConfig()
     logger = createLogger({ timezone: config.timezone })
@@ -139,13 +165,14 @@ async function main(): Promise<void> {
     // Clientes com o campo silenciosamente sem consolidacao.
     const clientMap = loadClientMap()
     clientGroups = clientMap.groups
+    teamMap = loadTeamMap()
     initStore({
       config,
       colorMap,
       statusAliases: loadStatusAliases(),
       clientMap: clientMap.clients,
       clientGroups: clientMap.groups,
-      teamMap: loadTeamMap(),
+      teamMap,
       logger,
     })
   } catch (error) {
@@ -171,6 +198,8 @@ async function main(): Promise<void> {
     undefined,
     undefined,
     clientGroups,
+    undefined,
+    teamMap,
   )
 
   try {
@@ -226,12 +255,17 @@ async function main(): Promise<void> {
   // Depois do `start`: o guard pausa e retoma o observador durante a escrita
   // (04-arquitetura.md secao 3.2), e nao teria o que pausar antes disto.
   //
-  // Nenhum `queuePath` e passado aqui de proposito. O guard e `registerEditsRoutes`
-  // tem pontos de injecao independentes, que so coincidem pelo mesmo default:
-  // divergi-los faria o guard arquivar um arquivo que as rotas nao escrevem, e a
-  // fila do operador ficaria para tras a cada aplicacao. Enquanto os dois usarem
-  // o default nao ha como divergirem — e passar um so aqui seria exatamente o
-  // jeito de quebrar isso.
+  // Nenhum `queuePath` e passado aqui de proposito, nem ao guard nem ao
+  // `buildServer` acima. Os dois tem pontos de injecao independentes, que so
+  // coincidem pelo mesmo default: divergi-los faria o guard arquivar um arquivo
+  // que as rotas nao escrevem, e a fila do operador ficaria para tras a cada
+  // aplicacao. Enquanto os dois usarem o default nao ha como divergirem — e
+  // passar um so aqui seria exatamente o jeito de quebrar isso.
+  //
+  // Expor o parametro em `buildServer` nao os diverge: quem passa um passa para
+  // os dois, e quem nao passa — este `main` — continua no default compartilhado.
+  // O que ele conserta e outra coisa: quem monta o servidor fora daqui nao tinha
+  // como redirecionar a fila, e escrevia na do operador.
   // `watcher` e nulo enquanto nao ha planilha configurada, e ai nao ha o que
   // pausar: sem caminho nao ha escrita. O primeiro salvamento bem-sucedido chama
   // `retargetWatcher` com o observador de verdade — e as chamadas de

@@ -1,6 +1,5 @@
 import { addDays, diffDays, isoWeekEnd, isWithin, toIsoDay } from './date-window.ts'
-import { RESPONSIBLE_LABELS } from './filters.ts'
-import type { Process, Responsible } from './types.ts'
+import type { Process } from './types.ts'
 
 /**
  * Indicadores calculados sobre o conjunto ja filtrado. Funcoes puras: nao leem
@@ -426,39 +425,37 @@ export function agentRanking(
   ).map((entry) => ({ ...entry, overdueCount: overdueByKey.get(entry.key) ?? 0 }))
 }
 
-/** As quatro chaves de `Responsible`, sempre presentes (A-28). */
-const RESPONSIBLE_KEYS: readonly Responsible[] = [
-  'colaborador1',
-  'colaborador2',
-  'colaborador1_outros_clientes',
-  'indefinido',
-]
-
 /**
- * IND-20. Ranking por responsavel, com as quatro chaves — inclusive as zeradas.
+ * IND-20. Ranking por responsavel, com todas as chaves conhecidas — inclusive
+ * as zeradas.
  *
- * `indefinido` visivel e o ponto: ele mede quanto da planilha nao tem
- * responsavel identificavel pela cor (A-17, A-28). Escondê-lo faria o ranking
- * parecer completo quando nao e.
+ * `known` vem de `knownResponsibles`, e nao dos processos: pessoa declarada no
+ * mapa de equipe e sem processo algum aparece com zero, e a chave vazia — os
+ * processos sem responsavel — aparece sempre (A-28). Escondê-las faria o
+ * ranking parecer completo quando nao e; a chave vazia e o que mede quanto da
+ * planilha nao tem dono, papel que `indefinido` tinha ate `H-50`.
  *
- * `colaborador1` e `colaborador1_outros_clientes` aparecem SEPARADAS aqui. O filtro faz o
- * oposto — `responsible=colaborador1` seleciona ambas (A-18) —, porque sao perguntas
- * diferentes: o ranking mostra a distribuicao, o filtro recorta o trabalho.
+ * O rotulo sai de `known`, e nao de tabela escrita aqui: desde `H-50` a chave
+ * de responsavel vem de `team-map.json`, que nao e versionado.
+ * `process.responsibleLabel` cobre a chave que o mapa nao declara — o mapa
+ * mudou entre a leitura e agora, e o rotulo do processo e o unico que sobrou.
  */
-export function responsibleRanking(processes: readonly Process[]): GroupCount[] {
-  const counts = new Map<string, number>(RESPONSIBLE_KEYS.map((key) => [key, 0]))
+export function responsibleRanking(
+  processes: readonly Process[],
+  known: readonly { key: string; label: string }[],
+): GroupCount[] {
+  const counts = new Map<string, number>(known.map(({ key }) => [key, 0]))
+  const labels = new Map<string, string>(known.map(({ key, label }) => [key, label]))
 
   for (const process of processes) {
     counts.set(process.responsible, (counts.get(process.responsible) ?? 0) + 1)
+    if (!labels.has(process.responsible)) labels.set(process.responsible, process.responsibleLabel)
   }
 
   return sortRanking(
     [...counts.entries()].map(([key, count]) => ({
       key,
-      // O rotulo legivel nasce aqui, e nao na tela: `colaborador1` e chave de
-      // dominio fechado, e traduzi-la no cliente seria a mesma regra escrita
-      // duas vezes — a rota de opcoes ja usa este mapa (A-28).
-      label: RESPONSIBLE_LABELS[key as Responsible] ?? key,
+      label: labels.get(key) ?? key,
       count,
     })),
   )

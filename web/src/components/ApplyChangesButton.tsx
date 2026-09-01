@@ -102,7 +102,7 @@ export function ApplyChangesButton({
         type="button"
         onClick={() => void apply()}
         disabled={busy || pendingCount === 0}
-        className="rounded bg-action-bg px-3 py-1.5 text-sm font-medium text-action-fg hover:bg-action-bg-hover disabled:cursor-not-allowed disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
+        className="button-primary px-3 py-1.5"
       >
         {busy
           ? 'Aplicando…'
