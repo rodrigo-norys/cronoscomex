@@ -28,8 +28,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E9 — Estilização ✅ | **H-39 … H-47 e H-67 … H-72, todas concluídas** | 7 | 8 | 0 |
 | E10 — As melhorias de uso ✅ | **H-48 … H-56 e H-66, todas concluídas.** `H-50` é a única G do backlog | 2 | 7 | 1 |
 | E11 — A casca redesenhada ✅ | **H-57 … H-65, todas concluídas** | 3 | 6 | 0 |
-| E12 — Os achados da revisão de estilo | **H-73 a H-76, todas abertas** | 2 | 1 | 1 |
-| **Total** | **76** — 72 concluídas, 4 abertas | **30** | **44** | **2** |
+| E12 — Os achados da revisão de estilo | **H-73 ✅; H-74 a H-76 abertas** | 2 | 1 | 1 |
+| **Total** | **76** — 73 concluídas, 3 abertas | **30** | **44** | **2** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -165,7 +165,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 
 **[Épico E12 — Os achados da revisão de estilo](#e12)**
 
-- [H-73 — A faixa de severidade no token certo](#h-73)
+- [H-73 — A faixa de severidade no token certo](#h-73) ✅
 - [H-74 — As quatro correções locais](#h-74)
 - [H-75 — Um papel de UI, uma forma e um nome](#h-75)
 - [H-76 — A coluna Navio cabe no que ela mostra](#h-76)
@@ -8338,6 +8338,42 @@ histórias tocam `web/src/` e nada mais.
 <a id="h-73"></a>
 
 ### H-73 — A faixa de severidade no token certo
+
+> ✅ **CONCLUÍDA em 01/09/2026.** **5 asserções próprias** — 4 em
+> `tests/repo/estilo.test.ts` e 1 de componente. Suíte de **1708 para 1713**.
+> **Abre `E12`.**
+>
+> **A razão medida no navegador, e não copiada:** a faixa urgente vai de
+> **1,60:1** para **5,92:1** no claro e de **1,94:1** para **8,93:1** no escuro,
+> contra o piso de 3:1 de `SC 1.4.11`. A espessura segue em `4px` — a composição
+> com `severityBand` não dobrou nada.
+>
+> **A correção do revisor estava certa na faixa e errada no ícone.** Ela mandava
+> `<SeverityIcon tone="warning"/>` junto de `severityBand('warning')`, e o glifo
+> de `warning` é o **círculo**: adotá-la faria urgente e não urgente mostrarem o
+> mesmo desenho, **perdendo um canal em vez de ganhar consistência**. O glifo
+> segue o tom, e o tom do urgente é `error` — o triângulo fica. Zero mudança
+> visual, uma definição só do desenho.
+>
+> **`severityBand` tinha o mesmo defeito que `H-65` corrigiu em `AlertRow`.**
+> `BAND.error` declarava `border-l-4` e `forced-colors:border-l-4` juntos: a
+> variante repetia o valor da própria base e **não podia diferir em situação
+> nenhuma**. Código morto que alcançava os quatro consumidores, e saiu.
+>
+> **O cabeçalho de `SeverityMark` já afirmava seis consumidores desde `H-62`.**
+> Aparecia em seis; quatro consumiam. A guarda nova é o que impede a afirmação
+> de voltar a ser intenção — ela cobra **um** arquivo desenhando o triângulo, e
+> ao menos seis consumindo `severityBand`.
+>
+> **Três mutações, três reprovações:** o triângulo copiado de volta reprova
+> nomeando o arquivo; a faixa voltando ao token de borda reprova nomeando a
+> linha; e apagar todas as chamadas de `severityBand` reprova a âncora — sem
+> ela, as duas primeiras passariam por vacuidade.
+>
+> **A composição pedia um ajuste que o plano não previa:** `severityBand` já
+> traz `border-l-4`, então a base do `<li>` perdeu o seu. O ramo não urgente
+> mantém o dele, com a compensação de `forced-colors` que `H-65` mediu.
+
 
 **Objetivo:** um nível de severidade usar um par de cor só, em todo o conjunto,
 e o ícone existir uma vez.
