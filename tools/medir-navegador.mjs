@@ -281,10 +281,17 @@ export async function comNavegador(opcoes, fn) {
   } finally {
     conexao?.fechar()
     chrome.kill('SIGKILL')
-    // `maxRetries` porque o Chrome ainda escreve no cache quando o sinal chega:
-    // sem ele, `rmSync` derruba a medicao com `ENOTEMPTY` DEPOIS de ela ter
-    // dado certo — e o erro parece defeito do que se estava medindo.
-    rmSync(perfil, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 })
+    // O Chrome ainda escreve no cache quando o sinal chega, e `maxRetries` **nao
+    // basta**: medido em 01/09/2026, `ENOTEMPTY` voltou DEPOIS de uma medicao
+    // que ja tinha dado certo, e o erro aparecia como defeito do que se media.
+    //
+    // **Limpar o perfil temporario nao vale derrubar a medicao.** O diretorio
+    // fica em `/tmp`, que o sistema recolhe; perder a medicao custa a sessao.
+    try {
+      rmSync(perfil, { recursive: true, force: true, maxRetries: 10, retryDelay: 100 })
+    } catch {
+      // Perfil orfao em /tmp e consequencia aceita, e declarada.
+    }
   }
 }
 
