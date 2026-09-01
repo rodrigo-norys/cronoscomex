@@ -130,7 +130,7 @@ export function ColorFieldsForm({
       {options !== null && options.length > 0 && (
         <>
           <form onSubmit={submit} className="mt-3 flex flex-wrap items-end gap-3">
-            <label className="flex grow flex-col gap-1 text-xs text-text-secondary sm:max-w-sm">
+            <label className="flex min-w-0 grow flex-col gap-1 text-xs text-text-secondary sm:max-w-sm">
               Cor da linha
               <select
                 value={chosen}
@@ -138,7 +138,7 @@ export function ColorFieldsForm({
                   setChosen(event.target.value)
                   setError(null)
                 }}
-                className="rounded border border-border-control bg-surface-raised px-2 py-1.5 text-sm text-text-primary"
+                className="w-full rounded border border-border-control bg-surface-raised px-2 py-1.5 text-sm text-text-primary"
               >
                 <option value="">Selecione…</option>
                 {options.map((option) => (

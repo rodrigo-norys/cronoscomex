@@ -185,6 +185,51 @@ describe('o que a tela afirma', () => {
 })
 
 /**
+ * `H-68`. A largura do `<select>` vem do texto da maior `<option>`, e o UA a
+ * impõe como largura mínima — por isso `sm:max-w-sm` não continha nada:
+ * `min-width` vence `max-width`. Medido em `VN-1`: a Página Detalhe rolava
+ * 572 px num viewport de 320, e 846 num de 640 com fonte-base 24.
+ *
+ * **jsdom não faz layout**, então o que se afirma aqui é a contenção
+ * declarada, não a largura resolvida. A largura foi medida em Chrome 151 por
+ * CDP ao fechar a história — 305 = 305 e 625 = 625, os mesmos números das
+ * páginas que `H-47` aprovou. Sem estas duas asserções, remover `min-w-0` só
+ * apareceria na próxima varredura de navegador.
+ */
+describe('a largura do seletor', () => {
+  it('deixa o rótulo encolher abaixo da largura intrínseca do menu', async () => {
+    renderForm()
+    await screen.findAllByRole('option')
+
+    const rotulo = screen.getByRole('combobox').closest('label')
+
+    expect(rotulo?.className).toContain('min-w-0')
+  })
+
+  it('prende o menu à largura do rótulo, em vez de à do texto mais longo', async () => {
+    renderForm()
+    await screen.findAllByRole('option')
+
+    expect(screen.getByRole('combobox').className).toContain('w-full')
+  })
+
+  /**
+   * A caixa fechada trunca, e é o UA que decide onde. O que a torna
+   * identificável é o nome da cor vir PRIMEIRO e ser único: truncar não faz
+   * duas opções virarem a mesma, que é o risco que o critério de aceite nomeia.
+   */
+  it('abre cada opção pelo nome da cor, que é o que sobrevive ao truncamento', async () => {
+    renderForm()
+
+    const opcoes = (await screen.findAllByRole('option')).slice(1)
+    const nomes = opcoes.map((opcao) => (opcao.textContent ?? '').split(' — ')[0])
+
+    expect(nomes).toEqual(['Verde (tom A)', 'Azul'])
+    expect(new Set(nomes).size).toBe(nomes.length)
+  })
+})
+
+/**
  * `H-43`. Os dois `role="alert"` deste formulário existem desde a montagem — o
  * da carga das cores e o da recusa do enfileiramento.
  */
