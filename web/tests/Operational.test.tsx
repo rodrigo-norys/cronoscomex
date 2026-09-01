@@ -48,7 +48,9 @@ describe('tabela', () => {
     )
     renderPage()
 
-    expect(await screen.findByRole('link', { name: 'FT501.26' })).toBeTruthy()
+    // `H-75`, `ACHADO 7`: o nome acessível é o mesmo de `AlertRow` para a
+    // mesma ação, e CONTÉM o texto visível — a REF —, como `SC 2.5.3` exige.
+    expect(await screen.findByRole('link', { name: 'Abrir o detalhe de FT501.26' })).toBeTruthy()
     expect(screen.getByText('BETA')).toBeTruthy()
   })
 
@@ -110,7 +112,7 @@ describe('tabela', () => {
     api.serveProcesses(processesFixture([processFixture({ ref: 'FT501.26' })]))
     renderPage()
 
-    fireEvent.click(await screen.findByRole('link', { name: 'FT501.26' }))
+    fireEvent.click(await screen.findByRole('link', { name: 'Abrir o detalhe de FT501.26' }))
 
     expect(window.location.pathname).toBe('/processo/FT501.26')
   })
@@ -478,6 +480,21 @@ describe('densidade e número na tabela (H-61)', () => {
 
     expect(chip.className).toContain('rounded-full')
     expect(chip.className).toContain('bg-channel-red-bg')
+  })
+
+  /**
+   * `H-75`, `ACHADO 7`, falha `F31`. Abrir o detalhe e a MESMA acao na tabela e
+   * na fila de alertas, e os dois nomes acessiveis eram diferentes — a REF
+   * sozinha aqui, "Abrir o detalhe de REF" la. O nome novo CONTEM o texto
+   * visivel, que e o que `SC 2.5.3` exige.
+   */
+  it('nomeia a ação de abrir o detalhe como a fila de alertas', async () => {
+    renderPage()
+
+    const link = await screen.findByRole('link', { name: 'Abrir o detalhe de FT501.26' })
+
+    expect(link.textContent).toBe('FT501.26')
+    expect(link.getAttribute('aria-label')).toContain(link.textContent)
   })
 
   /**

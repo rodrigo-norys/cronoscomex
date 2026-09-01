@@ -93,6 +93,10 @@ export function ProcessTable({ items, sort, order, onSort }: ProcessTableProps) 
                     event.preventDefault()
                     navigate(`/processo/${encodeURIComponent(item.ref)}`)
                   }}
+                  // O nome ACESSIVEL e o mesmo de `AlertRow` para a mesma acao
+                  // (`H-75`, `ACHADO 7`, falha `F31`). Ele CONTEM o texto
+                  // visivel — a REF —, que e o que `SC 2.5.3` exige.
+                  aria-label={`Abrir o detalhe de ${item.ref}`}
                   className="motion-tint text-text-secondary underline hover:text-text-primary"
                 >
                   {item.ref}
