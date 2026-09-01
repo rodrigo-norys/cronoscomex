@@ -331,7 +331,7 @@ function StartupChecklist({
           : 'Resolva o que falta e clique em Atualizar — não é preciso fechar esta janela.'}
       </p>
 
-      <ul className="mt-2 rounded border border-border-subtle bg-surface-raised p-4 text-sm">
+      <ul className="mt-2 rounded-container border border-border-subtle bg-surface-raised p-4 text-sm">
         {steps.map((step) => (
           <li key={step.label} className="flex flex-wrap items-baseline gap-x-2 py-1">
             {/*
@@ -389,7 +389,7 @@ function ConfigInventory({ config }: { config: WorkbookConfigResponse }) {
     <section aria-label="O que está configurado" className="mt-8">
       <h3 className="text-sm font-semibold text-text-primary">O que está configurado</h3>
 
-      <dl className="mt-2 rounded border border-border-subtle bg-surface-raised p-4 text-sm">
+      <dl className="mt-2 rounded-container border border-border-subtle bg-surface-raised p-4 text-sm">
         <Fact term="Caminho informado">
           {config.defined ? (
             <span className="break-all font-mono text-text-primary">{config.workbookPath}</span>

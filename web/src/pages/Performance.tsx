@@ -224,7 +224,7 @@ function Aggregate({ leadTime }: { leadTime: IndicatorsResponse['documentaryLead
   return (
     <section
       aria-label="Tempo médio de envio documental"
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Tempo médio de envio documental</h2>
 
@@ -305,7 +305,7 @@ function LeadTimeTable({ title, unit, groups, total, shown }: LeadTimeTableProps
   return (
     <section
       aria-label={title}
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">{title}</h2>
 

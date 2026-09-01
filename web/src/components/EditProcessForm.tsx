@@ -75,7 +75,7 @@ export function EditProcessForm({
   return (
     <section
       aria-label="Editar processo"
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Editar</h2>
       <p className="mt-1 text-xs text-text-secondary">

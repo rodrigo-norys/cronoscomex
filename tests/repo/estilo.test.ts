@@ -165,7 +165,7 @@ describe('nenhum passo bruto de paleta em web/src', () => {
  * **controle** — `input`, `select` e botão usam `px-`/`py-` assimétricos e a
  * borda de controle, que é outro papel e outro token de propósito.
  */
-const SECTION_ROLE = /rounded border border-\S+ bg-surface-raised p-\d/
+const SECTION_ROLE = /rounded-container border border-\S+ bg-surface-raised p-\d/
 
 /** O papel "ressalva/fora de escopo", distinto e consistente entre si. */
 const CAVEAT_ROLE = /border-dashed border-\S+ bg-surface-sunken/
@@ -175,12 +175,17 @@ describe('C04 — o mesmo papel de UI tem a mesma forma', () => {
     // Âncora das regexes, não do conjunto: sem isto, um erro de ancoragem faria
     // as duas asserções abaixo passarem por nunca casarem nada — a mesma
     // armadilha que a âncora de `C01` já cobre para o passo bruto.
+    expect(
+      SECTION_ROLE.test('rounded-container border border-border-subtle bg-surface-raised p-4'),
+    ).toBe(true)
+    // `H-61` trocou o raio do papel: o valor antigo deixa de casar, e é isso que
+    // impede um arquivo novo de nascer com o raio de antes.
     expect(SECTION_ROLE.test('rounded border border-border-subtle bg-surface-raised p-4')).toBe(
-      true,
+      false,
     )
-    expect(SECTION_ROLE.test('rounded border border-border-strong bg-surface-raised p-6')).toBe(
-      true,
-    )
+    expect(
+      SECTION_ROLE.test('rounded-container border border-border-strong bg-surface-raised p-6'),
+    ).toBe(true)
     // Controle não é seção: `px-`/`py-` assimétricos, e borda de controle.
     expect(
       SECTION_ROLE.test('rounded border border-border-control bg-surface-raised px-2 py-1.5'),
