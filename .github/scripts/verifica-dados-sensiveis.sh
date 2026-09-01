@@ -26,9 +26,16 @@ ESTE_SCRIPT='.github/scripts/verifica-dados-sensiveis.sh'
 # que os guards detectam — sem eles nao ha como provar que o guard pega o caso.
 # A isencao vale SO para o check de caminho absoluto. O nome real do dono da
 # maquina continua valendo para eles: ali nao existe payload legitimo.
+#
+# `tests/repo/fixtures-anonimas.test.ts` entrou em 01/09/2026 pela mesma razao:
+# a ancora dele prova que a regex de caminho reconhece um diretorio de usuario,
+# e a prova exige a forma. Ela reusa os TRES padroes deste check, verbatim — a
+# regra e uma so, e o que muda e o alcance: aqui, arquivo de texto; la, parte de
+# dentro do `.xlsx` versionado, que este script nunca ve porque pula binario.
 eh_regressao_de_guard() {
   case "$1" in
-    "$ESTE_SCRIPT" | '.github/scripts/test-verifica-dados-sensiveis.sh' | '.claude/hooks/test-guard.sh')
+    "$ESTE_SCRIPT" | '.github/scripts/test-verifica-dados-sensiveis.sh' \
+      | '.claude/hooks/test-guard.sh' | 'tests/repo/fixtures-anonimas.test.ts')
       return 0 ;;
     *) return 1 ;;
   esac

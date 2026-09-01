@@ -113,6 +113,13 @@ mkdir -p .github/scripts
 printf 'payload: "/home/beltrano/Desktop/x"\n' > .github/scripts/test-verifica-dados-sensiveis.sh
 roda_local aprova  'regressao de guard com payload de caminho'  '.github/scripts/test-verifica-dados-sensiveis.sh'
 
+# A guarda das fixtures esta na mesma isencao, e pelo mesmo motivo: a ancora
+# dela prova que a regex reconhece um diretorio de usuario, e a prova exige a
+# forma. Foi a CI que descobriu — o `npm run verify` nao roda este script.
+mkdir -p tests/repo
+printf 'expect(CAMINHO.test("/home/beltrano/x")).toBe(true)\n' > tests/repo/fixtures-anonimas.test.ts
+roda_local aprova  'guarda das fixtures com payload de caminho' 'tests/repo/fixtures-anonimas.test.ts'
+
 printf '\nNome real do usuario do sistema\n'
 printf 'o operador fulano rodou o painel\n' > docs/nota.md
 printf 'o operador rodou o painel\n'        > docs/limpo.md
@@ -122,6 +129,9 @@ roda_local aprova  'documento sem o nome'                'docs/limpo.md'
 # A isencao NAO cobre o nome real: ali nao existe payload legitimo.
 printf 'o operador fulano trabalhou aqui\n' > .github/scripts/test-verifica-dados-sensiveis.sh
 roda_local reprova 'nome do usuario numa regressao de guard' '.github/scripts/test-verifica-dados-sensiveis.sh'
+
+printf 'o operador fulano escreveu isto\n' > tests/repo/fixtures-anonimas.test.ts
+roda_local reprova 'nome do usuario na guarda das fixtures'  'tests/repo/fixtures-anonimas.test.ts'
 
 printf '\n%d passaram, %d falharam\n' "$passou" "$falhou"
 [ "$falhou" -eq 0 ] || exit 1
