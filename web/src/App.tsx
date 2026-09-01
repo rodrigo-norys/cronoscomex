@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { ApplyRefusal, HealthResponse } from './api-client.ts'
 import { ApplyChangesButton } from './components/ApplyChangesButton.tsx'
 import { ConflictDialog } from './components/ConflictDialog.tsx'
@@ -17,7 +17,14 @@ import { Performance } from './pages/Performance.tsx'
 import { NotFoundPage, PendingPage } from './pages/Placeholders.tsx'
 import { ProcessDetail } from './pages/ProcessDetail.tsx'
 import { WorkbookSetup } from './pages/WorkbookSetup.tsx'
-import { NAV_PAGES, navigate, pageOf, type Route, useRoute } from './router.ts'
+import {
+  consumePendingPageFocus,
+  NAV_PAGES,
+  navigate,
+  pageOf,
+  type Route,
+  useRoute,
+} from './router.ts'
 
 /**
  * A Pagina Historico e a unica que importa o Recharts, e ele responde por 374
@@ -54,6 +61,18 @@ export function App() {
   // fecha-lo nao pode depender de qual pagina estava aberta quando o operador
   // aplicou.
   const [refusal, setRefusal] = useState<ApplyRefusal | null>(null)
+  const mainRef = useRef<HTMLElement>(null)
+
+  /**
+   * O foco so se move quando a navegacao PEDIU (`H-70`). O sinal e consumido
+   * aqui, uma vez por troca de rota: o botao "voltar" emite o mesmo `popstate`
+   * e nao o seta, entao ele nao move o foco — e o link da casca declara
+   * `keepFocus`, porque ali o foco ja esta onde o usuario o pos.
+   */
+  // biome-ignore lint/correctness/useExhaustiveDependencies: gatilho deliberado; a rota nao e lida aqui, e sem ela o efeito nunca reagiria a troca de pagina
+  useEffect(() => {
+    if (consumePendingPageFocus()) mainRef.current?.focus()
+  }, [route])
 
   /**
    * Primeira execucao: 'degradado' MAIS `lastReadAt` nulo, que e exatamente
@@ -125,7 +144,18 @@ export function App() {
         )}
       </p>
 
-      <main className="px-6 py-6">
+      {/*
+        `H-70`. `VN-4` mediu o foco caindo no `<body>` depois de abrir um
+        recorte pelo ranking — 196 paradas de tabulacao pela frente em
+        `/operacional`, e `SC 2.4.3`. O alvo e a landmark da casca, e nao um no
+        da pagina: ela existe mesmo enquanto o `Suspense` mostra o fallback, o
+        que resolve por construcao o caso-limite da rota `lazy` que ainda nao
+        montou. O `aria-label` acompanha a pagina, e e ele que o leitor de tela
+        anuncia ao receber o foco — mover o foco em silencio trocaria um defeito
+        por outro. `tabIndex={-1}` nao acrescenta parada: as 467 que `H-47`
+        aprovou seguem 467.
+      */}
+      <main ref={mainRef} tabIndex={-1} aria-label={pageOf(route)?.label} className="px-6 py-6">
         <Suspense fallback={<PageLoading />}>
           {firstRun ? (
             <WorkbookSetup dataVersion={dataVersion} firstRun onSaved={applyHealth} />
@@ -191,7 +221,10 @@ function MainNav({ route }: { route: Route }) {
               // gesto legitimo, e sequestra-lo seria pior que nao rotear.
               if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
               event.preventDefault()
-              navigate(page.path)
+              // `keepFocus`: a UNICA navegacao que nao move o foco (`H-70`).
+              // Quem clicou no link ja esta com o foco nele, e arrasta-lo para
+              // a landmark faria o operador de teclado perder o menu.
+              navigate(page.path, { keepFocus: true })
             }}
             /*
               `H-72`. Sob `forced-colors: active` o agente de usuario pinta

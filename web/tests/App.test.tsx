@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from '../src/App.tsx'
 import { PAGE_LIVE_REGION_ID } from '../src/components/PageAlert.tsx'
 import { NAV_PAGES } from '../src/router.ts'
-import { type ApiStub, healthFixture, stubApi } from './support/api-stub.ts'
+import { type ApiStub, healthFixture, indicatorsFixture, stubApi } from './support/api-stub.ts'
 
 /**
  * A casca de `H-15`: navegacao entre as sete paginas, a faixa de estado que
@@ -298,6 +298,97 @@ describe('a aba corrente sob alto contraste', () => {
     expect(corrente?.className).toContain('forced-colors:pb-1.5')
     expect(corrente?.className).toContain('py-2')
     expect(corrente?.className).not.toMatch(/(^|\s)pb-1\.5/)
+  })
+})
+
+/**
+ * `H-70`. `VN-4` mediu o foco caindo no `<body>` depois de abrir um recorte
+ * pelo ranking: a rota trocava e o operador de teclado recomeçava do zero, com
+ * as **196** paradas de tabulação de `/operacional` pela frente — `SC 2.4.3`.
+ *
+ * O alvo é a landmark da casca, e não um nó da página: ela existe mesmo
+ * enquanto o `Suspense` mostra o fallback, o que resolve por construção o
+ * caso-limite da rota `lazy` que ainda não montou. Aqui jsdom **mede o foco de
+ * verdade** — `document.activeElement` é real —, então estes testes não são
+ * asserção de classe. Medido também em Chrome 151: `main` com
+ * `aria-label="Operacional"`, `outline auto 1px` casando `:focus-visible`, e
+ * zero paradas de tabulação novas nas oito rotas.
+ */
+describe('o foco depois da troca de rota', () => {
+  it('vai para a landmark da página nova, e não para o body', async () => {
+    const base = indicatorsFixture()
+    api.serveIndicators({
+      ...base,
+      rankings: {
+        ...base.rankings,
+        clients: [{ key: 'ACME', label: 'Acme Log', count: 42 }],
+      },
+    })
+    window.history.replaceState(null, '', '/clientes')
+    render(<App />)
+
+    const linha = await within(await screen.findByRole('region', { name: 'Clientes' })).findByRole(
+      'button',
+      { name: /Acme Log/ },
+    )
+    linha.focus()
+    fireEvent.click(linha)
+
+    await waitFor(() => expect(window.location.pathname).toBe('/operacional'))
+    await waitFor(() => {
+      expect(document.activeElement).toBe(screen.getByRole('main'))
+    })
+    expect(document.activeElement).not.toBe(document.body)
+  })
+
+  /**
+   * O terceiro critério de aceite: mover o foco em silêncio trocaria um defeito
+   * por outro. Quem anuncia é o rótulo da landmark, lido quando ela recebe o
+   * foco — e não um segundo texto na região viva, que faria o leitor de tela
+   * dizer a mesma coisa duas vezes (`H-43`).
+   */
+  it('dá à landmark o nome da página, que é o que o leitor de tela anuncia', async () => {
+    window.history.replaceState(null, '', '/alertas')
+    render(<App />)
+
+    const main = screen.getByRole('main')
+
+    expect(main.getAttribute('aria-label')).toBe('Alertas')
+    expect(main.tabIndex).toBe(-1)
+  })
+
+  /**
+   * O segundo critério. `keepFocus` é declarado só aqui, e é a única navegação
+   * que não move o foco: quem clicou no link já está com o foco nele.
+   */
+  it('não mexe no foco quando a navegação é pelo link da casca', async () => {
+    render(<App />)
+
+    const link = within(nav()).getByRole('link', { name: 'Histórico' })
+    link.focus()
+    fireEvent.click(link)
+
+    await waitFor(() => expect(window.location.pathname).toBe('/historico'))
+    expect(document.activeElement).toBe(link)
+  })
+
+  /**
+   * Caso-limite: o botão "voltar" emite o **mesmo** `popstate` que a navegação
+   * programática, e sem consumir o sinal ele herdaria a intenção do salto
+   * anterior. O critério não incide em `popstate`, e o teste prova que não
+   * passou a incidir.
+   */
+  it('deixa o foco onde está quando o gesto é o voltar do navegador', async () => {
+    render(<App />)
+    fireEvent.click(within(nav()).getByRole('link', { name: 'Histórico' }))
+    await waitFor(() => expect(window.location.pathname).toBe('/historico'))
+
+    const link = within(nav()).getByRole('link', { name: 'Clientes' })
+    link.focus()
+    window.history.back()
+
+    await waitFor(() => expect(window.location.pathname).toBe('/'))
+    expect(document.activeElement).toBe(link)
   })
 })
 
