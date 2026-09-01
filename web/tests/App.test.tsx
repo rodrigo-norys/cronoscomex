@@ -54,6 +54,29 @@ describe('casca', () => {
    * que e o unico trecho comum aos dois ramos — corrente e em repouso. Assertar
    * um item so deixaria passar a regressao de mover a classe para um dos ramos.
    */
+  /**
+   * `H-74`, `ACHADO 10`, `SC 4.1.3`. O `fallback` do `<Suspense>` NASCE com a
+   * mensagem dentro, e regiao viva ja populada nao e anunciada — a MDN e
+   * explicita. O `role` saiu do no; quem anuncia e a regiao da casca, montada
+   * desde o primeiro render.
+   *
+   * Os dois textos diferem de proposito: o visivel e rotulo, o anunciado e
+   * frase. Mesmo par de `WorkbookSetup`, e o que evita o leitor ouvir duas
+   * vezes.
+   */
+  it('não anuncia a carga da página por região que nasce populada', () => {
+    // `/historico` e a UNICA rota carregada sob demanda — o Recharts responde
+    // por 374 dos 634 kB do pacote. Nas outras o `fallback` nunca aparece.
+    window.history.replaceState(null, '', '/historico')
+    render(<App />)
+
+    const bloco = screen.getByText('Carregando página…')
+
+    expect(bloco.getAttribute('role')).toBeNull()
+    expect(bloco.getAttribute('aria-hidden')).toBe('true')
+    expect(bloco.closest('[role="status"]')).toBeNull()
+  })
+
   it('todo item da lateral nomeia o papel de movimento', () => {
     render(<App />)
 
