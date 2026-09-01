@@ -388,6 +388,90 @@ describe('edicao na tela', () => {
 })
 
 /**
+ * `H-71`. O valor anterior de uma edição enfileirada é o que o operador lê para
+ * conferir o que vai ser gravado no arquivo da empresa, e a 60% de opacidade ele
+ * media **3.23:1** sobre o painel de aviso — glifo `RGB(176,131,98)` sobre
+ * `RGB(255,251,235)`, contra o limiar de 4.5 que `text-sm` exige (`VN-6`).
+ *
+ * Sólido mede **8.73:1**, e a correção é tirar a opacidade — nenhum token muda,
+ * então nenhum outro consumidor de `state-warning-*` é afetado. **jsdom não
+ * resolve `oklch` nem compõe alfa**: o que se afirma aqui é a ausência da classe
+ * e a permanência dos dois canais NÃO cromáticos que separam anterior de novo.
+ * Iguais em cor e iguais em forma apagariam qual é qual — que é o segundo
+ * critério de aceite —, e cor sozinha violaria `ACHADO 18`.
+ */
+describe('a legibilidade do valor anterior', () => {
+  function comEdicao() {
+    api.serveProcessDetail(
+      processDetailFixture({
+        pendingEdits: [
+          {
+            id: 'e1',
+            ts: '2026-08-07T12:00:00.000Z',
+            ref: 'FT501.26',
+            sourceRow: 502,
+            field: 'clientRaw',
+            value: 'NOVO',
+            previous: 'ACME LOG',
+          },
+        ],
+      }),
+    )
+    renderPage()
+    return bloco('Edições pendentes')
+  }
+
+  it('não esmaece o valor que o operador confere antes de gravar', async () => {
+    const painel = await comEdicao()
+
+    const anterior = within(painel).getByText('ACME LOG')
+
+    expect(anterior.className).not.toMatch(/opacity-/)
+  })
+
+  it('separa anterior de novo por risco e peso, e não por cor', async () => {
+    const painel = await comEdicao()
+
+    const anterior = within(painel).getByText('ACME LOG')
+    const novo = within(painel).getByText('NOVO')
+
+    expect(anterior.className).toContain('line-through')
+    expect(anterior.tagName).toBe('SPAN')
+    expect(novo.tagName).toBe('STRONG')
+    expect(novo.className).not.toContain('line-through')
+  })
+
+  /**
+   * Anterior vazio vira o literal `(vazio)`, e ele é texto como qualquer outro —
+   * o caso-limite da história pedia confirmar que a linha não fica sem nada a
+   * contrastar.
+   */
+  it('trata o anterior vazio como texto legível, não como ausência', async () => {
+    api.serveProcessDetail(
+      processDetailFixture({
+        pendingEdits: [
+          {
+            id: 'e1',
+            ts: '2026-08-07T12:00:00.000Z',
+            ref: 'FT501.26',
+            sourceRow: 502,
+            field: 'clientRaw',
+            value: 'NOVO',
+            previous: '',
+          },
+        ],
+      }),
+    )
+    renderPage()
+
+    const vazio = within(await bloco('Edições pendentes')).getByText('(vazio)')
+
+    expect(vazio.className).toContain('line-through')
+    expect(vazio.className).not.toMatch(/opacity-/)
+  })
+})
+
+/**
  * `H-49`. Os dois campos vêm juntos do servidor: a tela nunca deriva um do
  * outro (regra inviolavel 6).
  */
