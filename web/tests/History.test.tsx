@@ -442,28 +442,38 @@ describe('a série reconstruída', () => {
 })
 
 /**
- * `H-44`. O gráfico sai do caminho de tabulação, e o botão de janela ganha um
- * canal que sobrevive a `forced-colors`.
+ * `H-44` tirou o gráfico do caminho de tabulação; **`H-74` o devolveu com
+ * nome** (`ACHADO 11`).
+ *
+ * O defeito que `ACHADO 12` mediu era a **orfandade**, não a parada: o
+ * `RootSurface` do Recharts dá `tabIndex={0}` e `role="application"` ao `<svg>`,
+ * e dentro de `aria-hidden="true"` isso vira um foco que a árvore de
+ * acessibilidade não expõe — sem nome nenhum a anunciar. Com o `aria-hidden`
+ * fora e um `aria-label` no gráfico, a parada deixa de ser órfã.
+ *
+ * A tabela irmã nunca esteve em jogo: ela continua carregando os mesmos
+ * números, e é a alternativa textual.
  */
 describe('acessibilidade do gráfico e da janela', () => {
-  it('não deixa parada de tabulação órfã dentro da subárvore aria-hidden', async () => {
+  /**
+   * **O `<svg>` do Recharts não existe em jsdom**: `ResponsiveContainer` mede o
+   * pai, e aqui todo retângulo é zero. O que se afirma aqui é o invólucro; a
+   * parada em si foi medida em Chrome 151, em `H-74` — `/historico` vai de 26
+   * para 27 paradas, **zero órfãs e zero sem nome**, com o `<svg>` respondendo
+   * `role="application"` e "Gráfico da evolução mensal".
+   */
+  it('não envolve o gráfico em subárvore aria-hidden', async () => {
     serve()
     const { container } = renderPage()
     await serie()
 
-    // `ACHADO 12`: sem `accessibilityLayer={false}`, o Recharts dá `tabIndex=0`
-    // e `role="application"` ao `<svg>` — dentro de `aria-hidden="true"`. O
-    // operador tabularia para um elemento que a árvore de acessibilidade não
-    // expõe, e que por isso não tem nome nenhum a anunciar.
-    const escondido = container.querySelector('[aria-hidden="true"]')
-    expect(escondido).toBeTruthy()
-    expect(escondido?.querySelector('[tabindex="0"]')).toBeNull()
-    expect(escondido?.querySelector('[role="application"]')).toBeNull()
+    const invólucro = container.querySelector('.h-72')
+
+    expect(invólucro).toBeTruthy()
+    expect(invólucro?.closest('[aria-hidden="true"]')).toBeNull()
   })
 
-  // A correção remove a parada, nunca a alternativa textual: a tabela irmã
-  // continua carregando os mesmos números.
-  it('mantém o gráfico aria-hidden e a tabela com os mesmos números', async () => {
+  it('mantém a tabela irmã com os mesmos números', async () => {
     serve({
       series: [{ month: '2026-08', total: 649, desembaracados: 480, canalVermelho: 5 }],
       reconstructed: SEM_RECONSTRUCAO,
@@ -472,7 +482,7 @@ describe('acessibilidade do gráfico e da janela', () => {
 
     const secao = await serie()
 
-    expect(secao.querySelector('[aria-hidden="true"]')).toBeTruthy()
+    expect(secao.querySelector('[aria-hidden="true"]')).toBeNull()
     expect(await linhas()).toEqual([['ago/2026', '649', '480', '5', '—', '—']])
   })
 

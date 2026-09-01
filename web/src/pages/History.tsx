@@ -327,23 +327,29 @@ function MonthlySeries({
     >
       <h2 className="text-sm font-semibold text-text-secondary">Evolução mensal</h2>
 
-      <div aria-hidden="true" className="mt-3 h-72 w-full">
-        <ResponsiveContainer width="100%" height="100%">
-          {/*
-            `ACHADO 12`. Sem isto, `recharts/es6/container/RootSurface.js:45` da
-            `tabIndex={0}` e `role="application"` ao `<svg>` — dentro de uma
-            subarvore `aria-hidden="true"`. O operador tabula para um elemento
-            que a arvore de acessibilidade nao expoe, e que por isso nao tem nome
-            nenhum a anunciar: uma parada orfa.
+      {/*
+        **O grafico deixou de ser `aria-hidden`** (`H-74`, `ACHADO 11`).
 
-            O grafico segue `aria-hidden`, e a tabela irma continua carregando os
-            mesmos numeros — a correcao remove a parada, nunca a alternativa
-            textual.
-          */}
+        `ACHADO 12` mediu a parada de tabulacao ORFA: `RootSurface` da
+        `tabIndex={0}` e `role="application"` ao `<svg>`, e dentro de uma
+        subarvore `aria-hidden` isso vira um foco que a arvore de acessibilidade
+        nao expoe — sem nome nenhum a anunciar. `H-46` matou a parada desligando
+        a camada.
+
+        **O defeito era a orfandade, nao a parada.** Com o `aria-hidden` fora e
+        um nome no proprio grafico, ela deixa de ser orfa: passa a ser uma parada
+        legitima, anunciada, com a navegacao por ponto que a camada oferece.
+        Medido em `H-65`: `/historico` vai de 26 para 27 paradas.
+
+        A tabela irma continua carregando os mesmos numeros — a alternativa
+        textual nunca esteve em jogo.
+      */}
+      <div className="mt-3 h-72 w-full">
+        <ResponsiveContainer width="100%" height="100%">
           <LineChart
+            aria-label="Gráfico da evolução mensal"
             data={points}
             margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
-            accessibilityLayer={false}
           >
             <CartesianGrid
               stroke="var(--color-chart-grid)"
