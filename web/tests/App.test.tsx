@@ -470,14 +470,16 @@ describe('filtros globais na casca', () => {
 
     expect(window.location.pathname).toBe('/performance')
     expect(window.location.search).toBe('?client=ACME&category=em_andamento')
-    expect(await screen.findByText('2 ativos')).toBeTruthy()
+    // `H-60`: o recorte ativo continua visivel SEM abrir nada — o chip diz o
+    // valor, e o botao de limpar diz quantos filtros recortam.
+    expect(await screen.findByRole('button', { name: 'Limpar 2' })).toBeTruthy()
   })
 
   it('limpar zera os filtros sem sair da pagina', async () => {
     window.history.replaceState(null, '', '/alertas?client=ACME')
     render(<App />)
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Limpar' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Limpar 1' }))
 
     expect(window.location.search).toBe('')
     expect(window.location.pathname).toBe('/alertas')

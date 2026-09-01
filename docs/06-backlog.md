@@ -27,8 +27,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização ✅ | **H-39 … H-47 e H-67 … H-72, todas concluídas** | 7 | 8 | 0 |
 | E10 — As melhorias de uso ✅ | **H-48 … H-56 e H-66, todas concluídas.** `H-50` é a única G do backlog | 2 | 7 | 1 |
-| E11 — A casca redesenhada | **H-57 ✅, H-59 ✅; H-58 e H-60 … H-65 abertas** | 3 | 6 | 0 |
-| **Total** | **72** — 65 concluídas, 7 abertas | **28** | **43** | **1** |
+| E11 — A casca redesenhada | **H-57 ✅, H-59 ✅, H-60 ✅; H-58 e H-61 … H-65 abertas** | 3 | 6 | 0 |
+| **Total** | **72** — 66 concluídas, 6 abertas | **28** | **43** | **1** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -155,7 +155,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-57 — O par escuro da camada de tema](#h-57) ✅
 - [H-58 — As duas famílias de fonte, servidas do repositório](#h-58)
 - [H-59 — Navegação lateral e topo de uma linha](#h-59) ✅
-- [H-60 — Os quatorze filtros como chips em popover](#h-60)
+- [H-60 — Os quatorze filtros como chips em popover](#h-60) ✅
 - [H-61 — Forma, densidade e número nos componentes de dado](#h-61)
 - [H-62 — Forma e número na superfície de edição e no detalhe](#h-62)
 - [H-63 — Forma e número nas sete páginas, e a guarda de forma](#h-63)
@@ -7567,12 +7567,58 @@ qualquer mudança de raio, densidade ou tipografia nos arquivos tocados; a busca
 
 ### H-60 — Os quatorze filtros como chips em popover
 
+> ✅ **CONCLUÍDA em 01/09/2026.** **11 testes próprios** em
+> `web/tests/FilterBar.test.tsx`. Suíte total de **1667 para 1678**, com seis
+> casos existentes ajustados — os que abriam controles que agora vivem em
+> popover, e o do contador, que virou o rótulo do botão de limpar.
+>
+> **A barra caiu de 200 px para 83 px, medido em Chrome 151.** O `<main>`
+> começava em **321 px** na casca de quatro faixas, foi a 260 com `H-59` e está
+> em **143** — **178 px liberados**, 61 pela lateral e 117 pelos chips. A 1280 px
+> a casca original exibia 10 linhas de tabela e a nova exibe 11; a fixture só
+> tem 11 processos, então o ganho real se mede pela altura, não pela contagem.
+>
+> **O critério "uma linha" não é atingível a 1280 px, e o número está medido.**
+> Os treze chips somam **1437 px** de largura, contra 1064 disponíveis com a
+> lateral: são **duas linhas** de 1280 a 1600, e **uma** a partir de ~1800.
+> Cortar rótulo para caber trocaria altura por ambiguidade — "Cor do
+> responsável" e "Importador fora do RJ" precisam do que dizem. O objetivo da
+> história — *o recorte ativo ocupar uma linha em vez de uma faixa de
+> controles* — é cumprido: o recorte fica visível **sem abrir nada**, e a faixa
+> de treze controles abertos deixou de existir.
+>
+> **Um defeito de acessibilidade que o teste pegou:** o nome acessível do chip
+> saía `"ClienteACME"`, porque o `gap` do flex é espaço visual e não textual —
+> um leitor de tela anunciaria isso. O chip passou a declarar `aria-label`
+> explícito, `Cliente: Acme Logística`, e o `title` cobre o outro lado do mesmo
+> caso-limite: o valor completo quando o rótulo trunca.
+>
+> **`VN-3` medido e limpo:** com o popover aberto, **nenhum** ancestral tem
+> `overflow` que o recorte, e `elementFromPoint` no centro do painel devolve um
+> nó de dentro dele. O popover não é engolido por contêiner de rolagem.
+>
+> **`MultiSelect` perdeu o gatilho, o popover e a sombra**, e virou só a lista.
+> O comportamento de abrir, fechar e devolver o foco vive uma vez em
+> `FilterChip` — antes estava duplicado ali e **faltava** nos outros dois
+> controles: os dois campos de data e o seletor de três estados nunca tiveram
+> popover nenhum.
+>
+> **`Esc` passou a devolver o foco ao chip.** `MultiSelect` fechava e deixava o
+> foco no `<body>`, e o operador de teclado recomeçava a tabulação do topo — o
+> mesmo defeito que `VN-4` mediu na navegação (`SC 2.4.3`).
+>
+> **`useFilters.ts` não foi tocado.** A lista de arquivos previa "se precisar de
+> contagem de ativos para o chip", e `activeCount` já existe desde `H-15`; o
+> resumo por filtro é apresentação e vive na barra.
+
 **Objetivo:** o recorte ativo ocupar uma linha em vez de uma faixa de controles,
 sem perder nenhum dos quatorze filtros nem o estado na URL.
 
-> **São treze, não onze.** `H-15` montou onze, `H-49` levou a doze com o cliente
-> consolidado e `H-55` a treze com o grupo. O mockup diz "onze" e está
-> desatualizado em dois — divergência 1 de `PROPOSTA.md §5`.
+> **São quatorze, não onze.** `H-15` montou onze, `H-49` levou a doze com o
+> cliente consolidado, `H-55` a treze com o grupo e `H-50` a quatorze com a cor
+> do responsável. O mockup diz "onze" e está desatualizado em três —
+> divergência 1 de `PROPOSTA.md §5`. **São treze CHIPS**, porque o grupo de
+> clientes vive dentro do de Cliente.
 >
 > **A URL continua sendo o único estado** (`useFilters.ts:5`). O chip é
 > apresentação do que já está lá; recarregar a página tem de reconstruir o mesmo
@@ -7594,8 +7640,8 @@ sem perder nenhum dos quatorze filtros nem o estado na URL.
   está aberto.
 - **Dado** um popover aberto, **então** `Esc` fecha, o foco volta ao chip, e o
   clique fora fecha — o padrão que `MultiSelect` já implementa hoje.
-- **Dado** a URL com os treze parâmetros, **então** os treze chips refletem o
-  recorte, e nenhum filtro ficou inalcançável.
+- **Dado** a URL com os quatorze parâmetros, **então** os treze chips refletem
+  o recorte, e nenhum filtro ficou inalcançável.
 - **Dado** o filtro Cliente, **então** o segundo nível de `H-55` continua
   dentro do popover, com a árvore intacta.
 
