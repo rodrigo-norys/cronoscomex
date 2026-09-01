@@ -44,7 +44,7 @@ export function RankingBar({
   return (
     <section
       aria-label={title}
-      className="rounded border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">{title}</h2>
       {caveat}
@@ -129,14 +129,17 @@ function RankingRow({
       >
         {label}
       </span>
-      <span className={`grow rounded-sm bg-meter-track ${nested ? 'h-2' : 'h-4'}`}>
+      {/* Raio de controle tambem na barra: ela nao e contentor, e `D-22` nao
+          admite valor intermediario. Na barra fina o efeito e quase o de uma
+          pilula, e isso e consequencia do raio unico, nao excecao. */}
+      <span className={`grow rounded-control bg-meter-track ${nested ? 'h-2' : 'h-4'}`}>
         <span
-          className="block h-full rounded-sm bg-meter-fill group-hover:bg-meter-fill-hover"
+          className="block h-full rounded-control bg-meter-fill group-hover:bg-meter-fill-hover"
           style={{ width: `${share}%` }}
         />
       </span>
       <span
-        className={`w-12 shrink-0 text-right tabular-nums ${
+        className={`w-12 shrink-0 text-right font-mono tabular-nums ${
           nested ? 'text-xs text-text-muted' : 'text-sm text-text-secondary'
         }`}
       >
@@ -146,7 +149,7 @@ function RankingRow({
     </>
   )
 
-  const shared = `group flex w-full items-center gap-3 rounded px-1 text-left ${
+  const shared = `group flex w-full items-center gap-3 rounded-control px-1 text-left ${
     secondary ? 'flex-wrap' : ''
   } ${nested ? 'py-0.5' : 'py-1'}`
 
