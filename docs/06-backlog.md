@@ -25,10 +25,10 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
-| E9 — Estilização | **H-39 ✅ … H-47 ✅, H-67 ✅, H-68 ✅, H-69 ✅ e H-71 ✅; `H-70` e `H-72` abertas** | 7 | 8 | 0 |
+| E9 — Estilização | **H-39 ✅ … H-47 ✅, H-67 ✅, H-68 ✅, H-69 ✅, H-71 ✅ e H-72 ✅; só `H-70` aberta** | 7 | 8 | 0 |
 | E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-52 ✅, H-53 ✅, H-54 ✅, H-55 ✅, H-56 ✅; abertas `H-50` — a única G do backlog — e `H-66`, que saiu do corte dela** | 2 | 7 | 1 |
 | E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
-| **Total** | **72** — 59 concluídas, 13 abertas | **28** | **43** | **1** |
+| **Total** | **72** — 60 concluídas, 12 abertas | **28** | **43** | **1** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -135,7 +135,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-69 — O texto cortado da tabela tem caminho de volta](#h-69) ✅
 - [H-70 — O foco sobrevive à navegação programática](#h-70)
 - [H-71 — O valor anterior da edição é legível](#h-71) ✅
-- [H-72 — A aba corrente sobrevive ao alto contraste](#h-72)
+- [H-72 — A aba corrente sobrevive ao alto contraste](#h-72) ✅
 
 **[Épico E10 — As melhorias de uso](#e10)**
 
@@ -5907,6 +5907,36 @@ modal é inativo, e mexer nele é decisão que `H-47` deixou registrada, não ab
 <a id="h-72"></a>
 
 ### H-72 — A aba corrente sobrevive ao alto contraste
+
+> ✅ **CONCLUÍDA em 31/08/2026.** **4 testes próprios**, suíte em **1609**.
+> Sob `forced-colors: active` as sete abas tinham **uma** assinatura de borda —
+> `2px solid rgb(255,255,0)` em todas, reproduzido antes de corrigir — e agora
+> têm duas: a corrente em **4 px** contra 2 px das outras seis. O canal é a
+> espessura, a mesma técnica que `H-44` usou no botão de janela e que `VN-5`
+> mediu sobrevivendo.
+>
+> **O modo normal não regride, e isso é medição.** A borda e a compensação de
+> `padding` viajam na variante `forced-colors:`, então fora do modo forçado o
+> computado é o mesmo de antes: duas assinaturas, corrente única, alturas e
+> linhas de base iguais. Sem condicionar o `padding` junto, a linha de base do
+> texto se mexeria sempre — e há teste fixando que os dois andam na mesma
+> variante.
+>
+> **Um falso achado morreu no controle.** A 320 px a medição devolveu "bases
+> diferentes", que pareceria desalinhamento causado pela correção. O controle
+> mostrou o contrário: as abas quebram em **3 linhas** de `flex-wrap` desde
+> antes, e a base é igual **dentro de cada linha** nos quatro cenários — normal
+> e forçado, 320 e 1280. O caso-limite da rolagem também fecha: 305 = 305 sob
+> modo forçado, e a contenção de `H-46` segue de pé.
+>
+> **`aria-current` permanece, em exatamente uma das sete** — `Configuração`
+> nasceu em `H-38` e conta. O canal novo se soma ao eixo programático, e o teste
+> ancora a contagem em `NAV_PAGES`, não num número escrito à mão.
+>
+> **Divergências:** nenhuma. `PD-07` **não fecha com esta história**: os itens
+> (2) e (3) dela — o `ConflictDialog` e o realce de linha — continuam abertos,
+> por exigirem respectivamente uma planilha alterada e um cursor real, e o item
+> (1), a paleta nominal do Windows, segue sendo confirmação de segunda ordem.
 
 **Objetivo:** o operador que usa tema de alto contraste enxergar em que página
 está.
