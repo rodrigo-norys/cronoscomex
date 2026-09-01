@@ -23,6 +23,13 @@ config/app.json
 config/client-map.json
 config/team-map.json
 
+# Achados das sessoes na maquina Windows do operador. NAO versionado: carrega
+# caminho absoluto com nome de usuario do SO, layout da maquina dele e detalhe
+# de ambiente que nao interessa ao repositorio publico. O que for regra do
+# projeto sai daqui e vai para .claude/rules/operacao-windows.md, que e
+# versionada.
+docs-windows/
+
 # Node
 node_modules/
 dist/
