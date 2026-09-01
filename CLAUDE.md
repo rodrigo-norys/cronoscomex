@@ -128,16 +128,22 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**As 72 histórias estão concluídas.** O que cada uma aprendeu — número medido,
+**73 das 76 histórias concluídas.** O que cada uma aprendeu — número medido,
 defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
 `docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
 em aberto. **Este bloco diz só o que está aberto.**
 
-**`E9`, `E10` e `E11` fecharam em 01/09/2026, e com `E11` fechou o backlog.**
-Nenhuma história aberta. O que resta são as **pendências abertas** abaixo, todas
-esperando a máquina do operador, e o que vier de `docs/redesign/VERIFICACAO.md`
-— o registro dos seis procedimentos de navegador nos dois esquemas, que `H-65`
-executou e onde três limitações ficaram declaradas.
+**`E9`, `E10` e `E11` fecharam em 01/09/2026.** Resta **um épico**:
+
+- **`E12` — Os achados da revisão de estilo.** `H-73` ✅; restam `H-74` a
+  `H-76`, nenhuma bloqueada. Nasce de `docs/redesign/REVISAO-ESTILO.md`, a
+  segunda invocação do `revisor-estilo` — mesmo mecanismo que gerou `E9`. Dos 14
+  achados, três fecharam em `H-65` e um é declarado não normativo; restam dez, em
+  quatro ondas de dependência técnica. **A ordem é linear**, e não por gosto:
+  `App.tsx` aparece em duas histórias e `IngestionHealth.tsx` em duas.
+
+O registro dos seis procedimentos de navegador nos dois esquemas está em
+`docs/redesign/VERIFICACAO.md`, onde três limitações ficaram declaradas.
 
 **A medição no navegador é `tools/medir-navegador.mjs`**, versionada em
 01/09/2026 depois de ser reconstruída do zero em duas sessões. Ela sobe a

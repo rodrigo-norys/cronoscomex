@@ -21,11 +21,21 @@
 
 export type SeverityTone = 'error' | 'warning'
 
-/** A faixa lateral, por tom. `forced-colors:border-l-4` porque sob o modo
- * forcado a COR da faixa e substituida, e so a espessura sobrevive. */
+/**
+ * A faixa lateral, por tom.
+ *
+ * **Sem `forced-colors:border-l-4`, e `H-73` mediu por que:** a base da propria
+ * faixa ja e `border-l-4`, entao a variante repetia o valor e nao podia diferir
+ * em situacao nenhuma. E o mesmo defeito que `H-65` encontrou em `AlertRow`,
+ * onde ele era pior: la havia dois ramos a distinguir, e a variante inerte
+ * fazia os dois medirem 4 px sob o modo forcado.
+ *
+ * Aqui a espessura sobrevive de qualquer jeito — o agente de usuario substitui
+ * a COR da faixa, nunca a largura dela.
+ */
 const BAND: Readonly<Record<SeverityTone, string>> = {
-  error: 'border-l-4 border-l-state-error-fg forced-colors:border-l-4',
-  warning: 'border-l-4 border-l-state-warning-fg forced-colors:border-l-4',
+  error: 'border-l-4 border-l-state-error-fg',
+  warning: 'border-l-4 border-l-state-warning-fg',
 }
 
 export function severityBand(tone: SeverityTone): string {

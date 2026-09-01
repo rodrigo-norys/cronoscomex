@@ -1,5 +1,6 @@
 import type { HealthResponse, QuarantineResponse } from '../api-client.ts'
 import { navigate, WORKBOOK_SETUP_PAGE } from '../router.ts'
+import { SeverityIcon, severityBand } from './SeverityMark.tsx'
 
 /**
  * Painel de saude da ingestao (RF-16).
@@ -59,32 +60,21 @@ export function IngestionHealth({ health, quarantine }: IngestionHealthProps) {
         severidade de canal por FORMA em vez de matiz (regra inviolavel 4).
 
         O texto continua dizendo tudo — `SC 1.4.1` —, e o icone se soma a ele.
-        `forced-colors:border-l-4` engrossa sob o modo forcado, onde a cor da
-        faixa e substituida pelo UA e so a espessura sobrevive.
+
+        **A faixa e o icone vem de `SeverityMark`** (`H-73`): eram declarados a
+        mao aqui, e a copia do `path` do triangulo era a terceira do conjunto.
       */}
       <p
         role="alert"
         className={
           overLimit
-            ? 'mt-3 flex items-start gap-2 rounded-container border border-state-error-border border-l-4 border-l-state-error-fg bg-state-error-bg px-3 py-2 text-sm text-state-error-fg forced-colors:border-l-4'
+            ? `mt-3 flex items-start gap-2 rounded-container border border-state-error-border bg-state-error-bg px-3 py-2 text-sm text-state-error-fg ${severityBand('error')}`
             : 'sr-only'
         }
       >
         {overLimit && (
           <>
-            <svg
-              aria-hidden="true"
-              viewBox="0 0 16 16"
-              className="mt-0.5 size-4 shrink-0"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            >
-              <path d="M8 2.5 14.5 13.5h-13z" strokeLinejoin="round" />
-              <path d="M8 6.5v3.5" />
-              <circle cx="8" cy="11.75" r="0.6" fill="currentColor" stroke="none" />
-            </svg>
+            <SeverityIcon tone="error" />
             <span>
               <strong className="font-semibold">Acima do limite de 2%.</strong> A carga precisa ser
               revista antes de os números serem usados: linhas não interpretadas não entram em

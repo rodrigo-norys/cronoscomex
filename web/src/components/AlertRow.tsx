@@ -1,5 +1,6 @@
 import type { AlertsResponse } from '../api-client.ts'
 import { navigate } from '../router.ts'
+import { SeverityIcon, severityBand } from './SeverityMark.tsx'
 
 type Alert = AlertsResponse['items'][number]
 type AlertType = Alert['type']
@@ -36,51 +37,6 @@ export const ALERT_LABELS: Readonly<Record<AlertType, string>> = {
 /** Severidade 1–3 pede ação; 4–6 é aviso. A escala vem de A-41 e é fixa. */
 const URGENT_SEVERITY = 3
 
-/**
- * Severidade como FORMA, e não só matiz (`H-61`, `D-22`).
- *
- * O chip de canal é pílula preenchida com rótulo escrito; a severidade é faixa
- * lateral mais ícone. Os dois sistemas deixam de se distinguir pela cor, que é
- * o que a **regra inviolável 4** protege: canal é dado aduaneiro (IND-06),
- * severidade é gravidade, e nenhum dos dois infere o outro.
- *
- * **O prefixo textual de `H-45` fica.** Ele é o canal que `SC 1.4.1` exige, e o
- * ícone se SOMA a ele — trocar um pelo outro devolveria o achado `ACHADO 18`,
- * com a informação de urgência dependendo de enxergar um desenho.
- *
- * SVG inline, e não biblioteca de ícones: o plano não prevê a dependência.
- * `currentColor` faz o traço sobreviver a `forced-colors: active`, onde o UA
- * substitui a paleta do autor.
- */
-function SeverityIcon({ urgent }: { urgent: boolean }) {
-  return (
-    <svg
-      aria-hidden="true"
-      viewBox="0 0 16 16"
-      className="mt-0.5 size-4 shrink-0"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.5"
-      strokeLinecap="round"
-    >
-      {urgent ? (
-        // Triangulo de atencao: contorno fechado, legivel a 16 px.
-        <>
-          <path d="M8 2.5 14.5 13.5h-13z" strokeLinejoin="round" />
-          <path d="M8 6.5v3.5" />
-          <circle cx="8" cy="11.75" r="0.6" fill="currentColor" stroke="none" />
-        </>
-      ) : (
-        <>
-          <circle cx="8" cy="8" r="6" />
-          <path d="M8 5.5v3.5" />
-          <circle cx="8" cy="11" r="0.6" fill="currentColor" stroke="none" />
-        </>
-      )}
-    </svg>
-  )
-}
-
 export function AlertRow({ group }: { group: AlertGroup }) {
   const mostSevere = group.alerts[0]
   if (mostSevere === undefined) return null
@@ -91,26 +47,29 @@ export function AlertRow({ group }: { group: AlertGroup }) {
   return (
     /*
       A faixa lateral carrega a severidade do grupo — a do alerta MAIS severo,
-      que e o primeiro da lista (o servidor ja ordenou). `forced-colors:border-l-4`
-      engrossa sob o modo forcado, onde a cor da faixa e substituida pelo UA e so
-      a espessura sobrevive — mesma tecnica de `H-72` e `H-59`.
+      que e o primeiro da lista (o servidor ja ordenou).
 
-      **A variante estava sem efeito, e `H-65` mediu:** ela repetia o valor da
-      base, entao as DEZ linhas de `/alertas` mediam `4px` sob
-      `forced-colors: active`, urgentes e nao urgentes. Quem engrossa nao pode
-      ser o ramo urgente — ele ja e o maximo —, e sim o outro, que some. O `pl`
-      devolve os 4 px do desenho e viaja na MESMA variante, como em `H-59`.
+      **A cor da faixa vem de `severityBand`, e nao mais de um token proprio**
+      (`H-73`, `ACHADO 2`): `state-warning-border` media **1,60:1** no claro e
+      **1,94:1** no escuro contra a superficie, sob o piso de 3:1 de
+      `SC 1.4.11`. `state-warning-fg`, que e o que a faixa compartilhada usa,
+      mede 5,92 e 8,93.
+
+      **Quem engrossa sob o modo forcado e o ramo NAO urgente, que some** — o
+      urgente ja esta no maximo. `H-65` mediu a variante antiga sem efeito: ela
+      repetia o valor da base, e as DEZ linhas de `/alertas` mediam `4px`
+      urgentes e nao urgentes. O `pl` devolve os 4 px e viaja na MESMA variante,
+      como em `H-59`.
 
       A informacao nunca esteve so aqui: o prefixo "Pede acao · " de `H-45`
-      sobrevive ao modo forcado por ser texto. Esta correcao devolve o canal
-      REDUNDANTE que o comentario prometia, e nao repara perda de informacao.
+      sobrevive ao modo forcado por ser texto. A faixa e canal REDUNDANTE.
     */
     <li
       data-urgent={urgent}
-      className={`border-b border-l-4 border-b-border-subtle last:border-b-0 ${
+      className={`border-b border-b-border-subtle last:border-b-0 ${
         urgent
-          ? 'border-l-state-warning-border'
-          : 'border-l-transparent forced-colors:border-l-0 forced-colors:pl-1'
+          ? severityBand('warning')
+          : 'border-l-4 border-l-transparent forced-colors:border-l-0 forced-colors:pl-1'
       }`}
     >
       {/*
@@ -138,7 +97,14 @@ export function AlertRow({ group }: { group: AlertGroup }) {
         className="flex w-full flex-col gap-1 px-1 py-2 text-left hover:bg-surface-sunken"
       >
         <span className="flex flex-wrap items-baseline gap-2">
-          <SeverityIcon urgent={urgent} />
+          {/*
+            **O glifo segue o tom, e o tom do urgente e `error`** (`H-73`). A
+            correcao do revisor mandava `tone="warning"` nos dois — a faixa E o
+            icone —, e isso colapsaria os dois glifos: urgente e nao urgente
+            passariam a mostrar o mesmo circulo, perdendo um canal em vez de
+            ganhar consistencia. O triangulo e o que distingue, e ele fica.
+          */}
+          <SeverityIcon tone={urgent ? 'error' : 'warning'} />
           <span className="font-mono text-sm font-medium text-text-primary">{group.ref}</span>
           <span className="text-xs text-text-muted">
             linha <span className="font-mono tabular-nums">{group.sourceRow}</span>

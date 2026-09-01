@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { AlertsResponse } from '../src/api-client.ts'
+import { severityBand } from '../src/components/SeverityMark.tsx'
 import { Alerts } from '../src/pages/Alerts.tsx'
 import { type ApiStub, alertsFixture, stubApi } from './support/api-stub.ts'
 import { findLiveRegion, mountLiveRegions, unmountLiveRegions } from './support/live-region.ts'
@@ -462,9 +463,39 @@ describe('severidade como faixa lateral e ícone (H-61)', () => {
     const linhas = await within(await fila()).findAllByRole('listitem')
 
     expect(linhas[0]?.getAttribute('data-urgent')).toBe('true')
-    expect(linhas[0]?.className).toContain('border-l-state-warning-border')
+    // `H-73`: a faixa vem de `severityBand('warning')`. O token anterior,
+    // `state-warning-border`, media 1,60:1 contra o piso de 3:1 de `SC 1.4.11`.
+    expect(linhas[0]?.className).toContain(severityBand('warning'))
+    expect(linhas[0]?.className).not.toContain('border-l-state-warning-border')
     expect(linhas[1]?.getAttribute('data-urgent')).toBe('false')
     expect(linhas[1]?.className).toContain('border-l-transparent')
+  })
+
+  /**
+   * `H-73`. O glifo segue o tom, e o tom do urgente e `error` — o triangulo.
+   * A correcao do revisor mandava `tone="warning"` no icone tambem, e isso
+   * colapsaria os dois glifos: urgente e nao urgente mostrando o mesmo circulo
+   * perderia um canal em vez de ganhar consistencia.
+   */
+  it('mantém glifos distintos entre urgente e não urgente', async () => {
+    serve({
+      items: [
+        alert({ ref: 'URGENTE', severity: 1 }),
+        alert({ ref: 'AVISO', sourceRow: 9, severity: 5, type: 'chegadas_7_dias' }),
+      ],
+    })
+    renderPage()
+
+    const linhas = await within(await fila()).findAllByRole('listitem')
+    const glifo = (linha: HTMLElement | undefined): string =>
+      [...(linha?.querySelectorAll('svg path, svg circle') ?? [])]
+        .map((no) => no.getAttribute('d') ?? `r${no.getAttribute('r')}`)
+        .join(' ')
+
+    // O triangulo do urgente, e o circulo do aviso: desenhos diferentes.
+    expect(glifo(linhas[0])).toContain('M8 2.5 14.5 13.5h-13z')
+    expect(glifo(linhas[1])).not.toContain('M8 2.5 14.5 13.5h-13z')
+    expect(glifo(linhas[0])).not.toBe(glifo(linhas[1]))
   })
 
   /**
