@@ -209,7 +209,7 @@ export function WorkbookSetup({
           <button
             type="submit"
             disabled={saving || path.trim() === ''}
-            className="mt-4 rounded-control border border-action-bg bg-action-bg px-3 py-1.5 text-sm font-medium text-action-fg disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
+            className="button-primary mt-4 px-3 py-1.5"
           >
             {saving ? 'Carregando a planilha…' : 'Carregar esta planilha'}
           </button>

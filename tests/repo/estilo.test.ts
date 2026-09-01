@@ -836,3 +836,81 @@ describe('C10 — a severidade tem um par de cor e um glifo', () => {
     expect(consomem.length).toBeGreaterThanOrEqual(6)
   })
 })
+
+/**
+ * `C04` — um papel de UI, uma forma (`H-75`, `ACHADO 4`).
+ *
+ * O botao de acao primaria aparece em **cinco** lugares, e o que divergia nao
+ * era detalhe: a borda existia em 3 dos 5 e o `hover` em 2 dos 5 — o mesmo
+ * papel com dois desenhos e dois comportamentos sob o cursor. `SC 3.2.4` incide
+ * porque as sete telas tem URIs distintas (determinacao `Z1` da revisao).
+ *
+ * **A assinatura e a TRIPLA, e nao o fundo sozinho.** Dois elementos usam
+ * `bg-action-bg` com `text-action-fg` e NAO sao o papel: o link de salto de
+ * `App.tsx`, que e link, e o seletor de janela de `History.tsx`, que e controle
+ * de selecao com `aria-pressed`. Nenhum dos dois traz `font-medium` na mesma
+ * linha — o do seletor vive na base do template, fora do ramo de cor. E por
+ * isso que a guarda nao precisa de lista de excecao.
+ */
+const BOTAO_A_MAO =
+  /(?=[^\n]*\bbg-action-bg\b)(?=[^\n]*\btext-action-fg\b)(?=[^\n]*\bfont-medium\b)[^\n]*/
+
+describe('C04 — o botão de ação primária tem uma forma só', () => {
+  it('a regex reconhece a tripla e ignora os dois que não são o papel', () => {
+    expect(
+      BOTAO_A_MAO.test(
+        'className="rounded-control bg-action-bg px-3 py-1.5 text-sm font-medium text-action-fg"',
+      ),
+    ).toBe(true)
+    // O link de salto: `bg-action-bg` e `text-action-fg`, sem `font-medium`.
+    expect(
+      BOTAO_A_MAO.test(
+        'className="sr-only rounded-control bg-action-bg px-3 py-2 text-sm text-action-fg"',
+      ),
+    ).toBe(false)
+    // O seletor de janela: a tripla existe, mas em DUAS linhas do template.
+    expect(BOTAO_A_MAO.test("? 'border-2 border-action-bg bg-action-bg text-action-fg'")).toBe(
+      false,
+    )
+    expect(BOTAO_A_MAO.test('className="button-primary px-3 py-1.5"')).toBe(false)
+  })
+
+  it('nenhum botão primário escreve a composição à mão', () => {
+    const aMao = occurrencesOf(BOTAO_A_MAO)
+
+    expect(aMao.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
+  })
+
+  /** Âncora: sem consumidores, a asserção acima passaria por vacuidade. */
+  it('encontra os cinco consumidores da utilidade', () => {
+    const consomem = FILES.filter((file) =>
+      /\bbutton-primary\b/.test(semComentarios(readFileSync(file, 'utf-8'))),
+    )
+
+    expect(consomem).toHaveLength(5)
+  })
+})
+
+/**
+ * `C04` — as duas faixas de largura total da casca (`H-75`, `ACHADO 5`).
+ *
+ * Elas empilham no MESMO lugar: `StatusBanner` desenha os sinais de saude e
+ * `App` desenha a recusa de escrita, uma embaixo da outra. Uma com `border-b` e
+ * a outra com `border-y` davam separacao diferente para o mesmo papel.
+ */
+const FAIXA_DA_CASCA = /border-(y|b)[^\n]*px-6 py-3 text-sm/
+
+describe('C04 — as faixas da casca têm a mesma borda', () => {
+  it('a regex reconhece a faixa e ignora o painel de página', () => {
+    expect(FAIXA_DA_CASCA.test("'border-b border-state-error-border px-6 py-3 text-sm'")).toBe(true)
+    expect(FAIXA_DA_CASCA.test('`border-y px-6 py-3 text-sm ')).toBe(true)
+    expect(FAIXA_DA_CASCA.test("'rounded-container border p-4 text-sm'")).toBe(false)
+  })
+
+  it('toda faixa da casca usa border-y, e nenhuma desvia', () => {
+    const faixas = occurrencesOf(FAIXA_DA_CASCA)
+
+    expect(faixas.length).toBeGreaterThanOrEqual(2)
+    expect(faixas.filter((one) => !/border-y/.test(one.text)).map((one) => one.file)).toEqual([])
+  })
+})

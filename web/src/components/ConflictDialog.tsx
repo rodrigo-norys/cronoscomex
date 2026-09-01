@@ -189,11 +189,7 @@ export function ConflictDialog({ refusal, onClose }: ConflictDialogProps) {
           )}
 
         <div className="mt-5 flex justify-end">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-control bg-action-bg px-4 py-2 text-sm font-medium text-action-fg hover:bg-action-bg-hover"
-          >
+          <button type="button" onClick={onClose} className="button-primary px-4 py-2">
             Entendi
           </button>
         </div>
