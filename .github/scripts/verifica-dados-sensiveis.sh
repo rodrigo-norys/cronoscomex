@@ -50,9 +50,15 @@ reportar() {
 # `git ls-files` e analisaria a arvore inteira.
 versionados="${ARQUIVOS_PARA_VERIFICAR-$(git ls-files)}"
 
-# 1. Planilhas fora das fixtures. As 8 de tests/fixtures/ sao derivadas do
+# 1. Planilhas fora das fixtures. As 9 de tests/fixtures/ sao derivadas do
 #    arquivo real com nomes trocados, e versiona-las e exigencia da regra 7.
 #    guard-dados-sensiveis.sh faz a MESMA excecao no `git add`, desde 13/08/2026.
+#
+#    A excecao e por CAMINHO, e ate 01/09/2026 nada olhava DENTRO delas — nem
+#    aqui, nem no hook, e o check 6 pula binario por construcao. Um comentario
+#    da planilha do operador, com nome de duas pessoas, sobreviveu meses assim.
+#    Quem olha para dentro e tests/repo/fixtures-anonimas.test.ts, que roda no
+#    `npm run verify` e no verify.yml. Esta excecao so se sustenta com ela.
 planilhas="$(printf '%s\n' "$versionados" | grep -iE '\.xlsx$' | grep -v '^tests/fixtures/' || true)"
 [ -n "$planilhas" ] &&
   reportar "Planilha versionada fora de tests/fixtures/." "$planilhas"
