@@ -470,8 +470,19 @@ describe('severidade como faixa lateral e ícone (H-61)', () => {
   /**
    * A espessura é o canal que sobrevive a `forced-colors: active`, onde o UA
    * substitui a cor da faixa — mesma técnica de `H-72` e `H-59`.
+   *
+   * **A asserção anterior provava o contrário do que o nome dela dizia**
+   * (`H-65`): ela cobrava `forced-colors:border-l-4` nas DUAS severidades, e
+   * classe igual nas duas é exatamente a definição de não distinguir. A base já
+   * era `border-l-4`, então a variante repetia o valor e era inerte. Quem tem
+   * de mudar sob o modo forçado é o ramo **não urgente** — o urgente já está no
+   * máximo.
+   *
+   * **Isto não é reparo de perda de informação:** o prefixo "Pede ação" de
+   * `H-45` é texto e sobrevive ao modo forçado em qualquer caso. É o canal
+   * redundante que o comentário prometia e não entregava.
    */
-  it('engrossa a faixa sob forced-colors, nas duas severidades', async () => {
+  it('distingue as duas severidades sob forced-colors, e não as iguala', async () => {
     serve({
       items: [
         alert({ severity: 1 }),
@@ -480,9 +491,16 @@ describe('severidade como faixa lateral e ícone (H-61)', () => {
     })
     renderPage()
 
-    for (const linha of await within(await fila()).findAllByRole('listitem')) {
-      expect(linha.className).toContain('forced-colors:border-l-4')
-    }
+    const [urgente, comum] = await within(await fila()).findAllByRole('listitem')
+
+    expect(urgente?.getAttribute('data-urgent')).toBe('true')
+    expect(urgente?.className).toContain('border-l-4')
+    expect(urgente?.className).not.toContain('forced-colors:border-l-0')
+
+    // O `pl` devolve os 4 px que a borda deixa de ocupar, como em `H-59`.
+    expect(comum?.getAttribute('data-urgent')).toBe('false')
+    expect(comum?.className).toContain('forced-colors:border-l-0')
+    expect(comum?.className).toContain('forced-colors:pl-1')
   })
 
   /**

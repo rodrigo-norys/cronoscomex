@@ -94,11 +94,23 @@ export function AlertRow({ group }: { group: AlertGroup }) {
       que e o primeiro da lista (o servidor ja ordenou). `forced-colors:border-l-4`
       engrossa sob o modo forcado, onde a cor da faixa e substituida pelo UA e so
       a espessura sobrevive — mesma tecnica de `H-72` e `H-59`.
+
+      **A variante estava sem efeito, e `H-65` mediu:** ela repetia o valor da
+      base, entao as DEZ linhas de `/alertas` mediam `4px` sob
+      `forced-colors: active`, urgentes e nao urgentes. Quem engrossa nao pode
+      ser o ramo urgente — ele ja e o maximo —, e sim o outro, que some. O `pl`
+      devolve os 4 px do desenho e viaja na MESMA variante, como em `H-59`.
+
+      A informacao nunca esteve so aqui: o prefixo "Pede acao · " de `H-45`
+      sobrevive ao modo forcado por ser texto. Esta correcao devolve o canal
+      REDUNDANTE que o comentario prometia, e nao repara perda de informacao.
     */
     <li
       data-urgent={urgent}
-      className={`border-b border-l-4 border-b-border-subtle last:border-b-0 forced-colors:border-l-4 ${
-        urgent ? 'border-l-state-warning-border' : 'border-l-transparent'
+      className={`border-b border-l-4 border-b-border-subtle last:border-b-0 ${
+        urgent
+          ? 'border-l-state-warning-border'
+          : 'border-l-transparent forced-colors:border-l-0 forced-colors:pl-1'
       }`}
     >
       {/*
