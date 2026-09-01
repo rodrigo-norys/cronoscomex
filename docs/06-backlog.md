@@ -25,10 +25,10 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
-| E9 — Estilização | **H-39 ✅ … H-47 ✅; `H-67` a `H-72` abertas, os seis achados medidos no navegador** | 7 | 8 | 0 |
+| E9 — Estilização | **H-39 ✅ … H-47 ✅ e H-68 ✅; `H-67`, `H-69` a `H-72` abertas, os cinco achados que restam** | 7 | 8 | 0 |
 | E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-52 ✅, H-53 ✅, H-54 ✅, H-55 ✅, H-56 ✅; abertas `H-50` — a única G do backlog — e `H-66`, que saiu do corte dela** | 2 | 7 | 1 |
 | E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
-| **Total** | **72** — 55 concluídas, 17 abertas | **28** | **43** | **1** |
+| **Total** | **72** — 56 concluídas, 16 abertas | **28** | **43** | **1** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -131,7 +131,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-46 — Responsividade e contenção de rolagem](#h-46) ✅
 - [H-47 — Percorrer os cinco procedimentos de navegador](#h-47) ✅
 - [H-67 — A linha do ranking cabe em 320 px](#h-67)
-- [H-68 — O seletor de cor cabe na tela do celular](#h-68)
+- [H-68 — O seletor de cor cabe na tela do celular](#h-68) ✅
 - [H-69 — O texto cortado da tabela tem caminho de volta](#h-69)
 - [H-70 — O foco sobrevive à navegação programática](#h-70)
 - [H-71 — O valor anterior da edição é legível](#h-71)
@@ -5561,6 +5561,42 @@ E qualquer correção de código: os cinco procedimentos produzem registro.
 <a id="h-68"></a>
 
 ### H-68 — O seletor de cor cabe na tela do celular
+
+> ✅ **CONCLUÍDA em 31/08/2026.** **3 testes próprios**, suíte em **1595**.
+> Os dois números de `VN-1` e `VN-2` foram **reproduzidos antes de corrigir** —
+> 572 num viewport de 320 e 846 num de 640 com fonte-base 24 —, e é isso que
+> torna a medição do depois confiável. Depois: **305 = 305** e **625 = 625**,
+> zero elementos ultrapassando a borda sem ancestral que contenha a rolagem.
+>
+> **A causa não era `sm:max-w-sm` incidir tarde demais; era `min-width` vencer
+> `max-width`.** O `<select>` tem `min-width: auto` como item de flex, e o UA
+> resolve isso para a largura da maior `<option>` — 531 px. Nenhum `max-width`
+> contém um elemento cujo mínimo já é maior que ele, e por isso o limite não
+> protegia nem a 640 px, onde estava ativo. A correção são duas classes:
+> `min-w-0` no `<label>`, que o deixa encolher abaixo do conteúdo, e `w-full`
+> no `<select>`, que o prende ao rótulo em vez de ao texto. **O limite em `rem`
+> ficou** — teto estético em tela larga, e agora inofensivo.
+>
+> **O critério de aceite fala em 320 e o harness devolve 305, e isso não é
+> divergência.** As páginas que `H-47` aprovou como "320 = 320" medem **305 =
+> 305** aqui: os 15 px são a barra de rolagem vertical clássica do
+> `--headless=new`. `/alertas` e `/clientes` foram medidas como controle antes
+> de aceitar o número — o mandato desta sessão pede exatamente isso, e sem o
+> controle o 305 teria sido lido como achado.
+>
+> **O terceiro critério passa por construção, não por sorte.** A caixa fechada
+> trunca, e quem a mantém identificável é o nome da cor vir primeiro: as 7
+> opções servidas têm 7 prefixos distintos, e o texto completo continua no DOM
+> para a lista aberta, que o UA desenha. Um teste fixa isso, para que reordenar
+> o rótulo para "sem responsável · Canal Verde — Verde (tom A)" reprove.
+>
+> **Divergência 1 (fiação, resolvida):** a lista de arquivos está correta e
+> completa, mas o critério é medido em px e **jsdom não faz layout** — os testes
+> próprios ancoram a contenção declarada (`min-w-0`, `w-full`), e a largura foi
+> medida por CDP num harness de scratchpad que sobe o servidor real sobre
+> `tests/fixtures/cores.xlsx`. Alternativa descartada: fechar só com teste de
+> classe, que prova intenção e não resultado — foi assim que `sm:max-w-sm`
+> pareceu suficiente por oito fatias.
 
 **Objetivo:** a Página Detalhe parar de rolar 572 px num viewport de 320.
 
