@@ -11,83 +11,125 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 
 ---
 
+<a id="resumo"></a>
+
+## Resumo do backlog
+
+| Épico | Histórias | P | M | G |
+|---|---|---|---|---|
+| E1 — Fundação e perfilamento ✅ | H-01, H-02 | 0 | 2 | 0 |
+| E2 — Leitura e normalização ✅ | H-03 … H-08 | 3 | 3 | 0 |
+| E3 — Indicadores e alertas ✅ | H-09 … H-14 | 3 | 3 | 0 |
+| E4 — Interface ✅ | H-15 … H-22 | 6 | 2 | 0 |
+| E5 — Edição e escrita ✅ | H-23 … H-27 | 0 | 5 | 0 |
+| E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
+| E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
+| E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
+| E9 — Estilização | **H-39 ✅ … H-47 ✅; `H-67` a `H-72` abertas, os seis achados medidos no navegador** | 7 | 8 | 0 |
+| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-52 ✅, H-53 ✅, H-54 ✅, H-55 ✅, H-56 ✅; abertas `H-50` — a única G do backlog — e `H-66`, que saiu do corte dela** | 2 | 7 | 1 |
+| E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
+| **Total** | **72** — 55 concluídas, 17 abertas | **28** | **43** | **1** |
+
+**O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
+Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
+`H-17`, e o índice seguiu afirmando que `H-13` estava aberta até 18/08/2026 —
+a única coisa no repositório dizendo isso, contra o bloco `✅ CONCLUÍDA` da
+própria história. **O defeito era ser manual e não verificado**, e é isso que
+mudou: `tests/repo/contratos.test.ts` compara cada marca do índice com o bloco da
+história e reprova na primeira divergência. A fonte de verdade continua sendo o
+bloco; o índice agora é obrigado a concordar com ele.
+
+`H-30` teve a ressalva do bloco dela **levantada em 31/08/2026**: o
+`iniciar.cmd` foi executado na máquina do operador, sobe e carrega a planilha.
+`PD-06` guarda os três itens que ainda faltam.
+
+**Uma história é G, e o rótulo é deliberado** — `H-50`, desde `D-24`. As três
+candidatas naturais anteriores foram quebradas: a
+escrita no `.xlsx` virou `H-24` (cirurgia), `H-25` (defesas) e `H-26` (comando
+ponta a ponta); os indicadores viraram cinco histórias por natureza de cálculo;
+e o épico E10 separou os mapas (`H-48`) dos dois campos que os consomem
+(`H-49`, `H-50`), que de outro modo seriam uma fatia só de 25 arquivos. `H-50`
+foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
+
+---
+
 <a id="indice"></a>
 
 ## Índice
 
 **[Épico E1 — Fundação e perfilamento](#e1)**
 
-- [H-01 — Perfilar a planilha real e emitir relatório de estrutura](#h-01)
-- [H-02 — Levantar o esqueleto do projeto com servidor, interface e testes](#h-02)
+- [H-01 — Perfilar a planilha real e emitir relatório de estrutura](#h-01) ✅
+- [H-02 — Levantar o esqueleto do projeto com servidor, interface e testes](#h-02) ✅
 
 **[Épico E2 — Leitura da planilha e normalização](#e2)**
 
-- [H-03 — Ler a planilha e expor as linhas cruas com a célula-âncora de estilo](#h-03)
-- [H-04 — Traduzir a chave de estilo em responsável, canal e localização do importador](#h-04)
-- [H-05 — Normalizar textos de agrupamento e converter células em datas](#h-05)
-- [H-06 — Classificar cada linha em uma das quatro categorias canônicas](#h-06)
-- [H-07 — Compor os processos e emitir o relatório de quarentena e divergências](#h-07)
-- [H-08 — Recarregar automaticamente quando a planilha for alterada por fora](#h-08)
+- [H-03 — Ler a planilha e expor as linhas cruas com a célula-âncora de estilo](#h-03) ✅
+- [H-04 — Traduzir a chave de estilo em responsável, canal e localização do importador](#h-04) ✅
+- [H-05 — Normalizar textos de agrupamento e converter células em datas](#h-05) ✅
+- [H-06 — Classificar cada linha em uma das quatro categorias canônicas](#h-06) ✅
+- [H-07 — Compor os processos e emitir o relatório de quarentena e divergências](#h-07) ✅
+- [H-08 — Recarregar automaticamente quando a planilha for alterada por fora](#h-08) ✅
 
 **[Épico E3 — Indicadores e alertas](#e3)**
 
-- [H-09 — Entregar as contagens por categoria de status](#h-09)
-- [H-10 — Entregar os indicadores de calendário](#h-10)
-- [H-11 — Entregar os agrupamentos e rankings](#h-11)
-- [H-12 — Entregar os indicadores de risco](#h-12)
-- [H-13 — Entregar os indicadores de tempo](#h-13)
-- [H-14 — Entregar os cinco alertas derivados do estado atual](#h-14)
+- [H-09 — Entregar as contagens por categoria de status](#h-09) ✅
+- [H-10 — Entregar os indicadores de calendário](#h-10) ✅
+- [H-11 — Entregar os agrupamentos e rankings](#h-11) ✅
+- [H-12 — Entregar os indicadores de risco](#h-12) ✅
+- [H-13 — Entregar os indicadores de tempo](#h-13) ✅
+- [H-14 — Entregar os cinco alertas derivados do estado atual](#h-14) ✅
 
 **[Épico E4 — Interface do painel](#e4)**
 
-- [H-15 — Montar a casca da aplicação com os onze filtros globais](#h-15)
-- [H-16 — Entregar a Página Inicial com os cartões-resumo](#h-16)
-- [H-17 — Entregar a Página Operacional com tabela, busca e calendário](#h-17)
-- [H-18 — Entregar a Página Clientes](#h-18)
-- [H-19 — Entregar a Página Performance](#h-19)
-- [H-20 — Entregar a Página Alertas](#h-20)
-- [H-21 — Entregar a Página Histórico](#h-21)
-- [H-22 — Entregar a tela de detalhe do processo](#h-22)
+- [H-15 — Montar a casca da aplicação com os onze filtros globais](#h-15) ✅
+- [H-16 — Entregar a Página Inicial com os cartões-resumo](#h-16) ✅
+- [H-17 — Entregar a Página Operacional com tabela, busca e calendário](#h-17) ✅
+- [H-18 — Entregar a Página Clientes](#h-18) ✅
+- [H-19 — Entregar a Página Performance](#h-19) ✅
+- [H-20 — Entregar a Página Alertas](#h-20) ✅
+- [H-21 — Entregar a Página Histórico](#h-21) ✅
+- [H-22 — Entregar a tela de detalhe do processo](#h-22) ✅
 
 **[Épico E5 — Edição e escrita na planilha](#e5)**
 
-- [H-23 — Editar campos na tela, enfileirando sem tocar no arquivo](#h-23)
-- [H-24 — Alterar células dentro do `.xlsx` preservando o arquivo byte a byte](#h-24)
-- [H-25 — Proteger a escrita com as seis defesas de integridade](#h-25)
-- [H-26 — Aplicar as edições pendentes sob comando explícito](#h-26)
-- [H-27 — Editar os campos codificados em cor](#h-27)
+- [H-23 — Editar campos na tela, enfileirando sem tocar no arquivo](#h-23) ✅
+- [H-24 — Alterar células dentro do `.xlsx` preservando o arquivo byte a byte](#h-24) ✅
+- [H-25 — Proteger a escrita com as seis defesas de integridade](#h-25) ✅
+- [H-26 — Aplicar as edições pendentes sob comando explícito](#h-26) ✅
+- [H-27 — Editar os campos codificados em cor](#h-27) ✅
 
 **[Épico E6 — Histórico](#e6)**
 
-- [H-28 — Registrar as mudanças de categoria a cada leitura](#h-28)
-- [H-29 — Entregar o alerta de processos parados](#h-29)
+- [H-28 — Registrar as mudanças de categoria a cada leitura](#h-28) ✅
+- [H-29 — Entregar o alerta de processos parados](#h-29) ✅
 
 **[Épico E7 — Operação](#e7)**
 
-- [H-30 — Entregar a aplicação empacotada com atalho de execução](#h-30)
-- [H-31 — Entregar logs estruturados e métricas de ingestão](#h-31)
-- [H-32 — Sinalizar interferência externa no arquivo](#h-32)
-- [H-33 — Trocar o leitor de `.xlsx` do ExcelJS para `fflate`](#h-33)
-- [H-34 — Configurar o caminho da planilha pela tela, sem editar JSON](#h-34)
-- [H-35 — Chegar ao painel na primeira execução, sem linha de comando](#h-35)
-- [H-36 — O painel diz onde a partida parou, e revalida sem reexecutar o atalho](#h-36)
+- [H-30 — Entregar a aplicação empacotada com atalho de execução](#h-30) ✅
+- [H-31 — Entregar logs estruturados e métricas de ingestão](#h-31) ✅
+- [H-32 — Sinalizar interferência externa no arquivo](#h-32) ✅
+- [H-33 — Trocar o leitor de `.xlsx` do ExcelJS para `fflate`](#h-33) ✅
+- [H-34 — Configurar o caminho da planilha pela tela, sem editar JSON](#h-34) ✅
+- [H-35 — Chegar ao painel na primeira execução, sem linha de comando](#h-35) ✅
+- [H-36 — O painel diz onde a partida parou, e revalida sem reexecutar o atalho](#h-36) ✅
 
 **[Épico E8 — A configuração alcançável](#e8)**
 
-- [H-37 — Escolher a planilha pelo diálogo do sistema](#h-37)
-- [H-38 — A tela de configuração deixa de ser inalcançável](#h-38)
+- [H-37 — Escolher a planilha pelo diálogo do sistema](#h-37) ✅
+- [H-38 — A tela de configuração deixa de ser inalcançável](#h-38) ✅
 
 **[Épico E9 — Estilização](#e9)**
 
-- [H-39 — Declarar a camada de tema e migrar a casca](#h-39)
-- [H-40 — Migrar os componentes de dado](#h-40)
-- [H-41 — Migrar a superfície de edição](#h-41)
-- [H-42 — Migrar as sete páginas e fechar a guarda de cor](#h-42)
-- [H-43 — Live regions da casca e dos componentes](#h-43)
-- [H-44 — Live regions das páginas, gráfico e forced-colors](#h-44)
-- [H-45 — Unificar papéis de UI e tirar a informação só-cor](#h-45)
-- [H-46 — Responsividade e contenção de rolagem](#h-46)
-- [H-47 — Percorrer os cinco procedimentos de navegador](#h-47)
+- [H-39 — Declarar a camada de tema e migrar a casca](#h-39) ✅
+- [H-40 — Migrar os componentes de dado](#h-40) ✅
+- [H-41 — Migrar a superfície de edição](#h-41) ✅
+- [H-42 — Migrar as sete páginas e fechar a guarda de cor](#h-42) ✅
+- [H-43 — Live regions da casca e dos componentes](#h-43) ✅
+- [H-44 — Live regions das páginas, gráfico e forced-colors](#h-44) ✅
+- [H-45 — Unificar papéis de UI e tirar a informação só-cor](#h-45) ✅
+- [H-46 — Responsividade e contenção de rolagem](#h-46) ✅
+- [H-47 — Percorrer os cinco procedimentos de navegador](#h-47) ✅
 - [H-67 — A linha do ranking cabe em 320 px](#h-67)
 - [H-68 — O seletor de cor cabe na tela do celular](#h-68)
 - [H-69 — O texto cortado da tabela tem caminho de volta](#h-69)
@@ -97,15 +139,15 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 
 **[Épico E10 — As melhorias de uso](#e10)**
 
-- [H-48 — Os dois mapas de negócio, fora do repositório](#h-48)
-- [H-49 — Cliente consolidado, separado do processo do cliente](#h-49)
+- [H-48 — Os dois mapas de negócio, fora do repositório](#h-48) ✅
+- [H-49 — Cliente consolidado, separado do processo do cliente](#h-49) ✅
 - [H-50 — Responsável pelo importador, com a cor desempatando](#h-50)
-- [H-51 — Canal verde, e a distribuição à vista](#h-51)
-- [H-52 — Os cartões declaram o período, e ele é editável ali](#h-52)
-- [H-53 — A Página Performance diz a métrica e mostra o recorte](#h-53)
-- [H-54 — O histórico reconstrói os meses da planilha](#h-54)
-- [H-55 — Grupo de clientes no filtro](#h-55)
-- [H-56 — O ranking de clientes mostra o grupo com a composição](#h-56)
+- [H-51 — Canal verde, e a distribuição à vista](#h-51) ✅
+- [H-52 — Os cartões declaram o período, e ele é editável ali](#h-52) ✅
+- [H-53 — A Página Performance diz a métrica e mostra o recorte](#h-53) ✅
+- [H-54 — O histórico reconstrói os meses da planilha](#h-54) ✅
+- [H-55 — Grupo de clientes no filtro](#h-55) ✅
+- [H-56 — O ranking de clientes mostra o grupo com a composição](#h-56) ✅
 - [H-66 — O filtro da cor de responsável na tela](#h-66)
 
 **[Épico E11 — A casca redesenhada](#e11)**
@@ -120,7 +162,6 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 - [H-64 — Movimento curto, com a redução nascendo junto](#h-64)
 - [H-65 — Percorrer os procedimentos de navegador nos dois esquemas](#h-65)
 
-**[Resumo do backlog](#resumo)**
 
 ---
 
@@ -3222,12 +3263,13 @@ vindo de `config/app.json` (`stalledDaysThreshold`, padrão **15**, A-32).
 > `tests/http/static.test.ts`; suíte total em **1157**. Seis divergências
 > resolvidas na abertura, mais uma descoberta durante a implementação.
 >
-> **A ressalva: o `iniciar.cmd` nunca foi executado.** É batch do Windows
-> (RNF-26) e o desenvolvimento acontece em Linux. Quatro dos seis critérios de
-> aceite — duplo clique, Node ausente, `app.json` ausente, janela fechada sem
-> processo órfão — e três casos-limite — porta ocupada, segunda execução,
-> caminho com espaços e acentos — **não foram exercidos**, só revisados por
-> inspeção. O que foi testado de verdade está listado adiante. **Esta história
+> **A ressalva foi levantada em 31/08/2026, e o que sobrou é pequeno.** Era
+> batch do Windows (RNF-26) escrito em Linux, e nada tinha sido exercido. Na
+> máquina do operador, com a distribuição refeita do zero: **duplo clique, Node
+> ausente, Node abaixo da 22, `app.json` ausente, porta ocupada e segunda
+> execução passaram**, e a planilha real foi lida — 649 aceitas, 0 em quarentena.
+> Sobram **janela fechada sem processo órfão**, que precisa de janela, e
+> **caminho com espaços e acentos**. O que foi testado de verdade está listado adiante. **Esta história
 > só está encerrada de fato depois da primeira instalação na máquina do
 > operador**, e é lá que as duas pendências restantes fecham.
 >
@@ -7457,44 +7499,6 @@ superfície dobrada pelo segundo esquema.
 [↑ Índice](#indice)
 
 ---
-
-<a id="resumo"></a>
-
-## Resumo do backlog
-
-| Épico | Histórias | P | M | G |
-|---|---|---|---|---|
-| E1 — Fundação e perfilamento ✅ | H-01, H-02 | 0 | 2 | 0 |
-| E2 — Leitura e normalização ✅ | H-03 … H-08 | 3 | 3 | 0 |
-| E3 — Indicadores e alertas ✅ | H-09 … H-14 | 3 | 3 | 0 |
-| E4 — Interface ✅ | H-15 … H-22 | 6 | 2 | 0 |
-| E5 — Edição e escrita ✅ | H-23 … H-27 | 0 | 5 | 0 |
-| E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
-| E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
-| E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
-| E9 — Estilização | **H-39 ✅ … H-47 ✅; `H-67` a `H-72` abertas, os seis achados medidos no navegador** | 7 | 8 | 0 |
-| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-52 ✅, H-53 ✅, H-54 ✅, H-55 ✅, H-56 ✅; abertas `H-50` — a única G do backlog — e `H-66`, que saiu do corte dela** | 2 | 7 | 1 |
-| E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
-| **Total** | **72** — 55 concluídas, 17 abertas | **28** | **43** | **1** |
-
-**O ✅ marca o épico, não a história.** As marcas por história congelaram em
-07/08/2026, com `H-17`, e a tabela seguiu afirmando que `H-13` estava aberta até
-18/08/2026 — foi a única coisa no repositório dizendo isso, contra o bloco
-`✅ CONCLUÍDA` da própria história e a linha dela em `09-rastreabilidade.md §4`.
-Com 33 de 43 fechadas àquela altura, marcar uma a uma é o que envelhece; o que o leitor precisa
-é **onde estão as abertas**. A fonte de verdade do estado de uma história
-continua sendo o bloco dela.
-
-`H-30` conta como concluída **com a ressalva que o bloco dela declara**: o
-`iniciar.cmd` nunca foi executado, e `PD-06` guarda o que falta conferir na
-máquina do operador.
-
-**Nenhuma história é G.** As três candidatas naturais foram quebradas: a
-escrita no `.xlsx` virou `H-24` (cirurgia), `H-25` (defesas) e `H-26` (comando
-ponta a ponta); os indicadores viraram cinco histórias por natureza de cálculo;
-e o épico E10 separou os mapas (`H-48`) dos dois campos que os consomem
-(`H-49`, `H-50`), que de outro modo seriam uma fatia só de 25 arquivos. `H-50`
-foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 
 ### Varredura de verbos de decisão em aberto
 

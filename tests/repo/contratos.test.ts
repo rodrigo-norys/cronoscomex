@@ -768,7 +768,7 @@ describe('o resumo do backlog concorda com as histórias', () => {
  */
 describe('o índice do backlog alcança todas as histórias', () => {
   const ancoras = [...BACKLOG.matchAll(/^<a id="(h-\d+)"><\/a>$/gm)].map((achado) => achado[1])
-  const entradas = [...BACKLOG.matchAll(/^- \[H-\d+ — .+\]\(#(h-\d+)\)$/gm)].map(
+  const entradas = [...BACKLOG.matchAll(/^- \[H-\d+ — .+\]\(#(h-\d+)\)( ✅)?$/gm)].map(
     (achado) => achado[1],
   )
 
@@ -782,6 +782,30 @@ describe('o índice do backlog alcança todas as histórias', () => {
 
     expect([...ancoras].sort()).toEqual([...historias].sort())
     expect([...entradas].sort()).toEqual([...historias].sort())
+  })
+
+  /**
+   * O marcador de conclusão do índice concorda com o bloco da história.
+   *
+   * Marcar história por história já foi tentado e falhou: as marcas congelaram
+   * em 07/08/2026 e o índice afirmou `H-13` aberta até 18/08/2026, contra o
+   * bloco `✅ CONCLUÍDA` dela. O defeito não era a marca, era ela ser manual e
+   * não verificada — esta asserção é o que autorizou a marca a voltar, em
+   * 31/08/2026. Sem lista fixa: o estado sai do próprio bloco.
+   */
+  it('o ✅ do índice concorda com o bloco de cada história', () => {
+    const concluidas = new Set(
+      historiasDoBacklog()
+        .filter((historia) => historia.concluida)
+        .map((historia) => historia.id.toLowerCase()),
+    )
+
+    const divergentes = [...BACKLOG.matchAll(/^- \[H-\d+ — .+\]\(#(h-\d+)\)( ✅)?$/gm)]
+      .map((achado) => ({ id: achado[1] ?? '', marcada: achado[2] !== undefined }))
+      .filter((entrada) => concluidas.has(entrada.id) !== entrada.marcada)
+      .map((entrada) => entrada.id)
+
+    expect(divergentes).toEqual([])
   })
 
   /** Link para âncora que não existe é buraco silencioso: não erra, só não vai. */
