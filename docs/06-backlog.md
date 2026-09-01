@@ -27,8 +27,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização ✅ | **H-39 … H-47 e H-67 … H-72, todas concluídas** | 7 | 8 | 0 |
 | E10 — As melhorias de uso ✅ | **H-48 … H-56 e H-66, todas concluídas.** `H-50` é a única G do backlog | 2 | 7 | 1 |
-| E11 — A casca redesenhada | **H-57 ✅ … H-64 ✅; H-65 aberta** | 3 | 6 | 0 |
-| **Total** | **72** — 71 concluídas, 1 aberta | **28** | **43** | **1** |
+| E11 — A casca redesenhada ✅ | **H-57 … H-65, todas concluídas** | 3 | 6 | 0 |
+| **Total** | **72** — 72 concluídas, nenhuma aberta | **28** | **43** | **1** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -160,7 +160,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-62 — Forma e número na superfície de edição e no detalhe](#h-62) ✅
 - [H-63 — Forma e número nas sete páginas, e a guarda de forma](#h-63) ✅
 - [H-64 — Movimento curto, com a redução nascendo junto](#h-64) ✅
-- [H-65 — Percorrer os procedimentos de navegador nos dois esquemas](#h-65)
+- [H-65 — Percorrer os procedimentos de navegador nos dois esquemas](#h-65) ✅
 
 
 ---
@@ -8161,6 +8161,77 @@ qualquer movimento que não responda a uma ação do operador.
 <a id="h-65"></a>
 
 ### H-65 — Percorrer os procedimentos de navegador nos dois esquemas
+
+> ✅ **CONCLUÍDA em 01/09/2026, e com ela `E11` e o backlog inteiro.**
+> **4 asserções próprias**, suíte de **1706 para 1708**. O registro datado está
+> em `docs/redesign/VERIFICACAO.md`; aqui fica só o que ele não é o lugar de
+> guardar.
+>
+> **Os seis procedimentos, duas vezes cada — e quatro achados, todos
+> corrigidos.** Nenhum virou nota solta, e os quatro caíram em arquivo já tocado
+> por `E11`, que é o que o critério de aceite manda.
+>
+> **`VN-1` — o popover era o buraco da medição anterior.** "Zero estouros de 320
+> a 1440", de `H-63`, foi medido com os treze popovers **fechados**; o painel é
+> `absolute` e contribui para o overflow. Abrindo um a um a 320 px, **6 dos 13**
+> faziam a página rolar, com números idênticos nos dois esquemas — **135 px** no
+> pior caso, quase metade da largura útil. Não há solução só de CSS:
+> posicionamento por âncora ainda é do Chrome. O painel passou a se recolher por
+> `useLayoutEffect`, e o deslocamento vai em `margin-left` e **não** em
+> `transform` — a animação de `H-64` escreve `transform`, e a origem de cascata
+> dela vence a do estilo em linha. **6 → 0**, e os sete que já cabiam não se
+> moveram.
+>
+> **`VN-2` corrigiu a descrição de `VN-2/A`, de `H-47`.** Aquele registro dizia
+> que o truncamento "cresce com a ampliação". Medido: **160 px visíveis para 200
+> necessários** no tamanho padrão e **240 para 300** em "Muito grande" — a
+> proporção é **a mesma**, porque `w-40` e `text-sm` escalam juntos. O que cresce
+> é o déficit absoluto. O truncamento já existia no padrão, e o rótulo do
+> ranking ganhou `title`, pela regra que `ProcessTable` fixava.
+>
+> **`VN-3` e `VN-4` aprovados com 193 paradas por esquema, 386 no total** — zero
+> sem anel, zero recortadas, zero em subárvore `aria-hidden`, o que confirma
+> `H-46` em campo. **Dentro do popover aberto: 11 paradas, zero recortadas.**
+> As regressões de ordem são todas transição de coluna, que `VN-4` manda aceitar.
+>
+> **`VN-5` fechou o item 4 de `PD-07` por medição:** sob o modo forçado os dois
+> esquemas são **paletas de sistema realmente distintas** — branco com
+> `rgb(0, 0, 159)` e preto com `rgb(255, 255, 0)` —, e a lateral distingue o item
+> corrente por `4px` contra `2px` nas duas. Os cartões: **13 no total, 2 de
+> urgência, os 2 com o texto "Pede ação"**, e os fundos **colapsam num só valor**
+> sob o modo forçado, o que prova que o canal cromático morre e o textual não.
+>
+> **O `forced-colors:border-l-4` de `AlertRow` era inerte, e o teste provava o
+> contrário do que o nome dele dizia.** A variante repetia o valor da base, então
+> urgentes e não urgentes ficariam com a mesma faixa; o teste se chamava
+> "engrossa a faixa **nas duas severidades**" e cobrava a mesma classe nas duas —
+> classe igual nas duas é a definição de não distinguir. Quem muda passou a ser o
+> ramo **não urgente**, com `forced-colors:border-l-0` mais `forced-colors:pl-1`,
+> técnica de `H-59`. **Não repara perda de informação:** o prefixo "Pede ação" de
+> `H-45` é texto e sempre sobreviveu.
+>
+> **`VN-6` ficou com um alvo só, e é do tema.** `MultiSelect` com `opacity-80` e
+> `PendingEditsPanel` com `opacity-60` deixaram de existir; sobrou
+> `--color-overlay-scrim`, já medido em `H-62`. O achado adjacente foi o glifo
+> `▾` do chip, que sobre `bg-action-soft` media **4,38:1** no claro contra o piso
+> de 4,5:1 — corrigido e remedido no navegador em **6,02:1** e **6,08:1**.
+>
+> **Três limitações declaradas, e nenhuma é de código.** (1) A emulação por CDP
+> fixa a media query na abertura do alvo, então **alternar o tema do sistema com
+> a aplicação aberta** exige a máquina do operador. (2) O `ConflictDialog` só
+> abre com a planilha alterada, e **nenhuma fixture versionada produz isso** —
+> continua devendo o foco ao abrir, a prisão de tabulação e o véu amostrado. (3)
+> A correção de `AlertRow` **não foi medida no navegador**: as 10 linhas de
+> `/alertas` sobre `cores.xlsx` são **todas urgentes**, e nenhuma das nove
+> fixtures produz severidade acima de `URGENT_SEVERITY`. Uma medição
+> compararia urgentes com urgentes e não diria nada; o ramo ficou coberto por
+> teste de componente com as duas classes concretas.
+>
+> **Uma divergência de execução, resolvida:** os endereços dos procedimentos
+> envelheceram — `VN-1` a `VN-6` citam abas, `shadow-lg` e `bg-slate-*` que `E9`
+> e `E11` substituíram. O que sobrevive é a **pergunta**, e a tradução de cada
+> item para o código atual está registrada no documento.
+
 
 **Objetivo:** provar no navegador o que a estática não alcança, agora com a
 superfície dobrada pelo segundo esquema.

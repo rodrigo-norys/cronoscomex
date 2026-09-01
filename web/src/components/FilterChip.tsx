@@ -1,4 +1,4 @@
-import { type ReactNode, useEffect, useId, useRef, useState } from 'react'
+import { type ReactNode, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 
 /**
  * Um filtro como chip, com o conteudo dele num popover (`H-60`, `D-22`).
@@ -15,7 +15,17 @@ import { type ReactNode, useEffect, useId, useRef, useState } from 'react'
  * multipla escolha, dois campos de data ou um seletor de tres estados —, e por
  * isso o comportamento de abrir, fechar e devolver o foco existe uma vez so.
  * Era duplicado em `MultiSelect` e ausente nos outros dois.
+ *
+ * **O painel se recolhe para dentro da tela, e isso e medido** (`H-65`,
+ * `VN-1`): ele tem 16 rem e nasce ancorado no `left` do chip, entao um chip no
+ * meio de uma linha do `flex-wrap` o lancava para fora. A 320 px, **6 dos 13**
+ * faziam a pagina rolar — 135 px no pior caso, quase metade da largura util —,
+ * e isso reprova `SC 1.4.10`. Nao ha solucao so de CSS: posicionamento por
+ * ancora ainda e do Chrome, e clamp de elemento absoluto o navegador nao faz.
  */
+
+/** Folga minima entre o painel e a borda da tela. */
+const MARGEM_DA_TELA = 8
 
 export function FilterChip({
   label,
@@ -28,10 +38,38 @@ export function FilterChip({
   children: ReactNode
 }) {
   const [open, setOpen] = useState(false)
+  const [shift, setShift] = useState(0)
   const container = useRef<HTMLDivElement>(null)
   const trigger = useRef<HTMLButtonElement>(null)
+  const panel = useRef<HTMLDivElement>(null)
   const panelId = useId()
   const active = summary !== null
+
+  /**
+   * `useLayoutEffect` e nao `useEffect`: medir depois da pintura mostraria o
+   * painel fora da tela por um quadro, que e o defeito que se corrige.
+   *
+   * `margin-left` e nao `transform`: a animacao de `motion-surface` escreve
+   * `transform`, e a origem de cascata dela vence a do estilo em linha —
+   * durante os 170 ms o deslocamento sumiria.
+   */
+  useLayoutEffect(() => {
+    if (!open) {
+      setShift(0)
+      return
+    }
+    const caixa = panel.current?.getBoundingClientRect()
+    // Em jsdom todo retangulo e zero; sem isto o calculo deslocaria por nada.
+    if (!caixa || caixa.width === 0) return
+
+    // O painel mais largo que a tela nao tem posicao boa: o limite direito cai
+    // abaixo do esquerdo, e o `max` faz o esquerdo vencer.
+    const tela = document.documentElement.clientWidth
+    const limiteDireito = Math.max(MARGEM_DA_TELA, tela - MARGEM_DA_TELA - caixa.width)
+    const desejado = Math.min(Math.max(caixa.left, MARGEM_DA_TELA), limiteDireito)
+
+    setShift(desejado - caixa.left)
+  }, [open])
 
   useEffect(() => {
     if (!open) return
@@ -85,14 +123,20 @@ export function FilterChip({
       >
         <span className="shrink-0">{label}</span>
         {active && <span className="truncate text-text-secondary">{summary}</span>}
-        <span aria-hidden="true" className="shrink-0 text-xs text-text-muted">
+        {/* `text-secondary` e nao `muted`: sobre `action-soft`, que e o fundo do
+            ramo ativo, o `muted` mede 4,38:1 no claro contra o piso de 4,5:1 de
+            `SC 1.4.3` — medido em `H-65`. `text-xs` sao 12 px, entao nao ha
+            isencao de texto grande. */}
+        <span aria-hidden="true" className="shrink-0 text-xs text-text-secondary">
           ▾
         </span>
       </button>
 
       {open && (
         <div
+          ref={panel}
           id={panelId}
+          style={shift === 0 ? undefined : { marginLeft: `${shift}px` }}
           className="motion-surface absolute z-20 mt-1 max-h-72 w-64 overflow-auto rounded-container border border-border-subtle bg-surface-raised p-2"
         >
           {children}

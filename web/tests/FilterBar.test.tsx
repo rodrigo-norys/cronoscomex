@@ -590,6 +590,49 @@ describe('o popover do chip', () => {
    * do token e caiam sob reducao e do CSS, e `tests/repo/estilo.test.ts` cobra.
    * Sem esta assercao, tirar a classe nao reprovaria nada.
    */
+  /**
+   * `H-65`, `VN-1`. Em jsdom todo retangulo e zero, entao a geometria precisa
+   * ser encenada — e e ela que a regra decide. Os numeros sao os medidos em
+   * Chrome 151 a 320 px: painel de 256 px nascendo em `left: 184`, tela util de
+   * 305. O limite direito e 305 - 8 - 256 = 41, e o deslocamento, -143.
+   */
+  it('recolhe o painel que nasceria fora da tela, e nao move o que cabe', () => {
+    const tela = 305
+    Object.defineProperty(document.documentElement, 'clientWidth', {
+      configurable: true,
+      value: tela,
+    })
+
+    const encenar = (left: number): void => {
+      HTMLDivElement.prototype.getBoundingClientRect = function rect(this: HTMLDivElement) {
+        if (!this.className.includes('motion-surface')) return new DOMRect()
+        return new DOMRect(left, 0, 256, 288)
+      }
+    }
+
+    const original = HTMLDivElement.prototype.getBoundingClientRect
+
+    try {
+      encenar(184)
+      const { unmount } = renderBar()
+      fireEvent.click(screen.getByRole('button', { name: /^Cliente/ }))
+      const fora = document.querySelector('[class*="motion-surface"]') as HTMLElement
+
+      expect(fora.style.marginLeft).toBe('-143px')
+      unmount()
+
+      // O chip do comeco da linha ja cabe: 24 + 256 = 280, abaixo de 297.
+      encenar(24)
+      renderBar()
+      fireEvent.click(screen.getByRole('button', { name: /^Cliente/ }))
+      const dentro = document.querySelector('[class*="motion-surface"]') as HTMLElement
+
+      expect(dentro.style.marginLeft).toBe('')
+    } finally {
+      HTMLDivElement.prototype.getBoundingClientRect = original
+    }
+  })
+
   it('o chip e o painel nomeiam o papel de movimento', () => {
     renderBar()
     const chip = screen.getByRole('button', { name: /^Cliente/ })

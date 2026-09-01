@@ -122,7 +122,14 @@ function RankingRow({
           quando ha `secondary`**, e so `Performance.tsx` o passa: as outras
           seis paginas que usam este componente nao recebem nem o `flex-wrap`,
           e por isso nao mudam. */}
+      {/* `title` porque o rotulo TRUNCA, e trunca nos dois tamanhos de fonte:
+          medido em `H-65`/`VN-2` a 1280 px, 160 px visiveis para 200
+          necessarios no padrao e 240 para 300 em "Muito grande" — a proporcao e
+          a mesma, o que cresce e o deficit. Sem ele o nome consolidado do
+          colaborador some sem aviso, e a regra ja estava fixada em
+          `ProcessTable`: texto livre que trunca guarda o valor inteiro. */}
       <span
+        title={label}
         className={`shrink-0 truncate text-sm group-hover:text-text-primary ${
           secondary ? 'w-full sm:w-40' : 'w-40'
         } ${nested ? 'pl-5 text-xs text-text-muted' : 'text-text-secondary'}`}
