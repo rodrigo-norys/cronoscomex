@@ -483,6 +483,37 @@ describe('densidade e número na tabela (H-61)', () => {
   })
 
   /**
+   * `H-76`, `ACHADO 12`. O teto da celula de texto livre, e o que ele resolve.
+   *
+   * Medido contra a planilha real: dos **3591** valores das seis colunas
+   * servidas por `<Text>`, **81 eram cortados** com o teto de `max-w-48` — 168
+   * px de orcamento —, e **80 estavam em Navio**, cujo maior valor mede 196 px.
+   * Com `max-w-56` sao 200 px de orcamento, e o corte vai a **zero**.
+   *
+   * **`truncate` fica.** Ele traz `white-space: nowrap`, e e ele que segura os
+   * 40 px de `H-61`: trocar por `break-words` deixaria a linha crescer.
+   */
+  it('dá teto à célula de texto livre sem soltar o truncamento', async () => {
+    renderPage()
+
+    const linhas = await screen.findAllByRole('row')
+    const celulas = linhas
+      .filter((linha) => linha.closest('tbody') !== null)
+      .flatMap((linha) => [...linha.querySelectorAll('td')])
+      .filter((celula) => celula.className.includes('max-w-'))
+
+    expect(celulas.length).toBeGreaterThan(0)
+    for (const celula of celulas) {
+      expect(celula.className).toContain('max-w-56')
+      expect(celula.className).toContain('truncate')
+    }
+    // O valor que ainda nao couber continua inteiro em `title`.
+    const comValor = celulas.filter((celula) => (celula.textContent ?? '') !== '—')
+    expect(comValor.length).toBeGreaterThan(0)
+    for (const celula of comValor) expect(celula.getAttribute('title')).toBe(celula.textContent)
+  })
+
+  /**
    * `H-75`, `ACHADO 7`, falha `F31`. Abrir o detalhe e a MESMA acao na tabela e
    * na fila de alertas, e os dois nomes acessiveis eram diferentes — a REF
    * sozinha aqui, "Abrir o detalhe de REF" la. O nome novo CONTEM o texto

@@ -28,8 +28,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E9 — Estilização ✅ | **H-39 … H-47 e H-67 … H-72, todas concluídas** | 7 | 8 | 0 |
 | E10 — As melhorias de uso ✅ | **H-48 … H-56 e H-66, todas concluídas.** `H-50` é a única G do backlog | 2 | 7 | 1 |
 | E11 — A casca redesenhada ✅ | **H-57 … H-65, todas concluídas** | 3 | 6 | 0 |
-| E12 — Os achados da revisão de estilo | **H-73 ✅ … H-75 ✅; H-76 aberta** | 2 | 1 | 1 |
-| **Total** | **76** — 75 concluídas, 1 aberta | **30** | **44** | **2** |
+| E12 — Os achados da revisão de estilo ✅ | **H-73 … H-76, todas concluídas** | 2 | 1 | 1 |
+| **Total** | **76** — 76 concluídas, nenhuma aberta | **30** | **44** | **2** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -168,7 +168,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-73 — A faixa de severidade no token certo](#h-73) ✅
 - [H-74 — As quatro correções locais](#h-74) ✅
 - [H-75 — Um papel de UI, uma forma e um nome](#h-75) ✅
-- [H-76 — A coluna Navio cabe no que ela mostra](#h-76)
+- [H-76 — A coluna Navio cabe no que ela mostra](#h-76) ✅
 
 
 ---
@@ -8631,6 +8631,47 @@ revisor.
 <a id="h-76"></a>
 
 ### H-76 — A coluna Navio cabe no que ela mostra
+
+> ✅ **CONCLUÍDA em 01/09/2026, e com ela `E12`.** **1 asserção própria**, suíte
+> de **1730 para 1731**. A fatia inteira é **uma classe** — e a medição é o que
+> justifica qual.
+>
+> **81 → 0 valores cortados na planilha real.** Dos **3591** valores de texto
+> livre das seis colunas servidas por `<Text>`, 81 eram cortados pelo teto de
+> `max-w-48`, que deixa 168 px de orçamento. Com `max-w-56` são 200 px, e o
+> corte vai a zero. As larguras máximas por coluna, medidas com a fonte
+> computada da própria célula pelo `measureText` do navegador:
+>
+> | Coluna | maior valor | cortados antes |
+> |---|---|---|
+> | **Navio** | **196 px** | **80** |
+> | Processo do cliente | 173 px | 1 |
+> | BL · Cliente · Contêiner · Importador | 134 · 116 · 108 · 98 | 0 |
+>
+> **Subir o teto não alarga as outras quatro, e é por isso que a fatia é uma
+> classe só.** `max-w` é **teto**, e o algoritmo de tabela dimensiona pelo
+> conteúdo: as colunas que já cabiam renderizam na mesma largura com ou sem o
+> valor novo. Só muda quem estava sendo cortado — a remedição confirma, com as
+> seis larguras idênticas às de antes.
+>
+> **A densidade de `H-61` não se desfez**, e é o que descarta `break-words`:
+> `truncate` traz `white-space: nowrap`, e é ele que segura a altura. Medido nos
+> dois esquemas: **40 px** a 1280 e a 320 px, e **60 px** com fonte-base 24 —
+> que é 40 × 1,5, e prova que a altura é relativa.
+>
+> **A 320 px a página não rola**, e a tabela continua contida: rolagem da raiz
+> em **0**, invólucro presente, e a rolagem acontecendo dentro dele (`R01`,
+> `VN-1`).
+>
+> **Um resultado absurdo morreu na conferência.** A remedição devolveu o maior
+> valor de Navio como **202 px**, contra 196 antes — impossível, porque o
+> conjunto de strings é o mesmo. O seletor do script caía no `td` da REF, que é
+> `font-mono`, depois que a classe da célula mudou. Com o seletor certo, os seis
+> números voltaram aos originais.
+>
+> **Duas mutações, duas reprovações:** o teto voltando a `max-w-48` reprova, e
+> `truncate` virando `break-words` reprova duas vezes.
+
 
 **Objetivo:** o texto que a tabela corta caber na célula, sem desfazer a
 densidade de 40 px.
