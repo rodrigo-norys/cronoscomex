@@ -28,7 +28,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E9 — Estilização ✅ | **H-39 … H-47 e H-67 … H-72, todas concluídas** | 7 | 8 | 0 |
 | E10 — As melhorias de uso ✅ | **H-48 … H-56 e H-66, todas concluídas.** `H-50` é a única G do backlog | 2 | 7 | 1 |
 | E11 — A casca redesenhada ✅ | **H-57 … H-65, todas concluídas** | 3 | 6 | 0 |
-| **Total** | **72** — 72 concluídas, nenhuma aberta | **28** | **43** | **1** |
+| E12 — Os achados da revisão de estilo | **H-73 a H-76, todas abertas** | 2 | 1 | 1 |
+| **Total** | **76** — 72 concluídas, 4 abertas | **30** | **44** | **2** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -161,6 +162,13 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-63 — Forma e número nas sete páginas, e a guarda de forma](#h-63) ✅
 - [H-64 — Movimento curto, com a redução nascendo junto](#h-64) ✅
 - [H-65 — Percorrer os procedimentos de navegador nos dois esquemas](#h-65) ✅
+
+**[Épico E12 — Os achados da revisão de estilo](#e12)**
+
+- [H-73 — A faixa de severidade no token certo](#h-73)
+- [H-74 — As quatro correções locais](#h-74)
+- [H-75 — Um papel de UI, uma forma e um nome](#h-75)
+- [H-76 — A coluna Navio cabe no que ela mostra](#h-76)
 
 
 ---
@@ -8271,6 +8279,267 @@ superfície dobrada pelo segundo esquema.
 **Fora desta história:** qualquer redesenho novo. É verificação.
 
 **Dependências:** `H-64`.
+**Tamanho:** P (1 arquivo, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="e12"></a>
+
+## Épico E12 — Os achados da revisão de estilo
+
+Nasce de `docs/redesign/REVISAO-ESTILO.md` (01/09/2026), segunda invocação do
+subagente `revisor-estilo` contra o corpus de 40 regras. **A primeira produziu
+`docs/estilizacao/RESULTADO.md`, de onde nasceu `E9`** — este épico é o mesmo
+mecanismo, uma passada depois.
+
+**Catorze achados. Três já fecharam em `H-65`**, por caírem em arquivo que a
+história estava tocando: a faixa do alerta sob `forced-colors`, o glifo do chip
+a 4,38:1, e o popover que estourava a 320 px. **Um não vira história** —
+`ACHADO 14` é declarado não normativo pelo próprio revisor, e aposentar dois
+degraus de espaçamento com 2 e 3 ocorrências é arrumação, não correção. **Restam
+dez, em quatro histórias.**
+
+**Nenhum indicador muda de valor, nenhuma rota muda de contrato.** As quatro
+histórias tocam `web/src/` e nada mais.
+
+**Três determinações valem para o épico e não se re-litigam:**
+
+1. **`ACHADO 12` se resolve alargando a coluna, não trocando o truncamento.**
+   Medido contra a planilha real em 01/09/2026: dos **3591** valores de texto
+   livre das seis colunas, **81 são cortados** — e **80 deles estão numa coluna
+   só**, Navio. Não é "a tabela trunca": é uma coluna estreita demais. Trocar
+   `truncate` por `break-words`, como `H-69` fez na Performance, desfaria a
+   densidade de 40 px que `H-61` mediu, e para 2,3% das células.
+2. **`ACHADO 11` restaura a camada de acessibilidade, em vez de registrar
+   exceção.** Sem `aria-hidden` a parada de tabulação deixa de ser **órfã** —
+   passa a ser legítima e nomeada —, então isso **não** reintroduz o defeito que
+   `H-46` fechou: o problema de lá era a orfandade, não a existência da parada.
+3. **`ACHADO 2` tem precedência sobre os outros nove.** É o único com razão de
+   contraste **abaixo do piso**: a faixa de `AlertRow` mede **1,60:1** no claro e
+   **1,94:1** no escuro contra os 3:1 de `SC 1.4.11`.
+
+**As quatro ondas, pela dependência técnica**, na forma que o revisor devolveu:
+
+| Onda | História | Arquivos | Por que vem aqui |
+|---|---|---|---|
+| 1 | `H-73` | 2 | Consumir `severityBand` fixa o token antes de qualquer unificação de papel |
+| 2 | `H-74` | 5 | Nível de título, altura de alvo, região viva e prop do gráfico não referenciam token nenhum |
+| 3 | `H-75` | 9 | A `@utility` do botão primário grava o conjunto final de tokens; extraí-la antes da onda 1 congelaria um par de cor que ainda ia mudar |
+| 4 | `H-76` | 1 | A largura da coluna segue o contêiner que a onda 3 unifica |
+
+> **A ordem é linear, e não é gosto.** `App.tsx` aparece em `H-74` e em `H-75`,
+> e `IngestionHealth.tsx` em `H-73` e em `H-75`. Fatiar em PRs paralelos poria
+> os dois arquivos em duas branches ao mesmo tempo.
+
+---
+
+<a id="h-73"></a>
+
+### H-73 — A faixa de severidade no token certo
+
+**Objetivo:** um nível de severidade usar um par de cor só, em todo o conjunto,
+e o ícone existir uma vez.
+
+> **`ACHADO 2`, e é o único do épico abaixo de um piso normativo.** `AlertRow`
+> pinta a faixa com `state-warning-border`, que mede **1,60:1** no claro e
+> **1,94:1** no escuro contra `surface-raised`. `severityBand('warning')` usa
+> `state-warning-fg` e mede **5,92** e **8,93**. O piso de `SC 1.4.11` é 3:1.
+>
+> **O ícone existe em três cópias:** `SeverityMark.tsx`, `AlertRow.tsx:55` e
+> `IngestionHealth.tsx`. Copiar doze linhas de `path` três vezes garante que a
+> terceira divirja — é o mesmo argumento que criou `SeverityMark` em `H-62`.
+
+**Arquivos:**
+- `web/src/components/AlertRow.tsx` — consome `severityBand` e `SeverityIcon`
+- `web/src/components/IngestionHealth.tsx` — idem, e perde a cópia inline
+- `web/tests/Alerts.test.tsx` e `web/tests/IngestionHealth.test.tsx`
+
+**Critérios de aceite:**
+- **Dado** qualquer faixa de severidade do conjunto, **então** ela vem de
+  `severityBand`, e nenhum arquivo declara `border-l-state-*-border`.
+- **Dado** o ícone de severidade, **então** existe **uma** definição de `path`
+  em `web/src/`, e os três consumidores a importam.
+- **Dado** o modo forçado, **então** a distinção de `H-65` sobrevive: o ramo não
+  urgente continua com `forced-colors:border-l-0` e a compensação de `pl`.
+- **Dado** o prefixo textual de `H-45`, **então** ele permanece — o ícone se
+  soma a ele, nunca o substitui.
+
+**Casos-limite:**
+- `state-warning-fg` sobre `surface-raised`: **5,92:1** no claro e **8,93:1** no
+  escuro — medir, não copiar do documento.
+- `IngestionHealth` usa tom `error` **e** `warning`; trocar só um deixaria o
+  outro divergente.
+- A faixa de `AlertRow` é `border-l-4` na base, e `severityBand` também declara
+  `border-l-4` — a composição não pode dobrar a espessura.
+
+**Fora desta história:** a unificação do botão primário, que é `H-75`.
+
+**Dependências:** `H-65`.
+**Tamanho:** P (2 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-74"></a>
+
+### H-74 — As quatro correções locais
+
+**Objetivo:** fechar os quatro achados que não referenciam token nenhum e não
+dependem uns dos outros.
+
+> **`ACHADO 1`, `ACHADO 9`, `ACHADO 10` e `ACHADO 11`.** Vêm juntos porque a
+> onda 2 do revisor os agrupa por **ausência** de dependência, não por
+> semelhança: nível de título, altura de alvo, região viva e prop do gráfico.
+
+**Arquivos:**
+- `web/src/components/StatCard.tsx` — `h3` vira `h2` (`ACHADO 1`)
+- `web/src/pages/Alerts.tsx` — idem, no cartão de contagem
+- `web/src/components/RankingBar.tsx` — a linha aninhada chega a 24 px
+  (`ACHADO 9`)
+- `web/src/App.tsx` — a tela de carregamento deixa de nascer populada
+  (`ACHADO 10`)
+- `web/src/pages/History.tsx` — o gráfico recupera nome acessível (`ACHADO 11`)
+- os testes correspondentes
+
+**Critérios de aceite:**
+- **Dado** cada uma das sete páginas, **então** há um `h1` e nenhum salto de
+  nível — `h1` da `TopBar` desce para `h2`, nunca para `h3`.
+- **Dado** a linha aninhada do ranking, **então** o alvo mede ao menos 24 px de
+  altura, ou os vizinhos ficam a 24 px de centro a centro.
+- **Dado** a tela de carregamento de `App.tsx`, **então** ela **não** declara
+  `role="status"` no nó que já nasce com a mensagem; o anúncio vai pela região
+  viva já montada.
+- **Dado** o gráfico do Histórico, **então** ele tem nome acessível e
+  `accessibilityLayer` no padrão, e a parada de tabulação **não** é órfã.
+
+**Casos-limite:**
+- `py-0.5` sobre `text-xs` dá caixa de **20 px**, e o `<ul>` não tem `gap`: 20 px
+  de centro a centro. `py-1` resolve 28 px, `min-h-6` resolve 24.
+- A linha de topo do ranking já usa `py-1` e **passa** — mexer nela é regressão
+  de densidade, não correção.
+- O `role="status"` de `App.tsx` é o fallback do `<Suspense>`: o nó nasce
+  populado, que é exatamente o que a MDN diz para não fazer.
+- Removido o `aria-hidden` do gráfico, `/historico` ganha **uma** parada de
+  tabulação — 26 vira 27, medido em `H-65`.
+- A `<table>` irmã continua sendo a alternativa textual; ela não sai.
+
+**Fora desta história:** qualquer mudança de tipografia do cartão de contagem —
+`C04` só alcança forma, e a divergência de `text-3xl`/`font-mono` contra
+`text-2xl` está registrada em `REVISAO-ESTILO.md` sem virar achado.
+
+**Dependências:** `H-65`. Independente de `H-73` por conteúdo; sequencial por
+compartilhar `App.tsx` com `H-75`.
+**Tamanho:** M (5 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-75"></a>
+
+### H-75 — Um papel de UI, uma forma e um nome
+
+**Objetivo:** o mesmo papel de interface ter a mesma forma e o mesmo nome
+acessível nas sete páginas.
+
+> **`ACHADO 4`, `ACHADO 5`, `ACHADO 6` e `ACHADO 7`** — os quatro composicionais
+> que sobraram. `SC 3.2.4` incide porque as sete telas têm URIs distintas
+> (determinação `Z1` da revisão), então a consistência deixa de ser preferência.
+>
+> **O `hover` do botão primário existe em 2 de 5**, e some junto na extração.
+
+**Arquivos:**
+- `web/src/index.css` — a `@utility` do botão primário
+- `web/src/components/ApplyChangesButton.tsx`, `ConflictDialog.tsx`,
+  `EditProcessForm.tsx`, `ColorFieldsForm.tsx` e `web/src/pages/WorkbookSetup.tsx`
+  — os cinco consumidores
+- `web/src/App.tsx` — a faixa de estado passa a `border-y` (`ACHADO 5`)
+- `web/src/components/StatusBanner.tsx` — o `<button>` vira `<a href>`
+  (`ACHADO 6`)
+- `web/src/components/ProcessTable.tsx` — nome acessível do link da REF
+  (`ACHADO 7`)
+- `tests/repo/estilo.test.ts` e os testes de componente
+
+**Critérios de aceite:**
+- **Dado** os cinco botões de ação primária, **então** todos usam a mesma
+  `@utility`, e nenhum declara a composição à mão.
+- **Dado** as duas faixas de largura total da casca, **então** as duas usam
+  `border-y` — elas empilham no mesmo lugar.
+- **Dado** navegar para `/configuracao`, **então** os três acessos são `<a href>`
+  e convergem para o rótulo canônico de `router.ts`.
+- **Dado** abrir `/processo/<ref>`, **então** o nome acessível é o mesmo na
+  tabela e na linha de alerta.
+- **Dado** `tests/repo/estilo.test.ts`, **então** botão primário com a
+  composição escrita à mão reprova.
+
+**Casos-limite:**
+- O `<a>` de salto de `App.tsx:114` usa `bg-action-bg` e **não** é botão — fica
+  de fora do papel.
+- O `WindowPicker` de `History.tsx:257` usa `border-2 border-action-bg` e é
+  controle de seleção, não ação primária — também fica de fora.
+- Os cinco botões têm estado desabilitado com tokens próprios; a `@utility` não
+  pode engoli-lo nem duplicá-lo.
+- `StatusBanner` virando `<a href>` precisa do interceptador de modificador de
+  `ProcessTable` — clique com `Ctrl` continua abrindo em outra aba.
+- `ProcessTable` já contém o texto visível da REF: o `aria-label` tem de
+  **conter** esse texto, ou `SC 2.5.3` reprova.
+
+**Fora desta história:** `ACHADO 14`, não normativo por declaração do próprio
+revisor.
+
+**Dependências:** `H-73` (o token da faixa) e `H-74` (`App.tsx`).
+**Tamanho:** G (9 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-76"></a>
+
+### H-76 — A coluna Navio cabe no que ela mostra
+
+**Objetivo:** o texto que a tabela corta caber na célula, sem desfazer a
+densidade de 40 px.
+
+> **`ACHADO 12`, e a medição reenquadra o achado.** Contra a planilha real,
+> 01/09/2026: dos **3591** valores de texto livre das seis colunas servidas por
+> `<Text>`, **81 são cortados** — 2,3% —, e **80 deles estão em Navio**. O
+> restante é um valor em Processo do cliente. Nenhum passa de **2 linhas** se
+> quebrasse.
+>
+> **Por isso não se troca `truncate` por `break-words`.** `H-69` fez essa troca
+> na Performance e mediu o ganho lá; aqui ela desfaria a linha de 40 px que
+> `H-61` estabeleceu, e para 2,3% das células. A coluna é que está estreita.
+
+**Arquivos:**
+- `web/src/components/ProcessTable.tsx` — a largura por coluna
+- `web/tests/Operational.test.tsx`
+
+**Critérios de aceite:**
+- **Dado** a coluna Navio, **então** o número de valores cortados na planilha
+  real cai a **zero ou perto disso**, medido e registrado.
+- **Dado** qualquer linha da tabela, **então** ela continua medindo **40 px** na
+  fonte-base padrão — a densidade de `H-61` não se desfaz.
+- **Dado** 320 px de viewport, **então** a tabela continua rolando dentro do
+  próprio invólucro, e a página não rola (`R01`, `VN-1`).
+- **Dado** o valor que ainda não couber, **então** ele continua com o valor
+  inteiro em `title`.
+
+**Casos-limite:**
+- A soma das larguras não pode fazer a página rolar a 1280 px — a tabela rola
+  dentro do invólucro, e é isso que precisa continuar valendo.
+- `max-w` é obrigatório: `truncate` sozinho não tem sobre o que incidir numa
+  célula que o algoritmo de tabela dimensiona pelo conteúdo.
+- A fixture `cores.xlsx` tem **zero** células cortadas — a medição do efeito
+  exige a planilha real, e sai dela apenas contagem.
+
+**Fora desta história:** trocar o mecanismo de truncamento, que a determinação 1
+do épico descarta.
+
+**Dependências:** `H-75`.
 **Tamanho:** P (1 arquivo, 0 contrato novo)
 
 [↑ Índice](#indice)
