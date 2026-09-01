@@ -61,16 +61,24 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('os treze controles', () => {
-  it('monta os onze de multipla escolha, o periodo e o tri-estado', () => {
+describe('os treze chips', () => {
+  /**
+   * `H-60`. Eram treze controles sempre abertos; agora sao treze CHIPS, e o
+   * conteudo de cada um vive num popover. O periodo e o tri-estado ganharam
+   * chip proprio — antes eram os unicos controles sem forma comum.
+   */
+  it('monta os treze chips, e nenhum popover aberto', () => {
     renderBar()
     const bar = screen.getByRole('region', { name: 'Filtros' })
 
-    // 11 botoes de multipla escolha + 1 select tri-estado + 2 campos de data.
-    expect(within(bar).getAllByRole('button')).toHaveLength(11)
-    expect(within(bar).getByLabelText('Importador fora do RJ')).toBeTruthy()
-    expect(within(bar).getByLabelText('ETA2 de')).toBeTruthy()
-    expect(within(bar).getByLabelText('ETA2 até')).toBeTruthy()
+    // 11 de multipla escolha + periodo + tri-estado. Sem filtro ativo nao ha
+    // botao de limpar, entao os treze sao todos os botoes da barra.
+    expect(within(bar).getAllByRole('button')).toHaveLength(13)
+    expect(within(bar).getByRole('button', { name: /Período \(ETA2\)/ })).toBeTruthy()
+    expect(within(bar).getByRole('button', { name: /Importador fora do RJ/ })).toBeTruthy()
+    // O conteudo so existe com o popover aberto: e o que libera a linha.
+    expect(within(bar).queryByLabelText('ETA2 de')).toBeNull()
+    expect(bar.querySelectorAll('[aria-expanded="true"]')).toHaveLength(0)
   })
 
   it('nao mostra contador nem botao de limpar sem filtro ativo', () => {
@@ -79,9 +87,9 @@ describe('os treze controles', () => {
     expect(screen.queryByRole('button', { name: 'Limpar' })).toBeNull()
   })
 
-  it('mostra quantos filtros estao ativos, no singular e no plural', () => {
+  it('mostra quantos filtros estao ativos no botao de limpar', () => {
     const { rerender } = renderBar(filtersStub({ activeCount: 1 }))
-    expect(screen.getByText('1 ativo')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Limpar 1' })).toBeTruthy()
 
     rerender(
       <FilterBar
@@ -90,7 +98,7 @@ describe('os treze controles', () => {
         optionsError={null}
       />,
     )
-    expect(screen.getByText('3 ativos')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Limpar 3' })).toBeTruthy()
   })
 })
 
@@ -209,6 +217,7 @@ describe('periodo e tri-estado', () => {
   it('o periodo escreve cada extremo no seu parametro', () => {
     const filters = filtersStub()
     renderBar(filters)
+    fireEvent.click(screen.getByRole('button', { name: /Período \(ETA2\)/ }))
 
     fireEvent.change(screen.getByLabelText('ETA2 de'), { target: { value: '2026-08-01' } })
     fireEvent.change(screen.getByLabelText('ETA2 até'), { target: { value: '2026-08-31' } })
@@ -222,7 +231,10 @@ describe('periodo e tri-estado', () => {
   it('o importador fora do RJ tem tres estados', () => {
     const filters = filtersStub()
     renderBar(filters)
-    const select = screen.getByLabelText('Importador fora do RJ')
+    fireEvent.click(screen.getByRole('button', { name: /Importador fora do RJ/ }))
+    // Pelo papel, e nao pelo rotulo: desde `H-60` o chip tambem se chama
+    // "Importador fora do RJ", e `getByLabelText` casaria os dois.
+    const select = screen.getByRole('combobox')
 
     expect(within(select).getAllByRole('option')).toHaveLength(3)
 
@@ -416,5 +428,159 @@ describe('responsável e cor do responsável', () => {
 
     fireEvent.click(controle)
     expect(screen.queryAllByRole('checkbox')).toHaveLength(0)
+  })
+})
+
+/**
+ * `H-60`. O chip diz o recorte **sem abrir o popover** — é o que separa esta
+ * forma de simplesmente esconder o filtro atrás de um botão.
+ */
+describe('o chip diz o recorte ativo', () => {
+  const comSelecao = (multi: Partial<Record<string, readonly string[]>>) =>
+    filtersStub({
+      selection: {
+        ...filtersStub().selection,
+        multi: { ...filtersStub().selection.multi, ...multi },
+      },
+    })
+
+  it('um valor vira o rótulo dele, e não a chave normalizada', () => {
+    // A chave e o rótulo precisam DIFERIR, senão a asserção passa sem medir
+    // nada: `clientKey` é normalizado, e um chip dizendo `ACME LOG` quando a
+    // célula diz `Acme Logística` faria o operador duvidar do recorte.
+    renderBar(
+      comSelecao({ client: ['ACME LOG'] }),
+      filterOptionsFixture({ clients: [{ key: 'ACME LOG', label: 'Acme Logística', count: 12 }] }),
+    )
+
+    expect(screen.getByRole('button', { name: /^Cliente: Acme Logística/ })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: /^Cliente: ACME LOG/ })).toBeNull()
+  })
+
+  // Listar quatro clientes num chip ocuparia a linha que a fatia libera.
+  it('dois valores ou mais viram contagem', () => {
+    renderBar(comSelecao({ client: ['ACME', 'BETA'] }))
+
+    expect(screen.getByRole('button', { name: /^Cliente: 2 valores/ })).toBeTruthy()
+  })
+
+  // Chave vazia é valor legítimo do domínio — célula em branco na planilha.
+  it('a chave vazia tem rótulo próprio, e não vira chip sem valor', () => {
+    renderBar(comSelecao({ goods: [''] }))
+
+    expect(screen.getByRole('button', { name: /^Mercadoria: \(em branco\)/ })).toBeTruthy()
+  })
+
+  // Chave digitada no endereço, sem opção correspondente: o chip mostra a
+  // chave, nunca um chip aparentemente inativo.
+  it('chave sem opção correspondente cai na própria chave', () => {
+    renderBar(comSelecao({ vessel: ['NAVIO INEXISTENTE'] }))
+
+    expect(screen.getByRole('button', { name: /^Navio: NAVIO INEXISTENTE/ })).toBeTruthy()
+  })
+
+  /** Período é UM filtro que ocupa dois parâmetros, e o chip exibe o intervalo. */
+  it('o período exibe intervalo, e cada extremo sozinho tem forma própria', () => {
+    const base = filtersStub()
+    const { rerender } = renderBar(
+      filtersStub({ selection: { ...base.selection, etaFrom: '2026-02-01', etaTo: '2026-02-28' } }),
+    )
+    expect(screen.getByRole('button', { name: /01\/02\/2026 a 28\/02\/2026/ })).toBeTruthy()
+
+    const so = (campo: 'etaFrom' | 'etaTo', valor: string) =>
+      rerender(
+        <FilterBar
+          filters={filtersStub({ selection: { ...base.selection, [campo]: valor } })}
+          options={filterOptionsFixture()}
+          optionsError={null}
+        />,
+      )
+
+    so('etaFrom', '2026-02-01')
+    expect(screen.getByRole('button', { name: /desde 01\/02\/2026/ })).toBeTruthy()
+    so('etaTo', '2026-02-28')
+    expect(screen.getByRole('button', { name: /até 28\/02\/2026/ })).toBeTruthy()
+  })
+
+  /**
+   * Três estados, e o chip não pode reduzi-los a marcado/desmarcado: "Não"
+   * inclui apenas `false`, nunca `null` — cor não reconhecida não é o mesmo que
+   * "dentro do RJ".
+   */
+  it('o tri-estado exibe o rótulo do estado, não um sinal de marcado', () => {
+    const base = filtersStub()
+    const { rerender } = renderBar(
+      filtersStub({ selection: { ...base.selection, importerOutsideRj: 'false' } }),
+    )
+    expect(screen.getByRole('button', { name: /^Importador fora do RJ: Não/ })).toBeTruthy()
+
+    rerender(
+      <FilterBar
+        filters={filtersStub({ selection: { ...base.selection, importerOutsideRj: 'true' } })}
+        options={filterOptionsFixture()}
+        optionsError={null}
+      />,
+    )
+    expect(screen.getByRole('button', { name: /^Importador fora do RJ: Sim/ })).toBeTruthy()
+  })
+
+  /**
+   * Nome de cliente real estoura a linha. O chip trunca por CSS e guarda o
+   * valor completo no `title` — cortar em silêncio esconderia parte do recorte
+   * que o operador montou.
+   */
+  it('o rótulo longo trunca com o valor completo acessível', () => {
+    renderBar(comSelecao({ vessel: ['UM NOME DE NAVIO BEM MAIS LONGO QUE O CHIP'] }))
+    const chip = screen.getByRole('button', { name: /^Navio: UM NOME/ })
+
+    expect(chip.getAttribute('title')).toBe('Navio: UM NOME DE NAVIO BEM MAIS LONGO QUE O CHIP')
+    expect(chip.querySelector('.truncate')).toBeTruthy()
+  })
+})
+
+/**
+ * `H-60`. O popover abre, fecha por `Esc` e por clique fora, e **devolve o foco
+ * ao chip**. Sem a devolução o foco cai no `<body>` e o operador de teclado
+ * recomeça a tabulação do topo — o defeito que `VN-4` mediu na navegação.
+ */
+describe('o popover do chip', () => {
+  it('abre e fecha pelo próprio chip, anunciando o estado', () => {
+    renderBar()
+    const chip = screen.getByRole('button', { name: /^Cliente/ })
+
+    expect(chip.getAttribute('aria-expanded')).toBe('false')
+    fireEvent.click(chip)
+    expect(chip.getAttribute('aria-expanded')).toBe('true')
+    fireEvent.click(chip)
+    expect(chip.getAttribute('aria-expanded')).toBe('false')
+  })
+
+  it('Esc fecha e devolve o foco ao chip', () => {
+    renderBar()
+    const chip = screen.getByRole('button', { name: /^Cliente/ })
+    fireEvent.click(chip)
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    expect(chip.getAttribute('aria-expanded')).toBe('false')
+    expect(document.activeElement).toBe(chip)
+  })
+
+  it('clique fora fecha', () => {
+    renderBar()
+    const chip = screen.getByRole('button', { name: /^Cliente/ })
+    fireEvent.click(chip)
+
+    fireEvent.pointerDown(document.body)
+
+    expect(chip.getAttribute('aria-expanded')).toBe('false')
+  })
+
+  /** O segundo nível de `H-55` continua dentro do popover, com a árvore intacta. */
+  it('mantém a árvore de grupos dentro do popover de Cliente', () => {
+    renderBar(filtersStub(), filterOptionsFixture())
+    fireEvent.click(screen.getByRole('button', { name: /^Cliente/ }))
+
+    expect(screen.getByRole('checkbox', { name: /ACME/ })).toBeTruthy()
   })
 })
