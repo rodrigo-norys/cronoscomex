@@ -357,3 +357,36 @@ describe('D-21 — todo token de cor tem par no esquema escuro', () => {
     expect(/:root\s*\{[^}]*color-scheme:\s*light dark/.test(CSS)).toBe(true)
   })
 })
+
+/**
+ * `H-59`, `SC 1.4.10`. Trilha de grid explícita encolhe até zero.
+ *
+ * `1fr` é `minmax(auto, 1fr)`, e o `auto` mínimo é a largura **intrínseca** do
+ * conteúdo: um grid com `[1fr_20rem]` e uma tabela larga dentro recusa encolher
+ * e empurra a página para fora da tela. **O `overflow-x-auto` de `R01` não
+ * alcança isto** — ele está na tabela, e quem se recusa a encolher é a trilha,
+ * acima dela.
+ *
+ * Medido em 01/09/2026, com a Página Operacional: `lg:grid-cols-[1fr_20rem]`
+ * estourava o documento entre 1024 px, onde `lg:` liga, e ~1240 px. `H-59`
+ * estreitou a coluna de conteúdo em 216 px e levou o estouro até 1440 —
+ * revelando o defeito em vez de criá-lo. Com `minmax(0,1fr)`, zero estouros em
+ * 320, 360, 768, 1024, 1064, 1280 e 1440.
+ */
+describe('SC 1.4.10 — trilha de grid explícita encolhe até zero', () => {
+  const TRILHA_EXPLICITA = /grid-cols-\[[^\]]*\]/
+
+  it('a regex reconhece a trilha rígida e ignora a que encolhe', () => {
+    expect(/(?<!minmax\(0,)1fr/.test('lg:grid-cols-[1fr_20rem]')).toBe(true)
+    expect(/(?<!minmax\(0,)1fr/.test('lg:grid-cols-[minmax(0,1fr)_20rem]')).toBe(false)
+  })
+
+  it('nenhuma trilha usa 1fr fora de minmax(0,…)', () => {
+    const rigidas = occurrencesOf(TRILHA_EXPLICITA).filter((one) => {
+      const trilha = one.text.match(TRILHA_EXPLICITA)?.[0] ?? ''
+      return /(?<!minmax\(0,)1fr/.test(trilha)
+    })
+
+    expect(rigidas.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
+  })
+})
