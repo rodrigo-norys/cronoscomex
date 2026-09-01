@@ -436,7 +436,7 @@ export function agentRanking(
  * planilha nao tem dono, papel que `indefinido` tinha ate `H-50`.
  *
  * O rotulo sai de `known`, e nao de tabela escrita aqui: desde `H-50` a chave
- * de responsavel vem de `config/team-map.json`, que nao e versionado.
+ * de responsavel vem de `team-map.json`, que nao e versionado.
  * `process.responsibleLabel` cobre a chave que o mapa nao declara — o mapa
  * mudou entre a leitura e agora, e o rotulo do processo e o unico que sobrou.
  */

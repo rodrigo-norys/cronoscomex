@@ -41,7 +41,7 @@ export type ColorResponsible =
  * cor desempatando o que a lista de importadores nao alcanca — `resolveTeam`.
  *
  * **Dominio ABERTO, e por isso e `string`:** a chave vem de
- * `config/team-map.json`, que nao e versionado (regra inviolavel 8). Ate `H-50`
+ * `team-map.json`, que nao e versionado (regra inviolavel 8). Ate `H-50`
  * eram quatro chaves fixas, e fecha-lo agora exigiria escrever no codigo os
  * membros da equipe do operador.
  *

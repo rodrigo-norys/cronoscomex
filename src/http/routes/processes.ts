@@ -63,7 +63,7 @@ export interface ProcessDto {
    * A chave da pessoa responsavel (`H-50`). `''` quando ninguem responde pelo
    * processo, e ela e chave legitima no filtro.
    *
-   * **Dominio aberto:** vem de `config/team-map.json`, que nao e versionado. A
+   * **Dominio aberto:** vem de `team-map.json`, que nao e versionado. A
    * interface NAO a traduz — o nome vem em `responsibleLabel`, resolvido no
    * servidor, porque nenhuma tabela escrita no cliente conhece a equipe.
    */
