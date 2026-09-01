@@ -1,128 +1,237 @@
 @import "tailwindcss";
 
 /**
- * Camada de tema (`H-39`).
+ * Camada de tema (`H-39`), com o par escuro de cada cor (`H-57`).
  *
  * Todo utilitario de cor do conjunto passa por aqui: nenhum `.tsx` volta a
- * citar passo de paleta. Os valores nao sao copia do que havia antes — os tres
- * que reprovavam contraste nascem ja corrigidos, para que a substituicao das
- * oito fatias seguintes carregue a correcao junto em vez de virar uma segunda
- * passada pelos mesmos arquivos.
+ * citar passo de paleta. Os valores nao sao copia do que havia antes — os que
+ * reprovavam contraste nascem ja corrigidos, para que a substituicao das fatias
+ * seguintes carregue a correcao junto em vez de virar uma segunda passada pelos
+ * mesmos arquivos. Foi assim em `H-39`, com tres, e em `H-57`, com seis.
  *
- * As contas estao em `docs/estilizacao/RESULTADO.md`; as razoes citadas abaixo
- * foram reconferidas contra a paleta 4.3.3 instalada, ao abrir `H-39`.
+ * As contas de `E9` estao em `docs/estilizacao/RESULTADO.md`; as de `E11`, em
+ * `docs/redesign/PROPOSTA.md` §2.2. As razoes citadas abaixo foram **medidas no
+ * navegador** por `tools/medir-navegador.mjs`, nos dois esquemas, ao fechar
+ * `H-57` — e nao calculadas a mao: quem resolve `oklch()` e compoe alfa e o
+ * compositor, nao a formula.
  *
  * `static` porque o Tailwind so emite a variavel que ele ve usada num
  * utilitario, e os tokens de grafico serao lidos por `var()` dentro do JS das
  * props do Recharts, onde ele nao enxerga. Sem isto, o token existiria no
  * fonte e nao no CSS servido — e a cor sumiria sem erro nenhum.
+ *
+ * **`static`, e nunca `inline`, tambem por causa do par escuro** (regra `D05`
+ * do corpus): com `inline` o utilitario grava o VALOR em vez de referenciar a
+ * variavel, e o bloco de override sob a media query nao teria efeito nenhum.
  */
 @theme static {
-  /* Superficies: slate-100, branco e slate-50. */
-  --color-surface-base: oklch(96.8% 0.007 247.896);
+  /* Superficies. `hover` e token novo (`H-57`): o realce de linha da tabela. */
+  --color-surface-base: #fbfbfc;
   --color-surface-raised: #ffffff;
-  --color-surface-sunken: oklch(98.4% 0.003 247.858);
+  --color-surface-sunken: #f4f5f7;
+  --color-surface-hover: #f0f2f5;
 
   /*
-   * Texto: slate-900 e slate-600 seguem como estavam. `muted` sai de slate-400
-   * e slate-300 — 2.63:1 e 1.49:1 sobre `surface-raised`, contra um piso de
-   * 4.5:1 — e assume slate-500, que mede 4.77:1 ali. Sobre `surface-base` ele
-   * cai para 4.35:1: nessa superficie quem vale e `--color-text-secondary`.
+   * Texto. `muted` NAO adota o `#868d97` do mockup: ele mede 3.35:1 sobre
+   * `surface-raised`, contra um piso de 4.5:1 — exatamente o defeito que `H-39`
+   * corrigiu, de volta. `#6a6f77` mede 5.06:1 (PROPOSTA §2.2).
    */
-  --color-text-primary: oklch(20.8% 0.042 265.755);
-  --color-text-secondary: oklch(44.6% 0.043 257.281);
-  --color-text-muted: oklch(55.4% 0.046 257.417);
+  --color-text-primary: #14161a;
+  --color-text-secondary: #545a63;
+  --color-text-muted: #6a6f77;
 
   /*
-   * Bordas: `control` e a que delimita campo e botao, e o piso dela e 3:1.
-   * Vinha de slate-300, que mede 1.35:1 sobre `surface-base` — a borda que
-   * informa onde o campo comeca era praticamente invisivel. slate-500 mede
-   * 4.35:1 ali e 4.77:1 sobre `surface-raised`.
+   * Bordas. `control` delimita campo e botao, e o piso dela e 3:1
+   * (`SC 1.4.11`); `strong` e o degrau acima. Os dois valores do mockup
+   * reprovavam — 1.59:1 e 2.63:1 —, e os candidatos de PROPOSTA §2.2 entram no
+   * lugar. `subtle` **nao tem piso**: e separacao de superficie, nao limite de
+   * componente, e 1.25:1 ali esta correto.
    */
-  --color-border-subtle: oklch(92.9% 0.013 255.508);
-  --color-border-strong: oklch(27.9% 0.041 260.031);
-  --color-border-control: oklch(55.4% 0.046 257.417);
+  --color-border-subtle: #e4e6ea;
+  --color-border-control: #8b8d92;
+  --color-border-strong: #6a6f77;
 
-  /* Acao primaria: slate-800, slate-700 no hover, branco por cima (14.66:1). */
-  --color-action-bg: oklch(27.9% 0.041 260.031);
-  --color-action-bg-hover: oklch(37.2% 0.044 257.287);
+  /*
+   * Acao primaria. O acento deixa de ser neutro e passa a ser indigo (`D-22`),
+   * em botao primario e item ativo — e em lugar nenhum mais: nunca em titulo,
+   * borda ou icone. `soft` e token novo, o fundo do item ativo da navegacao.
+   */
+  --color-action-bg: #3d4eac;
+  --color-action-bg-hover: #34449a;
   --color-action-fg: #ffffff;
+  --color-action-soft: #eceefa;
 
   /*
-   * Severidade: um trio por nivel, e nenhum local escolhe o seu. Os desviantes
-   * que a auditoria nomeia — borda mais forte aqui, contentor ausente ali —
-   * desaparecem por nao haver mais onde divergir.
+   * Severidade: um trio por nivel, e nenhum local escolhe o seu.
+   *
+   * O mockup **nao** declara `state-*-border`, porque ali a severidade e faixa
+   * lateral e nao contentor com borda. O token fica: `IngestionHealth` e as
+   * tres `@utility` de painel o consomem, e retira-lo seria mudanca de
+   * comportamento disfarcada de troca de valor. Ele nao carrega piso de 3:1 —
+   * quem delimita controle e `border-control`, e o painel ja se distingue pelo
+   * fundo e pelo texto.
    */
-  --color-state-error-bg: oklch(97.1% 0.013 17.38);
-  --color-state-error-border: oklch(80.8% 0.114 19.571);
-  --color-state-error-fg: oklch(39.6% 0.141 25.723);
+  --color-state-error-bg: #fdf2f1;
+  --color-state-error-border: #eab3ad;
+  --color-state-error-fg: #b03028;
 
-  --color-state-warning-bg: oklch(98.7% 0.022 95.277);
-  --color-state-warning-border: oklch(87.9% 0.169 91.605);
-  --color-state-warning-fg: oklch(41.4% 0.112 45.904);
+  --color-state-warning-bg: #fdf7ec;
+  --color-state-warning-border: #e6c98c;
+  --color-state-warning-fg: #8a5a06;
 
-  --color-state-info-bg: oklch(97.7% 0.013 236.62);
-  --color-state-info-border: oklch(82.8% 0.111 230.318);
-  --color-state-info-fg: oklch(39.1% 0.09 240.876);
+  --color-state-info-bg: #eef5fc;
+  --color-state-info-border: #aecdea;
+  --color-state-info-fg: #1f5c9e;
 
-  --color-state-success-fg: oklch(50.8% 0.118 165.612);
+  --color-state-success-fg: #1a7444;
 
   /*
-   * Controle desabilitado. Os dois padroes anteriores derrubavam o botao
-   * contra a pagina — 2.32:1 com `opacity-40`, 1.36:1 com slate-300 —, e foi
-   * assim que o unico chamado a acao da tela de primeira execucao sumiu numa
-   * sessao remota. slate-500 mede 4.35:1 contra `surface-base`, e o branco por
-   * cima, 4.77:1.
+   * Controle desabilitado. `SC 1.4.3` e `SC 1.4.11` isentam componente inativo,
+   * e mesmo assim o par e legivel: os dois padroes anteriores derrubavam o
+   * botao contra a pagina — 2.32:1 com `opacity-40`, 1.36:1 com slate-300 —, e
+   * foi assim que o unico chamado a acao da tela de primeira execucao sumiu
+   * numa sessao remota.
    */
-  --color-control-disabled-bg: oklch(55.4% 0.046 257.417);
+  --color-control-disabled-bg: #8b8d92;
   --color-control-disabled-fg: #ffffff;
 
   /*
-   * Veu do dialogo: slate-900 a 40%, o mesmo valor resolvido de antes. A cor
-   * efetiva depende do que esta pintado atras, e por isso ela e medida no
-   * navegador ([VN-6]) — aqui houve renomeacao, nao recoloracao.
+   * Veu do dialogo. **O par escuro nao e o mesmo alfa** (`H-57`): o mesmo preto
+   * a 40% sobre um fundo ja escuro nao escurece nada, e o dialogo perderia a
+   * separacao do que esta atras. No escuro ele fica mais opaco.
    */
-  --color-overlay-scrim: oklch(20.8% 0.042 265.755 / 0.4);
+  --color-overlay-scrim: rgb(20 22 26 / 0.4);
 
   /*
-   * Grafico. As tres series ficam nos valores ja medidos; eixo e grade saem de
-   * literal hexadecimal para a paleta da versao instalada, que e onde estavam
-   * derivando — dois dos tres literais eram passo da v3.
+   * Grafico. `series-1` acompanha o acento; as outras duas ficam nos valores ja
+   * medidos, e o escuro delas clareia para nao sumir contra `surface-raised`.
    */
-  --color-chart-series-1: #4f46e5;
-  --color-chart-series-2: #0d9488;
-  --color-chart-series-3: #dc2626;
-  --color-chart-axis: oklch(55.4% 0.046 257.417);
-  --color-chart-grid: oklch(92.9% 0.013 255.508);
+  --color-chart-series-1: #3d4eac;
+  --color-chart-series-2: #0d7d72;
+  --color-chart-series-3: #c2261c;
+  --color-chart-axis: #6a6f77;
+  --color-chart-grid: #e4e6ea;
 
   /*
-   * Medidor do ranking: a barra e o unico canal da comparacao entre linhas, e
-   * o preenchimento media 2.40:1 contra o trilho. slate-600 mede 6.90:1.
+   * Medidor do ranking: a barra e o unico canal da comparacao entre linhas
+   * (`H-40`), entao o que importa e a razao entre PREENCHIMENTO e TRILHO — e
+   * ela e medida nos dois esquemas, nao so contra a superficie.
    *
-   * O tom de foco existe porque a correcao acima consumiu o que era o realce:
-   * a barra ia de slate-400 para slate-600 sob o cursor, e slate-600 virou o
-   * estado normal. Sem um passo alem, o realce da linha desapareceria (`H-40`).
+   * O tom de foco existe porque a correcao de `H-40` consumiu o que era o
+   * realce: sem um passo alem, o realce da linha desapareceria.
    */
-  --color-meter-track: oklch(96.8% 0.007 247.896);
-  --color-meter-fill: oklch(44.6% 0.043 257.281);
-  --color-meter-fill-hover: oklch(27.9% 0.041 260.031);
+  --color-meter-track: #e4e6ea;
+  --color-meter-fill: #545a63;
+  --color-meter-fill-hover: #14161a;
 
   /*
-   * Canal Vermelho e DADO, nao severidade (IND-06): a auditoria nao o listou
-   * entre os locais de erro, e reusar `state-error-*` faria o badge do canal
-   * seguir uma futura mudanca no vermelho de erro sem motivo nenhum (`H-40`).
+   * Canal aduaneiro e DADO, nao severidade (IND-06, regra inviolavel 4): reusar
+   * `state-error-*` faria o badge do canal seguir uma futura mudanca no
+   * vermelho de erro sem motivo nenhum (`H-40`). Verde e ambar sao tokens novos
+   * de `H-57`, e o verde coincide com o que `H-51` ja introduziu no dominio.
    */
-  --color-channel-red-bg: oklch(93.6% 0.032 17.717);
-  --color-channel-red-fg: oklch(39.6% 0.141 25.723);
+  --color-channel-red-bg: #fbe3e1;
+  --color-channel-red-fg: #99271f;
+
+  --color-channel-green-bg: #e3f4e9;
+  --color-channel-green-fg: #14653a;
+
+  --color-channel-amber-bg: #fbeed4;
+  --color-channel-amber-fg: #7a4e05;
+
+  /*
+   * Forma e movimento. **Nao tem par por esquema, e a guarda cobra isso**: o
+   * raio de um botao nao muda porque o sistema esta escuro, e duplica-los sob a
+   * media query seria ruido que a proxima fatia copiaria.
+   *
+   * Dois raios e nada entre eles (`D-22`). `--ease-brand` e nao `--ease` porque
+   * `--ease-*` e namespace do Tailwind: sem sufixo ele nao gera utilitario.
+   */
+  --radius-control: 6px;
+  --radius-container: 12px;
+
+  --speed-fast: 110ms;
+  --speed-base: 170ms;
+  --ease-brand: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
 /*
  * Sem isto, as barras de rolagem e os controles nativos de formulario — os
  * quatro `input type="date"` e os tres `select` do conjunto — nao recebem o
- * esquema que o restante da interface declara.
+ * esquema que o restante da interface declara. **`light dark` desde `H-57`**:
+ * com `light` sozinho, o campo de data continuaria branco numa tela escura.
  */
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
+}
+
+/*
+ * O par escuro (`D-21`). **Quem escolhe e o sistema** — nao ha alternancia
+ * manual, e por isso nao ha `@custom-variant`: a variante `dark:` da v4 resolve
+ * para esta mesma media query sozinha (regra `D04` do corpus, que por isso NAO
+ * incide).
+ *
+ * So cor entra aqui. Raio, velocidade e curva ficam de fora de proposito, e
+ * `tests/repo/estilo.test.ts` reprova quem os duplicar.
+ */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-surface-base: #0b0c0e;
+    --color-surface-raised: #131519;
+    --color-surface-sunken: #0f1114;
+    --color-surface-hover: #1b1e24;
+
+    --color-text-primary: #eaecef;
+    --color-text-secondary: #9ba2ac;
+    --color-text-muted: #81878f;
+
+    --color-border-subtle: #23262c;
+    --color-border-control: #606369;
+    --color-border-strong: #81878f;
+
+    --color-action-bg: #4c5fc9;
+    --color-action-bg-hover: #5c6ed6;
+    --color-action-fg: #ffffff;
+    --color-action-soft: #1c2140;
+
+    --color-state-error-bg: #2a1614;
+    --color-state-error-border: #5a2b26;
+    --color-state-error-fg: #f08a80;
+
+    --color-state-warning-bg: #261c0c;
+    --color-state-warning-border: #57431b;
+    --color-state-warning-fg: #e0ad4e;
+
+    --color-state-info-bg: #101f2d;
+    --color-state-info-border: #264259;
+    --color-state-info-fg: #74b3ee;
+
+    --color-state-success-fg: #58c98a;
+
+    --color-control-disabled-bg: #4a4e55;
+    --color-control-disabled-fg: #c9ccd1;
+
+    --color-overlay-scrim: rgb(0 0 0 / 0.62);
+
+    --color-chart-series-1: #8c9bf0;
+    --color-chart-series-2: #3fc9bb;
+    --color-chart-series-3: #f0736b;
+    --color-chart-axis: #81878f;
+    --color-chart-grid: #23262c;
+
+    --color-meter-track: #23262c;
+    --color-meter-fill: #9ba2ac;
+    --color-meter-fill-hover: #eaecef;
+
+    --color-channel-red-bg: #2e1815;
+    --color-channel-red-fg: #f0908a;
+
+    --color-channel-green-bg: #12291d;
+    --color-channel-green-fg: #63d296;
+
+    --color-channel-amber-bg: #2b2110;
+    --color-channel-amber-fg: #e2b25f;
+  }
 }
 
 /*

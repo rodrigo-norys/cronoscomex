@@ -27,8 +27,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização ✅ | **H-39 … H-47 e H-67 … H-72, todas concluídas** | 7 | 8 | 0 |
 | E10 — As melhorias de uso ✅ | **H-48 … H-56 e H-66, todas concluídas.** `H-50` é a única G do backlog | 2 | 7 | 1 |
-| E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
-| **Total** | **72** — 63 concluídas, 9 abertas | **28** | **43** | **1** |
+| E11 — A casca redesenhada | **H-57 ✅; H-58 … H-65 abertas** | 3 | 6 | 0 |
+| **Total** | **72** — 64 concluídas, 8 abertas | **28** | **43** | **1** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -152,7 +152,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 
 **[Épico E11 — A casca redesenhada](#e11)**
 
-- [H-57 — O par escuro da camada de tema](#h-57)
+- [H-57 — O par escuro da camada de tema](#h-57) ✅
 - [H-58 — As duas famílias de fonte, servidas do repositório](#h-58)
 - [H-59 — Navegação lateral e topo de uma linha](#h-59)
 - [H-60 — Os quatorze filtros como chips em popover](#h-60)
@@ -7287,6 +7287,55 @@ reavaliação de `D-16`. Nenhuma das duas entra aqui.
 <a id="h-57"></a>
 
 ### H-57 — O par escuro da camada de tema
+
+> ✅ **CONCLUÍDA em 01/09/2026.** **5 testes próprios** em `tests/repo/estilo.test.ts`.
+> Suíte total de **1656 para 1661**, sem nenhum caso existente ajustado — e
+> **nenhum `.tsx` mudou**, que é o quarto critério de aceite: `git diff` contra a
+> branch anterior devolve `web/src/index.css` e o teste, mais nada.
+>
+> **44 tokens de cor, todos com par**, mais cinco sem par por não serem cor —
+> dois raios, duas velocidades e uma curva. Sete tokens nasceram aqui:
+> `surface-hover`, `action-soft`, `channel-green-*`, `channel-amber-*`,
+> `radius-control`, `radius-container`, `speed-fast`, `speed-base` e
+> `--ease-brand`.
+>
+> **Medido no navegador, e não calculado à mão** (`tools/medir-navegador.mjs`):
+> 37 pares de contraste × 2 esquemas = **74 medições, zero reprovações**. Os
+> seis valores corrigidos de `PROPOSTA §2.2` bateram exatamente com o previsto —
+> `text-muted` 5,06 e 5,04; `border-control` 3,32 e 3,03; `border-strong` 5,06 e
+> 5,04 —, e o pior fundo de `text-muted` (`surface-hover`) mede 4,51 e 4,61,
+> ambos acima do piso.
+>
+> **O controle foi rodado, e é o que dá crédito à medição.** Com os
+> hexadecimais crus do mockup no lugar dos corrigidos, a mesma medição devolve
+> **3,35 · 1,59** no claro e **3,82 · 1,65** no escuro — os quatro números que
+> `PROPOSTA §2.2` previu, reproduzidos por um caminho independente do
+> documento. Sem esse passo, "zero reprovações" não distinguiria uma paleta boa
+> de um medidor quebrado.
+>
+> **Um achado falso, registrado para não ser reaberto.** A primeira leitura deu
+> `body` branco no escuro, com o título a 1,18:1 — e era artefato: `body` e
+> `html` são `rgba(0,0,0,0)`, e compor transparente sobre branco devolve branco.
+> O título vive dentro de `header.bg-surface-raised`, que mede `rgb(19,21,25)`,
+> e o contraste real é 15,44:1. O wrapper `min-h-screen bg-surface-base` cobre a
+> viewport; do resto cuida `color-scheme: light dark`, que é para isso que ele
+> existe.
+>
+> **Três divergências de fiação.** (1) `--ease` do mockup virou `--ease-brand`:
+> `--ease-*` é namespace do Tailwind, e sem sufixo não gera utilitário nenhum.
+> (2) `PROPOSTA §2.1` não declara par escuro para nove tokens que existem desde
+> `H-39` — `state-*-border`, `control-disabled-*`, `overlay-scrim`,
+> `chart-series-2`, `chart-series-3`, `chart-axis` e `meter-*` —, e o primeiro
+> critério exige que **todo** token de cor tenha par: derivei os nove dentro do
+> mesmo sistema e medi cada um. (3) `chart-series-2` e `-3` saíram de `#0d9488`
+> e `#dc2626` para `#0d7d72` e `#c2261c` no claro: os valores herdados medem
+> abaixo de 3:1 contra a superfície nova, que é mais clara que a anterior.
+>
+> **`state-*-border` não carrega piso de 3:1**, e mede 1,5 a 1,8:1 nos dois
+> esquemas. É reforço de contentor, não limite de controle — quem carrega o
+> `SC 1.4.11` é `border-control`, pelo mesmo argumento que `PROPOSTA §2.2` usa
+> para dispensar `border-subtle`. O painel já se distingue pelo fundo e pelo
+> texto, os dois acima de 4,5:1.
 
 **Objetivo:** todo token de cor ter valor nos dois esquemas, com o navegador
 escolhendo qual vale, sem que nenhum componente mude de linha.
