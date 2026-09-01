@@ -380,6 +380,69 @@ describe('ranking por responsavel — IND-20', () => {
   })
 })
 
+/**
+ * `H-69`. `VN-2` mediu o truncamento da tabela de tempo documental **crescendo**
+ * com a ampliação — 7 células a 100%, 8 a 200% e 14 com a fonte do navegador em
+ * "Muito grande" —, e nenhuma das 34 tinha `title`: o texto cortado não tinha
+ * recurso nenhum. `SC 1.4.4` cobra que ampliar até 200% não custe conteúdo, e
+ * ali o conteúdo perdido dobrava.
+ *
+ * A correção é o rótulo quebrar em linhas em vez de ser cortado, e a coluna
+ * tomar o espaço que as três numéricas não usam. **jsdom não faz layout**: o
+ * que se afirma aqui é que a célula não declara corte e não ganhou adorno.
+ * Medido em Chrome 151 nos quatro cenários de ampliação, com 68 células:
+ * **zero cortadas**, contra 31 a 100% e 41 a 640 px com fonte 24.
+ */
+describe('o texto da tabela de tempo documental', () => {
+  const LONGO = 'AGENCIA MARITIMA INTERNACIONAL DO BRASIL'
+
+  it('não corta o rótulo, deixa-o quebrar', async () => {
+    serve({ clients: [group({ key: 'longo', label: LONGO })] })
+    renderPage()
+
+    const celula = (await screen.findByText(LONGO)).closest('td')
+
+    expect(celula?.className).toContain('break-words')
+    expect(celula?.className).not.toContain('truncate')
+    expect(celula?.className).not.toContain('max-w-0')
+  })
+
+  /**
+   * O terceiro critério de aceite. `title` seria o reflexo, e ele **não basta**:
+   * o Chrome não o revela por teclado. Aqui não há o que revelar — o texto
+   * inteiro está na tela —, então acrescentá-lo poluiria toda célula que já
+   * cabia, e uma parada de tabulação por linha poluiria a ordem que `H-47`
+   * aprovou em 467 de 467.
+   */
+  it('não acrescenta title nem parada de tabulação a célula nenhuma', async () => {
+    serve({ clients: [group({ key: 'longo', label: LONGO })] })
+    renderPage()
+    await screen.findByText(LONGO)
+
+    const celulas = document.querySelectorAll('table tbody tr > td:first-child')
+
+    expect(celulas.length).toBeGreaterThan(0)
+    for (const celula of celulas) {
+      expect(celula.hasAttribute('title')).toBe(false)
+      expect((celula as HTMLElement).tabIndex).toBeLessThan(0)
+    }
+  })
+
+  /**
+   * Caso-limite: rótulo vazio já vira o literal `(sem valor)`, e não pode ganhar
+   * rótulo de "texto completo" para conteúdo que não existe.
+   */
+  it('não promete texto completo onde não há texto', async () => {
+    serve({ clients: [group({ key: 'vazio', label: '' })] })
+    renderPage()
+
+    const celula = (await screen.findByText('(sem valor)')).closest('td')
+
+    expect(celula?.hasAttribute('title')).toBe(false)
+    expect(celula?.getAttribute('aria-label')).toBeNull()
+  })
+})
+
 describe('IND-21 fora de escopo', () => {
   it('declara a ausencia em vez de omiti-la', async () => {
     serve({})
