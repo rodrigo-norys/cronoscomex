@@ -237,6 +237,70 @@ describe('navegacao', () => {
   })
 })
 
+/**
+ * `H-72`. Sob `forced-colors: active` o agente de usuário pinta
+ * `border-transparent` como pinta qualquer outra borda, e `VN-5` mediu as
+ * **sete** abas com uma assinatura só — `2px solid rgb(255,255,0)` em todas.
+ * Restava o `aria-current`, que serve o leitor de tela e não serve quem
+ * enxerga.
+ *
+ * O canal novo é a **espessura**, a mesma técnica que `H-44` usou no botão de
+ * janela e que `VN-5` mediu sobrevivendo. **jsdom não emula `forced-colors`**:
+ * o que se afirma aqui é a variante declarada. Medido em Chrome 151 ao fechar:
+ * sob o modo forçado a corrente fica em 4 px contra 2 px das outras seis, com
+ * a linha de base do texto igual dentro de cada linha do wrap, e o modo normal
+ * fica byte a byte como era.
+ */
+describe('a aba corrente sob alto contraste', () => {
+  function abas() {
+    render(<App />)
+    return within(nav()).getAllByRole('link')
+  }
+
+  it('dá à aba corrente uma espessura que a substituição de paleta não apaga', () => {
+    const corrente = abas().find((aba) => aba.getAttribute('aria-current') === 'page')
+
+    expect(corrente?.className).toContain('forced-colors:border-b-4')
+  })
+
+  /**
+   * O canal só distingue se for exclusivo da corrente. As outras seis ficam nos
+   * 2 px que o UA já pinta — é a diferença entre as duas espessuras que carrega
+   * a informação.
+   */
+  it('não dá a espessura a nenhuma das outras seis', () => {
+    const outras = abas().filter((aba) => aba.getAttribute('aria-current') !== 'page')
+
+    expect(outras).toHaveLength(NAV_PAGES.length - 1)
+    for (const aba of outras) expect(aba.className).not.toContain('forced-colors:border-b-4')
+  })
+
+  /**
+   * O terceiro critério de aceite: o canal novo **se soma** ao eixo programático,
+   * nunca o substitui. Uma aba corrente, e só uma, entre as sete de `NAV_PAGES`
+   * — `Configuração` nasceu em `H-38` e conta.
+   */
+  it('mantém o aria-current, em exatamente uma das sete', () => {
+    const correntes = abas().filter((aba) => aba.getAttribute('aria-current') === 'page')
+
+    expect(correntes).toHaveLength(1)
+    expect(NAV_PAGES).toHaveLength(7)
+  })
+
+  /**
+   * O segundo critério: a barra não regride no modo normal. A compensação de
+   * `padding` viaja na MESMA variante da borda, então nada dela incide fora do
+   * modo forçado — sem isso a linha de base do texto se mexeria sempre.
+   */
+  it('não mexe no modo normal: a compensação é condicionada junto com a borda', () => {
+    const corrente = abas().find((aba) => aba.getAttribute('aria-current') === 'page')
+
+    expect(corrente?.className).toContain('forced-colors:pb-1.5')
+    expect(corrente?.className).toContain('py-2')
+    expect(corrente?.className).not.toMatch(/(^|\s)pb-1\.5/)
+  })
+})
+
 describe('faixa de estado', () => {
   it('avisa de dado congelado em pagina que nao a inicial (A-57)', async () => {
     api.serve(healthFixture({ state: 'degradado', degradedReason: 'Arquivo em uso.' }))
