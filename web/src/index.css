@@ -343,3 +343,90 @@
 @utility panel-no-read {
   @apply rounded-container border border-border-control bg-surface-raised p-4 text-sm;
 }
+
+/*
+ * Movimento (`H-64`). Duas duracoes, uma curva, e nada entre elas.
+ *
+ * **Declarado aqui, e nunca no `.tsx`.** `--radius-*` e `--ease-*` sao
+ * namespaces do Tailwind e por isso geram `rounded-control` e `ease-brand`;
+ * `--speed-*` nao e namespace nenhum — `duration-fast` NAO existe, e a
+ * alternativa seria repetir `duration-[var(--speed-fast)]` em cada consumidor.
+ * Com as utilidades abaixo o `.tsx` nomeia o papel, e a guarda pode cobrar
+ * **zero** utilitario de movimento fora deste arquivo, que e o criterio de
+ * aceite escrito de forma verificavel.
+ *
+ * A regra de reducao fecha o arquivo, e a ordem importa: as tres regras de
+ * movimento sao NAO-LAYERED, entao quem vem depois vence com a mesma
+ * especificidade. `@utility` cai em `@layer utilities`, e qualquer regra fora
+ * de camada ja o supera.
+ */
+
+/*
+ * Cor sob o cursor. **Nao cai sob reducao de movimento, de proposito**: `A10`
+ * trata de MOVIMENTO, e o contraexemplo do corpus e explicito — `transition-colors`
+ * nao e movimento. Anular esta seria obedecer a uma regra que nao existe e
+ * tirar do operador o unico retorno visual de que a linha esta sob o cursor.
+ */
+@utility motion-tint {
+  transition:
+    color var(--speed-fast) var(--ease-brand),
+    background-color var(--speed-fast) var(--ease-brand),
+    border-color var(--speed-fast) var(--ease-brand);
+}
+
+/*
+ * Superficie que aparece — hoje so o popover do chip. `--speed-base` e nao
+ * `--speed-fast` porque a superficie e maior que um controle: 110 ms num painel
+ * de 16 rem le como salto, e nao como abertura.
+ */
+@utility motion-surface {
+  animation: surface-appear var(--speed-base) var(--ease-brand);
+}
+
+@keyframes surface-appear {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+}
+
+/*
+ * O recuo do controle pressionado. 2,5% e o suficiente para o dedo confirmar
+ * que o clique pegou, e pouco o bastante para nao deslocar o rotulo.
+ *
+ * `:not(:disabled)` porque controle inativo nao responde a nada, e a isencao
+ * de `SC 1.4.3` para componente inativo tem a mesma raiz: o que nao age nao
+ * precisa confirmar acao.
+ */
+button:not(:disabled) {
+  transition: transform var(--speed-fast) var(--ease-brand);
+}
+
+button:not(:disabled):active {
+  transform: scale(0.975);
+}
+
+/*
+ * A contraparte de `A10`, e ela nasce no mesmo commit que o movimento.
+ *
+ * Cada seletor que se move acima aparece aqui anulado, e
+ * `tests/repo/estilo.test.ts` compara as duas listas: movimento sem contraparte
+ * reprova pelo NOME do seletor que ficou de fora.
+ */
+@media (prefers-reduced-motion: reduce) {
+  button:not(:disabled) {
+    transition: none;
+  }
+
+  button:not(:disabled):active {
+    transform: none;
+  }
+
+  /*
+   * O estado final e o MESMO — o painel aparece inteiro e opaco. O que cai e a
+   * interpolacao, nao a revelacao.
+   */
+  .motion-surface {
+    animation: none;
+  }
+}

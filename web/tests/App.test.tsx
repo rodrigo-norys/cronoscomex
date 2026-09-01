@@ -50,6 +50,20 @@ describe('casca', () => {
   })
 
   /**
+   * `H-64`. Os SETE itens, e nao um: o papel de movimento vive em `ITEM_BASE`,
+   * que e o unico trecho comum aos dois ramos — corrente e em repouso. Assertar
+   * um item so deixaria passar a regressao de mover a classe para um dos ramos.
+   */
+  it('todo item da lateral nomeia o papel de movimento', () => {
+    render(<App />)
+
+    const itens = within(nav()).getAllByRole('link')
+
+    expect(itens).toHaveLength(NAV_PAGES.length)
+    for (const item of itens) expect(item.className).toContain('motion-tint')
+  })
+
+  /**
    * H-38. A tela de `H-34` existia desde 18/08/2026 e nao havia como chegar
    * nela: nenhuma linha de `web/src/` apontava para `/configuracao`, e o unico
    * acesso era digitar o endereco. Depois de apontar a planilha uma vez, o

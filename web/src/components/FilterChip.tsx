@@ -77,7 +77,7 @@ export function FilterChip({
         */
         aria-label={active ? `${label}: ${summary}` : label}
         title={active ? `${label}: ${summary}` : undefined}
-        className={`flex max-w-64 items-center gap-1.5 rounded-control border px-2.5 py-1 text-sm ${
+        className={`motion-tint flex max-w-64 items-center gap-1.5 rounded-control border px-2.5 py-1 text-sm ${
           active
             ? 'border-action-bg bg-action-soft text-text-primary forced-colors:border-2'
             : 'border-border-control bg-surface-raised text-text-secondary hover:bg-surface-hover'
@@ -93,7 +93,7 @@ export function FilterChip({
       {open && (
         <div
           id={panelId}
-          className="absolute z-20 mt-1 max-h-72 w-64 overflow-auto rounded-container border border-border-subtle bg-surface-raised p-2"
+          className="motion-surface absolute z-20 mt-1 max-h-72 w-64 overflow-auto rounded-container border border-border-subtle bg-surface-raised p-2"
         >
           {children}
         </div>

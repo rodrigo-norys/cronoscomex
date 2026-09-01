@@ -27,8 +27,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização ✅ | **H-39 … H-47 e H-67 … H-72, todas concluídas** | 7 | 8 | 0 |
 | E10 — As melhorias de uso ✅ | **H-48 … H-56 e H-66, todas concluídas.** `H-50` é a única G do backlog | 2 | 7 | 1 |
-| E11 — A casca redesenhada | **H-57 ✅ … H-63 ✅; H-64 e H-65 abertas** | 3 | 6 | 0 |
-| **Total** | **72** — 70 concluídas, 2 abertas | **28** | **43** | **1** |
+| E11 — A casca redesenhada | **H-57 ✅ … H-64 ✅; H-65 aberta** | 3 | 6 | 0 |
+| **Total** | **72** — 71 concluídas, 1 aberta | **28** | **43** | **1** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -159,7 +159,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-61 — Forma, densidade e número nos componentes de dado](#h-61) ✅
 - [H-62 — Forma e número na superfície de edição e no detalhe](#h-62) ✅
 - [H-63 — Forma e número nas sete páginas, e a guarda de forma](#h-63) ✅
-- [H-64 — Movimento curto, com a redução nascendo junto](#h-64)
+- [H-64 — Movimento curto, com a redução nascendo junto](#h-64) ✅
 - [H-65 — Percorrer os procedimentos de navegador nos dois esquemas](#h-65)
 
 
@@ -8037,6 +8037,73 @@ de breakpoint que o corpus não sustente — o mesmo corte de `H-46`.
 <a id="h-64"></a>
 
 ### H-64 — Movimento curto, com a redução nascendo junto
+
+> ✅ **CONCLUÍDA em 01/09/2026.** **8 asserções próprias** — 5 em
+> `tests/repo/estilo.test.ts` e 3 de componente. Suíte total de **1698 para
+> 1706**. O movimento inteiro foi medido em Chrome 151, nos dois estados da
+> preferência.
+>
+> **As quatro medidas, e nenhum terceiro valor.** `motion-tint` resolve
+> `color, background-color, border-color` em `0.11s` com
+> `cubic-bezier(0.32, 0.72, 0, 1)`; o popover resolve `surface-appear 0.17s`
+> com a mesma curva; o controle pressionado mede `matrix(0.975, 0, 0, 0.975,
+> 0, 0)` com o botão **realmente pressionado** por `Input.dispatchMouseEvent`.
+> Sob `prefers-reduced-motion: reduce` o botão vai a `transition: none` e
+> `transform: none`, e o popover a `animation: none` — enquanto a cor **fica**
+> em `0.11s` nos dois estados, que é `A10` cumprida e não esquecida.
+>
+> **O movimento não é utilitário de `.tsx`, e a razão é do Tailwind.**
+> `--radius-*` e `--ease-*` são namespaces da v4 e geram `rounded-control` e
+> `ease-brand`; **`--speed-*` não é namespace nenhum** — `duration-fast` não
+> existe, e a alternativa seria `duration-[var(--speed-fast)]` repetido em cada
+> consumidor. Duas `@utility` em `index.css` resolvem, no idioma que
+> `panel-loading` já usava, e tornam o critério de aceite verificável na forma
+> forte: **zero** utilitário de movimento fora do CSS.
+>
+> **A guarda achou um buraco anterior a esta história, e ele estava em `D-22`.**
+> `EM_UTILITARIO` exigia `className` ou `@apply` **na mesma linha**, e
+> `AppSidebar.tsx` extrai as classes para `ITEM_BASE`, `ITEM_CURRENT` e
+> `ITEM_REST` — constantes sem `className` nenhum. Um `shadow-lg` plantado ali
+> **passava** por todas as asserções de `H-63`. O critério aproximado virou o
+> exato: prosa é comentário, e `semComentarios` o apaga preservando as linhas.
+> **Quatro mutações, quatro reprovações**, incluindo a que só o critério novo
+> pega.
+>
+> **A âncora reprovou a própria guarda duas vezes, antes do conjunto.**
+> `DECLARA_MOVIMENTO` via a propriedade sendo declarada e **não** a `transition`
+> que a nomeia no valor — deixaria passar exatamente a regra de recuo, o único
+> movimento real da fatia. E o passo de `@keyframes` era acusado de não ter
+> contraparte, quando quem a tem é a regra que **usa** a animação.
+>
+> **Três divergências de fiação, resolvidas e registradas.**
+>
+> 1. **`ProcessTable` não tem ações de linha a revelar.** A linha tem o link da
+>    REF, sempre visível, e o selo de edição pendente, condicional ao dado.
+>    Nenhuma ação escondida existe, e o caso-limite da opacidade ficou sem alvo.
+>    **Descartado:** inventar uma ação de linha para justificar a revelação.
+> 2. **O Recharts honra a preferência sozinho, e isso foi medido — não
+>    raciocinado.** `Line` tem `isAnimationActive: 'auto'` por padrão em 3.10.1,
+>    e `'auto'` passa por `usePrefersReducedMotion`. No navegador: sem redução as
+>    cinco linhas nascem com `strokeDasharray: 0px 0px` — traço oculto, meio da
+>    revelação — e só depois chegam ao estado final; **com redução nascem já no
+>    estado final**. Nenhuma prop é necessária, e passá-la mudaria o
+>    comportamento de quem não pediu redução.
+> 3. **`tools/medir-navegador.mjs` não alcançava nem a preferência nem o
+>    cursor**, e sem os dois a história não teria como ser verificada. Entraram
+>    `movimentoReduzido` e `apontadorFino` — o segundo descrito abaixo.
+>
+> **O `hover:` era inobservável no headless, e o diagnóstico registrado estava
+> errado.** O Tailwind v4 envolve **todo** `hover:` em `@media (hover: hover)`,
+> e o Chrome headless declara `hover: none` e `pointer: none`: nenhum utilitário
+> de cursor entra na cascata. `:hover` **casa** normalmente — medido por
+> `Input.dispatchMouseEvent`, `matches(':hover')` responde `true` —, e
+> `Emulation.setEmulatedMedia` **não** alcança essas duas features, que são
+> capacidade do dispositivo e não preferência do usuário. A flag de lançamento
+> `--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4`
+> resolve, e o realce da linha vai de `rgba(0, 0, 0, 0)` a `rgb(240, 242, 245)`.
+> Isso **corrige a suspeita do item (3) de `PD-07`**, que atribuía a falha à
+> ausência de cursor real: a falha era a ausência de apontador **declarado**.
+
 
 **Objetivo:** a interface responder ao cursor e à troca de tela com duas
 durações e uma curva, e desligar tudo isso sob `prefers-reduced-motion`.

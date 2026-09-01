@@ -83,7 +83,7 @@ export function ProcessTable({ items, sort, order, onSort }: ProcessTableProps) 
             */
             <tr
               key={item.ref}
-              className="h-10 border-b border-border-subtle last:border-0 hover:bg-surface-hover"
+              className="motion-tint h-10 border-b border-border-subtle last:border-0 hover:bg-surface-hover"
             >
               <td className="px-3 whitespace-nowrap font-mono">
                 <a
@@ -93,7 +93,7 @@ export function ProcessTable({ items, sort, order, onSort }: ProcessTableProps) 
                     event.preventDefault()
                     navigate(`/processo/${encodeURIComponent(item.ref)}`)
                   }}
-                  className="text-text-secondary underline hover:text-text-primary"
+                  className="motion-tint text-text-secondary underline hover:text-text-primary"
                 >
                   {item.ref}
                 </a>
@@ -173,7 +173,7 @@ function HeaderCell({
         <button
           type="button"
           onClick={() => onSort(column.sortBy as SortField)}
-          className="flex items-center gap-1 hover:text-text-primary"
+          className="motion-tint flex items-center gap-1 hover:text-text-primary"
         >
           {column.label}
           <span aria-hidden="true" className="text-xs">

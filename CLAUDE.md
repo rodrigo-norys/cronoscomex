@@ -128,28 +128,27 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**70 das 72 histórias concluídas.** O que cada uma aprendeu — número medido,
+**71 das 72 histórias concluídas.** O que cada uma aprendeu — número medido,
 defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
 `docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
 em aberto. **Este bloco diz só o que está aberto.**
 
 **`E9` e `E10` fecharam em 01/09/2026.** Resta **um épico**:
 
-- **`E11` — Casca redesenhada.** As ondas 1 e 2 fecharam, e `H-61` abriu a 3 —
-  restam `H-64` — o movimento — e `H-65` — a verificação nos dois esquemas.
-  **Nenhuma bloqueada**, e as ondas 1 a 3 fecharam. `H-63` herdou de `H-61` a
-  guarda de "dois raios e nada entre eles", que nasce vermelha até os arquivos
-  convergirem. A paleta está entregue e medida: as seis
-  correções de `docs/redesign/PROPOSTA.md §2.2` entraram em `H-57`, e o risco
-  `R-16` fechou. As duas famílias vivem em `web/public/fonts/` desde `H-58` —
-  **nenhuma requisição externa**, e o `LICENSE.txt` da OFL acompanha.
+- **`E11` — Casca redesenhada.** As ondas 1 a 4 fecharam; resta `H-65` — a
+  verificação no navegador nos dois esquemas —, e com ela o backlog inteiro.
+  **Nenhuma bloqueada.** A paleta está entregue e medida: as seis correções de
+  `docs/redesign/PROPOSTA.md §2.2` entraram em `H-57`, e o risco `R-16` fechou.
+  As duas famílias vivem em `web/public/fonts/` desde `H-58` — **nenhuma
+  requisição externa**, e o `LICENSE.txt` da OFL acompanha.
 
 **A medição no navegador é `tools/medir-navegador.mjs`**, versionada em
 01/09/2026 depois de ser reconstruída do zero em duas sessões. Ela sobe a
 aplicação sobre uma fixture, com os três caminhos de escrita num diretório
 temporário, e mede num Chrome real por CDP — largura, contraste com `oklch`
 resolvido pelo navegador, paradas de tabulação, `forced-colors`,
-`prefers-color-scheme` e a fonte-base do cenário "Muito grande". Rode com
+`prefers-color-scheme`, `prefers-reduced-motion`, o apontador com cursor e a
+fonte-base do cenário "Muito grande". Rode com
 `LOG_LEVEL=silent` e depois de `npm run build`.
 
 > **A numeração foi refeita em 19/08/2026** para acompanhar a ordem do backlog, e

@@ -66,6 +66,26 @@ const RAW_STEP = new RegExp(
 const HEX_LITERAL = /#[0-9a-fA-F]{6}\b/
 
 /**
+ * Apaga o conteúdo dos comentários preservando as linhas.
+ *
+ * **O critério é o utilitário, nunca a prosa**, e até `H-64` isso era
+ * aproximado por "`className` ou `@apply` na mesma linha". A aproximação erra
+ * dos dois lados, e o lado caro apareceu na prova por mutação de `H-64`:
+ * `AppSidebar.tsx` extrai as classes para `ITEM_BASE`, `ITEM_CURRENT` e
+ * `ITEM_REST` — constantes sem `className` nenhum na linha —, e um
+ * `transition-colors duration-150` plantado ali passou por todas as asserções.
+ * `shadow-` e `font-bold` de `D-22` tinham o mesmo ponto cego.
+ *
+ * Prosa é comentário; apagá-lo dá o critério exato em vez do aproximado. O
+ * `(?<!:)` preserva `https://`, que aparece em URL de documentação.
+ */
+function semComentarios(fonte: string): string {
+  const embranquecer = (trecho: string): string => trecho.replace(/[^\n]/g, ' ')
+
+  return fonte.replace(/\/\*[\s\S]*?\*\//g, embranquecer).replace(/(?<!:)\/\/[^\n]*/g, embranquecer)
+}
+
+/**
  * `SC 1.4.3` e `SC 1.4.11` isentam componente de interface inativo, e o corpus
  * registra a isenção. O conjunto **de fato** unificou o estado desabilitado num
  * token só, em `H-41` — mas a guarda não é o lugar de cobrar consistência que a
@@ -100,7 +120,7 @@ function occurrencesOf(pattern: RegExp): Occurrence[] {
   const found: Occurrence[] = []
 
   for (const file of interfaceFiles()) {
-    const lines = readFileSync(file, 'utf-8').split('\n')
+    const lines = semComentarios(readFileSync(file, 'utf-8')).split('\n')
 
     lines.forEach((text, index) => {
       if (EXEMPT.test(text)) return
@@ -511,7 +531,7 @@ describe('RNF-34 — nenhuma origem externa na interface', () => {
  * em 01/09/2026 era um comentário de `H-58` afirmando que havia zero; contar
  * prosa faria a guarda reprovar a própria documentação.
  */
-const EM_UTILITARIO = (nome: string) => new RegExp(`(className|@apply)[^\\n]*\\b${nome}`)
+const EM_UTILITARIO = (nome: string) => new RegExp(`\\b${nome}`)
 
 /** Raio que não é `rounded-control`, `rounded-container` nem a pílula declarada. */
 const RAIO_SOLTO = /(^|[\s'"`{@])rounded(-(none|sm|md|lg|xl|2xl|3xl))?(\s|$|'|"|`)/
@@ -528,7 +548,13 @@ describe('D-22 — a forma nova, e o que a mantém', () => {
     // A pílula de canal é exceção declarada, e a guarda a conhece pelo nome.
     expect(RAIO_SOLTO.test('className="rounded-full px-2"')).toBe(false)
     expect(EM_UTILITARIO('font-bold').test('className="font-bold"')).toBe(true)
-    expect(EM_UTILITARIO('font-bold').test(' * o conjunto tem zero `font-bold`')).toBe(false)
+    // A prosa nao chega ate aqui: `semComentarios` a apagou antes. A amostra e
+    // o BLOCO inteiro, e nao uma linha dele — a limpeza roda sobre o arquivo.
+    expect(semComentarios('/*\n * o conjunto tem zero `font-bold`\n */').trim()).toBe('')
+    expect(semComentarios('const A = 1 // font-bold').trim()).toBe('const A = 1')
+    expect(semComentarios('const U = "https://x/y"')).toBe('const U = "https://x/y"')
+    // O que a linha de `className` escondia: a classe extraida para constante.
+    expect(EM_UTILITARIO('shadow-').test("const BASE = 'shadow-lg p-4'")).toBe(true)
     expect(EM_UTILITARIO('shadow-').test('className="shadow-xl"')).toBe(true)
     expect(FONTE_ABSOLUTA.test('className="text-[13px]"')).toBe(true)
     expect(FONTE_ABSOLUTA.test('className="text-sm"')).toBe(false)
@@ -566,5 +592,189 @@ describe('D-22 — a forma nova, e o que a mantém', () => {
     const absolutos = occurrencesOf(FONTE_ABSOLUTA)
 
     expect(absolutos.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
+  })
+})
+
+/**
+ * `A10` — todo movimento tem contraparte de reducao, e ela nasce no mesmo
+ * commit (`H-64`).
+ *
+ * O conjunto tinha **zero** `transition-*` e **zero** `animate-*` ate aqui, e
+ * era por isso que `A07`, `A09` e `A10` do corpus estavam dispensadas por
+ * inaplicabilidade. A primeira transicao torna as tres aplicaveis de uma vez:
+ * sem esta guarda, o proximo arquivo nasce com `transition-all duration-300`
+ * porque era o que estava a mao — a mesma mecanica que levou o conjunto a 40
+ * classes de cor distintas (`C01`) e a 81 ocorrencias de raio (`D-22`).
+ *
+ * **Ela nasce verde, e isso e requisito**: `H-45` fixou o precedente de que
+ * guarda vermelha e desligada, nao obedecida. Por isso ela entra junto do
+ * movimento, e nao antes dele.
+ *
+ * **O escopo aqui e o CSS, e `interfaceFiles()` NAO o alcanca** — ele varre
+ * `.ts`/`.tsx`. Medido em `H-58`, quando a prova por mutacao reprovou pelo
+ * teste errado e revelou justamente esta lacuna.
+ *
+ * Quatro asserções:
+ *
+ * 1. nenhum utilitario de movimento em `.tsx` — o papel se nomeia, a duracao
+ *    nao se escreve;
+ * 2. toda duracao e um dos dois tokens, e toda curva e a unica;
+ * 3. todo seletor que se move tem contraparte anulada sob `reduce`;
+ * 4. o bloco de reducao existe e nao esta vazio — ancora contra guarda verde
+ *    por vacuidade.
+ */
+
+const CSS_DA_INTERFACE = 'web/src/index.css'
+
+const REDUCAO = '@media (prefers-reduced-motion: reduce)'
+
+/**
+ * Utilitario de movimento escrito no `.tsx`. `motion-tint` e `motion-surface`
+ * NAO casam: o que se proibe e a duracao e a curva soltas, nao o papel.
+ */
+const MOVIMENTO_EM_TSX = EM_UTILITARIO('(transition|duration|ease|animate)-')
+
+/**
+ * Movimento e uma de duas coisas, e a primeira versao desta regex so via a
+ * primeira: a propriedade que desloca pixel sendo DECLARADA, ou uma `transition`
+ * que NOMEIA essa propriedade no valor. Sem a segunda metade,
+ * `transition: transform var(--speed-fast)` — a regra de recuo do controle, o
+ * unico movimento real da fatia — passava batido. Pego pela ancora, e nao pelo
+ * conjunto: e o que `H-58` aprendeu ao provar a guarda por mutacao.
+ */
+const DECLARA_MOVIMENTO =
+  /\b(transform|translate|rotate|animation)\s*:|\btransition\s*:[^;]*\b(transform|translate|rotate|all)\b/
+
+/** `transition` e `animation` — as duas propriedades que carregam tempo e curva. */
+const TEMPORIZADA = /\b(transition|animation)\s*:([^;]*)/g
+
+/** Tempo literal: `150ms`, `.3s`. O que se aceita e `var(--speed-*)`. */
+const TEMPO_LITERAL = /(^|[\s,(])\.?\d+(\.\d+)?m?s\b/
+
+/** Curva literal. O que se aceita e `var(--ease-brand)`. */
+const CURVA_LITERAL = /\b(cubic-bezier|linear|ease-in|ease-out|ease-in-out|steps)\b/
+
+interface RegraCss {
+  readonly seletor: string
+  readonly declaracoes: string
+  /** O prelúdio da at-rule que a contém, ou `null` no topo do arquivo. */
+  readonly dentroDe: string | null
+}
+
+/**
+ * Percorre o CSS por contagem de chaves e devolve uma entrada por bloco.
+ *
+ * Nao e um parser de CSS, e nao precisa ser: o que se pergunta e "que seletor
+ * declara isto, e dentro de que at-rule" — duas perguntas que a contagem de
+ * chaves responde. Comentario sai antes, senao uma chave em prosa desalinha a
+ * pilha inteira.
+ */
+function regrasCss(fonte: string): RegraCss[] {
+  const limpo = fonte.replace(/\/\*[\s\S]*?\*\//g, '')
+  const regras: RegraCss[] = []
+  const pilha: string[] = []
+  let corrente = ''
+
+  for (const caractere of limpo) {
+    if (caractere === '{') {
+      pilha.push(corrente.trim())
+      corrente = ''
+    } else if (caractere === '}') {
+      const seletor = pilha.pop() ?? ''
+      regras.push({ seletor, declaracoes: corrente, dentroDe: pilha.at(-1) ?? null })
+      corrente = ''
+    } else {
+      corrente += caractere
+    }
+  }
+
+  return regras
+}
+
+/** `@utility motion-surface` e a classe `.motion-surface` sao o mesmo alvo. */
+const comoSeletor = (prelúdio: string): string =>
+  prelúdio.replace(/^@utility\s+/, '.').replace(/\s+/g, ' ')
+
+describe('A10 — todo movimento tem contraparte de redução', () => {
+  const css = readFileSync(CSS_DA_INTERFACE, 'utf-8')
+  const regras = regrasCss(css)
+
+  it('as regexes e o percurso reconhecem o defeito e ignoram a prosa', () => {
+    expect(MOVIMENTO_EM_TSX.test('className="transition-colors duration-150"')).toBe(true)
+    expect(MOVIMENTO_EM_TSX.test('className="motion-tint hover:bg-surface-hover"')).toBe(false)
+    expect(MOVIMENTO_EM_TSX.test("const BASE = 'transition-colors duration-150'")).toBe(true)
+    expect(DECLARA_MOVIMENTO.test('transform: scale(0.975)')).toBe(true)
+    expect(DECLARA_MOVIMENTO.test('transition: transform var(--speed-fast)')).toBe(true)
+    expect(DECLARA_MOVIMENTO.test('transition: color var(--speed-fast)')).toBe(false)
+    expect(TEMPO_LITERAL.test('transition: transform 150ms')).toBe(true)
+    expect(TEMPO_LITERAL.test('transition: transform var(--speed-fast)')).toBe(false)
+    expect(CURVA_LITERAL.test('animation: x var(--speed-base) ease-in-out')).toBe(true)
+    expect(CURVA_LITERAL.test('animation: x var(--speed-base) var(--ease-brand)')).toBe(false)
+    expect(comoSeletor('@utility motion-surface')).toBe('.motion-surface')
+
+    // O percurso separa o que esta dentro do bloco de reducao do que esta fora,
+    // e emite tambem a propria at-rule ao fecha-la — sem declaracao nenhuma,
+    // entao ela nunca casa uma regex de movimento.
+    const amostra = regrasCss('a { transform: none } @media (x) { b { transform: none } }')
+    expect(amostra.map((uma) => `${uma.dentroDe ?? '—'} > ${uma.seletor}`)).toEqual([
+      '— > a',
+      '@media (x) > b',
+      '— > @media (x)',
+    ])
+  })
+
+  it('nenhum utilitário de movimento escrito no .tsx', () => {
+    const soltos = occurrencesOf(MOVIMENTO_EM_TSX)
+
+    expect(soltos.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
+  })
+
+  it('toda duração é um dos dois tokens, e toda curva é a única', () => {
+    const fora: string[] = []
+
+    for (const regra of regras) {
+      for (const encontro of regra.declaracoes.matchAll(TEMPORIZADA)) {
+        const valor = encontro[2] ?? ''
+        if (TEMPO_LITERAL.test(valor) || CURVA_LITERAL.test(valor)) {
+          fora.push(`${regra.seletor} — ${encontro[0].trim()}`)
+        }
+      }
+    }
+
+    expect(fora).toEqual([])
+  })
+
+  it('todo seletor que se move tem contraparte anulada sob redução', () => {
+    const anulados = new Set(
+      regras
+        .filter(
+          (regra) =>
+            regra.dentroDe === REDUCAO &&
+            /\b(transform|animation|transition)\s*:\s*none/.test(regra.declaracoes),
+        )
+        .map((regra) => comoSeletor(regra.seletor)),
+    )
+
+    // O passo de `@keyframes` nao tem contraparte propria: quem a tem e a regra
+    // que USA a animacao, e e la que `animation: none` incide.
+    const semContraparte = regras
+      .filter(
+        (regra) =>
+          regra.dentroDe !== REDUCAO &&
+          !regra.dentroDe?.startsWith('@keyframes') &&
+          DECLARA_MOVIMENTO.test(regra.declaracoes),
+      )
+      .map((regra) => comoSeletor(regra.seletor))
+      .filter((seletor) => !anulados.has(seletor))
+
+    expect(semContraparte).toEqual([])
+  })
+
+  /** Âncora: sem isto a asserção acima passaria num arquivo sem movimento nenhum. */
+  it('o bloco de redução existe e anula alguma coisa', () => {
+    const dentro = regras.filter((regra) => regra.dentroDe === REDUCAO)
+
+    expect(dentro.length).toBeGreaterThan(0)
+    expect(css).toContain(REDUCAO)
   })
 })

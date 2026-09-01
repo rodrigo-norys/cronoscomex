@@ -583,4 +583,21 @@ describe('o popover do chip', () => {
 
     expect(screen.getByRole('checkbox', { name: /ACME/ })).toBeTruthy()
   })
+
+  /**
+   * `H-64`. O jsdom nao aplica a folha externa, entao o que se pode afirmar
+   * aqui e o PAPEL declarado — que a duracao e a curva por tras dele sejam as
+   * do token e caiam sob reducao e do CSS, e `tests/repo/estilo.test.ts` cobra.
+   * Sem esta assercao, tirar a classe nao reprovaria nada.
+   */
+  it('o chip e o painel nomeiam o papel de movimento', () => {
+    renderBar()
+    const chip = screen.getByRole('button', { name: /^Cliente/ })
+    expect(chip.className).toContain('motion-tint')
+
+    fireEvent.click(chip)
+    const painel = document.getElementById(chip.getAttribute('aria-controls') ?? '')
+
+    expect(painel?.className).toContain('motion-surface')
+  })
 })
