@@ -357,26 +357,46 @@ describe('ranking por responsavel — IND-20', () => {
   })
 
   /**
-   * A-18 faz o filtro `colaborador1` selecionar tambem os outros clientes dele,
-   * enquanto o ranking os exibe separados. Clicar numa linha de 120 e cair numa
-   * tela de 129 faria o operador desconfiar do numero certo.
+   * A linha segue sem virar botao: `H-50` removeu o impedimento de A-18, mas
+   * torna-la clicavel e funcionalidade nova, e nenhum criterio a pede.
+   *
+   * **`H-66` reescreveu o texto**, que ate entao dizia que o responsavel vinha
+   * da cor — verdade ate `H-50`, falsa depois dela. E o quinto criterio de
+   * `H-53`, que ficou nao-incidente ate o campo novo existir.
    */
-  it('nao torna a linha clicavel, e diz por que', async () => {
+  it('nao torna a linha clicavel, e diz de onde vem o responsavel', async () => {
     const base = indicatorsFixture()
     api.serveIndicators({
       ...base,
       rankings: {
         ...base.rankings,
-        responsible: [{ key: 'indefinido', label: 'Indefinido', count: 484 }],
+        responsible: [{ key: '', label: 'Sem responsável', count: 42 }],
       },
     })
     renderPage()
 
     const responsaveis = await section('Responsáveis')
 
+    const texto = responsaveis.textContent ?? ''
+
     expect(within(responsaveis).queryByRole('button')).toBeNull()
-    expect(within(responsaveis).getByText(/não são clicáveis/)).toBeTruthy()
-    expect(within(responsaveis).getByText(/A-31/)).toBeTruthy()
+    expect(texto).toContain('vem do importador')
+    expect(texto).toContain('Cor do responsável')
+    // A-31 continua valendo — para a COR, que agora e o outro filtro.
+    expect(texto).toContain('A-31')
+  })
+
+  // O texto anterior afirmava o contrario, e afirma-lo depois de `H-50` seria a
+  // tela mentindo sobre a regra que o servidor aplica.
+  it('nao diz mais que o responsavel vem da cor da linha', async () => {
+    renderPage()
+
+    const responsaveis = await section('Responsáveis')
+
+    const texto = responsaveis.textContent ?? ''
+
+    expect(texto).not.toContain('vem da cor da linha')
+    expect(texto).not.toContain('costuma liderar')
   })
 })
 
@@ -553,6 +573,24 @@ describe('o que a página declara sobre si', () => {
     const recorte = await screen.findByRole('region', { name: 'Recorte ativo' })
 
     expect(recorte.textContent).toContain('Cliente: 3 valores')
+    window.history.replaceState(null, '', '/')
+  })
+
+  /**
+   * `H-66`. Os dois filtros de responsável são independentes: um recorta por
+   * quem responde, o outro por o que a linha está pintada. O painel nomeia os
+   * dois separadamente, e é `MULTI_FILTER_LABELS` que os distingue.
+   */
+  it('nomeia responsável e cor do responsável como filtros distintos', async () => {
+    window.history.replaceState(null, '', '/?responsible=membro1&colorResponsible=colaborador2')
+    renderPage('?responsible=membro1&colorResponsible=colaborador2')
+
+    const recorte = await screen.findByRole('region', { name: 'Recorte ativo' })
+    const texto = recorte.textContent ?? ''
+
+    expect(texto).toContain('2 filtros ativos')
+    expect(texto).toContain('Responsável: membro1')
+    expect(texto).toContain('Cor do responsável: colaborador2')
     window.history.replaceState(null, '', '/')
   })
 

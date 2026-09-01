@@ -381,17 +381,23 @@ function OverdueBadge({ overdue }: { overdue: number | undefined }) {
 }
 
 /**
- * Por que a linha não leva à Operacional, e por que `Indefinido` é o maior
- * grupo. A-31 e R-02: a cor da linha é a única fonte do responsável, e linha
- * vermelha ou verde a perde — 477 verdes, medido.
+ * De onde vem o responsavel, e o que significa a linha sem ele.
+ *
+ * **Este texto dizia o contrario ate `H-66`**, e estava certo enquanto disse: a
+ * cor era a unica fonte, linha vermelha ou verde perdia o responsavel (A-31,
+ * R-02), e `Indefinido` liderava com 484 dos 649. `H-50` trocou a fonte para o
+ * importador, e a limitacao de A-31 deixou de valer para este campo — ela
+ * continua valendo para a COR, que agora e o outro filtro da barra.
  */
 function ResponsibleCaveat() {
   return (
     <p className="mt-2 rounded border border-border-subtle bg-surface-sunken px-3 py-2 text-xs text-text-secondary">
-      O responsável vem da cor da linha, e linha vermelha ou verde não o carrega (A-31) — por isso{' '}
-      <strong>Indefinido</strong> costuma liderar. As linhas não são clicáveis: o filtro por
-      Colaborador 1 seleciona também os outros clientes dele (A-18), e o recorte não bateria com a
-      contagem acima.
+      O responsável vem do <strong>importador</strong>, e a cor da linha decide o que a lista de
+      importadores não alcança. <strong>Sem responsável</strong> é o processo que não tem nem uma
+      coisa nem a outra — ele aparece aqui de propósito, porque escondê-lo faria o ranking parecer
+      completo. Para recortar por <strong>o que a linha está pintada</strong>, use o filtro Cor do
+      responsável na barra do topo: ele responde outra pergunta, e uma linha vermelha ou verde não a
+      responde (A-31).
     </p>
   )
 }

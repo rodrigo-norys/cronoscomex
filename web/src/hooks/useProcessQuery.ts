@@ -4,7 +4,7 @@ import { replaceQuery, useQuery } from '../router.ts'
 /**
  * Os parametros **da Pagina Operacional**: busca, ativos, ordenacao e pagina.
  *
- * Vivem na URL pelo mesmo motivo dos treze filtros globais — recarregar
+ * Vivem na URL pelo mesmo motivo dos quatorze filtros globais — recarregar
  * preserva, e um endereco descreve o que a tela mostra. Sao separados dos
  * filtros de proposito: `useFilters().clearAll` apaga so os onze, porque
  * limpar filtro nao e limpar a busca nem voltar para a primeira pagina.
@@ -28,7 +28,7 @@ export interface ProcessQuery {
   readonly sort: SortField
   readonly order: SortOrder
   readonly offset: number
-  /** O que a pagina anexa a requisicao: os treze filtros **mais** estes. */
+  /** O que a pagina anexa a requisicao: os quatorze filtros **mais** estes. */
   readonly requestQuery: string
   setSearch(value: string): void
   setActiveOnly(value: boolean): void

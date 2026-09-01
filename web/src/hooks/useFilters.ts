@@ -2,7 +2,7 @@ import { useCallback, useMemo } from 'react'
 import { replaceQuery, useQuery } from '../router.ts'
 
 /**
- * Os treze filtros globais (RF-17), com a URL como **unico** estado.
+ * Os quatorze filtros globais (RF-17), com a URL como **unico** estado.
  *
  * Nao ha copia em `useState`: o parametro na URL e a verdade, e o componente
  * deriva dela. Duas fontes divergiriam no primeiro `popstate` — e a URL precisa
@@ -27,6 +27,7 @@ export const MULTI_FILTERS = [
   'goods',
   'category',
   'responsible',
+  'colorResponsible',
   'channel',
   'port',
 ] as const
@@ -49,6 +50,7 @@ export const MULTI_FILTER_LABELS: Readonly<Record<MultiFilterKey, string>> = {
   clientGroup: 'Grupo de clientes',
   importer: 'Importador',
   responsible: 'Responsável',
+  colorResponsible: 'Cor do responsável',
   channel: 'Canal',
   vessel: 'Navio',
   agent: 'Agente',
@@ -68,8 +70,8 @@ export interface FilterSelection {
 
 export interface Filters {
   readonly selection: FilterSelection
-  /** Quantos dos treze estao ativos. O periodo conta uma vez, tendo um extremo
-   * ou os dois — e um filtro, ainda que ocupe dois parametros. */
+  /** Quantos dos quatorze estao ativos. O periodo conta uma vez, tendo um
+   * extremo ou os dois — e um filtro, ainda que ocupe dois parametros. */
   readonly activeCount: number
   /** O que as paginas de `H-16` a `H-22` anexam as proprias requisicoes. */
   readonly queryString: string

@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { MULTI_FILTERS, useFilters } from '../src/hooks/useFilters.ts'
 
 /**
- * A URL e o unico estado dos onze filtros. Nao ha copia em `useState`, entao
+ * A URL e o unico estado dos quatorze filtros. Nao ha copia em `useState`, entao
  * cada teste aqui le e escreve `window.location` de verdade — e o que a
  * aplicacao faz.
  */
@@ -181,5 +181,21 @@ describe('setPeriod — H-52', () => {
 
     expect(result.current.selection.multi.client).toEqual(['ACME'])
     expect(result.current.selection.etaFrom).toBe('2026-02-01')
+  })
+})
+
+/**
+ * `H-66`. Os dois filtros de responsável são independentes na URL, como qualquer
+ * outro par: OU dentro do parâmetro, E entre parâmetros distintos.
+ */
+describe('responsável e cor do responsável (H-66)', () => {
+  it('conta os dois separadamente em activeCount', () => {
+    window.history.replaceState(null, '', '/?responsible=membro1&colorResponsible=colaborador2')
+    const { result } = renderHook(() => useFilters())
+
+    expect(result.current.selection.multi.responsible).toEqual(['membro1'])
+    expect(result.current.selection.multi.colorResponsible).toEqual(['colaborador2'])
+    expect(result.current.activeCount).toBe(2)
+    window.history.replaceState(null, '', '/')
   })
 })
