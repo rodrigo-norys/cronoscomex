@@ -141,7 +141,9 @@ function TypeCounts({
             aria-label={ALERT_LABELS[type]}
             className="rounded-container border border-border-subtle bg-surface-raised p-3"
           >
-            <h3 className="text-xs font-medium text-text-muted">{ALERT_LABELS[type]}</h3>
+            {/* `h2` pelo mesmo motivo de `StatCard` (`H-74`): "Alertas por tipo"
+                e `aria-label` de secao, nao titulo — nao ha `h2` acima. */}
+            <h2 className="text-xs font-medium text-text-muted">{ALERT_LABELS[type]}</h2>
             {measurable ? (
               <p className="mt-1 text-2xl font-semibold tabular-nums">{counts[type]}</p>
             ) : (

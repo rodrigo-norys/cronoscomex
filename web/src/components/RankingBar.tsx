@@ -156,9 +156,16 @@ function RankingRow({
     </>
   )
 
+  // `min-h-6` sao 24 px, e e `SC 2.5.8` (`H-74`, `ACHADO 9`): com `py-0.5`
+  // sobre `text-xs` a caixa media **20 px**, e o `<ul>` nao tem `gap` — dois
+  // membros vizinhos ficavam a 20 px de centro a centro, e circulos de 24 px
+  // centrados em cada um se intersectam, o que nao satisfaz a excecao Spacing.
+  //
+  // `min-h` e nao `py-1`: o recuo menor e o que distingue o aninhado da linha
+  // de topo, que ja mede 28 px e passa.
   const shared = `group flex w-full items-center gap-3 rounded-control px-1 text-left ${
     secondary ? 'flex-wrap' : ''
-  } ${nested ? 'py-0.5' : 'py-1'}`
+  } ${nested ? 'min-h-6 py-0.5' : 'py-1'}`
 
   if (onSelect === undefined) return <span className={shared}>{content}</span>
 

@@ -51,9 +51,13 @@ function renderHome(queryString = '') {
 
 function cardsInOrder(): string[] {
   const section = screen.getByRole('region', { name: 'Cartões-resumo' })
-  return within(section)
-    .getAllByRole('heading', { level: 3 })
-    .map((heading) => heading.textContent ?? '')
+  return (
+    within(section)
+      // `H-74`, `ACHADO 1`: nivel 2, e nao 3. A secao dos cartoes nao tem titulo
+      // proprio, entao o `h1` da `TopBar` desceria direto para `h3`.
+      .getAllByRole('heading', { level: 2 })
+      .map((heading) => heading.textContent ?? '')
+  )
 }
 
 describe('os treze cartoes', () => {
@@ -73,7 +77,7 @@ describe('os treze cartoes', () => {
 
     const porRotulo = new Map(
       Array.from(section.querySelectorAll('article')).map((card) => [
-        card.querySelector('h3')?.textContent,
+        card.querySelector('h2')?.textContent,
         card.querySelector('p')?.textContent,
       ]),
     )
@@ -98,7 +102,7 @@ describe('os treze cartoes', () => {
 
     expect(urgentes).toHaveLength(2)
     expect(volumes).toHaveLength(11)
-    expect(Array.from(urgentes).map((card) => card.querySelector('h3')?.textContent)).toEqual([
+    expect(Array.from(urgentes).map((card) => card.querySelector('h2')?.textContent)).toEqual([
       'Atrasados',
       'Documentos pendentes',
     ])
@@ -281,7 +285,7 @@ describe('a janela declarada nos cartoes', () => {
   function cardByLabel(label: string): HTMLElement {
     const section = screen.getByRole('region', { name: 'Cartões-resumo' })
     const card = Array.from(section.querySelectorAll('article')).find(
-      (article) => article.querySelector('h3')?.textContent === label,
+      (article) => article.querySelector('h2')?.textContent === label,
     )
     if (!card) throw new Error(`cartão ausente: ${label}`)
     return card as HTMLElement

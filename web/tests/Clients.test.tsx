@@ -350,6 +350,30 @@ describe('grupo de clientes no ranking', () => {
    * para 300 em "Muito grande". Sem o `title` o nome consolidado some sem
    * aviso, e o operador nao tem como saber que ha mais texto.
    */
+  /**
+   * `H-74`, `ACHADO 9`, `SC 2.5.8`. Com `py-0.5` sobre `text-xs` a caixa media
+   * **20 px**, e o `<ul>` nao tem `gap`: dois membros vizinhos ficavam a 20 px
+   * de centro a centro, e circulos de 24 px centrados em cada um se
+   * intersectam — a excecao Spacing nao se satisfaz. `min-h-6` sao
+   * `calc(0.25rem * 6)` = 24 px, e **relativo**, entao acompanha a ampliacao.
+   *
+   * Em jsdom todo retangulo e zero: o que se afirma e a classe. A geometria da
+   * linha de TOPO — 28 px, que ja passava — foi medida em Chrome 151.
+   */
+  it('dá 24px ao alvo da linha aninhada, e não mexe na de topo', async () => {
+    comGrupo()
+    renderPage()
+
+    const clientes = within(await ranking('Clientes'))
+    const grupo = clientes.getByTitle(/Filtrar por Grupo Um/)
+    const membro = clientes.getByTitle(/Filtrar por Beta/)
+
+    expect(membro.className).toContain('min-h-6')
+    expect(membro.className).toContain('py-0.5')
+    expect(grupo.className).not.toContain('min-h-6')
+    expect(grupo.className).toContain('py-1')
+  })
+
   it('o rótulo do ranking guarda o valor inteiro, porque trunca', async () => {
     comGrupo()
     renderPage()

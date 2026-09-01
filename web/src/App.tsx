@@ -3,7 +3,11 @@ import type { ApplyRefusal, HealthResponse } from './api-client.ts'
 import { AppSidebar } from './components/AppSidebar.tsx'
 import { ConflictDialog } from './components/ConflictDialog.tsx'
 import { FilterBar } from './components/FilterBar.tsx'
-import { PAGE_LIVE_REGION_ID, PAGE_LIVE_STATUS_ID } from './components/PageAlert.tsx'
+import {
+  LiveAnnouncement,
+  PAGE_LIVE_REGION_ID,
+  PAGE_LIVE_STATUS_ID,
+} from './components/PageAlert.tsx'
 import { StatusBanner } from './components/StatusBanner.tsx'
 import { TopBar } from './components/TopBar.tsx'
 import { useAppData } from './hooks/useAppData.ts'
@@ -214,9 +218,23 @@ export function App() {
  */
 function PageLoading() {
   return (
-    <p role="status" className="panel-loading">
-      Carregando página…
-    </p>
+    <>
+      {/*
+        **Sem `role="status"` aqui** (`H-74`, `ACHADO 10`). Este no e o
+        `fallback` do `<Suspense>`: ele NASCE com a mensagem dentro, e regiao
+        viva que ja chega populada nao e anunciada — e o mesmo `ACHADO 11` que
+        criou as duas regioes persistentes da casca, uma camada abaixo.
+
+        Quem anuncia e `PAGE_LIVE_STATUS_ID`, que esta montado desde o primeiro
+        render e recebe o texto por portal. O bloco visivel fica `aria-hidden`
+        para o leitor nao ouvir a mesma coisa duas vezes — mesmo par de
+        `WorkbookSetup`, e por isso os dois textos diferem.
+      */}
+      <p aria-hidden="true" className="panel-loading">
+        Carregando página…
+      </p>
+      <LiveAnnouncement text="Carregando a página." tone="status" />
+    </>
   )
 }
 

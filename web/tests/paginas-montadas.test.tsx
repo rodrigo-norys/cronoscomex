@@ -96,3 +96,35 @@ describe('história concluída exige página montada', () => {
     expect(placeholder, `${story} está concluída no backlog, mas a página é um marcador`).toBe(null)
   })
 })
+
+/**
+ * `C08` — um `<h1>` por página, e nenhum salto de nível (`H-74`, `ACHADO 1`).
+ *
+ * É guarda **composicional**: o defeito não existe dentro de um arquivo. O
+ * `<h1>` vive na `TopBar`, e quem descia para `<h3>` era `StatCard` — dois
+ * arquivos que nunca se veem. `SC 1.3.1` nomeia isto como falha `F43`.
+ *
+ * Ela mora aqui porque este é o único teste que monta as sete páginas dentro da
+ * casca; `web/tests/Home.test.tsx` e as irmãs montam a página sozinha, sem o
+ * `<h1>` que faz o salto existir.
+ */
+describe('C08 — um h1 por página, sem salto de nível', () => {
+  it.each(PAGES)('%s (%s)', async (_label, path) => {
+    window.history.replaceState(null, '', path)
+    render(<App />)
+
+    const fallback = () => screen.queryByText('Carregando página…')
+    if (fallback() !== null) await waitForElementToBeRemoved(fallback)
+
+    const niveis = [...document.querySelectorAll('h1,h2,h3,h4,h5,h6')].map((titulo) =>
+      Number(titulo.tagName[1]),
+    )
+    const saltos = niveis
+      .map((nivel, i) => ({ de: niveis[i - 1], para: nivel }))
+      .filter(({ de, para }) => de !== undefined && para > de + 1)
+      .map(({ de, para }) => `h${de} → h${para}`)
+
+    expect(niveis.filter((nivel) => nivel === 1)).toHaveLength(1)
+    expect(saltos).toEqual([])
+  })
+})
