@@ -25,10 +25,10 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E6 — Histórico ✅ | H-28, H-29 | 1 | 1 | 0 |
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
-| E9 — Estilização | **H-39 ✅ … H-47 ✅, H-67 ✅, H-68 ✅, H-69 ✅, H-71 ✅ e H-72 ✅; só `H-70` aberta** | 7 | 8 | 0 |
+| E9 — Estilização ✅ | **H-39 … H-47 e H-67 … H-72, todas concluídas** | 7 | 8 | 0 |
 | E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-51 ✅, H-52 ✅, H-53 ✅, H-54 ✅, H-55 ✅, H-56 ✅; abertas `H-50` — a única G do backlog — e `H-66`, que saiu do corte dela** | 2 | 7 | 1 |
 | E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
-| **Total** | **72** — 60 concluídas, 12 abertas | **28** | **43** | **1** |
+| **Total** | **72** — 61 concluídas, 11 abertas | **28** | **43** | **1** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -133,7 +133,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-67 — A linha do ranking cabe em 320 px](#h-67) ✅
 - [H-68 — O seletor de cor cabe na tela do celular](#h-68) ✅
 - [H-69 — O texto cortado da tabela tem caminho de volta](#h-69) ✅
-- [H-70 — O foco sobrevive à navegação programática](#h-70)
+- [H-70 — O foco sobrevive à navegação programática](#h-70) ✅
 - [H-71 — O valor anterior da edição é legível](#h-71) ✅
 - [H-72 — A aba corrente sobrevive ao alto contraste](#h-72) ✅
 
@@ -5761,6 +5761,54 @@ inalcançável, e parar de crescer quando o operador amplia.
 <a id="h-70"></a>
 
 ### H-70 — O foco sobrevive à navegação programática
+
+> ✅ **CONCLUÍDA em 01/09/2026.** **4 testes próprios**, suíte em **1613**.
+> Depois de abrir um recorte pelo ranking o foco ia para o `<body>`; agora vai
+> para a landmark da página nova, medido em Chrome 151: `main` com
+> `aria-label="Operacional"`, `tabIndex -1` e `outline auto 1px` casando
+> `:focus-visible` — a **mesma forma única** que `H-47` aprovou em 467 de 467.
+>
+> **Mover o foco virou o padrão, e a exceção é quem declara.** `VN-4` mediu o
+> defeito numa origem, mas há **seis** navegações programáticas — `Clients`,
+> `Performance`, `ProcessTable`, `AlertRow`, `IngestionHealth` e
+> `StatusBanner` —, todas com o mesmo problema. Inverter o padrão em
+> `navigate()` cobre as seis sem tocar nenhuma, e deixa `keepFocus: true` num
+> lugar só: o link da casca, onde o foco já está onde o usuário o pôs.
+>
+> **O alvo é a landmark da casca, e não um nó da página** — o que resolve o
+> caso-limite da rota `lazy` por construção, em vez de por verificação: o
+> `<main>` existe mesmo enquanto o `Suspense` mostra o fallback, então nunca há
+> nó ausente para focar.
+>
+> **Um falso achado morreu no controle.** A primeira medição do "voltar"
+> devolveu `moveuOFoco: true`, o que reprovaria o caso-limite. O teste é que
+> estava errado: `document.body.focus()` **não move o foco** — o `<body>` não é
+> focável —, então a medida leu o foco que já estava no `<main>`. Refeito com um
+> elemento focável de verdade, o `popstate` deixa o foco **intacto**.
+>
+> **Zero paradas de tabulação novas**, medido nas oito rotas: 26 · 38 · 34 · 23
+> · 32 · 25 · 16 · 13, e `mainEhParada: false` em todas. Os números são menores
+> que as 196 que `VN-4` registrou em `/operacional` porque a fixture tem 10
+> processos e a planilha real tem 649 — o que muda a magnitude do prejuízo, não
+> o defeito.
+>
+> **O terceiro critério é o rótulo, não um segundo texto.** Quem anuncia é o
+> `aria-label` da landmark, lido quando ela recebe o foco. Escrever também na
+> região viva faria o leitor de tela dizer a mesma coisa duas vezes, que é
+> exatamente o que `H-43` evitou ao pôr o bloco visível em `aria-hidden`.
+>
+> **Divergência 1 (fiação, resolvida):** a lista de arquivos cita `Clients.tsx`
+> como "a origem da navegação", e são **seis**. Resolvido invertendo o padrão em
+> `router.ts` — e `Clients.tsx` acabou **não sendo modificada**. Alternativa
+> descartada: marcar as seis origens uma a uma, que tocaria seis arquivos e
+> deixaria a sétima origem futura nascendo com o defeito.
+>
+> **Divergência 2 (fiação, resolvida):** `docs/10-governanca.md` não estava na
+> lista, e o registro de `D-16` afirmava **79 linhas de código** em `router.ts`.
+> A fatia levou a 97, de ~100 — três de folga. O número foi atualizado: a
+> guarda de `tests/repo/contratos.test.ts` mede o limiar e continua verde, mas o
+> texto teria envelhecido em silêncio, que é o modo de falha que ela existe para
+> impedir.
 
 **Objetivo:** quem navega por teclado não recomeçar do zero ao abrir um recorte
 pelo ranking.

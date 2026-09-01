@@ -127,25 +127,23 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**60 das 72 histórias concluídas.** O que cada uma aprendeu — número medido,
+**61 das 72 histórias concluídas.** O que cada uma aprendeu — número medido,
 defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
 `docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
 em aberto. **Este bloco diz só o que está aberto.**
 
-**Três épicos abertos, e eles não se bloqueiam entre si:**
+**`E9` fechou em 01/09/2026** — as oito fatias de correção, `H-47` e os seis
+achados que ela mediu. **Dois épicos abertos, e eles não se bloqueiam:**
 
-- **`E9` — Estilização.** As oito fatias de correção fecharam, `H-47` percorreu
-  os procedimentos de navegador, e cinco dos seis achados fecharam. Aberta:
-  **`H-70`**, a última. O que resta de `VN-5` é `PD-07`, e `H-72` não o
-  fechou — os itens que sobram exigem planilha alterada e cursor real.
 - **`E10` — Melhorias de uso.** Sobra **`H-50`**, a segunda que consome os mapas
   de negócio, e ela está **pronta para `/fatia`**: `D-23` decidiu o critério que
   tinha duas leituras, e `D-24` a cortou, deixando `H-66` para depois dela.
   `H-50` é a **única `G` do backlog**, e o rótulo é deliberado.
 - **`E11` — Casca redesenhada.** `H-57` a `H-65`, nenhuma começada. **Vem depois
-  de `E9` e `E10` inteiros**, porque tocam os mesmos 25 arquivos de `web/src/` e
-  `H-50` ainda muda o que três telas dizem. A medição já reprovou seis pares da
-  paleta proposta — risco `R-16`, e `H-57` nasce com as correções calculadas.
+  de `E10` inteiro** — `E9` já saiu do caminho —, porque tocam os mesmos 25
+  arquivos de `web/src/` e `H-50` ainda muda o que três telas dizem. A medição
+  já reprovou seis pares da paleta proposta — risco `R-16`, e `H-57` nasce com
+  as correções calculadas.
 
 > **A numeração foi refeita em 19/08/2026** para acompanhar a ordem do backlog, e
 > **o histórico do git continua citando os números antigos** — a branch e os
