@@ -337,7 +337,7 @@
 }
 
 @utility panel-error {
-  @apply rounded border border-state-error-border bg-state-error-bg p-4 text-sm text-state-error-fg;
+  @apply rounded-container border border-state-error-border bg-state-error-bg p-4 text-sm text-state-error-fg;
 }
 
 @utility panel-no-read {

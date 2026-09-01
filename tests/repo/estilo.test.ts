@@ -492,3 +492,79 @@ describe('RNF-34 — nenhuma origem externa na interface', () => {
     expect(readFileSync('web/public/fonts/LICENSE.txt', 'utf-8')).toContain('SIL OPEN FONT LICENSE')
   })
 })
+
+/**
+ * `H-63`, `D-22`. A forma nova, travada — as quatro asserções da onda 3.
+ *
+ * `tests/repo/estilo.test.ts` nasceu em `H-42` para impedir o passo bruto de
+ * paleta de voltar, e a mecânica é a mesma: sem guarda, o próximo arquivo nasce
+ * com `rounded-md` e `shadow-sm` porque era o que estava à mão — foi assim que
+ * o conjunto chegou a **81 ocorrências de raio, 77 delas no mesmo valor**, e a
+ * duas sombras, medido em `docs/estilizacao/RESULTADO.md`.
+ *
+ * **Ela entra aqui, e não em `H-61`, porque só aqui pode passar.** Escrita
+ * naquela fatia, nascia vermelha: sobravam 47 `rounded`, 2 `rounded-sm` e 1
+ * `rounded-lg` em 17 arquivos. `H-45` fixou o precedente — guarda que nasce
+ * vermelha é desligada, não obedecida.
+ *
+ * **O escopo é o utilitário, nunca a prosa.** O único `font-bold` do conjunto
+ * em 01/09/2026 era um comentário de `H-58` afirmando que havia zero; contar
+ * prosa faria a guarda reprovar a própria documentação.
+ */
+const EM_UTILITARIO = (nome: string) => new RegExp(`(className|@apply)[^\\n]*\\b${nome}`)
+
+/** Raio que não é `rounded-control`, `rounded-container` nem a pílula declarada. */
+const RAIO_SOLTO = /(^|[\s'"`{@])rounded(-(none|sm|md|lg|xl|2xl|3xl))?(\s|$|'|"|`)/
+
+/** `text-[13px]` e afins: pixel não acompanha a fonte-base do operador. */
+const FONTE_ABSOLUTA = /text-\[\d+(px|pt)\]/
+
+describe('D-22 — a forma nova, e o que a mantém', () => {
+  it('as quatro regexes reconhecem o defeito e ignoram a prosa', () => {
+    expect(RAIO_SOLTO.test('className="rounded-md border"')).toBe(true)
+    expect(RAIO_SOLTO.test('className="rounded border"')).toBe(true)
+    expect(RAIO_SOLTO.test('className="rounded-control px-2"')).toBe(false)
+    expect(RAIO_SOLTO.test('className="rounded-container p-4"')).toBe(false)
+    // A pílula de canal é exceção declarada, e a guarda a conhece pelo nome.
+    expect(RAIO_SOLTO.test('className="rounded-full px-2"')).toBe(false)
+    expect(EM_UTILITARIO('font-bold').test('className="font-bold"')).toBe(true)
+    expect(EM_UTILITARIO('font-bold').test(' * o conjunto tem zero `font-bold`')).toBe(false)
+    expect(EM_UTILITARIO('shadow-').test('className="shadow-xl"')).toBe(true)
+    expect(FONTE_ABSOLUTA.test('className="text-[13px]"')).toBe(true)
+    expect(FONTE_ABSOLUTA.test('className="text-sm"')).toBe(false)
+  })
+
+  it('todo raio é um dos dois papéis, ou a pílula declarada', () => {
+    const soltos = occurrencesOf(RAIO_SOLTO)
+
+    expect(soltos.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
+  })
+
+  /** `D-22`: zero sombra. A separação de superfície é borda de 1 px. */
+  it('nenhuma sombra sobrou no conjunto', () => {
+    const sombras = occurrencesOf(EM_UTILITARIO('shadow-'))
+
+    expect(sombras.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
+  })
+
+  /**
+   * O teto de peso é 600, e ele existe porque **não há arquivo de fonte acima
+   * disso** (`H-58`): `font-bold` faria o navegador SINTETIZAR o peso,
+   * engordando o traço em vez de trocar a face.
+   */
+  it('nenhum peso acima de 600', () => {
+    const pesados = occurrencesOf(EM_UTILITARIO('font-(bold|extrabold|black)'))
+
+    expect(pesados.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
+  })
+
+  /**
+   * `SC 1.4.4`. Pixel não acompanha a fonte-base que o operador escolheu —
+   * mesma razão de `R03`, agora para o texto de interface e não só do gráfico.
+   */
+  it('nenhum tamanho de fonte em unidade absoluta', () => {
+    const absolutos = occurrencesOf(FONTE_ABSOLUTA)
+
+    expect(absolutos.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
+  })
+})
