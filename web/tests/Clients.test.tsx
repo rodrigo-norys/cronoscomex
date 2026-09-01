@@ -343,4 +343,20 @@ describe('grupo de clientes no ranking', () => {
     expect(window.location.search).toContain('client=BETA')
     expect(window.location.search).not.toContain('clientGroup')
   })
+
+  /**
+   * `H-65`, `VN-2`. O rotulo tem `w-40` e trunca: medido em Chrome 151 a
+   * 1280 px, **160 px visiveis para 200 necessarios** no tamanho padrao e 240
+   * para 300 em "Muito grande". Sem o `title` o nome consolidado some sem
+   * aviso, e o operador nao tem como saber que ha mais texto.
+   */
+  it('o rótulo do ranking guarda o valor inteiro, porque trunca', async () => {
+    comGrupo()
+    renderPage()
+
+    const clientes = within(await ranking('Clientes'))
+
+    expect(clientes.getByTitle('Grupo Um').textContent).toBe('Grupo Um')
+    expect(clientes.getByTitle('Beta').textContent).toBe('Beta')
+  })
 })
