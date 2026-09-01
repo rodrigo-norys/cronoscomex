@@ -109,8 +109,9 @@ src/io/        leitura e escrita de .xlsx, watcher, histórico, fila de ediçõe
 src/app/       process-store, write-guard, config
 src/http/      rotas Fastify (só serializam; não calculam)
 web/           SPA React (só apresenta; não calcula)
-tools/         perfilador (virada de ano), verificador de strip-types, e
-               carregar-planilha.mjs para conferência contra o arquivo real
+tools/         perfilador (virada de ano), verificador de strip-types,
+               carregar-planilha.mjs para conferência contra o arquivo real, e
+               medir-navegador.mjs para medição de tela num Chrome real
 config/        app.json, color-map.json, status-aliases.json, e os dois mapas
                de negocio de H-48 — client-map.json e team-map.json, nao
                versionados, com `.exemplo` versionado ao lado
@@ -139,6 +140,14 @@ em aberto. **Este bloco diz só o que está aberto.**
   paralelo, depois `H-59 → H-60` e `H-61`/`H-62 → H-63 → H-64 → H-65`. A medição
   já reprovou seis pares da paleta proposta — risco `R-16`, e `H-57` nasce com
   as correções calculadas em `docs/redesign/PROPOSTA.md §2.2`.
+
+**A medição no navegador é `tools/medir-navegador.mjs`**, versionada em
+01/09/2026 depois de ser reconstruída do zero em duas sessões. Ela sobe a
+aplicação sobre uma fixture, com os três caminhos de escrita num diretório
+temporário, e mede num Chrome real por CDP — largura, contraste com `oklch`
+resolvido pelo navegador, paradas de tabulação, `forced-colors`,
+`prefers-color-scheme` e a fonte-base do cenário "Muito grande". Rode com
+`LOG_LEVEL=silent` e depois de `npm run build`.
 
 > **A numeração foi refeita em 19/08/2026** para acompanhar a ordem do backlog, e
 > **o histórico do git continua citando os números antigos** — a branch e os
