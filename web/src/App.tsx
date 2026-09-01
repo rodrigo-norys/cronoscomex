@@ -193,9 +193,19 @@ function MainNav({ route }: { route: Route }) {
               event.preventDefault()
               navigate(page.path)
             }}
+            /*
+              `H-72`. Sob `forced-colors: active` o agente de usuario pinta
+              `border-transparent` como pinta qualquer outra borda, e as SETE
+              abas ficam com a mesma — `VN-5` mediu uma unica assinatura, e so o
+              `aria-current` restava, que serve o leitor de tela e nao serve
+              quem enxerga. A ESPESSURA e o canal nao-cromatico, a mesma tecnica
+              que `H-44` usou no botao de janela e que `VN-5` mediu sobrevivendo.
+              O `pb` compensa os 2 px a mais para a linha de base do texto nao
+              se mexer, e a variante mantem o modo normal intocado.
+            */
             className={`border-b-2 px-3 py-2 text-sm font-medium ${
               current
-                ? 'border-border-strong text-text-primary'
+                ? 'border-border-strong text-text-primary forced-colors:border-b-4 forced-colors:pb-1.5'
                 : 'border-transparent text-text-muted hover:text-text-primary'
             }`}
           >

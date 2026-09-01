@@ -127,7 +127,7 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**59 das 72 histórias concluídas.** O que cada uma aprendeu — número medido,
+**60 das 72 histórias concluídas.** O que cada uma aprendeu — número medido,
 defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
 `docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
 em aberto. **Este bloco diz só o que está aberto.**
@@ -135,9 +135,9 @@ em aberto. **Este bloco diz só o que está aberto.**
 **Três épicos abertos, e eles não se bloqueiam entre si:**
 
 - **`E9` — Estilização.** As oito fatias de correção fecharam, `H-47` percorreu
-  os procedimentos de navegador, e `H-67`, `H-68`, `H-69` e `H-71` fecharam
-  quatro dos seis achados. Abertas: **`H-70` e `H-72`**. O que resta de `VN-5`
-  é `PD-07`.
+  os procedimentos de navegador, e cinco dos seis achados fecharam. Aberta:
+  **`H-70`**, a última. O que resta de `VN-5` é `PD-07`, e `H-72` não o
+  fechou — os itens que sobram exigem planilha alterada e cursor real.
 - **`E10` — Melhorias de uso.** Sobra **`H-50`**, a segunda que consome os mapas
   de negócio, e ela está **pronta para `/fatia`**: `D-23` decidiu o critério que
   tinha duas leituras, e `D-24` a cortou, deixando `H-66` para depois dela.
