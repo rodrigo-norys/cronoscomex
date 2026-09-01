@@ -125,123 +125,37 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 ## Estado
 
-**Todas as fases do plano estão concluídas.** Fases 0 e 1 fecharam primeiro;
-na Fase 2, **`H-09` a `H-14`** — o épico E3 (indicadores e alertas) inteiro —,
-**mais `H-32`, antecipada**
-porque era dependência declarada de `H-15` e não existia, **`H-15`, que abriu o
-épico E4, `H-16`, a primeira página de dado, `H-17`, que entrega também
-`GET /api/processes`, `H-18`, os três rankings, `H-19`, que fecha as duas
-últimas regras sem tela, `H-20`, a fila de trabalho, e `H-22`, o detalhe.**
-**A Fase 3 fechou inteira** — `H-23`, a fila de edições, `H-24`, a escrita
-cirúrgica no `.xlsx`, `H-25`, as seis defesas de integridade, e `H-26`, o
-comando de aplicação —, **e a Fase 4 também, com `H-27`, sua única história: os
-campos codificados em cor, que fecha o caminho crítico.** **`H-28` fechou o
-histórico**, destravando as duas que faltavam, **`H-21` fechou a Página
-Histórico — a última de interface: as sete páginas estão montadas** — e
-**`H-29` fechou ALE-06, o alerta de processos parados.** **`H-30` fechou a
-Fase 2 e, com ela, o plano original** — entrega o atalho de execução e serve
-`GET /*`, a última rota documentada sem dono. **Ela é a única história fechada
-com verificação pendente:** o `iniciar.cmd` só é exercível na máquina Windows do
-operador, e `PD-06` guarda a lista do que falta conferir lá.
+**O plano original está fechado, e tudo que veio depois dele também** — as
+quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
+**55 das 72 histórias concluídas.** O que cada uma aprendeu — número medido,
+defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
+`docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
+em aberto. **Este bloco diz só o que está aberto.**
 
-**`H-33` trocou o leitor de `.xlsx` para `fflate`**, e com ele o `exceljs` saiu
-do projeto; **`H-34` fechou o caminho da planilha configurável pela tela**, e
-**`H-35` fechou a primeira execução numa máquina limpa** — o atalho deixou de
-barrar por configuração ausente, e o inventário da configuração passou a dizer
-de onde vem cada valor. As três foram acrescentadas depois do plano e não têm
-fase atribuída. **O plano original e tudo que veio depois dele estão fechados.**
+**Três épicos abertos, e eles não se bloqueiam entre si:**
 
-**O épico E8 nasceu e fechou no mesmo dia, e veio de uso, não de auditoria:**
-`H-37` entrega o seletor de arquivos do sistema — o servidor abre o diálogo,
-porque o navegador não expõe caminho —, e `H-38` fecha o link ausente que deixava
-a tela de configuração inalcançável desde `H-34`.
+- **`E9` — Estilização.** As oito fatias de correção fecharam, e `H-47` percorreu
+  os procedimentos de navegador. Abertas: **`H-67` a `H-72`**, uma por achado que
+  a verificação produziu. O que resta de `VN-5` é `PD-07`.
+- **`E10` — Melhorias de uso.** Sobra **`H-50`**, a segunda que consome os mapas
+  de negócio, e ela está **pronta para `/fatia`**: `D-23` decidiu o critério que
+  tinha duas leituras, e `D-24` a cortou, deixando `H-66` para depois dela.
+  `H-50` é a **única `G` do backlog**, e o rótulo é deliberado.
+- **`E11` — Casca redesenhada.** `H-57` a `H-65`, nenhuma começada. **Vem depois
+  de `E9` e `E10` inteiros**, porque tocam os mesmos 25 arquivos de `web/src/` e
+  `H-50` ainda muda o que três telas dizem. A medição já reprovou seis pares da
+  paleta proposta — risco `R-16`, e `H-57` nasce com as correções calculadas.
 
-**A numeração foi refeita para acompanhar a ordem do backlog**, em 19/08/2026:
-as duas de operação assumiram `H-35` e `H-36`, o épico da configuração assumiu
-`E8` com `H-37` e `H-38`, e o de estilização passou a `E9`, com `H-39`–`H-47`.
-**O histórico do git continua citando os números antigos** — a branch e os
-commits de `H-35` dizem `H-44` —, e não há como alinhá-lo: a `main` protegida
-proíbe reescrever histórico.
+> **A numeração foi refeita em 19/08/2026** para acompanhar a ordem do backlog, e
+> **o histórico do git continua citando os números antigos** — a branch e os
+> commits de `H-35` dizem `H-44`. Não há como alinhá-lo: a `main` protegida
+> proíbe reescrever histórico.
 
-**`H-36` fechou o épico E7, e com ele tudo que não é estilização:** o painel diz
-em que etapa a partida está e reconfere sem reexecutar o atalho.
-
-**`H-39` abriu o épico E9, de estilização** — `H-39` a `H-47`, nascidas da
-auditoria de `docs/estilizacao/RESULTADO.md`. Ela vinha primeiro por
-dependência: é a única que decide vocabulário de tema, e **agora que ele está
-fixado em `web/src/index.css`, as oito seguintes são substituição mecânica.**
-**`H-40` a `H-42` migraram tudo que consome cor, e a guarda
-`tests/repo/estilo.test.ts` impede o passo bruto de voltar — a onda 2 fechou.**
-**`H-42` corrigiu também um defeito de `H-30`** que a verificação dela encontrou:
-`GET /*` servia os assets como `text/html`, e a tela ficava branca sem erro.
-**`H-43` abriu a onda 3**, fechando `ACHADO 11` na casca e nos seis componentes:
-as regiões vivas passam a existir no DOM antes de receberem mensagem, e a região
-persistente que as páginas usarão nasceu ali, e **`H-44` a consumiu nas sete
-páginas, tirou a parada órfã do gráfico e trocou o canal de cor do botão de
-janela pela espessura da borda.** **`H-45` unificou os papéis de UI e tirou a
-informação só-cor**, e **`H-46` fechou a responsividade** — as três correções
-estáticas viraram guarda em `tests/repo/estilo.test.ts`, cada uma provada por
-mutação. **`H-47` fechou a onda 7 e, com ela, tudo de `E9` que não depende de
-Windows:** cinco dos seis procedimentos de navegador percorridos, e os cinco
-achados que eles produziram viraram `H-67` a `H-71`, uma por achado. `VN-5`
-segue fora, como `PD-07`. As ondas do épico estão no cabeçalho dele, em
-`docs/06-backlog.md` — `docs/07-plano-entrega.md` cobre as fases do plano
-original, e não alcança E9 nem E10.
-
-**O épico E10 nasceu do uso, não de auditoria**, em 31/08/2026: sete histórias
-levantadas por `docs/uso/RESULTADO.md`, com o operador usando o painel para
-trabalhar. **`H-48` abriu o épico** — os dois mapas de negócio fora do
-repositório, porque nome real de cliente e de pessoa da equipe são configuração e
-não código. **`H-49` fechou o primeiro consumo deles:** o campo Cliente diz quem
-é o cliente, e o valor da célula CLT continua servido ao lado. **`H-55` e `H-56` nasceram do
-uso da própria tela e fecharam no mesmo dia** — o filtro Cliente ganhou um nível
-de árvore, e o ranking passou a mostrar o grupo com a composição; o épico foi a
-oito histórias. **`H-51` acrescentou o canal verde** — o campo deixou de ser
-binário sobre 5 linhas, `nenhum` saiu do domínio, e a Página Inicial mostra a
-distribuição com o denominador ao lado —, **`H-52` pôs a janela em cada
-cartão**, com o atalho que a edita sem ir à barra de filtros, e **`H-54` pôs a
-série reconstruída ao lado da observada**, sem emendar as duas. **`H-53` fechou
-com o quinto critério declarado não-incidente**, porque ele depende de `H-50`.
-**Sobra `H-50`**, a segunda que consome os mapas, e as duas pendências que a
-travavam fecharam em 31/08/2026. `D-23` decidiu o critério de aceite com duas
-leituras: sem mapa de equipe, `responsible` recebe a chave de cor, e o campo
-segue mostrando os 157 de hoje. `D-24` a cortou — o resto de tela virou **`H-66`**,
-que fecha o quinto critério de `H-53` —, e declarou o que sobra como **`G`, a
-primeira do backlog**: 12 arquivos e três contratos não cabem em `M`, e os cortes
-que caberiam deixariam o Responsável fora da tela entre dois PRs. **`H-50` está
-pronta para `/fatia`**, e `H-66` vem depois dela.
-E9 e E10 estão abertos ao mesmo tempo, e não se bloqueiam.
-
-**O épico E11 nasceu de proposta de desenho, não de auditoria nem de uso**, em
-31/08/2026: `docs/redesign/PROPOSTA.md` transcreve o mockup *Cronos Console* e o
-épico o executa em nove histórias, `H-57` a `H-65` — a casca em navegação
-lateral, os treze filtros como chips, dois raios, densidade de 40 px, movimento
-com a redução junto, e **o modo escuro**, que `D-21` trouxe para dentro do plano
-depois de o cabeçalho de E9 tê-lo declarado fora. **Nenhum indicador muda de
-valor e nenhuma rota muda de contrato**; história de E11 que precise de campo
-novo na API está mal fatiada. **E11 vem depois de E9 e E10 inteiros**, porque
-`H-45` e `H-46` tocam os mesmos 25 arquivos, `H-47` é a linha de base da
-verificação no navegador, e `H-50` ainda muda o que três telas dizem.
-**A medição já reprovou seis pares da paleta proposta**, três deles
-reintroduzindo defeitos que `H-39` e `H-40` haviam removido — é o risco `R-16`, e
-`H-57` nasce com as correções calculadas.
-
-> **A escrita é o ponto onde errar custa a planilha da empresa.** O subagent
-> `revisor-xml` existe desde 11/08/2026 — invoque-o antes de commitar qualquer
-> mudança em `src/io/xlsx-surgeon.ts`, em `src/app/write-guard.ts` ou em código
-> que reescreva bytes do `.xlsx`. Em `H-24` ele reprovou na primeira invocação;
-> em `H-25`, **três das quatro**; em `H-26`, **seis das sete**; em `H-27`, **três
-> das quatro**. Vários defeitos foram introduzidos pelas correções dos
-> anteriores. **Reinvoque-o depois de corrigir**, não só antes de commitar.
->
-> **Ele acha defeito em código já commitado.** Em `H-27` pegou uma leitura de
-> atributo que varria o elemento inteiro em vez da tag de abertura — defeito
-> silencioso em `writeCell` desde `H-24`. Mande o módulo inteiro, não só o
-> trecho novo.
->
-> **Ele revisa a interface também.** Quatro dos seis defeitos de `H-26` estavam
-> na tela: mensagens que afirmavam o que o código não sabia. Ao mudar o que a
-> aplicação **diz** ao operador sobre a escrita, mande junto.
+> **Este bloco é curto por decisão.** Ele diz onde o projeto está e o que vem a
+> seguir — nada mais. Ele chegou a 310 linhas antes de 11/08/2026 e a 125 antes
+> de 31/08/2026, das quais quatro quintos eram narrativa de épicos já fechados.
+> O `CLAUDE.md` é carregado em **toda** sessão; o backlog, só quando alguém o
+> abre. **Não transcreva para cá o que a história já registrou lá.**
 
 Ao concluir uma história, marque-a em `docs/06-backlog.md` e verifique se algum
 status de `docs/09-rastreabilidade.md` mudou.
@@ -260,10 +174,11 @@ Não bloqueiam a implementação. Fechar antes da entrega ao operador.
 
 | # | Pendência | Quando fechar |
 |---|---|---|
-| **PD-06** | `scripts/iniciar.cmd` foi entregue por `H-30` e reescrito por `H-35`. **A primeira execução real, em 19/08/2026, fechou o essencial:** duplo clique, primeira execução sem `config/app.json` — que agora só informa e a partida segue — e a compilação sob demanda aceita. Com ela caíram também as **três correções que estavam sem reexecução**: o disparo de `main()` por `pathToFileURL`, a espera pela porta em `scripts/esperar-porta.mjs`, e o abridor com `/min` em vez de `start /b`. **Sobram sete itens**, e um deles tem falha conhecida: **o diálogo de escolha de arquivo de `H-37` não abriu** — o cursor girou sem janela nenhuma, e a correção (o `Form` dono passou a ser exibido e a opção `windowsHide` saiu) **ainda não foi testada**; `scripts/diagnostico-seletor.mjs` isola as quatro causas possíveis em quatro passos. Os outros seis nunca foram exercidos: Node ausente · Node abaixo da 22 · janela fechada sem processo órfão · porta ocupada · segunda execução com a aplicação no ar · caminho com espaços e acentos · e os três caminhos infelizes da compilação (recusar, máquina sem internet, `node_modules` ausente). **A lição desta pendência já se pagou:** a aplicação NUNCA subiu em Windows desde `H-30`, porque o disparo de `main()` comparava `import.meta.url` com `file://` concatenado a `process.argv[1]` — verdadeiro em Linux por acidente da barra inicial, falso em todo caminho `C:\...`. O processo carregava os módulos e saía com código **zero**, sem erro e sem escutar. Modo de falha mudo, num trecho que nenhum teste alcança: **o único ambiente onde a aplicação roda de verdade é o único que a suíte não cobre.** Guardado desde então por `tests/http/partida.test.ts`. Suspeitas ainda abertas, cada uma virando correção no `.cmd`: a detecção de "já está no ar" depende do espaçamento de colunas do `netstat`; o `PATH` de uma janela aberta antes de instalar o Node não enxerga o executável novo; e o caminho do projeto com acento aparece em algumas mensagens, em code page 850 | **Próxima sessão na máquina do operador.** Comece pelo diálogo de arquivo, que é o único com defeito conhecido; depois percorra os seis restantes. Cada falha é correção no `.cmd`, não história nova |
-| **PD-08** | **Os dois mapas de negócio de `H-48` precisam ser enviados à parte, e nada no procedimento de instalação diz isso.** `config/client-map.json` e `config/team-map.json` estão no `.gitignore` porque carregam nome real de cliente e de pessoa da equipe; `scripts/sincronizar-distribuicao.ts` leva só os dois `.exemplo`, com nomes fictícios. **A máquina do operador chega sem eles**, e o efeito já é visível: `H-49` está fechada e consome o de clientes, então o campo Cliente lá mostra a grafia da célula em vez do nome consolidado, e `H-50` fará o mesmo com o Responsável (`D-23`). **Redigitar não é opção:** os dois são lidos na partida em `src/http/server.ts`, e JSON malformado cai em `STARTUP_ERRORS` e mata o processo antes de existir tela — o operador ficaria sem painel por uma vírgula. **Decisão de 31/08/2026: fica como está, com envio manual**, e a solução — tela de edição, como `H-34` e `H-37` fizeram para o caminho da planilha, ou o envio virando passo do procedimento — é reexaminada em momento oportuno. Duas coisas mentem hoje sobre isso: o `README.md` da branch `distribuicao` afirma em negrito "você não precisa editar arquivo nenhum" e descreve `config\` como só cores e apelidos de status; e o bloco "Como refazer esta branch", no fim dele, lista os arquivos a copiar **sem** os dois `.exemplo`, divergindo do script, que é quem vale | **Junto com a primeira instalação**, no mesmo momento de `PD-01` e `PD-06`: copie os dois arquivos para `config\` na máquina do operador — `scp config/client-map.json config/team-map.json` — e corrija as duas afirmações do `README.md` da distribuição. Enquanto o envio for manual, **repita a cópia toda vez que a regra de consolidação ou a equipe mudar**: nenhum aviso existe para lembrar |
+| **PD-06** | **A partida na máquina Windows.** A primeira execução real, em 19/08/2026, fechou o essencial — duplo clique, primeira execução sem `config/app.json`, compilação sob demanda — e derrubou as três correções que estavam sem reexecução. **Sobram sete itens**, e um tem falha conhecida: o diálogo de escolha de arquivo de `H-37` não abriu, e a correção ainda não foi testada. A lista dos sete, as três suspeitas abertas e a lição que já se pagou — a aplicação nunca subiu em Windows entre `H-30` e 19/08/2026, saindo com código **zero** — estão em `.claude/rules/operacao-windows.md`, que carrega ao abrir `scripts/` | **Próxima sessão na máquina do operador.** Comece pelo diálogo de arquivo, que é o único com defeito conhecido. Cada falha é correção no `.cmd`, não história nova |
+| **PD-07** | **O resto de `VN-5` (forced colors), depois que a maior parte dele foi executada por emulação.** A pendência nasceu supondo que o procedimento exigia Windows, e **isso foi medido como falso em 31/08/2026**: o Chrome emula `forced-colors: active` no Linux, a media query casa e o UA substitui a paleta do autor do mesmo jeito — o que o procedimento pergunta não é que cor o tema pinta, e sim se o desenho sobrevive quando as cores do autor são descartadas. Quatro dos cinco alvos foram medidos: um reprovou e virou `H-72` — as sete abas ficam com a mesma borda, porque o UA pinta `border-transparent` —, e três passaram, dois deles **confirmando `H-44` e `H-45` em campo**. **Sobram três coisas, e cada uma por um motivo diferente:** (1) a paleta **nominal** do Windows — Aquático e os demais — e o par de temas claro e escuro do item 4, que é confirmação de segunda ordem; (2) o `ConflictDialog` do item 3(d), que só abre com a planilha real alterada, e é o **mesmo** item que `VN-3` deixou devendo; (3) o realce de linha do item 3(e), que precisa de **cursor real**: o Chrome headless não aplica `:hover` ao estilo computado nem ao render, e isso foi provado com um controle — um `<button>` com `hover:bg-*` também não muda, então não é defeito da aplicação | **Primeira instalação na máquina do operador**, junto de `PD-01`, `PD-05`, `PD-06` e `PD-08`. Os itens (2) e (3) não exigem Windows — exigem, respectivamente, uma planilha de teste alterada e um navegador com cursor; podem cair antes, em qualquer máquina com tela |
+| **PD-08** | **Os dois mapas de negócio de `H-48` precisam ser enviados à parte, e nada no procedimento de instalação diz isso.** Eles estão no `.gitignore` e a distribuição leva só os `.exemplo`, então a máquina do operador chega sem eles — o campo Cliente já mostra a grafia da célula em vez do nome consolidado. Decidido em 31/08/2026: fica com envio manual, e a solução é reexaminada em momento oportuno. Os detalhes, e as duas afirmações do `README.md` da distribuição que mentem sobre isso, estão em `.claude/rules/distribuicao.md` | **Junto com a primeira instalação:** `scp config/client-map.json config/team-map.json` para `config\` na máquina do operador, e corrija o `README.md` da distribuição. **Repita a cópia toda vez que a regra de consolidação ou a equipe mudar** — nenhum aviso existe para lembrar |
 | **PD-01** | `config/app.json` aponta para `CONTROLE DOS EMBARQUE.xlsx` na **raiz do projeto**, usado para validar a partida em `H-02`. Na máquina Windows precisa do caminho real da pasta sincronizada (`C:\Users\...\OneDrive - <org>\...`). O arquivo está no `.gitignore`, então o caminho de desenvolvimento não vaza. **`H-34` deu a saída, em 18/08/2026**, e **`H-35` tirou o último passo manual, em 19/08/2026**: o arquivo de configuração não precisa mais existir antes — ele nasce ao salvar o caminho na tela | **Primeira instalação na máquina do operador.** Não exige copiar nem editar arquivo nenhum: o passo 4 do `README.md` é apontar a planilha na tela, e continua existindo porque alguém precisa apontá-la uma vez |
-| **PD-05** | Falta confirmar **uma premissa de formato**: que o Excel emite o atributo `i` apenas na PRIMEIRA entrada de `xl/calcChain.xml`, com as seguintes herdando a aba. É o que a especificação OOXML descreve e o que `removeFromCalcChain` pressupõe ao repassar o índice, mas nunca foi observado num arquivo que o Excel tenha gerado sozinho — as três entradas de `tests/fixtures/formulas.xlsx` foram escolhidas por nós. **O resto já está coberto**, e a redação anterior desta linha descrevia como lacuna algo que deixou de ser: a fixture leva `l="1"` na segunda entrada desde 14/08/2026 — a forma com atributo além de `r`, que era exatamente o que escondia o defeito de repasse do `i` —, os outros 18 componentes do zip vêm do Excel real, e `removeFromCalcChain` **não enumera atributos**: preserva o bloco inteiro, então `s`, `t` e `a` viajam junto sem tratamento. A saída foi **aberta no Excel real em 13/08/2026**, sem aviso de reparo e com o recálculo produzindo as datas dependentes. **Risco baixo, e medido:** em 17/08/2026 a planilha real não tem `xl/calcChain.xml` — o Excel só emite a parte quando há fórmula, e nenhuma das quatro abas tem uma. O código é hoje inalcançável em produção, e passa a ser alcançável no dia em que alguém escrever uma fórmula na aba `2026` | **Qualquer Excel à mão**, e leva dois minutos: planilha nova, uma fórmula, salvar, copiar para `tests/fixtures/`. Não depende da máquina do operador — foi por isso que ela ficou passiva entre 14 e 18/08/2026. Se a via for o Excel Online, **confira a forma da cadeia** antes de tratar o arquivo como representativo: supor representatividade é o que produziu o defeito anterior |
+| **PD-05** | **Falta confirmar uma premissa de formato:** que o Excel emite o atributo `i` apenas na PRIMEIRA entrada de `xl/calcChain.xml`. É o que a especificação OOXML descreve e o que `removeFromCalcChain` pressupõe, mas nunca foi observado num arquivo que o Excel tenha gerado sozinho. **Risco baixo, e medido:** a planilha real não tem `xl/calcChain.xml`, então o código é hoje inalcançável em produção. O que já está coberto, e por que, está em `.claude/rules/escrita-xlsx.md` | **Qualquer Excel à mão**, e leva dois minutos: planilha nova, uma fórmula, salvar, copiar para `tests/fixtures/`. Não depende da máquina do operador. Se a via for o Excel Online, **confira a forma da cadeia** antes de tratar o arquivo como representativo |
 
 Ao fechar uma pendência, remova a linha.
 
@@ -306,26 +221,14 @@ pt-br, sem o tipo `test`.
 **O merge acontece no GitHub, não localmente.** `branch → commits → push da
 branch → PR → merge por lá`. Mesclar na `main` antes do push **mata o PR**.
 
-**A branch `distribuicao` é a árvore que vai para a máquina do operador** — 107
-arquivos, sem `docs/`, `tests/`, `tools/` nem `.claude/`, que são 3 de cada 4
-arquivos versionados e não servem para nada em produção. Ela **não recebe PR**:
-é artefato, não revisão. Sincronize com
-`node --experimental-strip-types scripts/sincronizar-distribuicao.ts` — sem
-argumento ele confere e sai `1` se divergir; com `--aplicar` ele prepara os
-arquivos no índice e **para**, deixando commit e push para você.
-
-> **Sincronize apenas a partir da `main` mesclada**, para o operador nunca
-> receber código que o CI e a revisão do PR ainda não aceitaram. Decidido em
-> 31/08/2026, depois de `H-48` ter ido para a distribuição antes do merge.
->
-> **O que entra não é lista escrita à mão:** é o fecho transitivo dos imports a
-> partir de `src/http/server.ts` e `web/src/main.tsx`, mais os arquivos de
-> suporte que nenhum import alcança. `README.md` e `iniciar.cmd` da raiz são
-> **exclusivos da branch** e nunca são sobrescritos — o primeiro é o guia do
-> operador, o segundo é o lançador que põe o ponto de partida na primeira pasta
-> que ele abre. Guardado por `tests/repo/distribuicao.test.ts`, que existe
-> porque arquivo faltando ali não quebra teste nem build: quebra a partida na
-> máquina do operador, longe de quem poderia consertar.
+**A branch `distribuicao` é a árvore que vai para a máquina do operador** — 108
+arquivos, sem `docs/`, `tests/`, `tools/` nem `.claude/`. Ela **não recebe PR**:
+é artefato, não revisão. Confira com
+`node --experimental-strip-types scripts/sincronizar-distribuicao.ts`, e
+**sincronize apenas a partir da `main` mesclada**. O resto —  o que entra e por
+quê, os dois arquivos exclusivos da branch, e os mapas de negócio de `PD-08` que
+não vão junto — está em `.claude/rules/distribuicao.md`, que carrega ao abrir o
+script ou os `.exemplo`.
 
 **Um commit por ponto verde.** O corte não é tempo nem tamanho: é o momento em
 que uma preocupação fecha **e** o portão passa. Todo commit verde mantém o
@@ -373,13 +276,26 @@ técnica**, cada uma declarando quantos arquivos toca.
 
 **Rules** (`.claude/rules/`). Instrução com `paths:` no frontmatter, que entra em
 contexto **só quando o Claude lê arquivo que casa o glob** — e por isso não custa
-token nas sessões que não tocam o assunto. `comentarios.md` carrega a régua de
-comentários em `src/`, `web/` e `tests/`; `documentacao.md` carrega a de números
-afirmados em prosa, ao tocar `docs/` ou um `.md` da raiz — essa segunda carrega
-em quase toda sessão, porque o protocolo de fatia lê `docs/`, e por isso é
-curta. **Não é garantia**: rule é contexto,
-não configuração aplicada, não é reinjetada depois do `/compact`, e o gatilho é
-leitura, não escrita. Quem garante é a asserção em `tests/repo/`. Regra
+token nas sessões que não tocam o assunto. São cinco:
+
+| Rule | Carrega ao tocar |
+|---|---|
+| `comentarios.md` | `src/`, `web/`, `tests/` — a régua de comentários |
+| `documentacao.md` | `docs/` e `.md` da raiz — números afirmados em prosa. Carrega em quase toda sessão, porque o protocolo de fatia lê `docs/`, e por isso é curta |
+| `escrita-xlsx.md` | `xlsx-surgeon.ts`, `write-guard.ts` — o procedimento do `revisor-xml` e `PD-05` |
+| `operacao-windows.md` | `scripts/` — os sete itens de `PD-06` e a lição que já se pagou |
+| `distribuicao.md` | o script de sincronização e os `.exemplo` — o que entra na branch, e `PD-08` |
+
+**As três últimas nasceram em 31/08/2026, do `CLAUDE.md`**, que era carregado em
+toda sessão e pagava ~1750 palavras por três assuntos que só interessam a quem
+abre aqueles arquivos. **Não é garantia**: rule é contexto, não
+configuração aplicada. **Ela sobrevive ao `/compact`** — a documentação é
+explícita: rules com `paths:` recarregam quando o Claude volta a ler arquivo que
+casa o glob, e o hook `InstructionsLoaded` chega a expor `load_reason: compact`.
+O que não sobrevive é o disparo sem leitura. **O gatilho é `Read`, não `Write`**,
+e isso é limitação medida, não escolha: criar arquivo novo em `scripts/` não
+carrega `operacao-windows.md` (issue #23478 do `claude-code`). Editar carrega,
+porque o harness exige `Read` antes de `Edit`. Quem garante é a asserção em `tests/repo/`. Regra
 inviolável não vai para cá.
 
 **Hooks** (`.claude/hooks/`). `guard-dados-sensiveis.sh` (`PreToolUse`) bloqueia
@@ -391,7 +307,13 @@ filtra o comando por regex antes de olhar a árvore.
 `conferir-alinhamento.sh` (`ConfigChange`) avisa quando existe skill, subagente
 ou hook que este arquivo não menciona, **e quando uma peça já criada continua
 com o gatilho em aberto na tabela de marcos** — mencionar e marcar são coisas
-diferentes. Falha **aberto**. `test-guard.sh` é a regressão do guard e roda
+diferentes. Falha **aberto**.
+`registrar-instrucoes.sh` (`InstructionsLoaded`) escreve uma linha por arquivo de
+instrução que entra em contexto — quando, **por que** (`load_reason`) e qual —,
+em `data/instrucoes-carregadas.log`, que é gitignored. Não imprime nada: o log é
+para leitura agregada, não para a sessão. **Falha aberto, e aqui isso é mais
+grave que nos outros:** neste evento `exit 2` **bloqueia o arquivo de instrução
+de carregar**, e uma sessão rodaria sem as regras invioláveis em silêncio. `test-guard.sh` é a regressão do guard e roda
 **primeiro** no `npm run verify` — exige `bash` e `jq`.
 
 **Permissões** (`.claude/settings.json`). `npm install` e `npm ci` pedem
@@ -468,6 +390,7 @@ processo e são abandonados. Os gatilhos abaixo são objetivos.
 | ~~**Ao concluir `H-13`**~~ | ~~Skill `novo-indicador`~~ | ✅ **Criada em 06/08/2026**, ao fechar `H-13`. Saiu da repetição real de `H-09` a `H-13`, com o formato já estabilizado — e com a omissão sistemática da rota como motivo principal |
 | ~~**Antes de iniciar a Fase 3** (`H-24`)~~ | ~~Subagent de review para manipulação de XML~~ | ✅ **Criado em 11/08/2026** como `revisor-xml`, antes da primeira linha de `H-24`. `H-24` tem **11** casos-limite — 8 no plano original, mais 3 que a própria revisão acrescentou (linha auto-fechada, célula ausente recebendo data, fórmula compartilhada) — e o custo de errar é a planilha da empresa. **Pagou-se na primeira invocação**: reprovou por dois defeitos reais, um deles gerando XML malformado, o outro reproduzindo A-56 no caso mais provável |
 | ~~**Ao concluir `H-20`**~~ | ~~Skill `nova-pagina`~~ | ✅ **Criada em 07/08/2026**, ao fechar `H-20`. Cinco páginas de `H-16` a `H-20` com o mesmo padrão — consumir rota → respeitar filtros globais → estado vazio explícito → nunca calcular no cliente —, e as mesmas coisas fora do plano toda vez. `H-22` foi a primeira história conduzida por ela |
+| **Ao acumular 20 `session_id` distintos** em `data/instrucoes-carregadas.log` | Conferir se cada rule dispara | As três de 31/08/2026 levaram ~1750 palavras do `CLAUDE.md` e **nada prova que carregam**. Rule que nunca apareça com `path_glob_match` ou volta para cá, ou tem o glob consertado — rule que não dispara não economizou contexto, escondeu a instrução. Se as cinco dispararem, o hook vira só observabilidade e esta linha sai. **Não virou asserção em `tests/repo/`** de propósito: dependeria de arquivo em `data/`, que é gitignored, e foi assim que o CI reprovou em `H-49` |
 | **Se aparecer a aba `2027`** | Reexecutar `H-01` | `python3 tools/profile_workbook.py`, depois `tools/build_fixtures.py`. As abas `2025` e `2024` provam que **o esquema muda entre anos**. Risco R-14 |
 | **Nunca** | Subagents para paralelizar o backlog | O caminho crítico é uma cadeia sequencial de 18 sessões (`docs/07-plano-entrega.md §3`). Fan-out não encurta |
 
