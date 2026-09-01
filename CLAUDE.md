@@ -127,23 +127,18 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**62 das 72 histórias concluídas.** O que cada uma aprendeu — número medido,
+**63 das 72 histórias concluídas.** O que cada uma aprendeu — número medido,
 defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
 `docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
 em aberto. **Este bloco diz só o que está aberto.**
 
-**`E9` fechou em 01/09/2026** — as oito fatias de correção, `H-47` e os seis
-achados que ela mediu. **Dois épicos abertos, e eles não se bloqueiam:**
+**`E9` e `E10` fecharam em 01/09/2026.** Resta **um épico**:
 
-- **`E10` — Melhorias de uso.** Sobra **`H-66`**, que saiu do corte de `H-50`
-  (`D-24`) e é a **próxima**: o controle do filtro `colorResponsible` na barra e
-  a ressalva de A-31 na Página Performance, que `H-50` deixou **descrevendo uma
-  limitação que acabou**.
-- **`E11` — Casca redesenhada.** `H-57` a `H-65`, nenhuma começada. **Vem depois
-  de `E10` inteiro** — `E9` já saiu do caminho —, porque tocam os mesmos 25
-  arquivos de `web/src/` e `H-66` ainda muda o que duas telas dizem. A medição
+- **`E11` — Casca redesenhada.** `H-57` a `H-65`, nenhuma começada, e agora sem
+  nada à frente. O grafo está no cabeçalho do épico: `H-57` e `H-58` em
+  paralelo, depois `H-59 → H-60` e `H-61`/`H-62 → H-63 → H-64 → H-65`. A medição
   já reprovou seis pares da paleta proposta — risco `R-16`, e `H-57` nasce com
-  as correções calculadas.
+  as correções calculadas em `docs/redesign/PROPOSTA.md §2.2`.
 
 > **A numeração foi refeita em 19/08/2026** para acompanhar a ordem do backlog, e
 > **o histórico do git continua citando os números antigos** — a branch e os

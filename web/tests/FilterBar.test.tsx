@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { FilterOptionsResponse } from '../src/api-client.ts'
 import { FilterBar } from '../src/components/FilterBar.tsx'
 import type { Filters } from '../src/hooks/useFilters.ts'
 import { filterOptionsFixture } from './support/api-stub.ts'
@@ -26,6 +27,7 @@ function filtersStub(overrides: Partial<Filters> = {}): Filters {
         goods: [],
         category: [],
         responsible: [],
+        colorResponsible: [],
         channel: [],
         port: [],
       },
@@ -41,10 +43,11 @@ function filtersStub(overrides: Partial<Filters> = {}): Filters {
   }
 }
 
-function renderBar(filters: Filters = filtersStub()) {
-  return render(
-    <FilterBar filters={filters} options={filterOptionsFixture()} optionsError={null} />,
-  )
+function renderBar(
+  filters: Filters = filtersStub(),
+  options: FilterOptionsResponse = filterOptionsFixture(),
+) {
+  return render(<FilterBar filters={filters} options={options} optionsError={null} />)
 }
 
 beforeEach(() => {
@@ -58,13 +61,13 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('os doze controles', () => {
-  it('monta os dez de multipla escolha, o periodo e o tri-estado', () => {
+describe('os treze controles', () => {
+  it('monta os onze de multipla escolha, o periodo e o tri-estado', () => {
     renderBar()
     const bar = screen.getByRole('region', { name: 'Filtros' })
 
-    // 10 botoes de multipla escolha + 1 select tri-estado + 2 campos de data.
-    expect(within(bar).getAllByRole('button')).toHaveLength(10)
+    // 11 botoes de multipla escolha + 1 select tri-estado + 2 campos de data.
+    expect(within(bar).getAllByRole('button')).toHaveLength(11)
     expect(within(bar).getByLabelText('Importador fora do RJ')).toBeTruthy()
     expect(within(bar).getByLabelText('ETA2 de')).toBeTruthy()
     expect(within(bar).getByLabelText('ETA2 até')).toBeTruthy()
@@ -363,5 +366,55 @@ describe('a região viva das opções de filtro', () => {
 
     expect(screen.getByRole('alert')).toBe(antes)
     expect(antes.textContent).toContain('rede indisponível')
+  })
+})
+
+/**
+ * `H-66`. Dois controles vizinhos e independentes: um recorta por quem responde
+ * pelo processo, o outro por o que a linha está pintada (`H-50`).
+ */
+describe('responsável e cor do responsável', () => {
+  it('oferece os dois controles, com nomes que os distinguem', () => {
+    renderBar()
+    const bar = screen.getByRole('region', { name: 'Filtros' })
+
+    expect(within(bar).getByRole('button', { name: /^Responsável/ })).toBeTruthy()
+    expect(within(bar).getByRole('button', { name: /^Cor do responsável/ })).toBeTruthy()
+  })
+
+  // As duas chaves de A-18 vêm do servidor e aparecem separadas no controle: a
+  // agregação acontece no recorte, não na lista de opções.
+  it('lista as quatro chaves de cor de TD-05', () => {
+    renderBar(
+      filtersStub(),
+      filterOptionsFixture({
+        colorResponsible: [
+          { key: 'colaborador1', label: 'Colaborador 1', count: 120 },
+          { key: 'colaborador2', label: 'Colaborador 2', count: 36 },
+          {
+            key: 'colaborador1_outros_clientes',
+            label: 'Colaborador 1 — outros clientes',
+            count: 9,
+          },
+          { key: 'indefinido', label: 'Indefinido', count: 484 },
+        ],
+      }),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /^Cor do responsável/ }))
+
+    expect(screen.getByRole('checkbox', { name: /Colaborador 1 — outros clientes/ })).toBeTruthy()
+    expect(screen.getByRole('checkbox', { name: /Indefinido/ })).toBeTruthy()
+  })
+
+  // Controle que some esconde que o recorte zerou (A-28). Ele fica, vazio.
+  it('aparece vazio quando nenhum processo do recorte tem cor de responsável', () => {
+    renderBar(filtersStub(), filterOptionsFixture({ colorResponsible: [] }))
+
+    const controle = screen.getByRole('button', { name: /^Cor do responsável/ })
+    expect(controle).toBeTruthy()
+
+    fireEvent.click(controle)
+    expect(screen.queryAllByRole('checkbox')).toHaveLength(0)
   })
 })

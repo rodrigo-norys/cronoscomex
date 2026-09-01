@@ -26,9 +26,9 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização ✅ | **H-39 … H-47 e H-67 … H-72, todas concluídas** | 7 | 8 | 0 |
-| E10 — As melhorias de uso | **H-48 ✅, H-49 ✅, H-50 ✅ — a única G do backlog —, H-51 ✅, H-52 ✅, H-53 ✅, H-54 ✅, H-55 ✅, H-56 ✅; aberta `H-66`, que saiu do corte de `H-50`** | 2 | 7 | 1 |
+| E10 — As melhorias de uso ✅ | **H-48 … H-56 e H-66, todas concluídas.** `H-50` é a única G do backlog | 2 | 7 | 1 |
 | E11 — A casca redesenhada | **H-57 … H-65, todas abertas** | 3 | 6 | 0 |
-| **Total** | **72** — 62 concluídas, 10 abertas | **28** | **43** | **1** |
+| **Total** | **72** — 63 concluídas, 9 abertas | **28** | **43** | **1** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -148,14 +148,14 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-54 — O histórico reconstrói os meses da planilha](#h-54) ✅
 - [H-55 — Grupo de clientes no filtro](#h-55) ✅
 - [H-56 — O ranking de clientes mostra o grupo com a composição](#h-56) ✅
-- [H-66 — O filtro da cor de responsável na tela](#h-66)
+- [H-66 — O filtro da cor de responsável na tela](#h-66) ✅
 
 **[Épico E11 — A casca redesenhada](#e11)**
 
 - [H-57 — O par escuro da camada de tema](#h-57)
 - [H-58 — As duas famílias de fonte, servidas do repositório](#h-58)
 - [H-59 — Navegação lateral e topo de uma linha](#h-59)
-- [H-60 — Os treze filtros como chips em popover](#h-60)
+- [H-60 — Os quatorze filtros como chips em popover](#h-60)
 - [H-61 — Forma, densidade e número nos componentes de dado](#h-61)
 - [H-62 — Forma e número na superfície de edição e no detalhe](#h-62)
 - [H-63 — Forma e número nas sete páginas, e a guarda de forma](#h-63)
@@ -7140,6 +7140,37 @@ mercadoria — grupo é conceito de cliente.
 
 ### H-66 — O filtro da cor de responsável na tela
 
+> ✅ **CONCLUÍDA em 01/09/2026.** **6 testes próprios** em três arquivos de
+> interface. Suíte total de **1645 para 1651**, com dois casos existentes
+> ajustados: o que conta os controles da barra e o que fixava o texto da
+> ressalva. **Fecha `E10`** e o quinto critério de `H-53`, que era o único
+> critério aberto de uma história já concluída.
+>
+> **Uma divergência de fiação:** `web/src/hooks/useFilters.ts` não estava na
+> lista, e é onde `MULTI_FILTERS` e `MULTI_FILTER_LABELS` vivem — o painel de
+> recorte de `H-53` é dirigido por eles, então o filtro novo aparece lá de
+> graça, com nome próprio. Sem esse arquivo o `typecheck` nem compila.
+>
+> **Medido num Chrome real**, com `tools/medir-navegador.mjs` sobre a fixture e
+> caminhos isolados: os **11** controles de múltipla escolha aparecem na ordem
+> declarada, `Responsável` e `Cor do responsável` lado a lado, e o layout **não
+> estoura** em nenhum dos quatro viewports — 1280, 1024, 768 e 360 —, nem a 360
+> com a fonte-base do navegador em 24 px, o cenário "Muito grande"
+> (`scrollWidth == clientWidth` nos cinco). 24 paradas de tabulação.
+>
+> **A ressalva de A-31 foi invertida, não removida.** Ela dizia "o responsável
+> vem da cor da linha, e linha vermelha ou verde não o carrega", e `H-50` tornou
+> isso falso. O texto novo diz de onde o campo vem, explica `Sem responsável`, e
+> **mantém A-31** — apontando-a para o filtro de cor, que é onde a limitação
+> continua real: uma linha vermelha não diz responsável.
+>
+> **A linha do ranking continua sem virar botão, e o motivo mudou.** O
+> impedimento era A-18 — o filtro `colaborador1` arrastava
+> `colaborador1_outros_clientes`, e clicar numa linha de 120 caía numa tela de
+> 129. Com `H-50` o filtro recorta a pessoa e a contagem bate, então **o
+> impedimento acabou**. Torná-la clicável é funcionalidade nova, nenhum critério
+> a pede, e fica registrado aqui como possibilidade, não como pendência.
+
 **Objetivo:** o operador recortar por *o que a linha está pintada*, e a Página
 Performance dizer qual campo a quebra usa.
 
@@ -7439,10 +7470,10 @@ qualquer mudança de raio, densidade ou tipografia nos arquivos tocados; a busca
 
 <a id="h-60"></a>
 
-### H-60 — Os treze filtros como chips em popover
+### H-60 — Os quatorze filtros como chips em popover
 
 **Objetivo:** o recorte ativo ocupar uma linha em vez de uma faixa de controles,
-sem perder nenhum dos treze filtros nem o estado na URL.
+sem perder nenhum dos quatorze filtros nem o estado na URL.
 
 > **São treze, não onze.** `H-15` montou onze, `H-49` levou a doze com o cliente
 > consolidado e `H-55` a treze com o grupo. O mockup diz "onze" e está

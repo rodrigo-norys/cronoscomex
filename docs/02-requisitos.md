@@ -74,7 +74,7 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 
 | ID | Requisito | Histórias |
 |---|---|---|
-| RF-17 | Aplicar simultaneamente 14 filtros: Período (ETA2), Cliente, **Processo do cliente**, **Grupo de clientes**, Importador, Navio, Agente, Mercadoria, Categoria de status, Responsável, **Cor do responsável**, Canal, Porto e Importador fora do RJ. Eram 11 até `H-49`, que separou o cliente consolidado do valor da célula CLT, 12 até `H-55`, que acrescentou o grupo, e 13 até `H-50`, que separou a pessoa responsável do que a cor diz. **Dois não têm controle próprio** na barra: o grupo é o primeiro nível da árvore dentro de Cliente, e a cor do responsável ganha controle em `H-66` — até lá ela existe na API e não na tela | H-15, H-49, H-55, H-50, H-66 |
+| RF-17 | Aplicar simultaneamente 14 filtros: Período (ETA2), Cliente, **Processo do cliente**, **Grupo de clientes**, Importador, Navio, Agente, Mercadoria, Categoria de status, Responsável, **Cor do responsável**, Canal, Porto e Importador fora do RJ. Eram 11 até `H-49`, que separou o cliente consolidado do valor da célula CLT, 12 até `H-55`, que acrescentou o grupo, e 13 até `H-50`, que separou a pessoa responsável do que a cor diz. **Um não tem controle próprio** na barra: o grupo é o primeiro nível da árvore dentro de Cliente. São 13 controles para 14 filtros | H-15, H-49, H-55, H-50, H-66 |
 | RF-18 | Todo indicador e todo alerta respeita os filtros ativos | H-15 |
 | RF-19 | Os valores disponíveis em cada filtro são derivados do arquivo, não de lista fixa | H-15 |
 

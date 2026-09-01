@@ -3,10 +3,10 @@ import { type Filters, MULTI_FILTER_LABELS, type MultiFilterKey } from '../hooks
 import { MultiSelect } from './MultiSelect.tsx'
 
 /**
- * Os treze filtros globais, em uma barra que vive na casca e vale para todas as
- * paginas de dado (RF-17, RF-18).
+ * Os quatorze filtros globais, em uma barra que vive na casca e vale para todas
+ * as paginas de dado (RF-17, RF-18).
  *
- * Sao doze controles: `clientGroup` (`H-55`) nao tem caixa propria — ele vive
+ * Sao treze controles: `clientGroup` (`H-55`) nao tem caixa propria — ele vive
  * DENTRO do controle de Cliente, como o primeiro nivel da arvore.
  *
  * Ela **nao filtra nada**: escreve a selecao na URL, e as paginas anexam a
@@ -20,11 +20,16 @@ interface MultiControl {
 }
 
 /**
- * Os dez de multipla escolha. Ordem: quem o operador usa mais, primeiro.
+ * Os onze de multipla escolha. Ordem: quem o operador usa mais, primeiro.
  *
  * "Cliente" e "Processo do cliente" sao controles distintos porque sao
  * perguntas distintas (`H-49`): um recorta a carteira, o outro acha um processo
  * especifico pelo valor da celula CLT.
+ *
+ * "Responsavel" e "Cor do responsavel" sao distintos pela mesma razao (`H-50`):
+ * um recorta por QUEM responde pelo processo, o outro por o que a linha esta
+ * PINTADA. Vem lado a lado porque respondem a perguntas vizinhas, e o operador
+ * que procura um vai olhar o outro.
  */
 const MULTI_CONTROLS: readonly MultiControl[] = [
   { key: 'category', source: 'categories' },
@@ -32,6 +37,7 @@ const MULTI_CONTROLS: readonly MultiControl[] = [
   { key: 'clientProcess', source: 'clientProcesses' },
   { key: 'importer', source: 'importers' },
   { key: 'responsible', source: 'responsible' },
+  { key: 'colorResponsible', source: 'colorResponsible' },
   { key: 'channel', source: 'channels' },
   { key: 'vessel', source: 'vessels' },
   { key: 'agent', source: 'agents' },
