@@ -26,9 +26,16 @@ ESTE_SCRIPT='.github/scripts/verifica-dados-sensiveis.sh'
 # que os guards detectam — sem eles nao ha como provar que o guard pega o caso.
 # A isencao vale SO para o check de caminho absoluto. O nome real do dono da
 # maquina continua valendo para eles: ali nao existe payload legitimo.
+#
+# `tests/repo/fixtures-anonimas.test.ts` entrou em 01/09/2026 pela mesma razao:
+# a ancora dele prova que a regex de caminho reconhece um diretorio de usuario,
+# e a prova exige a forma. Ela reusa os TRES padroes deste check, verbatim — a
+# regra e uma so, e o que muda e o alcance: aqui, arquivo de texto; la, parte de
+# dentro do `.xlsx` versionado, que este script nunca ve porque pula binario.
 eh_regressao_de_guard() {
   case "$1" in
-    "$ESTE_SCRIPT" | '.github/scripts/test-verifica-dados-sensiveis.sh' | '.claude/hooks/test-guard.sh')
+    "$ESTE_SCRIPT" | '.github/scripts/test-verifica-dados-sensiveis.sh' \
+      | '.claude/hooks/test-guard.sh' | 'tests/repo/fixtures-anonimas.test.ts')
       return 0 ;;
     *) return 1 ;;
   esac
@@ -50,9 +57,15 @@ reportar() {
 # `git ls-files` e analisaria a arvore inteira.
 versionados="${ARQUIVOS_PARA_VERIFICAR-$(git ls-files)}"
 
-# 1. Planilhas fora das fixtures. As 8 de tests/fixtures/ sao derivadas do
+# 1. Planilhas fora das fixtures. As 9 de tests/fixtures/ sao derivadas do
 #    arquivo real com nomes trocados, e versiona-las e exigencia da regra 7.
 #    guard-dados-sensiveis.sh faz a MESMA excecao no `git add`, desde 13/08/2026.
+#
+#    A excecao e por CAMINHO, e ate 01/09/2026 nada olhava DENTRO delas — nem
+#    aqui, nem no hook, e o check 6 pula binario por construcao. Um comentario
+#    da planilha do operador, com nome de duas pessoas, sobreviveu meses assim.
+#    Quem olha para dentro e tests/repo/fixtures-anonimas.test.ts, que roda no
+#    `npm run verify` e no verify.yml. Esta excecao so se sustenta com ela.
 planilhas="$(printf '%s\n' "$versionados" | grep -iE '\.xlsx$' | grep -v '^tests/fixtures/' || true)"
 [ -n "$planilhas" ] &&
   reportar "Planilha versionada fora de tests/fixtures/." "$planilhas"

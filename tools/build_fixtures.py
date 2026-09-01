@@ -281,13 +281,41 @@ EMAIL = re.compile(rb'[\w.+-]+@[\w-]+\.[\w.-]+')
 def sanitize(name, data):
     """Remove dado real de entradas que preservamos por sua estrutura."""
     if name in ('xl/comments1.xml', 'xl/threadedComments/threadedComment1.xml',
-                'xl/persons/person.xml', 'docProps/core.xml',
+                'xl/persons/person.xml', 'docProps/core.xml', 'xl/workbook.xml',
                 'xl/worksheets/_rels/sheet4.xml.rels') or name.startswith('customXml/'):
         data = EMAIL.sub(b'exemplo@exemplo.com', data)
-        data = re.sub(rb'(<t[^>]*>)[^<]{4,}(</t>)', rb'\1comentario de teste\2', data)
+        # Comentario tem DUAS formas, e ate 01/09/2026 so a primeira era coberta:
+        # `<t>` e o legado, de xl/comments1.xml, e `<text>` e o encadeado, de
+        # xl/threadedComments/. A lista acima ja citava a parte encadeada — o que
+        # falhava era a regex, que mirava a tag errada —, e por isso as nove
+        # fixtures versionadas carregaram texto real da planilha do operador.
+        #
+        # **As duas regras toleram atributo**, e essa e a licao do proprio
+        # defeito: `<text>` sem tolerancia deixaria passar
+        # `<text xml:space="preserve">`, que e o que o produtor emite quando o
+        # comentario comeca ou termina com espaco. Regex mais estreita que a tag
+        # que ela mira foi exatamente o que vazou.
+        #
+        # **Sem limiar de tamanho.** O `{4,}` anterior deixava passar comentario
+        # de ate tres caracteres — iniciais de pessoa, por exemplo. O que se
+        # exige e um caractere que nao seja espaco: assim `<text>` vazio ou so
+        # com indentacao NAO casa, e isso importa porque em xl/comments1.xml o
+        # `<text>` e um CT_Rst, de conteudo so-elemento (`<text><t>..</t></text>`)
+        # — substituir dentro dele produziria conteudo misto invalido.
+        COMENTARIO = rb'[^<]*[^<\s][^<]*'
+        data = re.sub(rb'(<t(?:\s[^>]*)?>)' + COMENTARIO + rb'(</t>)',
+                      rb'\1comentario de teste\2', data)
+        data = re.sub(rb'(<text(?:\s[^>]*)?>)' + COMENTARIO + rb'(</text>)',
+                      rb'\1comentario de teste\2', data)
         data = re.sub(rb'(displayName=")[^"]*(")', rb'\1Usuario Teste\2', data)
         data = re.sub(rb'(<dc:creator>)[^<]*(</dc:creator>)', rb'\1Teste\2', data)
         data = re.sub(rb'(<cp:lastModifiedBy>)[^<]*(</cp:lastModifiedBy>)', rb'\1Teste\2', data)
+        # `x15ac:absPath` guarda a pasta de onde o arquivo foi salvo, e o Excel
+        # a emite em xl/workbook.xml. O valor e substituido, e nao removido: ele
+        # vive dentro de `mc:AlternateContent`, e mexer na estrutura de uma
+        # fixture e o que a regra 9 existe para evitar.
+        data = re.sub(rb'(<x15ac:absPath url=")[^"]*(")',
+                      lambda m: m.group(1) + rb'C:\Exemplo' + b'\\' + m.group(2), data)
     return data
 
 
