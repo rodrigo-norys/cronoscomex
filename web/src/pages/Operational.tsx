@@ -101,7 +101,7 @@ function Controls({ query }: { query: ReturnType<typeof useProcessQuery> }) {
           value={query.search}
           onChange={(event) => query.setSearch(event.target.value)}
           placeholder="ex.: NBSC260"
-          className="rounded border border-border-control bg-surface-raised px-3 py-1.5 text-sm text-text-primary"
+          className="rounded-control border border-border-control bg-surface-raised px-3 py-1.5 text-sm text-text-primary"
         />
       </label>
 
@@ -151,7 +151,7 @@ function Pagination({
           type="button"
           onClick={() => onOffset(Math.max(0, offset - PAGE_SIZE))}
           disabled={offset === 0}
-          className="rounded border border-border-control px-2 py-1 text-xs disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
+          className="rounded-control border border-border-control px-2 py-1 text-xs disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
         >
           Anterior
         </button>
@@ -159,7 +159,7 @@ function Pagination({
           type="button"
           onClick={() => onOffset(offset + PAGE_SIZE)}
           disabled={last >= total}
-          className="rounded border border-border-control px-2 py-1 text-xs disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
+          className="rounded-control border border-border-control px-2 py-1 text-xs disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
         >
           Próxima
         </button>

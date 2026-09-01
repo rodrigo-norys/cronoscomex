@@ -182,7 +182,7 @@ function StalledNote({
   return (
     <section
       aria-label="Processos parados"
-      className="rounded border border-dashed border-border-subtle bg-surface-sunken p-4 text-xs text-text-secondary"
+      className="rounded-container border border-dashed border-border-subtle bg-surface-sunken p-4 text-xs text-text-secondary"
     >
       {measurable ? (
         <p>

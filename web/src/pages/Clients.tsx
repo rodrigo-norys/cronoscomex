@@ -140,7 +140,7 @@ function BazarCaveat({ share }: { share: number | null }) {
   if (share === null) return null
 
   return (
-    <p className="mt-2 rounded border border-state-warning-border bg-state-warning-bg px-3 py-2 text-xs text-state-warning-fg">
+    <p className="mt-2 rounded-container border border-state-warning-border bg-state-warning-bg px-3 py-2 text-xs text-state-warning-fg">
       <strong className="font-semibold">
         BAZAR concentra {(share * 100).toLocaleString('pt-BR', { maximumFractionDigits: 2 })}%
       </strong>{' '}

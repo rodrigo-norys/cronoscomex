@@ -108,7 +108,7 @@ function SetupLink() {
     <button
       type="button"
       onClick={() => navigate(WORKBOOK_SETUP_PAGE.path)}
-      className="ml-2 rounded border border-state-warning-fg px-2 py-0.5 font-medium text-state-warning-fg text-xs hover:bg-state-warning-bg"
+      className="ml-2 rounded-control border border-state-warning-fg px-2 py-0.5 font-medium text-state-warning-fg text-xs hover:bg-state-warning-bg"
     >
       Conferir a planilha configurada
     </button>
