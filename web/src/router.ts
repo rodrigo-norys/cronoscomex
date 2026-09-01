@@ -96,19 +96,47 @@ export function pageOf(route: Route): PageDefinition | null {
 }
 
 /**
+ * A troca de rota pediu que o foco fosse para a pagina nova (`H-70`).
+ *
+ * Modulo, e nao parametro que atravessa a arvore: quem navega sao seis lugares
+ * espalhados por paginas e componentes, e quem move o foco e a casca — os dois
+ * so se encontram aqui. O sinal e consumido UMA vez, no efeito de troca de
+ * rota, para que um `popstate` posterior nao herde a intencao do anterior.
+ */
+let pendingPageFocus = false
+
+/**
  * Troca de pagina **preservando a query**, que e onde os treze filtros globais
  * vivem — trocar de pagina nunca limpa o recorte que o operador montou.
  *
  * `pushState` nao emite evento nenhum, entao o `popstate` sintetico e o que faz
  * o assinante saber. Ele deixa navegacao programatica e botao "voltar" no mesmo
  * caminho de atualizacao, em vez de dois.
+ *
+ * **Mover o foco e o padrao, e nao a excecao** (`H-70`). `VN-4` mediu o foco
+ * caindo no `<body>` depois de abrir um recorte pelo ranking, com as 196
+ * paradas de `/operacional` pela frente — `SC 2.4.3`. As seis origens
+ * programaticas tem todas o mesmo problema, entao quem declara e a UNICA que
+ * nao tem: o link da casca, onde o foco ja esta onde o usuario o pos.
  */
-export function navigate(path: string): void {
+export function navigate(path: string, options?: { readonly keepFocus?: boolean }): void {
   const target = `${path}${window.location.search}`
   if (target === `${window.location.pathname}${window.location.search}`) return
 
+  pendingPageFocus = options?.keepFocus !== true
   window.history.pushState(null, '', target)
   window.dispatchEvent(new PopStateEvent('popstate'))
+}
+
+/**
+ * Le e zera o sinal. Zerar faz parte: o botao "voltar" do navegador emite o
+ * MESMO `popstate` que a navegacao programatica, e sem o consumo ele moveria o
+ * foco na volta seguinte, que e o caso-limite que a historia exclui.
+ */
+export function consumePendingPageFocus(): boolean {
+  const pending = pendingPageFocus
+  pendingPageFocus = false
+  return pending
 }
 
 /**

@@ -115,10 +115,17 @@ function RankingRow({
 
   const content = (
     <>
+      {/* Com `secondary` a linha tem QUATRO slots de largura fixa, e a 320 px
+          eles somam 348 antes da barra — `VN-1/A` mediu a pagina rolando ate
+          385 (`H-67`). Abaixo de 640 o rotulo passa a ocupar a linha inteira e
+          o resto desce junto, em vez de a linha romper a borda. **So incide
+          quando ha `secondary`**, e so `Performance.tsx` o passa: as outras
+          seis paginas que usam este componente nao recebem nem o `flex-wrap`,
+          e por isso nao mudam. */}
       <span
-        className={`w-40 shrink-0 truncate text-sm group-hover:text-text-primary ${
-          nested ? 'pl-5 text-xs text-text-muted' : 'text-text-secondary'
-        }`}
+        className={`shrink-0 truncate text-sm group-hover:text-text-primary ${
+          secondary ? 'w-full sm:w-40' : 'w-40'
+        } ${nested ? 'pl-5 text-xs text-text-muted' : 'text-text-secondary'}`}
       >
         {label}
       </span>
@@ -140,8 +147,8 @@ function RankingRow({
   )
 
   const shared = `group flex w-full items-center gap-3 rounded px-1 text-left ${
-    nested ? 'py-0.5' : 'py-1'
-  }`
+    secondary ? 'flex-wrap' : ''
+  } ${nested ? 'py-0.5' : 'py-1'}`
 
   if (onSelect === undefined) return <span className={shared}>{content}</span>
 

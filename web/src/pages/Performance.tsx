@@ -330,7 +330,17 @@ function LeadTimeTable({ title, unit, groups, total, shown }: LeadTimeTableProps
               <tbody>
                 {groups.map((group) => (
                   <tr key={group.key} className="border-b border-border-subtle last:border-0">
-                    <td className="max-w-0 truncate py-1 pr-2">
+                    {/* `VN-2` mediu o truncamento CRESCENDO com a ampliacao,
+                        e nenhuma das celulas tinha `title` — o texto cortado
+                        nao tinha recurso nenhum (`H-69`). `max-w-0` espremia a
+                        coluna ao minimo e `truncate` cortava o que sobrasse;
+                        agora o rotulo quebra em linhas e a coluna toma o espaco
+                        que as tres numericas nao usam. Medido nos quatro
+                        cenarios de ampliacao: zero celulas cortadas, contra 31
+                        a 100% e 41 a 640 px com fonte 24. Nada foi acrescentado
+                        a celula que ja cabia — sem `title`, sem parada de
+                        tabulacao. */}
+                    <td className="break-words py-1 pr-2">
                       {group.label === '' ? '(sem valor)' : group.label}
                     </td>
                     <td className="py-1 text-right tabular-nums">
