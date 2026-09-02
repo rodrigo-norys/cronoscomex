@@ -176,7 +176,7 @@ Lista de processos, já filtrada.
 |---|---|---|---|
 | `search` | `string` | — | Busca por substring, sem acento e sem caixa, em REF, BL e CNTR (A-39) |
 | `activeOnly` | `boolean` | `false` | `true` restringe a `statusCategory ≠ desembaracado` (A-16) |
-| `sort` | `string` | `eta2` | `ref` · `eta2` · `registrationDate` · `client` · `vessel`. `client` ordena pelo **cliente consolidado**; a coluna do processo do cliente não tem ordem própria (`H-49`) |
+| `sort` | `string` | `eta2` | `ref` · `client` · `clientProcess` · `importer` · `vessel` · `eta2` · `registrationDate` · `billOfLading` · `container` · `status` — uma por coluna da tabela. `client` ordena pelo **cliente consolidado** e `clientProcess` pelo valor da célula CLT: são ordens diferentes desde `H-49`. `status` ordena pelo **fluxo** (`em_andamento` → `em_desembaraco` → `desembaracado` → `fechado_aguardando_draft`), não pelo alfabeto, e nunca tem valor ausente |
 | `order` | `string` | `asc` | `asc` · `desc`. Nulos sempre por último |
 | `limit` | `number` | `200` | 1 a 1000 |
 | `offset` | `number` | `0` | ≥ 0 |
@@ -738,8 +738,16 @@ Somente estes. Qualquer outro → `400 CAMPO_NAO_EDITAVEL`.
 chaves, `anomalies`, `sourceRow`, `ref`.
 
 `ref` não é editável porque é a chave natural; alterá-la equivaleria a criar
-outro processo, o que a aplicação não faz — criação de linha nova está fora de
-escopo (§3.2 de `00-visao-escopo.md`).
+outro processo. **Criar processo novo passou a ser possível em 02/09/2026**
+(`D-25`), por caminho próprio — uma linha acrescentada depois da última que
+existe na aba, nunca a REF de uma linha existente sendo trocada.
+
+`clientLabel` — a coluna **Cliente** da tela — também não é editável por
+`POST /api/edits`, e por um motivo diferente: ele não é célula nenhuma. Sai de
+`config/client-map.json` cruzando a célula B com o importador (`H-49`), e o
+caminho de volta é `PUT /api/processes/:ref/client`, documentado abaixo. A
+célula B continua sendo editada pelo campo `clientRaw`, que é o que a coluna
+"Processo do cliente" mostra.
 
 Os campos derivados de cor (`colorResponsible`, `customsChannel`,
 `importerOutsideRj`) são editáveis pela rota dedicada abaixo, e **não** por
@@ -748,6 +756,112 @@ Os campos derivados de cor (`colorResponsible`, `customsChannel`,
 editar o mapa. O corpo de `PATCH .../color` mantém a chave `responsible`, onde o
 contexto já é a cor: eles não têm coluna própria, e a gravação é troca de estilo
 da linha, não de valor de célula (`H-27`).
+
+---
+
+### `POST /api/edits/row`
+
+Enfileira uma **linha nova**. **Não toca no `.xlsx`** — a escrita é do
+`Aplicar alterações`, com as mesmas seis defesas das demais edições, mais uma
+que só ela tem.
+
+```jsonc
+{ "ref": "FT900.26", "values": { "clientRaw": "CLIENTE NOVO", "eta2": "2026-09-30" } }
+```
+
+```jsonc
+{
+  "kind": "insert",
+  "id": "9f1c2a7e-...", "ts": "2026-09-02T14:30:00.000Z",
+  "ref": "FT900.26",
+  "values": { "clientRaw": "CLIENTE NOVO", "eta2": "2026-09-30" },
+  "pendingEditsCount": 1
+}
+```
+
+**Não há `sourceRow`, e a ausência é o contrato.** A linha não existe no arquivo
+ainda; o número é resolvido pelo `write-guard`, contra a leitura do momento da
+escrita — congelá-lo aqui repetiria o defeito que `H-25` fechou ao resolver a
+célula pela REF em vez do número enfileirado. A linha vai **depois da última que
+existe na aba**, tenha ela conteúdo ou não.
+
+**Não há `previous`.** Não existe valor anterior, e a defesa equivalente é a
+oposta: a REF não pode já estar no arquivo. Ela é conferida aqui, contra a
+leitura corrente, e **de novo** no momento da escrita — entre as duas o operador
+pode ter digitado a mesma REF no Excel.
+
+Os campos de `values` são os mesmos de `POST /api/edits`, com a mesma validação.
+Campo ausente **não vira célula**, como o Excel faz numa linha em branco.
+
+**Editar uma célula da linha pendente atualiza esta inserção**, e não cria uma
+edição de campo. Sem isso, a edição miraria uma REF que o `write-guard` não acha
+no arquivo, e a aplicação inteira voltaria com `refMissing`.
+
+**O desvio é decidido pelo processo PROJETADO, e não pela fila.** `POST
+/api/edits` resolve a REF em `state.processes` — que já vem com a fila aplicada —
+e só desvia quando o processo encontrado tem `sourceRow` igual ao sentinela de
+linha não gravada. **A linha do arquivo sempre vence:** se a REF passar a existir
+na planilha entre o enfileiramento e a edição — alguém a digitou no Excel —, a
+edição vai para a célula real, e a inserção órfã fica na fila até aparecer como
+`refExists` na aplicação.
+
+Procurar a inserção na fila antes disso foi tentado e é defeito medido: a
+inserção órfã engolia a edição endereçada à linha real, o operador recebia `201`,
+e a célula visível não mudava.
+
+| Código | Situação |
+|---|---|
+| `201` | Enfileirada |
+| `400 CORPO_INVALIDO` | `ref` ausente ou vazia, ou valor inválido em algum campo |
+| `400 CAMPO_NAO_EDITAVEL` | Campo fora da lista |
+| `409 REF_DUPLICADA` | Já existe processo com essa REF |
+| `409 ESCRITA_EM_ANDAMENTO` | Aplicação em curso |
+| `503 ARQUIVO_INDISPONIVEL` | Nunca houve leitura |
+
+---
+
+### `PUT /api/processes/:ref/client`
+
+Declara a que **cliente** pertence a célula CLT de um processo. **Não enfileira
+e não toca no `.xlsx`**: grava a regra em `config/client-map.json`, que é de
+onde a coluna Cliente já lia. Por isso o efeito é imediato e não passa pelo
+`Aplicar alterações` — não há nada para gravar na planilha, e o arquivo é local
+e reversível.
+
+```jsonc
+{ "label": "Aventura" }
+```
+
+```jsonc
+{
+  "outcome": "entrada-nova",   // ou "regra-acrescentada", ou "sem-efeito"
+  "key": "AVENTURA",           // chave normalizada da entrada
+  "label": "Aventura",
+  "value": "AV-480"            // o valor da célula CLT que a regra passou a casar
+}
+```
+
+**O alcance é uma linha.** A regra gravada é `exact` sobre o valor da célula,
+então declarar o cliente de `AV-480` não move `AV-397` nem as outras do mesmo
+prefixo. Inferir o prefixo a partir de uma linha seria adivinhar, e na planilha
+real um prefixo de 62 processos cobre **três** clientes (regra inviolável 3).
+
+**A entrada é encontrada pelo nome**, não pela chave: digitar "Aventura" quando
+já existe uma entrada com esse rótulo acrescenta a regra **nela**, em vez de
+criar um segundo cliente com o mesmo nome.
+
+**A posição importa, e é o mecanismo.** A primeira entrada que casa vence, então
+a entrada alvo é inserida ou movida para **antes** da que casava a célula até
+então. Sem isso a regra `exact` nunca seria alcançada, e a edição viraria um
+no-op silencioso (regra inviolável 2).
+
+| Código | Situação |
+|---|---|
+| `200` | Gravado, ou `sem-efeito` quando a célula já resolvia para aquele cliente |
+| `400 CORPO_INVALIDO` | `label` ausente, vazio, ou célula CLT vazia — a regra casa o valor dela |
+| `404 PROCESSO_NAO_ENCONTRADO` | Nenhum processo com a REF |
+| `409 ESCRITA_EM_ANDAMENTO` | Aplicação em curso |
+| `503 ARQUIVO_INDISPONIVEL` | Nunca houve leitura |
 
 ---
 
@@ -769,6 +883,13 @@ Enfileira uma edição. **Não toca no `.xlsx`.**
 }
 ```
 
+> **O `201` tem DUAS formas**, e esta seção mostra uma. Quando a REF é de uma
+> linha ainda não gravada — uma inserção pendente —, o mesmo endpoint devolve o
+> registro de inserção: `kind: 'insert'`, `ref`, `values`, `id`, `ts` e
+> `pendingEditsCount`, **sem** `field`, `value`, `previous` nem `sourceRow`. O
+> tipo da resposta é uma união desde 02/09/2026. O desvio e o critério estão em
+> `POST /api/edits/row`, abaixo.
+
 | Código | Situação |
 |---|---|
 | 201 | Enfileirada |
@@ -777,8 +898,8 @@ Enfileira uma edição. **Não toca no `.xlsx`.**
 | 409 | `ESCRITA_EM_ANDAMENTO` — uma aplicação está em curso |
 | 503 | `ARQUIVO_INDISPONIVEL` — nunca houve leitura, não há processo a editar |
 
-> As quatro rotas que ESCREVEM na fila — `POST /api/edits`,
-> `DELETE /api/edits/:id`, `DELETE /api/edits` e
+> As CINCO rotas que ESCREVEM na fila — `POST /api/edits`,
+> `POST /api/edits/row`, `DELETE /api/edits/:id`, `DELETE /api/edits` e
 > `PATCH /api/processes/:ref/color` — recusam com `409 ESCRITA_EM_ANDAMENTO`
 > enquanto uma aplicacao estiver em curso. Mexer na fila nesse intervalo a
 > faria sumir sem ser gravada: o `write-guard` tira o instantaneo do que vai
@@ -933,6 +1054,7 @@ Corpo: vazio.
   "applied": 0,
   "cellsWritten": 0,
   "rowsRepainted": 0,
+  "rowsInserted": 0,
   "backupPath": "data/backups/planilha-20260803-143512.xlsx",
   "archivedQueuePath": "data/applied/pending-edits-20260803-143512.jsonl",
   "durationMs": 0,
@@ -947,7 +1069,13 @@ Corpo: vazio.
 > receberam **valor**; `rowsRepainted`, linhas em que ao menos uma célula mudou
 > de estilo — **medido pela cirurgia**, não pedido pela fila.
 >
-> **`applied` maior que zero com as duas contagens em zero é desfecho válido**,
+> **`rowsInserted` entrou em 02/09/2026**, e pelo mesmo motivo do irmão: uma
+> linha nova não grava célula por `applyCellEdits` nem repinta nada. Sem ele, a
+> aplicação de uma linha nova bem-sucedida caía no discriminador de "nada mudou",
+> e a interface anunciava *"a planilha já estava assim"* a quem acabara de criar
+> um processo no arquivo.
+>
+> **`applied` maior que zero com as TRÊS contagens em zero é desfecho válido**,
 > e não erro: a fila resolvia para o que a planilha já tinha. Nesse caso
 > `backupPath` é `null` e nada foi gravado — ver a emenda de `H-27` em
 > `04-arquitetura.md §3.2`. A interface diz "a planilha já estava assim", em vez
@@ -971,8 +1099,8 @@ Corpo: vazio.
 > valida o que não se escreveu, e ali `validated: true` afirma que **o arquivo
 > em disco corresponde ao que a fila pedia** — que é verdade, e é o que o campo
 > sempre significou para o operador. O que ele não afirma mais é que houve uma
-> releitura de conferência. `backupPath: null` e `cellsWritten` e
-> `rowsRepainted` em zero distinguem o caso.
+> releitura de conferência. `backupPath: null` e os três contadores em zero —
+> `cellsWritten`, `rowsRepainted` e `rowsInserted` — distinguem o caso.
 
 **409 `ARQUIVO_MUDOU` — corpo com o conflito:**
 
@@ -1061,9 +1189,16 @@ A fila **não** é descartada em nenhum caminho de erro. O operador relê e deci
 | Código | Situação |
 |---|---|
 | 200 | Gravado e validado |
-| 409 | `EXCEL_ABERTO` · `ARQUIVO_MUDOU` · `EDICAO_OBSOLETA` · `NADA_A_APLICAR` · `ESCRITA_EM_ANDAMENTO` |
+| 409 | `EXCEL_ABERTO` · `ARQUIVO_MUDOU` · `EDICAO_OBSOLETA` · `NADA_A_APLICAR` · `ESCRITA_EM_ANDAMENTO` · `TABELA_CHEIA` |
 | 500 | `ESCRITA_INVALIDA` — três desfechos, distinguidos pelo `detail`; ver a nota abaixo |
 | 503 | `ARQUIVO_INDISPONIVEL` |
+
+> **`TABELA_CHEIA` entrou em 02/09/2026**, com a criação de linha. `Tabela1`
+> cobre `A1:P997` contra 745 linhas escritas, então há folga; quando ela acabar,
+> a aplicação **recusa** em vez de gravar fora da Tabela — linha fora dela nasce
+> sem banda, fora do autofiltro e colide com a linha que o Excel materializa ao
+> expandir a Tabela sozinho. A instrução ao operador é ampliá-la no Excel.
+> **Nada é gravado, e a fila fica intacta.**
 
 > `ESCRITA_INVALIDA` cobre desfechos **opostos**, e a presença de `backupPath` no
 > `detail` é o que os separa:
