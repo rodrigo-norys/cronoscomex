@@ -254,7 +254,7 @@ export async function enqueueRow(
  * Declara a que cliente pertence a celula CLT de um processo.
  *
  * **Nao enfileira, e nao toca o `.xlsx`**: grava a regra em
- * `config/client-map.json`, que e de onde a coluna Cliente ja saia. Por isso o
+ * `client-map.json`, que e de onde a coluna Cliente ja saia. Por isso o
  * efeito e imediato e nao passa por `Aplicar alteracoes`.
  */
 export async function setProcessClient(

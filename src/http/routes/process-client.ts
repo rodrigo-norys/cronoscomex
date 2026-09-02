@@ -16,8 +16,14 @@ import { refuseDuringWrite } from './edits.ts'
  *
  * **A unica rota de edicao que NAO enfileira, e nao toca o `.xlsx`.** As outras
  * escrevem numa celula; esta declara a que cliente uma celula pertence, e isso
- * e regra de negocio do operador — mora em `config/client-map.json`, que a
- * coluna Cliente ja lê desde `H-49`. O caminho de volta e este.
+ * e regra de negocio do operador — mora em `client-map.json`, que a coluna
+ * Cliente ja lê desde `H-49`. O caminho de volta e este.
+ *
+ * **O caminho aparece sem o prefixo `config/` de proposito**, como
+ * `client-map-loader.ts` ja fazia: o arquivo esta no `.gitignore`, e a guarda de
+ * ancora morta cobra existencia em disco — citar o caminho completo reprova o CI
+ * num checkout limpo, onde ele nao existe. Convencao fixada em `H-34` para o
+ * `app.json`, e o CI a cobrou de novo em 02/09/2026.
  *
  * Por isso ela tambem nao passa pelo `Aplicar alteracoes`: nao ha o que gravar
  * na planilha, e a fila existe para adiar a escrita no arquivo da empresa. A
