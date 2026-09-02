@@ -44,9 +44,58 @@ Get-Process node | Select-Object Id, SessionId    # tem de ser a sessao do conso
 query session                                     # mostra qual e a interativa
 ```
 
-O que **dá** para testar por SSH: a partida, a leitura da planilha, os caminhos
-de erro do `.cmd`, as rotas. O que **não** dá: seletor de arquivo, navegador,
-foco, `:hover` e qualquer coisa que precise de tela.
+O que **dá** para testar por SSH direto: a partida, a leitura da planilha, os
+caminhos de erro do `.cmd`, as rotas. O que **não** dá: seletor de arquivo,
+navegador, foco, `:hover` e qualquer coisa que precise de tela.
+
+## Mas a sessão gráfica é alcançável — por tarefa agendada
+
+**Medido em 02/09/2026, e revisa parcialmente o que está acima.** O que não sai
+por SSH **direto** sai por `schtasks` com `/it`, que roda na sessão do operador,
+onde há desktop. Foi assim que um `.xlsx` produzido por `appendRow` foi aberto
+no **Excel de verdade**, com a saída lida por arquivo.
+
+```powershell
+# O comando vai num .cmd. NUNCA inline.
+schtasks /create /tn Tarefa /tr C:\caminho\rodar.cmd /sc once /st 23:58 /ru <usuario> /it /f
+schtasks /run    /tn Tarefa
+# espere o arquivo de saida aparecer, leia, e entao:
+schtasks /delete /tn Tarefa /f
+```
+
+**Os dois erros que custam tempo, e cujas mensagens apontam para o lado errado:**
+
+1. **`/create` sem `/ru`** não cria a tarefa, e o sintoma só aparece no `/query`
+   seguinte, como *"O sistema não pode encontrar o arquivo especificado"* — que
+   fala do **nome da tarefa**, e faz procurar o executável.
+2. **`/tr` com aspas aninhadas** quebra: `schtasks` executa o programa **sem
+   shell**, então `>` vira argumento literal e as opções do programa interno são
+   lidas como opções dele — *"Argumento/opção inválido - '-NoProfile'"*. O `.cmd`
+   absorve redireção e opções, e o `/tr` fica sem uma aspa sequer.
+
+**Antes de concluir que um arquivo produzido aqui está corrompido, faça o
+controle.** Excel por COM na Sessão 0 falha em tudo, inclusive no `SaveAs` de
+uma pasta que ele mesmo acabou de criar. Peça a ele para criar e reabrir um
+arquivo próprio: se isso falhar, o problema é o ambiente, e não o que você
+produziu. Sem esse controle, `appendRow` teria sido declarada defeituosa.
+
+**O ID da sessão gráfica muda entre logons** — era 2 em 31/08/2026 e 1 em
+02/09/2026. Descubra com `query session`; nunca fixe.
+
+## Como saber se o Excel REPAROU o arquivo, sem ver a tela
+
+O banner amarelo de reparo não existe em execução headless. O sinal que o
+substitui é **`Workbook.Saved`, lido logo depois do `Open`**: reparar é modificar
+em memória, e a pasta abre **suja**. `Saved = True` sem ninguém ter editado
+significa que o Excel carregou o arquivo sem alterar um byte.
+
+Confirmam junto: nenhum arquivo novo em `%TEMP%` — o log de reparo cai lá — e a
+leitura de volta das células, porque reparo com remoção de registros apaga a
+linha nova.
+
+**Não mate `EXCEL` por PID sem conferir `StartTime` e `SessionId`.** O `Quit()`
+é assíncrono o bastante para o processo ainda aparecer depois de encerrado, e a
+sessão gráfica pode ter o Excel do operador aberto com trabalho não salvo.
 
 ## O que a primeira execução real já fechou (19/08/2026)
 
