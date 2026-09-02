@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { TooltipContentProps } from 'recharts'
 import {
   CartesianGrid,
   Legend,
@@ -43,6 +44,11 @@ type WindowMonths = (typeof WINDOWS)[number]
 
 const DEFAULT_WINDOW: WindowMonths = 12
 
+interface ReconstructedDefinition {
+  readonly key: 'r_chegados' | 'r_desembaracados'
+  readonly label: string
+}
+
 interface MeasureDefinition {
   readonly key: 'total' | 'desembaracados' | 'canalVermelho'
   readonly label: string
@@ -54,38 +60,76 @@ interface MeasureDefinition {
    * Validado contra fundo claro: pior par adjacente com ΔE 13,1 em deuteranopia.
    */
   readonly color: string
+  /**
+   * A medida reconstruida IRMA, quando existe (`H-54`). Declarar o par aqui, e
+   * nao numa segunda lista paralela, e o que garante que as duas linhas nasçam
+   * com a MESMA cor: separadas, elas divergem no primeiro ajuste de paleta, e a
+   * cor deixaria de significar "mesma medida".
+   *
+   * Nao ha Canal Vermelho reconstruido: a cor e o estado de hoje e nao carrega
+   * data, entao projeta-la para tras afirmaria o que ninguem observou (regra
+   * inviolavel 3).
+   */
+  readonly reconstructed: ReconstructedDefinition | null
 }
 
 const MEASURES: readonly MeasureDefinition[] = [
-  { key: 'total', label: 'Volume (observado)', color: 'var(--color-chart-series-1)' },
+  {
+    key: 'total',
+    label: 'Volume (observado)',
+    color: 'var(--color-chart-series-1)',
+    reconstructed: { key: 'r_chegados', label: 'Volume (reconstruído)' },
+  },
   {
     key: 'desembaracados',
     label: 'Desembaraçados (observado)',
     color: 'var(--color-chart-series-2)',
+    reconstructed: { key: 'r_desembaracados', label: 'Desembaraçados (reconstruído)' },
   },
   {
     key: 'canalVermelho',
     label: 'Canal Vermelho (observado)',
     color: 'var(--color-chart-series-3)',
+    reconstructed: null,
   },
 ]
 
+/** As colunas reconstruidas da tabela, na ordem em que a pagina sempre as teve. */
+const RECONSTRUCTED_MEASURES: readonly (ReconstructedDefinition & { color: string })[] =
+  MEASURES.flatMap((measure) =>
+    measure.reconstructed === null ? [] : [{ ...measure.reconstructed, color: measure.color }],
+  )
+
+/** O tracejado da serie reconstruida. Um valor so: a linha, a legenda e o
+    tooltip precisam desenhar EXATAMENTE o mesmo traco para o par ser lido como
+    par. */
+const RECONSTRUCTED_DASH = '6 3'
+
+interface ChartSeries {
+  readonly key: MeasureDefinition['key'] | ReconstructedDefinition['key']
+  readonly label: string
+  readonly color: string
+  readonly dashed: boolean
+}
+
 /**
- * As duas medidas reconstruidas (`H-54`), tracejadas para se distinguirem das
- * observadas **sem depender de cor** — o tracado e um canal a mais, e a legenda
- * escreve "reconstruído" em cada nome.
- *
- * Nao ha Canal Vermelho aqui: a cor e o estado de hoje e nao carrega data, entao
- * projeta-la para tras afirmaria o que ninguem observou (regra inviolavel 3).
+ * As cinco linhas do grafico, com a reconstruida logo depois da observada da
+ * MESMA medida. A ordem importa em tres lugares — o `<Line>`, a legenda e o
+ * tooltip —, e por isso ela e uma lista so.
  */
-const RECONSTRUCTED_MEASURES = [
-  { key: 'r_chegados', label: 'Volume (reconstruído)', color: 'var(--color-chart-series-1)' },
-  {
-    key: 'r_desembaracados',
-    label: 'Desembaraçados (reconstruído)',
-    color: 'var(--color-chart-series-2)',
-  },
-] as const
+const CHART_SERIES: readonly ChartSeries[] = MEASURES.flatMap((measure) => [
+  { key: measure.key, label: measure.label, color: measure.color, dashed: false },
+  ...(measure.reconstructed === null
+    ? []
+    : [
+        {
+          key: measure.reconstructed.key,
+          label: measure.reconstructed.label,
+          color: measure.color,
+          dashed: true,
+        },
+      ]),
+])
 
 interface HistoryProps {
   queryString: string
@@ -308,6 +352,97 @@ function mergePoints(
 }
 
 /**
+ * O traco da serie, do tamanho em que ele se le.
+ *
+ * O par observado/reconstruido divide a cor de proposito (`H-54`), entao o
+ * tracejado e o UNICO canal grafico que os separa — e nenhum dos dois padroes do
+ * Recharts o carregava: o icone da legenda tem 14px, onde `6 3` vira uma linha
+ * cheia, e o tooltip nao desenha traco nenhum. Os dois nomes do par so diferem
+ * na ultima palavra, entao o leitor ficava com cor identica e texto quase
+ * identico. 28px cabem tres tracos, e a diferenca aparece sem ler.
+ */
+function SeriesStroke({ color, dashed }: { color: string; dashed: boolean }) {
+  return (
+    <svg width="28" height="8" viewBox="0 0 28 8" aria-hidden="true" className="shrink-0">
+      <line
+        x1="0"
+        y1="4"
+        x2="28"
+        y2="4"
+        stroke={color}
+        strokeWidth="2"
+        strokeDasharray={dashed ? RECONSTRUCTED_DASH : undefined}
+      />
+    </svg>
+  )
+}
+
+/**
+ * A legenda sai de `CHART_SERIES`, e nao do `payload` do Recharts: as cinco
+ * linhas existem sempre, e a lista propria e o que poe a reconstruida ao lado da
+ * observada da mesma medida — o padrao ordenava por nome, e o par ficava a
+ * depender do alfabeto.
+ *
+ * **O nome veste tinta de texto, e nao a cor da serie.** Quem carrega a
+ * identidade e o traco ao lado; texto colorido gasta contraste para repetir o
+ * que a amostra ja diz.
+ */
+function MonthlyLegend() {
+  return (
+    <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 pt-2 text-xs text-text-secondary">
+      {CHART_SERIES.map((line) => (
+        <li key={line.key} className="flex items-center gap-2">
+          <SeriesStroke color={line.color} dashed={line.dashed} />
+          {line.label}
+        </li>
+      ))}
+    </ul>
+  )
+}
+
+/**
+ * O tooltip proprio, por tres motivos que o padrao do Recharts nao atende.
+ *
+ * 1. Ele nao desenha o traco, e sem ele as duas linhas do par chegam ao leitor
+ *    so como cor — que e a mesma de proposito.
+ * 2. Ele pinta o valor com a cor da serie e o mes em cinza claro sobre caixa
+ *    branca fixa: no esquema escuro o cabecalho quase some, porque a caixa nao
+ *    acompanha o tema.
+ * 3. Ele ordena por nome. Aqui a ordem e a das linhas na tela, com o par junto.
+ *
+ * Mes sem a medida nao vira zero — a linha simplesmente nao aparece, como o
+ * traco da tabela irma (regra inviolavel 3).
+ */
+function MonthlyTooltip({ active, label, payload }: TooltipContentProps) {
+  if (active !== true) return null
+
+  const valueByKey = new Map((payload ?? []).map((entry) => [entry.dataKey, entry.value]))
+  const rows = CHART_SERIES.map((line) => ({ line, value: valueByKey.get(line.key) })).filter(
+    (row): row is { line: ChartSeries; value: number } => typeof row.value === 'number',
+  )
+  if (rows.length === 0) return null
+
+  return (
+    <div className="rounded-container border border-border-modal bg-surface-raised px-3 py-2 text-xs">
+      <p className="font-semibold text-text-primary">
+        {typeof label === 'string' ? formatMonth(label) : label}
+      </p>
+      <ul className="mt-1 space-y-1">
+        {rows.map(({ line, value }) => (
+          <li key={line.key} className="flex items-center gap-2">
+            <SeriesStroke color={line.color} dashed={line.dashed} />
+            <span className="text-text-secondary">{line.label}</span>
+            <span className="ml-auto pl-3 font-semibold tabular-nums text-text-primary">
+              {value.toLocaleString('pt-BR')}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+/**
  * O grafico e a tabela sobre os mesmos pontos. Um eixo so: as medidas contam
  * processos, e escalas separadas fariam o Canal Vermelho — cinco linhas na
  * planilha real — parecer da mesma ordem que o volume.
@@ -368,33 +503,20 @@ function MonthlySeries({
               tick={{ fill: 'var(--color-chart-axis)', fontSize: '0.75rem' }}
               stroke="var(--color-chart-axis)"
             />
-            <Tooltip
-              labelFormatter={(label) => (typeof label === 'string' ? formatMonth(label) : label)}
-            />
-            <Legend />
-            {MEASURES.map((measure) => (
+            <Tooltip content={(props) => <MonthlyTooltip {...props} />} />
+            <Legend content={() => <MonthlyLegend />} />
+            {CHART_SERIES.map((line) => (
               <Line
-                key={measure.key}
+                key={line.key}
                 type="monotone"
-                dataKey={measure.key}
-                name={measure.label}
-                stroke={measure.color}
+                dataKey={line.key}
+                name={line.label}
+                stroke={line.color}
                 strokeWidth={2}
-                dot={series.length === 1}
-                activeDot={{ r: 4 }}
-                connectNulls={false}
-              />
-            ))}
-            {RECONSTRUCTED_MEASURES.map((measure) => (
-              <Line
-                key={measure.key}
-                type="monotone"
-                dataKey={measure.key}
-                name={measure.label}
-                stroke={measure.color}
-                strokeWidth={2}
-                strokeDasharray="6 3"
-                dot={false}
+                /* `exactOptionalPropertyTypes`: a prop nao aceita `undefined`
+                   explicito, entao a linha cheia e a AUSENCIA dela. */
+                {...(line.dashed ? { strokeDasharray: RECONSTRUCTED_DASH } : {})}
+                dot={!line.dashed && series.length === 1}
                 activeDot={{ r: 4 }}
                 connectNulls={false}
               />
