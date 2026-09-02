@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -17,9 +17,12 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
  * para tudo): `WebSocket` e global no Node 22, e o Chrome ja esta na maquina.
  *
  * **Nada aqui toca estado real** — nem a planilha do operador, nem `data/`, nem
- * `config/app.json`. `abrirAplicacao` sobe o servidor sobre uma fixture de
- * `tests/fixtures/` e redireciona os tres caminhos de escrita para um diretorio
- * temporario. Em 01/09/2026 um harness de medicao gravou na fila do operador
+ * `config/app.json`, nem `config/client-map.json`, **nem a fixture versionada**.
+ * `abrirAplicacao` COPIA a planilha para o temporario e redireciona os quatro
+ * caminhos de escrita para la — cinco lugares ao todo. A copia entrou em
+ * 02/09/2026, quando a aplicacao passou a criar linha: sem ela, "Aplicar
+ * alteracoes" numa medicao gravaria na fixture do repositorio. Em 01/09/2026 um harness de
+ * medicao gravou na fila do operador
  * **duas vezes**; as duas defesas — fixture e caminhos injetados — sao a
  * resposta, e nenhuma delas sozinha basta.
  *
@@ -62,7 +65,7 @@ const esperar = (ms) => new Promise((ok) => setTimeout(ok, ms))
 export async function abrirAplicacao({ fixture = 'cores.xlsx', porta = 5199 } = {}) {
   const { loadColorMap } = await modulo('src/app/color-map-loader.ts')
   const { loadStatusAliases } = await modulo('src/app/status-aliases-loader.ts')
-  const { initStore, reload, store } = await modulo('src/app/process-store.ts')
+  const { initStore, refreshClientMap, reload, store } = await modulo('src/app/process-store.ts')
   const { buildServer, LOOPBACK } = await modulo('src/http/server.ts')
 
   const area = mkdtempSync(join(tmpdir(), 'cronos-medicao-'))
@@ -71,12 +74,33 @@ export async function abrirAplicacao({ fixture = 'cores.xlsx', porta = 5199 } = 
     throw new Error(`${webRoot} nao existe. Rode "npm run build" antes de medir.`)
   }
 
+  /*
+    A planilha e COPIADA para o temporario, e a medicao aponta para a copia.
+    Sem isto, clicar em "Aplicar alteracoes" numa medicao gravaria na fixture
+    VERSIONADA — e a regra inviolavel 7 exige que ela sobreviva a uma suite que
+    escreve de proposito. Os outros quatro caminhos de escrita ja iam para o
+    temporario; a planilha era o quinto, e faltava.
+  */
+  const planilha = join(area, 'planilha.xlsx')
+  copyFileSync(resolve(RAIZ, 'tests/fixtures', fixture), planilha)
+
+  /*
+    O `AppConfig` COMPLETO. Faltavam `headerRow`, `firstDataRow` e
+    `stalledDaysThreshold`: este arquivo e `.mjs` e o `tsc` nao o confere, entao
+    a falta so aparecia em execucao — e apareceu, em 02/09/2026, como
+    `linha invalida: NaN` na primeira medicao de "Aplicar alteracoes". Quem
+    pegou foi a validacao de `appendRow`; sem ela, `Math.max(n, undefined)`
+    teria virado uma coordenada NaN no XML.
+  */
   const config = {
-    workbookPath: resolve(RAIZ, 'tests/fixtures', fixture),
+    workbookPath: planilha,
     sheetName: '2026',
+    headerRow: 1,
+    firstDataRow: 2,
     port: porta,
-    timezone: 'America/Sao_Paulo',
+    stalledDaysThreshold: 15,
     topN: 10,
+    timezone: 'America/Sao_Paulo',
   }
   const colorMap = loadColorMap()
 
@@ -90,6 +114,29 @@ export async function abrirAplicacao({ fixture = 'cores.xlsx', porta = 5199 } = 
   })
   await reload()
 
+  /*
+    O guarda de escrita, para que "Aplicar alteracoes" seja mensuravel. Sem ele
+    a rota responde 500 "initWriteGuard precisa ser chamado antes de aplicar", e
+    o ciclo completo — criar linha, aplicar, conferir no arquivo — ficava fora do
+    alcance da medicao.
+
+    Backup e fila arquivada tambem no temporario: sao o quinto e o sexto caminho
+    de escrita, e a regra inviolavel 7 vale para os dois.
+  */
+  const { initWriteGuard } = await modulo('src/app/write-guard.ts')
+  // Sem `store`: o padrao do guarda ja e o process-store inteiro, com
+  // `rebuild`, `settle`, `markWriting` e `finishWriting`. Passar o `StoreAccess`
+  // daqui — que so tem `getState` e `reload` — derruba a aplicacao com
+  // "store.finishWriting is not a function".
+  initWriteGuard({
+    config,
+    colorMap,
+    watcher: { pause() {}, resume() {} },
+    queuePath: join(area, 'pending-edits.jsonl'),
+    backupDir: join(area, 'backups'),
+    appliedDir: join(area, 'aplicadas'),
+  })
+
   const app = buildServer(
     config,
     store,
@@ -101,6 +148,17 @@ export async function abrirAplicacao({ fixture = 'cores.xlsx', porta = 5199 } = 
     webRoot,
     [],
     join(area, 'pending-edits.jsonl'),
+    [],
+    // O QUARTO caminho de escrita, de 02/09/2026: `PUT
+    // /api/processes/:ref/client` grava a regra de consolidacao. Sem este
+    // argumento a medicao escreveria no `client-map.json` do OPERADOR — a
+    // recusa de `saveClientRule` so vale sob `NODE_ENV=test`, e aqui nao vale
+    // (ver a nota do cabecalho). Mesmo modo de falha que `H-34` mediu.
+    [],
+    join(area, 'client-map.json'),
+    // O que `main` passa: sem ele a regra e gravada e a tela segue mostrando a
+    // consolidacao antiga — a medicao veria um defeito que a aplicacao nao tem.
+    (mapa) => refreshClientMap(mapa.clients, mapa.groups),
   )
   await app.listen({ host: LOOPBACK, port: porta })
 

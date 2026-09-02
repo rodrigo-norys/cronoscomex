@@ -1,6 +1,9 @@
-import type { EditableField } from './editable-fields.ts'
+import { NO_FILL_KEY } from './color-mapper.ts'
+import { EDITABLE_FIELDS, type EditableField } from './editable-fields.ts'
+import { normKey } from './normalizer.ts'
 import { type BuildDeps, buildProcesses, toRawRow } from './process-builder.ts'
-import type { Process } from './types.ts'
+import { ALL_COLUMNS, REF_COLUMN } from './status-classifier.ts'
+import type { Process, RawCell, RawRow } from './types.ts'
 
 /**
  * A projecao das edicoes pendentes sobre os processos lidos (`H-23`).
@@ -43,7 +46,31 @@ export interface ColorEdit {
   styleKey: string
 }
 
-export type ProjectedEdit = FieldEdit | ColorEdit
+/**
+ * A linha NOVA, ainda nao gravada (02/09/2026).
+ *
+ * Ela **acrescenta** um processo, em vez de alterar um que existe — e e a unica
+ * das tres que faz isso. Sem ela, o operador digitaria a linha e nao a veria
+ * ate mandar aplicar: a projecao existe justamente para a tela mostrar "o
+ * arquivo, mais o que ainda nao foi gravado" (`H-23`).
+ */
+export interface RowInsertEdit {
+  kind: 'insert'
+  ref: string
+  values: Partial<Record<EditableField, string | null>>
+}
+
+export type ProjectedEdit = FieldEdit | ColorEdit | RowInsertEdit
+
+/**
+ * O `sourceRow` de uma linha que ainda nao existe.
+ *
+ * **Zero, e nao um numero plausivel.** Chutar "a ultima com REF mais um" daria
+ * 651 no arquivo real, e a linha vai para a **746** — o numero seria inventado,
+ * e apareceria como fato na tela e no log (regra inviolavel 3). Quem resolve o
+ * numero de verdade e o `write-guard`, no momento da escrita.
+ */
+export const UNWRITTEN_ROW = 0
 
 export interface ProjectionResult {
   processes: Process[]
@@ -62,6 +89,9 @@ const DATE_FIELDS: readonly EditableField[] = ['eta2', 'registrationDate', 'docs
  */
 function withEditApplied(process: Process, edit: ProjectedEdit): Process {
   if (edit.kind === 'color') return { ...process, styleKey: edit.styleKey }
+  // Insercao nao altera processo nenhum — ela cria um. `applyEdits` a separa
+  // antes de chegar aqui, e este ramo existe para o tipo.
+  if (edit.kind === 'insert') return process
 
   if (DATE_FIELDS.includes(edit.field)) {
     return {
@@ -70,6 +100,31 @@ function withEditApplied(process: Process, edit: ProjectedEdit): Process {
     }
   }
   return { ...process, [edit.field]: edit.value ?? '' }
+}
+
+/**
+ * A linha crua de uma insercao: as 16 colunas, vazias, com a REF na A e os
+ * campos que o operador preencheu.
+ *
+ * `styleKey` e a AUSENCIA de preenchimento, que e o que `appendRow` grava — a
+ * tela mostra a mesma cor que o arquivo vai ter. Desde 02/09/2026 isso resolve
+ * para indefinido nos tres campos de cor, e nao para quarentena.
+ */
+export function insertToRawRow(insert: RowInsertEdit): RawRow {
+  const cells: Record<string, RawCell> = {}
+  for (const column of ALL_COLUMNS) cells[column] = { value: null, type: 'null' }
+  cells[REF_COLUMN] = { value: insert.ref, type: 'string' }
+
+  for (const [field, value] of Object.entries(insert.values)) {
+    const column = EDITABLE_FIELDS[field as EditableField]?.column
+    if (column === undefined || value === null) continue
+
+    cells[column] = DATE_FIELDS.includes(field as EditableField)
+      ? { value: new Date(`${value}T00:00:00Z`), type: 'date' }
+      : { value, type: 'string' }
+  }
+
+  return { sourceRow: UNWRITTEN_ROW, cells, styleKey: NO_FILL_KEY }
 }
 
 export function applyEdits(
@@ -82,6 +137,7 @@ export function applyEdits(
 
   const byRef = new Map<string, ProjectedEdit[]>()
   for (const edit of edits) {
+    if (edit.kind === 'insert') continue
     byRef.set(edit.ref, [...(byRef.get(edit.ref) ?? []), edit])
   }
 
@@ -99,5 +155,21 @@ export function applyEdits(
     return rebuilt ?? edited
   })
 
-  return { processes: projected, editedRefs }
+  /*
+    As insercoes entram DEPOIS das lidas, e nao intercaladas: elas ainda nao tem
+    numero de linha, entao nao ha posicao a respeitar. Uma insercao cuja REF ja
+    exista no arquivo NAO e projetada — o `write-guard` a recusaria na escrita, e
+    mostra-la na tela prometeria o que a aplicacao nao vai cumprir.
+  */
+  // `normKey`, como TD-06 define a identidade e como o `write-guard` decide.
+  // Comparar a REF crua fazia `ft900.26` no arquivo e `FT900.26` na fila
+  // conviverem na tabela — duas linhas que sao o MESMO processo —, e a
+  // aplicacao recusava a fila inteira depois. Achado do revisor-xml.
+  const existentes = new Set(processes.map((process) => normKey(process.ref)))
+  const novas = edits
+    .filter((edit): edit is RowInsertEdit => edit.kind === 'insert')
+    .filter((insert) => !existentes.has(normKey(insert.ref)))
+    .flatMap((insert) => buildProcesses([insertToRawRow(insert)], deps).processes)
+
+  return { processes: [...projected, ...novas], editedRefs }
 }

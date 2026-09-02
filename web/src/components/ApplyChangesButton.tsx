@@ -35,8 +35,18 @@ interface ApplyChangesButtonProps {
  * guard nao gravou byte algum. Dizer "gravadas" ali afirmaria uma escrita que
  * nao aconteceu. Achado do revisor-xml.
  */
-function describeWritten(cells: number, rows: number): string {
+/**
+ * **A linha nova conta aqui, e a ausência dela era uma afirmação falsa.** Uma
+ * fila só de inserção não grava célula por `applyCellEdits` nem repinta nada:
+ * sem `inseridas`, a tela anunciava *"a planilha já estava assim — nada precisou
+ * ser gravado"* ao operador que acabou de criar um processo no arquivo. Achado
+ * do revisor-xml, e é o caso mais comum da funcionalidade.
+ */
+function describeWritten(cells: number, rows: number, inseridas: number): string {
   const parts: string[] = []
+  if (inseridas > 0) {
+    parts.push(inseridas === 1 ? '1 linha nova' : `${inseridas} linhas novas`)
+  }
   if (cells > 0) parts.push(cells === 1 ? '1 célula gravada' : `${cells} células gravadas`)
   if (rows > 0) parts.push(rows === 1 ? '1 linha repintada' : `${rows} linhas repintadas`)
 
@@ -91,7 +101,7 @@ export function ApplyChangesButton({
       <span role="status" className={done === null ? 'sr-only' : 'text-sm text-state-success-fg'}>
         {done !== null && (
           <>
-            {describeWritten(done.cellsWritten, done.rowsRepainted)}
+            {describeWritten(done.cellsWritten, done.rowsRepainted, done.rowsInserted)}
             {/* A fila ficou para tras: sem isto o operador aplicaria de novo e
                 receberia uma recusa que ele nao tem como explicar. */}
             {done.archivedQueuePath === null && ' — confira a fila, ela não foi arquivada'}

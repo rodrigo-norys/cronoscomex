@@ -5,7 +5,12 @@ import {
   indexClientGroups,
 } from '../domain/client-mapper.ts'
 import { type ColorMapEntry, indexColorMap, resolveFillTarget } from '../domain/color-mapper.ts'
-import { type BuildResult, buildProcesses, quarantineRate } from '../domain/process-builder.ts'
+import {
+  type BuildResult,
+  buildProcesses,
+  quarantineRate,
+  toRawRow,
+} from '../domain/process-builder.ts'
 import { applyEdits, type ProjectedEdit } from '../domain/process-projection.ts'
 import type { TeamMember } from '../domain/team-mapper.ts'
 import type { Process, RawRow } from '../domain/types.ts'
@@ -13,6 +18,7 @@ import {
   consolidated,
   DEFAULT_QUEUE_PATH,
   isColorEdit,
+  isRowInsert,
   type PendingEdit,
 } from '../io/edit-queue.ts'
 import { DEFAULT_HISTORY_PATH, recordChanges } from '../io/history-store.ts'
@@ -157,7 +163,18 @@ export function initStore(next: StoreOptions): void {
  * e sem ele uma edicao qualquer tiraria o processo do cliente consolidado.
  */
 export function getState(): StoreState {
-  if (options === null || current.processes.length === 0) return { ...current }
+  /*
+    **A saida por lista vazia caiu em 02/09/2026**, e ela era um atalho que
+    deixou de valer quando a fila passou a CRIAR processo. Numa aba sem nenhum
+    — a `2027` recem-criada, que e o cenario que o piso de `firstDataRow` existe
+    para atender — a linha nova era enfileirada, nao aparecia na tabela, e toda
+    tentativa de preencher uma celula dela voltava `404` sobre a REF que a
+    propria aplicacao acabara de aceitar. Achado do revisor-xml.
+
+    Sem `initStore` a projecao continua pulada, e por outro motivo: nao ha
+    `statusAliases` nem mapa de cor para re-derivar.
+  */
+  if (options === null) return { ...current }
 
   const edits = consolidated(options.queuePath ?? DEFAULT_QUEUE_PATH)
   if (edits.length === 0) return { ...current }
@@ -185,6 +202,8 @@ export function getState(): StoreState {
  */
 function toProjected(edits: PendingEdit[], colorMap: readonly ColorMapEntry[]): ProjectedEdit[] {
   return edits.flatMap<ProjectedEdit>((edit) => {
+    // A insercao atravessa inteira: ela nao resolve nada contra mapa nenhum.
+    if (isRowInsert(edit)) return [{ kind: 'insert', ref: edit.ref, values: edit.values }]
     if (!isColorEdit(edit)) return [edit]
 
     const entry = resolveFillTarget(edit.target, colorMap)
@@ -395,6 +414,47 @@ export async function reload(): Promise<void> {
     inFlight = null
   })
   return inFlight
+}
+
+/**
+ * Troca o mapa de clientes com o processo no ar, e reprojeta (02/09/2026).
+ *
+ * Existe porque o mapa deixou de ser so configuracao de partida: declarar o
+ * cliente de uma linha na Pagina Operacional grava em `client-map.json`, e sem
+ * este passo a coluna Cliente continuaria mostrando a resolucao antiga ate o
+ * proximo reinicio.
+ *
+ * **Muta `options.clientMap` em vez de trocar o objeto de opcoes**, pelo mesmo
+ * motivo de `reconfigureWorkbook`: as rotas e o write-guard capturaram o mesmo
+ * objeto por referencia na partida.
+ *
+ * **Re-deriva em memoria, e NAO chama `reload`** — medido em 02/09/2026, com a
+ * regra gravada e a tela mostrando a consolidacao antiga. `runReload` sai antes
+ * de recompor quando o hash do arquivo nao mudou, que e a otimizacao de `H-28`
+ * contra o "salvar sem editar" do OneDrive; aqui quem mudou foi o MAPA, e o
+ * arquivo esta igual de proposito — a guarda acerta o caso dela e erra este.
+ *
+ * A volta pelas linhas cruas e o mesmo caminho que a projecao da fila usa desde
+ * `H-23`: `toRawRow` reconstroi a linha e `buildProcesses` refaz o processo
+ * inteiro, porque consolidar entra na CONSTRUCAO — reescrever so o rotulo
+ * deixaria `clientKey` e o grupo apontando para o cliente anterior.
+ */
+export async function refreshClientMap(
+  clients: readonly ClientMapEntry[],
+  groups: readonly ClientGroup[],
+): Promise<void> {
+  const deps = options
+  if (!deps) {
+    throw new StoreNotInitializedError('initStore precisa ser chamado antes de refreshClientMap.')
+  }
+
+  // Uma leitura em voo terminaria DEPOIS, gravando processos derivados do mapa
+  // antigo por cima destes.
+  await settle()
+  deps.clientMap = clients
+  deps.clientGroups = groups
+  clientGroupIndex = indexClientGroups(groups)
+  current = { ...current, processes: rebuildProcesses(current.processes.map(toRawRow)) }
 }
 
 let reconfiguring: Promise<void> | null = null

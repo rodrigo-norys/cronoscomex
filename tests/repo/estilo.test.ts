@@ -881,13 +881,19 @@ describe('C04 — o botão de ação primária tem uma forma só', () => {
     expect(aMao.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
   })
 
-  /** Âncora: sem consumidores, a asserção acima passaria por vacuidade. */
-  it('encontra os cinco consumidores da utilidade', () => {
+  /**
+   * Âncora: sem consumidores, a asserção acima passaria por vacuidade.
+   *
+   * **Seis desde 02/09/2026** — `NewRowButton` é o sexto, e entra pelo mesmo
+   * motivo dos outros cinco: enfileirar a linha nova é ação primária, e escrever
+   * a composição à mão foi o que `ACHADO 4` encontrou divergindo em 3 de 5.
+   */
+  it('encontra os seis consumidores da utilidade', () => {
     const consomem = FILES.filter((file) =>
       /\bbutton-primary\b/.test(semComentarios(readFileSync(file, 'utf-8'))),
     )
 
-    expect(consomem).toHaveLength(5)
+    expect(consomem).toHaveLength(6)
   })
 })
 

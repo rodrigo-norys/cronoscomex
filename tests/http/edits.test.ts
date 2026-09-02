@@ -7,7 +7,7 @@ import type { StoreAccess, StoreState } from '../../src/app/process-store.ts'
 import type { Process } from '../../src/domain/types.ts'
 import { registerEditsRoutes } from '../../src/http/routes/edits.ts'
 import { buildServer } from '../../src/http/server.ts'
-import { DEFAULT_QUEUE_PATH } from '../../src/io/edit-queue.ts'
+import { DEFAULT_QUEUE_PATH, enqueue } from '../../src/io/edit-queue.ts'
 
 /**
  * As quatro rotas de edicao. **Nenhuma toca o `.xlsx`** — e o teste prova, ao
@@ -454,6 +454,28 @@ describe('DELETE /api/edits', () => {
 describe('a fila e imutavel enquanto a escrita acontece', () => {
   const escrevendo = state({ state: 'escrevendo' })
 
+  /**
+   * **A rota da linha nova entrou na defesa e não na regressão** — achado do
+   * revisor-xml na quinta passagem. Sem este caso, remover `refuseDuringWrite`
+   * dela não reprova nada, e a janela reabre: uma inserção que entra na fila
+   * durante a aplicação é arquivada em `data/applied/` como aplicada **sem ter
+   * sido gravada**, e o painel passa a mostrar zero pendências. O `.xlsx` não é
+   * corrompido; o que se perde é a linha que o operador digitou, em silêncio.
+   */
+  it('recusa POST /api/edits/row com 409, sem enfileirar', async () => {
+    const app = buildApp(escrevendo)
+
+    const resposta = await app.inject({
+      method: 'POST',
+      url: '/api/edits/row',
+      payload: { ref: 'FT900.26', values: {} },
+    })
+
+    expect(resposta.statusCode).toBe(409)
+    expect(resposta.json().error.code).toBe('ESCRITA_EM_ANDAMENTO')
+    expect(existsSync(queuePath)).toBe(false)
+  })
+
   it('recusa POST com 409 ESCRITA_EM_ANDAMENTO, sem enfileirar', async () => {
     const app = buildApp(escrevendo)
 
@@ -600,5 +622,178 @@ describe('buildServer repassa o caminho da fila', () => {
     const depois = existsSync(DEFAULT_QUEUE_PATH) ? readFileSync(DEFAULT_QUEUE_PATH, 'utf-8') : null
     expect(depois).toBe(antes)
     await app.close()
+  })
+})
+
+/**
+ * `POST /api/edits/row` — a linha nova (02/09/2026).
+ *
+ * **Não grava nada**, como as demais: enfileira, e a planilha só muda no
+ * `Aplicar alterações`. O que estes casos protegem é o que a rota recusa — a
+ * REF é a chave natural, e uma repetida torna dois processos ambíguos e manda
+ * os dois para a quarentena por `REF_DUPLICADA`.
+ */
+describe('POST /api/edits/row', () => {
+  async function criar(app: ReturnType<typeof buildApp>, payload: Record<string, unknown>) {
+    return await app.inject({ method: 'POST', url: '/api/edits/row', payload })
+  }
+
+  it('enfileira a linha e devolve a pendencia, sem tocar a planilha', async () => {
+    const response = await criar(buildApp(), {
+      ref: 'FT900.26',
+      values: { clientRaw: 'CLIENTE NOVO', eta2: '2026-09-30' },
+    })
+
+    expect(response.statusCode).toBe(201)
+    const body = response.json()
+    expect(body.kind).toBe('insert')
+    expect(body.ref).toBe('FT900.26')
+    expect(body.values).toEqual({ clientRaw: 'CLIENTE NOVO', eta2: '2026-09-30' })
+    expect(body.pendingEditsCount).toBe(1)
+    // Não há `sourceRow`: o número da linha é do `write-guard`, no momento da
+    // escrita — congelá-lo aqui é o defeito que `H-25` fechou.
+    expect(body.sourceRow).toBeUndefined()
+  })
+
+  it('RECUSA REF que ja existe na planilha, com 409', async () => {
+    const response = await criar(buildApp(), { ref: 'FT533.26' })
+
+    expect(response.statusCode).toBe(409)
+    expect(response.json().error.code).toBe('REF_DUPLICADA')
+  })
+
+  it('RECUSA REF ausente ou vazia', async () => {
+    expect((await criar(buildApp(), {})).statusCode).toBe(400)
+    expect((await criar(buildApp(), { ref: '   ' })).statusCode).toBe(400)
+  })
+
+  it('RECUSA campo nao editavel e valor invalido, como POST /api/edits', async () => {
+    const naoEditavel = await criar(buildApp(), { ref: 'FT900.26', values: { ref: 'X' } })
+    const dataImpossivel = await criar(buildApp(), {
+      ref: 'FT901.26',
+      values: { eta2: '2026-02-31' },
+    })
+
+    expect(naoEditavel.statusCode).toBe(400)
+    expect(naoEditavel.json().error.code).toBe('CAMPO_NAO_EDITAVEL')
+    expect(dataImpossivel.statusCode).toBe(400)
+    expect(dataImpossivel.json().error.code).toBe('CORPO_INVALIDO')
+  })
+
+  /**
+   * A célula de uma linha ainda não gravada atualiza a INSERÇÃO. Enfileirar uma
+   * edição de campo para ela criaria uma edição cujo alvo o `write-guard`
+   * resolve pela REF — e a REF não está no arquivo: a aplicação inteira voltaria
+   * com `refMissing`.
+   */
+  it('editar celula da linha pendente atualiza a insercao, e nao cria edicao de campo', async () => {
+    // O estado vem PROJETADO em produção: a linha pendente aparece com
+    // `sourceRow: 0` (`UNWRITTEN_ROW`), e é esse zero que a rota usa para saber
+    // que ela ainda não está no arquivo.
+    const app = buildApp(
+      state({ processes: [process(), process({ ref: 'FT900.26', sourceRow: 0 })] }),
+    )
+    // Enfileirada direto: pela rota daria `409`, porque a REF já está no estado
+    // projetado — que é justamente o que a projeção faz com uma inserção.
+    enqueue({ kind: 'insert', ref: 'FT900.26', values: { clientRaw: 'ANTES' } }, queuePath)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/edits',
+      payload: { ref: 'FT900.26', field: 'clientRaw', value: 'DEPOIS' },
+    })
+
+    expect(response.statusCode).toBe(201)
+    expect(response.json().kind).toBe('insert')
+    expect(response.json().values.clientRaw).toBe('DEPOIS')
+    // Uma pendência só: a inserção substituiu a anterior, em vez de somar.
+    expect(response.json().pendingEditsCount).toBe(1)
+  })
+})
+
+/**
+ * **A linha do arquivo vence a inserção órfã** (02/09/2026). Se a REF passar a
+ * existir na planilha — alguém a digitou no Excel — a projeção deixa de mostrar
+ * a linha pendente, mas a fila ainda a tem. Antes, a edição da linha REAL era
+ * desviada para o registro invisível: o operador recebia `201`, a célula não
+ * mudava, e nada indicava o desvio. Achado do revisor-xml.
+ */
+describe('edicao quando a REF passou a existir no arquivo', () => {
+  it('a edicao vai para a celula real, e nao para a insercao pendente', async () => {
+    const app = buildApp(state({ processes: [process({ ref: 'FT900.26', sourceRow: 42 })] }))
+    await app.inject({
+      method: 'POST',
+      url: '/api/edits/row',
+      payload: { ref: 'FT901.26', values: {} },
+    })
+    // A inserção órfã é forjada direto na fila: a rota a recusaria com 409.
+    enqueue({ kind: 'insert', ref: 'FT900.26', values: {} }, queuePath)
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/edits',
+      payload: { ref: 'FT900.26', field: 'clientRaw', value: 'VALOR' },
+    })
+
+    expect(response.statusCode).toBe(201)
+    // Edição de CAMPO, contra a linha 42 — e não uma inserção regravada.
+    expect(response.json().kind).toBeUndefined()
+    expect(response.json().sourceRow).toBe(42)
+    expect(response.json().field).toBe('clientRaw')
+  })
+})
+
+/**
+ * **O cruzamento dos dois eixos: linha pendente × entrada inválida.**
+ *
+ * Os casos de validação existentes miram a linha REAL, e o caso do desvio usa
+ * valores válidos — nenhum cruzava os dois. Foi por esse buraco que uma
+ * reconstrução do arquivo deixou o desvio sem validação, e o `revisor-xml`
+ * mediu o desfecho: `eta2` em formato errado entra na fila, a projeção lança
+ * `RangeError: Invalid time value`, e como toda rota chama `getState()` o
+ * painel inteiro passa a responder `500` — inclusive o `DELETE /api/edits` que
+ * esvaziaria a fila. Ela é append-only em disco, então nem reiniciar resolve.
+ *
+ * É o mesmo formato de buraco de `H-24`: dois eixos exercitados em separado e
+ * nunca juntos.
+ */
+describe('a linha pendente valida como qualquer outra', () => {
+  const comPendente = () =>
+    buildApp(state({ processes: [process(), process({ ref: 'FT900.26', sourceRow: 0 })] }))
+
+  const INVALIDOS: [string, string | null][] = [
+    ['responsible', 'X'],
+    ['eta2', '2026-02-31'],
+    ['eta2', '06/08/2026'],
+    ['statusRaw', 'x'.repeat(1001)],
+  ]
+
+  it('RECUSA os mesmos valores que recusaria na linha real', async () => {
+    for (const [field, value] of INVALIDOS) {
+      const app = comPendente()
+      enqueue({ kind: 'insert', ref: 'FT900.26', values: {} }, queuePath)
+
+      const resposta = await app.inject({
+        method: 'POST',
+        url: '/api/edits',
+        payload: { ref: 'FT900.26', field, value },
+      })
+
+      expect(resposta.statusCode, `${field}=${String(value).slice(0, 12)}`).toBe(400)
+    }
+  })
+
+  /** A âncora do caso acima: os mesmos valores na linha real também são 400 —
+      sem isto, um `400` por outro motivo faria o teste passar por engano. */
+  it('e a linha real recusa os mesmos, pelo mesmo caminho', async () => {
+    for (const [field, value] of INVALIDOS) {
+      const resposta = await buildApp().inject({
+        method: 'POST',
+        url: '/api/edits',
+        payload: { ref: 'FT533.26', field, value },
+      })
+
+      expect(resposta.statusCode).toBe(400)
+    }
   })
 })

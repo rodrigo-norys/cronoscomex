@@ -35,6 +35,32 @@ aplicação **diz** ao operador sobre a escrita, mande a tela junto.
 Ele não tem `Edit` nem `Write`, e é invocado **sem** o raciocínio de quem
 escreveu o código: começar cego é o mecanismo, não efeito colateral.
 
+**Onde ele acha os casos-limite.** Ele os enumera de `docs/06-backlog.md`, e a
+criação de linha (02/09/2026) ainda **não tem história lá**. A enumeração está
+repartida em três lugares, e os três precisam ir junto:
+
+| Arquivo | O que enumera |
+|---|---|
+| `tests/io/xlsx-surgeon-append.test.ts` | a cirurgia — `appendRow` e as recusas dela |
+| `tests/app/write-guard.test.ts` | quem a chama — piso de `firstDataRow`, duas inserções, `refExists`, REF aparada, `TABELA_CHEIA`, linhas vazias no fim da aba |
+| `docs/05-contratos-api.md §3` | o contrato de `POST /api/edits/row` e do desvio em `POST /api/edits` |
+
+Sem os três, a revisão reenumera do zero e a lista muda entre invocações — foi a
+divergência que ele levantou em **todas** as passagens.
+
+**Ele reprovou QUATRO vezes em 02/09/2026, em cinco passagens — e o padrão é a
+lição.** Da segunda passagem em diante, **quase todo achado nasceu da correção
+do achado anterior**:
+
+| Passagem | Achado introduzido pela correção anterior |
+|---|---|
+| 2ª | `growDimension` passou a derrubar a gravação numa forma de `<dimension>` que o Excel lê sem reclamar; e o filtro de colunas de `tableLastRow` deixou o guarda da Tabela **contornável pela escolha das colunas** |
+| 3ª | `TABELA_CHEIA` não atravessou até a tela, caindo em `ERRO_INTERNO`; e a edição de célula passou a ser engolida por uma inserção órfã invisível |
+| 4ª | o `404` na aba vazia, aberto pela correção anterior; e a guarda nova contra códigos faltando **não cobria os últimos códigos da lista** |
+| 5ª | dois artefatos descrevendo o que o código deixou de fazer |
+
+**Corrigir sem reinvocar teria trocado um defeito por outro, quatro vezes.**
+
 ## A cadeia de cálculo, e a premissa que foi REFUTADA — `PD-05`, fechada em 01/09/2026
 
 A pendência supunha que o Excel emite o atributo `i` apenas na **primeira**

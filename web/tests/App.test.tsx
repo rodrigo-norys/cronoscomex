@@ -748,4 +748,24 @@ describe('a casca de eixo lateral', () => {
 
     expect(alertas.some((no) => no.className.includes('sr-only'))).toBe(true)
   })
+
+  /**
+   * As duas regiões de `H-44` nasceram sem classe, e o portal escreve nelas o
+   * MESMO texto que o bloco visível da página já mostra: em `/historico` com a
+   * janela de 12 meses o aviso de recorte apareceu na tela, fora do painel,
+   * como terceira coluna do flex da raiz. Elas carregam texto para o leitor de
+   * tela, nunca para o olho.
+   */
+  it('mantém as duas regiões vivas das páginas fora da tela', () => {
+    const { container } = render(<App />)
+
+    for (const id of ['regiao-viva-da-pagina', 'regiao-viva-da-pagina-status']) {
+      const regiao = container.querySelector(`#${id}`)
+
+      expect(regiao).toBeTruthy()
+      // `hidden` esconderia igual e mataria o anúncio — a asserção é sobre a
+      // classe exata, e não sobre "estar escondido de algum jeito".
+      expect(regiao?.className).toBe('sr-only')
+    }
+  })
 })

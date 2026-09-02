@@ -28,6 +28,7 @@ interface Fields {
   container?: string
   clientRaw?: string
   clientKey?: string
+  importerKey?: string
   clientGroupKey?: string
   goodsRaw?: string
   vesselKey?: string
@@ -62,7 +63,7 @@ function makeProcess(fields: Fields = {}): Process {
     clientProcessKey: fields.clientKey ?? '',
     clientLabel: fields.clientRaw ?? '',
     clientGroupKey: fields.clientGroupKey ?? '',
-    importerKey: '',
+    importerKey: fields.importerKey ?? '',
     agentKey: '',
     vesselKey: fields.vesselKey ?? '',
     portKey: '',
@@ -213,6 +214,73 @@ describe('sortProcesses — nulos sempre por ultimo', () => {
 
     expect(sortProcesses([beta, alfa], 'ref', 'asc').map((p) => p.ref)).toEqual(['AAA', 'ZZZ'])
     expect(sortProcesses([alfa, beta], 'vessel', 'asc').map((p) => p.ref)).toEqual(['ZZZ', 'AAA'])
+  })
+})
+
+/**
+ * As cinco ordens que 02/09/2026 acrescentou, uma por coluna que a tabela
+ * mostrava sem cabecalho clicavel.
+ */
+describe('sortProcesses — as colunas que nao tinham ordem', () => {
+  it('ordena por importador, BL e CNTR, com o vazio por ultimo nos dois sentidos', () => {
+    const vazio = makeProcess({ sourceRow: 9, ref: 'Z', importerKey: '', billOfLading: '' })
+    const cheio = makeProcess({ sourceRow: 8, ref: 'Y', importerKey: 'ACME', billOfLading: 'BL1' })
+
+    for (const campo of ['importer', 'billOfLading'] as const) {
+      expect(sortProcesses([vazio, cheio], campo, 'asc').map((p) => p.ref)).toEqual(['Y', 'Z'])
+      expect(sortProcesses([vazio, cheio], campo, 'desc').map((p) => p.ref)).toEqual(['Y', 'Z'])
+    }
+  })
+
+  /**
+   * O caso que justifica as DUAS colunas existirem: `AV-480` e `AV-397` sao o
+   * mesmo cliente consolidado e processos diferentes daquele cliente (`H-49`).
+   * Ordenar por um nao ordena pelo outro.
+   */
+  it('separa a ordem do cliente consolidado da ordem da celula CLT', () => {
+    const primeiro = makeProcess({ sourceRow: 1, ref: 'A', clientKey: 'ZETA', clientRaw: 'AV-397' })
+    const segundo = makeProcess({ sourceRow: 2, ref: 'B', clientKey: 'ALFA', clientRaw: 'AV-480' })
+
+    expect(sortProcesses([primeiro, segundo], 'client', 'asc').map((p) => p.ref)).toEqual([
+      'B',
+      'A',
+    ])
+    expect(sortProcesses([primeiro, segundo], 'clientProcess', 'asc').map((p) => p.ref)).toEqual([
+      'A',
+      'B',
+    ])
+  })
+
+  it('nao deixa caixa nem acento decidirem a ordem', () => {
+    const comAcento = makeProcess({ sourceRow: 1, ref: 'A', container: 'ábaco' })
+    const maiuscula = makeProcess({ sourceRow: 2, ref: 'B', container: 'ABACO' })
+    const depois = makeProcess({ sourceRow: 3, ref: 'C', container: 'BXYZ' })
+
+    // Os dois primeiros empatam na chave dobrada, e o desempate e `sourceRow`.
+    expect(
+      sortProcesses([depois, maiuscula, comAcento], 'container', 'asc').map((p) => p.ref),
+    ).toEqual(['A', 'B', 'C'])
+  })
+
+  /**
+   * A ordem e a do FLUXO, e nao a do alfabeto — alfabetica poria
+   * "Desembaracado" antes de "Em andamento", invertendo o trabalho.
+   */
+  it('ordena categoria pelo fluxo declarado em STATUS_CATEGORIES', () => {
+    const desembaracado = makeProcess({ sourceRow: 1, ref: 'A', statusCategory: 'desembaracado' })
+    const andamento = makeProcess({ sourceRow: 2, ref: 'B', statusCategory: 'em_andamento' })
+    const draft = makeProcess({
+      sourceRow: 3,
+      ref: 'C',
+      statusCategory: 'fechado_aguardando_draft',
+    })
+    const desembaraco = makeProcess({ sourceRow: 4, ref: 'D', statusCategory: 'em_desembaraco' })
+    const todos = [desembaracado, andamento, draft, desembaraco]
+
+    expect(sortProcesses(todos, 'status', 'asc').map((p) => p.ref)).toEqual(['B', 'D', 'A', 'C'])
+    // Toda linha tem uma das quatro (TD-01): nao ha balde de nulos preso no fim,
+    // entao descendente inverte as quatro inteiras.
+    expect(sortProcesses(todos, 'status', 'desc').map((p) => p.ref)).toEqual(['C', 'A', 'D', 'B'])
   })
 })
 

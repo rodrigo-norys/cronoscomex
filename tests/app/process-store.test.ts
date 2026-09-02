@@ -10,6 +10,7 @@ import {
   initStore,
   markWriting,
   reconfigureWorkbook,
+  refreshClientMap,
   reload,
   settle,
 } from '../../src/app/process-store.ts'
@@ -17,6 +18,7 @@ import { normalizeClientMap } from '../../src/domain/client-mapper.ts'
 import type { ColorMapEntry } from '../../src/domain/color-mapper.ts'
 import { normalizeTeamMap } from '../../src/domain/team-mapper.ts'
 import type { RawRow } from '../../src/domain/types.ts'
+import { enqueue } from '../../src/io/edit-queue.ts'
 import type { ReadResult } from '../../src/io/xlsx-reader.ts'
 
 const COLOR_MAP: ColorMapEntry[] = [
@@ -545,7 +547,9 @@ describe('process-store — reconfiguracao do caminho (H-34)', () => {
     await reconfigureWorkbook(outra)
 
     expect(getState().state).toBe('pronto')
-    expect(getState().rowsRead).toBe(10)
+    // 11 desde 02/09/2026: `cores.xlsx` ganhou a linha SEM preenchimento, que
+    // deixou de ser cor desconhecida e passou a ser linha em branco legitima.
+    expect(getState().rowsRead).toBe(11)
   })
 
   /**
@@ -754,5 +758,92 @@ describe('initStore — o mapa de equipe chega a composicao (H-50)', () => {
     const [process] = getState().processes
     expect(process?.responsible).toBe('indefinido')
     expect(process?.colorResponsible).toBe('indefinido')
+  })
+})
+
+/**
+ * `refreshClientMap` (02/09/2026): a coluna Cliente passou a escrever no
+ * `client-map.json`, e a tela precisa mostrar a consolidação nova sem reinício.
+ */
+describe('process-store — troca do mapa de clientes', () => {
+  it('re-deriva com o mapa novo SEM que a planilha mude', async () => {
+    start()
+    await reload()
+    const antes = getState().processes[0]
+    expect(antes?.clientLabel).toBe(antes?.clientRaw)
+
+    await refreshClientMap(
+      normalizeClientMap([
+        {
+          key: 'consolidado',
+          label: 'Consolidado',
+          rules: [{ match: 'exact', value: antes?.clientProcessKey ?? '' }],
+        },
+      ]),
+      [],
+    )
+
+    const depois = getState().processes[0]
+    expect(depois?.clientLabel).toBe('Consolidado')
+    // A célula NÃO muda: quem mudou foi a regra de consolidação.
+    expect(depois?.clientRaw).toBe(antes?.clientRaw)
+    // E a chave de agrupamento acompanha — reescrever só o rótulo deixaria os
+    // rankings agrupando pelo cliente anterior.
+    expect(depois?.clientKey).toBe('CONSOLIDADO')
+  })
+
+  /**
+   * **O defeito medido em 02/09/2026, e a razão de não chamar `reload`.**
+   * `runReload` sai antes de recompor quando o hash do arquivo não mudou — a
+   * otimização de `H-28` contra o "salvar sem editar" do OneDrive. Com ela no
+   * caminho, a regra era gravada e a tela seguia mostrando o rótulo antigo.
+   */
+  it('não depende de o arquivo ter mudado', async () => {
+    start()
+    await reload()
+    const hashAntes = getState().fileHash
+
+    await refreshClientMap(
+      normalizeClientMap([
+        {
+          key: 'x',
+          label: 'X',
+          rules: [{ match: 'exact', value: getState().processes[0]?.clientProcessKey ?? '' }],
+        },
+      ]),
+      [],
+    )
+
+    expect(getState().fileHash).toBe(hashAntes)
+    expect(getState().processes[0]?.clientLabel).toBe('X')
+  })
+})
+
+/**
+ * **A projeção não pode depender de já haver processo lido** (02/09/2026).
+ *
+ * O atalho por lista vazia valia enquanto a fila só ALTERAVA processo. Com a
+ * linha nova, ele criava um estado em que a aplicação aceita a inserção (`201`),
+ * a linha não aparece na tabela, e toda tentativa de preencher uma célula dela
+ * volta `404` sobre a REF que ela mesma aceitou — na aba `2027` recém-criada,
+ * que é exatamente o cenário que a inserção precisa atender. Achado do
+ * revisor-xml.
+ */
+describe('process-store — projeção sobre aba sem processo', () => {
+  it('projeta a linha nova mesmo quando a leitura não trouxe processo algum', async () => {
+    const queuePath = join(dir, 'pending-edits.jsonl')
+    copyFileSync('tests/fixtures/vazio.xlsx', workbookPath)
+    start({ queuePath })
+    await reload()
+    expect(getState().processes).toHaveLength(0)
+
+    enqueue({ kind: 'insert', ref: 'FT900.26', values: { clientRaw: 'NOVO' } }, queuePath)
+
+    const projetados = getState().processes
+    expect(projetados).toHaveLength(1)
+    expect(projetados[0]?.ref).toBe('FT900.26')
+    expect(projetados[0]?.clientRaw).toBe('NOVO')
+    // `0` é o sentinela de "ainda não gravada", e não um endereço.
+    expect(projetados[0]?.sourceRow).toBe(0)
   })
 })

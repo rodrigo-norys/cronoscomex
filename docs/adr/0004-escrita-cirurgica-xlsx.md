@@ -99,9 +99,23 @@ destroem.
   `xml:space="preserve"` para texto com espaços significativos, ordem dos nós
   `<c>` dentro de `<row>`, atualização de `count` e `uniqueCount` em
   `sharedStrings.xml` — cada um é um caso-limite com teste próprio em `H-24`.
-- **Só funciona para o que se implementou.** Alterar mesclagem de células,
-  inserir linhas ou criar estilos novos exigiria estender a cirurgia. Por isso
-  criação e remoção de linhas estão fora de escopo.
+- **Só funciona para o que se implementou.** Alterar mesclagem de células ou
+  criar estilos novos exigiria estender a cirurgia.
+
+  > **Emenda de 02/09/2026 — a criação de linha entrou** (`D-25`). A cirurgia
+  > foi estendida com `appendRow`, e a medição no arquivo real é o que a tornou
+  > barata: a aba `2026` **não tem** formatação condicional, validação de dados
+  > nem autofiltro próprios — o autofiltro vive dentro de `Tabela1`, cujo `ref`
+  > é `A1:P997` contra 745 linhas escritas. Enquanto houver folga, a linha nova
+  > cabe **sem estender intervalo nenhum**; só `<dimension>` cresce. Quando a
+  > folga acabar, `appendRow` **recusa** em vez de gravar fora da Tabela.
+  >
+  > A linha nasce com o estilo que a **coluna** declara — `xf 162`, sem
+  > preenchimento —, e não com o da linha de cima: `xf 181` carrega `fillId 8`,
+  > que o `color-map.json` traduz como Colaborador 1, e todo processo novo
+  > nasceria atribuído a quem ninguém escolheu (regra inviolável 3).
+  >
+  > **A remoção de linha continua fora de escopo.**
 - **Acoplamento ao formato OOXML.** Uma variação estrutural inesperada do
   arquivo (produzido por outra ferramenta que não o Excel) poderia quebrar a
   localização dos nós. A validação pós-escrita detecta antes que o dano

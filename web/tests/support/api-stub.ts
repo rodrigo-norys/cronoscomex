@@ -334,6 +334,9 @@ export function filterOptionsFixture(
 export interface ApiStub {
   /** `METODO /caminho`, na ordem em que foram chamados. Prova a ordem de A-62. */
   readonly calls: string[]
+  /** Os corpos enviados a `POST /api/edits`, na ordem — o que a edicao em linha
+      precisa afirmar e o PAR campo/valor, e nao so que a rota foi chamada. */
+  readonly editBodies: { ref: string; field: string; value: string | null }[]
   serve(health: HealthResponse): void
   serveOptions(options: FilterOptionsResponse): void
   failNextHealth(message: string): void
@@ -355,6 +358,8 @@ export interface ApiStub {
   failColorOptions(): void
   /** `PATCH /api/processes/:ref/color` passa a recusar com esta mensagem. */
   failEnqueueColor(message: string): void
+  /** `PUT /api/processes/:ref/client` passa a recusar com esta mensagem. */
+  failClientRule(message: string): void
   /** `POST /api/edits/apply` passa a responder 200 com este corpo. */
   serveWorkbookConfig(config: Partial<WorkbookConfigResponse>): void
   failSaveWorkbookPath(message: string): void
@@ -387,6 +392,7 @@ export interface ApiStub {
  */
 export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
   const calls: string[] = []
+  const editBodies: { ref: string; field: string; value: string | null }[] = []
   let health = initial
   let healthFailure: string | null = null
   let options = filterOptionsFixture()
@@ -403,6 +409,7 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
   let detail = processDetailFixture()
   let detailStatus = 200
   let enqueueFailure: string | null = null
+  let clientRuleFailure: string | null = null
   let colorOptions: ColorOption[] = [
     {
       label: 'Verde (tom A)',
@@ -423,6 +430,7 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
     applied: 1,
     cellsWritten: 1,
     rowsRepainted: 0,
+    rowsInserted: 0,
     backupPath: 'data/backups/planilha-20260814-143512.xlsx',
     archivedQueuePath: 'data/applied/pending-edits-20260814-143512.jsonl',
     durationMs: 210,
@@ -471,6 +479,9 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
       // As rotas de edicao de `H-23`. O stub nao mantem fila: cada teste serve
       // o detalhe que quer ver, e o que se verifica aqui e a chamada.
       if (path === '/api/edits') {
+        if (init?.method === 'POST' && typeof init.body === 'string') {
+          editBodies.push(JSON.parse(init.body))
+        }
         if (init?.method === 'POST' && enqueueFailure !== null) {
           const message = enqueueFailure
           return Promise.resolve({
@@ -534,6 +545,29 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
           ok: true,
           status: 201,
           json: () => Promise.resolve({ pendingEditsCount: 1 }),
+        } as Response)
+      }
+
+      // Pelo mesmo motivo do `/color` acima: antes do `startsWith` do detalhe.
+      if (path.endsWith('/client') && init?.method === 'PUT') {
+        if (clientRuleFailure !== null) {
+          const message = clientRuleFailure
+          return Promise.resolve({
+            ok: false,
+            status: 400,
+            json: () => Promise.resolve({ error: { code: 'CORPO_INVALIDO', message } }),
+          } as Response)
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              outcome: 'entrada-nova',
+              key: 'ACME',
+              label: 'Acme',
+              value: 'ACME-12',
+            }),
         } as Response)
       }
 
@@ -643,6 +677,7 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
 
   return {
     calls,
+    editBodies,
     serve: (next) => {
       health = next
     },
@@ -720,6 +755,9 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
     },
     failEnqueueEdit: (message) => {
       enqueueFailure = message
+    },
+    failClientRule: (message) => {
+      clientRuleFailure = message
     },
     serveColorOptions: (next) => {
       colorOptions = next

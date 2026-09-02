@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { cleanup, render, screen, waitForElementToBeRemoved } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from '../src/App.tsx'
+import { LINHA_PENDENTE } from '../src/api-client.ts'
 import { NAV_PAGES, PROCESS_DETAIL_PAGE } from '../src/router.ts'
 import { stubApi } from './support/api-stub.ts'
 
@@ -126,5 +127,67 @@ describe('C08 — um h1 por página, sem salto de nível', () => {
 
     expect(niveis.filter((nivel) => nivel === 1)).toHaveLength(1)
     expect(saltos).toEqual([])
+  })
+})
+
+/**
+ * As duas listas mantidas à mão que o `web/` guarda do servidor, e que nenhuma
+ * asserção cobria até 02/09/2026.
+ *
+ * `web/` só importa **tipo**, e só de `src/http/routes/` (`D-18`), então valor
+ * compartilhado é declarado duas vezes por construção. O que impede a
+ * divergência é a conferência aqui — mesmo padrão de `STYLED_COLUMNS`.
+ *
+ * **É COBERTURA, e não igualdade**, e a diferença importa para quem ler: a
+ * asserção reprova quando o servidor tem código que a tela não conhece, e passa
+ * em silêncio quando a tela tem um a mais. `ERRO_INTERNO` é justamente esse a
+ * mais — ele é do cliente, para a falha de rede, e não existe como recusa do
+ * servidor. O preço é que um código aposentado no servidor e esquecido em
+ * `REFUSAL_CODES` não é detectado.
+ */
+describe('o que o cliente duplica do servidor', () => {
+  /**
+   * **O defeito que criou esta guarda:** `TABELA_CHEIA` entrou no servidor e não
+   * em `REFUSAL_CODES`, e a recusa caía em `ERRO_INTERNO` — o diálogo dizia "Não
+   * foi possível concluir", que significa "não se sabe o que aconteceu", e
+   * suprimia o rodapé que garante "nada foi gravado" justamente na única recusa
+   * em que o código tem certeza disso.
+   */
+  /**
+   * **A fonte e `STATUS`, e nao a uniao em si** — e a diferenca e o que faz a
+   * guarda valer. `STATUS` e declarado `Record<WriteRefusal, number>`, entao o
+   * `tsc` **obriga** que ele tenha todo membro da uniao: parsear as chaves dele
+   * da a lista completa por construcao.
+   *
+   * A primeira versao lia a uniao ate a primeira linha em branco, e o
+   * revisor-xml mediu o furo: uma linha em branco entre membros — TypeScript
+   * legal, que nenhum lint remove — cortava a captura, e os **ultimos** membros
+   * escapavam. E exatamente onde codigo novo e acrescentado, que e o defeito
+   * que esta guarda existe para impedir.
+   */
+  it('REFUSAL_CODES cobre toda WriteRefusal do servidor', () => {
+    const rota = readFileSync('src/http/routes/apply.ts', 'utf-8')
+    const mapa =
+      /const STATUS: Record<WriteRefusal, number> = \{([\s\S]*?)\n\}/.exec(rota)?.[1] ?? ''
+    const doServidor = [...mapa.matchAll(/^\s*([A-Z_0-9]+):/gm)].map((achado) => achado[1])
+
+    const cliente = readFileSync('web/src/api-client.ts', 'utf-8')
+    const lista =
+      /const REFUSAL_CODES: readonly string\[\] = \[([\s\S]*?)\]/.exec(cliente)?.[1] ?? ''
+    const naTela = [...lista.matchAll(/'([A-Z_0-9]+)'/g)].map((achado) => achado[1])
+
+    // Ancora na contagem REAL, e nao abaixo dela: calibrada folgada, ela nao
+    // detectaria a propria cegueira — foi assim que a versao anterior passou
+    // aprovando enquanto dois membros escapavam.
+    expect(doServidor).toHaveLength(8)
+    expect(doServidor.filter((codigo) => !naTela.includes(codigo))).toEqual([])
+  })
+
+  it('LINHA_PENDENTE e UNWRITTEN_ROW sao o mesmo valor', () => {
+    const dominio = readFileSync('src/domain/process-projection.ts', 'utf-8')
+    const doDominio = /export const UNWRITTEN_ROW = (\d+)/.exec(dominio)?.[1]
+
+    expect(doDominio).toBeDefined()
+    expect(Number(doDominio)).toBe(LINHA_PENDENTE)
   })
 })

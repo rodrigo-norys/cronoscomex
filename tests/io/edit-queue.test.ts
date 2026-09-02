@@ -10,6 +10,7 @@ import {
   enqueue,
   type FieldEditCommand,
   isColorEdit,
+  isRowInsert,
   type PendingColorEdit,
   type PendingEdit,
   type PendingFieldEdit,
@@ -61,7 +62,9 @@ function colorCommand(overrides: Partial<ColorEditCommand> = {}): ColorEditComma
 
 /** `PendingEdit` virou uniao em `H-27`; os testes de campo estreitam aqui. */
 function asField(edit: PendingEdit | undefined): PendingFieldEdit {
-  if (edit === undefined || isColorEdit(edit)) throw new Error('esperava uma edicao de campo')
+  if (edit === undefined || isColorEdit(edit) || isRowInsert(edit)) {
+    throw new Error('esperava uma edicao de campo')
+  }
   return edit
 }
 

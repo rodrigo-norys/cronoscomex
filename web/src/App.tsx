@@ -202,9 +202,15 @@ export function App() {
 
         **A casca nao conhece pagina nenhuma.** Ela expoe um endereco estavel no
         DOM; quem escreve nele e a pagina, por portal.
+
+        **`sr-only`, e nao `hidden`.** O texto do portal duplica o que o bloco
+        visivel da pagina ja mostra — sem esconde-lo, ele aparecia na tela como
+        uma terceira coluna do flex da raiz, fora do painel. `hidden` ou
+        `display: none` resolveriam a tela e matariam o anuncio: no de regiao
+        viva removido da arvore de acessibilidade nao e lido.
       */}
-      <div id={PAGE_LIVE_REGION_ID} role="alert" />
-      <div id={PAGE_LIVE_STATUS_ID} role="status" />
+      <div id={PAGE_LIVE_REGION_ID} role="alert" className="sr-only" />
+      <div id={PAGE_LIVE_STATUS_ID} role="status" className="sr-only" />
 
       <ConflictDialog refusal={refusal} onClose={() => setRefusal(null)} />
     </div>

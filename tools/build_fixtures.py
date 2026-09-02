@@ -14,6 +14,12 @@ O destino padrao e tests/fixtures, e o script reescreve TODAS as fixtures de
 uma vez. Como o arquivo real e uma planilha viva, regenerar sobre as versionadas
 pode alterar estilos e quebrar testes que hoje passam. Para obter uma fixture
 so, gere num diretorio temporario e copie a que interessa.
+
+ATENCAO, medido em 02/09/2026: `formatado.xlsx` versionada NAO e mais o que este
+script produz. Ela ganhou a mao uma coluna P `hidden="1"` e a formula `1+1` em
+N9 — as duas exigidas por assercoes de tests/io/xlsx-surgeon.test.ts.
+Sobrescreve-la com a saida daqui remove as duas em silencio. Compare antes de
+copiar; nao copie o que voce nao mudou.
 """
 import zipfile, sys, re, os, datetime
 
@@ -396,8 +402,15 @@ FIXTURES = {
    for i,k in enumerate(['verdeA','verdeB','azul','roxoA','roxoB','bege',
                          'vermelho','amarelo','branco'], start=101)
  ] + [
-   (163, {'A':'FT999.26','B':'COR DESCONHECIDA','I':D('2026-08-10'),'L':''}),
- ], 'as 9 chaves reais + 1 cor fora do mapa'),
+   # 169 -> fillId 6 -> argb:FFB7E1CD. Cor REAL do arquivo, e fora do mapa: e
+   # ela que exercita COR_NAO_MAPEADA desde 02/09/2026. Antes o papel era do
+   # estilo 163, que nao tem preenchimento nenhum — e ausencia de cor deixou de
+   # ser pendencia quando a aplicacao passou a criar linha em branco.
+   (169, {'A':'FT999.26','B':'COR DESCONHECIDA','I':D('2026-08-10'),'L':''}),
+   # 163 -> fillId 0 -> patternType="none". A linha como o Excel a cria, e como
+   # a insercao a escreve: sem cor, indefinida nos tres campos, sem quarentena.
+   (163, {'A':'FT998.26','B':'SEM COR','I':D('2026-08-10'),'L':''}),
+ ], 'as 9 chaves reais + 1 cor fora do mapa + 1 linha sem preenchimento'),
 
  'datas.xlsx': ([
    (ST['verdeA'], {'A':'FT201.26','I':D('2026-08-03'),'K':D('2026-08-03'),

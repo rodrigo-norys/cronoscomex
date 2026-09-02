@@ -1,10 +1,11 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import {
   type ClientGroup,
   type ClientGroupMember,
   type ClientMapEntry,
   type ClientMatch,
   type ClientRule,
+  type ClientRulePlan,
   normalizeClientGroups,
   normalizeClientMap,
 } from '../domain/client-mapper.ts'
@@ -256,4 +257,104 @@ function validateGroups(
   })
 
   return normalizeClientGroups(groups)
+}
+
+/**
+ * RECUSA o padrao sob `NODE_ENV=test`, como `history-store` desde `H-28` e
+ * `saveWorkbookPath` desde `H-34`.
+ *
+ * O arquivo esta no `.gitignore` e e do OPERADOR: um ponto de injecao esquecido
+ * aqui reescreveria o mapa de clientes dele a cada execucao da suite, e o
+ * sintoma apareceria semanas depois, como consolidacao que parou de funcionar.
+ * `H-34` mediu exatamente esse engano com o `app.json`.
+ */
+function resolveClientMapPath(path: string | undefined): string {
+  if (path !== undefined) return path
+  if (process.env.NODE_ENV !== 'test') return DEFAULT_CLIENT_MAP_PATH
+
+  throw new ClientMapError(
+    'client-map: sob teste, injete o caminho — o padrao aponta para o mapa real do operador.',
+  )
+}
+
+interface RawEntry {
+  key?: unknown
+  label?: unknown
+  rules?: unknown
+}
+
+/**
+ * Grava a regra planejada no JSON **cru**, preservando tudo o que nao e dela.
+ *
+ * **Nao serializa o mapa em memoria**, e a razao e dupla: as chaves e os valores
+ * de la vem normalizados por `normalizeClientMap`, entao a volta apagaria a
+ * grafia do operador; e o arquivo carrega `_origem`, `_comentario_*` e `_nota`,
+ * que a convencao do repositorio manda preservar — sao a documentacao do
+ * formato, lidas por quem abre o arquivo.
+ *
+ * **Arquivo ausente e criado**, e nao e caso de erro: e o estado da maquina do
+ * operador (`PD-08`), onde a distribuicao leva so o `.exemplo`. Declarar o
+ * cliente de uma linha na tela e o que faz o mapa nascer.
+ *
+ * Gravacao atomica pelo mesmo motivo de `saveWorkbookPath`: truncado no meio, o
+ * arquivo mataria a partida seguinte, e a mensagem apontaria para JSON invalido
+ * num arquivo que ninguem editou a mao.
+ */
+export function saveClientRule(plan: ClientRulePlan, path?: string): void {
+  if (plan.kind === 'sem-efeito') return
+
+  const target = resolveClientMapPath(path)
+  let raw: Record<string, unknown> = { version: 1, clients: [] }
+  if (existsSync(target)) {
+    try {
+      raw = JSON.parse(readFileSync(target, 'utf-8')) as Record<string, unknown>
+    } catch (cause) {
+      throw new ClientMapError(`${target} nao e um JSON valido: ${(cause as Error).message}`)
+    }
+  }
+
+  const clients = Array.isArray(raw.clients) ? [...(raw.clients as RawEntry[])] : []
+  const at = clients.findIndex(
+    (entry) => typeof entry.key === 'string' && normKey(entry.key) === plan.key,
+  )
+
+  const entry: RawEntry =
+    at === -1 ? { key: plan.key, label: plan.label, rules: [] } : (clients[at] as RawEntry)
+
+  const rules = Array.isArray(entry.rules) ? [...(entry.rules as ClientRule[])] : []
+  const already = rules.some(
+    (rule) =>
+      rule.match === 'exact' && normKey(rule.value) === plan.value && rule.importer === undefined,
+  )
+  if (!already) rules.push({ match: 'exact', value: plan.value })
+  entry.rules = rules
+
+  if (at !== -1) clients.splice(at, 1)
+  const before =
+    plan.beforeKey === null
+      ? -1
+      : clients.findIndex(
+          (candidate) =>
+            typeof candidate.key === 'string' && normKey(candidate.key) === plan.beforeKey,
+        )
+  if (before === -1) {
+    // Entrada nova sem alvo vai para o FIM; entrada que ja existia e nao precisa
+    // mudar de lugar volta ao indice de onde saiu.
+    if (at === -1) clients.push(entry)
+    else clients.splice(at, 0, entry)
+  } else {
+    clients.splice(before, 0, entry)
+  }
+
+  raw.clients = clients
+  const temporary = `${target}.tmp`
+  try {
+    writeFileSync(temporary, `${JSON.stringify(raw, null, 2)}\n`, 'utf-8')
+    renameSync(temporary, target)
+  } catch (cause) {
+    throw new ClientMapError(
+      `Nao foi possivel gravar ${target}: ${(cause as Error).message}\n` +
+        'Confira se o arquivo nao esta somente-leitura.',
+    )
+  }
 }

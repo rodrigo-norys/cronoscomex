@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { ArrivalCalendar } from '../components/ArrivalCalendar.tsx'
+import { NewRowButton } from '../components/NewRowButton.tsx'
 import { PageAlert } from '../components/PageAlert.tsx'
 import { ProcessTable } from '../components/ProcessTable.tsx'
 import { useIndicators } from '../hooks/useIndicators.ts'
@@ -21,7 +23,14 @@ interface OperationalProps {
 
 export function Operational({ queryString, dataVersion }: OperationalProps) {
   const query = useProcessQuery()
-  const processes = useProcesses(query.requestQuery, dataVersion)
+  /**
+   * A edicao em linha nao muda `dataVersion` — ele e o relogio da CASCA, e sobe
+   * quando a planilha e relida. Somar um contador local e o que faz a lista
+   * voltar a buscar depois de enfileirar: a projecao do servidor ja inclui o que
+   * esta na fila, entao o valor novo chega pela mesma rota de sempre.
+   */
+  const [editVersion, setEditVersion] = useState(0)
+  const processes = useProcesses(query.requestQuery, dataVersion + editVersion)
   const indicators = useIndicators(queryString, dataVersion)
 
   const calendar =
@@ -29,7 +38,7 @@ export function Operational({ queryString, dataVersion }: OperationalProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <Controls query={query} />
+      <Controls query={query} onEdited={() => setEditVersion((version) => version + 1)} />
 
       {processes.status === 'semLeitura' && (
         <PageAlert
@@ -70,6 +79,7 @@ export function Operational({ queryString, dataVersion }: OperationalProps) {
                 sort={query.sort}
                 order={query.order}
                 onSort={query.toggleSort}
+                onEdited={() => setEditVersion((version) => version + 1)}
               />
               <Pagination
                 total={processes.page.total}
@@ -91,7 +101,13 @@ export function Operational({ queryString, dataVersion }: OperationalProps) {
   )
 }
 
-function Controls({ query }: { query: ReturnType<typeof useProcessQuery> }) {
+function Controls({
+  query,
+  onEdited,
+}: {
+  query: ReturnType<typeof useProcessQuery>
+  onEdited: () => void
+}) {
   return (
     <div className="flex flex-wrap items-end gap-4">
       <label className="flex grow flex-col gap-1 text-xs text-text-secondary sm:max-w-md">
@@ -115,6 +131,12 @@ function Controls({ query }: { query: ReturnType<typeof useProcessQuery> }) {
         />
         Incluir desembaraçados
       </label>
+
+      {/* A criacao fica ao lado da busca, e nao dentro da tabela: a tabela e
+          grade, e um controle solto nela seria uma celula que nao e celula. */}
+      <div className="pb-0.5">
+        <NewRowButton onCreated={onEdited} />
+      </div>
     </div>
   )
 }

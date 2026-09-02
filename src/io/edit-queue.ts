@@ -64,7 +64,25 @@ export interface ColorEditCommand {
   previousLabel: string
 }
 
-export type EditCommand = FieldEditCommand | ColorEditCommand
+/**
+ * A linha NOVA (02/09/2026). Nao tem `sourceRow` nem `previous`, e a ausencia
+ * dos dois e o contrato:
+ *
+ * - **sem `sourceRow`**, porque a linha ainda nao existe no arquivo. O numero e
+ *   resolvido pelo `write-guard`, contra a leitura canonica do momento da
+ *   escrita — congela-lo aqui repetiria o defeito que `H-25` fechou ao resolver
+ *   a celula pela REF em vez do numero enfileirado;
+ * - **sem `previous`**, porque nao ha valor anterior. A defesa equivalente e
+ *   outra: a REF nao pode ja existir no arquivo, e quem confere e o guarda.
+ */
+export interface RowInsertCommand {
+  kind: 'insert'
+  ref: string
+  /** Campo ausente NAO vira celula, como o Excel faz numa linha em branco. */
+  values: Partial<Record<EditableField, string | null>>
+}
+
+export type EditCommand = FieldEditCommand | ColorEditCommand | RowInsertCommand
 
 interface Identity {
   id: string
@@ -74,17 +92,25 @@ interface Identity {
 
 export type PendingFieldEdit = FieldEditCommand & Identity
 export type PendingColorEdit = ColorEditCommand & Identity
-export type PendingEdit = PendingFieldEdit | PendingColorEdit
+export type PendingRowInsert = RowInsertCommand & Identity
+export type PendingEdit = PendingFieldEdit | PendingColorEdit | PendingRowInsert
 
 /**
  * Generica para estreitar tanto `EditCommand` quanto `PendingEdit`: uma
  * assinatura fixa em `ColorEditCommand` faria quem tem `PendingEdit` perder o
  * `id` e o `ts` no estreitamento, e voltar a precisar de `as`.
  */
-export function isColorEdit<T extends { kind?: 'field' | 'color' }>(
+export function isColorEdit<T extends { kind?: 'field' | 'color' | 'insert' }>(
   edit: T,
 ): edit is T & ColorEditCommand {
   return edit.kind === 'color'
+}
+
+/** Mesma razao de `isColorEdit`: estreita comando e pendencia sem perder `id`. */
+export function isRowInsert<T extends { kind?: 'field' | 'color' | 'insert' }>(
+  edit: T,
+): edit is T & RowInsertCommand {
+  return edit.kind === 'insert'
 }
 
 /**
@@ -154,9 +180,17 @@ export function enqueue<T extends EditCommand>(
  * `EditableField` se chama assim.
  */
 const COLOR_PAIR = 'cor'
+/**
+ * A insercao e consolidada por REF, como a cor: a linha nova e uma so, e o
+ * operador que corrige o que digitou substitui a anterior em vez de enfileirar
+ * duas. O sufixo nao colide com nome de campo.
+ */
+const INSERT_PAIR = 'linha-nova'
 
 function pairOf(edit: PendingEdit): string {
-  return `${normKey(edit.ref)}|${isColorEdit(edit) ? COLOR_PAIR : edit.field}`
+  if (isColorEdit(edit)) return `${normKey(edit.ref)}|${COLOR_PAIR}`
+  if (isRowInsert(edit)) return `${normKey(edit.ref)}|${INSERT_PAIR}`
+  return `${normKey(edit.ref)}|${edit.field}`
 }
 
 /**

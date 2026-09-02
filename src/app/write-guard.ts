@@ -14,6 +14,7 @@ import {
   validateEdit,
 } from '../domain/editable-fields.ts'
 import { normKey } from '../domain/normalizer.ts'
+import { REF_COLUMN } from '../domain/status-classifier.ts'
 import type { Process, RawCell, RawRow } from '../domain/types.ts'
 import {
   backupFrom,
@@ -28,6 +29,7 @@ import {
   DEFAULT_APPLIED_DIR,
   DEFAULT_QUEUE_PATH,
   isColorEdit,
+  isRowInsert,
   type PendingEdit,
   rotate,
 } from '../io/edit-queue.ts'
@@ -35,10 +37,13 @@ import { detectInterference } from '../io/interference-detector.ts'
 import type { Watcher } from '../io/watcher.ts'
 import { hashBytes, type ReadResult, readWorkbook } from '../io/xlsx-reader.ts'
 import {
+  appendRow,
   applyCellEdits,
   applyRowFill,
   type CellEdit,
   type RowFillEdit,
+  type RowInsert,
+  TableFullError,
 } from '../io/xlsx-surgeon.ts'
 import type { AppConfig } from './config.ts'
 import { type Logger, NULL_LOGGER } from './logger.ts'
@@ -88,11 +93,16 @@ import {
  * o `previous` de cada edicao e conferido contra o valor atual SEMPRE, e nao
  * apenas quando o hash diverge.
  *
- * **A fila tem dois tipos de edicao** desde H-27, e as duas percorrem as mesmas
- * defesas: campo, que grava valor de celula, e cor, que troca o `fillId` das
- * colunas A a L. Uma so cirurgia por aplicacao seria mais simples, mas o
- * contrato de H-27 fixa `applyRowFill` a parte — entao as duas sao encadeadas
- * sobre o mesmo buffer, dentro do mesmo backup e da mesma validacao.
+ * **A fila tem TRES tipos de edicao** desde 02/09/2026, e os tres percorrem as
+ * mesmas defesas: campo, que grava valor de celula; cor, que troca o `fillId`
+ * das colunas A a L; e linha nova, que cria a linha depois da ultima que existe.
+ * Uma so cirurgia por aplicacao seria mais simples, mas o contrato de H-27 fixa
+ * `applyRowFill` a parte — entao as tres sao encadeadas sobre o mesmo buffer,
+ * dentro do mesmo backup e da mesma validacao.
+ *
+ * **A linha nova troca as duas primeiras conferencias por uma oposta.** Ela nao
+ * tem `sourceRow` congelado nem `previous` a comparar: o numero sai da leitura
+ * canonica, e o que se confere e que a REF **nao** esteja no arquivo.
  *
  * O ponto sem volta e a renomeacao. Tudo antes dela pode falhar deixando o
  * original intacto; da validacao em diante, a unica saida e restaurar o backup.
@@ -110,6 +120,14 @@ export type WriteRefusal =
   | 'NADA_A_APLICAR'
   | 'ESCRITA_EM_ANDAMENTO'
   | 'ESCRITA_INVALIDA'
+  /**
+   * A folga da Tabela do Excel acabou (02/09/2026). Codigo proprio porque a
+   * instrucao ao operador e outra, e o evento e previsivel: `Tabela1` cobre ate
+   * a linha 997 e a aba tem 745 escritas, entao ha algumas centenas de linhas de
+   * folga. Sem ele, o fim da folga chegaria como "a gravacao nao pode ser
+   * concluida com seguranca" — que nao diz o que fazer.
+   */
+  | 'TABELA_CHEIA'
   /**
    * Fora dos cinco do backlog, e exigido por 05-contratos-api.md secao 3, que
    * cataloga `503 ARQUIVO_INDISPONIVEL` para `POST /api/edits/apply`. Sem ele o
@@ -135,7 +153,7 @@ export interface Conflict {
    * o ROTULO da cor — "Verde (tom A)" —, porque a troca nao altera valor nenhum
    * e descreve-la como valor mentiria sobre o que mudou.
    */
-  field: EditableField | 'cor'
+  field: EditableField | 'cor' | 'linha-nova'
   /** O valor que estava na celula quando o operador editou. */
   valueWhenEdited: string
   /** O valor que esta na celula agora. Vazio tambem quando a linha sumiu. */
@@ -147,6 +165,14 @@ export interface Conflict {
    * esta vazia", que e falso — a linha nao existe. Regra inviolavel 3.
    */
   refMissing?: true
+  /**
+   * A REF da linha NOVA ja esta no arquivo (02/09/2026). E o espelho de
+   * `refMissing`, e a defesa que substitui o `previous` numa insercao: nao ha
+   * valor anterior a conferir, e o que nao pode acontecer e nascer uma segunda
+   * linha com a mesma chave. Regra inviolavel 3 pelo mesmo motivo do irmao —
+   * `valueNow` sozinho descreveria uma celula, e o que ha e um processo inteiro.
+   */
+  refExists?: true
 }
 
 export interface WriteResult {
@@ -162,6 +188,8 @@ export interface WriteResult {
    * operador que ele gravou doze coisas quando ele mudou uma.
    */
   rowsRepainted: number
+  /** Quantas linhas NOVAS foram criadas (02/09/2026). */
+  rowsInserted: number
   backupPath: string | null
   conflicts: Conflict[]
   restored: boolean
@@ -307,6 +335,7 @@ function refuse(
     applied: 0,
     cellsWritten: 0,
     rowsRepainted: 0,
+    rowsInserted: 0,
     backupPath: null,
     conflicts: [],
     restored: false,
@@ -319,9 +348,38 @@ function refuse(
   }
 }
 
+/**
+ * A primeira linha livre: depois da ULTIMA que existe na aba, tenha ela conteudo
+ * ou nao, e **nunca antes da primeira linha de dado**.
+ *
+ * **Le as linhas CRUAS, e nao os processos.** No arquivo real ha 95 linhas
+ * vazias e formatadas entre o ultimo processo (650) e o fim da aba (745) — elas
+ * sao procedimento do operador, e escrever nelas seria ocupar espaco que ele
+ * mantem de proposito. A leitura devolve toda linha; quem descarta as sem REF e
+ * a composicao, e por isso a ancora sai daqui e nao de `processes`.
+ *
+ * **O piso de `firstDataRow` e o que impede gravar no CABECALHO**, e sem ele a
+ * conta errava nos dois sentidos numa aba sem dado — medido pelo revisor-xml em
+ * `vazio.xlsx`, que so tem a linha 1:
+ *
+ * - `read.rows` volta vazia, porque a leitura pula o cabecalho. A ancora dava
+ *   **1**, e `appendRow` recusava para sempre: uma insercao enfileirada por
+ *   engano travava a fila INTEIRA, com mensagem generica.
+ * - Com `<sheetData/>`, `appendRow` ACEITAVA a linha 1 e gravava a REF do
+ *   processo por cima da faixa de cabecalho — e os nomes de coluna da `Tabela1`
+ *   passariam a ser o conteudo do processo. O unico anteparo era a restauracao
+ *   do backup dar certo.
+ */
+function nextRowOf(rows: readonly RawRow[], config: AppConfig): number {
+  const ultimaLida = rows.reduce((maior, row) => Math.max(maior, row.sourceRow), 0)
+  return Math.max(ultimaLida + 1, config.firstDataRow)
+}
+
 interface Resolution {
   targets: CellEdit[]
   fills: RowFillEdit[]
+  /** As linhas NOVAS, com o numero ja resolvido contra a leitura canonica. */
+  inserts: RowInsert[]
   conflicts: Conflict[]
 }
 
@@ -360,12 +418,55 @@ function resolve(
   pending: PendingEdit[],
   processes: readonly Process[],
   colorMap: readonly ColorMapEntry[],
+  nextRow: number,
 ): Resolution {
   const targets: CellEdit[] = []
   const fills: RowFillEdit[] = []
+  const inserts: RowInsert[] = []
   const conflicts: Conflict[] = []
+  let proxima = nextRow
 
   for (const edit of pending) {
+    /*
+      A insercao e resolvida ANTES do bloco comum, e nao dentro dele: as duas
+      primeiras coisas que ele faz — achar o processo pela REF e comparar o
+      `previous` — sao exatamente o que uma linha nova nao tem. Aqui a
+      conferencia e a oposta: a REF **nao** pode existir.
+    */
+    if (isRowInsert(edit)) {
+      const wantedRef = normKey(edit.ref)
+      const jaExiste = processes.some((candidate) => normKey(candidate.ref) === wantedRef)
+      if (jaExiste) {
+        conflicts.push({
+          ref: edit.ref,
+          field: 'linha-nova',
+          valueWhenEdited: '',
+          valueNow: '',
+          yourValue: edit.ref,
+          refExists: true,
+        })
+        continue
+      }
+
+      // Aparada AQUI tambem, e nao so na rota: a fila e append-only em disco e
+      // sobrevive ao reinicio, entao um registro editado a mao chega por este
+      // caminho — que e a hipotese que a admissibilidade acima ja cobre para o
+      // vazio. `validate` compara por `normKey` e aprovaria a REF com espaços.
+      const values: Record<string, CellEdit['value']> = { [REF_COLUMN]: edit.ref.trim() }
+      for (const [field, value] of Object.entries(edit.values)) {
+        const spec = EDITABLE_FIELDS[field as EditableField]
+        if (spec === undefined || value === null) continue
+        values[spec.column] = spec.kind === 'date' ? new Date(`${value}T00:00:00Z`) : value
+      }
+
+      // Cada insercao ocupa a proxima linha livre: aplicadas em sequencia sobre
+      // o mesmo buffer, a segunda so passa por `appendRow` se vier depois da
+      // primeira, que ja gravou.
+      inserts.push({ sourceRow: proxima, values })
+      proxima += 1
+      continue
+    }
+
     const base = isColorEdit(edit)
       ? {
           ref: edit.ref,
@@ -424,7 +525,7 @@ function resolve(
     })
   }
 
-  return { targets, fills, conflicts }
+  return { targets, fills, inserts, conflicts }
 }
 
 /** Comparacao exata: espaco nas pontas e diferenca, e a cirurgia o preserva. */
@@ -458,6 +559,7 @@ async function validate(
   deps: ResolvedOptions,
   edits: CellEdit[],
   fills: RowFillEdit[],
+  inserts: RowInsert[],
 ): Promise<boolean> {
   // A chave de estilo que cada `fillId` deve produzir na releitura. O leitor
   // devolve `styleKey`, nao `fillId`, e as duas sao a mesma entrada do mapa.
@@ -476,6 +578,29 @@ async function validate(
         return row !== undefined && wrote(row.cells[edit.column], edit.value)
       })
       if (!values) return false
+
+      /*
+        **A linha nova e conferida pela REF, e nao pelo numero.** As demais
+        edicoes miram linha que ja existia, e o numero delas veio da leitura
+        canonica; o da insercao foi ATRIBUIDO por `resolve`, e conferi-lo contra
+        si mesmo nao provaria nada. Procurar pela REF prova as duas coisas de
+        uma vez: a linha existe, e existe no lugar certo.
+      */
+      const criadas = inserts.every((insert) => {
+        const esperada = insert.values[REF_COLUMN]
+        const row = rows.find(
+          (candidate) =>
+            typeof esperada === 'string' &&
+            typeof candidate.cells[REF_COLUMN]?.value === 'string' &&
+            normKey(candidate.cells[REF_COLUMN].value as string) === normKey(esperada),
+        )
+        if (row === undefined || row.sourceRow !== insert.sourceRow) return false
+
+        return Object.entries(insert.values).every(([column, value]) =>
+          wrote(row.cells[column], value),
+        )
+      })
+      if (!criadas) return false
 
       return [...expectedKeys].every(([sourceRow, styleKey]) => {
         const row = rows.find((candidate) => candidate.sourceRow === sourceRow)
@@ -591,11 +716,22 @@ async function guardedWrite(
     // passa pela rota, entao so chega aqui se `config/color-map.json` mudou
     // depois do enfileiramento — e gravar a cor "mais proxima" e exatamente o
     // que a regra inviolavel 3 proibe.
-    const inadmissible = pending.some((edit) =>
-      isColorEdit(edit)
-        ? resolveFillTarget(edit.target, deps.colorMap) === null
-        : !isEditableField(edit.field) || validateEdit(edit.field, edit.value) !== null,
-    )
+    //
+    // Na insercao o inadmissivel e o mesmo de um campo, campo a campo, MAIS a
+    // REF vazia: sem ela a linha nova nao e um processo, e nasceria direto na
+    // quarentena por `REF_AUSENTE`.
+    const inadmissible = pending.some((edit) => {
+      if (isColorEdit(edit)) return resolveFillTarget(edit.target, deps.colorMap) === null
+      if (isRowInsert(edit)) {
+        return (
+          edit.ref.trim() === '' ||
+          Object.entries(edit.values).some(
+            ([field, value]) => !isEditableField(field) || validateEdit(field, value) !== null,
+          )
+        )
+      }
+      return !isEditableField(edit.field) || validateEdit(edit.field, edit.value) !== null
+    })
     if (inadmissible) return refused('ESCRITA_INVALIDA')
 
     // Leitura canonica: dela saem o hash, o caminho da aba dentro do zip, o
@@ -623,7 +759,8 @@ async function guardedWrite(
     const knownHash = store.getState().fileHash
     if (knownHash === null || read.fileHash !== knownHash) {
       return refused('ARQUIVO_MUDOU', {
-        conflicts: resolve(pending, fromFile, deps.colorMap).conflicts,
+        conflicts: resolve(pending, fromFile, deps.colorMap, nextRowOf(read.rows, config))
+          .conflicts,
         expectedHash: knownHash,
         actualHash: read.fileHash,
       })
@@ -635,7 +772,12 @@ async function guardedWrite(
     // inserida antes da `2026` mudaria o alvo sem mudar a configuracao.
     if (read.sheetName !== store.getState().sheetName) return refused('ESCRITA_INVALIDA')
 
-    const { targets, fills, conflicts } = resolve(pending, fromFile, deps.colorMap)
+    const { targets, fills, inserts, conflicts } = resolve(
+      pending,
+      fromFile,
+      deps.colorMap,
+      nextRowOf(read.rows, config),
+    )
     if (conflicts.length > 0) {
       return refused('EDICAO_OBSOLETA', {
         conflicts,
@@ -679,6 +821,7 @@ async function guardedWrite(
      */
     let cellsWritten: number
     let rowsRepainted: number
+    let rowsInserted: number
     let buffer: Uint8Array
     try {
       // Valores primeiro, cor depois: a repintura precisa enxergar as celulas
@@ -696,16 +839,32 @@ async function guardedWrite(
       // zero ausencias. Achado do revisor-xml.
       const written = applyCellEdits(original, targets, read.sheetPath)
       const painted = applyRowFill(written.buffer, fills, read.sheetPath)
+      /*
+        As linhas novas por ULTIMO, e uma de cada vez sobre o buffer anterior.
+        `appendRow` so aceita linha depois de todas, entao a segunda insercao
+        depende de a primeira ja estar no buffer que ela recebe — encadear e o
+        que torna duas insercoes numa fila possiveis.
+
+        Depois das outras duas cirurgias porque nenhuma delas alcanca a linha
+        nova: `applyCellEdits` grava em linha que existe, e `applyRowFill`
+        repinta linha que existe. A ordem inversa faria as duas varrerem uma
+        linha que a terceira acabou de criar, sem nada a fazer nela.
+      */
+      let comLinhas = painted.buffer
+      for (const insert of inserts) {
+        comLinhas = appendRow(comLinhas, insert, read.sheetPath).buffer
+      }
+      rowsInserted = inserts.length
       cellsWritten = written.cellsWritten
       // O que a cirurgia MEDIU, e nao `fills.length`: uma linha que ja estivesse
       // na cor pedida nao muda byte algum, e anuncia-la como repintada diria ao
       // operador que houve gravacao onde nao houve. Achado do revisor-xml.
       rowsRepainted = painted.rowsPainted
-      buffer = painted.buffer
-    } catch {
+      buffer = comLinhas
+    } catch (error) {
       // Nada foi gravado: o original esta intacto, e nao ha backup a indicar
       // porque nao houve o que desfazer.
-      return refused('ESCRITA_INVALIDA')
+      return refused(error instanceof TableFullError ? 'TABELA_CHEIA' : 'ESCRITA_INVALIDA')
     }
 
     /**
@@ -718,7 +877,13 @@ async function guardedWrite(
      * fila e arquivada como em qualquer aplicacao bem-sucedida — deixa-la para
      * tras faria a proxima tentativa repetir o mesmo nada.
      */
-    if (cellsWritten === 0 && rowsRepainted === 0) {
+    /*
+      **A insercao entra na conta, e a ausencia dela era um defeito silencioso.**
+      Uma fila so de linha nova nao escreve celula por `applyCellEdits` nem
+      repinta nada: sem `rowsInserted` aqui, ela caia neste ramo, a fila era
+      arquivada como aplicada, e o arquivo ficava intacto — com `ok: true`.
+    */
+    if (cellsWritten === 0 && rowsRepainted === 0 && rowsInserted === 0) {
       const archived = archiveQueue(deps)
       const durationMs = Math.round(performance.now() - startedAt)
       logger.log({ level: 'info', event: 'write.done', durationMs, cellsWritten: 0 })
@@ -726,9 +891,10 @@ async function guardedWrite(
       return {
         ok: true,
         refusal: null,
-        applied: targets.length + fills.length,
+        applied: targets.length + fills.length + inserts.length,
         cellsWritten: 0,
         rowsRepainted: 0,
+        rowsInserted: 0,
         backupPath: null,
         conflicts: [],
         restored: false,
@@ -755,7 +921,7 @@ async function guardedWrite(
       return refused('ESCRITA_INVALIDA', { backupPath })
     }
 
-    if (!(await validate(deps, targets, fills))) {
+    if (!(await validate(deps, targets, fills, inserts))) {
       const restored = await restoreQuietly(backupPath, filePath, logger)
       return refused('ESCRITA_INVALIDA', {
         backupPath,
@@ -770,15 +936,23 @@ async function guardedWrite(
     const archivedQueuePath = archiveQueue(deps)
 
     const durationMs = Math.round(performance.now() - startedAt)
-    logger.log({ level: 'info', event: 'write.done', durationMs, cellsWritten, backupPath })
+    logger.log({
+      level: 'info',
+      event: 'write.done',
+      durationMs,
+      cellsWritten,
+      rowsInserted,
+      backupPath,
+    })
     await pruneQuietly(deps)
 
     return {
       ok: true,
       refusal: null,
-      applied: targets.length + fills.length,
+      applied: targets.length + fills.length + inserts.length,
       cellsWritten,
       rowsRepainted,
+      rowsInserted,
       backupPath,
       conflicts: [],
       restored: false,
