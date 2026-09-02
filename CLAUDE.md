@@ -322,6 +322,17 @@ grave que nos outros:** neste evento `exit 2` **bloqueia o arquivo de instruçã
 de carregar**, e uma sessão rodaria sem as regras invioláveis em silêncio. `test-guard.sh` é a regressão do guard e roda
 **primeiro** no `npm run verify` — exige `bash` e `jq`.
 
+**`verifica-dados-sensiveis.sh` roda logo depois dele, desde 02/09/2026**, e
+até então só existia no CI: o portão local passava e o workflow reprovava, que
+é a ordem errada de descobrir. Foi assim que a guarda das fixtures chegou ao
+`dados-sensiveis.yml` com a âncora reprovando o check de caminho absoluto.
+
+> Ele tem **uma** isenção estrutural, e ela nasceu no mesmo dia: quando a conta
+> do GitHub tem o nome do usuário do sistema, a URL do próprio repositório passa
+> a conter o nome. Só `github.com/<dono>/` é isento — o nome nu continua
+> reprovando, inclusive na mesma linha. Sem isso o check reprovava na máquina do
+> dono e aprovava no runner, onde `$USER` é `runner`.
+
 **Permissões** (`.claude/settings.json`). `npm install` e `npm ci` pedem
 confirmação. `curl`, `wget`, force-push e leitura ou escrita de `*.xlsx` e
 `*.jpeg` da raiz estão negados. O modo bypass está desabilitado.
@@ -414,7 +425,7 @@ processo e são abandonados. Os gatilhos abaixo são objetivos.
 
 ```bash
 nvm use             # Node 22.23.2, conforme .nvmrc
-npm run verify      # guard + strip-types + lint + typecheck + test + build
+npm run verify      # guard + dados-sensiveis + strip-types + lint + typecheck + test + build
 npm test            # Vitest
 npm run dev         # servidor (5173) + interface (5174), no mesmo terminal
 npm run dev:server  # só a API, em 5173

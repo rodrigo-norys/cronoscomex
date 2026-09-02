@@ -133,5 +133,15 @@ roda_local reprova 'nome do usuario numa regressao de guard' '.github/scripts/te
 printf 'o operador fulano escreveu isto\n' > tests/repo/fixtures-anonimas.test.ts
 roda_local reprova 'nome do usuario na guarda das fixtures'  'tests/repo/fixtures-anonimas.test.ts'
 
+# A URL do proprio repositorio contem o nome quando a conta do GitHub e o
+# usuario do sistema tem o mesmo nome. Ela e o endereco do projeto, e o check
+# reprovava na maquina do dono e aprovava no runner — verde onde ninguem olha.
+printf 'ver [PR #69](https://github.com/fulano/cronoscomex/pull/69)\n' > docs/url.md
+roda_local aprova  'URL do proprio repositorio em documento'  'docs/url.md'
+
+# A isencao e SO da URL: o nome nu na mesma linha continua reprovando.
+printf 'o fulano abriu https://github.com/fulano/cronoscomex/pull/70\n' > docs/url-e-nome.md
+roda_local reprova 'URL do repositorio junto do nome nu'      'docs/url-e-nome.md'
+
 printf '\n%d passaram, %d falharam\n' "$passou" "$falhou"
 [ "$falhou" -eq 0 ] || exit 1
