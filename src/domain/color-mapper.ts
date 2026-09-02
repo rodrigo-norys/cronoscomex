@@ -30,12 +30,41 @@ export interface ColorMapEntry {
   importerOutsideRj: boolean
 }
 
+/**
+ * De onde a resolucao veio — e "sem cor" NAO e o mesmo que "cor que eu nao
+ * conheco" (02/09/2026).
+ *
+ * Enquanto a aplicacao so LIA, os dois casos coincidiam: nenhuma das 649 linhas
+ * nascia sem preenchimento, entao a ausencia so podia ser engano. Ao passar a
+ * CRIAR linha — em branco, como o Excel a cria —, a ausencia vira estado
+ * legitimo, e trata-la como engano mandaria para a quarentena toda linha que a
+ * propria aplicacao acabou de escrever.
+ *
+ * A distincao e a regra inviolavel 3 no caso dela: buraco visivel e diferente
+ * de valor errado invisivel. Celula sem preenchimento nao foi pintada de
+ * amarelo, entao `importerOutsideRj` e `false` — o mesmo que o branco do tema
+ * ja devolve. Cor PRESENTE e nao catalogada continua com `null`: ela pode ser
+ * uma variante de amarelo que o mapa nao conhece, e afirmar `false` ali seria
+ * adivinhar.
+ */
+export type ColorSource = 'mapa' | 'sem-cor' | 'desconhecida'
+
+/**
+ * A chave que a leitura produz para celula SEM preenchimento.
+ *
+ * Duplica `NO_FILL` de `src/io/style-extractor.ts` de proposito: o dominio nao
+ * importa de `src/io/` (regra inviolavel 5). Quem impede a divergencia e a
+ * assercao de igualdade em `tests/domain/color-mapper.test.ts` — mesmo padrao
+ * de `STYLED_COLUMNS`.
+ */
+export const NO_FILL_KEY = 'none'
+
 export interface ColorResolution {
   responsible: ColorResponsible
   customsChannel: CustomsChannel
-  /** `null` quando a cor nao foi reconhecida: nao e o mesmo que "dentro do RJ". */
+  /** `null` so quando ha cor e o mapa nao a conhece: nao e "dentro do RJ". */
   importerOutsideRj: boolean | null
-  mapped: boolean
+  source: ColorSource
   /** Rotulo legivel; para chave nao mapeada, a propria chave, para o relatorio. */
   label: string
 }
@@ -44,9 +73,18 @@ const UNMAPPED = (styleKey: string): ColorResolution => ({
   responsible: 'indefinido',
   customsChannel: 'indefinido',
   importerOutsideRj: null,
-  mapped: false,
+  source: 'desconhecida',
   label: styleKey,
 })
+
+/** Linha em branco: indefinida nos tres campos, e isso nao e pendencia. */
+const NO_FILL_RESOLUTION: ColorResolution = {
+  responsible: 'indefinido',
+  customsChannel: 'indefinido',
+  importerOutsideRj: false,
+  source: 'sem-cor',
+  label: 'Sem cor',
+}
 
 /**
  * Resolve a chave de estilo contra o mapa.
@@ -62,15 +100,19 @@ const UNMAPPED = (styleKey: string): ColorResolution => ({
  */
 export function resolveColor(styleKey: string, map: readonly ColorMapEntry[]): ColorResolution {
   const entry = map.find((candidate) => candidate.styleKey === styleKey)
-  if (!entry) return UNMAPPED(styleKey)
-
-  return {
-    responsible: entry.responsible,
-    customsChannel: entry.customsChannel,
-    importerOutsideRj: entry.importerOutsideRj,
-    mapped: true,
-    label: entry.label,
+  if (entry) {
+    return {
+      responsible: entry.responsible,
+      customsChannel: entry.customsChannel,
+      importerOutsideRj: entry.importerOutsideRj,
+      source: 'mapa',
+      label: entry.label,
+    }
   }
+
+  // DEPOIS do mapa, e nao antes: se algum dia o operador declarar `none` em
+  // `color-map.json`, a declaracao dele vence o padrao daqui.
+  return styleKey === NO_FILL_KEY ? NO_FILL_RESOLUTION : UNMAPPED(styleKey)
 }
 
 /**
@@ -162,13 +204,15 @@ export function resolveColorIndexed(
   index: ReadonlyMap<string, ColorMapEntry>,
 ): ColorResolution {
   const entry = index.get(styleKey)
-  if (!entry) return UNMAPPED(styleKey)
-
-  return {
-    responsible: entry.responsible,
-    customsChannel: entry.customsChannel,
-    importerOutsideRj: entry.importerOutsideRj,
-    mapped: true,
-    label: entry.label,
+  if (entry) {
+    return {
+      responsible: entry.responsible,
+      customsChannel: entry.customsChannel,
+      importerOutsideRj: entry.importerOutsideRj,
+      source: 'mapa',
+      label: entry.label,
+    }
   }
+
+  return styleKey === NO_FILL_KEY ? NO_FILL_RESOLUTION : UNMAPPED(styleKey)
 }

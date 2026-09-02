@@ -26,6 +26,7 @@ function result(overrides: Partial<WriteResult> = {}): WriteResult {
     applied: 0,
     cellsWritten: 0,
     rowsRepainted: 0,
+    rowsInserted: 0,
     backupPath: null,
     conflicts: [],
     restored: false,
@@ -71,6 +72,10 @@ describe('POST /api/edits/apply — sucesso', () => {
       // `H-27`: separado de `cellsWritten` porque uma troca de cor toca 12
       // celulas sem gravar valor algum.
       rowsRepainted: 0,
+      // 02/09/2026, pelo mesmo motivo: uma linha nova nao grava celula por
+      // `applyCellEdits` nem repinta, e sem este campo a tela anunciava "nada
+      // precisou ser gravado" a quem acabou de criar um processo.
+      rowsInserted: 0,
       backupPath: 'data/backups/planilha-20260814-143512.xlsx',
       archivedQueuePath: 'data/applied/pending-edits-20260814-143512.jsonl',
       durationMs: 284,

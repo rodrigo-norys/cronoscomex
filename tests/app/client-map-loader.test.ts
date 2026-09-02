@@ -1,8 +1,8 @@
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { ClientMapError, loadClientMap } from '../../src/app/client-map-loader.ts'
+import { ClientMapError, loadClientMap, saveClientRule } from '../../src/app/client-map-loader.ts'
 
 /**
  * H-48. A carga do mapa de clientes.
@@ -213,5 +213,128 @@ describe('loadClientMap — a secao "groups"', () => {
 
   it('recusa "groups" que nao e lista', () => {
     expect(() => loadClientMap(comGrupos({ key: 'um' }))).toThrow(/precisa ser uma lista/)
+  })
+})
+
+/**
+ * A gravacao da regra (02/09/2026), que fecha o caminho de volta: a coluna
+ * Cliente lê o mapa desde `H-49`, e agora escreve nele.
+ *
+ * O que estes casos protegem e o arquivo do OPERADOR. Ele carrega `_origem`,
+ * `_comentario_*` e `_nota`, que sao a documentacao do formato, e a grafia dos
+ * valores e dele — serializar o mapa em memoria por cima apagaria os dois.
+ */
+describe('saveClientRule', () => {
+  it('cria o arquivo quando ele nao existe', () => {
+    // O estado da maquina do operador (`PD-08`): a distribuicao leva so o
+    // `.exemplo`, e declarar o cliente de uma linha e o que faz o mapa nascer.
+    const path = join(dir, 'novo.json')
+
+    saveClientRule(
+      { kind: 'entrada-nova', key: 'ALFA', label: 'Alfa', value: 'ALF-1', beforeKey: null },
+      path,
+    )
+
+    expect(JSON.parse(readFileSync(path, 'utf-8'))).toEqual({
+      version: 1,
+      clients: [{ key: 'ALFA', label: 'Alfa', rules: [{ match: 'exact', value: 'ALF-1' }] }],
+    })
+  })
+
+  it('preserva as chaves de comentario e a secao de grupos', () => {
+    const path = escrever({
+      version: 1,
+      _origem: 'escrito a mao',
+      _comentario_ordem: 'a primeira que casa vence',
+      clients: [clienteValido],
+      groups: [{ key: 'g', label: 'G', members: [{ client: 'alfa' }] }],
+    })
+
+    saveClientRule(
+      { kind: 'entrada-nova', key: 'ZETA', label: 'Zeta', value: 'ZZZ', beforeKey: null },
+      path,
+    )
+
+    const gravado = JSON.parse(readFileSync(path, 'utf-8'))
+    expect(gravado._origem).toBe('escrito a mao')
+    expect(gravado._comentario_ordem).toBe('a primeira que casa vence')
+    expect(gravado.groups).toEqual([{ key: 'g', label: 'G', members: [{ client: 'alfa' }] }])
+  })
+
+  /** O mecanismo inteiro: a regra `exact` so vence se a entrada dela for
+      consultada antes da entrada de prefixo que ja casava a celula. */
+  it('insere a entrada nova ANTES da que casa hoje', () => {
+    const path = escrever({ version: 1, clients: [clienteValido] })
+
+    saveClientRule(
+      { kind: 'entrada-nova', key: 'ZETA', label: 'Zeta', value: 'ALF-1', beforeKey: 'ALFA' },
+      path,
+    )
+
+    expect(loadClientMap(path).clients.map((entry) => entry.key)).toEqual(['ZETA', 'ALFA'])
+  })
+
+  it('move a entrada que ja existia quando ela esta atras da que casa', () => {
+    const path = escrever({
+      version: 1,
+      clients: [
+        clienteValido,
+        { key: 'zeta', label: 'Zeta', rules: [{ match: 'exact', value: 'z' }] },
+      ],
+    })
+
+    saveClientRule(
+      { kind: 'regra-acrescentada', key: 'ZETA', label: 'Zeta', value: 'ALF-1', beforeKey: 'ALFA' },
+      path,
+    )
+
+    const clients = loadClientMap(path).clients
+    expect(clients.map((entry) => entry.key)).toEqual(['ZETA', 'ALFA'])
+    expect(clients[0]?.rules).toEqual([
+      { match: 'exact', value: 'Z' },
+      { match: 'exact', value: 'ALF-1' },
+    ])
+  })
+
+  it('nao duplica a regra que ja esta la', () => {
+    const path = escrever({
+      version: 1,
+      clients: [{ key: 'alfa', label: 'Alfa', rules: [{ match: 'exact', value: 'alf-1' }] }],
+    })
+
+    saveClientRule(
+      { kind: 'regra-acrescentada', key: 'ALFA', label: 'Alfa', value: 'ALF-1', beforeKey: null },
+      path,
+    )
+
+    expect(loadClientMap(path).clients[0]?.rules).toHaveLength(1)
+  })
+
+  it('nao grava nada quando o plano e sem efeito', () => {
+    const path = join(dir, 'intocado.json')
+
+    saveClientRule(
+      { kind: 'sem-efeito', key: 'ALFA', label: 'Alfa', value: 'ALF-1', beforeKey: null },
+      path,
+    )
+
+    expect(existsSync(path)).toBe(false)
+  })
+
+  /**
+   * A guarda de `H-28` e `H-34`, no terceiro caminho de escrita. Sem ela a
+   * suite reescreveria o `client-map.json` do operador a cada execucao, e o
+   * sintoma apareceria semanas depois como consolidacao que parou de funcionar.
+   */
+  it('RECUSA o caminho padrao sob NODE_ENV=test', () => {
+    expect(() =>
+      saveClientRule({
+        kind: 'entrada-nova',
+        key: 'ALFA',
+        label: 'Alfa',
+        value: 'ALF-1',
+        beforeKey: null,
+      }),
+    ).toThrow(ClientMapError)
   })
 })

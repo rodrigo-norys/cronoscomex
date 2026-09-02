@@ -1,7 +1,11 @@
 import { readdirSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { describe, expect, it } from 'vitest'
+import { loadColorMap } from '../../src/app/color-map-loader.ts'
 import type { AppConfig } from '../../src/app/config.ts'
+import { indexColorMap } from '../../src/domain/color-mapper.ts'
+import { buildProcesses } from '../../src/domain/process-builder.ts'
+import { NO_FILL } from '../../src/io/style-extractor.ts'
 import { readWorkbook, WorkbookReadError } from '../../src/io/xlsx-reader.ts'
 
 function config(fixture: string, overrides: Partial<AppConfig> = {}): AppConfig {
@@ -153,6 +157,27 @@ describe('readWorkbook — chaves de estilo', () => {
     for (const chave of lidas) {
       expect(doMapa.has(chave), `chave ${chave} ausente de color-map.json`).toBe(true)
     }
+  })
+
+  /**
+   * A **decima primeira** linha nao tem preenchimento nenhum, e desde
+   * 02/09/2026 isso e estado legitimo — e a linha como o Excel a cria, e como a
+   * insercao a escreve. Antes o papel de "cor desconhecida" era dela, o que
+   * confundia ausencia com engano.
+   */
+  it('a decima primeira linha nao tem preenchimento, e isso NAO e pendencia', async () => {
+    const result = await readWorkbook(config('cores.xlsx'))
+
+    expect(result.rows[10]?.styleKey).toBe(NO_FILL)
+
+    const { quarantine } = buildProcesses(result.rows, {
+      colorMap: indexColorMap(loadColorMap('config/color-map.json')),
+      statusAliases: [],
+    })
+
+    expect(quarantine.map((item) => item.sourceRow)).not.toContain(result.rows[10]?.sourceRow)
+    // E a decima, que TEM cor e nao esta no mapa, continua indo.
+    expect(quarantine.map((item) => item.sourceRow)).toContain(result.rows[9]?.sourceRow)
   })
 
   it('a decima linha usa cor fora do mapa, para exercitar COR_NAO_MAPEADA em H-07', async () => {

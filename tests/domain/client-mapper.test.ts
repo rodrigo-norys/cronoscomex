@@ -4,6 +4,7 @@ import {
   indexClientGroups,
   normalizeClientGroups,
   normalizeClientMap,
+  planClientRule,
   resolveClient,
   resolveClientGroup,
 } from '../../src/domain/client-mapper.ts'
@@ -152,5 +153,83 @@ describe('grupos de clientes', () => {
 
   it('membro sem label fica sem label — quem resolve a exibicao e a rota', () => {
     expect(grupos[0]?.members[1]).not.toHaveProperty('label')
+  })
+})
+
+/**
+ * A volta do caminho (02/09/2026): declarar, a partir de uma linha da tela, a
+ * que cliente a celula CLT pertence.
+ *
+ * O que estes casos protegem e a POSICAO da entrada. A primeira que casa vence,
+ * entao uma regra acrescentada depois da entrada de prefixo que ja casa nunca
+ * seria alcancada — a edicao viraria um no-op silencioso (regra inviolavel 2).
+ */
+describe('planClientRule', () => {
+  it('recusa rotulo vazio e celula vazia, com motivos distintos', () => {
+    expect(planClientRule('ALF-1', '', '   ', map)).toBe('ROTULO_VAZIO')
+    expect(planClientRule('', '', 'Alfa', map)).toBe('CELULA_VAZIA')
+  })
+
+  it('nao faz nada quando a celula JA resolve para aquele cliente', () => {
+    // `alf-1` casa o prefixo `alf` da entrada Alfa: declarar Alfa de novo nao
+    // acrescenta regra nenhuma, e dizer isso e diferente de falhar.
+    expect(planClientRule('ALF-1', '', 'Alfa', map)).toEqual({
+      kind: 'sem-efeito',
+      key: 'ALFA',
+      label: 'Alfa',
+      value: 'ALF-1',
+      beforeKey: null,
+    })
+  })
+
+  /** A celula nao casa regra nenhuma: a entrada nova pode ir para o fim. */
+  it('cria a entrada no fim quando nada casava a celula', () => {
+    expect(planClientRule('ZZZ-9', '', 'Zeta', map)).toEqual({
+      kind: 'entrada-nova',
+      key: 'ZETA',
+      label: 'Zeta',
+      value: 'ZZZ-9',
+      beforeKey: null,
+    })
+  })
+
+  /**
+   * O caso que justifica `beforeKey`. `alf-1` casa Alfa por prefixo; declarar
+   * outro cliente para essa linha exige que a entrada nova seja consultada
+   * ANTES de Alfa, ou a regra `exact` nunca seria alcancada.
+   */
+  it('poe a entrada nova ANTES da que casa hoje', () => {
+    expect(planClientRule('ALF-1', '', 'Zeta', map)).toEqual({
+      kind: 'entrada-nova',
+      key: 'ZETA',
+      label: 'Zeta',
+      value: 'ALF-1',
+      beforeKey: 'ALFA',
+    })
+  })
+
+  it('so acrescenta a regra quando a entrada alvo ja vem antes da que casa', () => {
+    // `gama` e a primeira do mapa, e `ALF-1` casa `alfa`, que vem depois: a
+    // regra nova ja vence onde a entrada esta. A entrada e achada pelo NOME
+    // ("Gama Trading"), e a chave dela — `GAMA` — e o que a gravacao procura.
+    expect(planClientRule('ALF-1', '', 'Gama Trading', map)).toEqual({
+      kind: 'regra-acrescentada',
+      key: 'GAMA',
+      label: 'Gama Trading',
+      value: 'ALF-1',
+      beforeKey: null,
+    })
+  })
+
+  it('manda mover a entrada alvo quando ela esta DEPOIS da que casa', () => {
+    // `eps` e a ultima; `G1` casa `gama`, a primeira. Sem mover, a regra `exact`
+    // acrescentada em `eps` ficaria atras e nunca seria alcancada.
+    expect(planClientRule('G1', 'IMPORTADORA UM', 'Épsilon', map)).toEqual({
+      kind: 'regra-acrescentada',
+      key: 'EPS',
+      label: 'Épsilon',
+      value: 'G1',
+      beforeKey: 'GAMA',
+    })
   })
 })

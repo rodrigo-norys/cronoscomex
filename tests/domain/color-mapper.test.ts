@@ -2,11 +2,13 @@ import { describe, expect, it } from 'vitest'
 import {
   type ColorMapEntry,
   indexColorMap,
+  NO_FILL_KEY,
   representableTargets,
   resolveColor,
   resolveColorIndexed,
   resolveFillTarget,
 } from '../../src/domain/color-mapper.ts'
+import { NO_FILL } from '../../src/io/style-extractor.ts'
 
 /** As 9 entradas reais, medidas por H-01 sobre a aba 2026. */
 const MAPA: ColorMapEntry[] = [
@@ -89,7 +91,7 @@ describe('resolveColor — as 9 cores reais', () => {
     const r = resolveColor('argb:FF5B9BD5', MAPA)
 
     expect(r.responsible).toBe('colaborador1')
-    expect(r.mapped).toBe(true)
+    expect(r.source).toBe('mapa')
     expect(r.label).toBe('Azul')
   })
 
@@ -120,7 +122,7 @@ describe('resolveColor — as 9 cores reais', () => {
   it('branco do tema mapeia com todos os derivados neutros', () => {
     const r = resolveColor('theme:0|tint:0.0000', MAPA)
 
-    expect(r.mapped).toBe(true)
+    expect(r.source).toBe('mapa')
     expect(r.responsible).toBe('indefinido')
     expect(r.customsChannel).toBe('indefinido')
     expect(r.importerOutsideRj).toBe(false)
@@ -133,7 +135,7 @@ describe('resolveColor — as 9 cores reais', () => {
     for (const chave of ['argb:FF00FF00', 'argb:FF00FF0D']) {
       const r = resolveColor(chave, MAPA)
 
-      expect(r.mapped).toBe(true)
+      expect(r.source).toBe('mapa')
       expect(r.responsible).toBe('indefinido')
       expect(r.customsChannel).toBe('verde')
     }
@@ -155,10 +157,10 @@ describe('resolveColor — as 9 cores reais', () => {
 })
 
 describe('resolveColor — chave nao reconhecida', () => {
-  it('devolve indefinido, importerOutsideRj null e mapped false', () => {
+  it('devolve indefinido, importerOutsideRj null e source desconhecida', () => {
     const r = resolveColor('theme:9|tint:0.3999', MAPA)
 
-    expect(r.mapped).toBe(false)
+    expect(r.source).toBe('desconhecida')
     expect(r.responsible).toBe('indefinido')
     expect(r.customsChannel).toBe('indefinido')
     expect(r.importerOutsideRj).toBeNull()
@@ -171,8 +173,8 @@ describe('resolveColor — chave nao reconhecida', () => {
   // A ausencia de tolerancia e deliberada (ADR-0003). Um limiar de distancia
   // teria unificado os dois verdes reais sozinho — e qualquer cor nova junto.
   it('NAO aproxima cor vizinha: um bit de diferenca ja nao mapeia', () => {
-    expect(resolveColor('argb:FF00FF01', MAPA).mapped).toBe(false)
-    expect(resolveColor('argb:FF00B051', MAPA).mapped).toBe(false)
+    expect(resolveColor('argb:FF00FF01', MAPA).source).toBe('desconhecida')
+    expect(resolveColor('argb:FF00B051', MAPA).source).toBe('desconhecida')
   })
 
   it('nao confunde importerOutsideRj null com false', () => {
@@ -186,12 +188,47 @@ describe('resolveColor — chave nao reconhecida', () => {
   it('mapa vazio resulta em tudo nao mapeado, sem lancar erro', () => {
     const r = resolveColor('argb:FF5B9BD5', [])
 
-    expect(r.mapped).toBe(false)
+    expect(r.source).toBe('desconhecida')
     expect(r.responsible).toBe('indefinido')
   })
 
-  it('a chave "none" so mapeia se estiver no mapa', () => {
-    expect(resolveColor('none', MAPA).mapped).toBe(false)
+  /**
+   * **Ausencia de cor nao e cor desconhecida** (02/09/2026). Enquanto a
+   * aplicacao so lia, os dois casos coincidiam — nenhuma das 649 linhas nascia
+   * sem preenchimento. Ao passar a criar linha em branco, tratar a ausencia
+   * como engano mandaria para a quarentena toda linha que ela mesma escreveu.
+   */
+  it('celula sem preenchimento e estado legitimo, e nao pendencia', () => {
+    const semCor = resolveColor(NO_FILL_KEY, MAPA)
+
+    expect(semCor.source).toBe('sem-cor')
+    expect(semCor.responsible).toBe('indefinido')
+    expect(semCor.customsChannel).toBe('indefinido')
+    // `false`, e nao `null`: a celula nao foi pintada de amarelo. O `null` e
+    // para cor PRESENTE e nao catalogada, que pode ser uma variante de amarelo.
+    expect(semCor.importerOutsideRj).toBe(false)
+  })
+
+  it('a chave do dominio e a MESMA que a leitura produz', () => {
+    // `src/domain/` nao importa de `src/io/` (regra inviolavel 5), entao a
+    // constante e declarada duas vezes. Esta assercao e o que as mantem iguais.
+    expect(NO_FILL_KEY).toBe(NO_FILL)
+  })
+
+  it('declaracao do operador no mapa vence o padrao de "sem cor"', () => {
+    const comNone = resolveColor(NO_FILL_KEY, [
+      {
+        styleKey: 'none',
+        fillId: 0,
+        label: 'Sem preenchimento',
+        responsible: 'colaborador1',
+        customsChannel: 'indefinido',
+        importerOutsideRj: false,
+      },
+    ])
+
+    expect(comNone.source).toBe('mapa')
+    expect(comNone.responsible).toBe('colaborador1')
   })
 })
 

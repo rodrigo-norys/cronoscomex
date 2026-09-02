@@ -11,6 +11,7 @@ import {
 } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
+import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 import type { AppConfig } from '../../src/app/config.ts'
 import type { LogInput } from '../../src/app/logger.ts'
@@ -39,6 +40,7 @@ import { hashFile, type ReadResult, readWorkbook } from '../../src/io/xlsx-reade
  */
 
 const FIXTURE = 'basico.xlsx'
+const SHEET_PATH = 'xl/worksheets/sheet1.xml'
 const REF = 'FT001.26'
 const SOURCE_ROW = 2
 const HASH_FALSO = `sha256:${'0'.repeat(64)}`
@@ -1181,5 +1183,257 @@ describe('aplicacao que nao muda nada', () => {
 
     expect(result.archivedQueuePath).not.toBeNull()
     expect(consolidated(queuePath)).toEqual([])
+  })
+})
+
+/**
+ * A linha NOVA (02/09/2026). As mesmas seis defesas, com duas trocas que a
+ * natureza da operação impõe:
+ *
+ * - o alvo **não** é resolvido pela REF, porque ela ainda não está no arquivo —
+ *   é a última linha que existe, mais um, lida no momento da escrita;
+ * - não há `previous` a conferir. A defesa equivalente é a oposta: a REF não
+ *   pode já existir.
+ */
+describe('linha nova', () => {
+  function queueInsert(ref = 'FT900.26', values: Record<string, string | null> = {}): void {
+    enqueue({ kind: 'insert', ref, values: { clientRaw: 'CLIENTE NOVO', ...values } }, queuePath)
+  }
+
+  async function ultimaLinha(): Promise<number> {
+    const read = await readWorkbook(config())
+    return read.rows.reduce((maior, row) => Math.max(maior, row.sourceRow), 0)
+  }
+
+  it('grava depois da ULTIMA linha que existe', async () => {
+    const antes = await ultimaLinha()
+    queueInsert()
+
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.ok).toBe(true)
+    expect(await ultimaLinha()).toBe(antes + 1)
+    const celulas = await cellsOf(antes + 1)
+    expect(celulas.A).toBe('FT900.26')
+    expect(celulas.B).toBe('CLIENTE NOVO')
+  })
+
+  /** A linha nasce sem preenchimento, e desde 02/09/2026 isso é estado
+      legítimo — não vai para a quarentena. */
+  it('a linha nova nasce SEM cor', async () => {
+    const antes = await ultimaLinha()
+    queueInsert()
+    await setup()
+
+    await applyPendingEdits()
+
+    expect(await styleKeyOf(antes + 1)).toBe('none')
+  })
+
+  it('duas insercoes ocupam linhas consecutivas', async () => {
+    const antes = await ultimaLinha()
+    queueInsert('FT900.26')
+    queueInsert('FT901.26')
+
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.ok).toBe(true)
+    expect((await cellsOf(antes + 1)).A).toBe('FT900.26')
+    expect((await cellsOf(antes + 2)).A).toBe('FT901.26')
+  })
+
+  /**
+   * O espelho de `refMissing`: a REF já está lá, e gravar criaria um segundo
+   * processo com a mesma chave. É a defesa que substitui a conferência de
+   * `previous`, que uma inserção não tem.
+   */
+  it('RECUSA quando a REF ja existe no arquivo, com o conflito nomeado', async () => {
+    queueInsert(REF)
+
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.ok).toBe(false)
+    expect(result.refusal).toBe('EDICAO_OBSOLETA')
+    const conflito = result.conflicts[0]
+    expect(conflito?.refExists).toBe(true)
+    expect(conflito?.field).toBe('linha-nova')
+    expect(conflito?.ref).toBe(REF)
+    // E a fila continua intacta: recusa nunca perde o que o operador digitou.
+    expect(consolidated(queuePath)).toHaveLength(1)
+  })
+
+  it('RECUSA REF vazia — sem ela a linha nao e um processo', async () => {
+    queueInsert('   ')
+
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.ok).toBe(false)
+    expect(result.refusal).toBe('ESCRITA_INVALIDA')
+  })
+
+  it('RECUSA campo inadmissivel na linha nova, como faria numa edicao', async () => {
+    queueInsert('FT900.26', { eta2: '2026-02-31' })
+
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.ok).toBe(false)
+    expect(result.refusal).toBe('ESCRITA_INVALIDA')
+  })
+
+  it('grava data na linha nova, e ela volta como data', async () => {
+    const antes = await ultimaLinha()
+    queueInsert('FT900.26', { eta2: '2026-08-29' })
+
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.ok).toBe(true)
+    expect((await cellsOf(antes + 1)).I).toBeInstanceOf(Date)
+  })
+
+  /** Inserção e edição de célula na mesma fila: as duas cirurgias encadeiam. */
+  it('convive com edicao de campo na mesma aplicacao', async () => {
+    const antes = await ultimaLinha()
+    queueTextEdit()
+    queueInsert()
+
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.ok).toBe(true)
+    expect((await cellsOf(SOURCE_ROW)).B).toBe('CLIENTE ALTERADO')
+    expect((await cellsOf(antes + 1)).A).toBe('FT900.26')
+  })
+})
+
+/**
+ * Os achados da revisão da fatia (02/09/2026). Cada um foi medido pelo
+ * `revisor-xml` sobre um caminho que a suíte não alcançava.
+ */
+describe('linha nova — os achados da revisão', () => {
+  /**
+   * **A âncora tem piso, e sem ele a gravação ia para o CABEÇALHO.** Numa aba
+   * sem linha de dado, `read.rows` volta vazia — a leitura pula o cabeçalho — e
+   * a conta dava 1. Com `<sheetData/>`, `appendRow` aceitava e gravava a REF do
+   * processo por cima da faixa de cabeçalho da `Tabela1`.
+   */
+  it('nunca mira antes da primeira linha de dado, mesmo com a aba sem dado', async () => {
+    copyFileSync('tests/fixtures/vazio.xlsx', workbook)
+    enqueue({ kind: 'insert', ref: 'FT900.26', values: {} }, queuePath)
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.ok).toBe(true)
+    const read = await readWorkbook(config())
+    const criada = read.rows.find((row) => row.cells.A?.value === 'FT900.26')
+    // A linha 1 é o cabeçalho: a nova precisa cair na 2, que é `firstDataRow`.
+    expect(criada?.sourceRow).toBe(2)
+  })
+
+  /**
+   * **O caso que a fatia inteira existe para acertar**, e que nenhuma das nove
+   * fixtures exercitava — o `revisor-xml` o marcou como não verificável em duas
+   * passagens.
+   *
+   * No arquivo real há **95 linhas vazias e formatadas** entre o último processo
+   * (650) e o fim da aba (745). Elas são procedimento dos operadores, e a linha
+   * nova vai para a **746**, não para a 651: escrever nelas seria ocupar espaço
+   * que eles mantêm de propósito. O cenário é montado aqui, e não numa décima
+   * fixture, porque o que o caso precisa é da FORMA — `<row>` sem célula com
+   * valor, depois da última REF.
+   */
+  it('vai depois das linhas VAZIAS que existem no fim da aba, e nao para a primeira delas', async () => {
+    const entries = unzipSync(new Uint8Array(readFileSync(workbook)))
+    const sheet = strFromU8(entries[SHEET_PATH] as Uint8Array)
+    const ultimaComRef = Math.max(
+      ...[...sheet.matchAll(/<row\s[^>]*?\br="(\d+)"/g)].map((m) => Number(m[1])),
+    )
+    // Três linhas vazias depois da última com REF, como as 95 do arquivo real:
+    // existem no XML e não têm `<v>` em célula nenhuma. A **forma** não importa
+    // aqui — o revisor-xml mediu as três (esta, a auto-fechada que o Excel emite
+    // para linha formatada sem célula, e a variante com espaço) e a âncora cai
+    // no mesmo lugar nas três.
+    const vazias = [1, 2, 3]
+      .map(
+        (n) =>
+          `<row r="${ultimaComRef + n}" spans="1:14"><c r="A${ultimaComRef + n}" s="0"/></row>`,
+      )
+      .join('')
+    entries[SHEET_PATH] = strToU8(sheet.replace('</sheetData>', `${vazias}</sheetData>`))
+    writeFileSync(workbook, zipSync(entries))
+
+    enqueue({ kind: 'insert', ref: 'FT900.26', values: {} }, queuePath)
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.ok).toBe(true)
+    const read = await readWorkbook(config())
+    const criada = read.rows.find((row) => row.cells.A?.value === 'FT900.26')
+    // Depois das três vazias — e não na primeira delas.
+    expect(criada?.sourceRow).toBe(ultimaComRef + 4)
+  })
+
+  it('a REF vai APARADA para a celula, mesmo vinda de fila editada a mao', async () => {
+    const antes = await (async () => {
+      const read = await readWorkbook(config())
+      return read.rows.reduce((maior, row) => Math.max(maior, row.sourceRow), 0)
+    })()
+    enqueue({ kind: 'insert', ref: '  FT900.26  ', values: {} }, queuePath)
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.ok).toBe(true)
+    expect((await cellsOf(antes + 1)).A).toBe('FT900.26')
+  })
+
+  /**
+   * A folga da `Tabela1` acaba, e isso tem data: ela cobre até a linha 997
+   * contra 745 escritas. Sem código próprio, o operador receberia "a gravação
+   * não pode ser concluída com segurança" e não saberia o que fazer.
+   */
+  it('a Tabela cheia recusa com codigo PROPRIO, e nao com falha generica', async () => {
+    const entries = unzipSync(new Uint8Array(readFileSync(workbook)))
+    const ultima = Math.max(
+      ...[
+        ...strFromU8(entries['xl/worksheets/sheet1.xml'] as Uint8Array).matchAll(
+          /<row\s[^>]*?\br="(\d+)"/g,
+        ),
+      ].map((m) => Number(m[1])),
+    )
+    entries['xl/tables/table1.xml'] = strToU8(
+      '<table xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" id="1" ' +
+        `name="Tabela1" displayName="Tabela1" ref="A1:P${ultima}"/>`,
+    )
+    entries['xl/worksheets/_rels/sheet1.xml.rels'] = strToU8(
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+        '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/' +
+        'relationships/table" Target="../tables/table1.xml"/></Relationships>',
+    )
+    writeFileSync(workbook, zipSync(entries))
+    enqueue({ kind: 'insert', ref: 'FT900.26', values: {} }, queuePath)
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.ok).toBe(false)
+    expect(result.refusal).toBe('TABELA_CHEIA')
+    // Nada foi gravado, e a fila continua inteira.
+    expect(result.fileState).toBe('intacto')
+    expect(consolidated(queuePath)).toHaveLength(1)
   })
 })

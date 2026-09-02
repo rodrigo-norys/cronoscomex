@@ -1,6 +1,6 @@
 import { pathToFileURL } from 'node:url'
 import Fastify, { type FastifyInstance } from 'fastify'
-import { ClientMapError, loadClientMap } from '../app/client-map-loader.ts'
+import { type ClientMap, ClientMapError, loadClientMap } from '../app/client-map-loader.ts'
 import { ColorMapError, loadColorMap } from '../app/color-map-loader.ts'
 import { type AppConfig, ConfigError, loadConfig, WORKBOOK_UNSET } from '../app/config.ts'
 import { createLogger, type Logger } from '../app/logger.ts'
@@ -8,13 +8,14 @@ import {
   store as defaultStore,
   initStore,
   reconfigureWorkbook,
+  refreshClientMap,
   reload,
   type StoreAccess,
 } from '../app/process-store.ts'
 import { loadStatusAliases, StatusAliasesError } from '../app/status-aliases-loader.ts'
 import { loadTeamMap, TeamMapError } from '../app/team-map-loader.ts'
 import { initWriteGuard, retargetWatcher } from '../app/write-guard.ts'
-import type { ClientGroup } from '../domain/client-mapper.ts'
+import type { ClientGroup, ClientMapEntry } from '../domain/client-mapper.ts'
 import type { ColorMapEntry } from '../domain/color-mapper.ts'
 import type { TeamMember } from '../domain/team-mapper.ts'
 import { createWatcher, DEFAULT_DEBOUNCE_MS, type Watcher } from '../io/watcher.ts'
@@ -26,6 +27,7 @@ import { registerFilterOptionsRoute } from './routes/filter-options.ts'
 import { registerHealthRoute } from './routes/health.ts'
 import { registerHistoryRoute } from './routes/history.ts'
 import { registerIndicatorsRoute } from './routes/indicators.ts'
+import { registerProcessClientRoute } from './routes/process-client.ts'
 import { registerProcessColorRoute } from './routes/process-color.ts'
 import { registerProcessesRoute } from './routes/processes.ts'
 import { registerQuarantineRoute } from './routes/quarantine.ts'
@@ -96,6 +98,21 @@ export function buildServer(
    * de `clientGroups`: `team-map.json` e estado real do operador.
    */
   teamMap: readonly TeamMember[] = [],
+  /**
+   * Mapa de clientes (`H-49`) e o caminho dele, para `PUT
+   * /api/processes/:ref/client` planejar contra a MESMA ordem que resolve a
+   * coluna e gravar onde o operador le.
+   *
+   * **Os dois juntos, e nao so o caminho.** Passar so o caminho faria a rota
+   * recarregar o arquivo a cada requisicao, e planejar contra uma ordem que o
+   * store nao esta usando — o mesmo defeito que a nota de `colorMap` acima
+   * descreve, num terceiro mapa.
+   */
+  clientMap: readonly ClientMapEntry[] = [],
+  /** Ponto de injecao para teste. `saveClientRule` recusa o padrao sob teste. */
+  clientMapPath?: string,
+  /** Reprojeta com o mapa novo. Ausente, so grava — o certo em teste. */
+  applyClientMap?: (map: ClientMap) => Promise<void>,
 ): FastifyInstance {
   // Silencioso sob teste: a saida do Vitest e o relatorio, nao o log do servidor.
   const app = Fastify({
@@ -113,6 +130,7 @@ export function buildServer(
   registerHistoryRoute(app, config, store, historyPath)
   registerEditsRoutes(app, store, queuePath)
   registerProcessColorRoute(app, store, colorMap)
+  registerProcessClientRoute(app, store, clientMap, clientMapPath, applyClientMap)
   registerApplyRoute(app)
 
   // Por ultimo: `GET /*` e o catch-all, e registra-la antes nao mudaria o
@@ -145,6 +163,7 @@ async function main(): Promise<void> {
   let colorMap: readonly ColorMapEntry[]
   // Fora do `try` pelo mesmo motivo do mapa de cor: a rota de opcoes, montada
   // abaixo, precisa dos MESMOS grupos que o store recebeu.
+  let clientEntries: readonly ClientMapEntry[] = []
   let clientGroups: readonly ClientGroup[]
   // Idem: as duas rotas precisam do MESMO mapa de equipe que o store recebeu.
   let teamMap: readonly TeamMember[]
@@ -164,6 +183,7 @@ async function main(): Promise<void> {
     // escrito errado apareca aqui, e nao quando o operador abrir a Pagina
     // Clientes com o campo silenciosamente sem consolidacao.
     const clientMap = loadClientMap()
+    clientEntries = clientMap.clients
     clientGroups = clientMap.groups
     teamMap = loadTeamMap()
     initStore({
@@ -200,6 +220,9 @@ async function main(): Promise<void> {
     clientGroups,
     undefined,
     teamMap,
+    clientEntries,
+    undefined,
+    (map) => refreshClientMap(map.clients, map.groups),
   )
 
   try {

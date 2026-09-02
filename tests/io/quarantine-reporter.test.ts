@@ -15,7 +15,9 @@ function linha(sourceRow: number, ref: string | null): RawRow {
   const cells: Record<string, RawCell> = {}
   for (const c of ALL_COLUMNS)
     cells[c] = { value: c === 'A' ? ref : null, type: ref ? 'string' : 'null' }
-  return { sourceRow, cells, styleKey: 'none' }
+  // Cor PRESENTE e fora do mapa, e nao `none`: desde 02/09/2026 a ausencia de
+  // preenchimento e estado legitimo, e nao produz quarentena nenhuma.
+  return { sourceRow, cells, styleKey: 'argb:FFB7E1CD' }
 }
 
 beforeEach(() => {

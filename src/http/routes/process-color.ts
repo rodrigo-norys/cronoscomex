@@ -8,6 +8,7 @@ import {
   resolveFillTarget,
 } from '../../domain/color-mapper.ts'
 import { normKey } from '../../domain/normalizer.ts'
+import { UNWRITTEN_ROW } from '../../domain/process-projection.ts'
 import {
   consolidated,
   DEFAULT_QUEUE_PATH,
@@ -119,6 +120,28 @@ export function registerProcessColorRoute(
       return reply
         .code(404)
         .send(apiError('PROCESSO_NAO_ENCONTRADO', `Nenhum processo com a REF "${ref}".`))
+    }
+
+    /*
+      **Linha ainda nao gravada nao recebe cor** (02/09/2026). Ela aparece em
+      `state.processes` pela projecao, entao a rota a encontra — mas o
+      `write-guard` resolve o alvo da repintura pela REF no ARQUIVO, e ali ela
+      nao esta: a edicao voltaria com `refMissing`, recusando a fila INTEIRA e
+      dizendo ao operador que "esta linha nao esta mais na planilha", sobre uma
+      linha que nunca esteve. Achado do revisor-xml.
+
+      A linha nova nasce sem preenchimento por decisao; a cor se define depois
+      de ela existir no arquivo.
+    */
+    if (process.sourceRow === UNWRITTEN_ROW) {
+      return reply
+        .code(409)
+        .send(
+          apiError(
+            'LINHA_NAO_GRAVADA',
+            'Esta linha ainda nao foi gravada na planilha. Aplique as alteracoes antes de definir a cor.',
+          ),
+        )
     }
 
     // A validacao dos tres valores e a resolucao sao a MESMA operacao: uma

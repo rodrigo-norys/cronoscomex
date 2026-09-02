@@ -152,7 +152,9 @@ function buildOne(row: RawRow, deps: BuildDeps): { process: Process; unmappedCol
   for (const parse of [eta2, registrationDate, docsSentDate]) {
     if (parse.anomaly) anomalies.add(parse.anomaly)
   }
-  if (!color.mapped) anomalies.add('COR_NAO_MAPEADA')
+  // So cor PRESENTE e nao catalogada e pendencia. Celula sem preenchimento e a
+  // linha em branco que a propria aplicacao cria, e nao um engano a reportar.
+  if (color.source === 'desconhecida') anomalies.add('COR_NAO_MAPEADA')
 
   const clientRaw = text(row, COLUMN.client)
   const importerRaw = text(row, COLUMN.importer)
@@ -208,7 +210,10 @@ function buildOne(row: RawRow, deps: BuildDeps): { process: Process; unmappedCol
 
   for (const code of detectAnomalies(base)) anomalies.add(code)
 
-  return { process: { ...base, anomalies: [...anomalies] }, unmappedColor: !color.mapped }
+  return {
+    process: { ...base, anomalies: [...anomalies] },
+    unmappedColor: color.source === 'desconhecida',
+  }
 }
 
 /**

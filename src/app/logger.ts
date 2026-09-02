@@ -56,6 +56,12 @@ export interface LogEntry {
   quarantineRate?: number
   cellsWritten?: number
   /**
+   * Quantas linhas NOVAS a escrita criou (02/09/2026). Sem ele, `write.done`
+   * de uma aplicacao so de insercao sai com `cellsWritten: 0` — indistinguivel
+   * do ramo em que nada mudou.
+   */
+  rowsInserted?: number
+  /**
    * Quantas edicoes a escrita vai tentar aplicar. Exigido por
    * 08-qualidade-operacao.md secao 3.1 para `write.start`, e nomeado assim
    * porque naquele instante nada foi aplicado ainda.
