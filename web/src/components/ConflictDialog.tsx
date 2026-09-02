@@ -26,6 +26,8 @@ const NOME_DA_COLUNA: Record<string, string> = {
   // Nao e coluna: e a cor da linha inteira (H-27). Entra aqui porque a coluna
   // "Campo" precisa dizer o que mudou, e "cor" sozinho nao diz.
   cor: 'Cor da linha',
+  // Nem coluna nem cor: a linha INTEIRA que se queria criar (02/09/2026).
+  'linha-nova': 'Linha nova',
 }
 
 interface ConflictDialogProps {
@@ -158,15 +160,31 @@ export function ConflictDialog({ refusal, onClose }: ConflictDialogProps) {
                     <td className="py-2 pr-3">
                       {NOME_DA_COLUNA[conflito.field] ?? conflito.field}
                     </td>
-                    <td className="py-2 pr-3">{conflito.valueWhenEdited || '—'}</td>
                     <td className="py-2 pr-3">
-                      {conflito.refMissing ? (
+                      {/* Uma linha que ainda nao existia nao tem valor anterior,
+                          e o traco diria "a celula estava vazia" — que e falso
+                          por outro caminho (regra inviolavel 3). */}
+                      {conflito.refExists ? (
+                        <span className="text-text-muted">não existia</span>
+                      ) : (
+                        conflito.valueWhenEdited || '—'
+                      )}
+                    </td>
+                    <td className="py-2 pr-3">
+                      {conflito.refMissing && (
                         <span className="text-state-warning-fg">
                           Esta linha não está mais na planilha
                         </span>
-                      ) : (
-                        conflito.valueNow || '—'
                       )}
+                      {/* O espelho de `refMissing`, e sem ele esta celula saia
+                          com um traco — afirmando celula vazia onde ha um
+                          processo inteiro. Achado do revisor-xml. */}
+                      {conflito.refExists && (
+                        <span className="text-state-warning-fg">
+                          Já existe um processo com esta REF
+                        </span>
+                      )}
+                      {!conflito.refMissing && !conflito.refExists && (conflito.valueNow || '—')}
                     </td>
                     <td className="py-2">{conflito.yourValue || '(vazio)'}</td>
                   </tr>

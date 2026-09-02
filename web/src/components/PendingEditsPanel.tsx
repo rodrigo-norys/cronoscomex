@@ -31,22 +31,32 @@ const FIELD_LABELS: Readonly<Record<string, string>> = {
 }
 
 /**
- * A troca de cor nao tem campo nem valor: o que muda e o estilo da linha. As
- * tres funcoes abaixo dao a ela a mesma forma "de → para" das demais, sem
- * inventar um valor de celula que nao existe.
+ * Nem a troca de cor nem a linha nova tem campo e valor: numa muda o estilo, na
+ * outra nao ha estado anterior nenhum. As tres funcoes abaixo lhes dao a mesma
+ * forma "de → para" das demais, sem inventar valor de celula que nao existe.
  */
 function labelOf(edit: PendingEdit): string {
   if (edit.kind === 'color') return 'Cor da linha'
+  if (edit.kind === 'insert') return 'Linha nova'
   return FIELD_LABELS[edit.field] ?? edit.field
 }
 
 function previousOf(edit: PendingEdit): string {
   if (edit.kind === 'color') return edit.previousLabel
+  // **"(não existe)", e não "(vazio)"**: a linha ainda não está na planilha, e
+  // dizer que ela está vazia afirmaria uma célula que não há (regra 3).
+  if (edit.kind === 'insert') return '(não existe)'
   return edit.previous === '' ? '(vazio)' : edit.previous
 }
 
 function nextOf(edit: PendingEdit): string {
   if (edit.kind === 'color') return edit.label
+  if (edit.kind === 'insert') {
+    const preenchidos = Object.values(edit.values).filter(
+      (value) => value !== null && value !== '',
+    ).length
+    return `${edit.ref} — ${preenchidos} ${preenchidos === 1 ? 'campo' : 'campos'}`
+  }
   return edit.value === null || edit.value === '' ? '(vazio)' : edit.value
 }
 

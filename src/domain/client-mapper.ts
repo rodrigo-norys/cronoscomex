@@ -99,6 +99,92 @@ export function resolveClient(
 }
 
 /**
+ * O que precisa mudar no mapa para que uma celula CLT passe a pertencer a um
+ * cliente — a volta do caminho que `resolveClient` faz na ida (02/09/2026).
+ *
+ * **Aqui so se PLANEJA.** Quem escreve o arquivo e `src/app/client-map-loader.ts`,
+ * e escreve no JSON CRU: o mapa em memoria vem normalizado, e serializa-lo de
+ * volta apagaria a grafia do operador e as chaves `_comentario_*`, que a
+ * convencao do repositorio manda preservar.
+ */
+export interface ClientRulePlan {
+  kind: 'entrada-nova' | 'regra-acrescentada' | 'sem-efeito'
+  /** Chave normalizada da entrada alvo. */
+  key: string
+  /** O rotulo como o operador escreveu — so a entrada nova o usa. */
+  label: string
+  /** A regra `exact` a acrescentar, com o valor da celula ja normalizado. */
+  value: string
+  /**
+   * Onde a entrada alvo precisa ficar. Na entrada NOVA, `null` e o fim da lista;
+   * na que ja existe, `null` e "fica onde esta".
+   *
+   * **E o mecanismo, e nao um detalhe de ordenacao.** A primeira entrada que
+   * casa vence: uma regra `exact` acrescentada DEPOIS da entrada de prefixo que
+   * ja casa a celula nunca seria alcancada, e a edicao viraria um no-op
+   * silencioso (regra inviolavel 2).
+   */
+  beforeKey: string | null
+}
+
+/** Por que o mapa nao pode receber a regra. A rota traduz para 400. */
+export type ClientRuleRejection = 'ROTULO_VAZIO' | 'CELULA_VAZIA'
+
+/**
+ * Planeja a regra que faz `clientKey` resolver para o cliente `label`.
+ *
+ * **O alcance e UMA linha, por construcao.** A regra e `exact` sobre o valor da
+ * celula, entao declarar o cliente de `AV-480` nao move `AV-397` nem as outras
+ * 60 do mesmo prefixo. Consolidar um grupo inteiro continua sendo trabalho de
+ * quem edita o arquivo — inferir o prefixo a partir de uma linha seria adivinhar
+ * (regra inviolavel 3), e a planilha real tem um prefixo que cobre TRES
+ * clientes.
+ */
+export function planClientRule(
+  clientKey: string,
+  importerKey: string,
+  label: string,
+  map: readonly ClientMapEntry[],
+): ClientRulePlan | ClientRuleRejection {
+  const key = normKey(label)
+  if (key === '') return 'ROTULO_VAZIO'
+  // Celula vazia nunca casa regra alguma, e `''` como valor de regra e recusado
+  // na carga: nao ha o que declarar enquanto a celula B nao tiver conteudo.
+  if (clientKey === '') return 'CELULA_VAZIA'
+
+  const current = resolveClient(clientKey, importerKey, map)
+  const matchIndex = current.mapped ? map.findIndex((entry) => entry.key === current.key) : -1
+  const beforeKey = matchIndex === -1 ? null : (map[matchIndex]?.key ?? null)
+
+  /**
+   * O alvo se acha pelo NOME, e nao pela chave. O operador digita "Alfa
+   * Comercio"; a chave daquela entrada pode ser `ALFA`, escolhida por quem
+   * escreveu o arquivo. Comparar so com a chave criaria uma segunda entrada para
+   * um cliente que ja existe, e a tela passaria a mostrar dois.
+   */
+  const targetIndex = map.findIndex((entry) => normKey(entry.label) === key || entry.key === key)
+  const target = targetIndex === -1 ? null : map[targetIndex]
+
+  if (current.mapped && targetIndex !== -1 && current.key === target?.key) {
+    return { kind: 'sem-efeito', key: current.key, label, value: clientKey, beforeKey: null }
+  }
+
+  if (target === undefined || target === null) {
+    return { kind: 'entrada-nova', key, label, value: clientKey, beforeKey }
+  }
+
+  // A entrada alvo ja existe. Ela so precisa MUDAR DE LUGAR quando esta depois
+  // da que casa hoje; a frente dela, a regra nova ja vence onde esta.
+  return {
+    kind: 'regra-acrescentada',
+    key: target.key,
+    label,
+    value: clientKey,
+    beforeKey: matchIndex !== -1 && targetIndex > matchIndex ? beforeKey : null,
+  }
+}
+
+/**
  * Um agrupamento de clientes, exibido como um nivel de arvore no filtro
  * (`H-55`).
  *

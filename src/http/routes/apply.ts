@@ -19,6 +19,8 @@ export interface ApplyResponse {
   cellsWritten: number
   /** Linhas repintadas (`H-27`). Nao entra em `cellsWritten` — ver `WriteResult`. */
   rowsRepainted: number
+  /** Quantas linhas NOVAS foram criadas (02/09/2026). */
+  rowsInserted: number
   backupPath: string | null
   /** `null` quando a fila nao foi arquivada. Ver o aviso em §3 do contrato. */
   archivedQueuePath: string | null
@@ -33,6 +35,7 @@ const STATUS: Record<WriteRefusal, number> = {
   NADA_A_APLICAR: 409,
   ESCRITA_EM_ANDAMENTO: 409,
   ESCRITA_INVALIDA: 500,
+  TABELA_CHEIA: 409,
   ARQUIVO_INDISPONIVEL: 503,
 }
 
@@ -50,6 +53,8 @@ const MESSAGE: Record<WriteRefusal, string> = {
   NADA_A_APLICAR: 'Nao ha alteracoes pendentes para aplicar.',
   ESCRITA_EM_ANDAMENTO: 'Ja existe uma aplicacao em curso. Aguarde alguns instantes.',
   ESCRITA_INVALIDA: 'A gravacao nao pode ser concluida com seguranca. Nada foi perdido.',
+  TABELA_CHEIA:
+    'A Tabela da planilha nao tem mais espaco para linha nova. Amplie a Tabela no Excel e tente de novo; nada foi gravado.',
   ARQUIVO_INDISPONIVEL:
     'A planilha nao pode ser lida agora. Confira se a pasta do OneDrive esta sincronizada.',
 }
@@ -119,6 +124,7 @@ export function registerApplyRoute(
       applied: result.applied,
       cellsWritten: result.cellsWritten,
       rowsRepainted: result.rowsRepainted,
+      rowsInserted: result.rowsInserted,
       backupPath: result.backupPath,
       archivedQueuePath: result.archivedQueuePath,
       durationMs: result.durationMs,

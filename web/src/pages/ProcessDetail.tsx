@@ -1,4 +1,5 @@
 import type { ProcessDetailResponse, ProcessDto } from '../api-client.ts'
+import { LINHA_PENDENTE } from '../api-client.ts'
 import { ColorFieldsForm } from '../components/ColorFieldsForm.tsx'
 import { EditProcessForm } from '../components/EditProcessForm.tsx'
 import { PageAlert } from '../components/PageAlert.tsx'
@@ -121,7 +122,15 @@ function Identification({ process }: { process: ProcessDto }) {
       className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="font-mono text-xl font-semibold">{process.ref}</h2>
-      <p className="mt-1 text-xs text-text-muted">Linha {process.sourceRow} da planilha</p>
+      {/* **`0` nao e endereco**: as linhas do Excel comecam em 1, e e o valor
+          que a projecao usa para "ainda nao gravada" (`UNWRITTEN_ROW`). Imprimi-lo
+          afirmaria um lugar que nao existe — e `sourceRow` e um dos dois
+          identificadores que a regra inviolavel 8 permite. Achado do revisor-xml. */}
+      <p className="mt-1 text-xs text-text-muted">
+        {process.sourceRow === LINHA_PENDENTE
+          ? 'Linha ainda não gravada na planilha'
+          : `Linha ${process.sourceRow} da planilha`}
+      </p>
     </section>
   )
 }

@@ -1,31 +1,48 @@
-import type { ProcessDto } from '../api-client.ts'
+import { enqueueEdit, type ProcessDto, setProcessClient } from '../api-client.ts'
+import { type GridNavigation, useGridNavigation } from '../hooks/useGridNavigation.ts'
 import type { SortField, SortOrder } from '../hooks/useProcessQuery.ts'
 import { navigate } from '../router.ts'
+import { EditableCell } from './EditableCell.tsx'
 
 /**
  * A tabela de processos. Nao ordena nem pagina: o servidor ja entregou a pagina
  * pronta, e reordenar aqui daria um resultado diferente do que `total` conta.
+ *
+ * **Sete das nove colunas se editam onde estao** (02/09/2026), por DUAS portas.
+ * As seis que sao celula da planilha enfileiram em `POST /api/edits`, como o
+ * detalhe faz desde `H-23`. Cliente vai por `PUT /api/processes/:ref/client`,
+ * porque nao e celula: e a regra de consolidacao de `client-map.json`, e
+ * declara-la ali e o caminho de volta do que a coluna ja lia.
+ *
+ * As duas que sobram nao tem porta: REF e a chave natural, e Categoria sai de
+ * cinco regras das quais so uma le a celula L (`A-22`) — editar o rotulo
+ * gravaria numa celula que nao esta a vista.
  */
 
 interface Column {
   readonly key: string
   readonly label: string
-  /** Ausente na coluna que o servidor nao sabe ordenar. */
-  readonly sortBy?: SortField
+  readonly sortBy: SortField
 }
 
+/**
+ * As nove colunas, **todas** ordenaveis desde 02/09/2026.
+ *
+ * Quatro nao eram, e a tela nao dizia por que: quem clicava em BL nao recebia
+ * nem ordem nem recusa. `client` e `clientProcess` tem ordens proprias e
+ * distintas — o cliente consolidado e o valor da celula CLT sao coisas
+ * diferentes (`H-49`), e e por isso que sao duas colunas.
+ */
 const COLUMNS: readonly Column[] = [
   { key: 'ref', label: 'REF', sortBy: 'ref' },
   { key: 'client', label: 'Cliente', sortBy: 'client' },
-  // O valor da celula CLT, sem ordenacao propria: `sort=client` ordena pelo
-  // cliente consolidado, e oferecer as duas ordens confundiria as colunas.
-  { key: 'clientProcess', label: 'Processo do cliente' },
-  { key: 'importer', label: 'Importador' },
+  { key: 'clientProcess', label: 'Processo do cliente', sortBy: 'clientProcess' },
+  { key: 'importer', label: 'Importador', sortBy: 'importer' },
   { key: 'vessel', label: 'Navio', sortBy: 'vessel' },
   { key: 'eta2', label: 'ETA2', sortBy: 'eta2' },
-  { key: 'billOfLading', label: 'BL' },
-  { key: 'container', label: 'CNTR' },
-  { key: 'status', label: 'Categoria' },
+  { key: 'billOfLading', label: 'BL', sortBy: 'billOfLading' },
+  { key: 'container', label: 'CNTR', sortBy: 'container' },
+  { key: 'status', label: 'Categoria', sortBy: 'status' },
 ]
 
 const CATEGORY_LABELS: Record<ProcessDto['statusCategory'], string> = {
@@ -40,9 +57,13 @@ interface ProcessTableProps {
   sort: SortField
   order: SortOrder
   onSort: (field: SortField) => void
+  /** Recarrega a lista depois de uma edicao enfileirada. */
+  onEdited: () => void
 }
 
-export function ProcessTable({ items, sort, order, onSort }: ProcessTableProps) {
+export function ProcessTable({ items, sort, order, onSort, onEdited }: ProcessTableProps) {
+  const grid = useGridNavigation(items.length, COLUMNS.length)
+
   if (items.length === 0) {
     return (
       <p className="rounded-container border border-border-subtle bg-surface-raised p-6 text-sm text-text-secondary">
@@ -51,27 +72,42 @@ export function ProcessTable({ items, sort, order, onSort }: ProcessTableProps) 
     )
   }
 
+  /*
+    `role="grid"`, e nao `table`: a tabela e editavel, e sem a grade cada linha
+    custa sete paradas de tabulacao — ~1.400 numa pagina cheia, com a paginacao
+    DEPOIS dela no DOM. O porque completo, e a troca que ela impoe ao leitor de
+    tela, estao no cabecalho de `useGridNavigation`.
+
+    **O invólucro fica na linha de cima, e isso e exigencia de guarda:**
+    `tests/repo/estilo.test.ts` procura `overflow-x-auto` nas TRES linhas acima
+    de cada `<table>` (`R01`). Comentario longo aqui empurra o involucro para
+    fora da janela e reprova a suite — por isso este bloco vive aqui.
+  */
   return (
     // A tabela e larga; o scroll fica NELA, para a pagina nunca rolar na
     // horizontal e levar o cabecalho junto.
     <div className="overflow-x-auto rounded-container border border-border-subtle bg-surface-raised">
-      <table className="w-full text-sm">
-        <caption className="sr-only">Processos</caption>
+      {/* biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: em ARIA `grid` e SUBCLASSE de `table`, e a APG constroi a grade assim; a regra existe contra `<div role="button">` */}
+      <table ref={grid.ref} role="grid" onKeyDown={grid.onKeyDown} className="w-full text-sm">
+        <caption className="sr-only">
+          Processos. Use as setas para percorrer as células, Enter para abrir a edição.
+        </caption>
         <thead className="border-b border-border-subtle bg-surface-sunken">
           <tr>
-            {COLUMNS.map((column) => (
+            {COLUMNS.map((column, index) => (
               <HeaderCell
                 key={column.key}
                 column={column}
                 sort={sort}
                 order={order}
                 onSort={onSort}
+                cell={grid.cellProps(0, index)}
               />
             ))}
           </tr>
         </thead>
         <tbody>
-          {items.map((item) => (
+          {items.map((item, index) => (
             /*
               `h-10` sao 2.5rem — 40 px na fonte-base padrao, e **relativo**, entao
               a linha acompanha o operador que amplia (`SC 1.4.4`). Altura
@@ -85,9 +121,11 @@ export function ProcessTable({ items, sort, order, onSort }: ProcessTableProps) 
               key={item.ref}
               className="motion-tint h-10 border-b border-border-subtle last:border-0 hover:bg-surface-hover"
             >
-              <td className="px-3 whitespace-nowrap font-mono">
+              <td {...grid.cellProps(index + 1, 0)} className="px-3 whitespace-nowrap font-mono">
                 <a
                   href={`/processo/${encodeURIComponent(item.ref)}`}
+                  // Fora da ordem de tabulacao: quem tabula e a grade.
+                  tabIndex={-1}
                   onClick={(event) => {
                     if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
                     event.preventDefault()
@@ -119,16 +157,81 @@ export function ProcessTable({ items, sort, order, onSort }: ProcessTableProps) 
                 Categoria quebrava em SEIS retangulos de texto e esticava a linha
                 para 57 px, porque o rotulo e o chip de canal nao cabiam juntos.
               */}
-              <Text value={item.client} />
-              <Text value={item.clientProcess} mono />
-              <Text value={item.importer} />
-              <Text value={item.vessel} />
-              <td className="px-3 font-mono text-xs whitespace-nowrap tabular-nums">
-                {formatDay(item.eta2)}
-              </td>
-              <Text value={item.billOfLading} mono />
-              <Text value={item.container} mono />
-              <td className="px-3 whitespace-nowrap">
+              <EditableCell
+                processRef={item.ref}
+                cell={grid.cellProps(index + 1, 1)}
+                label="Cliente"
+                kind="text"
+                value={item.client}
+                display={item.client || '—'}
+                onCommit={(value) => setProcessClient(item.ref, value ?? '')}
+                onEdited={onEdited}
+              />
+              <EditableCell
+                processRef={item.ref}
+                cell={grid.cellProps(index + 1, 2)}
+                label="Processo do cliente"
+                kind="text"
+                value={item.clientProcess}
+                display={item.clientProcess || '—'}
+                onCommit={(value) => enqueueEdit({ ref: item.ref, field: 'clientRaw', value })}
+                className="font-mono text-xs"
+                onEdited={onEdited}
+              />
+              <EditableCell
+                processRef={item.ref}
+                cell={grid.cellProps(index + 1, 3)}
+                label="Importador"
+                kind="text"
+                value={item.importer}
+                display={item.importer || '—'}
+                onCommit={(value) => enqueueEdit({ ref: item.ref, field: 'importerRaw', value })}
+                onEdited={onEdited}
+              />
+              <EditableCell
+                processRef={item.ref}
+                cell={grid.cellProps(index + 1, 4)}
+                label="Navio"
+                kind="text"
+                value={item.vessel}
+                display={item.vessel || '—'}
+                onCommit={(value) => enqueueEdit({ ref: item.ref, field: 'vesselRaw', value })}
+                onEdited={onEdited}
+              />
+              <EditableCell
+                processRef={item.ref}
+                cell={grid.cellProps(index + 1, 5)}
+                label="ETA2"
+                kind="date"
+                value={item.eta2 ?? ''}
+                display={formatDay(item.eta2)}
+                onCommit={(value) => enqueueEdit({ ref: item.ref, field: 'eta2', value })}
+                className="font-mono text-xs whitespace-nowrap tabular-nums"
+                onEdited={onEdited}
+              />
+              <EditableCell
+                processRef={item.ref}
+                cell={grid.cellProps(index + 1, 6)}
+                label="BL"
+                kind="text"
+                value={item.billOfLading}
+                display={item.billOfLading || '—'}
+                onCommit={(value) => enqueueEdit({ ref: item.ref, field: 'billOfLading', value })}
+                className="font-mono text-xs"
+                onEdited={onEdited}
+              />
+              <EditableCell
+                processRef={item.ref}
+                cell={grid.cellProps(index + 1, 7)}
+                label="CNTR"
+                kind="text"
+                value={item.container}
+                display={item.container || '—'}
+                onCommit={(value) => enqueueEdit({ ref: item.ref, field: 'container', value })}
+                className="font-mono text-xs"
+                onEdited={onEdited}
+              />
+              <td {...grid.cellProps(index + 1, 8)} className="px-3 whitespace-nowrap">
                 <span className="whitespace-nowrap">{CATEGORY_LABELS[item.statusCategory]}</span>
                 {/*
                   **A unica excecao aos dois raios, e ela e declarada.** O chip de
@@ -156,70 +259,38 @@ function HeaderCell({
   sort,
   order,
   onSort,
+  cell,
 }: {
   column: Column
   sort: SortField
   order: SortOrder
   onSort: (field: SortField) => void
+  cell: ReturnType<GridNavigation['cellProps']>
 }) {
-  const active = column.sortBy !== undefined && column.sortBy === sort
+  const active = column.sortBy === sort
   const ariaSort = active ? (order === 'asc' ? 'ascending' : 'descending') : undefined
 
   return (
     <th
       scope="col"
+      {...cell}
       {...(ariaSort ? { 'aria-sort': ariaSort } : {})}
       className="h-10 px-3 text-left font-medium text-text-secondary"
     >
-      {column.sortBy === undefined ? (
-        column.label
-      ) : (
-        <button
-          type="button"
-          onClick={() => onSort(column.sortBy as SortField)}
-          className="motion-tint flex items-center gap-1 hover:text-text-primary"
-        >
-          {column.label}
-          <span aria-hidden="true" className="text-xs">
-            {active ? (order === 'asc' ? '▲' : '▼') : '↕'}
-          </span>
-        </button>
-      )}
+      <button
+        type="button"
+        onClick={() => onSort(column.sortBy)}
+        // Fora da ordem de tabulacao: a linha 0 da grade E o cabecalho, e Enter
+        // sobre a celula ordena.
+        tabIndex={-1}
+        className="motion-tint flex items-center gap-1 hover:text-text-primary"
+      >
+        {column.label}
+        <span aria-hidden="true" className="text-xs">
+          {active ? (order === 'asc' ? '▲' : '▼') : '↕'}
+        </span>
+      </button>
     </th>
-  )
-}
-
-/**
- * Celula de texto livre: trunca por CSS e guarda o valor inteiro no `title`.
- *
- * `max-w` e obrigatorio — `truncate` sozinho nao tem sobre o que incidir numa
- * celula que o algoritmo de tabela dimensiona pelo conteudo.
- *
- * **`max-w-56` e nao `max-w-48`, e a medicao e o que decide** (`H-76`,
- * `ACHADO 12`). Contra a planilha real: dos **3591** valores de texto livre
- * destas seis colunas, **81 eram cortados** — e **80 estavam em Navio**, cujo
- * maior valor mede 196 px contra os 168 de orcamento que `max-w-48` deixava.
- * O outro e um valor de Processo do cliente, com 173 px. Nao era "a tabela
- * trunca": era uma coluna estreita demais.
- *
- * **Subir o teto nao alarga as outras quatro.** `max-w` e TETO, e o algoritmo
- * de tabela dimensiona pelo conteudo: Cliente para em 116 px, Importador em 98,
- * BL em 134 e Conteiner em 108, com ou sem este valor. So muda quem estava
- * sendo cortado.
- *
- * **E `truncate` continua, e nao `break-words`.** `H-69` fez essa troca na
- * Performance e mediu o ganho la; aqui ela desfaria a linha de 40 px de `H-61`
- * — `truncate` traz `white-space: nowrap`, e e ele que segura a altura.
- */
-function Text({ value, mono = false }: { value: string; mono?: boolean }) {
-  const cheio = value !== ''
-  return (
-    <td
-      className={`max-w-56 truncate px-3 ${mono ? 'font-mono text-xs' : ''}`}
-      {...(cheio ? { title: value } : {})}
-    >
-      {value || '—'}
-    </td>
   )
 }
 
