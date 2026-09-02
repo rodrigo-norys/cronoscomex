@@ -122,8 +122,17 @@ done <<< "$alvos_config"
 
 # 7. O nome real do usuario do sistema, em QUALQUER arquivo — inclusive docs.
 #    So roda onde ha um usuario real: no runner do GitHub, \$USER e 'runner'.
-#    Este e o unico check sem falso positivo, porque compara com o nome de
-#    verdade em vez de adivinhar formato.
+#    Compara com o nome de verdade em vez de adivinhar formato.
+#
+#    **Uma excecao, e ela e estrutural.** Quando a conta do GitHub tem o mesmo
+#    nome do usuario do sistema, a URL do PROPRIO repositorio passa a conter o
+#    nome — e ela e o endereco do projeto, publico por construcao, nao
+#    vazamento. So `github.com/<dono>/` e isento; o nome NU continua reprovando,
+#    inclusive na mesma linha.
+#
+#    Medido em 01/09/2026, antes da excecao: 16 linhas em 1 arquivo, TODAS URL
+#    de PR. Zero ocorrencias nuas. Sem isto o check reprova na maquina do dono e
+#    aprova no runner, que e o pior dos dois mundos: verde onde ninguem olha.
 dono="${USER:-}"
 case "$dono" in
   '' | runner | root | nobody) dono='' ;;
@@ -135,7 +144,11 @@ if [ -n "$dono" ]; then
     [ -z "$arquivo" ] && continue
     [ "$arquivo" = "$ESTE_SCRIPT" ] && continue
     grep -Iq . "$arquivo" 2>/dev/null || continue
-    encontrado="$(grep -n -- "$dono" "$arquivo" 2>/dev/null || true)"
+    # `sed` antes do `grep` mantem a numeracao: ele e linha a linha, e o que
+    # sai e a linha inteira com a URL do repositorio mascarada. Linha que tenha
+    # a URL E o nome nu continua reprovando pelo segundo.
+    encontrado="$(sed "s#github\.com/${dono}/#github.com/<dono>/#g" "$arquivo" 2>/dev/null |
+      grep -n -- "$dono" 2>/dev/null || true)"
     if [ -n "$encontrado" ]; then
       vazamentos="${vazamentos}${arquivo}
 $(printf '%s' "$encontrado" | sed 's/^/    /')
