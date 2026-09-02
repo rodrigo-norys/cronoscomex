@@ -10,10 +10,33 @@ import { replaceQuery, useQuery } from '../router.ts'
  * limpar filtro nao e limpar a busca nem voltar para a primeira pagina.
  */
 
-export type SortField = 'ref' | 'eta2' | 'registrationDate' | 'client' | 'vessel'
+export type SortField =
+  | 'ref'
+  | 'client'
+  | 'clientProcess'
+  | 'importer'
+  | 'vessel'
+  | 'eta2'
+  | 'registrationDate'
+  | 'billOfLading'
+  | 'container'
+  | 'status'
 export type SortOrder = 'asc' | 'desc'
 
-const SORT_FIELDS: readonly SortField[] = ['ref', 'eta2', 'registrationDate', 'client', 'vessel']
+/** Espelha `SORT_FIELDS` de `src/domain/process-query.ts`: valor fora da lista
+    cai no padrao em vez de chegar a rota e voltar 400. */
+const SORT_FIELDS: readonly SortField[] = [
+  'ref',
+  'client',
+  'clientProcess',
+  'importer',
+  'vessel',
+  'eta2',
+  'registrationDate',
+  'billOfLading',
+  'container',
+  'status',
+]
 
 export const PAGE_SIZE = 200
 

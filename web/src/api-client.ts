@@ -8,6 +8,7 @@ import type { FilterOptionsResponse } from '../../src/http/routes/filter-options
 import type { HealthResponse } from '../../src/http/routes/health.ts'
 import type { MonthlyHistoryResponse } from '../../src/http/routes/history.ts'
 import type { IndicatorsResponse } from '../../src/http/routes/indicators.ts'
+import type { ClientRuleResponse } from '../../src/http/routes/process-client.ts'
 import type {
   ColorOption,
   ColorOptionsResponse,
@@ -33,6 +34,7 @@ import type { QuarantineResponse } from '../../src/http/routes/quarantine.ts'
 export type {
   AlertsResponse,
   ApplyResponse,
+  ClientRuleResponse,
   ColorOption,
   ColorOptionsResponse,
   ColorTarget,
@@ -224,6 +226,56 @@ export async function enqueueEdit(
   throw new Error(body?.error?.message ?? `POST /api/edits respondeu ${response.status}`)
 }
 
+/**
+ * Enfileira uma linha NOVA. **Nao grava no `.xlsx`** — a escrita e do
+ * `Aplicar alteracoes`, com as mesmas seis defesas das demais edicoes.
+ *
+ * O numero da linha nao viaja: quem o resolve e o `write-guard`, contra a
+ * leitura do momento da escrita.
+ */
+export async function enqueueRow(
+  ref: string,
+  values: Record<string, string | null> = {},
+  signal?: AbortSignal,
+): Promise<EnqueuedEditResponse> {
+  const response = await fetch('/api/edits/row', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ ref, values }),
+    ...(signal ? { signal } : {}),
+  })
+  if (response.ok) return (await response.json()) as EnqueuedEditResponse
+
+  const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null
+  throw new Error(body?.error?.message ?? `POST /api/edits/row respondeu ${response.status}`)
+}
+
+/**
+ * Declara a que cliente pertence a celula CLT de um processo.
+ *
+ * **Nao enfileira, e nao toca o `.xlsx`**: grava a regra em
+ * `config/client-map.json`, que e de onde a coluna Cliente ja saia. Por isso o
+ * efeito e imediato e nao passa por `Aplicar alteracoes`.
+ */
+export async function setProcessClient(
+  ref: string,
+  label: string,
+  signal?: AbortSignal,
+): Promise<ClientRuleResponse> {
+  const response = await fetch(`/api/processes/${encodeURIComponent(ref)}/client`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ label }),
+    ...(signal ? { signal } : {}),
+  })
+  if (response.ok) return (await response.json()) as ClientRuleResponse
+
+  const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null
+  throw new Error(
+    body?.error?.message ?? `PUT /api/processes/:ref/client respondeu ${response.status}`,
+  )
+}
+
 /** As combinacoes que a aplicacao sabe gravar. Fonte: `config/color-map.json`. */
 export async function getColorOptions(signal?: AbortSignal): Promise<ColorOptionsResponse> {
   const response = await fetch('/api/color-options', signal ? { signal } : undefined)
@@ -301,6 +353,17 @@ export async function discardEdit(id: string): Promise<void> {
  */
 export type ApplyRefusalCode = WriteRefusal | 'ERRO_INTERNO'
 
+/**
+ * Os codigos que a tela sabe nomear. **Lista a mao, e por isso guardada:**
+ * `tests/repo/contratos.test.ts` confere que toda `WriteRefusal` esta aqui, e
+ * reprova na primeira que faltar.
+ *
+ * A guarda nasceu de um defeito medido em 02/09/2026: `TABELA_CHEIA` entrou no
+ * servidor e nao aqui, e a recusa caia em `ERRO_INTERNO` — o operador via "Nao
+ * foi possivel concluir", que significa "nao se sabe o que aconteceu", e o
+ * rodape que garante "nada foi gravado, sua fila esta intacta" era SUPRIMIDO
+ * justamente na unica recusa em que o codigo tem certeza das duas coisas.
+ */
 const REFUSAL_CODES: readonly string[] = [
   'EXCEL_ABERTO',
   'ARQUIVO_MUDOU',
@@ -308,9 +371,25 @@ const REFUSAL_CODES: readonly string[] = [
   'NADA_A_APLICAR',
   'ESCRITA_EM_ANDAMENTO',
   'ESCRITA_INVALIDA',
+  'TABELA_CHEIA',
   'ARQUIVO_INDISPONIVEL',
   'ERRO_INTERNO',
 ]
+
+/**
+ * O `sourceRow` de uma linha que a fila tem e o arquivo ainda nao.
+ *
+ * **`LINHA_PENDENTE`, e nao `LINHA_NAO_GRAVADA`:** este ultimo ja e o codigo de
+ * erro que `PATCH .../color` devolve no `409`, e os dois convivem na mesma
+ * cadeia cliente-servidor significando coisas diferentes — um endereco ausente
+ * e uma recusa. Achado do revisor-xml.
+ *
+ * Duplica `UNWRITTEN_ROW` de `src/domain/process-projection.ts` de proposito:
+ * `web/` so importa TIPO, e so de `src/http/routes/` (`D-18`). Quem impede a
+ * divergencia e a assercao em `web/tests/paginas-montadas.test.tsx` — mesmo
+ * padrao de `STYLED_COLUMNS` e `NO_FILL_KEY`.
+ */
+export const LINHA_PENDENTE = 0
 
 export interface ApplyRefusal {
   code: ApplyRefusalCode

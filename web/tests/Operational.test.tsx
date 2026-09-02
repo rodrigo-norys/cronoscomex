@@ -60,7 +60,7 @@ describe('tabela', () => {
     )
     renderPage()
 
-    await screen.findByRole('table')
+    await screen.findByRole('grid')
     expect(screen.getAllByText('—').length).toBeGreaterThanOrEqual(3)
   })
 
@@ -121,7 +121,7 @@ describe('tabela', () => {
 describe('busca — A-39', () => {
   it('escreve o termo na URL e o envia ao servidor', async () => {
     renderPage()
-    await screen.findByRole('table')
+    await screen.findByRole('grid')
 
     fireEvent.change(screen.getByLabelText(/Buscar por REF, BL ou CNTR/), {
       target: { value: 'NBSC260' },
@@ -134,7 +134,7 @@ describe('busca — A-39', () => {
   it('limpar a busca remove o parametro, em vez de mandar vazio', async () => {
     window.history.replaceState(null, '', '/operacional?search=NBSC')
     renderPage()
-    await screen.findByRole('table')
+    await screen.findByRole('grid')
 
     fireEvent.change(screen.getByLabelText(/Buscar por REF, BL ou CNTR/), { target: { value: '' } })
 
@@ -154,7 +154,7 @@ describe('activeOnly — A-16', () => {
 
   it('marcar "incluir desembaracados" manda false', async () => {
     renderPage()
-    await screen.findByRole('table')
+    await screen.findByRole('grid')
 
     fireEvent.click(screen.getByLabelText('Incluir desembaraçados'))
 
@@ -173,23 +173,34 @@ describe('ordenacao', () => {
     })
   })
 
+  /**
+   * **Escopado ao cabecalho de proposito.** Desde que as celulas se editam onde
+   * estao, "ETA2" tambem e nome acessivel de 200 botoes de celula — um seletor
+   * pela pagina inteira casaria os 201.
+   */
+  function cabecalho(nome: RegExp): HTMLElement {
+    const coluna = screen.getAllByRole('columnheader').find((th) => nome.test(th.textContent ?? ''))
+    if (coluna === undefined) throw new Error(`coluna ${nome} nao encontrada`)
+    return within(coluna).getByRole('button')
+  }
+
   it('clicar na mesma coluna alterna a direcao', async () => {
     renderPage()
-    await screen.findByRole('table')
+    await screen.findByRole('grid')
 
-    fireEvent.click(screen.getByRole('button', { name: /ETA2/ }))
+    fireEvent.click(cabecalho(/ETA2/))
     await waitFor(() => expect(lastProcessCall()).toContain('order=desc'))
 
-    fireEvent.click(screen.getByRole('button', { name: /ETA2/ }))
+    fireEvent.click(cabecalho(/ETA2/))
     await waitFor(() => expect(lastProcessCall()).toContain('order=asc'))
   })
 
   it('clicar em outra coluna comeca em ascendente', async () => {
     window.history.replaceState(null, '', '/operacional?sort=eta2&order=desc')
     renderPage()
-    await screen.findByRole('table')
+    await screen.findByRole('grid')
 
-    fireEvent.click(screen.getByRole('button', { name: /REF/ }))
+    fireEvent.click(cabecalho(/REF/))
 
     await waitFor(() => {
       expect(lastProcessCall()).toContain('sort=ref')
@@ -199,7 +210,7 @@ describe('ordenacao', () => {
 
   it('marca a coluna ordenada para o leitor de tela', async () => {
     renderPage()
-    await screen.findByRole('table')
+    await screen.findByRole('grid')
 
     const eta2 = screen.getAllByRole('columnheader').find((th) => th.textContent?.includes('ETA2'))
     expect(eta2?.getAttribute('aria-sort')).toBe('ascending')
@@ -225,6 +236,16 @@ describe('paginacao', () => {
     expect(await screen.findByText('1–200 de 649')).toBeTruthy()
   })
 
+  /**
+   * **Escopada a navegacao de proposito.** Uma pagina cheia tem 200 linhas com
+   * seis celulas editaveis cada, e uma consulta por papel na pagina inteira
+   * calcula o nome acessivel dos 1.200 botoes antes de achar "Próxima" —
+   * medido em 02/09/2026: 5 s, o teto do teste.
+   */
+  async function paginacao() {
+    return within(await screen.findByRole('navigation', { name: 'Paginação' }))
+  }
+
   it('avanca e volta a pagina', async () => {
     const items = Array.from({ length: 200 }, (_, index) =>
       processFixture({ ref: `FT${index}.26` }),
@@ -232,10 +253,10 @@ describe('paginacao', () => {
     api.serveProcesses(processesFixture(items, { total: 649 }))
     renderPage()
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Próxima' }))
+    fireEvent.click((await paginacao()).getByRole('button', { name: 'Próxima' }))
     await waitFor(() => expect(lastProcessCall()).toContain('offset=200'))
 
-    fireEvent.click(screen.getByRole('button', { name: 'Anterior' }))
+    fireEvent.click((await paginacao()).getByRole('button', { name: 'Anterior' }))
     await waitFor(() => expect(window.location.search).not.toContain('offset'))
   })
 
@@ -246,16 +267,16 @@ describe('paginacao', () => {
     api.serveProcesses(processesFixture(items, { total: 649 }))
     renderPage()
 
-    expect((await screen.findByRole('button', { name: 'Anterior' })).hasAttribute('disabled')).toBe(
-      true,
-    )
+    const anterior = (await paginacao()).getByRole('button', { name: 'Anterior' })
+
+    expect(anterior.hasAttribute('disabled')).toBe(true)
   })
 
   /** Manter o offset mostraria a pagina 4 de um conjunto que agora tem duas. */
   it('mudar a busca volta para a primeira pagina', async () => {
     window.history.replaceState(null, '', '/operacional?offset=400')
     renderPage()
-    await screen.findByRole('table')
+    await screen.findByRole('grid')
 
     fireEvent.change(screen.getByLabelText(/Buscar por REF, BL ou CNTR/), {
       target: { value: 'X' },
@@ -369,7 +390,7 @@ describe('cliente consolidado e processo do cliente', () => {
     )
     renderPage()
 
-    await screen.findByRole('table')
+    await screen.findByRole('grid')
     const colunas = screen.getAllByRole('columnheader').map((th) => th.textContent)
 
     expect(colunas.some((texto) => texto?.includes('Cliente'))).toBe(true)
@@ -544,5 +565,264 @@ describe('densidade e número na tabela (H-61)', () => {
       expect(linha.className).toContain('hover:bg-surface-hover')
       expect(linha.className).toContain('motion-tint')
     }
+  })
+})
+
+/**
+ * A edição na própria célula, sem abrir o detalhe (02/09/2026).
+ *
+ * **Nada aqui grava no `.xlsx`.** A célula enfileira pela porta de `H-23`, e o
+ * valor volta à tela pela projeção do servidor — a mesma que a tabela já lia.
+ * O que estes casos protegem é o par campo/valor que chega à rota: errar o
+ * campo grava numa coluna que o operador não estava olhando.
+ */
+describe('edição na célula', () => {
+  function celula(nome: RegExp): HTMLElement {
+    return screen.getByRole('button', { name: nome })
+  }
+
+  it('abre o campo com o valor atual da célula', async () => {
+    renderPage()
+    await screen.findByRole('grid')
+
+    fireEvent.click(celula(/^Editar BL de FT501\.26/))
+
+    expect(
+      (screen.getByRole('textbox', { name: 'BL de FT501.26' }) as HTMLInputElement).value,
+    ).toBe('NBSC260812')
+  })
+
+  it('Enter enfileira o CAMPO da coluna, e não o rótulo dela', async () => {
+    renderPage()
+    await screen.findByRole('grid')
+
+    fireEvent.click(celula(/^Editar Navio de FT501\.26/))
+    const campo = screen.getByRole('textbox', { name: 'Navio de FT501.26' })
+    fireEvent.change(campo, { target: { value: 'KOTA ELOK' } })
+    fireEvent.keyDown(campo, { key: 'Enter' })
+
+    await waitFor(() => expect(api.calls).toContain('POST /api/edits'))
+    expect(api.editBodies).toEqual([{ ref: 'FT501.26', field: 'vesselRaw', value: 'KOTA ELOK' }])
+  })
+
+  /** O cancelamento tira o foco, e tirar o foco grava. Sem a marca de
+      cancelamento, Escape enfileiraria o que acabou de ser desfeito. */
+  it('Escape sai sem enfileirar, mesmo com o blur que ele provoca', async () => {
+    renderPage()
+    await screen.findByRole('grid')
+
+    fireEvent.click(celula(/^Editar Importador de FT501\.26/))
+    const campo = screen.getByRole('textbox', { name: 'Importador de FT501.26' })
+    fireEvent.change(campo, { target: { value: 'OUTRO' } })
+    fireEvent.keyDown(campo, { key: 'Escape' })
+    fireEvent.blur(campo)
+
+    expect(api.editBodies).toEqual([])
+    expect(screen.getByRole('button', { name: /^Editar Importador de FT501\.26/ })).toBeTruthy()
+  })
+
+  it('não enfileira quando o valor não mudou', async () => {
+    renderPage()
+    await screen.findByRole('grid')
+
+    fireEvent.click(celula(/^Editar BL de FT501\.26/))
+    fireEvent.blur(screen.getByRole('textbox', { name: 'BL de FT501.26' }))
+
+    expect(api.editBodies).toEqual([])
+  })
+
+  /** Data vazia é **célula vazia**, e não "não mexer": é assim que o operador
+      limpa uma data (`H-23`). */
+  it('data esvaziada vai como null, e não como string vazia', async () => {
+    renderPage()
+    await screen.findByRole('grid')
+
+    fireEvent.click(celula(/^Editar ETA2 de FT501\.26/))
+    const campo = screen.getByLabelText('ETA2 de FT501.26')
+    fireEvent.change(campo, { target: { value: '' } })
+    fireEvent.keyDown(campo, { key: 'Enter' })
+
+    await waitFor(() =>
+      expect(api.editBodies).toEqual([{ ref: 'FT501.26', field: 'eta2', value: null }]),
+    )
+  })
+
+  /** Quem valida é `src/domain/editable-fields.ts`, e a mensagem que aparece é
+      a dele: uma segunda tabela de regras no cliente divergiria da primeira. */
+  it('mostra na própria célula a recusa do servidor, e continua em edição', async () => {
+    api.failEnqueueEdit('Valor acima do limite da coluna.')
+    renderPage()
+    await screen.findByRole('grid')
+
+    fireEvent.click(celula(/^Editar CNTR de FT501\.26/))
+    const campo = screen.getByRole('textbox', { name: 'CNTR de FT501.26' })
+    fireEvent.change(campo, { target: { value: 'X'.repeat(300) } })
+    fireEvent.keyDown(campo, { key: 'Enter' })
+
+    expect(await screen.findByText('Valor acima do limite da coluna.')).toBeTruthy()
+    expect(campo.getAttribute('aria-invalid')).toBe('true')
+    expect((await findLiveRegion('alert')).textContent).toContain('Valor acima do limite')
+  })
+
+  /**
+   * As duas colunas que não têm porta. Categoria sai de cinco regras das quais
+   * só uma lê a célula L (`A-22`), e REF é a chave natural — abrir edição em
+   * qualquer uma gravaria numa célula que não está à vista.
+   */
+  it('não oferece edição em Categoria nem REF', async () => {
+    renderPage()
+    await screen.findByRole('grid')
+
+    for (const rotulo of [/^Editar Categoria de/, /^Editar REF de/]) {
+      expect(screen.queryByRole('button', { name: rotulo })).toBeNull()
+    }
+    // E o valor derivado continua na tela, só que sem porta de edição.
+    expect(screen.getByText('Em andamento')).toBeTruthy()
+  })
+
+  /**
+   * Cliente **é** editável, e por outra porta: ela não é célula da planilha, e
+   * sim a regra de consolidação de `client-map.json` — a mesma de onde a coluna
+   * já lia (`H-49`). Enfileirar seria gravar na célula B, que é o que a coluna
+   * ao lado faz.
+   */
+  it('Cliente vai para a rota do client-map, e não para a fila', async () => {
+    renderPage()
+    await screen.findByRole('grid')
+
+    fireEvent.click(celula(/^Editar Cliente de FT501\.26/))
+    const campo = screen.getByRole('textbox', { name: 'Cliente de FT501.26' })
+    fireEvent.change(campo, { target: { value: 'Acme Comércio' } })
+    fireEvent.keyDown(campo, { key: 'Enter' })
+
+    await waitFor(() => expect(api.calls).toContain('PUT /api/processes/FT501.26/client'))
+    expect(api.editBodies).toEqual([])
+  })
+})
+
+/**
+ * A tabela como **grade** (02/09/2026), no padrão `grid` da WAI-ARIA.
+ *
+ * O que estes casos protegem é a contagem de paradas de tabulação. Medido num
+ * Chrome real antes da grade: 7 por linha — o link da REF mais as seis células
+ * editáveis —, e a paginação vem depois da tabela no DOM. Numa página cheia de
+ * 200 linhas eram ~1.400 paradas até o botão "Próxima".
+ */
+describe('navegação por grade', () => {
+  function celulas(): HTMLElement[] {
+    return [...document.querySelectorAll<HTMLElement>('[data-grid-row]')]
+  }
+
+  function celulaEm(row: number, column: number): HTMLElement {
+    const alvo = celulas().find(
+      (no) => no.dataset.gridRow === String(row) && no.dataset.gridColumn === String(column),
+    )
+    if (alvo === undefined) throw new Error(`célula ${row},${column} não existe`)
+    return alvo
+  }
+
+  it('deixa UMA parada de tabulação na tabela inteira', async () => {
+    api.serveProcesses(
+      processesFixture([processFixture(), processFixture({ ref: 'FT502.26' })], { total: 2 }),
+    )
+    renderPage()
+    await screen.findByRole('grid')
+
+    const tabulaveis = celulas().filter((no) => no.getAttribute('tabindex') === '0')
+    expect(tabulaveis).toHaveLength(1)
+    // 2 linhas × 9 colunas + o cabeçalho: 27 células, 26 fora da ordem.
+    expect(celulas().filter((no) => no.getAttribute('tabindex') === '-1')).toHaveLength(26)
+  })
+
+  /** Os controles DENTRO das células saem da ordem: quem tabula é a grade. */
+  it('tira da tabulação o link da REF, os botões de edição e os de ordenação', async () => {
+    renderPage()
+    await screen.findByRole('grid')
+
+    const internos = [
+      ...document.querySelectorAll<HTMLElement>('[data-grid-row] button, [data-grid-row] a'),
+    ]
+    expect(internos.length).toBeGreaterThan(9)
+    for (const controle of internos) expect(controle.getAttribute('tabindex')).toBe('-1')
+  })
+
+  it('as setas movem a célula corrente', async () => {
+    renderPage()
+    await screen.findByRole('grid')
+
+    fireEvent.keyDown(celulaEm(0, 0), { key: 'ArrowRight' })
+    expect(celulaEm(0, 1).getAttribute('tabindex')).toBe('0')
+
+    fireEvent.keyDown(celulaEm(0, 1), { key: 'ArrowDown' })
+    expect(celulaEm(1, 1).getAttribute('tabindex')).toBe('0')
+
+    // O canto não escapa: seta para cima na linha 0 fica na linha 0.
+    fireEvent.keyDown(celulaEm(1, 1), { key: 'ArrowUp' })
+    fireEvent.keyDown(celulaEm(0, 1), { key: 'ArrowUp' })
+    expect(celulaEm(0, 1).getAttribute('tabindex')).toBe('0')
+  })
+
+  it('Ctrl+End vai para a última célula, e Ctrl+Home volta para a primeira', async () => {
+    api.serveProcesses(
+      processesFixture([processFixture(), processFixture({ ref: 'FT502.26' })], { total: 2 }),
+    )
+    renderPage()
+    await screen.findByRole('grid')
+
+    fireEvent.keyDown(celulaEm(0, 0), { key: 'End', ctrlKey: true })
+    expect(celulaEm(2, 8).getAttribute('tabindex')).toBe('0')
+
+    fireEvent.keyDown(celulaEm(2, 8), { key: 'Home', ctrlKey: true })
+    expect(celulaEm(0, 0).getAttribute('tabindex')).toBe('0')
+  })
+
+  /** A ordenação continua alcançável por teclado, agora pela grade. */
+  it('Enter sobre a célula do cabeçalho ordena', async () => {
+    renderPage()
+    await screen.findByRole('grid')
+
+    fireEvent.keyDown(celulaEm(0, 0), { key: 'Enter' })
+
+    await waitFor(() => expect(lastProcessCall()).toContain('sort=ref'))
+  })
+
+  it('Enter sobre a célula editável abre o campo', async () => {
+    renderPage()
+    await screen.findByRole('grid')
+
+    fireEvent.keyDown(celulaEm(1, 6), { key: 'Enter' })
+
+    expect(screen.getByRole('textbox', { name: 'BL de FT501.26' })).toBeTruthy()
+  })
+
+  /**
+   * O campo desmonta ao sair da edição, e sem devolver o foco ele cairia no
+   * `<body>` — a falha `SC 2.4.3` que `VN-4` mediu na outra ponta. Numa grade o
+   * efeito é pior: o operador perde a posição e recomeça do cabeçalho.
+   */
+  it('devolve o foco à célula ao cancelar a edição', async () => {
+    renderPage()
+    await screen.findByRole('grid')
+
+    fireEvent.keyDown(celulaEm(1, 6), { key: 'Enter' })
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'BL de FT501.26' }), { key: 'Escape' })
+
+    await waitFor(() => expect(document.activeElement).toBe(celulaEm(1, 6)))
+  })
+
+  /** Dentro do campo as setas pertencem ao TEXTO, não à grade. */
+  it('não move a célula enquanto o campo está aberto', async () => {
+    renderPage()
+    await screen.findByRole('grid')
+
+    // O foco é o que torna a célula a corrente — no navegador ele chega pelo
+    // clique ou pela seta; `fireEvent.keyDown` sozinho não foca nada.
+    celulaEm(1, 6).focus()
+    fireEvent.keyDown(celulaEm(1, 6), { key: 'Enter' })
+    fireEvent.keyDown(screen.getByRole('textbox', { name: 'BL de FT501.26' }), {
+      key: 'ArrowRight',
+    })
+
+    expect(celulaEm(1, 6).getAttribute('tabindex')).toBe('0')
   })
 })

@@ -1,4 +1,5 @@
 import type { AlertsResponse } from '../api-client.ts'
+import { LINHA_PENDENTE } from '../api-client.ts'
 import { navigate } from '../router.ts'
 import { SeverityIcon, severityBand } from './SeverityMark.tsx'
 
@@ -107,7 +108,15 @@ export function AlertRow({ group }: { group: AlertGroup }) {
           <SeverityIcon tone={urgent ? 'error' : 'warning'} />
           <span className="font-mono text-sm font-medium text-text-primary">{group.ref}</span>
           <span className="text-xs text-text-muted">
-            linha <span className="font-mono tabular-nums">{group.sourceRow}</span>
+            {/* `0` e "ainda nao gravada" (`UNWRITTEN_ROW`), e nao a linha zero:
+                o Excel comeca na 1. Achado do revisor-xml. */}
+            {group.sourceRow === LINHA_PENDENTE ? (
+              'linha ainda não gravada'
+            ) : (
+              <>
+                linha <span className="font-mono tabular-nums">{group.sourceRow}</span>
+              </>
+            )}
           </span>
           <span className="text-xs text-text-muted">
             ETA2{' '}
