@@ -1,3 +1,4 @@
+import { STATUS_CATEGORIES } from './filters.ts'
 import type { Process } from './types.ts'
 
 /**
@@ -12,7 +13,28 @@ import type { Process } from './types.ts'
 /** Os tres campos de consulta declarados em §2 da especificacao (A-39). */
 const SEARCHABLE = ['ref', 'billOfLading', 'container'] as const
 
-export const SORT_FIELDS = ['ref', 'eta2', 'registrationDate', 'client', 'vessel'] as const
+/**
+ * As dez ordens que a Pagina Operacional oferece — uma por coluna da tabela.
+ *
+ * Eram cinco ate 02/09/2026, e a tabela mostrava nove colunas: quatro
+ * cabecalhos nao eram clicaveis, sem que a tela dissesse por que. `client` e
+ * `clientProcess` sao ordens DIFERENTES de proposito, e nao duas grafias da
+ * mesma: uma ordena pelo cliente consolidado, a outra pelo valor da celula CLT
+ * — que sao coisas distintas desde `H-49`, quando 649 processos revelaram 509
+ * valores distintos em CLT.
+ */
+export const SORT_FIELDS = [
+  'ref',
+  'client',
+  'clientProcess',
+  'importer',
+  'vessel',
+  'eta2',
+  'registrationDate',
+  'billOfLading',
+  'container',
+  'status',
+] as const
 export type SortField = (typeof SORT_FIELDS)[number]
 export type SortOrder = 'asc' | 'desc'
 
@@ -69,6 +91,31 @@ function sortKey(process: Process, field: SortField): string | number | null {
       return process.clientKey === '' ? null : process.clientKey
     case 'vessel':
       return process.vesselKey === '' ? null : process.vesselKey
+    // As chaves ja normalizadas ordenam onde existem — `importerKey` agrupa, e
+    // agrupar e comparar sem caixa nem acento e a mesma pergunta. Onde nao ha
+    // chave, `fold` faz o mesmo sobre o texto cru.
+    case 'importer':
+      return process.importerKey === '' ? null : process.importerKey
+    case 'clientProcess':
+      return process.clientRaw === '' ? null : fold(process.clientRaw)
+    case 'billOfLading':
+      return process.billOfLading === '' ? null : fold(process.billOfLading)
+    case 'container':
+      return process.container === '' ? null : fold(process.container)
+    /*
+      **A categoria ordena pelo FLUXO, e nao pelo alfabeto**, e nunca e nula.
+
+      Alfabetica poria "Desembaracado" antes de "Em andamento", que e a ordem
+      inversa do trabalho. A ordem vem de `STATUS_CATEGORIES`, que ja existe e
+      ja e a declarada — uma segunda lista aqui divergiria da primeira no
+      primeiro ajuste.
+
+      Toda linha tem exatamente uma das quatro (TD-01), entao nao ha o balde de
+      nulos que as outras colunas tem: a ordem descendente inverte as quatro
+      inteiras, sem nada preso no fim.
+    */
+    case 'status':
+      return STATUS_CATEGORIES.indexOf(process.statusCategory)
   }
 }
 
@@ -81,8 +128,17 @@ function sortKey(process: Process, field: SortField): string | number | null {
  * planilha tem **64 processos sem ETA2**. O nulo nao participa da inversao —
  * ele e ausencia de valor, nao um valor extremo.
  *
- * Empate desempata por `sourceRow`, que e unico: sem isso a ordem entre iguais
- * dependeria do algoritmo de `sort` e mudaria entre paginas.
+ * Empate desempata por `sourceRow`, que e unico **entre as linhas do arquivo**:
+ * sem isso a ordem entre iguais dependeria do algoritmo de `sort` e mudaria
+ * entre paginas.
+ *
+ * **Linha ainda nao gravada e a excecao, e ela e conhecida.** A projecao marca
+ * `sourceRow: 0` (`UNWRITTEN_ROW`), entao duas insercoes pendentes empatam entre
+ * si e ordenam ANTES de qualquer linha real. Deliberado: elas sao o que o
+ * operador acabou de digitar, e o `sort` estavel preserva a ordem de chegada
+ * entre elas. Achado do revisor-xml, registrado em vez de corrigido — inventar
+ * um numero para ordenar reintroduziria o endereco falso que `UNWRITTEN_ROW`
+ * existe para evitar.
  */
 export function sortProcesses(
   processes: readonly Process[],
