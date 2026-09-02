@@ -5,8 +5,10 @@ import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
  * reserializar o workbook (ADR-0004). Tudo que a aplicacao nao entende, ela
  * nao toca.
  *
- * Duas cirurgias, e elas nao se cruzam: `applyCellEdits` grava VALOR e preserva
- * o estilo; `applyRowFill` troca o `fillId` do estilo e nao encosta em valor.
+ * TRES cirurgias, e elas nao se cruzam: `applyCellEdits` grava VALOR em celula
+ * de linha que existe e preserva o estilo; `applyRowFill` troca o `fillId` do
+ * estilo e nao encosta em valor; `appendRow` cria uma linha DEPOIS da ultima,
+ * com o estilo que a COLUNA declara (02/09/2026).
  *
  * "Byte a byte identicas" vale sobre o CONTEUDO DESCOMPRIMIDO de cada entrada
  * do zip, nao sobre os bytes comprimidos: recompactar reproduz o conteudo, nao
@@ -68,6 +70,11 @@ import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
  *    gravacao inseriria uma segunda <c> para a mesma coordenada, a repintura
  *    apenas nao pinta. Nenhum produtor conformante emite `r` fora da primeira
  *    posicao; o Excel sempre o emite primeiro.
+ *    **`appendRow` NAO herda este limite**, e por isso ela nao usa `findRow`:
+ *    `lastRowOf` le o `r` em qualquer posicao da tag e depois de qualquer
+ *    whitespace, e o guarda dela e "vem depois de TODAS". Medido em 02/09/2026,
+ *    depois de o revisor-xml achar o caso do TAB: `<row\tr="4">` era ignorado
+ *    pela leitura por espaco literal, e a linha nova saia com `r` DUPLICADO.
  *
  * Nao foram tratados por escolha: cobri-los exigiria fixture que o gerador nao
  * produz, e o codigo nao verificado por teste e o que engana. H-25 tem o
@@ -85,6 +92,33 @@ export interface RowFillEdit {
   sourceRow: number
   fillId: number
   columns: string[]
+}
+
+/**
+ * Uma linha NOVA no fim da aba (02/09/2026).
+ *
+ * `sourceRow` vem de quem chama, resolvido contra a leitura canonica do
+ * momento da escrita — nunca de um numero congelado no enfileiramento. A defesa
+ * contra linha deslocada e a mesma de `H-25`, aqui aplicada ao contrario: la o
+ * alvo se acha pela REF, e uma insercao ainda nao tem REF no arquivo.
+ */
+/**
+ * A Tabela do Excel nao alcanca a linha pedida.
+ *
+ * Classe propria, e nao `Error` generico, porque o chamador precisa DISTINGUIR:
+ * o `write-guard` traduz todo lanco da cirurgia em "a gravacao nao pode ser
+ * concluida com seguranca", e o operador ficaria sem saber que a folga da
+ * `Tabela1` acabou — que e um evento previsivel e com data. Achado do
+ * revisor-xml.
+ */
+export class TableFullError extends Error {
+  override readonly name = 'TableFullError'
+}
+
+export interface RowInsert {
+  sourceRow: number
+  /** Valor por coluna. Coluna ausente NAO vira `<c>`, como o Excel faz. */
+  values: Record<string, CellEdit['value']>
 }
 
 export interface SurgeryResult {
@@ -105,6 +139,12 @@ export interface RowFillResult extends SurgeryResult {
 const SHARED_STRINGS_PATH = 'xl/sharedStrings.xml'
 const STYLES_PATH = 'xl/styles.xml'
 const CALC_CHAIN_PATH = 'xl/calcChain.xml'
+
+/** Os limites de endereçamento da planilha desde o formato de 2007: XFD e a
+    ultima coluna, 1.048.576 a ultima linha. Coordenada alem de qualquer um dos
+    dois faz o Excel abrir pedindo reparo e reconstruir a aba. */
+const MAX_ROW = 1_048_576
+const MAX_COLUMN = 16_384
 
 const MS_PER_DAY = 86_400_000
 // O Excel conta a partir de 1899-12-30 por causa do ano bissexto ficticio de
@@ -164,6 +204,259 @@ export function applyCellEdits(
   }
 
   return { buffer: zipSync(rebuilt), cellsWritten, entriesPreserved }
+}
+
+/**
+ * Acrescenta uma linha DEPOIS da ultima que existe na aba.
+ *
+ * **A linha nasce em branco, no sentido do Excel**: cada celula recebe o estilo
+ * declarado pela COLUNA em `<cols>`, e nada mais. Medido no arquivo real em
+ * 02/09/2026: as 16 colunas declaram `style="162"` — fonte 1, centralizado, sem
+ * preenchimento e sem borda. Copiar o estilo da linha de cima seria mais facil e
+ * estaria errado: `xf 181`, o das ultimas 95 linhas, carrega `fillId 8`, que o
+ * `color-map.json` traduz como **Colaborador 1** — todo processo novo nasceria
+ * atribuido a uma pessoa que ninguem escolheu (regra inviolavel 3).
+ *
+ * Data continua passando por `ensureDateFormat`, como em `applyCellEdits`: a
+ * coluna declara `numFmtId=0`, e sem isso o Excel mostraria o serial cru
+ * (A-56).
+ *
+ * **CINCO recusas na entrada, e duas a jusante — todas a mesma preocupacao, nao
+ * gravar as cegas.** Quem escrever o chamador precisa traduzir as sete em recusa
+ * ao operador; hoje elas sobem como excecao.
+ *
+ * 1. `values` vazio. Criar linha sem celula alguma mudaria os bytes do arquivo
+ *    — hash novo, backup consumido, releitura do watcher — para gravar nada.
+ * 2. Chave de coluna que nao e letra de coluna, ou passa de `XFD`. Coordenada
+ *    fora do espaco de endereçamento faz o Excel reconstruir a aba.
+ * 3. `sourceRow` que nao e indice de linha valido (1 a `MAX_ROW`).
+ * 4. `sourceRow` que NAO vem depois de todas. `<sheetData>` exige `<row>` em
+ *    ordem crescente de `r`, e a insercao e sempre antes de `</sheetData>`:
+ *    mirar um buraco no meio produziria 1,2,4,3. Este guarda tambem cobre o
+ *    caso de o arquivo ter crescido desde a leitura que resolveu o alvo — o que
+ *    faz `H-25` resolver a celula pela REF, aqui aplicado ao contrario.
+ * 5. A linha cair FORA da Tabela do Excel. O arquivo real tem
+ *    `xl/tables/table1.xml` com `ref="A1:P997"` contra 745 linhas escritas —
+ *    ha folga, e enquanto houver a Tabela nao precisa ser estendida. Quando
+ *    acabar, uma linha alem do `ref` nasceria fora da Tabela: sem banda, fora do
+ *    filtro, e colidindo com a proxima linha que o Excel expandir sozinho.
+ *    Estender o `ref` e trabalho de outra fatia; ate la, a recusa e o que
+ *    impede o dano silencioso (regra inviolavel 2).
+ *
+ * As duas a jusante: `<sheetData>` que nao pode ser localizada, e `<dimension>`
+ * presente em forma que nao e intervalo. `renderCell` acrescenta a terceira, em
+ * numero nao finito.
+ */
+export function appendRow(
+  original: Uint8Array,
+  insert: RowInsert,
+  sheetPath: string,
+): SurgeryResult {
+  const entries = unzipSync(original)
+
+  const sheetEntry = entries[sheetPath]
+  if (!sheetEntry) throw new Error(`aba nao encontrada no zip: ${sheetPath}`)
+
+  let sheetXml = strFromU8(sheetEntry)
+
+  const columns = Object.keys(insert.values).sort(
+    (left, right) => columnIndex(left) - columnIndex(right),
+  )
+  /*
+    Linha sem celula nenhuma nao e pedido legitimo: `applyCellEdits` devolve o
+    buffer intacto para lista vazia porque "nada a gravar" e estado normal da
+    fila, mas quem chama AQUI pediu para criar uma linha. Sem a recusa, o
+    arquivo do operador mudaria de bytes — hash novo, backup consumido,
+    releitura do watcher — para gravar `<row>` sem celula alguma.
+  */
+  if (columns.length === 0) throw new Error('insercao sem celula alguma')
+  for (const column of columns) {
+    // `a`, `A1` e `` produzem coordenada que contradiz a linha, ou nem e
+    // referencia: o Excel abre pedindo reparo e reconstroi a aba.
+    // A FORMA e o LIMITE: `ZZZ` casa a forma e endereca a coluna 18.278, que nao
+    // existe. O eixo de linha ganhou `MAX_ROW`; este e o par dele.
+    if (!/^[A-Z]{1,3}$/.test(column) || columnIndex(column) > MAX_COLUMN) {
+      throw new Error(`coluna invalida: "${column}"`)
+    }
+  }
+
+  /*
+    **A linha precisa vir DEPOIS de todas**, e nao apenas "nao existir".
+    `<sheetData>` exige `<row>` em ordem crescente de `r`, e a insercao e sempre
+    antes de `</sheetData>`: mirar um buraco no meio — linhas 1,2,4 e alvo 3 —
+    produz 1,2,4,3, e o Excel reconstroi a aba inteira removendo os registros de
+    linha. `r` tambem e indice, de 1 a 1.048.576: fracionario e negativo passam
+    pelo tipo `number` e nao pelo formato.
+  */
+  if (!Number.isInteger(insert.sourceRow) || insert.sourceRow < 1 || insert.sourceRow > MAX_ROW) {
+    throw new Error(`linha invalida: ${insert.sourceRow}`)
+  }
+  const ultima = lastRowOf(sheetXml)
+  if (insert.sourceRow <= ultima) {
+    throw new Error(`linha ${insert.sourceRow} nao e depois da ultima, que e a ${ultima}`)
+  }
+
+  const limite = tableLastRow(entries, sheetPath)
+  if (limite !== null && insert.sourceRow > limite) {
+    throw new TableFullError(
+      `linha ${insert.sourceRow} fica fora da Tabela do Excel, que termina na ${limite}`,
+    )
+  }
+
+  const sharedStringsEntry = entries[SHARED_STRINGS_PATH]
+  const stylesEntry = entries[STYLES_PATH]
+  const sharedStrings = new SharedStringPool(
+    sharedStringsEntry ? strFromU8(sharedStringsEntry) : null,
+  )
+  const styles = new StyleTable(stylesEntry ? strFromU8(stylesEntry) : null)
+
+  let cells = ''
+  let cellsWritten = 0
+  for (const column of columns) {
+    const value = insert.values[column] ?? null
+    const columnStyle = columnStyleOf(sheetXml, column)
+    const style = value instanceof Date ? styles.ensureDateFormat(columnStyle) : columnStyle
+    if (typeof value === 'string') sharedStrings.adjustReferences(1)
+    cells += renderCell(`${column}${insert.sourceRow}`, style, value, sharedStrings)
+    cellsWritten += 1
+  }
+
+  // `spans` acompanha o que foi escrito, como nas linhas vizinhas — o arquivo
+  // real usa 1:14, 1:15 e 1:16 conforme a linha. E dica de renderizacao, nao
+  // conteudo: emiti-la errada nao corrompe, mas emiti-la certa custa nada.
+  const first = columns[0]
+  const last = columns[columns.length - 1]
+  const spans =
+    first === undefined || last === undefined
+      ? ''
+      : ` spans="${columnIndex(first)}:${columnIndex(last)}"`
+  const row = `<row r="${insert.sourceRow}"${spans}>${cells}</row>`
+
+  /*
+    `<sheetData />` — com espaco antes do fechamento — e XML legal e equivalente
+    ao auto-fechado sem espaco. Casar a string literal deixava a gravacao cair no
+    `replace` de `</sheetData>`, que nao existe: a linha sumia e a funcao
+    devolvia sucesso, com `sharedStrings` ja incrementado. A conferencia depois
+    do `replace` e o que transforma o silencio em erro.
+  */
+  const antes = sheetXml
+  sheetXml = /<sheetData\s*\/>/.test(sheetXml)
+    ? sheetXml.replace(/<sheetData\s*\/>/, `<sheetData>${row}</sheetData>`)
+    : sheetXml.replace('</sheetData>', `${row}</sheetData>`)
+  if (sheetXml === antes) throw new Error('nao foi possivel localizar <sheetData> na aba')
+  sheetXml = growDimension(sheetXml, insert.sourceRow, columns)
+
+  const rebuilt: Record<string, Uint8Array> = { ...entries }
+  rebuilt[sheetPath] = strToU8(sheetXml)
+  if (sharedStrings.changed) rebuilt[SHARED_STRINGS_PATH] = strToU8(sharedStrings.serialize())
+  if (styles.changed) rebuilt[STYLES_PATH] = strToU8(styles.serialize())
+
+  let entriesPreserved = 0
+  for (const [path, content] of Object.entries(rebuilt)) {
+    if (sameBytes(content, entries[path])) entriesPreserved += 1
+  }
+
+  return { buffer: zipSync(rebuilt), cellsWritten, entriesPreserved }
+}
+
+/** O maior `r` declarado na aba. `0` quando nao ha linha alguma. */
+function lastRowOf(sheetXml: string): number {
+  let last = 0
+  // `\s`, e nao um espaco literal: TAB entre `<row` e o primeiro atributo e
+  // whitespace legal em XML, e a linha nao contada faria a insercao emitir um
+  // `r` DUPLICADO. Achado do revisor-xml na segunda passagem.
+  for (const row of sheetXml.matchAll(/<row\s[^>]*?\br="(\d+)"/g)) {
+    last = Math.max(last, Number(row[1]))
+  }
+  return last
+}
+
+/** `A1:P997` e `A1` — as duas formas de `ref`. `null` quando nao e intervalo. */
+function parseRef(
+  ref: string | null,
+): { first: string; firstRow: number; last: string; lastRow: number } | null {
+  const match = /^([A-Z]+)(\d+)(?::([A-Z]+)(\d+))?$/.exec(ref ?? '')
+  if (!match) return null
+
+  const first = match[1] ?? ''
+  return {
+    first,
+    firstRow: Number(match[2]),
+    last: match[3] ?? first,
+    lastRow: Number(match[4] ?? match[2]),
+  }
+}
+
+/**
+ * A ultima linha coberta pelas Tabelas do Excel desta aba, ou `null` quando a
+ * aba nao tem Tabela.
+ *
+ * **Resolve pelos rels da aba ALVO, e nunca varre `xl/tables/` inteiro.** O
+ * arquivo real tem quatro abas, e tres estao fora de escopo: casar a tabela pelo
+ * nome do arquivo faria a insercao consultar — ou, pior, um dia estender — a
+ * Tabela da aba `2025` (regra inviolavel 10).
+ *
+ * **O limite e o MINIMO entre TODAS as Tabelas da aba, sem filtrar por coluna.**
+ * A primeira versao so considerava Tabela que sobrepusesse as colunas escritas,
+ * e o revisor-xml mediu o buraco: com `Tabela A1:P4` e um insert na coluna `Q`,
+ * o limite sumia e a linha 90.000 era aceita — o guarda virava contornavel pela
+ * escolha das colunas. O minimo sem filtro nao e contornavel, e o preco e recusa
+ * FALSA numa aba com duas Tabelas desalinhadas: direcao segura, e a aba `2026`
+ * tem uma so.
+ */
+function tableLastRow(entries: Record<string, Uint8Array>, sheetPath: string): number | null {
+  const relsPath = sheetPath.replace(/([^/]+)$/, '_rels/$1.rels')
+  const relsEntry = entries[relsPath]
+  // Aba com Tabela SEMPRE tem rels: a ausencia e "nao ha Tabela", nao "nao sei".
+  if (!relsEntry) return null
+
+  let last: number | null = null
+  for (const match of strFromU8(relsEntry).matchAll(/Target="([^"]*tables\/[^"]+)"/g)) {
+    // `../tables/x.xml` e relativo a `xl/worksheets/`; `/xl/tables/x.xml` e nome
+    // de parte ABSOLUTO, legal em OPC e emitido por outras ferramentas.
+    const raw = match[1] ?? ''
+    const target = raw.startsWith('/') ? raw.slice(1) : raw.replace(/^\.\.\//, 'xl/')
+    const tableEntry = entries[target]
+    if (!tableEntry) continue
+
+    const ref = parseRef(
+      readAttribute(/<table[^>]*>/.exec(strFromU8(tableEntry))?.[0] ?? '', 'ref'),
+    )
+    if (ref === null) continue
+
+    last = last === null ? ref.lastRow : Math.min(last, ref.lastRow)
+  }
+  return last
+}
+
+/**
+ * Estende `<dimension>` para cobrir a linha nova E as colunas escritas.
+ *
+ * **A primeira versao errou nos dois sentidos, e o revisor-xml mediu os dois.**
+ * Ela lancava em `ref="a1:p4"` — caixa baixa, que o Excel le sem reclamar —,
+ * derrubando uma gravacao que antes funcionava; e, partindo de `ref="A1"`,
+ * montava `A1:A5` para um insert que escreveu ate `P`, ASSINANDO um intervalo
+ * que exclui a celula recem-gravada. Silencio virou afirmacao errada, que e pior.
+ *
+ * Agora: caixa e normalizada, as duas formas de fechamento e atributos extras
+ * casam, e o canto final e o MAXIMO entre o que a dimensao ja declarava e o que
+ * foi escrito. Ausente continua legitimo — `<dimension>` e opcional no OOXML.
+ * Presente e ilegivel continua lancando, e agora a forma ilegivel e so a que
+ * nao e intervalo.
+ */
+function growDimension(sheetXml: string, row: number, columns: readonly string[]): string {
+  const match = /<dimension\b[^>]*?\bref="([^"]*)"[^>]*?>/.exec(sheetXml)
+  if (!match) return sheetXml
+
+  const ref = parseRef((match[1] ?? '').toUpperCase())
+  if (ref === null) throw new Error(`<dimension> em forma nao reconhecida: ${match[1]}`)
+
+  const escrita = columns[columns.length - 1] ?? 'A'
+  const fim = columnIndex(ref.last) >= columnIndex(escrita) ? ref.last : escrita
+  const linha = Math.max(ref.lastRow, row)
+  if (fim === ref.last && linha === ref.lastRow) return sheetXml
+
+  return sheetXml.replace(match[0], `<dimension ref="${ref.first}${ref.firstRow}:${fim}${linha}"/>`)
 }
 
 /**
@@ -403,6 +696,11 @@ function renderCell(
   }
 
   if (typeof value === 'number') {
+    // `NaN` e `Infinity` serializam como texto e NAO sao valor numerico do
+    // Excel: o arquivo abre pedindo reparo. Recusar aqui e a unica barreira —
+    // o tipo `number` de TypeScript admite os dois.
+    if (!Number.isFinite(value))
+      throw new Error(`valor numerico invalido em ${reference}: ${value}`)
     return `<c r="${reference}"${style}><v>${value}</v></c>`
   }
 
@@ -528,7 +826,10 @@ function rowStyleOf(openTag: string): string | null {
 
 function columnStyleOf(sheetXml: string, column: string): string | null {
   const index = columnIndex(column)
-  for (const col of sheetXml.matchAll(/<col [^>]*\/>/g)) {
+  // `<col ...></col>` e XML legal e o Excel nao o emite, mas outra ferramenta
+  // pode: sem a segunda forma a celula nova sairia sem `s=` e cairia em
+  // `cellXfs[0]`, perdendo fonte e alinhamento das vizinhas.
+  for (const col of sheetXml.matchAll(/<col\s[^>]*?\/>|<col\s[^>]*?>/g)) {
     const min = Number(readAttribute(col[0], 'min') ?? '0')
     const max = Number(readAttribute(col[0], 'max') ?? '0')
     if (index >= min && index <= max) return readAttribute(col[0], 'style')
@@ -547,7 +848,14 @@ class SharedStringPool {
     this.header =
       xml?.slice(0, xml.indexOf('<sst')) ??
       '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\r\n'
-    this.items = xml?.match(/<si>[\s\S]*?<\/si>/g) ?? []
+    /*
+      `<si/>` auto-fechado entra na lista. Descarta-lo deslocaria em um TODO
+      indice `t="s"` posterior a ele — e o pool e GLOBAL a pasta de trabalho,
+      entao as quatro abas passariam a exibir a string errada, inclusive as tres
+      fora de escopo (regra inviolavel 10). Achado do revisor-xml em 02/09/2026,
+      e o defeito existia desde `H-24`.
+    */
+    this.items = xml?.match(/<si>[\s\S]*?<\/si>|<si\s*\/>/g) ?? []
     this.originalCount = Number(/<sst[^>]*\scount="(\d+)"/.exec(xml ?? '')?.[1] ?? '0')
   }
 
