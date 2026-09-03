@@ -19,7 +19,13 @@ export type StatusCategory =
   | 'em_andamento'
   | 'fechado_aguardando_draft'
 
-export type Responsible =
+// Domínio ABERTO desde `H-50` (01/09/2026): a pessoa vem de `team-map.json`
+// cruzado com o importador, e a chave vazia `''` é "sem responsável".
+export type Responsible = string
+
+// A união de quatro valores continua existindo, com outro nome: ela é a leitura
+// da COR, e `H-50` a separou da pessoa.
+export type ColorResponsible =
   | 'colaborador1'
   | 'colaborador2'
   | 'colaborador1_outros_clientes'
@@ -38,6 +44,9 @@ export interface Process {
   readonly billOfLading: string           // D  — BL
   readonly agentRaw: string               // E  — AGENTE (P-01)
   readonly container: string              // F  — CNTR
+  // …
+  // `responsible: Responsible` (a pessoa) e `colorResponsible: ColorResponsible`
+  // (a leitura da cor) são campos SEPARADOS desde `H-50`.
   readonly vesselRaw: string              // G  — NAVIO
   readonly portRaw: string                // H  — ETA (porto, não data)
   readonly goodsRaw: string               // J  — MERCADORIA
@@ -82,10 +91,12 @@ export type AnomalyCode =
   | 'VARIANTE_STATUS_PROXIMA'   // A-03
 ```
 
-**Chave natural:** `ref`. **Chave de escrita:** `sourceRow` — é a linha que a
-escrita cirúrgica endereça, e é estável enquanto ninguém inserir ou remover
-linhas no Excel entre a leitura e a gravação; a defesa de hash (`H-25`) cobre
-exatamente esse caso.
+**Chave natural:** `ref`. **Chave de escrita:** a **REF**, e não `sourceRow` — a
+célula alvo é resolvida procurando a REF na leitura canônica no momento da
+escrita, e `sourceRow` é o retrato da leitura anterior. A ordem importa: a defesa
+de hash (`H-25`) **não** cobre inserção de linha por terceiro, porque ela recusa
+quando o arquivo mudou, e a resolução por REF é o que faz a escrita acertar
+quando ele não mudou o suficiente para a recusa disparar.
 
 ### 1.2. Mapeamento coluna → campo
 
@@ -314,6 +325,21 @@ qualquer conversão para RGB (ADR-0003).
 | `{ indexed: 43 }` | `indexed:43` |
 | `fill` ausente, ou `fill.type !== 'pattern'`, ou `pattern === 'none'` | `none` |
 
+**A chave `none` é um TERCEIRO estado desde 02/09/2026 (`D-25`), e não uma cor
+desconhecida.** `ColorSource` tem três valores:
+
+| `source` | Quando | Quarentena | `importerOutsideRj` |
+|---|---|---|---|
+| `'mapa'` | a chave está em `color-map.json` | não | o que o mapa disser |
+| `'sem-cor'` | chave `none` que o mapa não declara | **não** | `false` |
+| `'desconhecida'` | cor **presente** e fora do mapa | sim, `COR_NAO_MAPEADA` | `null` |
+
+Enquanto a aplicação só lia, os dois últimos coincidiam: nenhuma linha nascia sem
+preenchimento. Ao passar a **criar** linha em branco com `appendRow`, tratar a
+ausência como engano mandaria para a quarentena toda linha que ela mesma
+escreveu. O mapa é consultado **antes** do padrão, então uma entrada
+`"styleKey": "none"` declarada vence.
+
 **A chave deriva do `fillId`, não do `styleId`.** O perfilamento mediu que uma
 mesma cor é produzida por vários `styleId` — `argb:FF00FF00` vem dos styleIds
 199, 165 e 189, que compartilham `fillId=2` mas diferem em borda. Para a
@@ -404,8 +430,13 @@ significado. Duas linhas no mapa custam menos que uma heurística.
 
 ### TD-05.1 — Escrita de estilo: trocar um campo da tupla, nunca o `styleId`
 
-Aplicável a **`H-24`** (campo `numFmtId`, ao gravar data) e a **`H-27`** (campo
-`fillId`, ao pintar). Medido em A-49: uma mesma cor vem de vários `styleId`, que
+Aplicável a **`H-24`** (campo `numFmtId`, ao gravar data), a **`H-27`** (campo
+`fillId`, ao pintar) e — desde 02/09/2026 — a **`appendRow`**, com uma diferença:
+ali a célula é **nova** e não tem `s=`, então não há tupla a preservar. O estilo
+vem do que a **coluna** declara em `<cols>`; copiar o da linha de cima seria o
+caminho fácil e errado, porque no arquivo real ela carrega `fillId 8`, que o
+mapa traduz como Colaborador 1 — todo processo novo nasceria atribuído a quem
+ninguém escolheu. Medido em A-49: uma mesma cor vem de vários `styleId`, que
 diferem em borda e fonte — trocar o `styleId` inteiro destrói o que não estava
 em questão. O mesmo raciocínio vale para formato de data (A-56): a célula
 precisa ganhar `numFmt` sem perder fonte, borda e preenchimento.
@@ -508,6 +539,14 @@ retroativo que não existe (A-43).
 Append-only. A projeção corrente é a **última** entrada por par
 `(ref, field)`.
 
+**São TRÊS tipos discriminados por `kind`**, e não um:
+
+| `kind` | Origem | O que guarda |
+|---|---|---|
+| `field` | `H-23` | o descrito abaixo — `field`, `value`, `previous` |
+| `color` | `H-27` | `target`, `label`, `previousStyleKey`; **sem** `field` e **sem** `value` |
+| `rowInsert` | 02/09/2026 | só a `ref`; **sem** `sourceRow` e **sem** `previous` — a linha ainda não existe, então o número sai da leitura canônica no momento da escrita, e a defesa que substitui o `previous` é a oposta: a REF não pode já existir |
+
 > **Corrigido em `H-23`.** Este parágrafo dizia que `value: null` cancelava a
 > edição anterior. Não cancela: **`null` é célula vazia**, e o operador precisa
 > dele para limpar uma data. O cancelamento ganhou rotas próprias
@@ -530,7 +569,7 @@ Append-only. A projeção corrente é a **última** entrada por par
 | `ref` | string | Processo alvo |
 | `sourceRow` | number | Linha alvo no momento da edição |
 | `field` | string | Nome do campo de `Process` |
-| `value` | string \| null | Valor novo, já serializado como irá para a célula. `null` cancela |
+| `value` | string \| null | Valor novo, já serializado como irá para a célula. **`null` é célula vazia**, nunca cancelamento — ver o bloco "Corrigido em `H-23`" acima |
 | `previous` | string | Valor anterior, para exibir o conflito caso o arquivo mude |
 
 Após uma aplicação bem-sucedida, o arquivo é rotacionado para
@@ -573,13 +612,18 @@ escrita. Expurgo conforme RNF-21.
 | `config/app.json` | Caminho do `.xlsx`, nome da aba, linha do cabeçalho, porta HTTP, limiar de "processo parado" |
 | `config/color-map.json` | TD-05 |
 | `config/status-aliases.json` | TD-02 |
+| `config/client-map.json` | TD-04.1 e TD-04.2 — consolidação do cliente e grupo (`H-48`, `H-49`, `H-55`). **Não versionado**: nome real de cliente |
+| `config/team-map.json` | A pessoa por trás de `responsible` (`H-48`, `H-50`). **Não versionado**: nome real de pessoa |
+
+Os dois últimos têm `.exemplo` versionado ao lado, e a máquina do operador chega
+sem eles — ver `PD-08`.
 
 `config/app.json`:
 
 ```jsonc
 {
   "workbookPath": "C:\\Users\\<usuario>\\OneDrive - <org>\\<pasta>\\planilha.xlsx",
-  "sheetName": null,          // null = primeira aba (P-04)
+  "sheetName": "2026",        // o padrão. P-04 ("a planilha tem uma aba") foi REFUTADA pelo perfilamento: são quatro
   "headerRow": 1,
   "firstDataRow": 2,
   "port": 5173,

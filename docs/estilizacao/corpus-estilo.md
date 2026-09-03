@@ -262,8 +262,9 @@ Critério de **CUSTO**, declarado: medido em **quantos arquivos precisam mudar**
 | Modo escuro | **7** | D01–D07 |
 | **Total** | **40** | dentro da faixa 30–45 |
 
-Por balde: **LOCAL 23** · **COMPOSICIONAL 12** · **DE EXECUÇÃO 5** (dos quais A01, A02 e R01 viram estáticos pela cadeia de §3.2; A15 e A17 viram parcialmente estáticos).
-Por custo: **baixo 17** · **médio 17** · **alto 6**.
+Por balde: **LOCAL 24** · **COMPOSICIONAL 11** · **DE EXECUÇÃO 5** (dos quais A01, A02 e R01 viram estáticos pela cadeia de §3.2; A15 e A17 viram parcialmente estáticos).
+Por custo: **baixo 19** · **médio 17** · **alto 4**.
+Medido em 02/09/2026 sobre as colunas BALDE e CUSTO das quatro tabelas de regras.
 
 ---
 

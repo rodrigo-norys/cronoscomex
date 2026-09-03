@@ -116,7 +116,7 @@ desempenho não paga a complexidade — ver ADR-0006.
 
 ## Referências
 
-- `01-auditoria-especificacao.md` — os 45 achados que derivam da qualidade da
+- `01-auditoria-especificacao.md` — os 65 achados (`A-01` a `A-65`), dos quais `A-01` a `A-56` derivam da qualidade da
   origem
 - `03-modelo-dados.md` — projeção em memória e artefatos locais
 - ADR-0004 — como a escrita preserva o arquivo

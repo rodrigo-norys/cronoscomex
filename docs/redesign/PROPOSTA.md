@@ -188,9 +188,11 @@ substituição nenhuma — custa uma guarda, para que não volte.
 Levantadas em 31/08/2026, ao alinhar a proposta. Nenhuma é impeditiva; todas
 mudam o texto de alguma história.
 
-1. **"os onze filtros"** — são **treze** desde `H-55`. `H-15` foi titulada com
-   onze, `H-49` levou a doze e `H-55` a treze. A história que reorganizar a
-   barra parte de treze controles, não de onze.
+1. **"os onze filtros"** — são **catorze** desde `H-66`, que expôs
+   `colorResponsible` na barra. `H-15` foi titulada com onze, `H-49` levou a
+   doze, `H-55` a treze e `H-66` a catorze. Os **chips** continuam treze:
+   `clientGroup` não tem chip próprio. A história que reorganizar a barra parte
+   de catorze controles, não de onze.
 2. **A tarja diz "Épico E10"** — `E10` é *As melhorias de uso*, `H-48` a `H-56`,
    e nenhuma delas toca a casca. A proposta é `E11`.
 3. **O mockup carrega as fontes de `fonts.googleapis.com`** — proibido em
@@ -222,5 +224,6 @@ Duas coisas, e o mockup diz que não as decide. **Nenhuma vira história de
   REF, ou também cliente e ação — é decisão à parte.
 - **O detalhe do processo em painel lado a lado**, em vez de página. É a
   evolução natural desta estrutura e mexe no roteador — o que toca diretamente
-  o gatilho de reavaliação de `D-16`, hoje em 79 linhas de código de um limiar
-  de 100.
+  o gatilho de reavaliação de `D-16`, hoje em **97** linhas de código de um
+  limiar de 100 — medido em 02/09/2026 pela mesma contagem que
+  `tests/repo/contratos.test.ts` usa.

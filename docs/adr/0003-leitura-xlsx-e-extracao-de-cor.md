@@ -83,6 +83,14 @@ esse fim.
 
 ### 3. Cor não reconhecida vai para quarentena, nunca é aproximada
 
+> **Emenda de 02/09/2026 (`D-25`).** "Não reconhecida" passou a ter dois casos, e
+> só um vai para a quarentena. `ColorSource` tem três valores — `'mapa'`,
+> `'sem-cor'` e `'desconhecida'` —, e a chave `none` que o mapa não declara
+> resolve como `'sem-cor'`, **fora** da quarentena: é a linha em branco que a
+> própria aplicação passou a criar com `appendRow`, e tratá-la como engano
+> mandaria para a quarentena toda linha inserida. Cor **presente** e fora do mapa
+> continua sendo `'desconhecida'`, e o parágrafo abaixo vale inteiro para ela.
+
 Não há tolerância, limiar de distância entre cores nem correspondência por
 proximidade. `argb:FF00B051`, a um bit do verde `argb:FF00B050`, é
 **não reconhecida**. A linha entra nos indicadores de volume com os campos

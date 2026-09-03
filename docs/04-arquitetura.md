@@ -55,7 +55,7 @@ graph TB
     SRV -->|"lê e vigia"| XLSX
     SRV -->|"grava sob comando"| XLSX
     SRV -->|"lê e escreve"| DATA
-    SRV -->|"lê na partida"| CFG
+    SRV -->|"lê na partida, escreve sob comando"| CFG
 
     classDef proc fill:#1f6feb,stroke:#0d419d,color:#fff
     classDef dado fill:#8957e5,stroke:#6e40c9,color:#fff
@@ -68,7 +68,7 @@ graph TB
 | Container | Responsabilidade | Tecnologia |
 |---|---|---|
 | **Servidor Node** | Ler a planilha, calcular indicadores e alertas, servir a API e a SPA, gravar no `.xlsx` sob comando | Node 22 · Fastify 5.11.2 · TypeScript 7.0.2 |
-| **Interface web** | Apresentar as **sete páginas** — as seis do menu, mais o detalhe do processo, que vive fora dele (`web/src/router.ts`) —, os filtros globais e o formulário de edição. **Nenhuma regra de negócio** (RNF-38) | React 19.2.8 · Vite 8.2.0 · Tailwind 4.3.3 · Recharts 3.10.1 |
+| **Interface web** | Apresentar as **oito páginas** — as sete do menu, incluindo Configuração (`H-34`), mais o detalhe do processo, que vive fora dele (`web/src/router.ts`) —, os filtros globais e o formulário de edição. **Nenhuma regra de negócio** (RNF-38) | React 19.2.8 · Vite 8.2.0 · Tailwind 4.3.3 · Recharts 3.10.1 |
 | **planilha.xlsx** | Fonte da verdade. Não pertence ao sistema | Arquivo OOXML |
 | **data/** | Histórico, fila de edições, quarentena e backups. Descartável sem perda de dado de negócio | JSONL, JSON, XLSX |
 | **config/** | Caminho do arquivo, mapa de cores, dicionário de grafias | JSON |
@@ -154,6 +154,8 @@ efeito colateral em disco. Verde = fronteira.
 | `color-mapper` | Traduzir a chave de estilo em responsável, canal e localização do importador | `styleKey`, `color-map.json` | `{ responsible, customsChannel, importerOutsideRj }` ou não-mapeado |
 | `normalizer` | Normalizar texto para agrupamento e converter célula em data | `string \| number \| Date` | `string` normalizada, `Date \| null`, anomalias |
 | `status-classifier` | Aplicar TD-01 e devolver a categoria canônica | `RawRow`, `status-aliases.json` | `StatusCategory`, anomalias |
+| `client-mapper` | Consolidar a grafia da célula CLT num cliente e num grupo (TD-04.1, TD-04.2) | `RawRow`, `client-map.json` | `client`, `clientGroup` |
+| `team-mapper` | Resolver a pessoa por trás de `responsible`, pelo importador com a cor desempatando (`H-50`) | `RawRow`, `team-map.json`, `ColorResponsible` | `responsible` |
 | `process-builder` | Compor o `Process` a partir dos anteriores e decidir aceite ou quarentena | `RawRow[]` e os módulos acima | `Process[]`, `QuarantineItem[]` |
 | `quarantine-reporter` | Persistir o relatório de linhas não interpretadas e de divergências | `QuarantineItem[]` | `data/quarantine.json` |
 | `process-store` | Guardar o conjunto corrente em memória e aplicar os filtros globais | `Process[]`, `FilterSet` | `Process[]` filtrado |
@@ -179,11 +181,12 @@ graph LR
     UI -->|"POST aplicar"| GUARD
     QUEUE -->|"edições consolidadas"| GUARD
     GUARD -->|"1. pausa"| WATCH
-    GUARD -->|"2. backup"| BAK
-    GUARD -->|"3. hash e lock conferem"| ZIP
-    ZIP -->|"4. escreve arquivo temporário e renomeia"| XLSX
-    GUARD -->|"5. valida releitura"| ZIP
-    GUARD -->|"6. falhou: restaura"| BAK
+    GUARD -->|"2. hash e lock conferem"| ZIP
+    ZIP -->|"3. cirurgias no buffer, em memória"| ZIP
+    GUARD -->|"4. backup"| BAK
+    ZIP -->|"5. escreve arquivo temporário e renomeia"| XLSX
+    GUARD -->|"6. valida releitura"| ZIP
+    GUARD -->|"7. falhou: restaura"| BAK
     GUARD -->|"7. retoma"| WATCH
 
     classDef proc fill:#1f6feb,stroke:#0d419d,color:#fff
@@ -227,7 +230,7 @@ sequenceDiagram
             G->>W: retomar
             G-->>U: 409 ARQUIVO_MUDOU + diferenças
         else confere
-            G->>S: aplicar CellEdit[] e RowFillEdit[] no buffer
+            G->>S: aplicar CellEdit[], RowFillEdit[] e RowInsert[] no buffer
             alt nenhum byte mudaria
                 G->>Q: arquivar fila em data/applied/
                 G->>W: retomar
@@ -299,7 +302,9 @@ cronoscomex/
 │  │  ├─ history.ts
 │  │  ├─ date-window.ts
 │  │  ├─ editable-fields.ts
-│  │  └─ filters.ts
+│  │  ├─ filters.ts
+│  │  ├─ client-mapper.ts     # H-49
+│  │  └─ team-mapper.ts       # H-50
 │  ├─ io/
 │  │  ├─ xlsx-reader.ts
 │  │  ├─ xlsx-parts.ts
@@ -316,16 +321,20 @@ cronoscomex/
 │  │  ├─ write-guard.ts
 │  │  ├─ color-map-loader.ts
 │  │  ├─ status-aliases-loader.ts
+│  │  ├─ client-map-loader.ts # H-49
+│  │  ├─ team-map-loader.ts   # H-50
+│  │  ├─ file-dialog.ts       # H-37
 │  │  ├─ logger.ts
 │  │  └─ config.ts
 │  └─ http/
 │     ├─ server.ts
 │     ├─ errors.ts
 │     ├─ filter-request.ts
-│     └─ routes/              # 12 rotas — ver 05-contratos-api.md
+│     ├─ filter-request.ts
+│     └─ routes/              # 14 arquivos de rota — ver 05-contratos-api.md
 ├─ web/
 │  ├─ src/
-│  │  ├─ pages/               # 8 arquivos: as 7 páginas + Placeholders.tsx
+│  │  ├─ pages/               # 9 arquivos: as 8 páginas + Placeholders.tsx
 │  │  ├─ components/
 │  │  ├─ hooks/
 │  │  ├─ App.tsx
@@ -341,14 +350,18 @@ cronoscomex/
 ├─ tools/                     # perfilador, gerador de fixtures e conferências
 ├─ scripts/
 │  ├─ iniciar.cmd             # atalho do operador, Windows (H-30, RNF-26)
-│  ├─ dev.mjs
-│  └─ porta.mjs
-├─ config/                    # app.json não é versionado; há um .exemplo
+│  ├─ dev.mjs · esperar-porta.mjs · porta.mjs
+│  ├─ diagnostico-seletor.mjs # PD-06 — isola por que o seletor não abriu
+│  └─ sincronizar-distribuicao.ts
+├─ config/                    # app.json, client-map.json e team-map.json não
+│                              # são versionados; há um .exemplo de cada
 └─ package.json
 ```
 
-> **A árvore é conferível:** `ls src/domain src/io src/app src/http` devolve
-> exatamente os arquivos acima. A pasta `src/profiling/`, que este documento
+> **A árvore é conferível:** `ls src/domain src/io src/app src/http src/http/routes`
+> devolve exatamente os arquivos acima — 15 · 10 · 9 · 3 · 14, medido em
+> 02/09/2026. O comando anterior omitia `src/http/routes/`, e a lista tinha
+> ficado para trás em `src/domain/` e `src/app/`. A pasta `src/profiling/`, que este documento
 > listou até 18/08/2026, **nunca existiu** — o perfilador de `H-01` é Python e
 > mora em `tools/`.
 

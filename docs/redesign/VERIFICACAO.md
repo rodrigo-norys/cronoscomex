@@ -294,7 +294,7 @@ que é o que o critério de aceite manda. Nenhum virou nota solta.
 
 | # | O que | Por que não foi feito aqui |
 |---|---|---|
-| 1 | **Alternar o tema do sistema operacional com a aplicação aberta.** A página precisa acompanhar sem recarregar | A emulação por CDP fixa a media query na abertura do alvo. É o único item que exige a máquina do operador, e vai junto de `PD-06` |
+| 1 | **Alternar o tema do sistema operacional com a aplicação aberta.** A página precisa acompanhar sem recarregar | A emulação por CDP fixa a media query na abertura do alvo. Exige a máquina do operador, e vai junto de `PD-06` — como o item 4 desta mesma tabela |
 | 2 | **O `ConflictDialog`, três vezes:** foco ao abrir e ao fechar, prisão de tabulação, e o véu amostrado sobre as sete páginas | Nenhuma fixture versionada produz o conflito. É o mesmo item que `VN-3` e `PD-07` já deviam |
 | 3 | **Prender o foco no diálogo** | Achado de leitura, não de execução: não há `.focus()` no arquivo. Comportamento novo, e `H-65` é verificação — vira história própria |
 | 4 | **A paleta nominal do Windows** (Aquático e as demais) | Confirmação de segunda ordem: os dois temas forçados medidos aqui já são paletas de sistema distintas, e o que o procedimento pergunta é se o desenho sobrevive à substituição |
