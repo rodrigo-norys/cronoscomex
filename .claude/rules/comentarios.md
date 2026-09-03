@@ -2,6 +2,10 @@
 paths:
   - "src/**/*.ts"
   - "web/**/*.{ts,tsx}"
+  # `config/*.json` entrou em 02/09/2026: a rule declarava a convencao de
+  # comentario daqueles arquivos e nunca carregava quando alguem abria um deles.
+  - "config/*.json"
+  - "config/*.exemplo"
   - "tests/**/*.ts"
 ---
 
@@ -26,11 +30,15 @@ Régua derivada da literatura, não de gosto. A derivação com as fontes está 
 
 ## Convenções deste repositório
 
-- **Sem acento nos comentários de `src/` e `web/`**: medido em 1.837 linhas de
-  comentário, 96% sem acento. O markdown de `docs/` usa acento normalmente.
+- **Sem acento nos comentários de `src/` e `web/`**: medido em 02/09/2026 sobre
+  os 98 arquivos de `src/` e `web/src/` — 5.884 linhas de comentário, 98,0% sem
+  acento. O markdown de `docs/` usa acento normalmente.
 - Cabeçalho vem **depois dos imports**, em bloco `/** */`.
-- Comentário em JSON de `config/` usa chave prefixada — `_comentario`,
-  `_origem`, `_evidencia`. Elas são lidas em execução: não remova nem renomeie.
+- Comentário em JSON de `config/` usa chave prefixada com `_`. As mais comuns
+  são `_comentario`, `_origem` e `_evidencia`, mas a convenção é o prefixo, e não
+  a lista: os arquivos também usam `_nota`, `_regras`, `_dominios`,
+  `_naoIncluidas` e variantes `_comentario_<sufixo>`. Elas são lidas em execução:
+  não remova nem renomeie.
 
 ## Ao editar código que já tem comentário
 

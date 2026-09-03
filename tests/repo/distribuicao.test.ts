@@ -1,4 +1,4 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import {
   arvoreEsperada,
@@ -52,6 +52,25 @@ describe('a arvore de distribuicao e calculavel', () => {
 
   it('inclui o CSS, que so o import de main.tsx alcanca', () => {
     expect(esperada).toContain('web/src/index.css')
+  })
+
+  it('inclui TODO asset que o CSS cita por url("/..."), e a licenca deles', () => {
+    // Medido em 03/09/2026: o fecho tratava `.css` como folha, e os seis
+    // `.woff2` de `H-58` nunca entraram na `distribuicao`. Fonte faltando nao
+    // quebra nada — o navegador cai no fallback —, entao o script imprimia
+    // "sincronizada com HEAD" e o operador via outra tipografia desde sempre.
+    const css = readFileSync('web/src/index.css', 'utf-8')
+    const citados = [...css.matchAll(/url\(\s*["']?(\/[^"')]+)["']?\s*\)/g)].map(
+      (achado) => `web/public${achado[1] as string}`,
+    )
+
+    expect(citados.length).toBeGreaterThan(0)
+    for (const asset of citados) {
+      expect(existsSync(asset)).toBe(true)
+      expect(esperada).toContain(asset)
+    }
+    // A OFL 1.1 exige a licenca junto dos binarios, e nenhum `url()` a cita.
+    expect(esperada).toContain('web/public/fonts/LICENSE.txt')
   })
 
   it('inclui os dois mapas de negocio de H-48, que server.ts passou a importar', () => {

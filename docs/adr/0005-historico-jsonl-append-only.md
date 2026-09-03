@@ -30,7 +30,9 @@ e gravar as diferenças em `data/history.jsonl`, um arquivo append-only.**
 Uma linha JSON por evento:
 
 ```jsonc
-{"ts":"2026-08-03T14:22:31.004Z","ref":"FT498.26","from":"em_andamento","to":"desembaracado","channel":"nenhum","sourceRow":475}
+{"ts":"2026-08-03T14:22:31.004Z","ref":"FT498.26","from":"em_andamento","to":"desembaracado","channel":"indefinido","sourceRow":475}
+// `channel` foi `"nenhum"` ate `H-51` (31/08/2026), que o removeu de `CustomsChannel`.
+// Registro antigo no arquivo do operador ainda o traz — o formato e append-only.
 ```
 
 - `from: null` na primeira vez que um REF é visto.

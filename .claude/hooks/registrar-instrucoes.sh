@@ -63,8 +63,25 @@ fi
 
 # O caminho vai relativo a raiz: absoluto carregaria o nome de usuario do SO
 # para um arquivo que alguem pode colar num relatorio (regra inviolavel 8).
+#
+# A remocao de prefixo so alcanca instrucao DENTRO do projeto. O CLAUDE.md
+# global e o MEMORY.md do harness vem de fora e entravam absolutos, com o nome
+# do usuario — medido em 02/09/2026, e o do MEMORY.md o traz DUAS vezes, porque
+# o diretorio de projeto do harness e o caminho absoluto com `/` virando `-`.
+# Por isso o que nao perdeu o prefixo vira marcador, e nao caminho redigido:
+# redigir so o prefixo deixaria o nome no meio do segmento. `$HOME` fica fora de
+# proposito — `set -u` esta ativo, e referenciar variavel desassociada abortaria
+# o hook, que neste evento roda a sessao sem as regras inviolaveis.
+#
+# O `%/` cobre CLAUDE_PROJECT_DIR com barra final: sem ele o corte procura `//`,
+# nao casa nada, e TODO caminho passa a ser gravado absoluto.
 raiz="${CLAUDE_PROJECT_DIR:-}"
-[ -n "$raiz" ] && arquivo="${arquivo#"$raiz"/}"
+relativo="$arquivo"
+[ -n "$raiz" ] && relativo="${arquivo#"${raiz%/}"/}"
+case "$relativo" in
+  /*) arquivo="<externo>/$(basename "$relativo")" ;;
+  *)  arquivo="$relativo" ;;
+esac
 
 registrar "$(date -u '+%Y-%m-%dT%H:%MZ')" "${motivo:-?}" "${arquivo:-?}" "${sessao:0:8}"
 

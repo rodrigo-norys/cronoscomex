@@ -1,5 +1,22 @@
 #!/usr/bin/env python3
-"""H-01 — Perfilamento da planilha real. Somente stdlib."""
+"""H-01 — Perfilamento da planilha real. Somente stdlib.
+
+A SAIDA NAO E PUBLICAVEL, e o cabecalho anterior nao dizia isso — so a mensagem
+do hook dizia. Ela percorre TODAS as abas do workbook, inclusive `CNPJ`, que a
+regra inviolavel 10 trata como credenciais de terceiros, e leva por aba: ate 15
+amostras de celula por coluna, o cabecalho inteiro, 40 valores brutos de STATUS
+e 10 amostras de REF duplicada.
+
+`docs/perfilamento/perfilamento-20260803.json` so pode ser versionado porque a
+aba `CNPJ` foi podada a mao (chave `_OMITIDO`); as abas `2025` e `2024` seguem
+la com 345 e 291 amostras reais. O `.gitignore` cobre o resto de
+`docs/perfilamento/*.json` por essa razao.
+
+Por isso o destino e OBRIGATORIO e tem de estar em `/tmp/` — a recusa esta no
+fim do arquivo. Ela nao duplica o hook `guard-dados-sensiveis.sh`: fecha o que
+ele nao ve, porque `npm run profile` nao contem o nome deste arquivo e passa
+direto pelo `check_profiler`. Grave em /tmp, sanitize, e so entao mova.
+"""
 import zipfile, json, sys, re, hashlib
 from collections import Counter, defaultdict
 import xml.etree.ElementTree as ET
@@ -249,6 +266,18 @@ for sh in sheets:
         })
     report['sheets'].append(sheet_report)
 
-out = sys.argv[2] if len(sys.argv) > 2 else 'perfilamento.json'
+out = sys.argv[2] if len(sys.argv) > 2 else None
+
+# Recusa ALTA, em vez de padrao silencioso. O padrao anterior gravava
+# `perfilamento.json` no diretorio corrente — a raiz do repositorio —, e nem o
+# `.gitignore` nem o `check_git_add` cobrem esse nome. Um padrao em /tmp seria
+# pior: faria `npm run profile` "funcionar" gravando onde ninguem pediu.
+if out is None:
+    raise SystemExit(
+        'destino obrigatorio, e em /tmp/: a saida traz amostras de celula de '
+        'TODAS as abas, inclusive CNPJ. Uso: %s "<planilha.xlsx>" /tmp/saida.json'
+        % sys.argv[0])
+if not out.startswith('/tmp/') or '..' in out:
+    raise SystemExit('destino fora de /tmp/: %s — grave em /tmp, sanitize, e so entao mova.' % out)
 json.dump(report, open(out, 'w'), ensure_ascii=False, indent=1)
 print('OK ->', out)

@@ -23,8 +23,12 @@ export default defineConfig({
     coverage: {
       provider: 'v8',
       include: ['src/**/*.ts', 'web/src/**/*.{ts,tsx}'],
-      // RNF-35: dominio >= 90%. RNF-36: io >= 80%.
-      // Os limiares sobem conforme as historias entregam codigo real.
+      // ZERO de proposito, e nao por esquecimento. RNF-35 (dominio >= 90%) e
+      // RNF-36 (io >= 80%) sao ALVO declarado, nunca portao: `npm test` roda
+      // sem `--coverage`, entao o percentual nem e medido. Decidido em
+      // 03/09/2026 — a lacuna real e `PR-10`, que pede os 43 casos-limite de
+      // `docs/08-qualidade-operacao.md` §1.3 virando teste, e percentual de
+      // linha nao verifica isso. A ressalva esta em §1.1 do mesmo documento.
       thresholds: { lines: 0, functions: 0, branches: 0, statements: 0 },
     },
     projects: [

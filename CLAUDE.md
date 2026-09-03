@@ -128,16 +128,24 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**As 76 histórias estão concluídas.** O que cada uma aprendeu — número medido,
+**As 81 histórias estão concluídas.** O que cada uma aprendeu — número medido,
 defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
 `docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
 em aberto. **Este bloco diz só o que está aberto.**
 
-**`E9`, `E10`, `E11` e `E12` fecharam em 01/09/2026, e com `E12` fechou o
-backlog.** Nenhuma história aberta. O que resta são as **pendências abertas**
-abaixo — três delas esperam a máquina do operador, e **uma não**: o
-`ConflictDialog` de `PD-07` precisa de fixture que produza o conflito, e nenhuma
-das nove produz.
+**`E9` a `E12` fecharam em 01/09/2026, e `E13` em 03/09/2026.** Nenhuma história
+aberta. O que resta são as **pendências abertas** abaixo — três delas esperam a
+máquina do operador, e **uma não**: o `ConflictDialog` de `PD-07` precisa de
+fixture que produza o conflito, e nenhuma das nove produz.
+
+> **`E13` é retroativo, e é o único do backlog que é.** O código entrou em
+> 02/09/2026 pelo PR #111 — edição na tabela, ordenação, criação de linha e a
+> gravação do mapa de clientes — **sem história**, e a cascata de documentos foi
+> percorrida só em parte. As cinco histórias, os cinco RF novos e a linha da
+> Página Configuração na matriz foram escritos em 03/09 (`D-26`). **A lição não é
+> sobre documento:** o protocolo de fatia existe para o defeito de plano aparecer
+> antes do código, e escrever depois recupera a rastreabilidade, nunca o
+> anteparo.
 
 Os dois documentos que geraram trabalho depois do plano estão exauridos:
 `docs/redesign/VERIFICACAO.md` — os seis procedimentos de navegador nos dois
@@ -186,6 +194,8 @@ Não bloqueiam a implementação. Fechar antes da entrega ao operador.
 | **PD-08** | **Os dois mapas de negócio de `H-48` precisam ser enviados à parte, e nada no procedimento de instalação diz isso.** Eles estão no `.gitignore` e a distribuição leva só os `.exemplo`, então a máquina do operador chega sem eles — o campo Cliente já mostra a grafia da célula em vez do nome consolidado. Decidido em 31/08/2026: fica com envio manual, e a solução é reexaminada em momento oportuno. Os detalhes, e as duas afirmações do `README.md` da distribuição que mentem sobre isso, estão em `.claude/rules/distribuicao.md` | **Junto com a primeira instalação:** `scp config/client-map.json config/team-map.json` para `config\` na máquina do operador, e corrija o `README.md` da distribuição. **Repita a cópia toda vez que a regra de consolidação ou a equipe mudar** — nenhum aviso existe para lembrar |
 | **PD-01** | `config/app.json` aponta para `CONTROLE DOS EMBARQUE.xlsx` na **raiz do projeto**, usado para validar a partida em `H-02`. Na máquina Windows precisa do caminho real da pasta sincronizada (`C:\Users\...\OneDrive - <org>\...`). O arquivo está no `.gitignore`, então o caminho de desenvolvimento não vaza. **`H-34` deu a saída, em 18/08/2026**, e **`H-35` tirou o último passo manual, em 19/08/2026**: o arquivo de configuração não precisa mais existir antes — ele nasce ao salvar o caminho na tela | **Primeira instalação na máquina do operador.** Não exige copiar nem editar arquivo nenhum: o passo 4 do `README.md` é apontar a planilha na tela, e continua existindo porque alguém precisa apontá-la uma vez |
 
+| **PD-09** | **A premissa `P-15` ficou sem dono, e há uma frase da tela apoiada nela.** `P-15` — o OneDrive sincroniza o arquivo de lock `~$<nome>.xlsx` entre máquinas — está "não afirmada" desde o plano, e `docs/00-visao-escopo.md` e `A-58` mandavam medi-la em `H-30`, que **fechou em 18/08/2026 sem medir**. Mesmo padrão de `PD-05` entre 14 e 17/08/2026. A medição direta pede **duas máquinas com a mesma pasta sincronizada**, e nada indica que exista uma segunda conta com acesso à pasta da organização; o **proxy de uma máquina só** — abrir a planilha no Excel e observar se o `~$` sobe, pelo ícone do OneDrive ou pela visão web do SharePoint — responde a mesma pergunta. O que não pode ficar como está: `web/src/components/StatusBanner.tsx` afirma "Alguém está com a planilha aberta no Excel", que é a leitura **forte** da premissa. Ou ela é medida e a frase se justifica, ou a frase recua para o que é sabidamente verdadeiro — o arquivo está aberto **nesta** máquina — com o motivo no cabeçalho do componente | **Primeira instalação na máquina do operador**, junto de `PD-01`, `PD-06` e `PD-08`. Se o proxy responder antes disso, fecha antes — não exige Windows |
+
 Ao fechar uma pendência, remova a linha.
 
 ## Onde a regra já aprendida foi parar
@@ -227,8 +237,10 @@ pt-br, sem o tipo `test`.
 **O merge acontece no GitHub, não localmente.** `branch → commits → push da
 branch → PR → merge por lá`. Mesclar na `main` antes do push **mata o PR**.
 
-**A branch `distribuicao` é a árvore que vai para a máquina do operador** — 108
-arquivos, sem `docs/`, `tests/`, `tools/` nem `.claude/`. Ela **não recebe PR**:
+**A branch `distribuicao` é a árvore que vai para a máquina do operador** — 117
+arquivos hoje, contra **124 que o script calcula desde 03/09/2026**: as seis
+fontes de `H-58` e a licença delas nunca entraram, e a próxima sincronização as
+leva (`D-28`). Sem `docs/`, `tests/`, `tools/` nem `.claude/`. Ela **não recebe PR**:
 é artefato, não revisão. Confira com
 `node --experimental-strip-types scripts/sincronizar-distribuicao.ts`, e
 **sincronize apenas a partir da `main` mesclada**. O resto —  o que entra e por
@@ -430,7 +442,7 @@ npm test            # Vitest
 npm run dev         # servidor (5173) + interface (5174), no mesmo terminal
 npm run dev:server  # só a API, em 5173
 npm run dev:web     # só a interface, em 5174
-python3 tools/profile_workbook.py "<caminho.xlsx>" saida.json   # reperfilar
+python3 tools/profile_workbook.py "<caminho.xlsx>" /tmp/saida.json   # reperfilar
 ```
 
 > `node: bad option` **não é erro de código**: o shell herdou um Node abaixo de

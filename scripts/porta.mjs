@@ -15,8 +15,9 @@ import { readFileSync } from 'node:fs'
  * tem nenhum.
  *
  * A porta e lida da MESMA fonte que o servidor le. Escrever 5173 no `.cmd`
- * criaria a terceira copia do numero — `src/app/config.ts` e
- * `web/vite.config.ts` ja registram por que isso da errado.
+ * criaria a terceira copia do numero — as duas existentes sao `DEFAULTS.port`
+ * em `src/app/config.ts` e `FALLBACK_API_PORT` em `web/vite.config.ts`, e o
+ * cabecalho deste ultimo registra por que a duplicacao da errado.
  *
  * Saida 1 quando o arquivo existe e nao e JSON: o `.cmd` distingue "nao consegui
  * ler" de "li e deu 5173", e diz ao operador para conferir a configuracao.

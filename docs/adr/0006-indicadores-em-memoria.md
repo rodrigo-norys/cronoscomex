@@ -10,12 +10,12 @@ no servidor, no cliente, ou distribuídos entre os dois.
 
 A especificação define regras com muitos casos de fronteira — datas
 inclusivas, categorias mutuamente exclusivas, exclusões condicionais, semana
-ISO, valores nulos que nunca satisfazem comparação. A auditoria produziu 45
+ISO, valores nulos que nunca satisfazem comparação. A auditoria produziu 65
 achados, e a maioria virou uma decisão fina sobre um desses limites. Cada uma
 dessas decisões precisa ser verificável com dado concreto, sem ambiguidade
 sobre onde ela vive.
 
-Há também um fato de escala: **o volume da planilha é desconhecido** (RNF-01,
+Há também um fato de escala: **o volume da planilha era desconhecido quando este ADR foi escrito** — `H-01` o mediu em 03/08/2026: 649 linhas, parse em 104 ms contra o teto de 10 s (RNF-13), 117 MB contra o teto de 512 MB (RNF-16). A decisão se sustenta com folga de duas ordens de grandeza (RNF-01,
 pendente de `H-01`). A decisão precisa declarar o gatilho objetivo que a
 invalidaria.
 

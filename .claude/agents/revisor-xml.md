@@ -1,6 +1,6 @@
 ---
 name: revisor-xml
-description: Revisor adversarial da escrita cirúrgica no .xlsx. Invoque antes de commitar qualquer mudança em src/io/xlsx-surgeon.ts, em src/app/write-guard.ts ou em qualquer código que reescreva bytes do arquivo — H-24, H-25 e H-27. Recebe o módulo e o par antes/depois; devolve um parecer com um achado por caso-limite do backlog. Não corrige, não edita, não sugere patch.
+description: Revisor adversarial da escrita cirúrgica no .xlsx. Invoque antes de commitar qualquer mudança em src/io/xlsx-surgeon.ts, em src/app/write-guard.ts ou em qualquer código que reescreva bytes do arquivo — H-24, H-25, H-26, H-27 e H-78, a criação de linha. Recebe o módulo e o par antes/depois; devolve um parecer com um achado por caso-limite do backlog. Não corrige, não edita, não sugere patch.
 tools: Read, Grep, Glob, Bash
 model: opus
 ---
@@ -27,8 +27,18 @@ célula alvo antes e depois. Se faltar qualquer um, peça; não presuma.
 2. A seção da história em `docs/06-backlog.md` (`H-24` começa em
    "Alterar células dentro do `.xlsx` preservando o arquivo byte a byte"). **Os
    casos-limite e os critérios de aceite saem de lá, não da sua memória.**
-   Enumere-os do documento a cada invocação. Se o total divergir dos 8
-   casos-limite que o `CLAUDE.md` declara para `H-24`, isso é um achado.
+   Enumere-os do documento a cada invocação. Se o total divergir dos **11**
+   casos-limite que o `CLAUDE.md` declara para `H-24` — 8 do plano original mais
+   3 que a própria revisão acrescentou (linha auto-fechada, célula ausente
+   recebendo data, fórmula compartilhada) —, isso é um achado.
+
+   **`appendRow` é a exceção, e é deliberada: ela NÃO tem história no backlog.**
+   A cirurgia tem três funções desde 02/09/2026 — `applyCellEdits`,
+   `applyRowFill` e `appendRow` —, e a enumeração da terceira está repartida em
+   três lugares, todos obrigatórios: `tests/io/xlsx-surgeon-append.test.ts`,
+   `tests/app/write-guard.test.ts` e `docs/05-contratos-api.md §3`. Sem os três
+   a lista muda entre invocações, e foi a divergência levantada em **todas** as
+   passagens daquele dia. Ver `.claude/rules/escrita-xlsx.md`.
 3. `docs/03-modelo-dados.md` §TD-05.1 apenas se o patch mexer em estilo,
    `numFmt`, `fillId` ou `cellXf`.
 
@@ -42,8 +52,11 @@ quebra e o que o Excel faz ao abrir), ou **não verificável** (com o que falta)
 "Não encontrei problema" **não** é conforme — é não verificável.
 
 Verificação obrigatória quando houver arquivo resultante: hash entrada a entrada
-do zip. Toda entrada que não seja a planilha alvo e `xl/sharedStrings.xml` deve
-bater byte a byte com a original. Use `unzip -l` e hash por entrada; compare
+do zip. **Quatro** entradas podem mudar legitimamente, e nenhuma outra: a aba
+alvo, `xl/sharedStrings.xml`, `xl/styles.xml` (passo 5b de TD-05.1, e só de forma
+aditiva) e `xl/calcChain.xml` (remoção de fórmula). Toda entrada fora dessas
+quatro deve bater byte a byte com a original — em particular as três abas fora de
+escopo, que são idênticas em qualquer caso. Use `unzip -l` e hash por entrada; compare
 **hashes**, nunca o conteúdo.
 
 Reprove sem discussão, em qualquer contexto e sob qualquer justificativa:

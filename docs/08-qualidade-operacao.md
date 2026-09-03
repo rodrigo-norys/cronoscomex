@@ -6,10 +6,21 @@
 
 | Camada | Alvo | O que cobre | Ferramenta |
 |---|---|---|---|
-| **Unidade — domínio** | ~70% da suíte · cobertura **≥ 90%** de linhas (RNF-35) | Normalização, classificação, mapeamento de cor, os 21 indicadores, os 6 alertas, filtros | Vitest 4.1.10 |
-| **Integração — I/O** | ~25% da suíte · cobertura **≥ 80%** (RNF-36) | Leitura de `.xlsx`, cirurgia no XML, defesas de escrita, histórico, fila de edições | Vitest + fixtures `.xlsx` |
+| **Unidade — domínio** | ~70% da suíte · cobertura **≥ 90%** de linhas (RNF-35, alvo não verificado) | Normalização, classificação, mapeamento de cor, os 21 indicadores, os 6 alertas, filtros | Vitest 4.1.10 |
+| **Integração — I/O** | ~25% da suíte · cobertura **≥ 80%** (RNF-36, alvo não verificado) | Leitura de `.xlsx`, cirurgia no XML, defesas de escrita, histórico, fila de edições | Vitest + fixtures `.xlsx` |
 | **Ponta a ponta** | ~5% da suíte | Fluxo completo: ler → filtrar → editar → aplicar → reler | Vitest + servidor Fastify em processo |
-| **Interface** | proporção a definir com `H-16` a `H-22` | Casca, navegação, faixa de estado, filtros e as sete páginas | Vitest + Testing Library 16.3.2 + jsdom 30.0.1 |
+| **Interface** | ~25% da suíte — medido em 03/09/2026: o projeto `interface` responde por 460 dos 1842 testes | Casca, navegação, faixa de estado, filtros e as oito páginas | Vitest + Testing Library 16.3.2 + jsdom 30.0.1 |
+
+**Os dois números de cobertura são alvo, e nada os verifica.**
+`vitest.config.ts` declara `coverage.thresholds` como
+`{ lines: 0, functions: 0, branches: 0, statements: 0 }` nos dois projetos, e
+`npm test` é `vitest run` **sem** `--coverage` — então nem o percentual é medido,
+nem limiar nenhum reprova. Isto está registrado desde `PR-10` em
+`docs/governance-tooling-claude.md`, e a decisão de 03/09/2026 foi **corrigir a
+afirmação e não ligar a cobertura**: percentual de linha não verifica o que a
+lacuna de fato pede — que os 43 casos-limite obrigatórios de §1.3 tenham virado
+teste — e ligar limiar por camada é mudança de código, com o backlog fechado.
+Quem quiser o número roda `npx vitest run --coverage`; ele não é portão.
 
 **O paralelismo do Vitest fica ligado.** Desligá-lo foi tentado contra a corrida
 do leitor de `.xlsx` e nunca foi o caminho: dava 0 falhas em 6 rodadas
@@ -32,13 +43,18 @@ suíte roda sobre fixtures versionadas em `tests/fixtures/`.
 
 ### 1.2. Fixtures obrigatórias
 
-**Já geradas**, por `tools/build_fixtures.py`, derivando do arquivo real —
-exceto `formulas.xlsx`, que a flag `--formulas` deriva de `basico.xlsx`.
+**Já geradas**, por `tools/build_fixtures.py`, derivando do arquivo real — com
+duas exceções, ambas produzidas pelo próprio script no fim da execução padrão:
+`formulas.xlsx`, derivada de `basico.xlsx`, e `formatado.xlsx`, que passa por
+`enriquecer_formatado` para ganhar os cinco elementos que vivem dentro do
+`sheet1.xml` (autofiltro, formatação condicional, validação de dados, a coluna P
+oculta e a fórmula de N9). Até 02/09/2026 esse passo só existia no modo manual, e
+quem regenerasse perdia os cinco em silêncio.
 
 | Arquivo | Linhas | Propósito |
 |---|---|---|
 | `basico.xlsx` | 3 | Uma linha por categoria de status |
-| `cores.xlsx` | 10 | As **9 chaves reais** medidas por `H-01` + 1 cor fora do mapa |
+| `cores.xlsx` | 11 | As **9 chaves reais** medidas por `H-01`, mais 1 cor real fora do mapa (`argb:FFB7E1CD`) e 1 linha **sem preenchimento** — os dois estados que `D-25` separou (02/09/2026) |
 | `datas.xlsx` | 8 | Data real do Excel, texto `dd/MM/yyyy`, texto sem ano (`29/jul`), e as fronteiras de 15 dias (`hoje+15` e `hoje+16`) |
 | `sujeira.xlsx` | 11 | REF duplicada por caixa e espaço, REF ausente com outras colunas preenchidas, linha totalmente vazia, `DESEMBARÇADA`, `DESEMBARAÇADO`, `DESEMBARAÇADA 03/02`, STATUS só com espaços, canal em texto, nomes parecidos |
 | `so-ref.xlsx` | 4 | Linha só com REF; linha com REF e só `boletoRaw`; linha com REF e colunas só com espaços |
@@ -301,10 +317,18 @@ mesmo arquivo que o operador já pode abrir no Excel.
 
 | Dado | Natureza | Onde vive |
 |---|---|---|
-| Nome de cliente (CLT) | Pode ser pessoa jurídica ou identificar pessoa natural | Somente no `.xlsx` e em memória |
-| Nome de importador | Idem | Idem |
+| Nome de cliente (CLT) | Pode ser pessoa jurídica ou identificar pessoa natural | No `.xlsx`, em memória **e em disco**: `config/client-map.json` guarda a grafia da célula e o nome consolidado, e a aplicação **grava** nele por `saveClientRule` (`src/app/client-map-loader.ts`) quando o operador declara o cliente de uma linha |
+| Nome de importador | Idem | Somente no `.xlsx` e em memória |
 | Nome de agente de carga | Idem | Idem |
-| Nome do responsável interno (Colaborador 1, Colaborador 2) | Pessoa natural identificada | Derivado de cor, somente em memória |
+| Nome do responsável interno (Colaborador 1, Colaborador 2) | Pessoa natural identificada | Derivado de cor, em memória, **e em disco**: `config/team-map.json` guarda o nome real de cada pessoa da equipe. A aplicação só o lê — o arquivo chega por cópia manual (`PD-08`) |
+
+**Os dois arquivos de `config/` acima estão no `.gitignore`** e nunca vão para o
+repositório nem para a branch `distribuicao`, que leva apenas os `.exemplo` de
+nomes fictícios — guardado por `tests/repo/distribuicao.test.ts`. **A frase
+"somente no `.xlsx` e em memória" valeu até `H-48`**, que criou os dois mapas, e
+seguiu escrita aqui até 03/09/2026; a retenção deles não é governada pela
+planilha, e sim pelo `config/` da máquina do operador — ao contrário do que
+§4.3 afirma para o resto.
 
 ### 4.3. Base legal e minimização
 
@@ -359,17 +383,29 @@ contra uma cópia antes de apontar para a planilha de produção.
 
 ### 5.2. Pipeline
 
-Não há servidor de CI: o projeto roda numa máquina só, e não há implantação
-remota. O portão de qualidade é local e obrigatório antes de qualquer entrega:
+**Há CI, e ele é obrigatório desde 06/08/2026.** `.github/workflows/verify.yml`
+roda o portão inteiro com o Node de `.nvmrc`, e `dados-sensiveis.yml` roda
+`verifica-dados-sensiveis.sh`; os dois disparam em `pull_request` e em `push` na
+`main`, e o ruleset `main protegida` os exige como checks obrigatórios, com
+`bypass_actors` vazio. **É a única camada que roda sempre** — o hook local é
+`PreToolUse` e não vê commit feito fora do Claude Code. Não há implantação
+remota: a aplicação roda numa máquina só.
+
+O portão local é o mesmo comando, e é obrigatório antes de qualquer entrega:
 
 ```
+npm run test:hooks  # regressao de .claude/hooks/guard-dados-sensiveis.sh
+npm run test:dados  # .github/scripts/verifica-dados-sensiveis.sh, sobre o indice
+npm run test:strip  # importa src/ sob --experimental-strip-types
 npm run lint        # inclui a regra de fronteira: domain/ não importa io/, app/, http/
 npm run typecheck
-npm test            # Vitest, com os limiares de cobertura de RNF-35 e RNF-36
+npm test            # Vitest — `vitest run`, SEM cobertura (ver a ressalva de §1.1)
 npm run build       # servidor + SPA em dist/
 ```
 
-`npm run verify` encadeia os quatro e é o comando único do portão.
+`npm run verify` encadeia os **sete** e é o comando único do portão. As duas
+regressões de guarda vêm primeiro de propósito: verificar a proteção antes de
+verificar o código.
 
 ### 5.3. Gestão de segredos
 
@@ -378,8 +414,11 @@ não existe credencial a guardar. `config/app.json` contém apenas caminhos e
 parâmetros de negócio.
 
 O que **não** vai para o controle de versão: `config/app.json` (contém o caminho
-local, que revela estrutura de pastas e nome de organização), `data/` inteiro e
-qualquer `.xlsx` que não seja fixture.
+local, que revela estrutura de pastas e nome de organização), `config/client-map.json`
+e `config/team-map.json` (nome real de cliente e de pessoa da equipe, regra
+inviolável 8 — `H-48`), `data/` inteiro, `docs/perfilamento/*.json` não
+sanitizado, e qualquer `.xlsx` ou imagem que não seja fixture. `.gitignore` é a
+fonte; `verifica-dados-sensiveis.sh` é quem recusa.
 
 O repositório traz `config/app.json.exemplo` com o caminho substituído por um
 marcador.

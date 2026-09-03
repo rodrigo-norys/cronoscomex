@@ -153,7 +153,8 @@ gh pr create --base main \
 - **Um marcador por mudança técnica relevante** no resumo; prefixe pela área quando ajudar
   (`Domain:`/`IO:`/`HTTP:`/`Web:`). Não despeje o diff.
 - **Verificação: só o que existe, e aqui existe portão de verdade.** O projeto tem
-  `npm run verify` = teste do hook + lint + typecheck + test + build. Informe o resultado **real**,
+  `npm run verify` = regressão do hook + guarda de dados sensíveis + strip-types + lint +
+  typecheck + test + build — sete passos. Informe o resultado **real**,
   com o número que o Vitest devolveu naquela execução. **Nunca copie contagem de teste de outro
   documento** — a contagem muda a cada fatia, e cópia manual diverge em silêncio.
 
@@ -162,7 +163,8 @@ gh pr create --base main \
 
   Complemente com o que mais foi conferido de fato: conferência contra o arquivo real via
   `GET /api/indicators`, casos-limite de `docs/08-qualidade-operacao.md` §1.3 cobertos com valor
-  concreto, revisão pelo agente `revisor-xml` (quando existir, a partir de `H-24`).
+  concreto, e a revisão pelo agente `revisor-xml` — **obrigatória**, e não condicional, para
+  qualquer mudança em `src/io/xlsx-surgeon.ts` ou `src/app/write-guard.ts` (`.claude/rules/escrita-xlsx.md`).
 - **Ancore no diff real.** Não invente passos nem marcadores de exemplo.
 - **Itens transversais vão em risco e notas:** mudança de contrato de rota (`docs/05-contratos-api.md`),
   mudança em tabela de decisão (`docs/03-modelo-dados.md`), fixture a regenerar

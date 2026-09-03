@@ -33,7 +33,9 @@ jobs:
       - name: Instalar dependencias
         run: npm ci
 
-      # lint + typecheck + test + build, na ordem definida em package.json.
-      # test-guard.sh roda primeiro, como regressao do hook.
+      # A cadeia inteira, na ordem definida em package.json: test:hooks,
+      # test:dados, test:strip, lint, typecheck, test, build. As duas
+      # regressoes de guard rodam PRIMEIRO — verificar a protecao antes de
+      # verificar o codigo.
       - name: Portao de qualidade
         run: npm run verify

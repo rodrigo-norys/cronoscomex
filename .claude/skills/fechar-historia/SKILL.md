@@ -45,10 +45,15 @@ argument-hint: '[H-NN]'
 
 5. **`CLAUDE.md`, bloco `## Estado`.** **Releia o arquivo do disco antes de
    editar** — a cópia em contexto é o retrato do início da sessão e pode estar
-   defasada. Atualize a fase e a próxima história.
+   defasada.
 
-   **O bloco é curto por decisão, e continua curto.** Ele diz onde a fase está
-   e qual é a próxima história — nada mais. Todo aprendizado técnico da história
+   **Desde que o backlog fechou, em 01/09/2026, não há fase nem sucessora a
+   atualizar**: o bloco diz "As 81 histórias estão concluídas" e "Este bloco diz
+   só o que está aberto". O que se atualiza aqui é a lista de **pendências
+   abertas** — acrescente a que a história criou, remova a que ela fechou. Se a
+   história não mexeu em nenhuma, o bloco não muda, e isso é o caso normal.
+
+   **O bloco é curto por decisão, e continua curto.** Todo aprendizado técnico da história
    (número medido, defeito encontrado, decisão tomada) vai no bloco
    `✅ CONCLUÍDA` do passo 3, que é o lar dele. O `CLAUDE.md` é carregado em
    **toda** sessão; o backlog, só quando alguém o abre. Acrescentar parágrafo
@@ -77,8 +82,13 @@ argument-hint: '[H-NN]'
    origem (D-04). Qualquer outro nome é regra calculada que o operador nunca
    verá: **pare e reporte**, não feche a história em silêncio. Ver A-65.
 
-7. **Marcos de tooling.** Se esta história for `H-13`, `H-20` ou a última antes
-   de `H-24`, avise que o gatilho de tooling foi atingido.
+7. **Marcos de tooling.** Percorra a tabela `## Marcos de tooling` do
+   `CLAUDE.md` e confira se algum gatilho **em aberto** foi atingido — os que
+   citavam `H-13`, `H-20` e `H-24` já estão riscados. O que resta em aberto hoje
+   é a contagem de 20 `session_id` distintos em
+   `data/instrucoes-carregadas.log` (conferir se cada rule dispara) e a aparição
+   da aba `2027`. Riscar a linha é parte do fechamento; o hook
+   `conferir-alinhamento.sh` avisa, e `tests/repo/contratos.test.ts` reprova.
 
 ## Prova — imprima isto no final, sem editar
 

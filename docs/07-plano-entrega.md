@@ -5,11 +5,16 @@
 Cada fase termina em software **utilizável por quem usa a planilha hoje**.
 Nenhuma fase entrega apenas infraestrutura.
 
-> **As cinco fases cobrem o plano original, e só ele.** Os épicos que nasceram
-> depois — `E8` (configuração alcançável), `E9` (estilização), `E10` (melhorias
-> de uso) e `E11` (a casca redesenhada) — **não têm fase atribuída**, e a ordem
-> entre eles vive no cabeçalho de cada épico, em `06-backlog.md`. A regra vigente
-> em 31/08/2026: `E9` e `E10` estão abertos ao mesmo tempo e não se bloqueiam;
+> **As cinco fases cobrem o plano original, e só ele.** O que nasceu depois
+> **não tem fase atribuída**: as histórias `H-33` a `H-38` e os épicos `E8`
+> (configuração alcançável), `E9` (estilização), `E10` (melhorias de uso), `E11`
+> (a casca redesenhada), `E12` (os achados da revisão de estilo) e `E13` (o
+> operacional que edita, ordena e cria). A ordem entre eles vive no cabeçalho de
+> cada épico, em `06-backlog.md`, e **desde 03/09/2026 a regra de ordem não vale
+> mais**: todos fecharam. **`E13` não teve ordem a respeitar** — ele é
+> retroativo, escrito em 03/09/2026 a partir de código que já estava na `main`
+> (`D-26`). A regra vigente até então:
+> `E9` e `E10` estão abertos ao mesmo tempo e não se bloqueiam;
 > **`E11` vem depois dos dois**, porque `H-45` e `H-46` tocam os mesmos 25
 > arquivos que ele reescreve, `H-47` era a linha de base da verificação no
 > navegador — **e ela fechou em 31/08/2026**, deixando `H-67` a `H-72` no lugar
@@ -43,7 +48,9 @@ Nenhuma fase entrega apenas infraestrutura.
 | **Critério de saída** | Taxa de quarentena **≤ 2%** (RNF-24); 100% das linhas com REF lidas ou explicitamente quarentenadas (RNF-25); a soma das 4 categorias iguala o total de processos. **Alvo medido:** as 649 linhas da aba `2026` devem ser aceitas, com quarentena **0%** — o `color-map.json` cobre as 9 chaves e não há REF duplicada ou vazia |
 | **Valor para o operador** | Já responde "quantos processos existem e em que categoria estão", e revela sujeira que hoje passa despercebida na planilha |
 
-### Fase 2 — Painel completo, somente leitura
+### Fase 2 — Painel completo, somente leitura ✅
+
+> ✅ **CONCLUÍDA.** Todas as histórias da fase estão `✅ CONCLUÍDA` no backlog.
 
 | | |
 |---|---|
@@ -52,7 +59,9 @@ Nenhuma fase entrega apenas infraestrutura.
 | **Critério de saída** | Todo indicador e todo alerta da matriz de rastreabilidade marcado como implementável está implementado e coberto por teste com dado concreto; o operador consegue responder na tela todas as perguntas que hoje responde abrindo a planilha |
 | **Valor para o operador** | **Esta é a fase que substitui a leitura manual da planilha.** A partir daqui o painel é útil todo dia, mesmo sem edição |
 
-### Fase 3 — Edição de texto e data, com escrita protegida
+### Fase 3 — Edição de texto e data, com escrita protegida ✅
+
+> ✅ **CONCLUÍDA.** Todas as histórias da fase estão `✅ CONCLUÍDA` no backlog.
 
 | | |
 |---|---|
@@ -61,7 +70,9 @@ Nenhuma fase entrega apenas infraestrutura.
 | **Critério de saída** | Um arquivo de teste com cores, autofiltro, comentário, validação de dados e formatação condicional sobrevive a uma gravação **byte a byte** em todas as entradas não alteradas do zip; as seis defesas têm teste próprio; o Excel abre o resultado sem aviso de reparo |
 | **Valor para o operador** | Deixa de precisar abrir o Excel para a maioria das alterações do dia a dia |
 
-### Fase 4 — Edição dos campos codificados em cor
+### Fase 4 — Edição dos campos codificados em cor ✅
+
+> ✅ **CONCLUÍDA.** Todas as histórias da fase estão `✅ CONCLUÍDA` no backlog, e com ela **o plano original fechou** — `docs/README.md` registra a data.
 
 | | |
 |---|---|
@@ -185,10 +196,10 @@ time neste código, porque o código não existe.
 |---|---|---|---|---|---|
 | Fase 0 | 1 | 0 | 1 | 2 | 1 – 3 |
 | Fase 1 | 8 | 4 | 4 | 12 | 7 – 17 |
-| Fase 2 | 17 | 11 | 6 | 23 | 14 – 32 |
+| Fase 2 | 18 | 11 | 6 | 23 | 14 – 32 |
 | Fase 3 | 4 | 0 | 4 | 8 | 5 – 11 |
 | Fase 4 | 1 | 0 | 1 | 2 | 1 – 3 |
-| **Total** | **31** | **15** | **16** | **47** | **28 – 66** |
+| **Total** | **32** | **15** | **16** | **47** | **28 – 66** |
 
 **Faixa total: 28 a 66 sessões de implementação.**
 
@@ -355,7 +366,7 @@ materializando.
 | **Probabilidade** | 4 — já está acontecendo: as credenciais estão no arquivo hoje |
 | **Impacto** | 3 — para **este projeto**, nenhum: a aba é excluída do escopo e nunca é lida. O impacto é organizacional |
 | **Gatilho observável** | A aba `CNPJ` contém credenciais de terceiros, num arquivo sincronizado com o SharePoint da organização |
-| **Mitigação preventiva** | A aplicação **não lê, não exibe e não registra** a aba `CNPJ` (achado A-47). O relatório de perfilamento versionado foi sanitizado antes de entrar no repositório |
+| **Mitigação preventiva** | A aplicação **não processa, não indexa, não expõe e não registra** a aba `CNPJ` (achado A-47) — o XML dela nunca é descomprimido, e o pool global de texto vem inteiro por limitação do OOXML (regra inviolável 10). O relatório de perfilamento versionado foi sanitizado antes de entrar no repositório |
 | **Contingência** | Fora do escopo técnico deste projeto: mover as credenciais para um gerenciador de senhas é decisão do operador e da organização. Fica registrado porque foi descoberto aqui, e omitir seria pior |
 
 ### R-14 · Virada de ano exige nova aba e reconfiguração — score 9 (**novo**)

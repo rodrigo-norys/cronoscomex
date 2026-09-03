@@ -6,9 +6,14 @@ rem
 rem  O operador nao usa linha de comando: este arquivo e o unico ponto de
 rem  partida da aplicacao na maquina dele (RNF-26, Windows).
 rem
-rem  FICA AQUI SOMENTE o que impede o servidor de subir ou a tela de existir:
-rem  Node ausente, Node abaixo da 22, e a interface nao compilada. Os tres sao
-rem  anteriores ao navegador por natureza, e nenhuma interface pode reporta-los.
+rem  FICA AQUI SOMENTE o que impede o servidor de subir ou a tela de existir.
+rem  Sao QUATRO verificacoes, e cada uma traz a receita completa: Node ausente,
+rem  Node abaixo da 22, a interface nao compilada, e `config\app.json` existente
+rem  e nao-JSON. As quatro sao anteriores ao navegador por natureza, e nenhuma
+rem  interface pode reporta-las — a ultima porque `loadConfig` mata o processo
+rem  antes de escutar. O `cd /d` do inicio nao entra na conta: e guarda do
+rem  proprio atalho sobre a acao dele, sem receita, e nao verificacao do estado
+rem  da maquina.
 rem  Todo o resto migrou para a tela em H-35 — inclusive `config\app.json`
 rem  ausente, que ate entao PARAVA a partida e mandava o operador copiar um
 rem  arquivo e editar JSON a mao, enquanto a tela que resolve isso existia desde

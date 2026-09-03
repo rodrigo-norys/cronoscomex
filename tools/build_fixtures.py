@@ -1,9 +1,19 @@
 #!/usr/bin/env python3
 """Gera tests/fixtures/*.xlsx derivando do arquivo real.
 
-Preserva a riqueza estrutural do arquivo original (tema, estilos, tabela,
-comentarios, vmlDrawing, customXml) e reescreve do zero o sharedStrings e o
-sheetData, de modo que NENHUM dado real vaze para o repositorio.
+Preserva a riqueza estrutural do arquivo original (tema, estilos, comentarios,
+vmlDrawing, customXml) e reescreve do zero o sharedStrings e o sheetData, de
+modo que NENHUM dado real vaze para o repositorio.
+
+A Tabela do Excel e a EXCECAO, removida de proposito: `xl/tables/table1.xml` e
+`xl/worksheets/_rels/sheet1.xml.rels` ficam fora do zip, `<tableParts>` sai da
+aba e o `Override` sai do `[Content_Types].xml`, porque o `ref` da `Tabela1`
+cobre `A1:P997` e o Excel reclama se ele ficar fora do intervalo de uma fixture
+de 3 a 11 linhas. Nenhuma das nove fixtures tem `xl/tables/` — quem precisar da
+FORMA da tabela a constroi em memoria, como fazem
+tests/io/xlsx-surgeon-append.test.ts e tests/app/write-guard.test.ts. O rels da
+aba cai junto, e ele NAO leva comentario nem vmlDrawing embora: esses pertencem
+a sheet4, cujo rels e preservado.
 
 A tecnica usada aqui e a mesma da escrita cirurgica do ADR-0004: descompactar,
 alterar apenas as entradas necessarias, recompactar preservando o resto.
@@ -15,11 +25,18 @@ uma vez. Como o arquivo real e uma planilha viva, regenerar sobre as versionadas
 pode alterar estilos e quebrar testes que hoje passam. Para obter uma fixture
 so, gere num diretorio temporario e copie a que interessa.
 
-ATENCAO, medido em 02/09/2026: `formatado.xlsx` versionada NAO e mais o que este
-script produz. Ela ganhou a mao uma coluna P `hidden="1"` e a formula `1+1` em
-N9 — as duas exigidas por assercoes de tests/io/xlsx-surgeon.test.ts.
-Sobrescreve-la com a saida daqui remove as duas em silencio. Compare antes de
-copiar; nao copie o que voce nao mudou.
+ATENCAO: a `formatado.xlsx` versionada e a saida deste script MAIS o passo
+`--enriquecer`. O modo padrao sozinho produz a mesma fixture SEM cinco elementos
+que vivem dentro de xl/worksheets/sheet1.xml — autofiltro, formatacao
+condicional, validacao de dados, a coluna P `hidden="1"` e a formula de N9.
+Quatro deles sao asseridos em tests/io/xlsx-surgeon.test.ts:92-95 e o quinto em
+:300. O caminho padrao ja chama `enriquecer_formatado` no fim, entao regenerar
+devolve a fixture identica a versionada em toda entrada do zip; para um arquivo
+gerado a parte, rode `python3 tools/build_fixtures.py --enriquecer <arquivo>`.
+As outras oito fixtures saem identicas as versionadas sem passo nenhum.
+
+Identidade POR ENTRADA, e nao byte a byte: o md5 do .xlsx difere por metadado
+de zip. Mesma lista de nomes, mesmo conteudo em cada um.
 """
 import zipfile, sys, re, os, datetime
 
@@ -119,12 +136,13 @@ def fill_style_gaps(src):
                 ref[col] = sid
                 break
 
-    criados = 0
+    pulados = reutilizados = criados = 0
     for color_style, cols in ROW_STYLES.items():
         fill = xfs[color_style].get('fillId', '0')
         for col in ('I', 'K', 'O'):
             sid = cols.get(col)
             if sid is not None and xfs[sid].get('numFmtId', '0') != '0':
+                pulados += 1
                 continue                       # ja tem formato de data
             if col not in ref:
                 raise SystemExit('nenhuma cor tem formato de data na coluna %s' % col)
@@ -134,14 +152,22 @@ def fill_style_gaps(src):
             k = key(novo)
             if k in index:
                 cols[col] = index[k]           # reutiliza
+                reutilizados += 1
             else:
                 xfs.append(novo)
                 index[k] = len(xfs) - 1
                 EXTRA_XFS.append(novo)
                 cols[col] = len(xfs) - 1
                 criados += 1
-    print('  estilos de data compostos: %d reutilizados, %d acrescentados'
-          % (sum(1 for c in ROW_STYLES.values() for x in 'IKO') - criados, criados))
+    # Tres estados, e nao dois. A conta anterior era `27 - criados`, uma
+    # constante disfarcada de medicao: ela chamava de "reutilizados" os pares que
+    # nem chegaram a ser compostos, e o ramo `if k in index` — o unico reuso de
+    # verdade — nunca aparecia. Contra o arquivo real: 19 ja formatados, 0
+    # reutilizados, 8 acrescentados, de 27 pares. O zero nao e defeito: so outra
+    # planilha, com um cellXf ja casando os cinco atributos, acionaria o reuso.
+    print('  estilos de data: %d pares ja formatados, %d cellXf reutilizados, '
+          '%d acrescentados (de %d pares)'
+          % (pulados, reutilizados, criados, len(ROW_STYLES) * 3))
 
 
 def assert_date_formats(src):
@@ -539,6 +565,9 @@ def enriquecer_formatado(path):
             print('  %s ja enriquecida, nada a fazer' % os.path.basename(path))
             return
 
+        if COLUNA_ABERTA not in d:
+            raise SystemExit('a entrada <col> de P mudou de forma: %r nao casa'
+                             % COLUNA_ABERTA)
         d = d.replace(COLUNA_ABERTA, COLUNA_OCULTA)
 
         alvo = re.search(r'<c r="%s"[^>]*?(?:/>|>.*?</c>)' % CELULA_COM_FORMULA, d)
@@ -755,4 +784,10 @@ for name, (rows, note) in FIXTURES.items():
 # apontando para uma basico.xlsx que nao existe mais — e os seriais que ela
 # copia para o cache das formulas silenciosamente errados.
 gerar_formulas(os.path.join(OUT, 'basico.xlsx'), os.path.join(OUT, 'formulas.xlsx'))
+
+# Pelo mesmo motivo de `gerar_formulas`: a `formatado.xlsx` versionada e a saida
+# deste script MAIS este passo, e ate 02/09/2026 ele so existia no modo manual —
+# quem regenerasse perdia cinco elementos asseridos pela suite, em silencio. A
+# funcao e idempotente (guarda por 'conditionalFormatting').
+enriquecer_formatado(os.path.join(OUT, 'formatado.xlsx'))
 print('\nOK -> %s/' % OUT)

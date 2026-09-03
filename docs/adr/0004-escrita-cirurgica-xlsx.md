@@ -175,8 +175,10 @@ histórico, e apagá-la esconderia por que a regra mudou.
 | "Se a coluna não tiver formato de data, o Excel exibirá o número" | §Consequências negativas | **Deixa de ser consequência aceita e vira defeito a corrigir** (A-56). A célula recebe `numFmt` de data pelo algoritmo de TD-05.1 — o sintoma proibido é o Excel exibir `46263` no lugar de `29/ago` |
 
 O que **não** mudou: `workbook.xlsx.writeFile()` segue proibido em qualquer
-circunstância, e toda entrada do zip fora das três citadas segue byte a byte
-idêntica — inclusive as três abas fora de escopo.
+circunstância, e toda entrada do zip fora das **quatro** que podem mudar segue
+byte a byte idêntica — inclusive as três abas fora de escopo. As quatro são a aba
+alvo, `xl/sharedStrings.xml`, `xl/styles.xml` (aditivo, TD-05.1 passo 5b) e
+`xl/calcChain.xml`, esta última quando uma fórmula é removida junto com o valor.
 
 ## Referências
 

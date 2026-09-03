@@ -41,7 +41,8 @@ Sua unidade de análise é O CONJUNTO: a casca (cabeçalho, navegação por abas
 de filtros globais, faixa de estado) MAIS as sete páginas (Início, Operacional,
 Clientes, Desempenho, Alertas, Histórico, Detalhe do Processo).
 
-Não é escolha de conveniência. Doze das quarenta regras são do balde COMPOSICIONAL:
+Não é escolha de conveniência. Onze das quarenta regras são do balde COMPOSICIONAL
+(A11, A14, C01, C04, C05, C06, C08, C09, C10, D01 e R06):
 a violação delas NÃO EXISTE dentro de um arquivo. "O mesmo papel de UI usa o mesmo
 trio rounded/border/shadow" (C04) é indecidível com um card na mão — o achado é a
 DIFERENÇA entre o card da página Clientes e o da página Alertas. O mesmo vale para
@@ -191,11 +192,16 @@ mesmo que nenhuma regra os tenha disparado:
   [VN-4] ORDEM DE LEITURA — procedimento: percorrer com Tab e comparar a sequência
     com a ordem visual; investigar todo lugar onde houver order-*, flex-*-reverse
     ou grid-flow-*. Fonte: SC 1.3.2 (A) e SC 2.4.3 (A).
-  [VN-5] FORCED COLORS — procedimento: Windows → Configurações → Acessibilidade →
-    Temas de Contraste → ativar um tema; percorrer as sete páginas; registrar todo
-    estado que deixou de ser distinguível porque dependia só de background-color,
-    de box-shadow ou de cor de borda. Fonte: MDN @media (forced-colors) e
-    CSS Color Adjustment Module Level 1 (CR Snapshot 16/12/2025).
+  [VN-5] FORCED COLORS — **não exige Windows**, e supor que exigia foi medido como
+    falso em 31/08/2026: o Chrome emula `forced-colors: active`, e a pergunta do
+    procedimento não é que cor o tema pinta, e sim se o desenho sobrevive quando as
+    cores do autor são descartadas. Rode por `tools/medir-navegador.mjs`, que já
+    mede `forced-colors` nos dois esquemas; percorrer as sete páginas e registrar
+    todo estado que deixou de ser distinguível porque dependia só de
+    background-color, de box-shadow ou de cor de borda. Só a paleta NOMINAL do
+    Windows (Aquático e as demais) fica para a máquina do operador — é confirmação
+    de segunda ordem, e é o que resta em `PD-07`. Fonte: MDN @media (forced-colors)
+    e CSS Color Adjustment Module Level 1 (CR Snapshot 16/12/2025).
   [VN-6] CONTRASTE COM ALFA OU GRADIENTE — procedimento: DevTools → Elements →
     conta-gotas sobre o pixel do texto e sobre o pixel do fundo imediatamente atrás;
     calcular a razão com os dois valores lidos; em gradiente, amostrar início, meio

@@ -963,7 +963,7 @@ MEDIDO    ConflictDialog.tsx:73 `bg-overlay-scrim` sobre os dois fundos pedidos,
 | **D02** | ACHADO 2 |
 | **D03–D07** | **não aplicáveis — 0 ocorrências de `dark:` no conjunto** |
 
-**(P1)** ✓ Z1 e Z2 declarados. **(P2)** ✓ 40 regras com desfecho registrado. **(P3)** ✓ VN-1 a VN-6 emitidos. **(P4)** ✓ os 7 achados composicionais (1, 9, 10, 15, 16, 17, 18, 19) citam 2+ locais com majoritário e desviante nomeados. **(P5)** ✓ os 5 achados de contraste (3, 4, 5, 6, 7) mostram oklch, hex e razão. **(P6)** ✓ plano abaixo.
+**(P1)** ✓ Z1 e Z2 declarados. **(P2)** ✓ 40 regras com desfecho registrado. **(P3)** ✓ VN-1 a VN-6 emitidos. **(P4)** ✓ os 8 achados composicionais (1, 9, 10, 15, 16, 17, 18, 19) citam 2+ locais com majoritário e desviante nomeados. **(P5)** ✓ os 5 achados de contraste (3, 4, 5, 6, 7) mostram oklch, hex e razão. **(P6)** ✓ plano abaixo.
 
 ---
 

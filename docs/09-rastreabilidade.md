@@ -72,25 +72,33 @@ especificação são rastreados aqui, para que **nenhum** fique fora.
 
 ### 3.1. Telas (§6)
 
-> **`E11` redesenha a casca que hospeda estas sete telas, e nenhuma linha desta
+> **`E11` redesenha a casca que hospeda estas telas, e nenhuma linha desta
 > tabela muda por causa dele:** o que cada página mostra, calcula e recorta segue
 > igual. Se uma história de `E11` alterar uma coluna daqui, ela saiu do escopo do
 > épico.
+>
+> **São oito linhas desde 03/09/2026**, e eram sete: a Página Configuração
+> existe desde `H-34` e nunca teve linha aqui nem requisito — `E11` e `E12` a
+> redesenharam citando este parágrafo, que não a listava. Corrigido com `D-26`,
+> junto de RF-31.
 
 
 | Tela | Requisito | Histórias | Status |
 |---|---|---|---|
 | Página Inicial | RF-09 | H-16 | ✅ **Entregue.** 12 cartões: "Em desembaraço" por A-12, os dois de urgência por A-40, "Desembaraçados hoje" por A-64. A soma das 4 categorias é exibida e confere (649) |
-| Página Operacional | RF-10 | H-17, H-22 | ✅ **Entregue.** Tabela de 8 colunas com ordenação por clique e paginação, busca por REF/BL/CNTR (A-39), e o calendário de chegadas. "Processo ativo" (A-16) é o padrão da página, não da rota. Medido: 169 ativos de 649 |
+| Página Operacional | RF-10 | H-17, H-22 | ✅ **Entregue.** **Grade** (`role="grid"`) de 9 colunas, todas ordenáveis, com paginação, busca por REF/BL/CNTR (A-39), e o calendário de chegadas. Desde 02/09/2026 sete colunas se editam onde estão, pela fila de `H-23`; Categoria fica de leitura, e Cliente grava a regra de consolidação no mapa. "Processo ativo" (A-16) é o padrão da página, não da rota. Medido: 169 ativos de 649 |
 | Página Clientes | RF-11 | H-18 | ✅ **Entregue.** Três rankings em barras horizontais — CLT, IMPORTADOR e MERCADORIA (A-65) —, cada item aplicando o filtro global e abrindo a Operacional. `bazarShare` exibido dentro da seção de mercadoria (A-34) |
 | Página Performance | RF-12 | H-19, H-53 | ✅ **Entregue.** Quatro quebras de IND-22 com denominador ao lado (A-42), os rankings de agente com `overdueCount` e de responsável, e a nota de IND-21 fora de escopo. Medido: a quebra por responsável é degenerada — os 101 pares completos estão todos em `indefinido` (A-31). `H-53` acrescentou a **fórmula escrita** junto do agregado e o painel de **recorte ativo**: a página sempre respeitou os filtros globais, e o que faltava era dizer isso |
 | Página Alertas | RF-13 | H-20 | ✅ **Entregue.** Fila agrupada por processo (A-60), preservando a ordem de primeira aparição — a severidade de A-41 vem do servidor e não é refeita no cliente. Medido: 40 linhas para 25 processos |
 | Página Histórico | RF-14 | H-21, H-28, H-54 | ✅ **Concluída.** Rota em `H-28`, tela em `H-21`. `GET /api/history/monthly` serve as três medidas — as duas de status por agregação dos eventos, e Canal Vermelho porque `H-28` passou a gravar o canal no evento, sem o que ele seria inderivável. Sem retroatividade anterior à primeira execução (A-43), e a tela declara isso. Declara também que o volume conta os REF já observados, e não os que a planilha tem hoje. `H-54` acrescentou a série **reconstruída** ao lado, derivada das datas da planilha e nunca somada à observada |
 | Detalhe do processo | RF-15 | H-22 | ✅ **Entregue.** `statusRaw` ao lado da categoria classificada, as três colunas fora de escopo rotuladas, e as anomalias com o texto que vem de `describeAnomaly`. A rota `GET /api/processes/:ref` **não existia** e foi construída aqui |
+| Página Configuração | RF-31 | H-34, H-35, H-36, H-37, H-38 | ✅ **Entregue, e fora da especificação** — ela não vem de §6: nasceu para o operador apontar a planilha sem editar JSON. `H-34` deu a tela e a gravação do caminho, `H-35` tirou o último passo manual (o arquivo de configuração nasce ao salvar), `H-36` fez o painel dizer onde a partida parou e revalidar sem reexecutar o atalho, `H-37` trouxe o diálogo de arquivo do sistema — verificado na sessão gráfica do operador em 31/08/2026 — e `H-38` a tornou alcançável pelo menu. **Linha escrita em 03/09/2026** (`D-26`): `H-62`, `H-73` e `H-75` já citavam esta seção para ela |
 
 ### 3.2. Filtros globais (§7)
 
-> **São treze**, e a tabela abaixo os lista. `H-15` entregou onze, `H-49` levou a
+> **São catorze**, e a tabela abaixo os lista — `H-66` expôs `colorResponsible`
+> na barra. Os **chips** continuam treze: `clientGroup` não tem chip próprio.
+> `H-15` entregou onze, `H-49` levou a
 > doze e `H-55` a treze. `H-60`, em `E11`, troca a **apresentação** — cada filtro
 > vira um chip que abre em popover —, sem tirar, acrescentar ou redefinir nenhum.
 
@@ -104,7 +112,8 @@ especificação são rastreados aqui, para que **nenhum** fique fora.
 | Agente | AGENTE | H-15 | ✅ **Entregue.** Domínio aberto; medidos 35 valores |
 | Mercadoria | MERCADORIA | H-15 | ✅ **Entregue.** Domínio aberto; medidos 217 valores. Limitação de "BAZAR" mantida (A-34) |
 | Categoria de status | STATUS derivado | H-15 | ✅ **Entregue.** Domínio fechado, as 4 chaves sempre exibidas. Vocabulário de A-01 aplicado |
-| Responsável | Cor | H-04, H-15 | ✅ **Entregue.** A-18 provado sobre dado real: `colaborador1` devolve 129 com ou sem `colaborador1_outros_clientes` junto |
+| Responsável | Importador × `team-map.json`, com a cor desempatando | H-04, H-15, H-50 | ✅ **Entregue.** A fonte deixou de ser a cor em `H-50` (01/09/2026): medidos 559 pelo importador, 48 pela cor e 42 sem responsável. O filtro casa chave exata, **sem agregação** |
+| Responsável (cor) | Cor | H-04, H-15, H-66 | ✅ **Entregue.** É onde a agregação de A-18 vive desde `H-50`: `colaborador1` devolve 129 com ou sem `colaborador1_outros_clientes` junto |
 | Canal | Cor | H-04, H-15 | ✅ **Entregue.** Domínio fechado de A-37, as 3 chaves sempre exibidas |
 | Porto | ETA | H-15 | ✅ **Entregue.** A-36 confirmado na prática: o porto `RO` existe com 2 processos, e domínio fechado o teria escondido |
 | Importador fora do RJ | Cor | H-04, H-15 | ✅ **Entregue.** Tri-estado, não caixa de marcar: `false` inclui apenas `false`, nunca `null`. Medido: `true`=1 e `false`=648 somam 649, então nenhuma linha real exercita o `null` hoje |
@@ -141,7 +150,7 @@ especificação são rastreados aqui, para que **nenhum** fique fora.
 | Bege | Colaborador 1, outros clientes | `responsible = colaborador1_outros_clientes` | H-04, H-27 | ✅ **Entregue em `H-27`** — a combinação vira `fillId`, e a repintura troca só o `fillId` do `cellXf` de A a L, preservando fonte, borda e formato de cada célula (TD-05.1) (A-18) |
 | Vermelho | Canal Vermelho | `customsChannel = vermelho` | H-04, H-27 | ✅ **Entregue em `H-27`** — a combinação vira `fillId`, e a repintura troca só o `fillId` do `cellXf` de A a L, preservando fonte, borda e formato de cada célula (TD-05.1) |
 | Amarelo forte | Importador fora do RJ | `importerOutsideRj = true` | H-04, H-27 | ✅ **Entregue em `H-27`** — a combinação vira `fillId`, e a repintura troca só o `fillId` do `cellXf` de A a L, preservando fonte, borda e formato de cada célula (TD-05.1). Decisão do usuário sobre A-38 |
-| Verde | Desembaraçado | **Nenhum** — confirmação visual apenas | H-04 | Por decisão de A-04, a cor nunca infere status |
+| Verde | Desembaraçado | `customsChannel = 'verde'` desde `H-51` | H-04, H-51 | Por decisão de A-04, a cor nunca infere **status**. O que ela passou a derivar é o **canal**, que é campo distinto: as duas entradas verdes de `config/color-map.json` declaram `"customsChannel": "verde"`, e são 477 das 649 linhas |
 | Branco | Em desembaraçamento | **Nenhum** — idem | H-04 | Idem. A foto 2 refuta a coerência afirmada (A-04) |
 
 ### 3.5. Melhorias futuras (§8)
@@ -158,16 +167,17 @@ especificação são rastreados aqui, para que **nenhum** fique fora.
 | Normalização automática de nomes | Fora de escopo — a normalização implementada é determinística, não corretiva (TD-04) |
 | Indicadores preditivos | Fora de escopo |
 | Alerta de boleto pendente com ETA vencida | Fora de escopo — Coluna 13 e R$ ENVIADO não alimentam indicadores (§2) |
-| Alerta de processo sem responsável | **Atendido parcialmente** — `responsible = indefinido` é contado e exibido em IND-20, e a linha aparece na quarentena (A-17) |
+| Alerta de processo sem responsável | **Atendido parcialmente** — em IND-20 os processos sem dono são a chave vazia `''` desde `H-50`, contados e exibidos; a linha aparece na quarentena só quando a cor está **presente** e fora do mapa (A-17, `D-25`) |
 | Métricas de SLA | Fora de escopo |
 
 ---
 
 ## 4. Verificação de histórias órfãs
 
-As 61 histórias concluídas, e onde cada uma aparece nesta matriz. **Nenhuma
-órfã.** A contagem já envelheceu duas vezes — dizia 33 desde `H-33`, depois 43 —,
-e **o número correto é sempre o de linhas da tabela abaixo**, não o desta frase.
+As histórias concluídas, e onde cada uma aparece nesta matriz. **Nenhuma órfã.**
+**Sem número aqui de propósito:** ele já envelheceu três vezes — 33, depois 43,
+depois 61 —, e a ressalva que anunciava o modo de falha não o impediu. **O número
+correto é sempre o de linhas `| H-` da tabela abaixo**, e hoje são 81.
 
 | História | Aparece em | Papel |
 |---|---|---|
@@ -197,7 +207,7 @@ e **o número correto é sempre o de linhas da tabela abaixo**, não o desta fra
 | H-24 | §5 abaixo (RF-22) | ✅ **Concluída.** Quatro entradas do zip podem mudar, e só elas: a aba alvo, `sharedStrings`, `styles` (aditivo, passo 5b de TD-05.1) e `calcChain`. Reprovada pelo `revisor-xml` na primeira invocação, por dois defeitos reais |
 | H-25 | §5 abaixo (RF-23 a RF-26) | ✅ **Concluída.** Seis defesas de integridade. A célula é endereçada pela **REF**, nunca pelo `sourceRow` da fila, e o `previous` é conferido sempre: reprovada três vezes pelo `revisor-xml`, por quatro defeitos reais, dois deles introduzidos pelas correções dos anteriores. Fechou `PD-04` |
 | H-26 | §5 abaixo (RF-21) | ✅ **Concluída.** Comando de aplicação, com a fila arquivada em `data/applied/` e a releitura em voo aguardada. Reprovada seis vezes pelo `revisor-xml`, por seis defeitos reais — quatro na interface, incluindo um que omitia o caminho do backup no único desfecho em que ele é a saída |
-| H-27 | IND-06, IND-20, §3.4 (as 5 cores com significado) | ✅ **Concluída.** Torna editáveis os campos de cor, trocando `fillId` e nunca `styleId` (A-49). A interface oferece as 6 combinações representáveis: o mapa tem 9 entradas para elas, e a primeira na ordem do arquivo vence. Reprovada três vezes pelo `revisor-xml`, por cinco defeitos reais — um herdado de `H-24` |
+| H-27 | IND-06, IND-20, §3.4 (as 5 cores com significado) | ✅ **Concluída.** Torna editáveis os campos de cor, trocando `fillId` e nunca `styleId` (A-49). A interface oferece as **7** combinações representáveis — o branco é gravável, e `H-51` acrescentou o verde: o mapa tem 9 entradas para elas, e a primeira na ordem do arquivo vence. Reprovada três vezes pelo `revisor-xml`, por cinco defeitos reais — um herdado de `H-24` |
 | H-28 | ALE-06, §3.1 (Página Histórico) | ✅ **Concluída.** Histórico append-only, com o evento gravando também o **canal**: sem ele a série mensal de Canal Vermelho seria inderivável, e o arquivo não tem retroatividade. Entrega `GET /api/history/monthly` e preenche `daysInCurrentCategory`, `statusHistory` e `historyStartedAt`, que serviam valor de espera desde `H-14` |
 | H-29 | ALE-06 | ✅ **Concluída.** Fecha ALE-06 — a regra existia desde `H-14`, o dado desde `H-28`, e faltava a tela, que decidia por tipo literal. `GET /api/alerts` ganha `stalledCoverageDays` e `stalledMeasurable`, para que o zero da contagem só apareça quando o histórico já cobrir o limiar (A-43). Corrige de passagem a formatação de `historyStartedAt`, que a Página Alertas fatiava como se fosse `AAAA-MM-DD` |
 | H-30 | §5 abaixo (operação), `GET /*` | ✅ **Entregue e verificada em campo.** Serve `GET /*`, a última rota documentada sem dono (A-63), registrada **sempre** e consultando `dist/web` por requisição — o portão roda `test` antes de `build`, e condicionar o registro à pasta reprovaria a guarda no CI. **O `iniciar.cmd` foi executado na máquina do operador em 31/08/2026 e sobe** — sete itens de `PD-06` fecharam, inclusive o diálogo de arquivo de `H-37`; sobram três. **`H-42` corrigiu um defeito dela:** os assets eram servidos como `text/html` quando o build acontecia com o servidor no ar |
@@ -247,6 +257,11 @@ e **o número correto é sempre o de linhas da tabela abaixo**, não o desta fra
 | H-75 | §3.1 (as sete páginas), `docs/redesign/REVISAO-ESTILO.md` `ACHADO 4`, `5`, `6`, `7` | ✅ **Concluída.** Um papel de UI, uma forma e um nome. A borda do botão primário existia em **3 dos 5** e o `hover` em **2 dos 5**; depois da `@utility`, medido em Chrome 151: **uma forma só**, `1px`/peso 500/raio 6px. Os três acessos a `/configuracao` convergem para `<a href>` e o rótulo canônico — alinhar por `aria-label` estava fora, porque `SC 2.5.3` exige que o nome CONTENHA o texto visível. A guarda de `C04` distingue o papel pela **tripla** `bg`/`fg`/`font-medium` na mesma linha, sem lista de exceção |
 | H-76 | §3.1 (Página Operacional), `docs/redesign/REVISAO-ESTILO.md` `ACHADO 12` | ✅ **Concluída, e fecha `E12`.** O teto da célula de texto livre vai de `max-w-48` para `max-w-56`, e **81 valores cortados viram 0** na planilha real — 80 deles estavam em Navio, cujo maior valor mede **196 px** contra 168 de orçamento. **Subir o teto não alarga as outras quatro**: `max-w` é teto, e a tabela dimensiona pelo conteúdo — a remedição devolve as seis larguras idênticas. A densidade de `H-61` fica: **40 px** a 1280 e a 320, **60 px** com fonte-base 24. `truncate` continua, porque é o `nowrap` dele que segura a altura |
 | H-56 | IND-10, IND-18, §3.1 (Página Clientes) | ✅ **Concluída.** O grupo de `H-55` passa a existir no ranking de clientes, **no lugar** dos membros: `count` somado e a composição em `segments`, desenhada como árvore indentada — o grupo numa linha, cada componente na sua, com mini-barra na mesma escala. A barra empilhada foi tentada e descartada na tela: com 304 · 15 · 2 o menor componente ocupa 0,6% da largura. IND-22 não entrou na revisão, e a soma das barras volta a bater com o total |
+| H-77 | §3.1 (Página Operacional), RF-32 | ✅ **Concluída, e abre `E13`.** A ordenação vai de **cinco** ordens para **dez**, e a tabela tem nove colunas — quatro cabeçalhos não clicavam e a tela não dizia por que. `status` ordena pela sequência de `STATUS_CATEGORIES`, e não pelo alfabeto: é onde o processo está. `client` e `clientProcess` são comparadores distintos, porque o cliente consolidado e a célula CLT são coisas diferentes desde `H-49` — 649 processos, 509 valores distintos em CLT. A décima ordem, `registrationDate`, é válida na rota e **não** tem coluna |
+| H-78 | §3.3 (todas as colunas), RF-34, `ADR-0004` | ✅ **Concluída.** `appendRow` cria a linha depois da última que existe e recusa qualquer outro alvo — cinco recusas na entrada e duas a jusante, entre elas o alvo além do intervalo de `Tabela1`, que cobre `A1:P997` contra 745 linhas escritas. A linha nasce com o `xf` da **coluna** (`162`, sem preenchimento): herdar o da linha de cima traria `fillId 8`, que é Colaborador 1. **O `revisor-xml` reprovou duas vezes** (`D-25`), e três defeitos de `H-24` saíram junto — `<si/>` auto-fechado descartado do pool global, número não finito gravado, e `col` em par não lido. Validado no Excel real: `wb.Saved` true, sem log de reparo |
+| H-79 | §3.4 (Verde e Branco), RF-34, RF-35, ALE-01 | ✅ **Concluída.** Uma das duas G de `E13`: 29 arquivos e duas rotas novas. **Ausência de preenchimento deixou de ser cor desconhecida** — `resolveColor` devolve `source: 'mapa' | 'sem-cor' | 'desconhecida'` no lugar de `mapped` —, e sem isso toda linha criada iria para a quarentena. `PendingRowInsert` tem a defesa oposta à da edição: a `ref` **não** pode existir (`REF_DUPLICADA`), e editar célula de linha ainda não gravada recusa com `LINHA_NAO_GRAVADA`. A âncora vem das linhas cruas, com piso em `firstDataRow`, senão a gravação caía no cabeçalho. `PUT /api/processes/:ref/client` grava a regra de consolidação e **cria o mapa se ele faltar**, que é o estado de `PD-08` |
+| H-80 | §3.1 (Página Operacional), RF-33, RF-34 | ✅ **Concluída.** A outra G de `E13`: 15 arquivos. Sete colunas se editam onde estão; **Categoria fica de leitura** por `A-22` — ela sai de cinco regras das quais só uma lê a célula L. A tabela virou grade `role="grid"`: **25 paradas de tabulação** contra ~1.430 se cada célula editável fosse uma parada, com a paginação depois dela no DOM. Linha `0` nunca aparece como endereço, e `rowsInserted` chegou à tela — antes dele, aplicar uma linha nova com sucesso caía no discriminador de "nada mudou" |
+| H-81 | §3.1 (Página Histórico), RNF-42 | ✅ **Concluída, e fecha `E13`.** As duas séries da Página Histórico passam a se distinguir pelo **traço**: elas compartilham a cor de propósito — observada e reconstruída são a mesma medida por duas fontes, desde `H-54` —, e nenhum padrão do Recharts levava o tracejado até a legenda, que virou própria, com amostra de 28 px. As duas regiões vivas da casca saíram da tela: nasceram sem classe, como filhas do flex da raiz, e o texto do portal aparecia como terceira coluna. `sr-only` e **não** `hidden` — `display: none` mataria o anúncio, que é a razão de elas existirem desde `H-43` |
 
 ---
 
@@ -265,6 +280,11 @@ virada de escopo (edição) ou por necessidade operacional.
 | RF-22 · Preservar formatação na escrita | ADR-0004 | H-24 | ✅ **Entregue.** Formatação condicional, validação de dados, autofiltro, coluna oculta e comentários sobrevivem à edição, conferido por hash entrada a entrada e aberto no Excel real sem aviso de reparo. `PD-05` registra que a cadeia de cálculo só tem teste sintético |
 | RF-23 a RF-26 · Defesas de integridade | D7 | H-25 | ✅ **Entregue.** Lock, hash, backup antes de qualquer modificação, gravação atômica com `fsync`, validação pós-escrita com restauração automática, e expurgo por RNF-21. Sete recusas contra as cinco do contrato fixado — `ARQUIVO_INDISPONIVEL` e `EDICAO_OBSOLETA`, ambas justificadas no bloco da história |
 | RF-27 · Editar campos de cor | Decorrência de RF-20 | H-27 | ✅ **Entregue.** `PATCH /api/processes/:ref/color` enfileira, e a aplicação repinta A–L trocando o `fillId` (A-49). A interface oferece as **6 combinações representáveis** contra as 9 entradas do mapa: branco e os tons B são legíveis e não graváveis, porque a escrita usa o tom canônico |
+| RF-31 · Página Configuração | Necessidade operacional | H-34, H-35, H-36, H-37, H-38 | ✅ **Entregue.** Requisito escrito em 03/09/2026, cinco histórias depois da tela (`D-26`) |
+| RF-32 · Ordenar por qualquer coluna | Decorrência de RF-10 | H-77 | ✅ **Entregue.** Dez ordens para nove colunas; a de categoria segue o fluxo |
+| RF-33 · Editar a célula onde ela está | Decorrência de RF-20 | H-80 | ✅ **Entregue.** Sete colunas editáveis na grade; Categoria de leitura (A-22) |
+| RF-34 · Criar processo novo | Decisão do usuário (`D-25`) | H-78, H-79, H-80 | ✅ **Entregue.** Enfileirada como as demais edições e gravada depois da última linha, sob comando explícito. A **remoção** segue fora de escopo |
+| RF-35 · Declarar o cliente consolidado | Decorrência de RF-20 e de `H-48` | H-79 | ✅ **Entregue.** `PUT /api/processes/:ref/client` grava a regra e cria o mapa quando ele não existe — o estado de `PD-08` |
 | Empacotamento e execução | Necessidade operacional | H-30 | ✅ **Entregue e verificada em campo.** `GET /*` serve a SPA e foi conferida contra o `dist/web` real; o `README.md` ganhou a seção de instalação e fecha `PD-03`. **O `scripts/iniciar.cmd` foi executado na máquina do operador em 31/08/2026**, com a distribuição refeita do zero: sobe, abre o navegador e carrega a planilha real — 649 aceitas, 0 em quarentena. Três itens de `PD-06` seguem sem exercício, e um deles precisa de janela |
 
 ---
@@ -280,7 +300,7 @@ virada de escopo (edição) ou por necessidade operacional.
 | Condicionados a perfilamento | **0** — `H-01` concluída em 03/08/2026 |
 | Bloqueados por lacuna de dado | 1 (IND-21) |
 | Destravados por decisão de arquitetura | 2 (ALE-06 e Página Histórico, via ADR-0005) |
-| Histórias no backlog | 31 |
+| Histórias no backlog | 81 — todas concluídas (o 31 era do plano original de quatro fases; as cinco últimas são o épico retroativo `E13`, por `D-26`) |
 | Histórias órfãs | **0** |
 
 **A Fase 0 está concluída.** `H-01` rodou sobre o arquivo real e resolveu as

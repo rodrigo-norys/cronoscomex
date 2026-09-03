@@ -6,10 +6,10 @@
 # e PreToolUse e so ve o que o agente faz. Este roda sobre o que efetivamente
 # esta versionado, independente de quem commitou e com qual ferramenta.
 #
-# Recusa: planilha fora de tests/fixtures/, config/app.json, artefato de data/,
-# imagem, perfilamento bruto, caminho absoluto de usuario em codigo ou
-# configuracao (A-05), e — so onde ha usuario real — o nome do dono da maquina
-# em qualquer arquivo.
+# Recusa: planilha fora de tests/fixtures/, config/app.json, os dois mapas de
+# negocio de config/, artefato de data/, imagem, perfilamento bruto, caminho
+# absoluto de usuario em codigo ou configuracao (A-05), e — so onde ha usuario
+# real — o nome do dono da maquina em qualquer arquivo.
 #
 # Falha FECHADO: qualquer achado devolve 1. Aqui o dano de deixar passar e
 # publicar dado de cliente, e o custo de um falso positivo e uma conversa.
@@ -54,10 +54,34 @@ reportar() {
 #
 # Sem os dois-pontos de proposito: `${VAR-default}` distingue "nao definida" de
 # "definida e vazia". Com `${VAR:-default}`, testar a lista vazia cairia no
-# `git ls-files` e analisaria a arvore inteira.
-versionados="${ARQUIVOS_PARA_VERIFICAR-$(git ls-files)}"
+# `git ls-files` e analisaria a arvore inteira. Por isso o `if` explicito, e nao
+# uma substituicao: `-z` nao cabe dentro de `${VAR-...}` sem perder a distincao.
+#
+# `-z` e obrigatorio, e nao estilo: `git ls-files` CITA nome fora do ASCII por
+# padrao (`core.quotePath` vem `true`), e `"src/relat\303\263rio.ts"` sai com
+# aspas literais. Elas derrotam as sete verificacoes de uma vez e em silencio —
+# as de padrao ancoram em `$`, e a linha termina em aspa; as de conteudo tentam
+# abrir a string citada como arquivo, `grep -Iq .` falha, e o laco faz
+# `continue` sem sinal nenhum. `core.quotePath=false` nao basta: com ele o git
+# ainda cita nome que contenha `"` ou `\`. Medido em 02/09/2026, num repo com
+# tres nomes hostis — o script de entao alcancava 1 dos 3, e com `-z` alcanca 3.
+if [ -n "${ARQUIVOS_PARA_VERIFICAR+definida}" ]; then
+  versionados="$ARQUIVOS_PARA_VERIFICAR"
+else
+  versionados="$(git ls-files -z | tr '\0' '\n')"
+fi
 
-# 1. Planilhas fora das fixtures. As 9 de tests/fixtures/ sao derivadas do
+# Defesa em profundidade contra a citacao do git. O `-z` acima ja a desliga na
+# origem; esta linha protege o dia em que alguem "simplificar" de volta para
+# `$(git ls-files)`, e a lista injetada pela regressao, que chega como veio.
+# Sem ela a aspa literal fica no fim da linha e derrota a ancora `$` dos checks
+# 1 a 5 — nome citado com `.xlsx` passava. Tirar as aspas devolve a extensao ao
+# fim da linha; o nome fica com os escapes octais, o que basta para os checks de
+# PADRAO e nao muda nada nos de conteudo, que nesse estado ja nao abririam o
+# arquivo.
+versionados="$(printf '%s\n' "$versionados" | sed -E 's/^"(.*)"$/\1/')"
+
+# 1. Planilhas fora das fixtures. As de tests/fixtures/ sao derivadas do
 #    arquivo real com nomes trocados, e versiona-las e exigencia da regra 7.
 #    guard-dados-sensiveis.sh faz a MESMA excecao no `git add`, desde 13/08/2026.
 #
@@ -74,6 +98,18 @@ planilhas="$(printf '%s\n' "$versionados" | grep -iE '\.xlsx$' | grep -v '^tests
 config="$(printf '%s\n' "$versionados" | grep -xE 'config/app\.json' || true)"
 [ -n "$config" ] &&
   reportar "config/app.json versionado — ele carrega o caminho real do OneDrive." "$config"
+
+# 2b. Os dois mapas de negocio de H-48. Verificacao SEPARADA, e nao um `grep`
+#     mais largo na 2: o motivo e outro — eles carregam nome real de cliente e
+#     de pessoa da equipe (regra inviolavel 8), nao caminho local. O `-x` e o
+#     que mantem os `.exemplo` liberados, que sao versionados desde H-48.
+#
+#     `src/http/routes/process-client.ts` CRIA o client-map.json ao gravar a
+#     regra de consolidacao, entao ele passa a existir em toda maquina de
+#     desenvolvimento — o arquivo deixou de depender de alguem te-lo copiado.
+mapas="$(printf '%s\n' "$versionados" | grep -xE 'config/(client-map|team-map)\.json' || true)"
+[ -n "$mapas" ] &&
+  reportar "Mapa de negocio versionado — carrega nome real de cliente e de pessoa da equipe (regra inviolavel 8)." "$mapas"
 
 # 3. Artefatos de execucao: quarentena, historico, backups e logs.
 dados="$(printf '%s\n' "$versionados" | grep -E '^data/' || true)"
@@ -99,7 +135,7 @@ bruto="$(printf '%s\n' "$versionados" | grep -E '^docs/perfilamento/.*\.json$' |
 #    absoluto deixa de casar em qualquer outra maquina, **em silencio**, o que
 #    e exatamente o achado A-05 da auditoria de configuracao.
 alvos_config="$(printf '%s\n' "$versionados" |
-  grep -E '^(\.claude/|\.github/|config/|src/|web/|tools/|tests/)|^(package\.json|biome\.json|tsconfig\.json|vitest\.config\.ts)$' || true)"
+  grep -E '^(\.claude/|\.github/|config/|scripts/|src/|web/|tools/|tests/)|^(package\.json|biome\.json|tsconfig\.json|vitest\.config\.ts)$' || true)"
 
 absolutos=''
 while IFS= read -r arquivo; do
