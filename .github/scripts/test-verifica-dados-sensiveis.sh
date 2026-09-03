@@ -4,11 +4,14 @@
 #
 # Existe pelo mesmo motivo que .claude/hooks/test-guard.sh: uma regex quebrada
 # num guard falha em SILENCIO — continuaria saindo 0 e dizendo "aprovado".
-# Metade dos casos aqui sao falsos positivos que precisam **passar**, e dois
+# Boa parte dos casos aqui sao falsos positivos que precisam **passar**, e dois
 # deles ja morderam de verdade durante a escrita do script.
 #
-# Sao 19 casos, e este script roda PRIMEIRO no workflow dados-sensiveis.yml —
-# mesma razao de test-guard.sh rodar primeiro no `npm run verify`.
+# Este script roda PRIMEIRO no workflow dados-sensiveis.yml — mesma razao de
+# test-guard.sh rodar primeiro no `npm run verify`. Sem contagem no cabecalho de
+# proposito: a que estava aqui declarou 19 num commit em que o arquivo ja tinha
+# 21, e depois acumulou mais quatro. O total sai na ultima linha da execucao,
+# que e a fonte que nao mente.
 #
 # A lista de arquivos do alvo vem de `git ls-files`, com ARQUIVOS_PARA_VERIFICAR
 # como ponto de injecao. Sem ele esta regressao seria impossivel, porque o hook
@@ -19,7 +22,8 @@
 
 set -uo pipefail
 
-cd "$(dirname "$0")/../.." || exit 1
+RAIZ="$(cd "$(dirname "$0")/../.." && pwd)" || exit 1
+cd "$RAIZ" || exit 1
 ALVO='.github/scripts/verifica-dados-sensiveis.sh'
 AREA="$(mktemp -d)"
 trap 'rm -rf "$AREA"' EXIT
@@ -56,15 +60,26 @@ roda reprova 'backup do .xlsx'             'data/backups/2026-08-06.xlsx'
 roda reprova 'print .jpeg'                 'planilha.jpeg'
 roda reprova 'print .png'                  'docs/print.png'
 roda reprova 'perfilamento bruto'          'docs/perfilamento/cru.json'
+roda reprova 'mapa de clientes'            'config/client-map.json'
+roda reprova 'mapa da equipe'              'config/team-map.json'
 
 printf '\nDeve APROVAR — falso positivo que precisa passar\n'
-roda aprova  'as 7 fixtures versionadas'   'tests/fixtures/basico.xlsx
+roda aprova  'fixture versionada'           'tests/fixtures/basico.xlsx
 tests/fixtures/cores.xlsx
 tests/fixtures/formatado.xlsx'
 roda aprova  'exemplo de configuracao'     'config/app.json.exemplo'
+roda aprova  'exemplo do mapa de clientes' 'config/client-map.json.exemplo'
+roda aprova  'exemplo do mapa da equipe'   'config/team-map.json.exemplo'
 roda aprova  'perfilamento sanitizado'     'docs/perfilamento/perfil-sanitizado.json'
 roda aprova  'documento comum'             'docs/06-backlog.md'
 roda aprova  'lista vazia'                 ''
+
+# `git ls-files` cita nome fora do ASCII, e a aspa literal no fim da linha
+# derrota a ancora `$` dos checks 1 a 5. O caso abaixo passa a forma CITADA:
+# ela precisa reprovar como a nao citada reprova.
+printf '\nNome citado pelo git ls-files\n'
+roda reprova 'planilha com nome citado'    '"CONTROLE DOS EMBARQUE - importa\303\247\303\243o.xlsx"'
+roda reprova 'imagem com nome citado'      '"docs/anexa\303\247\303\243o.png"'
 
 # Os dois casos abaixo morderam de verdade: a primeira versao do script
 # reprovava a documentacao que discute caminhos de proposito.
@@ -73,15 +88,27 @@ printf '\nCaminho absoluto — o que conta e onde ele esta\n'
 criar() { mkdir -p "$AREA/$(dirname "$1")" && printf '%s\n' "$2" > "$AREA/$1" && printf '%s' "$1"; }
 
 pushd "$AREA" > /dev/null || exit 1
-mkdir -p src docs .claude/hooks
+mkdir -p src docs scripts .claude/hooks
 printf 'const caminho = "/home/fulano/Desktop/projeto/x"\n' > src/vaza.ts
 printf 'o marcador /home/usuario/ e generico\n'              > docs/marcador.md
 printf 'blocks "git diff --output=/tmp/../home/vazamento.txt"\n' > .claude/hooks/test-guard.sh
 printf 'const s = "C:\\Users\\fulano\\OneDrive"\n'           > src/windows.ts
+# scripts/ so entrou na verificacao 6 em 02/09/2026, e e onde o caminho absoluto
+# do Windows e MAIS provavel: iniciar.cmd e o lancador da maquina do operador.
+printf 'set "CAMINHO=C:\\Users\\fulano\\OneDrive\\planilha.xlsx"\n' > scripts/iniciar.cmd
+printf 'const raiz = "/home/fulano/Desktop/CronosComex"\n' > scripts/sincronizar-distribuicao.ts
 popd > /dev/null || exit 1
 
 cd "$AREA" || exit 1
-cp "$OLDPWD/$ALVO" ./verifica.sh 2>/dev/null || cp /home/*/Desktop/CronosComex/"$ALVO" ./verifica.sh
+# A raiz vem de $RAIZ, e nao de $OLDPWD: o `pushd`/`popd`/`cd` acima ja o movem,
+# e o ramo de fallback que existia aqui embutia o layout de diretorio da maquina
+# do desenvolvedor — dentro do script cujo assunto e recusar caminho de usuario.
+# Ele era inalcancavel, e se disparasse falharia no runner, onde os seis casos
+# `roda_local reprova` passariam por `exit 127` em vez de pela regex.
+cp "$RAIZ/$ALVO" ./verifica.sh || {
+  printf 'nao foi possivel copiar %s a partir de %s\n' "$ALVO" "$RAIZ" >&2
+  exit 1
+}
 mkdir -p .github/scripts && mv verifica.sh .github/scripts/verifica-dados-sensiveis.sh
 
 roda_local() {
@@ -101,6 +128,8 @@ roda_local() {
 
 roda_local reprova 'caminho de usuario em src/'          'src/vaza.ts'
 roda_local reprova 'caminho Windows em src/'             'src/windows.ts'
+roda_local reprova 'caminho Windows em scripts/'          'scripts/iniciar.cmd'
+roda_local reprova 'caminho de usuario em scripts/'      'scripts/sincronizar-distribuicao.ts'
 roda_local aprova  'marcador generico em docs/'          'docs/marcador.md'
 roda_local aprova  'payload de ataque no test-guard'     '.claude/hooks/test-guard.sh'
 
@@ -115,7 +144,8 @@ roda_local aprova  'regressao de guard com payload de caminho'  '.github/scripts
 
 # A guarda das fixtures esta na mesma isencao, e pelo mesmo motivo: a ancora
 # dela prova que a regex reconhece um diretorio de usuario, e a prova exige a
-# forma. Foi a CI que descobriu — o `npm run verify` nao roda este script.
+# forma. Foi a CI que descobriu, porque ate 02/09/2026 o `npm run verify` nao
+# rodava este script — hoje roda, como `test:dados`, e foi essa a licao.
 mkdir -p tests/repo
 printf 'expect(CAMINHO.test("/home/beltrano/x")).toBe(true)\n' > tests/repo/fixtures-anonimas.test.ts
 roda_local aprova  'guarda das fixtures com payload de caminho' 'tests/repo/fixtures-anonimas.test.ts'
