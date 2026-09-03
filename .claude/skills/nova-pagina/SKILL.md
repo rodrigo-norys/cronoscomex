@@ -89,15 +89,18 @@ cedo em cada um evita o `?.` encadeado que esconde estado.
 - **Chave vazia vira `(sem valor)`**, nunca linha invisível. Medido: é o maior
   grupo de clientes (38) e o segundo de mercadorias (57).
 
-  **A chave vazia é valor nos seis filtros de domínio aberto, e a query precisa
+  **A chave vazia é valor nos NOVE filtros de domínio aberto, e a query precisa
   carregá-la** — `asKeyList` em `src/domain/filters.ts`, separada de `asList` por
-  `H-18`. A distinção é a presença do parâmetro, não o conteúdo: `?goods=` é
+  `H-18`: `client`, `clientProcess`, `clientGroup`, `importer`, `vessel`,
+  `agent`, `goods`, `responsible` e `port`. A distinção é a presença do parâmetro, não o conteúdo: `?goods=` é
   "mercadoria em branco", parâmetro ausente não filtra. Antes disso `optionsOf` a
   oferecia de propósito e `applyFilters` a casava, mas ela morria em
   `parseFilters`, no meio: marcar "(em branco)" devolvia a base inteira, sem erro
-  nem aviso, nos nove filtros da barra. Nos demais — categoria, canal,
-  responsável, datas — vazio segue sendo ausência, porque lá não existe chave em
-  branco. Medido: o recorte devolve 57 processos sem mercadoria e 38 sem cliente,
+  nem aviso, nos nove filtros da barra. Nos demais — categoria, canal, datas —
+  vazio segue sendo ausência, porque lá não existe chave em branco.
+  **`responsible` mudou de lado em `H-50`** (01/09/2026): passou de domínio
+  fechado a aberto, usa `asKeyList`, e `''` é chave legítima — são os 42
+  processos sem responsável. Medido: o recorte devolve 57 processos sem mercadoria e 38 sem cliente,
   onde antes devolvia 649.
 - **Rótulo é a grafia de origem** (A-26), nunca a chave normalizada.
 
@@ -125,9 +128,11 @@ pergunte se o filtro casa exatamente com o que a linha conta.**
 
 - `web/src/App.tsx` — o ramo em `PageOutlet`, e atualizar o comentário que lista
   as páginas restantes.
-- `web/tests/App.test.tsx` — **procure a rota desta página** nas asserções de
-  marcador pendente e migre-as para a próxima história ainda aberta. Aconteceu
-  em `H-18`, `H-19` e `H-20`.
+- `web/tests/App.test.tsx` — **não há mais marcador pendente para migrar**:
+  `H-21` fechou a última página do menu, e a asserção foi reescrita para derivar
+  de `story:` de cada rota, sem lista fixa. O passo sobrevive como aviso: se você
+  encontrar um marcador ali, ele é resíduo, e o lugar de investigar é
+  `web/tests/paginas-montadas.test.tsx`. Aconteceu em `H-18`, `H-19` e `H-20`.
 - `web/tests/support/api-stub.ts` — a rota, a fixture com **valores medidos**, e
   os controles `serveX` / `xWithoutRead` / `failX`.
 

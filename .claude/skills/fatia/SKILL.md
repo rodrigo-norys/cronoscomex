@@ -15,7 +15,7 @@ Extraídos de `docs/08-qualidade-operacao.md` §1.3 — os 43 casos obrigatório
 projeto. Cada linha abaixo precisa virar um teste com o **valor concreto** que
 aparece nela.
 
-!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); grep -F "| ${H:?informe H-NN} |" docs/08-qualidade-operacao.md || echo "NENHUM caso obrigatório atribuído a esta história em §1.3 — os 43 casos cobrem 11 das 33 histórias, e a ausência aqui é esperada, não defeito. Os casos-limite do backlog continuam obrigatórios."`
+!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); grep -F "| ${H:?informe H-NN} |" docs/08-qualidade-operacao.md || echo "NENHUM caso obrigatório atribuído a esta história em §1.3 — os 43 casos cobrem 11 das 81 histórias, e a ausência aqui é esperada, não defeito. Os casos-limite do backlog continuam obrigatórios."`
 
 ## Linhas da matriz de rastreabilidade que citam esta história
 
@@ -23,8 +23,9 @@ aparece nela.
 
 ## Confira a lista de arquivos ANTES de aceitá-la
 
-**A lista de arquivos do backlog está incompleta em 6 das histórias já
-fechadas.** Não é acidente: quem escreveu o plano pensou na regra, não na
+**A lista de arquivos do backlog está incompleta em 7 das histórias já
+fechadas** — `H-09` a `H-13`, `H-14` e `H-32`, as sete listadas abaixo.
+**O 6 vinha da contagem original**, e sobreviveu ao sétimo caso. Não é acidente: quem escreveu o plano pensou na regra, não na
 fiação. Responda às quatro perguntas abaixo **contra a lista da história**, e
 tudo que faltar entra como divergência.
 

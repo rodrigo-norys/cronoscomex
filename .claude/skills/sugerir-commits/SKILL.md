@@ -140,8 +140,15 @@ Derivados da estrutura real e da fronteira que o Biome impõe — use o mais esp
    `git bisect` que o corte atômico existe para preservar. As demais mudanças do documento vão
    antes normalmente; só o marcador viaja com a rota.
 
+   **E a exceção é MAIOR do que o marcador**, medido em 02/09/2026: para uma rota **nova** —
+   que nasce sem marcador nenhum — a seção `### \`MÉTODO /rota\`` inteira reprova se entrar
+   antes do código que a serve. A regra prática é uma só: **a seção do contrato de uma rota
+   viaja com o commit que a serve, ou depois dele.**
+
    Medido em `H-26`: os dois primeiros commits reprovaram e precisaram de `git reset HEAD~2`.
-   Restam três rotas com o marcador — `H-21`, `H-27` e `H-30` —, então isto reaparece.
+   Em 02/09/2026 aconteceu de novo, com rota nova, e custou um `git reset HEAD~1`.
+   **Não resta nenhuma rota com o marcador** — `docs/05-contratos-api.md` tem zero ocorrências
+   de "Pendente de" desde `H-30` —, então o que reaparece é o caso da rota nova.
 
 6. **Para cada commit, devolva:**
    - O `git add` com os caminhos **exatos** daquele commit.
