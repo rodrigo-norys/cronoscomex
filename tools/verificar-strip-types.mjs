@@ -17,12 +17,15 @@ import { pathToFileURL } from 'node:url'
  * que precise gerar codigo: `parameter property`, `enum`, `namespace` e
  * `experimentalDecorators`.
  *
- * Sao 28 modulos importados. A `parameter property` que motivou este arquivo
- * passou por `lint`, `typecheck`, 441 testes e `build` — quatro etapas — e
- * teria derrubado a aplicacao no primeiro `npm start`.
+ * Roda no `npm run verify` ANTES de `lint`, `typecheck`, `test` e `build` — as
+ * quatro etapas que a `parameter property` atravessou. Hoje em terceiro, depois
+ * de `test:hooks` e de `test:dados`, mas o ordinal nao e a parte duravel: ele
+ * quebra na proxima insercao no portao, e foi o que aconteceu em 02/09/2026.
+ * Provado que pega: reintroduzir o defeito faz o passo sair com `1`.
  *
- * Roda logo depois do guard no `npm run verify`. Provado que pega:
- * reintroduzir o defeito faz o passo sair com `1`.
+ * Sem contagem de modulos aqui: o proprio script a imprime na ultima linha, e o
+ * numero que estava escrito envelheceu de 28 para 51 sem que nada acusasse —
+ * `tools/` fica fora de `sourceFiles()` em tests/repo/contratos.test.ts.
  */
 
 const SRC = resolve(import.meta.dirname, '..', 'src')
