@@ -52,17 +52,38 @@ export interface GridNavigation {
   ref: React.RefObject<HTMLTableElement | null>
 }
 
+interface ActiveCell extends GridPosition {
+  /** `true` so quando a ULTIMA mudanca de celula veio de tecla. */
+  byKeyboard: boolean
+}
+
 const clamp = (value: number, max: number): number => Math.min(Math.max(value, 0), max)
 
 export function useGridNavigation(rows: number, columns: number): GridNavigation {
-  const [active, setActive] = useState<GridPosition>({ row: 0, column: 0 })
-  const ref = useRef<HTMLTableElement>(null)
   /**
-   * So a navegacao por TECLADO move o foco. Sem esta marca, o efeito roubaria o
-   * foco na montagem da pagina e a cada releitura da lista — o operador estaria
-   * digitando na busca e o foco pularia para a tabela.
+   * A celula corrente carrega QUEM a moveu, e a marca viaja no ESTADO.
+   *
+   * So a navegacao por TECLADO move o foco: sem a marca, o efeito abaixo
+   * roubaria o foco na montagem da pagina e a cada releitura da lista — o
+   * operador estaria digitando na busca e o foco pularia para a tabela.
+   *
+   * **Ela foi um `useRef` booleano ate 03/09/2026, e era a origem de dois
+   * defeitos.** Ref e global no tempo; o efeito que a consome e por commit. Com
+   * os efeitos passivos da montagem ainda pendentes na fila do Scheduler — o
+   * que acontece quando a grade monta ao resolver a requisicao, fora do
+   * ambiente de act —, a tecla armava a marca antes de eles drenarem, o efeito
+   * da MONTAGEM a consumia com `active` em (0,0), focava a celula velha, e o
+   * `onFocus` sobrescrevia a posicao nova: a seta se perdia em silencio. O
+   * segundo defeito era deterministico e chegava ao operador: seta na borda
+   * corta para a MESMA celula, as dependencias nao mudavam, a marca ficava
+   * presa em `true`, e a proxima vez que a lista encolhesse arrastava o foco
+   * para a tabela — exatamente o que ela existe para impedir. No estado, a
+   * intencao viaja junto do commit a que pertence. Travado por
+   * `web/tests/useGridNavigation.test.tsx`, que reprova nos dois casos sem esta
+   * mudanca (`H-80`).
    */
-  const moving = useRef(false)
+  const [active, setActive] = useState<ActiveCell>({ row: 0, column: 0, byKeyboard: false })
+  const ref = useRef<HTMLTableElement>(null)
 
   const lastRow = rows
   const lastColumn = columns - 1
@@ -73,24 +94,30 @@ export function useGridNavigation(rows: number, columns: number): GridNavigation
     setActive((current) =>
       current.row <= lastRow && current.column <= lastColumn
         ? current
-        : { row: clamp(current.row, lastRow), column: clamp(current.column, lastColumn) },
+        : {
+            row: clamp(current.row, lastRow),
+            column: clamp(current.column, lastColumn),
+            byKeyboard: false,
+          },
     )
   }, [lastRow, lastColumn])
 
   useEffect(() => {
-    if (!moving.current) return
-    moving.current = false
+    if (!active.byKeyboard) return
     ref.current
       ?.querySelector<HTMLElement>(
         `[data-grid-row="${active.row}"][data-grid-column="${active.column}"]`,
       )
       ?.focus()
-  }, [active.row, active.column])
+  }, [active])
 
   const go = useCallback(
     (row: number, column: number): void => {
-      moving.current = true
-      setActive({ row: clamp(row, lastRow), column: clamp(column, lastColumn) })
+      setActive({
+        row: clamp(row, lastRow),
+        column: clamp(column, lastColumn),
+        byKeyboard: true,
+      })
     },
     [lastRow, lastColumn],
   )
@@ -156,7 +183,9 @@ export function useGridNavigation(rows: number, columns: number): GridNavigation
    */
   const focusCell = useCallback((position: GridPosition): void => {
     setActive((current) =>
-      current.row === position.row && current.column === position.column ? current : position,
+      current.row === position.row && current.column === position.column
+        ? current
+        : { ...position, byKeyboard: false },
     )
   }, [])
 

@@ -71,6 +71,9 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 | RF-16 | Painel de saúde da ingestão: última leitura, linhas lidas, quarentena e divergências | H-16, H-31 |
 | RF-31 | Página Configuração: apontar a planilha pela tela — com o diálogo de arquivo do sistema —, salvar o caminho sem editar JSON, e revalidar a partida sem reexecutar o atalho | H-34, H-35, H-36, H-37, H-38 |
 | RF-32 | Ordenar a tabela da Página Operacional por **qualquer** uma das nove colunas, com a ordem de categoria seguindo o fluxo do processo e não o alfabeto | H-77 |
+| RF-36 | Exibir, ao lado de Operacional e de Alertas na navegação, quantos itens o **recorte ativo** tem — o mesmo número que a página mostra ao abrir, ausente enquanto não se sabe e nunca zero por omissão | H-87 |
+| RF-37 | Achar um processo de qualquer tela por atalho de teclado, buscando REF, BL e contêiner (A-39), com os sete destinos do menu num grupo à parte | H-83 |
+| RF-38 | Escolher quantas linhas a tabela mostra por vez — 50, 100, 200 ou 500, com 200 como padrão — e manter o cabeçalho visível durante a rolagem | H-84 |
 
 > **Os RF acima de RF-30 nasceram depois do plano**, e a numeração é
 > cronológica, não posicional: eles ficam na seção do tema a que pertencem, e o

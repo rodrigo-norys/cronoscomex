@@ -30,7 +30,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E11 — A casca redesenhada ✅ | **H-57 … H-65, todas concluídas** | 3 | 6 | 0 |
 | E12 — Os achados da revisão de estilo ✅ | **H-73 … H-76, todas concluídas** | 2 | 1 | 1 |
 | E13 — O operacional que edita, ordena e cria ✅ | **H-77 … H-81, todas concluídas.** Épico **retroativo**: o código entrou em 02/09/2026 e as histórias foram escritas em 03/09 | 3 | 0 | 2 |
-| **Total** | **81** — 81 concluídas, nenhuma aberta | **33** | **44** | **4** |
+| E14 — A casca que se opera, não só se lê | **H-82 … H-87, todas abertas.** Primeiro épico **prospectivo** desde `E12`: as seis nascem antes do código (`D-29`, `D-30`, `D-31`) | 1 | 5 | 0 |
+| **Total** | **87** — 81 concluídas, 6 abertas | **34** | **49** | **4** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -182,6 +183,15 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-79 — A fila aceita linha nova, e o Cliente grava a regra no mapa](#h-79) ✅
 - [H-80 — Editar a célula onde ela está, e criar a linha na tabela](#h-80) ✅
 - [H-81 — O gráfico distinto pelo traço, e as regiões vivas fora da tela](#h-81) ✅
+
+**[Épico E14 — A casca que se opera, não só se lê](#e14)**
+
+- [H-82 — Os filtros num painel, e a barra dizendo o recorte](#h-82)
+- [H-83 — A busca alcançável do teclado](#h-83)
+- [H-84 — O quadro que rola, e as linhas por página](#h-84)
+- [H-85 — O carregamento que não colapsa a altura](#h-85)
+- [H-86 — Os sete ícones da lateral](#h-86)
+- [H-87 — A contagem que segue o recorte](#h-87)
 
 
 ---
@@ -9162,6 +9172,430 @@ são `E12` e fecharam em 01/09/2026.
 
 ---
 
+<a id="e14"></a>
+
+## Épico E14 — A casca que se opera, não só se lê
+
+Nasce da revisão de interação de **03/09/2026** — `D-29` e `D-30` —, e o gatilho
+foi o mockup: o usuário apontou a lateral do redesenho e pediu opções que
+melhorassem a interação, e depois disse que a barra de treze chips estava "muito
+padrão". **Quatro das cinco já estavam especificadas e ficaram de fora** — ícone,
+contagem e busca aparecem no mockup de `docs/redesign/PROPOSTA.md`, e nenhum
+virou história em `E11`.
+
+**O primeiro épico prospectivo depois de `E12`**, e a distinção importa: `E13`
+foi escrito depois do código, e o que se perdeu lá foi o anteparo do protocolo de
+fatia. Aqui as cinco histórias existem antes da primeira linha.
+
+**Quatro determinações valem para o épico e não se re-litigam** — as três
+primeiras são escolha do usuário, registradas em `D-29`:
+
+1. **O ícone herda a cor do texto** (`A1`). Ele acompanha `text-primary` no item
+   corrente e `text-muted` no repouso, e **nenhuma cor nova entra no conjunto**.
+   `chart-1` a 6,01:1 — o par que `PROPOSTA §2` mediu — fica registrado como a
+   alternativa recusada, não como pendência.
+2. **A contagem é o número que a página mostra**, e não o do arquivo: a
+   Operacional abre filtrada por processo ativo (`A-16`), então a lateral conta
+   ativos. Medido em `H-17`: **169 ativos de 649**. O número da lateral e o da
+   tabela nunca divergem, que é a razão de existir da escolha.
+3. **A busca alcança REF, BL e contêiner** — os três campos que `A-39` já define
+   e `SEARCHABLE` já implementa — mais os sete destinos do menu. **Cliente e
+   navio ficam fora**, e isso fecha o primeiro dos dois itens que `D-22`
+   declarou em aberto: estendê-los exigiria decidir entre a grafia da célula e o
+   cliente consolidado, distintos desde `H-49`, e isso é regra nova em
+   `src/domain/`.
+4. **Nenhuma rota muda de contrato, e nenhum indicador muda de valor.** Medido
+   em 03/09/2026, e é o que derruba a estimativa inicial do épico:
+   `GET /api/processes` já devolve `total` respeitando os filtros **e**
+   `activeOnly`, e `GET /api/alerts` já respeita os filtros por `RF-18`. O que
+   falta é a casca **buscar** o que o servidor já serve — ela carrega apenas
+   `useFilters` hoje.
+
+**A ordem foi refeita em 03/09/2026, e a numeração acompanha a execução:**
+
+| Ordem | História | Tamanho | Por que vem aqui |
+|---|---|---|---|
+| 1 | `H-82` | M | A maior mudança estrutural da casca, e **o padrão de foco modal nasce no consumidor mais exigente** — véu, `inert` e 320 px |
+| 2 | `H-83` | M | Consome o padrão de `H-82` em vez de criar um segundo |
+| 3 | `H-84` | M | Dá altura própria ao quadro da tabela — e é essa altura que o esqueleto da seguinte passa a preencher |
+| 4 | `H-85` | M | A de maior superfície — sete páginas — e por isso vem antes do que ainda vai mudar por baixo dela |
+| 5 | `H-86` | P | A lateral só se decora depois que a casca parou de mudar |
+| 6 | `H-87` | M | Depende da linha do item, que `H-86` define, e acrescenta busca de dado à casca já estável |
+
+> **A primeira ordem escrita punha o painel por último**, e ela estava errada
+> pelo mesmo motivo que o conjunto já pagou uma vez: um padrão de foco nascido
+> no caso simples não cobre o difícil, e o difícil é o painel. `H-60` e
+> `MultiSelect` tiveram gestões de foco divergentes até `H-60` unificá-las, e
+> repetir isso custaria a mesma unificação de novo.
+
+> **`H-82` substitui a forma que `H-60` entregou**, e a distinção entre
+> substituir e corrigir está no bloco dela.
+
+---
+
+<a id="h-82"></a>
+
+### H-82 — Os filtros num painel, e a barra dizendo o recorte
+
+> **Substitui a forma que `H-60` entregou, e não a corrige.** Os treze chips em
+> popover cumpriram o que aquela história prometia; o que mudou foi o critério —
+> `D-30`, 03/09/2026, depois de quatro formas desenhadas e comparadas na tela
+> inteira. `H-60` fica no backlog como está: é registro do que existiu, e a linha
+> de base contra a qual esta é medida.
+
+**Objetivo:** a barra de filtros ocupar uma linha que **descreve** o recorte, com
+os catorze filtros num painel que abre sobre a tela.
+
+**Contrato:** nenhum. A URL segue sendo o único estado (`useFilters.ts`), e o
+recorte segue acontecendo no servidor (regra inviolável 6).
+
+**Quatro determinações, decididas em `D-30` e não re-litigáveis:**
+
+1. **O painel é sobreposto, à direita, com véu** — a variante `3a`. A `3b`, que
+   punha o painel no lugar da coluna de chegadas, foi desenhada e recusada.
+2. **Ele cobre "Chegadas nos próximos 15 dias", e isso é consequência aceita.**
+   A coluna volta ao fechar; nada é perdido, e a alternativa custava a coluna
+   sumir do fluxo enquanto o painel estivesse aberto.
+3. **A barra de topo continua visível.** O painel e o véu ocupam a região de
+   **conteúdo**, não a tela inteira: "Dados de 03/09/2026", `Aplicar alterações`
+   e `Atualizar` permanecem à vista, inertes. Cobrir a ação que grava no arquivo
+   seria esconder o que o operador precisa saber que existe.
+4. **Sobreposto com véu significa diálogo modal**, com tudo que o padrão exige —
+   e não um popover grande.
+
+**Arquivos:**
+- `web/src/components/FilterPanel.tsx` — novo, os catorze em coluna
+- `web/src/components/FilterBar.tsx` — vira a linha de resumo
+- `web/src/components/FilterChip.tsx` — **removido**: com o painel, nenhum filtro
+  é chip. `MultiSelect.tsx` continua, agora consumido pelo painel
+- `web/tests/App.test.tsx` e teste próprio do painel
+
+**Critérios de aceite:**
+- **Dado** nenhum filtro ativo, **então** a barra mostra o botão e uma frase que
+  diz o recorte padrão, em **uma** linha.
+- **Dado** um ou mais filtros ativos, **então** a barra os nomeia por extenso,
+  com o valor de cada um, mais a contagem no botão e a ação de limpar.
+- **Dado** o painel aberto, **então** o foco fica preso nele, `Esc` fecha,
+  **o foco volta para o botão** que o abriu, e o restante da tela é inerte.
+- **Dado** o painel aberto, **então** a barra de topo continua visível
+  (determinação 3), e o véu cobre apenas a região de conteúdo.
+- **Dado** qualquer alteração no painel, **então** ela chega à URL e o recorte
+  muda **sem fechar o painel** — filtrar é observar o efeito.
+- **Dado** 320 px, **então** o painel ocupa a largura disponível e a página não
+  rola na horizontal (`SC 1.4.10`, `VN-1`).
+
+**Casos-limite:**
+- **O resumo precisa de teto.** Com seis filtros ativos a frase não cabe em
+  1280 px: a forma é nomear os dois primeiros e resumir o resto — "e mais 4" —,
+  nunca truncar a frase no meio de um valor.
+- **Contagem de filtros ativos é catorze, não treze:** `clientGroup` conta como
+  filtro sem controle próprio, e a barra não pode divergir de `activeCount`.
+- **Um valor longo** — os que hoje truncam em `max-w-64` no chip — cabe inteiro
+  no painel, que é coluna; a barra é que resume.
+- **Reabrir o painel** não pode empilhar dois, nem perder a rolagem interna.
+- **Sob `forced-colors: active`**, o véu não existe como cor: a borda do painel é
+  o que o separa do fundo, pelo mesmo argumento de `border-modal` em `H-62`.
+- **O painel é o primeiro modal exercitável do conjunto.** O `ConflictDialog` só
+  abre com a planilha alterada durante a sessão, e por isso a gestão de foco
+  dele está parada em `PD-07`; este abre a qualquer momento, e o padrão passa a
+  ter teste de verdade.
+
+**Fora desta história:** mudar o que cada filtro faz, acrescentar ou remover
+filtro, e a busca por atalho, que é `H-83`.
+
+**Dependências:** nenhuma — é a primeira do épico, e o padrão de foco modal
+nasce aqui.
+**Tamanho:** M (5 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-83"></a>
+
+### H-83 — A busca alcançável do teclado
+
+**Objetivo:** achar um processo de qualquer tela, sem passar pela Página
+Operacional.
+
+**Contrato:** nenhum contrato novo — a busca usa `GET /api/processes` com o
+parâmetro de busca que `H-17` já serve, sobre os três campos de `A-39`.
+
+**Arquivos:**
+- `web/src/components/CommandSearch.tsx` — novo
+- `web/src/App.tsx` · `web/src/router.ts` (apenas se a navegação exigir)
+- `web/tests/App.test.tsx` e teste próprio do componente
+
+**Critérios de aceite:**
+- **Dado** `Ctrl+K` ou `⌘K` em qualquer tela, **então** a busca abre com o foco
+  no campo; `Esc` fecha e **devolve o foco** ao elemento anterior.
+- **Dado** um termo, **então** os resultados vêm de REF, BL e contêiner
+  (`A-39`), e os sete destinos do menu aparecem num grupo separado.
+- **Dado** um resultado escolhido, **então** a navegação é a mesma de um link —
+  `pushState`, sem recarregar —, e o foco vai para a landmark da página nova,
+  como `H-70` estabeleceu.
+- **Dado** o campo aberto, **então** a tabulação fica presa dentro dele enquanto
+  estiver aberto, e o resto da tela é inerte — **pelo mesmo mecanismo de
+  `H-82`**, e não por uma segunda implementação.
+- **Dado** que o cliente não calcula nada, **então** a filtragem é do servidor:
+  nenhuma lista de processos é filtrada no navegador (regra inviolável 6).
+
+**Casos-limite:**
+- **O atalho não pode roubar o `Ctrl+K` de dentro de um campo de edição** — a
+  Operacional edita célula desde `H-80`, e o operador digitando não pode perder
+  o texto.
+- **Nem de dentro do painel de `H-82`**, que também é sobreposição: abrir a
+  busca com o painel aberto precisa de comportamento declarado.
+- Busca sem resultado tem estado próprio, afirmativo, e não fica em branco.
+- `⌘K` no macOS e `Ctrl+K` no Windows: o operador está no Windows, e é lá que
+  precisa funcionar.
+- Sob `forced-colors: active`, a borda da sobreposição precisa existir — sem ela
+  o painel se funde com o fundo.
+
+**Fora desta história:** buscar por cliente e navio, que a determinação 3 do
+épico deixa fora; e ações de comando ("aplicar edições", "recarregar"), que
+transformariam a busca em paleta de comandos.
+
+**Dependências:** `H-82` — o padrão de foco e sobreposição nasce lá.
+**Tamanho:** M (4 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+
+
+
+<a id="h-84"></a>
+
+### H-84 — O quadro que rola, e as linhas por página
+
+**Objetivo:** o cabeçalho da tabela acompanhar a rolagem, e o operador escolher
+quantas linhas vê de uma vez.
+
+**Contrato:** nenhum contrato novo. `GET /api/processes` já aceita `limit` de 1 a
+`MAX_LIMIT` (**1000**, em `src/domain/process-query.ts`) — quem fixa 200 é o
+cliente, em `PAGE_SIZE`, sem oferecer escolha.
+
+**Três determinações, decididas em `D-31` e não re-litigáveis:**
+
+1. **A rolagem vertical passa para o quadro da tabela** — a variante `C2`. O
+   invólucro ganha altura própria e `overflow-y`, e o cabeçalho gruda no topo
+   **dele**, não da janela. A variante `C1`, com a página rolando e o
+   `<thead>` grudando no topo da janela, foi desenhada e recusada: numa tela que
+   **edita** — sete colunas desde `H-80` —, a ação que grava no arquivo não pode
+   sair de vista enquanto se trabalha.
+2. **A altura é relativa, com piso.** Nunca `h-*` fixo: `R05` do corpus trata
+   altura fixa em contêiner de texto como achado, porque impede o aumento de
+   entrelinha de `SC 1.4.12`. A medida sai de `dvh` menos o que está acima, e o
+   piso existe para a fonte-base de 24 px do cenário "Muito grande" não deixar
+   duas linhas visíveis.
+3. **Os tamanhos são 50, 100, 200 e 500.** `200` continua o padrão. **`500` é
+   teto, e não "todas"**: com 649 processos a paginação nunca desaparece, o
+   rodapé tem uma forma só, e o pior caso de renderização fica **previsível** —
+   4.500 células em vez das 5.841 de uma lista inteira. `25` foi descartado: com
+   a linha de 40 px de `H-61` ele não enche uma tela de 1080 px, e a paginação
+   passaria a ocupar mais atenção que os dados.
+
+**Arquivos:**
+- `web/src/components/ProcessTable.tsx` — o invólucro e o `<thead>`
+- `web/src/hooks/useProcessQuery.ts` — `limit` como estado de URL
+- `web/src/pages/Operational.tsx` — o seletor no rodapé
+- `web/tests/Operational.test.tsx` · `tests/repo/estilo.test.ts`
+
+**Critérios de aceite:**
+- **Dado** qualquer rolagem da tabela, **então** o cabeçalho permanece visível, e
+  topo, filtros, busca e a coluna de chegadas **não se movem**.
+- **Dado** o seletor, **então** ele oferece 50, 100, 200 e 500, com 200 marcado
+  por padrão, e a escolha vai para a URL.
+- **Dado** que o tamanho muda, **então** o `offset` volta a zero — sair da página
+  4 de 200 para 50 por página apontaria para um lugar que não existe mais.
+- **Dado** um endereço com `limit` inválido — zero, negativo, acima do teto ou
+  não numérico —, **então** a tela cai no padrão sem erro, como já faz com
+  `offset`.
+- **Dado** 500 linhas na tela, **então** a rolagem e a navegação por setas da
+  grade continuam utilizáveis, **medido no navegador** e registrado no bloco de
+  conclusão — não estimado.
+- **Dado** 320 px, **então** a página continua sem rolar na horizontal: o
+  invólucro mantém o `overflow-x-auto` que `R01` exige, e a guarda que o procura
+  nas três linhas acima da `<table>` continua passando.
+
+**Casos-limite:**
+- **O cabeçalho grudado precisa de fundo opaco e de borda que sobreviva.** Com
+  `border-collapse: collapse` o Chrome **descarta** a borda de um `th` fixo, e a
+  separação entre cabeçalho e primeira linha some quando as linhas passam por
+  baixo; a forma que funciona é `border-separate` com `border-spacing: 0`.
+- **Sob `forced-colors: active`** não há garantia de cor de fundo: é a borda
+  inferior que separa o cabeçalho das linhas que correm sob ele.
+- **A ordem de tabulação não muda:** a paginação e o seletor ficam **depois** da
+  grade no DOM, como `H-80` decidiu, e o quadro rolável não pode virar uma
+  parada de tabulação órfã — se receber foco por ser rolável, precisa de nome.
+- **Fonte-base 24 px com tela de 768 px de altura:** é o pior caso do piso, e é
+  onde se confere que sobra mais de uma linha visível.
+- **Trocar o tamanho com uma edição pendente na fila** não pode descartar a
+  edição: a fila é do servidor, e a tabela só reapresenta.
+- **500 e o teto do servidor:** `MAX_LIMIT` é 1000, então 500 nunca esbarra nele.
+  Subir o seletor acima disso exigiria medir de novo, e é o motivo de o teto ser
+  500 e não "todas".
+
+**Fora desta história:** virtualizar a lista, que só faria sentido acima do teto
+escolhido; e mudar a paginação em si, que continua por `offset`.
+
+> **`PD-10` espera esta história, e o vínculo é técnico.** Quatro casos da suíte
+> reprovam por prazo sob contenção, e três deles montam 200 itens só porque
+> `PAGE_SIZE` é constante fixa no cliente. Com o `limit` em estado de URL, eles
+> passam a pedir páginas pequenas e continuam exercitando a paginação. **Fechar
+> esta história sem olhar a pendência é o padrão que deixou `PD-05` e `P-15` sem
+> dono** — a régua está na tabela de pendências do `CLAUDE.md`.
+
+**Dependências:** nenhuma.
+**Tamanho:** M (5 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-85"></a>
+
+### H-85 — O carregamento que não colapsa a altura
+
+**Objetivo:** trocar o parágrafo "Carregando…" por um esqueleto com a altura do
+conteúdo real, para a página não saltar quando o dado chega.
+
+**Contrato:** nenhum.
+
+**Arquivos:**
+- `web/src/components/Skeleton.tsx` — novo
+- As seis páginas com estado de carregamento, mais `ProcessDetail.tsx`
+- `web/tests/Operational.test.tsx` e os testes das páginas tocadas
+
+**Critérios de aceite:**
+- **Dado** o estado de carregamento de qualquer página, **então** o espaço
+  ocupado é o mesmo do conteúdo carregado, e nada se desloca quando ele chega.
+- **Dado** o esqueleto, **então** ele é `aria-hidden` e o anúncio continua sendo
+  textual, pela região viva que `H-43` e `H-44` estabeleceram — quem usa leitor
+  de tela ouve "Carregando processos", não sete formas.
+- **Dado** `prefers-reduced-motion: reduce`, **então** a pulsação não roda, e o
+  esqueleto fica estático — a contraparte nasce junto, como em `H-64`.
+- **Dado** o contêiner, **então** ele declara `aria-busy`, como `StatCard` já
+  faz desde `H-16`: hoje as páginas não declaram.
+
+**Casos-limite:**
+- A linha do esqueleto mede **40 px**, a densidade de `H-61` — um esqueleto de
+  outra altura troca um salto por outro.
+- Página cujo conteúdo tem altura variável (Clientes, Performance): o esqueleto
+  usa a altura **típica**, e a história registra qual foi medida.
+- O estado de erro **não** vira esqueleto: erro é texto, e continua sendo.
+- O esqueleto nunca aparece em recarga com dado já em tela — trocaria conteúdo
+  bom por forma.
+
+**Fora desta história:** o estado vazio, que já é afirmativo desde `H-17` e não
+muda.
+
+**Dependências:** nenhuma.
+**Tamanho:** M (8 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+<a id="h-86"></a>
+
+### H-86 — Os sete ícones da lateral
+
+**Objetivo:** cada destino do menu ganhar um ícone, para o reconhecimento não
+depender só da leitura do rótulo.
+
+**Contrato:** nenhum. O ícone é apresentação, e `NAV_PAGES` não muda — o mapa de
+`PageId` para desenho vive no componente, não no roteador, pelo mesmo argumento
+de `H-59`: `router.ts` está a **97 linhas de código** de um limiar de 100
+(`D-16`), e ícone não é dado de roteamento.
+
+**Arquivos:**
+- `web/src/components/NavIcon.tsx` — novo, os sete desenhos
+- `web/src/components/AppSidebar.tsx` — consome
+- `web/tests/App.test.tsx`
+
+**Critérios de aceite:**
+- **Dado** qualquer um dos sete destinos, **então** ele exibe um ícone próprio, e
+  os sete desenhos são distintos entre si.
+- **Dado** o ícone, **então** ele é `aria-hidden="true"` e não acrescenta parada
+  de tabulação nem nome acessível — o rótulo já nomeia o link.
+- **Dado** o item corrente, **então** o ícone acompanha `text-primary`, e no
+  repouso `text-muted`: **nenhuma cor nova** entra no conjunto (determinação 1).
+- **Dado** `forced-colors: active`, **então** o ícone continua visível por usar
+  `currentColor`, e a distinção do item corrente segue vindo da **espessura** da
+  borda, como `H-72` mediu — o ícone não vira o canal.
+- **Dado** o item, **então** a altura dele não muda: os 16 px cabem no `py-2`
+  atual, e a densidade de `H-61` fica intacta.
+
+**Casos-limite:**
+- **Configuração está no rodapé** e também recebe ícone — `H-38` fechou a tela
+  inalcançável, e um rodapé sem ícone reintroduziria a assimetria na leitura.
+- **A lateral vira faixa horizontal abaixo de `sm`**: o ícone não pode empurrar
+  o rótulo para uma segunda linha nessa largura.
+- **Nenhuma dependência nova** — o plano não prevê biblioteca de ícone, e o
+  padrão é o SVG inline de `SeverityMark.tsx`.
+- Fonte-base 24 px, do cenário "Muito grande": o ícone é dimensionado em `size-4`
+  e não acompanha o texto, então a linha precisa continuar alinhada.
+
+**Fora desta história:** a lateral colapsável em coluna de ícones, que é
+estrutura e não desenho.
+
+**Dependências:** `H-59`.
+**Tamanho:** P (3 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+<a id="h-87"></a>
+
+### H-87 — A contagem que segue o recorte
+
+**Objetivo:** Operacional e Alertas mostrarem, ao lado do rótulo, quantos itens o
+recorte ativo tem — o mesmo número que a página exibe ao ser aberta.
+
+**Contrato:** nenhum contrato novo. A casca passa a consumir
+`GET /api/processes` com `activeOnly=true` e `limit=1`, lendo apenas `total`, e
+`GET /api/alerts`, ambos com os filtros globais anexados. O `limit=1` é
+deliberado: sem ele a casca traria 200 processos a cada troca de filtro para
+exibir um número.
+
+**Arquivos:**
+- `web/src/hooks/useNavCounts.ts` — novo
+- `web/src/App.tsx` · `web/src/components/AppSidebar.tsx`
+- `web/tests/App.test.tsx` · `web/tests/support/api-stub.ts`
+
+**Critérios de aceite:**
+- **Dado** o filtro vazio, **então** Operacional mostra o total de processos
+  **ativos** — medido em `H-17`: 169 de 649 — e Alertas, a contagem de alertas.
+- **Dado** qualquer filtro global ativo, **então** os dois números acompanham o
+  recorte, e o da lateral é igual ao que a página mostra ao abrir.
+- **Dado** que a busca ainda não respondeu, **então** o item aparece **sem**
+  contagem — nunca com `0`, que é uma afirmação (caso-limite de `H-59`).
+- **Dado** que a busca falhou, **então** o item aparece sem contagem e a tela
+  não exibe erro por isso: a navegação não pode quebrar por um número.
+- **Dado** o número, **então** ele é servido pelo domínio — o cliente não conta,
+  não soma e não filtra nada (regra inviolável 6).
+
+**Casos-limite:**
+- Contagem zero **legítima** — filtro que não casa nada — é diferente de
+  contagem ausente: a primeira mostra `0`, a segunda não mostra nada.
+- Troca rápida de filtro: a resposta antiga não pode sobrescrever a nova.
+- Alertas usa `state-error-fg` no número, e ele precisa medir ≥ 4,5:1 sobre
+  `surface-raised` nos dois esquemas.
+- O número é mono e tabular, como toda contagem do conjunto.
+- **A barra de filtros já não é a de `H-60`**: o recorte que o número segue é o
+  que `H-82` passou a descrever em texto, e os dois não podem divergir.
+
+**Fora desta história:** contagem nos outros cinco destinos — Início, Clientes,
+Performance, Histórico e Configuração não têm número que signifique recorte.
+
+**Dependências:** `H-86`.
+**Tamanho:** M (5 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
 ### Varredura de verbos de decisão em aberto
 
 Os textos das 34 histórias **do plano original** foram varridos em busca de

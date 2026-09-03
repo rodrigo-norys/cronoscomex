@@ -125,21 +125,62 @@ Fechados por medição na máquina, na mesma data:
 - **a planilha real lida em Windows** → 649 lidas, 649 aceitas, 0 em quarentena,
   hash idêntico ao da máquina de desenvolvimento
 
-## O que ainda não foi exercido
+## `PD-06` fechou em 03/09/2026
 
-- janela fechada sem processo órfão — **precisa de janela**, não sai por SSH
-- caminho com espaços e acentos
-- os três caminhos infelizes da compilação: recusar, máquina sem internet,
-  `node_modules` ausente
+Os três que faltavam foram exercidos: **caminho com espaços e acentos** (subiu e
+leu 649 linhas de um caminho acentuado), **os três caminhos infelizes da
+compilação** (recusar, `node_modules` ausente com rede, e sem rede) e **janela
+fechada sem processo órfão** — zero órfãos, com o gesto real.
+
+**O teste da janela não exige mão humana**, e é o que mais surpreende aqui:
+`schtasks /it` abre a aplicação com janela na sessão gráfica, e **`taskkill` sem
+`/F`** envia o mesmo `WM_CLOSE` do clique no X. Duas armadilhas no caminho:
+
+1. **Da Sessão 0, `MainWindowHandle` vem `0` para todo processo da sessão
+   gráfica** — isolamento de sessão, não ausência de janela. Quem procura a
+   janela precisa **rodar dentro** da sessão, por uma segunda tarefa `/it`.
+2. **`taskkill` sem `/F` recusa entre sessões** — *"só pode ser forçada"*. Na
+   mesma sessão, funciona e devolve *"sinal de encerramento enviado"*.
+
+**O cache do npm engana o teste de "sem internet":** com o cache quente, `npm ci`
+instala sem rede. Para exercer o caminho é preciso `npm_config_cache` num
+diretório vazio. O efeito colateral é bom — a máquina do operador recompila
+offline depois da primeira instalação.
 
 ## Suspeitas, e o que restou delas
 
 - ~~A detecção de "já está no ar" depende do espaçamento de colunas do
   `netstat`~~ — **descartada em 31/08/2026**: a regex casa a saída real. O falso
   negativo da primeira medição era método, não script.
-- O `PATH` de uma janela aberta **antes** de instalar o Node não enxerga o
-  executável novo — segue aberta.
-- O caminho do projeto com acento aparece em algumas mensagens, em code page
-  850 — segue aberta, e o `ver` do Windows já sai truncado por ela.
+- ~~O `PATH` de uma janela aberta **antes** de instalar o Node~~ — **virou
+  correção em 03/09/2026.** A mensagem cobria só o duplo clique, que cria janela
+  nova; a janela velha cairia na mesma mensagem depois de instalar. As duas
+  mensagens de Node ganharam a linha *"Se esta janela ja estava aberta ANTES da
+  instalacao, feche-a antes"*.
+- ~~Acento em code page 850~~ — **DERRUBADA em 03/09/2026, por medição.** O
+  `.cmd` emite `0xB5` para o `Á` do caminho, e **em CP850 `0xB5` é `Á`**: a linha
+  sai correta no console. A corrupção aparece só ao ler o log como UTF-8, que era
+  o erro do exame, não do script.
+
+## Quatro erros de método que já custaram tempo aqui
+
+- **A identidade do host se verifica fora de banda.** Em 03/09/2026 o SSH recusou
+  conectar — `REMOTE HOST IDENTIFICATION HAS CHANGED` — e a causa era o DHCP ter
+  dado o endereço antigo a **outro aparelho**. Quem decidiu foi o operador lendo
+  a chave pública do serviço na própria máquina e comparando. Remover a chave
+  para "destravar" teria rodado os testes no aparelho errado.
+- **No `cmd`, o pipe tem precedência menor que `&&`.**
+  `cmd /c "set A=1 && echo S| x.cmd"` vira `(set A=1 && echo S) | x.cmd`: a
+  variável fica do lado esquerdo e o script roda sem ela. Use
+  `[Environment]::SetEnvironmentVariable(...,'Process')` e deixe o filho herdar.
+- **Não mate todos os `cmd.exe` da Sessão 0** — um deles hospeda a sua própria
+  sessão SSH.
+- **`iniciar.cmd` não retorna**, por construção: ele fica no ar servindo. Em
+  foreground, pendura o comando. Use `Start-Process`.
+
+**`.ps1` enviado para cá vai em ASCII puro**, e roda com
+`-ExecutionPolicy Bypass` — a política da máquina é restritiva, e o `Bypass` vale
+só para o processo. O PS 5.1 lê UTF-8 sem BOM como ANSI, e um travessão dentro de
+string já quebrou o parser de um script inteiro.
 
 **Cada falha é correção no `.cmd`, não história nova.**
