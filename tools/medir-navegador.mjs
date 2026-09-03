@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process'
-import { copyFileSync, existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -18,13 +18,23 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
  *
  * **Nada aqui toca estado real** — nem a planilha do operador, nem `data/`, nem
  * `config/app.json`, nem `config/client-map.json`, **nem a fixture versionada**.
- * `abrirAplicacao` COPIA a planilha para o temporario e redireciona os quatro
- * caminhos de escrita para la — cinco lugares ao todo. A copia entrou em
- * 02/09/2026, quando a aplicacao passou a criar linha: sem ela, "Aplicar
- * alteracoes" numa medicao gravaria na fixture do repositorio. Em 01/09/2026 um harness de
- * medicao gravou na fila do operador
- * **duas vezes**; as duas defesas — fixture e caminhos injetados — sao a
- * resposta, e nenhuma delas sozinha basta.
+ * `abrirAplicacao` COPIA a planilha para o temporario e injeta os demais
+ * caminhos de escrita; sao **oito destinos, todos sob `area`**, e a lista se
+ * confere com `grep -n "join(area" tools/medir-navegador.mjs`:
+ *
+ *     planilha.xlsx · quarantine.json · history.jsonl · pending-edits.jsonl
+ *     backups/ · aplicadas/ · client-map.json · app.json
+ *
+ * A copia e o `app.json` entraram em 02/09/2026: sem a primeira, "Aplicar
+ * alteracoes" numa medicao gravaria na fixture do repositorio; sem o segundo,
+ * `PUT /api/config/workbook` gravava na configuracao do operador. Em 01/09/2026
+ * um harness de medicao gravou na fila do operador **duas vezes**; as duas
+ * defesas — fixture e caminhos injetados — sao a resposta, e nenhuma delas
+ * sozinha basta.
+ *
+ * Sem ordinal em comentario nenhum, de proposito: o arquivo chegou a carregar
+ * tres numeracoes contraditorias entre si ("o quinto", "o quinto e o sexto", "O
+ * QUARTO"). Caminho novo entra na lista acima, e a contagem sai de graca.
  *
  * Uso, a partir de um script no scratchpad:
  *
@@ -78,8 +88,8 @@ export async function abrirAplicacao({ fixture = 'cores.xlsx', porta = 5199 } = 
     A planilha e COPIADA para o temporario, e a medicao aponta para a copia.
     Sem isto, clicar em "Aplicar alteracoes" numa medicao gravaria na fixture
     VERSIONADA — e a regra inviolavel 7 exige que ela sobreviva a uma suite que
-    escreve de proposito. Os outros quatro caminhos de escrita ja iam para o
-    temporario; a planilha era o quinto, e faltava.
+    escreve de proposito. Foi o ultimo destino que ainda apontava para fora do
+    temporario — a lista completa esta no cabecalho.
   */
   const planilha = join(area, 'planilha.xlsx')
   copyFileSync(resolve(RAIZ, 'tests/fixtures', fixture), planilha)
@@ -104,6 +114,24 @@ export async function abrirAplicacao({ fixture = 'cores.xlsx', porta = 5199 } = 
   }
   const colorMap = loadColorMap()
 
+  /*
+    O `app.json` no temporario, e ESCRITO antes de subir o servidor.
+
+    Passar so o caminho nao bastaria: o arquivo nao existiria, `describeConfig`
+    devolveria `present:false`, e todo campo cairia para `source:'padrao'` —
+    degradando justamente o inventario que a Pagina Configuracao existe para
+    mostrar. Escrevendo o mesmo objeto que o harness ja monta, o inventario fica
+    MAIS fiel que antes: somem os dois `restartPending` espurios que a medicao
+    produzia.
+
+    Sem isto, `PUT /api/config/workbook` gravava no `config/app.json` do
+    OPERADOR durante uma medicao — `saveWorkbookPath` so recusa o padrao sob
+    `NODE_ENV=test`, que o cabecalho proibe usar aqui. Mesmo modo de falha que
+    `H-34` mediu, e a pagina esta em `NAV_PAGES`, logo e um dos alvos.
+  */
+  const configPath = join(area, 'app.json')
+  writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`)
+
   initStore({
     config,
     colorMap,
@@ -120,8 +148,8 @@ export async function abrirAplicacao({ fixture = 'cores.xlsx', porta = 5199 } = 
     o ciclo completo — criar linha, aplicar, conferir no arquivo — ficava fora do
     alcance da medicao.
 
-    Backup e fila arquivada tambem no temporario: sao o quinto e o sexto caminho
-    de escrita, e a regra inviolavel 7 vale para os dois.
+    Backup e fila arquivada tambem no temporario: a regra inviolavel 7 vale
+    para os dois.
   */
   const { initWriteGuard } = await modulo('src/app/write-guard.ts')
   // Sem `store`: o padrao do guarda ja e o process-store inteiro, com
@@ -143,13 +171,13 @@ export async function abrirAplicacao({ fixture = 'cores.xlsx', porta = 5199 } = 
     colorMap,
     join(area, 'history.jsonl'),
     undefined,
-    undefined,
+    configPath,
     undefined,
     webRoot,
     [],
     join(area, 'pending-edits.jsonl'),
     [],
-    // O QUARTO caminho de escrita, de 02/09/2026: `PUT
+    // Caminho de escrita de 02/09/2026: `PUT
     // /api/processes/:ref/client` grava a regra de consolidacao. Sem este
     // argumento a medicao escreveria no `client-map.json` do OPERADOR — a
     // recusa de `saveClientRule` so vale sob `NODE_ENV=test`, e aqui nao vale

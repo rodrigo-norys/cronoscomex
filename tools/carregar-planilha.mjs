@@ -14,6 +14,21 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
  * conferencia manual: o passo 4 do ciclo de `/novo-indicador`, e o "medido na
  * planilha real" que todo fechamento de historia carrega.
  *
+ * **Mas ela ESCREVE**, e por padrao no temporario desde 02/09/2026. Antes disso
+ * `carregarPlanilha()` sobrescrevia `data/quarantine.json` em toda execucao bem
+ * sucedida e fazia append em `data/history.jsonl` — os dois sao estado do
+ * operador, e o segundo alimenta a Pagina Historico. Pior que a escrita era a
+ * assimetria: sob `NODE_ENV=test` o historico era pulado EM SILENCIO
+ * (`persistHistory` engole a recusa num `catch` nu), entao a mesma conferencia
+ * media diferente conforme a variavel de ambiente, sem erro nenhum.
+ *
+ * Quem precisa da serie REAL passa os caminhos:
+ *
+ *     await carregarPlanilha({
+ *       quarantinePath: 'data/quarantine.json',
+ *       historyPath: 'data/history.jsonl',
+ *     })
+ *
  * Uso, a partir de um script no scratchpad:
  *
  *     const { carregarPlanilha, reportar } = await import(
@@ -53,7 +68,7 @@ const modulo = (caminho) => import(pathToFileURL(resolve(RAIZ, caminho)).href)
  *   dominio: Record<string, object>,
  * }>}
  */
-export async function carregarPlanilha() {
+export async function carregarPlanilha({ quarantinePath, historyPath } = {}) {
   const { loadConfig } = await modulo('src/app/config.ts')
   const { loadColorMap } = await modulo('src/app/color-map-loader.ts')
   const { loadStatusAliases } = await modulo('src/app/status-aliases-loader.ts')
@@ -67,6 +82,17 @@ export async function carregarPlanilha() {
   // cliente e um responsavel que o painel do operador nao mostra.
   const config = loadConfig()
   const clientMap = loadClientMap()
+
+  // Padrao no temporario, como `medir-navegador.mjs` ja fazia: sem isto o
+  // `reload()` grava em `data/`, que e estado do operador. Sobrescrivivel de
+  // proposito — uma conferencia de ALE-06 ou da Pagina Historico apontada para
+  // um temporario veria serie VAZIA e mediria numero errado sem aviso, que e
+  // exatamente o que a regra inviolavel 3 proibe.
+  const { mkdtempSync } = await import('node:fs')
+  const { tmpdir } = await import('node:os')
+  const { join } = await import('node:path')
+  const area = mkdtempSync(join(tmpdir(), 'cronos-conferencia-'))
+
   initStore({
     config,
     colorMap: loadColorMap(),
@@ -74,22 +100,31 @@ export async function carregarPlanilha() {
     clientMap: clientMap.clients,
     clientGroups: clientMap.groups,
     teamMap: loadTeamMap(),
+    quarantinePath: quarantinePath ?? join(area, 'quarantine.json'),
+    historyPath: historyPath ?? join(area, 'history.jsonl'),
   })
   await reload()
 
   const estado = getState()
 
-  // O dominio inteiro vem junto para o script nao precisar de mais um import
-  // por indicador medido. Sao oito modulos e o custo e uma resolucao de ESM.
-  const dominio = {
-    dateWindow,
-    indicators: await modulo('src/domain/indicators.ts'),
-    alerts: await modulo('src/domain/alerts.ts'),
-    filters: await modulo('src/domain/filters.ts'),
-    normalizer: await modulo('src/domain/normalizer.ts'),
-    types: await modulo('src/domain/types.ts'),
-    clientMapper: await modulo('src/domain/client-mapper.ts'),
-    teamMapper: await modulo('src/domain/team-mapper.ts'),
+  // TODOS os modulos de `src/domain/`, enumerados do diretorio — o script nao
+  // precisa de mais um import por indicador medido, e a lista nao envelhece.
+  // Ela ja envelheceu duas vezes escrita a mao (6 -> 8), e a segunda mordeu: em
+  // 02/09/2026 quatro dos cinco modulos alterados no dia estavam FORA do pacote
+  // — `color-mapper`, `process-query`, `process-builder` e `process-projection`
+  // —, entao a conferencia daquele trabalho precisava importar a mao justamente
+  // o que este arquivo existe para evitar.
+  //
+  // O filtro por extensao e obrigatorio: `readdirSync` devolve o `.fronteira.md`
+  // do mesmo diretorio. `types.ts` nao exporta nada em runtime e entra so por
+  // simetria.
+  const { readdirSync } = await import('node:fs')
+  const camelCase = (nome) =>
+    nome.replace(/\.ts$/, '').replace(/-(\w)/g, (_, letra) => letra.toUpperCase())
+
+  const dominio = { dateWindow }
+  for (const arquivo of readdirSync(resolve(RAIZ, 'src/domain')).filter((f) => f.endsWith('.ts'))) {
+    dominio[camelCase(arquivo)] = await modulo(`src/domain/${arquivo}`)
   }
 
   return {
@@ -105,8 +140,16 @@ export async function carregarPlanilha() {
  * Uma COPIA da planilha real, com a config apontando para ela.
  *
  * **O original nunca e aberto para escrita.** Conferir a Fase 3 exige exercer a
- * escrita sobre a estrutura verdadeira do arquivo — 649 linhas, formatacao
- * condicional, validacao —, e a unica forma segura e sobre copia.
+ * escrita sobre a estrutura verdadeira do arquivo — a `Tabela1` cobrindo
+ * `A1:P997` com o autofiltro dentro dela, os comentarios encadeados, o estilo
+ * que cada `<col>` declara e as 30 entradas do zip —, e a unica forma segura e
+ * sobre copia.
+ *
+ * A aba `2026` **nao tem** formatacao condicional, validacao de dados,
+ * autofiltro proprio, celula mesclada nem `calcChain` — medido em 02/09/2026, e
+ * o texto anterior prometia as duas primeiras. Quem precisa exercer CF, DV ou
+ * formula usa `tests/fixtures/formatado.xlsx`, onde `enriquecer_formatado` as
+ * injetou de proposito, justamente porque o arquivo real nao as oferece.
  *
  * Existe porque `H-25` e `H-26` repetiram este preambulo em onze scripts:
  * `loadConfig`, copiar, remontar a config, e so entao chamar o write-guard.
@@ -148,8 +191,11 @@ export async function fflate() {
  * descomprimido — o criterio de ADR-0004, e nao os bytes comprimidos:
  * recompactar reproduz o conteudo, nao o fluxo deflate do Excel.
  *
- * E a conferencia que toda historia de escrita faz antes de fechar. Medido em
- * `H-26`: 27 das 28 entradas identicas, so a aba alvo mudou.
+ * E a conferencia que toda historia de escrita faz antes de fechar. Sobre copia
+ * do arquivo real sao **30** entradas, e quantas mudam depende da cirurgia:
+ * `H-25` mediu 29 identicas (so `sheet1.xml`), `H-27` mediu 28 (`sheet1.xml` e
+ * `styles.xml`). O "27 de 28" de `H-26` veio do caminho fim a fim sobre
+ * fixture, que tem 28 entradas — nao do arquivo real.
  *
  * @returns {Promise<{total: number, identicas: number, mudadas: string[]}>}
  */
