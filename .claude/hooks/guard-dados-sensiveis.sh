@@ -182,6 +182,26 @@ check_profiler() {
     *) return 0 ;;
   esac
 
+  # Comando do git que CITA o perfilador nao o executa: preparar o arquivo dele
+  # para o indice, ou commita-lo, e manutencao do proprio script. Sem esta saida
+  # o gatilho — a string em qualquer posicao da linha — lia `git add` do arquivo
+  # como execucao sem destino e bloqueava. Medido em 03/09/2026, ao commitar a
+  # correcao deste guard; contornado na hora com um pathspec que casava so ele.
+  #
+  # A isencao vale para o git e CAI se o subcomando trouxer substituicao de
+  # comando ou interpretador: `git commit -m "$(python3 tools/profile_workbook.py
+  # x.xlsx saida.json)"` executa de verdade, e ali o guard volta a falhar
+  # fechado. Mesmo desenho de check_git_add, que delimita pelo verbo antes de
+  # olhar os argumentos.
+  case "$subcommand" in
+    "git "*)
+      case "$subcommand" in
+        *'$('*|*'`'*|*python*|*"npm "*) ;;
+        *) return 0 ;;
+      esac
+      ;;
+  esac
+
   # Isola o DESTINO, em vez de testar a linha inteira: ` /tmp/` em qualquer
   # posicao liberava o comando, inclusive quando era o caminho de ENTRADA — e a
   # saida caia em docs/perfilamento/, que o .gitignore cobre justamente por

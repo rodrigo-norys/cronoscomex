@@ -137,6 +137,9 @@ blocks 'python3 tools/profile_workbook.py /tmp/copia.xlsx config/perfil.json'
 # Destino e OPCIONAL no perfilador: sem ele a saida cai na raiz do repositorio.
 blocks 'python3 tools/profile_workbook.py /tmp/copia.xlsx'
 
+# A isencao do git nao pode virar bypass: substituicao de comando executa.
+blocks 'git commit -m "$(python3 tools/profile_workbook.py x.xlsx saida.json)"'
+
 # --- comando composto: o guard testa por subcomando, nao a linha inteira ---
 blocks 'npm test && git add -A'
 blocks 'echo ok; echo x > config/app.json'
@@ -168,6 +171,11 @@ allows 'python3 tools/profile_workbook.py "planilha.xlsx" /tmp/saida.json'
 # `split_subcommands` nao quebra em `>`, entao o token de redirecionamento
 # entrava na conta dos posicionais e bloqueava comando legitimo.
 allows 'python3 tools/profile_workbook.py "planilha.xlsx" /tmp/saida.json 2>/dev/null'
+# Comando do git que CITA o perfilador nao o executa. Os tres saiam 2 ate
+# 03/09/2026, e o primeiro apareceu commitando a correcao do proprio guard.
+allows 'git add tools/profile_workbook.py'
+allows 'git commit -m "fix(tools): profile_workbook.py exige destino em /tmp"'
+allows 'git diff main...HEAD -- tools/profile_workbook.py'
 allows 'node --version 2>/dev/null'
 allows 'echo "config/app.json e o arquivo de configuracao local"'
 
