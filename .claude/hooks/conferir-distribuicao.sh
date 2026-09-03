@@ -2,11 +2,13 @@
 # PostToolUse(Bash) — avisa quando a branch `distribuicao` ficou para tras da
 # `main` depois de um merge.
 #
-# O gatilho e `git pull` ou `git merge` COM A MAIN EM HEAD, que e o passo 6 da
-# ordem de trabalho: sincronizar so a partir da `main` mesclada. O passo 7 —
-# rodar `scripts/sincronizar-distribuicao.ts` — depende de alguem lembrar, e a
-# consequencia de esquecer nao aparece aqui: aparece na maquina do operador, que
-# continua rodando a versao anterior sem nenhum sinal de que ha correcao pronta.
+# O gatilho e `git pull` ou `git merge` COM A MAIN EM HEAD, porque a
+# distribuicao se sincroniza APENAS a partir da `main` mesclada — regra em
+# `.claude/rules/distribuicao.md` e no bloco "A branch distribuicao" do
+# CLAUDE.md. Rodar o `scripts/sincronizar-distribuicao.ts` depois disso depende
+# de alguem lembrar, e a consequencia de esquecer nao aparece aqui: aparece na
+# maquina do operador, que continua rodando a versao anterior sem nenhum sinal
+# de que ha correcao pronta.
 #
 # Nasceu da regra que o proprio CLAUDE.md ja declarava para o gatilho de commit:
 # "e instrucao, e instrucao falha. Se falhar seguido, o gatilho vira hook
@@ -61,7 +63,8 @@ fi
   echo "A branch 'distribuicao' esta defasada em relacao a main."
   echo
   echo "$saida"
-  echo "Passos 7 a 9 da ordem de trabalho, no CLAUDE.md. O comando prepara o"
-  echo "indice e para: commit e push continuam sendo decisao de quem esta olhando."
+  echo "O comando acima prepara o indice e para: o commit e o push da branch"
+  echo "'distribuicao' continuam sendo decisao de quem esta olhando. O"
+  echo "procedimento inteiro esta em .claude/rules/distribuicao.md."
 } >&2
 exit 2
