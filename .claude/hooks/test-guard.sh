@@ -13,8 +13,9 @@
 #
 # Convencao: `blocks` espera exit 2, `allows` espera exit 0.
 # Os casos de `allows` nao sao enfeite: cada um e um falso positivo que
-# ja aconteceu ou que a estrutura do guard torna provavel — metade dos casos,
-# e dois deles ja morderam de verdade.
+# ja aconteceu ou que a estrutura do guard torna provavel, e QUATRO deles ja
+# morderam de verdade — a fixture (13/08/2026) e o exemplo de configuracao
+# (H-30), narrados nas secoes abaixo, mais os dois marcados no bloco final.
 #
 # Exige `bash` e `jq`.
 
@@ -95,9 +96,46 @@ blocks 'rm -rf src/domain'
 blocks 'rm -r tests/fixtures'
 blocks 'rm -R .claude'
 
+# Os tres casos acima passavam por ACIDENTE DE FORMA: dois trazem subdiretorio,
+# logo a barra que o glob exigia, e o terceiro caia no unico glob sem barra.
+# Nenhum exercitava o diretorio de topo nu, que era o furo — e a suite reportava
+# "todos passaram" com ele aberto. Medido em 02/09/2026: `rm -rf src` saia 0.
+blocks 'rm -rf src'
+blocks 'rm -rf docs'
+blocks 'rm -rf config'
+blocks 'rm -rf web'
+blocks 'rm -rf tools'
+blocks 'rm -r tests'
+blocks 'rm -rf ./src'
+blocks 'rm -rf "src"'
+blocks 'rm -rf src -v'
+
+# Furo distinto do anterior, e este passava MESMO COM a barra: os dois
+# diretorios faltavam na lista por inteiro. Sao versionados e nasceram DEPOIS
+# do guard — `.github/` guarda os dois unicos gates que rodam em todo commit.
+blocks 'rm -rf scripts'
+blocks 'rm -rf scripts/sincronizar-distribuicao.ts'
+blocks 'rm -rf .github'
+blocks 'rm -rf .github/workflows'
+
+# Os dois piores, que tambem saiam 0.
+blocks 'rm -rf .'
+blocks 'rm -rf .git'
+
 # --- perfilador gravando fora de /tmp --------------------------------------
 blocks 'python3 tools/profile_workbook.py "planilha.xlsx" saida.json'
 blocks 'python3 tools/profile_workbook.py "planilha.xlsx" docs/perfilamento/bruto.json'
+
+# O teste era sobre a LINHA, nao sobre o destino: qualquer ` /tmp/` em qualquer
+# posicao liberava o comando. Os tres primeiros saiam 0 em 02/09/2026 — o
+# primeiro gravando perfilamento bruto dentro de docs/perfilamento/, que o
+# .gitignore cobre justamente por trazer amostra de celula.
+blocks 'python3 tools/profile_workbook.py /tmp/copia.xlsx docs/perfilamento/bruto.json'
+blocks 'python3 tools/profile_workbook.py "planilha.xlsx" /tmp/../home/saida.json'
+blocks 'python3 tools/profile_workbook.py /tmp/copia.xlsx .claude/vazamento.json'
+blocks 'python3 tools/profile_workbook.py /tmp/copia.xlsx config/perfil.json'
+# Destino e OPCIONAL no perfilador: sem ele a saida cai na raiz do repositorio.
+blocks 'python3 tools/profile_workbook.py /tmp/copia.xlsx'
 
 # --- comando composto: o guard testa por subcomando, nao a linha inteira ---
 blocks 'npm test && git add -A'
@@ -108,6 +146,12 @@ blocks 'echo ok; echo x > config/app.json'
 allows 'grep -n "git add" docs/06-backlog.md'
 # Este tambem: `2>/dev/null` num comando que apenas MENCIONA .claude/.
 allows 'grep -rn "usuario" .claude/ 2>/dev/null'
+# Os dois mapas de H-48 estao no .gitignore por carregarem nome real; os
+# `.exemplo` sao versionados, e o glob com `*` nas duas pontas casaria os dois.
+blocks 'git add config/client-map.json'
+blocks 'git add config/team-map.json'
+allows 'git add config/client-map.json.exemplo'
+allows 'git add config/team-map.json.exemplo'
 allows 'git add src/domain/indicators.ts'
 allows 'git add docs/06-backlog.md docs/09-rastreabilidade.md'
 allows 'npm run verify'
@@ -115,7 +159,15 @@ allows 'git diff main...HEAD --stat'
 allows 'git log --oneline -10'
 allows 'rm /tmp/scratch.json'
 allows 'rm -rf /tmp/claude-1000/algum-diretorio'
+# A varredura por SEGMENTO existe para nao transformar sufixo em falso
+# positivo: `mydocs` e `websrc` nao sao `docs` nem `src`.
+allows 'rm -rf /tmp/mydocs'
+allows 'rm -rf /tmp/websrc'
+allows 'rm -rf node_modules'
 allows 'python3 tools/profile_workbook.py "planilha.xlsx" /tmp/saida.json'
+# `split_subcommands` nao quebra em `>`, entao o token de redirecionamento
+# entrava na conta dos posicionais e bloqueava comando legitimo.
+allows 'python3 tools/profile_workbook.py "planilha.xlsx" /tmp/saida.json 2>/dev/null'
 allows 'node --version 2>/dev/null'
 allows 'echo "config/app.json e o arquivo de configuracao local"'
 
