@@ -30,9 +30,9 @@ ela a interpreta e a edita.
 | Campos derivados de cor | Responsável, Canal e Importador fora do RJ |
 | Indicadores | 21 dos 22 do catálogo (§4). O 22º está fora de escopo por decisão da própria especificação — ver 3.2 |
 | Alertas | Os 6 do catálogo (§5), incluindo "Processos parados" |
-| Telas | As 6 páginas de §6, mais a tela de detalhe do processo |
+| Telas | As 6 páginas de §6, a tela de detalhe do processo, e a **Página Configuração** — que não vem da especificação: ela nasceu entre `H-34` e `H-38` para o operador apontar a planilha sem editar JSON (RF-31) |
 | Filtros globais | Os 10 de §7, com as correções da auditoria |
-| Edição | Campos de texto e data (Fase 2); campos que vivem na cor (Fase 4) |
+| Edição | Campos de texto e data (Fase 2); campos que vivem na cor (Fase 4); a célula editada na **própria tabela**, a **criação de linha** e a declaração do cliente consolidado (`E13`, por `D-25`; RF-33 a RF-35) |
 | Escrita na planilha | Sob comando explícito, com seis defesas de integridade |
 | Histórico | Registro append-only das mudanças de categoria |
 | Quarentena | Relatório de toda linha não interpretada, com motivo |
@@ -51,6 +51,7 @@ ela a interpreta e a edita.
 | Automações de §8 (e-mail, Teams, notificação) | Melhorias futuras na própria especificação |
 | Indicadores preditivos e métricas de SLA de §8 | Melhorias futuras na própria especificação |
 | Normalização automática de nomes com correção de digitação | §8. A normalização implementada é determinística (caixa, acento, espaço), não corretiva |
+| **Remoção** de linha da planilha | `D-25` abriu a criação e manteve a remoção fora: desfazer uma linha gravada envolve reindexar `<row>`, o intervalo da Tabela e a cadeia de cálculo, e o operador tem o Excel para isso. Registrado aqui em 03/09/2026, com `E13` (`D-26`) |
 
 ### 3.3. Fronteira explícita
 
@@ -85,7 +86,7 @@ Apenas a aba **`2026`** entra no escopo, por decisão do usuário. As demais:
 |---|---|
 | `2025` (665 linhas) | Esquema diferente: coluna A é `REF. FAITH`, **não tem DOCS ENVIADOS**, e tem duas colunas chamadas `ETA` |
 | `2024` (191 linhas) | Esquema mais divergente ainda: **sem IMPORTADOR**, tem `ARMAD`, e a coluna de situação chama-se `ANDAMENTO` |
-| `CNPJ` (28 linhas) | **Dado sensível** — cadastral e de acesso, de terceiros. O inventário das colunas não é versionado. Não é lida, não é exibida, não é registrada em log — ver A-47 |
+| `CNPJ` (28 linhas) | **Dado sensível** — cadastral e de acesso, de terceiros. O inventário das colunas não é versionado. O XML da aba nunca é descomprimido; o pool global de texto vem inteiro por limitação do OOXML, e nenhum valor dela é processado, indexado, exposto nem registrado em log — ver A-47 e D-15 |
 
 A aba em uso é configurável em `config/app.json` (`sheetName: "2026"`). Na
 virada do ano, alterar essa linha aponta a aplicação para a aba nova.
@@ -101,7 +102,7 @@ virada do ano, alterar essa linha aponta a aplicação para a aba nova.
 | P-12 | O arquivo `.xlsx` não é protegido por senha | ✅ **Confirmada** pelo perfilamento: o arquivo foi lido sem credencial |
 | P-13 | Taxa de conversão de esforço: 1 história P ≈ 1 sessão de implementação, M ≈ 2, G ≈ 4 | Erro na taxa altera proporcionalmente a faixa de esforço em `07-plano-entrega.md`, não o sequenciamento |
 | P-14 | Crescimento mensal de linhas | **Pendente.** Depende de informação sua. Com 649 linhas em ~8 meses de 2026, a ordem de grandeza é confortável para a arquitetura em memória, mas o número não é afirmado |
-| P-15 | O OneDrive sincroniza o arquivo de lock `~$<nome>.xlsx` entre as máquinas | **Pendente — não afirmada.** O OneDrive mantém listas de exclusão para arquivos temporários, e não houve como medir. Se sincronizar, `H-32` avisa que **qualquer pessoa** tem o arquivo aberto; se não, o aviso cobre apenas quem o abrir na própria máquina do operador — ainda útil, porque impede gravar por cima do próprio Excel aberto. **Verificação em `H-30`:** abrir o arquivo numa segunda máquina e observar se o `~$` aparece na pasta sincronizada. A detecção de arquivo de conflito **não** depende desta premissa |
+| P-15 | O OneDrive sincroniza o arquivo de lock `~$<nome>.xlsx` entre as máquinas | **Pendente — não afirmada.** O OneDrive mantém listas de exclusão para arquivos temporários, e não houve como medir. Se sincronizar, `H-32` avisa que **qualquer pessoa** tem o arquivo aberto; se não, o aviso cobre apenas quem o abrir na própria máquina do operador — ainda útil, porque impede gravar por cima do próprio Excel aberto. **Verificação: `PD-09`, na tabela de pendências do `CLAUDE.md`** — apontava para `H-30`, que fechou em 18/08/2026 sem medir, e ficou sem dono. A medição direta pede duas máquinas com a mesma pasta sincronizada, e nada indica que exista uma segunda conta com acesso; o proxy de uma máquina só — abrir a planilha no Excel e observar se o `~$` sobe, pelo ícone do OneDrive ou pela visão web do SharePoint — responde a mesma pergunta. A detecção de arquivo de conflito **não** depende desta premissa |
 
 ## 5. Glossário do domínio
 

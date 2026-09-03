@@ -39,13 +39,13 @@ Leia nesta ordem. Cada documento pressupõe o anterior.
 | 1 | [00-visao-escopo.md](00-visao-escopo.md) | Escopo, fora de escopo, 15 premissas (P-NN), o princípio da planilha-referência e o glossário | Tudo |
 | 2 | [01-auditoria-especificacao.md](01-auditoria-especificacao.md) | Os **65 defeitos** da especificação e a resolução de cada um | Qualquer regra de negócio |
 | 3 | [02-requisitos.md](02-requisitos.md) | Requisitos funcionais e os RNF quantificados, com origem declarada | Qualquer decisão de desempenho |
-| 4 | [03-modelo-dados.md](03-modelo-dados.md) | Modelo em memória, arquivos locais e **as 7 tabelas de decisão** (TD-01 a TD-06 + TD-05.1) | H-04, H-05, H-06, H-07, H-27 |
+| 4 | [03-modelo-dados.md](03-modelo-dados.md) | Modelo em memória, arquivos locais e **as 9 tabelas de decisão** — TD-01 a TD-06, mais TD-05.1 (escrita de estilo), TD-04.1 (consolidação do cliente, `H-49`) e TD-04.2 (grupo de clientes, `H-55`) | H-04, H-05, H-06, H-07, H-27 |
 | 5 | [04-arquitetura.md](04-arquitetura.md) | Diagramas de contexto, containers e componentes; estrutura de diretórios | H-02 |
 | 6 | [05-contratos-api.md](05-contratos-api.md) | Rotas, schemas, códigos de erro e campos editáveis | Qualquer rota |
-| 7 | [06-backlog.md](06-backlog.md) | **72 histórias executáveis** em 11 épicos, com contrato, aceite e casos-limite — 55 concluídas | — |
+| 7 | [06-backlog.md](06-backlog.md) | **81 histórias executáveis** em 13 épicos (`E1` a `E13`), com contrato, aceite e casos-limite — **todas concluídas** | — |
 | 8 | [07-plano-entrega.md](07-plano-entrega.md) | 5 fases, grafo de dependências, caminho crítico e **16 riscos** — `R-03` encerrado por `H-01`, `R-09` por `H-33`, `R-16` aberto por `E11`. **As fases cobrem o plano original e só ele** | Planejar a ordem |
 | 9 | [08-qualidade-operacao.md](08-qualidade-operacao.md) | Testes, ingestão, observabilidade, LGPD e build | Escrever testes |
-| 10 | [09-rastreabilidade.md](09-rastreabilidade.md) | Matriz de 28 linhas: indicador/alerta → história → teste → status | Verificar cobertura |
+| 10 | [09-rastreabilidade.md](09-rastreabilidade.md) | Matriz de indicador/alerta → história → teste → status, mais as 81 linhas de história | Verificar cobertura |
 | 11 | [10-governanca.md](10-governanca.md) | Quem decide o quê, protocolo de mudança de escopo, ciclo de vida de ADR, *definition of done* e o log de decisões | Mudar escopo ou reabrir um ADR |
 
 ### Para entender por quê
@@ -83,6 +83,8 @@ Cada um tem um documento de origem, e o cabeçalho do épico em
 | [estilizacao/RESULTADO.md](estilizacao/RESULTADO.md) | `E9` | A auditoria de 18/08/2026 contra o corpus: 21 achados sobre 25 arquivos, em 7 ondas |
 | [uso/RESULTADO.md](uso/RESULTADO.md) | `E10` | O que apareceu na tela em 31/08/2026, com o operador usando o painel para trabalhar — 12 observações, 8 viraram história |
 | [redesign/PROPOSTA.md](redesign/PROPOSTA.md) | `E11` | A transcrição versionada do mockup *Cronos Console*, com a paleta dos dois esquemas, as seis reprovações de contraste medidas e as seis divergências contra o repositório |
+| [redesign/REVISAO-ESTILO.md](redesign/REVISAO-ESTILO.md) | `E12` | Os 14 achados da revisão de estilo de 01/09/2026, todos resolvidos ou declarados não normativos |
+| [redesign/VERIFICACAO.md](redesign/VERIFICACAO.md) | `E11` | Os seis procedimentos de navegador nos dois esquemas, com três limitações declaradas |
 
 ### Regras de processo
 
@@ -110,26 +112,31 @@ em `src/`; por que uma guarda existe, no cabeçalho do próprio script ou teste.
 
 ---
 
-## Estado atual: o plano original fechado, três épicos abertos depois dele
+## Estado atual: o backlog fechado
 
 **Todas as fases do plano fecharam**, e o critério de saída da Fase 1 foi
 atingido com folga: as 649 linhas da aba `2026` são aceitas com **0% de
 quarentena** (`H-07`), contra o limite de 2% de RNF-24.
 
-**55 das 72 histórias estão concluídas.** As 17 abertas estão em três épicos que
-nasceram depois do plano e não têm fase atribuída:
+**As 81 histórias estão concluídas, e nenhuma está aberta.** `E9`, `E10`, `E11` e
+`E12` fecharam em 01/09/2026, e `E13` em 03/09/2026. Os cinco nasceram depois do
+plano e não têm fase atribuída; a ordem entre eles vive no cabeçalho de cada
+épico, em `06-backlog.md`.
 
-| Épico | Aberto em | Ordem |
-|---|---|---|
-| `E9` — Estilização | abertas `H-67` a `H-72`, os seis achados que `H-47` mediu no navegador; `H-39` a `H-47` fechadas | Corre em paralelo a `E10`; os dois não se bloqueiam |
-| `E10` — As melhorias de uso | abertas `H-50` — a única G do backlog — e `H-66`, que saiu do corte dela (`D-24`); `H-48`, `H-49`, `H-51` a `H-56` fechadas | idem |
-| `E11` — A casca redesenhada | `H-57` a `H-65`, todas | **Depois de `E9` e `E10` inteiros** — a razão está no cabeçalho do épico |
+**`E13` é retroativo**, e é o único: a criação de linha, a edição na tabela, a
+ordenação e a gravação do mapa de clientes entraram em 02/09/2026 **sem história
+no backlog**, e as cinco histórias — `H-77` a `H-81` — foram escritas no dia
+seguinte, a partir dos commits (`D-26`). O que elas registram estava vivo desde
+então nos testes, no contrato de `05-contratos-api.md §3` e em
+`.claude/rules/escrita-xlsx.md`.
 
-**Cinco pendências convergem para a primeira instalação na máquina do operador**
-— `PD-01`, `PD-05`, `PD-06`, `PD-07` e `PD-08`. Estão no `CLAUDE.md` da raiz,
-com o gatilho de cada uma. **Duas não exigem Windows e podem cair antes:**
-`PD-05` precisa de qualquer Excel, e dois dos três itens de `PD-07` precisam de
-uma planilha de teste alterada e de um navegador com cursor.
+**As pendências abertas são cinco** — `PD-01`, `PD-06`, `PD-07`, `PD-08` e
+`PD-09` —, e a maioria converge para a primeira instalação na máquina do
+operador. Estão no `CLAUDE.md` da raiz, com o gatilho de cada uma. **`PD-05`
+fechou em 01/09/2026**, medida em dois arquivos que o próprio Excel gerou, e a
+premissa dela foi **refutada**. **O que não exige Windows:** o item 2 de `PD-07`
+— o `ConflictDialog` — precisa de uma fixture que produza o conflito, e nenhuma
+das nove produz; e `PD-09` fecha com o proxy de uma máquina só.
 
 **O que cada história mediu e decidiu está no bloco `✅ CONCLUÍDA` dela**, em
 [06-backlog.md](06-backlog.md) — é lá que o registro técnico vive, não aqui. O

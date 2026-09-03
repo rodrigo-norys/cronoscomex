@@ -69,6 +69,16 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 | RF-14 | Página Histórico: evolução mensal de volume, desembaraçados e Canal Vermelho | H-21 |
 | RF-15 | Tela de detalhe do processo, exibindo o texto original de STATUS e todos os campos, inclusive os fora de escopo | H-22 |
 | RF-16 | Painel de saúde da ingestão: última leitura, linhas lidas, quarentena e divergências | H-16, H-31 |
+| RF-31 | Página Configuração: apontar a planilha pela tela — com o diálogo de arquivo do sistema —, salvar o caminho sem editar JSON, e revalidar a partida sem reexecutar o atalho | H-34, H-35, H-36, H-37, H-38 |
+| RF-32 | Ordenar a tabela da Página Operacional por **qualquer** uma das nove colunas, com a ordem de categoria seguindo o fluxo do processo e não o alfabeto | H-77 |
+
+> **Os RF acima de RF-30 nasceram depois do plano**, e a numeração é
+> cronológica, não posicional: eles ficam na seção do tema a que pertencem, e o
+> ID diz quando entraram. **RF-31 é retroativo por outro motivo que RF-32 a
+> RF-35:** a Página Configuração foi entregue entre `H-34` e `H-38`, em agosto,
+> e nunca ganhou requisito — o achado é de 03/09/2026, e não havia o que
+> decidir, apenas o que registrar. Os quatro seguintes vêm de `E13`, cujo código
+> entrou em 02/09/2026 sem história (`D-26`).
 
 ### 1.5. Filtros globais (§7, com as correções da auditoria)
 
@@ -91,6 +101,9 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 | RF-26 | Validar o arquivo após a escrita e restaurar o backup automaticamente em caso de falha | H-25 |
 | RF-27 | Editar os campos codificados em cor (responsável, canal, importador fora do RJ) | H-27 |
 | RF-28 | Descartar edições pendentes individualmente ou em bloco, antes da aplicação | H-23 |
+| RF-33 | Editar o campo **onde ele está**, na própria tabela da Página Operacional: sete colunas editáveis, com Categoria de leitura porque ela sai de cinco regras das quais só uma lê a célula (A-22) | H-80 |
+| RF-34 | **Criar um processo novo** pela tela, enfileirado como as demais edições e gravado depois da última linha existente da aba `2026` sob comando explícito. A **remoção** de linha permanece fora de escopo (`D-25`) | H-78, H-79, H-80 |
+| RF-35 | Declarar o cliente consolidado de um processo pela tela, gravando a regra no mapa de clientes de `H-48` — e criando o arquivo quando ele não existe, que é o estado da máquina do operador em `PD-08` | H-79 |
 
 ### 1.7. Histórico
 
@@ -187,7 +200,7 @@ Todos os valores abaixo, exceto RNF-02, têm origem **medido**. Detalhe em
 | RNF-28 | Navegador alvo | Edge ou Chrome, versão corrente | Premissa |
 | RNF-29 | Interface de rede do servidor | Apenas `127.0.0.1`. O processo **não** escuta em interface externa | Decisão de segurança, ADR-0002 |
 | RNF-30 | Fuso horário de todo cálculo de data | `America/Sao_Paulo` | Decisão, A-07 — P-10 |
-| RNF-42 | Esquemas de cor da interface | **Dois** — claro e escuro, escolhidos por `prefers-color-scheme`. Sem alternância manual. Entregue em `H-57`: **44 tokens de cor**, todos com par, e `tests/repo/estilo.test.ts` reprova quem declarar um só. Medido no navegador nos dois esquemas, **zero reprovações** de contraste | **medido**, D-21 |
+| RNF-42 | Esquemas de cor da interface | **Dois** — claro e escuro, escolhidos por `prefers-color-scheme`. Sem alternância manual. Entregue em `H-57` com **41 tokens de cor**; hoje são **42** — os `--color-` do bloco `@theme static` de `web/src/index.css`, todos com par no bloco escuro (medido em 02/09/2026, `grep -oE '^\s*--color-[a-z0-9-]+' web/src/index.css | sort -u | wc -l`). `tests/repo/estilo.test.ts` reprova nos dois sentidos: token de cor sem par no escuro, e token que não é cor sob a media query. Medido no navegador nos dois esquemas, **zero reprovações** de contraste | **medido**, D-21 |
 | RNF-43 | Origem das fontes da interface | **O próprio repositório** (`web/public/fonts/`), com `@font-face` local. Nenhuma requisição a CDN. Entregue em `H-58`: IBM Plex Sans e Mono, pesos 400/500/600, **347 KB**, licença OFL 1.1 ao lado. Medido no navegador: **zero** requisições externas, `Content-Type: font/woff2` | **medido**, derivado de RNF-34 e RNF-31 |
 
 ### 2.7. Segurança e privacidade
@@ -203,8 +216,8 @@ Todos os valores abaixo, exceto RNF-02, têm origem **medido**. Detalhe em
 
 | ID | Requisito | Valor | Origem |
 |---|---|---|---|
-| RNF-35 | Cobertura de teste do módulo de domínio (classificação, normalização, indicadores, alertas) | **≥ 90%** de linhas | Premissa — alvo, ver pirâmide em `08-qualidade-operacao.md` |
-| RNF-36 | Cobertura de teste dos módulos de leitura e escrita de `.xlsx` | **≥ 80%** de linhas, com fixtures versionadas | Premissa |
+| RNF-35 | Cobertura de teste do módulo de domínio (classificação, normalização, indicadores, alertas) | **≥ 90%** de linhas — **alvo declarado, não verificado**: `vitest.config.ts` tem `coverage.thresholds` nos quatro eixos em `0` e `npm test` roda sem `--coverage`. Ver a ressalva na pirâmide de `08-qualidade-operacao.md §1.1` | Premissa |
+| RNF-36 | Cobertura de teste dos módulos de leitura e escrita de `.xlsx` | **≥ 80%** de linhas, com fixtures versionadas — **mesmo estado de RNF-35**: alvo declarado, nenhum limiar ativo | Premissa |
 | RNF-37 | Testes que tocam a planilha real | **Zero.** Toda a suíte roda sobre fixtures do repositório | Decisão, D7 |
 | RNF-38 | Regras de negócio implementadas fora do módulo de domínio | **Zero.** Nenhum cálculo de indicador no cliente ou nas rotas | Decisão, ADR-0006 |
 

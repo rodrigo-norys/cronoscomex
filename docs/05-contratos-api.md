@@ -65,6 +65,16 @@ Parâmetro com valor fora do domínio → `400 FILTRO_INVALIDO`.
 | `ARQUIVO_INDISPONIVEL` | 503 | Aplicação em estado `Degradado`, ou arquivo ilegível na hora de gravar |
 | `ESCRITA_INVALIDA` | 500 | Escrita recusada ou desfeita; ver §3 para distinguir os casos |
 | `ERRO_INTERNO` | 500 | Demais falhas |
+| `REF_DUPLICADA` | 409 | Linha nova cuja `ref` já está na fila |
+| `LINHA_NAO_GRAVADA` | 409 | Edição de célula sobre linha nova ainda não aplicada ao arquivo |
+| `TABELA_CHEIA` | 409 | A folga da Tabela do Excel acabou; a aplicação **recusa** em vez de gravar fora dela |
+| `CAMINHO_INVALIDO` | 400 | Caminho de planilha que não resolve, não existe ou não tem a aba (`H-34`) |
+| `CONFIG_NAO_GRAVAVEL` | 500 | `config/app.json` não pôde ser escrito (`H-35`) |
+| `SELETOR_INDISPONIVEL` | 503 | O sistema não oferece diálogo de arquivo (`H-37`) |
+| `SELETOR_FALHOU` | 500 | O diálogo abriu e falhou |
+
+> **Vinte códigos, e é a lista inteira** — `src/http/errors.ts` é a fonte, e
+> `tests/repo/contratos.test.ts` confere que a tela conhece todos.
 
 > `EDICAO_OBSOLETA` e o alcance maior de `ARQUIVO_INDISPONIVEL` entraram em
 > `H-25`, cujo contrato no backlog declarava cinco recusas. As duas estão
@@ -77,7 +87,7 @@ Parâmetro com valor fora do domínio → `400 FILTRO_INVALIDO`.
 type StatusCategory = 'desembaracado' | 'em_desembaraco' | 'em_andamento'
                     | 'fechado_aguardando_draft'
 type Responsible    = 'colaborador1' | 'colaborador2' | 'colaborador1_outros_clientes' | 'indefinido'
-type CustomsChannel = 'vermelho' | 'nenhum' | 'indefinido'
+type CustomsChannel = 'verde' | 'vermelho' | 'indefinido'   // `nenhum` saiu em H-51
 
 interface ProcessDto {
   ref: string
@@ -136,6 +146,7 @@ Estado do processo. Nunca falha enquanto o servidor responder.
   "lastReadOk": true,
   "lastReadDurationMs": 0,        // null enquanto não houve leitura
   "sourceFileHash": "sha256:9f2c...",
+  "sheetName": "2026",            // null enquanto não houve leitura
   "rowsRead": 0,
   "rowsAccepted": 0,
   "rowsQuarantined": 0,
@@ -896,6 +907,7 @@ Enfileira uma edição. **Não toca no `.xlsx`.**
 | 400 | `CORPO_INVALIDO`, `CAMPO_NAO_EDITAVEL` |
 | 404 | `PROCESSO_NAO_ENCONTRADO` |
 | 409 | `ESCRITA_EM_ANDAMENTO` — uma aplicação está em curso |
+| 409 | `LINHA_NAO_GRAVADA` — o processo é linha nova ainda não aplicada ao arquivo, então não há linha a pintar |
 | 503 | `ARQUIVO_INDISPONIVEL` — nunca houve leitura, não há processo a editar |
 
 > As CINCO rotas que ESCREVEM na fila — `POST /api/edits`,
@@ -951,10 +963,12 @@ verde, que cobre 477 das 649 linhas. A regra do tom canônico é a mesma que o
 caso-limite de `H-27` já fixa para a linha verde tom B repintada de verde.
 
 **Consequência, e ela é visível ao operador:** as combinações representáveis são
-**seis**, e cada uma grava uma cor só. Branco e os tons B são **legíveis, não
-graváveis** — a interface oferece as seis, rotuladas pela cor que de fato será
-gravada, em vez de deixar o operador escolher um alvo que a aplicação não
-escreve.
+**sete**, e cada uma grava uma cor só. Os tons B são **legíveis, não graváveis**;
+**o branco é gravável** — `representableTargets` sobre `config/color-map.json`
+devolve Verde (tom A), Azul, Roxo (tom A), Bege, Vermelho, Amarelo forte e Branco
+(do tema), medido em 02/09/2026. A interface oferece as sete, rotuladas pela cor
+que de fato será gravada, em vez de deixar o operador escolher um alvo que a
+aplicação não escreve.
 
 | `responsible` | `customsChannel` | `importerOutsideRj` | Cor gravada | `fillId` |
 |---|---|---|---|---|
@@ -989,9 +1003,11 @@ A tabela é **derivada** de `config/color-map.json`, não uma segunda fonte: o
 { "items": [ /* edições consolidadas */ ], "count": 0 }
 ```
 
-A fila tem **dois** tipos de item, distinguidos por `kind`. Uma edição de campo
+A fila tem **três** tipos de item, distinguidos por `kind`. Uma edição de campo
 é consolidada por `(ref, field)`; uma de cor, por `ref` — a linha tem uma cor
-só, então a última escolha vence.
+só, então a última escolha vence; e uma **linha nova** (`rowInsert`), também por
+`ref`, guardando só ela: sem `sourceRow`, porque a linha ainda não existe, e sem
+`previous`, porque não há valor anterior.
 
 ```jsonc
 { "kind": "field", "id": "…", "ref": "FT533.26", "sourceRow": 483,
@@ -1154,6 +1170,11 @@ Corpo: vazio.
 Sem essa marca, `valueNow: ""` afirmaria que a célula está vazia, quando a linha
 inteira desapareceu (regra inviolável 3).
 
+Desde 02/09/2026 há um **segundo** discriminador, e ele é o oposto:
+`"refExists": true`, emitido com `field: 'linha-nova'` quando a `ref` de uma
+linha nova **já está** no arquivo. É a defesa que substitui o `previous` que esse
+tipo de item não tem.
+
 **Conflito de cor** sai com `"field": "cor"`, e os três valores são o **rótulo**
 da cor, não conteúdo de célula — `"Verde (tom A)"`, `"Roxo (tom A)"`. A troca de
 cor não altera valor nenhum, então descrevê-la como valor mentiria sobre o que
@@ -1276,6 +1297,15 @@ requisição, então rodar o `build` com o servidor no ar dispensa reiniciá-lo.
 | `GET /api/processes/:ref` | H-22 |
 | `GET /api/indicators` | H-09, H-10, H-11, H-12, H-13, H-16, H-17, H-49, H-56 |
 | `GET /api/alerts` | H-14, H-29 |
+| `GET /api/edits` | H-23 |
+| `DELETE /api/edits/:id` | H-23 |
+| `DELETE /api/edits` | H-23 |
+| `POST /api/edits/row` | H-78, H-79, H-80 — histórias escritas retroativamente em 03/09/2026 (`D-26`) |
+| `PATCH /api/processes/:ref/color` | H-27 |
+| `PUT /api/processes/:ref/client` | H-79, H-80 — idem, `D-26` |
+| `GET /api/config/workbook` | H-34, H-35, H-36 |
+| `PUT /api/config/workbook` | H-34, H-35, H-36 |
+| `POST /api/config/workbook/browse` | H-37 |
 | `GET /api/history/monthly` | H-21, H-28 |
 | `GET /api/filters/options` | H-15, H-49, H-55 |
 | `GET /api/quarantine` | H-07 |

@@ -26,10 +26,11 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização ✅ | **H-39 … H-47 e H-67 … H-72, todas concluídas** | 7 | 8 | 0 |
-| E10 — As melhorias de uso ✅ | **H-48 … H-56 e H-66, todas concluídas.** `H-50` é a única G do backlog | 2 | 7 | 1 |
+| E10 — As melhorias de uso ✅ | **H-48 … H-56 e H-66, todas concluídas.** `H-50` é uma das **quatro** G do backlog — as outras são `H-75`, em `E12`, e `H-79` e `H-80`, em `E13` | 2 | 7 | 1 |
 | E11 — A casca redesenhada ✅ | **H-57 … H-65, todas concluídas** | 3 | 6 | 0 |
 | E12 — Os achados da revisão de estilo ✅ | **H-73 … H-76, todas concluídas** | 2 | 1 | 1 |
-| **Total** | **76** — 76 concluídas, nenhuma aberta | **30** | **44** | **2** |
+| E13 — O operacional que edita, ordena e cria ✅ | **H-77 … H-81, todas concluídas.** Épico **retroativo**: o código entrou em 02/09/2026 e as histórias foram escritas em 03/09 | 3 | 0 | 2 |
+| **Total** | **81** — 81 concluídas, nenhuma aberta | **33** | **44** | **4** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -44,7 +45,11 @@ bloco; o índice agora é obrigado a concordar com ele.
 `iniciar.cmd` foi executado na máquina do operador, sobe e carrega a planilha.
 `PD-06` guarda os três itens que ainda faltam.
 
-**Uma história é G, e o rótulo é deliberado** — `H-50`, desde `D-24`. As três
+**Quatro histórias são G.** `H-50` desde `D-24`, `H-75` em `E12`, e `H-79` e
+`H-80` em `E13` — estas duas por medição do que já estava commitado: 29 e 15
+arquivos, e duas rotas novas. **Nas duas o rótulo é diagnóstico, não escolha**,
+e é o preço de escrever a história depois do código: fatiar em M teria sido
+decisão de antes. As três
 candidatas naturais anteriores foram quebradas: a
 escrita no `.xlsx` virou `H-24` (cirurgia), `H-25` (defesas) e `H-26` (comando
 ponta a ponta); os indicadores viraram cinco histórias por natureza de cálculo;
@@ -170,6 +175,14 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-75 — Um papel de UI, uma forma e um nome](#h-75) ✅
 - [H-76 — A coluna Navio cabe no que ela mostra](#h-76) ✅
 
+**[Épico E13 — O operacional que edita, ordena e cria](#e13)**
+
+- [H-77 — A tabela ordena pelas nove colunas](#h-77) ✅
+- [H-78 — Uma linha nova depois da última que existe](#h-78) ✅
+- [H-79 — A fila aceita linha nova, e o Cliente grava a regra no mapa](#h-79) ✅
+- [H-80 — Editar a célula onde ela está, e criar a linha na tabela](#h-80) ✅
+- [H-81 — O gráfico distinto pelo traço, e as regiões vivas fora da tela](#h-81) ✅
+
 
 ---
 
@@ -236,13 +249,17 @@ export interface WorkbookProfile {
 export async function profileWorkbook(filePath: string): Promise<WorkbookProfile>
 ```
 
-Executável por `npm run profile -- "<caminho do .xlsx>"`, gravando
-`docs/perfilamento-<AAAAMMDD>.json` e um resumo em Markdown ao lado.
+Executável por `npm run profile -- "<caminho do .xlsx>" /tmp/perfil.json`.
+
+> **Emenda de 02/09/2026.** O destino passou a ser **obrigatório e em `/tmp/`** —
+> a saída percorre todas as abas, inclusive `CNPJ`, e o padrão anterior gravava
+> na raiz do repositório. E o que o script grava é o JSON: o resumo em Markdown
+> nunca existiu, e `docs/perfilamento/RESULTADO.md` foi escrito à mão.
 
 **Critérios de aceite:**
-- **Dado** o `.xlsx` real, **quando** `npm run profile` roda, **então** o JSON é
-  gravado com uma entrada por coluna de A até a última coluna com cabeçalho ou
-  dado.
+- **Dado** o `.xlsx` real, **quando** `npm run profile` roda com destino em
+  `/tmp/`, **então** o JSON é gravado com uma entrada por coluna de A até a
+  última coluna com cabeçalho ou dado.
 - **Dado** que a coluna E está oculta ou colapsada, **quando** o perfil é
   gerado, **então** `columns[E].hidden` é `true` e `columns[E].header` traz o
   texto real do cabeçalho, resolvendo **P-01**.
@@ -423,9 +440,16 @@ export function extractStyleKey(cell: unknown): string   // TD-05
   cruzado com `xl/_rels/workbook.xml.rels` — nunca presumido como
   `sheet1.xml`, porque o nome do arquivo interno não acompanha a ordem das abas.
 - **Dado** que o arquivo tem 4 abas (medido em `H-01`), **então** as abas
-  `2025`, `2024` e `CNPJ` são **ignoradas por completo** — não lidas, não
-  contadas, não registradas em log. A aba `CNPJ` contém credenciais em texto
-  claro (A-47), e lê-la seria carregá-las em memória sem necessidade.
+  `2025`, `2024` e `CNPJ` são **ignoradas por completo** — o XML delas nunca é
+  descomprimido, e nenhum valor seu é processado, indexado, exposto nem
+  registrado em log. A aba `CNPJ` contém credenciais em texto claro (A-47).
+
+  > **Emenda de 02/09/2026.** A redação anterior dizia "não lidas", e a regra
+  > inviolável 10 do `CLAUDE.md` a aposentou por ser tecnicamente inatingível: a
+  > aba `CNPJ` referencia o pool **global** `xl/sharedStrings.xml`, que vem
+  > inteiro em toda leitura de texto — limitação do formato OOXML, não da
+  > biblioteca. O critério verificável é o que ficou acima, e é o que
+  > `src/io/xlsx-reader.ts` garante.
 - **Dado** `config.sheetName` apontando para aba inexistente, **então** a
   partida falha com mensagem listando os nomes de aba disponíveis.
 
@@ -487,26 +511,32 @@ export interface ColorMapEntry {
 }
 export interface ColorResolution {
   responsible: Responsible; customsChannel: CustomsChannel
-  importerOutsideRj: boolean | null; mapped: boolean; label: string
+  importerOutsideRj: boolean | null; source: ColorSource; label: string
 }
+// `mapped: boolean` ate 02/09/2026. `D-25` o substituiu por tres estados:
+type ColorSource = 'mapa' | 'sem-cor' | 'desconhecida'
 export function resolveColor(styleKey: string, map: ColorMapEntry[]): ColorResolution
 ```
 
-Chave ausente do mapa → `{ responsible: 'indefinido', customsChannel:
-'indefinido', importerOutsideRj: null, mapped: false, label: styleKey }`.
+Chave **presente** e ausente do mapa → `{ responsible: 'indefinido',
+customsChannel: 'indefinido', importerOutsideRj: null, source: 'desconhecida',
+label: styleKey }`. Chave `none` que o mapa não declara → `source: 'sem-cor'`,
+com `importerOutsideRj: false` e **sem quarentena**: é a linha em branco que a
+própria aplicação cria (`D-25`).
 
 **Critérios de aceite:**
 - **Dado** `color-map.json` com a entrada azul, **quando** `resolveColor("argb:FF0070C0")`
-  roda, **então** devolve `responsible: 'colaborador1'` e `mapped: true`.
+  roda, **então** devolve `responsible: 'colaborador1'` e `source: 'mapa'`.
 - **Dado** a entrada bege, **quando** resolvida, **então** devolve
   `responsible: 'colaborador1_outros_clientes'` — subcategoria de Colaborador 1 (A-18).
 - **Dado** a entrada vermelha, **então** `customsChannel: 'vermelho'`.
 - **Dado** a entrada amarela, **então** `importerOutsideRj: true` — e
   `customsChannel: 'nenhum'`, conforme decisão do usuário sobre A-38.
-- **Dado** `"none"` (branco), **então** todos os derivados neutros e
-  `mapped: true`.
-- **Dado** uma chave ausente do mapa, **então** `mapped: false` e nenhuma
-  aproximação por proximidade de cor é tentada.
+- **Dado** `"none"` declarado no mapa, **então** todos os derivados neutros e
+  `source: 'mapa'`; **não declarado**, `source: 'sem-cor'`.
+- **Dado** uma chave de cor **presente** e ausente do mapa, **então**
+  `source: 'desconhecida'` e nenhuma aproximação por proximidade de cor é
+  tentada.
 
 **Casos-limite:**
 - `"argb:FF00B051"` (um bit distante do verde `FF00B050`) → **não mapeado**. A
@@ -8231,7 +8261,10 @@ qualquer movimento que não responda a uma ação do operador.
 > continua devendo o foco ao abrir, a prisão de tabulação e o véu amostrado. (3)
 > A correção de `AlertRow` **não foi medida no navegador**: as 10 linhas de
 > `/alertas` sobre `cores.xlsx` são **todas urgentes**, e nenhuma das nove
-> fixtures produz severidade acima de `URGENT_SEVERITY`. Uma medição
+> fixtures produz severidade acima de `URGENT_SEVERITY`. (A fixture foi
+> regenerada em 02/09/2026 e passou a ter **11** linhas de dados — a décima com
+> uma cor real fora do mapa, a décima primeira sem preenchimento —, mas isso não
+> muda o que este parágrafo mede.) Uma medição
 > compararia urgentes com urgentes e não diria nada; o ramo ficou coberto por
 > teste de componente com as duas classes concretas.
 >
@@ -8718,10 +8751,428 @@ do épico descarta.
 
 ---
 
+<a id="e13"></a>
+
+## Épico E13 — O operacional que edita, ordena e cria
+
+**Épico retroativo, e é a única coisa incomum nele.** O código entrou em
+02/09/2026 pelo PR #111 — cinco commits de produto, 49 arquivos — **sem
+história no backlog**, e a cascata de documentos foi percorrida só em parte: o
+commit `603a62f` emendou `05-contratos-api.md`, `10-governanca.md` (`D-25`) e o
+`ADR-0004`, e deixou de fora `00-visao-escopo.md`, `02-requisitos.md`, este
+backlog e `09-rastreabilidade.md`. As cinco histórias abaixo foram escritas em
+**03/09/2026**, a partir dos commits, e o achado que as motivou está em `D-26`.
+
+**O que se ganha escrevendo depois é a rastreabilidade; o que não se recupera é
+o protocolo de fatia.** Ele existe para o defeito de plano aparecer antes do
+código — foi assim que o erro de `H-27` (trocar `styleId` em vez de `fillId`)
+custou uma conversa em vez de um retrabalho. Aqui o papel de anteparo foi
+exercido pelo `revisor-xml`, que reprovou **duas vezes** a cirurgia de `H-78`, e
+não pelo checklist. **Por isso o bloco de cada história cita o commit que a
+entregou:** ela descreve o que foi feito, e não o que se pretendia fazer.
+
+**Três determinações valem para o épico e não se re-litigam:**
+
+1. **A criação de linha está no escopo desde `D-25`.** A decisão é de
+   02/09/2026, reverte a negativa do `ADR-0004` e de `05-contratos-api.md §3`, e
+   não se reabre aqui.
+2. **A remoção de linha continua fora de escopo** — `D-25` é explícito.
+3. **Nenhum indicador muda de valor.** O que muda é o contrato: duas rotas novas
+   (`POST /api/edits/row` e `PUT /api/processes/:ref/client`) e `rowsInserted`
+   em `POST /api/edits/apply`, todas já documentadas em `05-contratos-api.md`.
+
+**As cinco histórias, na ordem dos commits** — que é a ordem da cadeia
+canônica, e não coincidência:
+
+| Ordem | História | Commit | Camada | Por que vem aqui |
+|---|---|---|---|---|
+| 1 | `H-77` | `94fa3e3` | `domain` | Ordenar não depende de nada do resto do épico |
+| 2 | `H-78` | `1ef37da` | `io` | A cirurgia precisa existir antes de a fila poder enfileirar linha |
+| 3 | `H-79` | `5d00c0d`, `c20b930` | `app`, `http`, `domain` | Fila, rotas e a distinção de cor ausente, que é o que impede a linha criada de cair na quarentena |
+| 4 | `H-80` | `8d00d87` | `web` | A tela consome as duas rotas de `H-79` e as dez ordens de `H-77` |
+| 5 | `H-81` | `9f9be19`, `06d9091` | `web` | Dois achados visuais da própria sessão, em arquivos que o épico já estava tocando |
+
+> **`H-81` não pertence a `E12`**, e a distinção importa: `E12` nasceu do corpus
+> de `docs/redesign/REVISAO-ESTILO.md` e fechou em 01/09/2026 com `H-76`. Os dois
+> achados de `H-81` foram encontrados na sessão de 02/09, olhando a tela — não
+> vêm do revisor, e reabrir um épico fechado para acomodá-los diria que o corpus
+> os previu.
+
+---
+
+<a id="h-77"></a>
+
+### H-77 — A tabela ordena pelas nove colunas
+
+> ✅ **CONCLUÍDA em 02/09/2026**, no commit `94fa3e3`. História escrita
+> retroativamente em 03/09/2026.
+>
+> **Eram cinco ordens para nove colunas.** Quatro cabeçalhos não clicavam e a
+> tela não dizia por que: quem clicava em BL não recebia nem ordem nem recusa.
+> `SORT_FIELDS` passou a declarar **dez**.
+>
+> **`status` ordena pelo fluxo, e não pelo alfabeto.** A ordem reusa
+> `STATUS_CATEGORIES` de `src/domain/filters.ts` — a mesma sequência canônica que
+> os filtros e os cartões usam —, então "Em andamento" vem antes de
+> "Desembaraçado" por ser onde o processo está, não pela letra.
+>
+> **`client` e `clientProcess` são ordens distintas de propósito.** Uma ordena
+> pelo cliente consolidado do mapa de `H-48`, a outra pelo valor cru da célula
+> CLT, e desde `H-49` isso são coisas diferentes: 649 processos revelaram 509
+> valores distintos em CLT. São duas colunas na tabela, e por isso duas ordens.
+>
+> **A décima ordem não tem coluna.** `registrationDate` existe em
+> `SORT_FIELDS`, no tipo do cliente e no comparador, e nenhum cabeçalho a
+> oferece — a tabela mostra nove colunas ordenáveis, e a rota aceita dez valores
+> de `sort`.
+
+**Objetivo:** todo cabeçalho da tabela da Página Operacional ordenar, e a ordem
+de categoria seguir o fluxo do processo.
+
+**Arquivos:**
+- `src/domain/process-query.ts` — `SORT_FIELDS` e o comparador
+- `tests/domain/process-query.test.ts`
+
+**Critérios de aceite:**
+- **Dado** qualquer uma das nove colunas da tabela, **quando** o cabeçalho é
+  clicado, **então** a lista ordena por ela, nos dois sentidos.
+- **Dado** a ordem por `status`, **então** a sequência é a de
+  `STATUS_CATEGORIES`, e **não** a alfabética.
+- **Dado** `client` e `clientProcess`, **então** são comparadores distintos: o
+  primeiro lê o cliente consolidado, o segundo a célula CLT.
+- **Dado** um valor nulo no campo ordenado, **então** ele cai sempre no mesmo
+  extremo, independentemente do sentido — nulo não se reordena com o resto.
+
+**Casos-limite:**
+- `status` com as quatro categorias fora de ordem alfabética: a asserção precisa
+  usar os rótulos concretos de `STATUS_CATEGORIES`, senão passa por coincidência.
+- `registrationDate` é ordem válida **sem coluna** na tabela; remover a coluna
+  não pode remover a ordem.
+- Data nula em `eta2` e em `registrationDate` — os dois campos são anuláveis.
+- Ordem por `client` num processo cujo mapa não declara regra: o consolidado cai
+  na grafia da célula, e a ordem tem de continuar total.
+
+**Fora desta história:** a edição da célula, que é `H-80`.
+
+**Dependências:** `H-17`, `H-49`.
+**Tamanho:** P (2 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-78"></a>
+
+### H-78 — Uma linha nova depois da última que existe
+
+> ✅ **CONCLUÍDA em 02/09/2026**, no commit `1ef37da`. História escrita
+> retroativamente em 03/09/2026.
+>
+> **`appendRow` cria a linha DEPOIS da última que existe, e recusa qualquer
+> outro alvo.** `<sheetData>` exige `<row>` em ordem crescente de `r`, e a
+> inserção é sempre antes de `</sheetData>`: mirar um buraco no meio — linhas
+> 1, 2, 4 com alvo 3 — produziria 1, 2, 4, 3, e o Excel reconstrói a aba inteira
+> removendo os registros de linha.
+>
+> **A linha nasce com o estilo da COLUNA, e isso foi medido.** Herdar o da linha
+> de cima carregaria `fillId 8`, que é Colaborador 1 — a linha criada nasceria
+> atribuída a uma pessoa. O `xf` da coluna é o `162`, sem preenchimento.
+>
+> **Cinco recusas na entrada e duas a jusante.** Inserção sem célula alguma,
+> coluna fora da forma ou acima de `MAX_COLUMN`, `sourceRow` não inteiro ou fora
+> de 1..`MAX_ROW`, alvo que não é depois da última — e, a jusante, o alvo além do
+> intervalo da Tabela do Excel. `Tabela1` cobre `A1:P997` contra 745 linhas
+> escritas: **enquanto houver folga a linha cabe sem estender intervalo nenhum, e
+> quando não houver a cirurgia recusa** em vez de estender.
+>
+> **O `revisor-xml` reprovou duas vezes**, e o registro está em `D-25`: seis
+> achados em `appendRow` e quatro em código **já commitado** na primeira, mais
+> cinco na segunda — dois deles introduzidos pelas correções da primeira, que é
+> o motivo de a régua mandar reinvocá-lo depois de corrigir.
+>
+> **Três defeitos de `H-24` saíram junto**, todos alcançáveis por
+> `applyCellEdits` e nenhum deles novo: `<si/>` auto-fechado sendo descartado do
+> pool **global** de strings, número não finito chegando a ser gravado, e `col`
+> declarado em par não sendo lido.
+>
+> **Validado no Excel real**, e não só na fixture: `wb.Saved` devolve `true`, não
+> há log de reparo, e a linha nasce dentro da Tabela.
+
+**Objetivo:** acrescentar uma linha ao fim da aba `2026` sem que o Excel peça
+reparo e sem herdar cor de ninguém.
+
+**Arquivos:**
+- `src/io/xlsx-surgeon.ts` — `appendRow`
+- `tests/io/xlsx-surgeon-append.test.ts`
+
+**Critérios de aceite:**
+- **Dado** um alvo depois da última linha, **quando** `appendRow` roda, **então**
+  a aba ganha um `<row>` com `r` maior que todos, e as demais entradas do zip
+  ficam byte a byte idênticas (`ADR-0004`).
+- **Dado** um alvo que não é depois da última, **então** a cirurgia **recusa**,
+  nomeando a última linha encontrada.
+- **Dado** que a linha nasce, **então** o `s` de cada célula vem do `xf` da
+  **coluna**, e nenhuma célula recebe `fillId` de linha vizinha.
+- **Dado** o alvo além do intervalo de `Tabela1`, **então** a cirurgia recusa em
+  vez de estender o intervalo.
+- **Dado** o arquivo gravado, **quando** aberto no Excel real, **então** não há
+  aviso de reparo e a linha está dentro da Tabela.
+
+**Casos-limite:**
+- Inserção com `values` vazio: `applyCellEdits` devolve o buffer intacto para
+  lista vazia porque "nada a gravar" é estado normal da fila; **aqui não é** —
+  quem chama pediu para criar uma linha, e sem a recusa o arquivo do operador
+  mudaria de bytes para gravar `<row>` sem célula alguma.
+- Coluna `ZZZ`: casa a forma `[A-Z]{1,3}` e endereça a coluna 18.278, que não
+  existe. O eixo de linha tem `MAX_ROW`; este é o par dele.
+- `sourceRow` fracionário ou negativo passa pelo tipo `number` e não pelo
+  formato de `r`.
+- `<si/>` auto-fechado no pool global — o defeito de `H-24` que este trabalho
+  encontrou.
+- Aba com `<sheetData/>` auto-fechado, sem nenhuma linha: `lastRowOf` precisa
+  devolver zero, e não falhar.
+
+**Fora desta história:** enfileirar a inserção e decidir a âncora, que são de
+`H-79`; e a **remoção** de linha, fora de escopo por `D-25`.
+
+**Dependências:** `H-24`, `H-25`.
+**Tamanho:** P (2 arquivos, 0 contrato novo — o critério conta arquivos, e esta
+é a maior P do backlog em linhas de diff)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-79"></a>
+
+### H-79 — A fila aceita linha nova, e o Cliente grava a regra no mapa
+
+> ✅ **CONCLUÍDA em 02/09/2026**, nos commits `5d00c0d` e `c20b930`. História
+> escrita retroativamente em 03/09/2026.
+>
+> **Ausência de preenchimento deixou de ser cor desconhecida**, e sem isso o
+> épico não existiria: toda linha criada iria para a quarentena. `resolveColor`
+> passou a devolver `source: 'mapa' | 'sem-cor' | 'desconhecida'` no lugar de
+> `mapped: boolean` — `sem-cor` traz `importerOutsideRj: false` e **não**
+> quarentena; `desconhecida` continua indo para a quarentena, que é a regra
+> inviolável 3.
+>
+> **`PendingRowInsert` tem a defesa oposta à da edição de célula.** Ela entra na
+> fila sem `sourceRow` e sem `previous`, e o que se verifica é que a `ref`
+> **não** existe: `REF_DUPLICADA` (409). A edição de célula sobre linha nova
+> ainda não aplicada recusa com `LINHA_NAO_GRAVADA` (409) — não há linha a
+> alterar.
+>
+> **A âncora vem das linhas CRUAS, com piso em `firstDataRow`.** Sem o piso a
+> gravação caía no cabeçalho: uma aba sem linha de dado nenhuma tem "última
+> linha" igual à do cabeçalho.
+>
+> **`PUT /api/processes/:ref/client` grava a regra de consolidação e cria o
+> arquivo se ele faltar** — que é exatamente o estado da máquina do operador
+> descrito em `PD-08`. É a primeira escrita da aplicação dentro de `config/`
+> fora do `app.json` de `H-34`.
+>
+> **`c20b930` conserta o caminho citado no cabeçalho da rota.** A guarda de
+> âncora morta de `tests/repo/contratos.test.ts` cobra existência **em disco**, e
+> o mapa de clientes está no `.gitignore`: o caminho completo reprovava o CI num
+> checkout limpo. A convenção — citar o arquivo sem o prefixo do diretório — já
+> estava fixada em `H-34` para o `app.json`, e passou a estar registrada na rota.
+>
+> **A fixture `cores.xlsx` ganhou uma cor real fora do mapa**, para a quarentena
+> por cor não ficar sem prova depois que `sem-cor` deixou de produzi-la.
+
+**Objetivo:** enfileirar uma linha nova e declarar o cliente de um processo, sem
+que nenhuma das duas toque o `.xlsx` fora do comando explícito.
+
+**Contrato:**
+
+```ts
+type ColorSource = 'mapa' | 'sem-cor' | 'desconhecida'
+```
+
+As duas rotas e o campo `rowsInserted` de `POST /api/edits/apply` estão
+especificados em `05-contratos-api.md` — documentados no mesmo dia, em
+`603a62f`.
+
+**Arquivos:** 29, entre eles —
+- `src/domain/color-mapper.ts` — os três estados de `ColorSource`
+- `src/domain/client-mapper.ts` e `src/app/client-map-loader.ts` — a regra e a
+  gravação do mapa
+- `src/app/write-guard.ts` e `src/io/edit-queue.ts` — `PendingRowInsert`
+- `src/http/routes/edits.ts` e `src/http/routes/process-client.ts`
+- `tests/fixtures/cores.xlsx` — a cor real fora do mapa
+
+**Critérios de aceite:**
+- **Dado** uma linha criada pela própria aplicação, sem preenchimento, **então**
+  ela **não** vai para a quarentena, e `source` é `sem-cor`.
+- **Dado** uma cor presente e ausente do mapa, **então** ela continua indo para
+  a quarentena, com `source: 'desconhecida'`.
+- **Dado** uma `ref` que já existe, **quando** a inserção é enfileirada,
+  **então** a recusa é `REF_DUPLICADA` (409).
+- **Dado** uma edição de célula sobre linha nova ainda não aplicada, **então** a
+  recusa é `LINHA_NAO_GRAVADA` (409).
+- **Dado** `PUT /api/processes/:ref/client` com o mapa ausente do disco,
+  **então** o arquivo é criado, e a regra fica gravada.
+- **Dado** a aplicação de uma inserção bem-sucedida, **então** `rowsInserted`
+  vem maior que zero na resposta de apply.
+
+**Casos-limite:**
+- Aba sem linha de dado nenhuma: a âncora tem de respeitar `firstDataRow`, ou a
+  gravação cai no cabeçalho.
+- Editar uma célula da linha pendente **atualiza a inserção**, e não cria uma
+  edição separada.
+- O mapa de clientes com JSON malformado: a partida já morre por ele
+  (`PD-08`), e a gravação não pode ser o que o corrompe — escrita em temporário
+  e `renameSync`.
+- Nome de cliente é dado pessoal (regra inviolável 8): a gravação do mapa não
+  pode aparecer em log.
+- `ref` com espaço ou caixa divergente da que já está na fila.
+
+**Fora desta história:** a tela, que é `H-80`; e o envio do mapa para a máquina
+do operador, que segue manual por `PD-08`.
+
+**Dependências:** `H-23`, `H-48`, `H-49`, `H-78`.
+**Tamanho:** G (29 arquivos, 2 contratos novos)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-80"></a>
+
+### H-80 — Editar a célula onde ela está, e criar a linha na tabela
+
+> ✅ **CONCLUÍDA em 02/09/2026**, no commit `8d00d87`. História escrita
+> retroativamente em 03/09/2026.
+>
+> **Sete colunas se editam onde estão. Categoria fica de leitura**, e o motivo é
+> `A-22`: ela sai de cinco regras das quais só uma lê a célula L — editar o
+> rótulo gravaria numa célula que não está à vista.
+>
+> **A tabela virou grade, e o número é o argumento:** `role="grid"` com
+> navegação por setas dá **25 paradas de tabulação** contra ~1.430 se cada
+> célula editável fosse uma parada própria. A paginação ficou **depois** da
+> grade no DOM, que é onde a ordem de leitura a espera.
+>
+> **Linha 0 nunca aparece como endereço.** Enquanto a inserção está pendente ela
+> não tem `sourceRow`, e mostrar `0` diria ao operador que a linha está na
+> primeira posição do arquivo.
+>
+> **`rowsInserted` chegou à tela.** Antes dele, aplicar uma linha nova
+> bem-sucedida caía no discriminador de "nada mudou": a tela dizia que nada
+> precisou ser gravado depois de gravar.
+>
+> **Duas guardas novas conferem o que o cliente duplica do servidor** — a lista
+> de colunas editáveis e o rótulo de categoria existem nos dois lados, e
+> divergir em silêncio é o modo de falha.
+
+**Objetivo:** editar um processo sem sair da Página Operacional, e criar um
+processo novo ali mesmo.
+
+**Arquivos:** 15, entre eles —
+- `web/src/components/EditableCell.tsx` e `NewRowButton.tsx` — os dois novos
+- `web/src/hooks/useGridNavigation.ts` — as setas da grade
+- `web/src/components/ProcessTable.tsx` e `web/src/pages/Operational.tsx`
+- `web/src/api-client.ts` — as duas rotas de `H-79`
+- `web/tests/Operational.test.tsx` e `web/tests/paginas-montadas.test.tsx`
+
+**Critérios de aceite:**
+- **Dado** uma das sete colunas editáveis, **quando** a célula é editada,
+  **então** a edição vai para a fila e a lista recarrega — sem abrir o detalhe.
+- **Dado** a coluna Categoria, **então** ela **não** é editável.
+- **Dado** o teclado, **então** a grade se percorre por setas, e a tabela inteira
+  ocupa um número de paradas de tabulação da ordem de dezenas, não de milhares.
+- **Dado** uma linha pendente, **então** a tela nunca exibe `0` como endereço de
+  linha.
+- **Dado** uma linha nova aplicada com sucesso, **então** a tela relata a
+  inserção, e não "nada precisou ser gravado".
+- **Dado** qualquer recusa do servidor, **então** a mensagem exibida é a dele —
+  o cliente não valida data nem tamanho de texto (regra inviolável 6).
+
+**Casos-limite:**
+- Editar a célula de uma linha **pendente** atualiza a inserção, e não cria
+  edição separada — o cliente precisa refletir isso sem recalcular nada.
+- A paginação depois da grade no DOM, e ainda alcançável por tabulação.
+- Cliente é a única coluna que **não** enfileira: ela chama
+  `PUT /api/processes/:ref/client`, e a célula não conhece nenhuma das duas
+  rotas.
+- Fila com edição pendente **e** inserção pendente ao mesmo tempo.
+- Grade com zero linhas: o estado vazio afirmativo de `H-17` continua valendo.
+
+**Fora desta história:** editar os campos que vivem na cor, que é `H-27` e segue
+no detalhe.
+
+**Dependências:** `H-77`, `H-79`.
+**Tamanho:** G (15 arquivos)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-81"></a>
+
+### H-81 — O gráfico distinto pelo traço, e as regiões vivas fora da tela
+
+> ✅ **CONCLUÍDA em 02/09/2026**, nos commits `9f9be19` e `06d9091`. História
+> escrita retroativamente em 03/09/2026.
+>
+> **As séries da Página Histórico compartilham a cor de propósito** — a
+> observada e a reconstruída de `H-54` são a mesma medida por duas fontes —, e
+> era **só** a cor que as distinguia. Nenhum padrão do Recharts carregava o
+> tracejado até a legenda, então legenda e tooltip passaram a ser próprios, com
+> amostra de 28 px, onde o traço se lê. O tooltip acompanha o tema e ordena por
+> par, em vez de por nome.
+>
+> **As duas regiões vivas da casca apareciam na tela.** Elas nasceram sem classe
+> e são filhas do flex da raiz: o texto anunciado por portal aparecia como uma
+> terceira coluna ao lado da navegação e do conteúdo. A correção é `sr-only`, e
+> **não** `hidden` — `display: none` mataria o anúncio, que é a razão de as
+> regiões existirem desde `H-43` e `H-44`.
+
+**Objetivo:** distinguir as duas séries sem depender da cor, e tirar da tela o
+que existe para o leitor de tela.
+
+**Arquivos:**
+- `web/src/pages/History.tsx` — legenda e tooltip próprios
+- `web/src/App.tsx` e `web/tests/App.test.tsx`
+
+**Critérios de aceite:**
+- **Dado** o gráfico da Página Histórico, **então** cada série se distingue por
+  **traço**, e a distinção aparece também na legenda e no tooltip.
+- **Dado** o tema escuro, **então** o tooltip acompanha o esquema.
+- **Dado** qualquer rota, **então** as duas regiões vivas da casca não ocupam
+  espaço na tela, **e** continuam anunciando.
+- **Dado** `sr-only`, **então** o nó permanece no DOM e no fluxo de acessibilidade
+  — `display: none` está proibido aqui, e o teste diz por quê.
+
+**Casos-limite:**
+- O par que compartilha a cor: trocar a cor de uma das séries resolveria o
+  sintoma e desfaria o que `H-54` estabeleceu — as duas são a mesma medida.
+- `forced-colors: active`, onde a cor do autor é descartada e o traço sobrevive.
+- Região viva vazia não pode deixar caixa na tela — o mesmo cuidado que
+  `StatusBanner` recebeu em `H-43`.
+
+**Fora desta história:** os achados de `docs/redesign/REVISAO-ESTILO.md`, que
+são `E12` e fecharam em 01/09/2026.
+
+**Dependências:** `H-43`, `H-44`, `H-54`.
+**Tamanho:** P (3 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
 ### Varredura de verbos de decisão em aberto
 
-Os textos das 34 histórias foram varridos em busca de "escolher", "avaliar",
-"definir", "decidir" e "ver qual". As ocorrências encontradas foram eliminadas:
+Os textos das 34 histórias **do plano original** foram varridos em busca de
+"escolher", "avaliar", "definir", "decidir" e "ver qual". As ocorrências
+encontradas foram eliminadas:
+
+> **A varredura nunca foi refeita.** O backlog tem 81 histórias hoje, e as 47
+> posteriores — `H-33` em diante, mais os épicos `E9` a `E13` — não passaram por
+> ela. As cinco de `E13` não poderiam passar: foram escritas **depois** do
+> código, e verbo de decisão em aberto num texto retroativo descreveria uma
+> escolha que já foi feita. A conclusão abaixo vale para o recorte varrido, não para o backlog.
 
 | Onde estava | Como foi fechado |
 |---|---|
