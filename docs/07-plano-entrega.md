@@ -8,10 +8,11 @@ Nenhuma fase entrega apenas infraestrutura.
 > **As cinco fases cobrem o plano original, e só ele.** O que nasceu depois
 > **não tem fase atribuída**: as histórias `H-33` a `H-38` e os épicos `E8`
 > (configuração alcançável), `E9` (estilização), `E10` (melhorias de uso), `E11`
-> (a casca redesenhada), `E12` (os achados da revisão de estilo) e `E13` (o
-> operacional que edita, ordena e cria). A ordem entre eles vive no cabeçalho de
-> cada épico, em `06-backlog.md`, e **desde 03/09/2026 a regra de ordem não vale
-> mais**: todos fecharam. **`E13` não teve ordem a respeitar** — ele é
+> (a casca redesenhada), `E12` (os achados da revisão de estilo), `E13` (o
+> operacional que edita, ordena e cria) e `E14` (a lateral que se lê antes de se
+> ler). A ordem entre eles vive no cabeçalho de
+> cada épico, em `06-backlog.md`. **`E14` é o único aberto**, e a ordem dentro
+> dele está no cabeçalho do épico; os demais fecharam. **`E13` não teve ordem a respeitar** — ele é
 > retroativo, escrito em 03/09/2026 a partir de código que já estava na `main`
 > (`D-26`). A regra vigente até então:
 > `E9` e `E10` estão abertos ao mesmo tempo e não se bloqueiam;
