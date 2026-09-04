@@ -845,3 +845,99 @@ describe('a casca de eixo lateral', () => {
     }
   })
 })
+
+/**
+ * A busca por atalho (`H-83`). O componente e testado em
+ * `CommandSearch.test.tsx`; aqui esta o que so a casca decide — o atalho, as
+ * duas recusas e a inercia do resto da tela.
+ */
+describe('a busca por atalho', () => {
+  it('Ctrl+K abre, e o foco entra no campo', async () => {
+    render(<App />)
+    await screen.findByRole('button', { name: 'Filtros' })
+
+    fireEvent.keyDown(document, { key: 'k', ctrlKey: true })
+
+    expect(await screen.findByRole('dialog', { name: 'Buscar processo' })).toBeTruthy()
+    expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: /Buscar por REF/ }))
+  })
+
+  /** O operador esta no Windows, mas o atalho do macOS nao custa nada. */
+  it('⌘K tambem abre', async () => {
+    render(<App />)
+    await screen.findByRole('button', { name: 'Filtros' })
+
+    fireEvent.keyDown(document, { key: 'k', metaKey: true })
+
+    expect(await screen.findByRole('dialog', { name: 'Buscar processo' })).toBeTruthy()
+  })
+
+  it('Esc fecha e devolve o foco ao elemento anterior', async () => {
+    render(<App />)
+    const gatilho = await screen.findByRole('button', { name: 'Filtros' })
+    gatilho.focus()
+
+    fireEvent.keyDown(document, { key: 'k', ctrlKey: true })
+    await screen.findByRole('dialog', { name: 'Buscar processo' })
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    expect(screen.queryByRole('dialog', { name: 'Buscar processo' })).toBeNull()
+    expect(document.activeElement).toBe(gatilho)
+  })
+
+  /**
+   * A Operacional edita celula desde `H-80`: roubar a tecla de quem esta
+   * digitando perderia o texto. Mesma guarda de `useGridNavigation`.
+   */
+  it('NAO abre a partir de um campo de edicao', async () => {
+    render(<App />)
+    const campo = await screen.findByRole('button', { name: 'Filtros' })
+    campo.focus()
+
+    const input = document.createElement('input')
+    document.body.appendChild(input)
+    fireEvent.keyDown(input, { key: 'k', ctrlKey: true })
+
+    expect(screen.queryByRole('dialog', { name: 'Buscar processo' })).toBeNull()
+    input.remove()
+  })
+
+  /**
+   * Decidido em 04/09/2026, sobre o caso-limite que `H-83` deixou por declarar:
+   * duas sobreposicoes empilhadas quebram a prisao de foco e a inercia de uma
+   * vez. O operador fecha com `Esc`, que ja e o gesto dele.
+   */
+  it('NAO abre com o painel de filtros aberto', async () => {
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Filtros' }))
+    await screen.findByRole('dialog', { name: 'Filtros' })
+
+    fireEvent.keyDown(document, { key: 'k', ctrlKey: true })
+
+    expect(screen.queryByRole('dialog', { name: 'Buscar processo' })).toBeNull()
+    expect(screen.getByRole('dialog', { name: 'Filtros' })).toBeTruthy()
+  })
+
+  it('com a busca aberta, o resto da tela fica inerte', async () => {
+    render(<App />)
+    await screen.findByRole('button', { name: 'Filtros' })
+
+    fireEvent.keyDown(document, { key: 'k', ctrlKey: true })
+    await screen.findByRole('dialog', { name: 'Buscar processo' })
+
+    expect(nav().hasAttribute('inert')).toBe(true)
+    expect(screen.getByRole('main').closest('[inert]')).not.toBeNull()
+  })
+
+  /** Ela alcanca as SETE telas, inclusive as que nao tem barra de filtros. */
+  it('abre tambem onde nao ha barra de filtros', async () => {
+    window.history.replaceState(null, '', '/configuracao')
+    render(<App />)
+
+    fireEvent.keyDown(document, { key: 'k', ctrlKey: true })
+
+    expect(await screen.findByRole('dialog', { name: 'Buscar processo' })).toBeTruthy()
+    expect(screen.queryByRole('region', { name: 'Filtros' })).toBeNull()
+  })
+})
