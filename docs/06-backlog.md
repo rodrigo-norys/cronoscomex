@@ -30,8 +30,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E11 — A casca redesenhada ✅ | **H-57 … H-65, todas concluídas** | 3 | 6 | 0 |
 | E12 — Os achados da revisão de estilo ✅ | **H-73 … H-76, todas concluídas** | 2 | 1 | 1 |
 | E13 — O operacional que edita, ordena e cria ✅ | **H-77 … H-81, todas concluídas.** Épico **retroativo**: o código entrou em 02/09/2026 e as histórias foram escritas em 03/09 | 3 | 0 | 2 |
-| E14 — A casca que se opera, não só se lê | **H-82 … H-87, todas abertas.** Primeiro épico **prospectivo** desde `E12`: as seis nascem antes do código (`D-29`, `D-30`, `D-31`) | 1 | 5 | 0 |
-| **Total** | **87** — 81 concluídas, 6 abertas | **34** | **49** | **4** |
+| E14 — A casca que se opera, não só se lê | **H-82 … H-88, todas abertas.** Primeiro épico **prospectivo** desde `E12`: as sete nascem antes do código (`D-29` a `D-32`) | 1 | 6 | 0 |
+| **Total** | **88** — 81 concluídas, 7 abertas | **34** | **50** | **4** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -192,6 +192,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-85 — O carregamento que não colapsa a altura](#h-85)
 - [H-86 — Os sete ícones da lateral](#h-86)
 - [H-87 — A contagem que segue o recorte](#h-87)
+- [H-88 — O que falta declarar, à vista e alimentável](#h-88)
 
 
 ---
@@ -9221,6 +9222,7 @@ primeiras são escolha do usuário, registradas em `D-29`:
 | 4 | `H-85` | M | A de maior superfície — sete páginas — e por isso vem antes do que ainda vai mudar por baixo dela |
 | 5 | `H-86` | P | A lateral só se decora depois que a casca parou de mudar |
 | 6 | `H-87` | M | Depende da linha do item, que `H-86` define, e acrescenta busca de dado à casca já estável |
+| 7 | `H-88` | M | A única que não vem da revisão de interação: nasce de `PD-08`, e não depende de nenhuma das outras |
 
 > **A primeira ordem escrita punha o painel por último**, e ela estava errada
 > pelo mesmo motivo que o conjunto já pagou uma vez: um padrão de foco nascido
@@ -9596,6 +9598,100 @@ Performance, Histórico e Configuração não têm número que signifique recort
 [↑ Índice](#indice)
 
 ---
+<a id="h-88"></a>
+
+### H-88 — O que falta declarar, à vista e alimentável
+
+> **`E14` cresceu de seis para sete histórias em 03/09/2026** (`D-32`), e esta é a
+> única que não veio da revisão de interação: ela nasce de `PD-08`, medida em
+> campo na terceira visita à máquina do operador.
+
+**Objetivo:** o operador ver quais grafias de CLT ainda não têm cliente
+declarado, ordenadas pelo que mais pesa, e declarar cada uma dali mesmo.
+
+**Contrato:** rota nova.
+
+```
+GET /api/clients/pending
+{ "items": [ { "key": "XYZ101", "count": 14, "samples": ["FT498.26", "FT471.26"] } ], "total": 0 }
+```
+
+> **A seção desta rota em `05-contratos-api.md` viaja com o commit que a serve,
+> ou depois dele.** Rota documentada e não servida reprova
+> `tests/repo/contratos.test.ts`, e isso já custou `git reset HEAD~2` em `H-26` e
+> `HEAD~1` em 02/09/2026.
+
+**Quatro determinações, decididas em `D-32` e não re-litigáveis:**
+
+1. **O painel vive na Página Configuração**, ao lado do caminho da planilha. É
+   manutenção de configuração, não análise: a Página Clientes é analítica, e dar
+   dois papéis a ela foi recusado.
+2. **A contagem ignora os filtros globais.** É dívida de configuração, não
+   recorte — se seguisse o filtro, filtrar por um cliente faria a dívida
+   "sumir", e o operador concluiria que declarou tudo.
+3. **Chave vazia não é pendência.** Processo sem CLT é ausência de dado, não
+   cliente por declarar; `resolveClient` devolve `{ key: '', mapped: false }`
+   para ela, e ela **não** entra na lista.
+4. **A aplicação não sugere agrupamento.** A lista mostra o que existe e conta;
+   quem decide que duas grafias são o mesmo cliente é o operador. Heurística
+   aqui adivinharia, e a regra inviolável 3 proíbe — o cabeçalho de
+   `client-mapper.ts` registra o caso que o prova: um prefixo de **62 processos**
+   cobre **três** clientes, distinguíveis só pelo importador.
+
+**Arquivos:**
+- `src/domain/client-mapper.ts` — a agregação das chaves sem regra, pura
+- `src/http/routes/clients-pending.ts` — nova · `src/http/server.ts`
+- `docs/05-contratos-api.md` — a seção da rota
+- `web/src/hooks/usePendingClients.ts` — novo
+- `web/src/pages/WorkbookSetup.tsx` — a seção do painel
+- `tests/domain/client-mapper.test.ts` · `tests/http/clients-pending.test.ts` ·
+  `web/tests/WorkbookSetup.test.tsx`
+
+**Critérios de aceite:**
+- **Dado** o mapa como está hoje, **então** a rota devolve as chaves de CLT que
+  **nenhuma regra casa**, cada uma com a contagem de processos e alguns `ref` de
+  exemplo, ordenadas por contagem decrescente.
+- **Dado** qualquer filtro global ativo, **então** a lista e as contagens **não
+  mudam** (determinação 2).
+- **Dado** um processo sem CLT, **então** ele não aparece na lista nem soma em
+  nenhuma contagem.
+- **Dado** que o operador declara o cliente de uma chave, **então** a regra vai
+  para o mapa por `saveClientRule` — que **já existe** desde `E13` — e a chave
+  **sai** da lista na recarga seguinte.
+- **Dado** que o mapa não existe em disco, **então** a tela funciona e a lista
+  traz todas as chaves: `saveClientRule` cria o arquivo na primeira declaração,
+  e nada precisa ser copiado antes.
+- **Dado** o cálculo, **então** ele é do domínio: o cliente não agrupa, não
+  conta e não ordena nada (regra inviolável 6).
+
+**Casos-limite:**
+- **A lista é longa por natureza:** 649 processos produzem **509 valores
+  distintos** em CLT (medido em `H-49`, 31/08/2026), e há **121 processos** com
+  cliente ainda não declarado — o número que o cabeçalho de `client-mapper.ts`
+  registra. A tela precisa de teto declarado e de ordem estável, não de rolagem
+  infinita.
+- **Nome de cliente é dado pessoal** (regra inviolável 8): a rota o devolve para
+  a tela, e **nunca** para o log — nem em erro.
+- **Duas chaves que o operador declara para o mesmo cliente** produzem duas
+  regras no mesmo `clients[]`, e a segunda não pode apagar a primeira.
+- **Declarar não conserta retroativamente o histórico** (`A-43`): o mapa muda a
+  leitura seguinte, e o que já foi gravado em `data/history.jsonl` fica.
+- **A chave normalizada de `TD-04`** é o que casa a regra; a lista exibe a
+  grafia da célula, e as duas podem diferir em caixa e acento.
+- **O arquivo pode estar somente-leitura** — `saveClientRule` já traduz isso, e a
+  tela precisa mostrar a mensagem dele em vez de falhar em silêncio.
+
+**Fora desta história:** sugerir agrupamentos (determinação 4); editar o
+`team-map.json`, que a aplicação não grava e chega por cópia; e a seção `groups`
+do mapa, que é agrupamento de clientes já declarados e não dívida.
+
+**Dependências:** nenhuma.
+**Tamanho:** M (8 arquivos, 1 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
 ### Varredura de verbos de decisão em aberto
 
 Os textos das 34 histórias **do plano original** foram varridos em busca de

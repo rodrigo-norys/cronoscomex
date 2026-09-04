@@ -42,7 +42,7 @@ Leia nesta ordem. Cada documento pressupõe o anterior.
 | 4 | [03-modelo-dados.md](03-modelo-dados.md) | Modelo em memória, arquivos locais e **as 9 tabelas de decisão** — TD-01 a TD-06, mais TD-05.1 (escrita de estilo), TD-04.1 (consolidação do cliente, `H-49`) e TD-04.2 (grupo de clientes, `H-55`) | H-04, H-05, H-06, H-07, H-27 |
 | 5 | [04-arquitetura.md](04-arquitetura.md) | Diagramas de contexto, containers e componentes; estrutura de diretórios | H-02 |
 | 6 | [05-contratos-api.md](05-contratos-api.md) | Rotas, schemas, códigos de erro e campos editáveis | Qualquer rota |
-| 7 | [06-backlog.md](06-backlog.md) | **87 histórias executáveis** em 14 épicos (`E1` a `E14`), com contrato, aceite e casos-limite — 81 concluídas, **as 6 de `E14` abertas** | — |
+| 7 | [06-backlog.md](06-backlog.md) | **88 histórias executáveis** em 14 épicos (`E1` a `E14`), com contrato, aceite e casos-limite — 81 concluídas, **as 7 de `E14` abertas** | — |
 | 8 | [07-plano-entrega.md](07-plano-entrega.md) | 5 fases, grafo de dependências, caminho crítico e **16 riscos** — `R-03` encerrado por `H-01`, `R-09` por `H-33`, `R-16` aberto por `E11`. **As fases cobrem o plano original e só ele** | Planejar a ordem |
 | 9 | [08-qualidade-operacao.md](08-qualidade-operacao.md) | Testes, ingestão, observabilidade, LGPD e build | Escrever testes |
 | 10 | [09-rastreabilidade.md](09-rastreabilidade.md) | Matriz de indicador/alerta → história → teste → status, mais as 81 linhas de história | Verificar cobertura |
@@ -118,7 +118,7 @@ em `src/`; por que uma guarda existe, no cabeçalho do próprio script ou teste.
 atingido com folga: as 649 linhas da aba `2026` são aceitas com **0% de
 quarentena** (`H-07`), contra o limite de 2% de RNF-24.
 
-**81 das 87 histórias estão concluídas.** `E9`, `E10`, `E11` e `E12` fecharam em
+**81 das 88 histórias estão concluídas.** `E9`, `E10`, `E11` e `E12` fecharam em
 01/09/2026, e `E13` em 03/09/2026. Os seis épicos posteriores ao plano não têm
 fase atribuída; a ordem entre eles vive no cabeçalho de cada um, em
 `06-backlog.md`.
@@ -127,7 +127,7 @@ fase atribuída; a ordem entre eles vive no cabeçalho de cada um, em
 filtros num painel sobreposto (`D-30`), que substitui a barra de chips de
 `H-60`; a busca por atalho; o quadro que rola com cabeçalho fixo e tamanho de
 página escolhível (`D-31`); o carregamento sem salto de altura; o ícone por
-destino; e a contagem que segue o recorte (`D-29`). **Nenhuma toca contrato de rota**, e três delas já estavam no mockup de
+destino; e a contagem que segue o recorte (`D-29`); mais `H-88`, que tira o mapa de clientes da cópia manual (`D-32`). **Nenhuma toca contrato de rota**, e três delas já estavam no mockup de
 `docs/redesign/PROPOSTA.md` sem nunca terem virado história.
 
 **`E13` é retroativo**, e é o único: a criação de linha, a edição na tabela, a
@@ -137,9 +137,11 @@ seguinte, a partir dos commits (`D-26`). O que elas registram estava vivo desde
 então nos testes, no contrato de `05-contratos-api.md §3` e em
 `.claude/rules/escrita-xlsx.md`.
 
-**As pendências abertas são cinco** — `PD-01`, `PD-06`, `PD-07`, `PD-08` e
-`PD-09` —, e a maioria converge para a primeira instalação na máquina do
-operador. Estão no `CLAUDE.md` da raiz, com o gatilho de cada uma. **`PD-05`
+**As pendências abertas são quatro** — `PD-07`, `PD-08`, `PD-09` e
+`PD-10`. Estão no `CLAUDE.md` da raiz, com o gatilho de cada uma. **A primeira
+instalação na máquina do operador aconteceu em 04/09/2026**, e fechou `PD-01`;
+`PD-08` encolheu para uma correção no `README.md` da branch `distribuicao`.
+**`PD-06` fechou em 03/09/2026.** **`PD-05`
 fechou em 01/09/2026**, medida em dois arquivos que o próprio Excel gerou, e a
 premissa dela foi **refutada**. **O que não exige Windows:** o item 2 de `PD-07`
 — o `ConflictDialog` — precisa de uma fixture que produza o conflito, e nenhuma
