@@ -107,6 +107,55 @@ describe('casca', () => {
   })
 
   /**
+   * `H-86`. **Sete desenhos, e a Configuracao entra**: ela vive no rodape, e um
+   * rodape sem icone reintroduziria na leitura a assimetria que `H-38` fechou.
+   */
+  it('cada destino da lateral tem icone proprio, e os sete sao distintos', () => {
+    render(<App />)
+
+    const itens = within(nav()).getAllByRole('link')
+    const desenhos = itens.map((item) => item.querySelector('svg')?.innerHTML ?? '')
+
+    expect(desenhos).toHaveLength(NAV_PAGES.length)
+    expect(desenhos.filter((desenho) => desenho === '')).toEqual([])
+    // Conjunto do mesmo tamanho da lista: dois destinos com o mesmo desenho
+    // devolveriam o reconhecimento a leitura do rotulo, que e o que a historia
+    // existe para evitar.
+    expect(new Set(desenhos).size).toBe(NAV_PAGES.length)
+  })
+
+  /**
+   * O icone se soma ao rotulo e nao o substitui (`SC 1.4.1`): quem nomeia o
+   * link continua sendo o texto. Se o desenho entrasse no nome acessivel, o
+   * leitor de tela ouviria duas vezes a mesma coisa, ou pior — ouviria o nome
+   * de um `path`.
+   */
+  it('o icone e decorativo: nao nomeia, nao tabula', () => {
+    render(<App />)
+
+    const inicio = within(nav()).getByRole('link', { name: 'Início' })
+    const icone = inicio.querySelector('svg') as SVGElement
+
+    expect(icone.getAttribute('aria-hidden')).toBe('true')
+    expect(icone.getAttribute('tabindex')).toBe(null)
+    // O nome acessivel e o rotulo, e nada mais: `getByRole` acima ja falharia,
+    // mas a assercao diz qual e a propriedade que importa.
+    expect(inicio.textContent).toBe('Início')
+  })
+
+  /** `currentColor`, e nenhuma cor nova (`D-29`): o icone acompanha o item, e
+      sobrevive a `forced-colors`, onde a paleta do autor e descartada. */
+  it('o traco herda a cor do texto, sem token proprio', () => {
+    render(<App />)
+
+    for (const item of within(nav()).getAllByRole('link')) {
+      const icone = item.querySelector('svg') as SVGElement
+      expect(icone.getAttribute('stroke')).toBe('currentColor')
+      expect(icone.getAttribute('class')).not.toMatch(/\btext-/)
+    }
+  })
+
+  /**
    * H-38. A tela de `H-34` existia desde 18/08/2026 e nao havia como chegar
    * nela: nenhuma linha de `web/src/` apontava para `/configuracao`, e o unico
    * acesso era digitar o endereco. Depois de apontar a planilha uma vez, o
