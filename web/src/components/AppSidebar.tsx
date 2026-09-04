@@ -1,4 +1,5 @@
 import { NAV_PAGES, navigate, type Route } from '../router.ts'
+import { NavIcon } from './NavIcon.tsx'
 
 /**
  * A navegacao lateral (`H-59`, `D-22`).
@@ -19,6 +20,12 @@ import { NAV_PAGES, navigate, type Route } from '../router.ts'
  * inalcancavel — o unico acesso era digitar o endereco, e depois de apontar a
  * planilha uma vez o operador a perdia.
  *
+ * **O icone se soma ao rotulo e nao o substitui** (`H-86`). Ele e
+ * `aria-hidden`, usa `currentColor` e nao traz cor nova; quem distingue o item
+ * corrente continua sendo a ESPESSURA da borda, pelo motivo de `H-72` logo
+ * abaixo. Um desenho por destino nao serve como canal: os sete teriam a mesma
+ * espessura, e sob `forced-colors` o corrente sumiria no conjunto.
+ *
  * **Sem contagem ao lado do item**, e isso e deliberado: o mockup mostra "649" e
  * "6", e o unico numero que a casca tem servido e `rowsAccepted`, que ignora o
  * recorte — exibi-lo ao lado de Operacional afirmaria 649 com o filtro em 12.
@@ -29,7 +36,8 @@ import { NAV_PAGES, navigate, type Route } from '../router.ts'
 
 const FOOTER_PAGE_ID = 'workbookSetup'
 
-const ITEM_BASE = 'motion-tint block rounded-control border-l-2 px-3 py-2 text-sm font-medium'
+const ITEM_BASE =
+  'motion-tint flex items-center gap-2 rounded-control border-l-2 px-3 py-2 text-sm font-medium'
 
 /**
  * O item corrente, e o unico lugar do conjunto onde o acento pinta fundo.
@@ -63,6 +71,7 @@ function NavItem({ page, current }: { page: (typeof NAV_PAGES)[number]; current:
       }}
       className={`${ITEM_BASE} ${current ? ITEM_CURRENT : ITEM_REST}`}
     >
+      <NavIcon page={page.id} />
       {page.label}
     </a>
   )
