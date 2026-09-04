@@ -30,8 +30,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E11 — A casca redesenhada ✅ | **H-57 … H-65, todas concluídas** | 3 | 6 | 0 |
 | E12 — Os achados da revisão de estilo ✅ | **H-73 … H-76, todas concluídas** | 2 | 1 | 1 |
 | E13 — O operacional que edita, ordena e cria ✅ | **H-77 … H-81, todas concluídas.** Épico **retroativo**: o código entrou em 02/09/2026 e as histórias foram escritas em 03/09 | 3 | 0 | 2 |
-| E14 — A casca que se opera, não só se lê | **H-82 a H-85 e H-90 ✅; H-86 … H-89 abertas.** Primeiro épico **prospectivo** desde `E12`: as nove nascem antes do código (`D-29` a `D-34`) | 2 | 7 | 0 |
-| **Total** | **90** — 86 concluídas, 4 abertas | **35** | **51** | **4** |
+| E14 — A casca que se opera, não só se lê | **H-82 a H-86 e H-90 ✅; H-87 … H-89 abertas.** Primeiro épico **prospectivo** desde `E12`: as nove nascem antes do código (`D-29` a `D-34`) | 2 | 7 | 0 |
+| **Total** | **90** — 87 concluídas, 3 abertas | **35** | **51** | **4** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -190,7 +190,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-83 — A busca alcançável do teclado](#h-83) ✅
 - [H-84 — O quadro que rola, e as linhas por página](#h-84) ✅
 - [H-85 — O carregamento que não colapsa a altura](#h-85) ✅
-- [H-86 — Os sete ícones da lateral](#h-86)
+- [H-86 — Os sete ícones da lateral](#h-86) ✅
 - [H-87 — A contagem que segue o recorte](#h-87)
 - [H-88 — O que falta declarar, à vista e alimentável](#h-88)
 - [H-89 — A ordem em que a planilha está](#h-89)
@@ -9735,6 +9735,41 @@ muda.
 <a id="h-86"></a>
 
 ### H-86 — Os sete ícones da lateral
+
+> ✅ **CONCLUÍDA em 04/09/2026.** **63 testes próprios** em
+> `web/tests/App.test.tsx`, suíte em **1.906**.
+>
+> **`D-29` nomeou um token que o item não usa, e a frase dela se contradizia.**
+> A determinação 1 manda o ícone "herdar a cor do texto" e, na mesma linha, diz
+> que ele acompanha `text-muted` no repouso — mas `ITEM_REST` usa
+> `text-text-secondary`, e os dois são tokens distintos (`#545a63` contra
+> `#6a6f77`). Herdar e pintar de outro token são coisas incompatíveis. Venceu a
+> primeira metade, que é o que ela de fato decide: `currentColor`, escolha do
+> usuário na abertura. **Nenhuma cor nova entrou no conjunto**, e é o mesmo
+> mecanismo que faz o traço sobreviver ao modo forçado.
+>
+> **Um caso-limite afirmava o oposto do que o Tailwind faz, e a medição
+> derrubou.** Ele dizia que o ícone "é dimensionado em `size-4` e **não**
+> acompanha o texto"; `size-4` no Tailwind v4 é `1rem`, relativo à fonte-base.
+> Medido num Chrome real, no cenário "Muito grande": o ícone vai de **16 px para
+> 24 px** e o item de **36 px para 54 px** — 1,5× nos dois, então a linha
+> continua alinhada. A conclusão do caso-limite estava certa; a premissa, não.
+>
+> **Medido num Chrome real, sobre a planilha real**, os quatro cenários: sete
+> destinos, **sete com ícone** em todos eles. A 320 px o item mede **36 px**, o
+> mesmo que a 1400 — o ícone não empurrou o rótulo para a segunda linha, e o
+> documento não rola na horizontal. Sob `forced-colors: active` a cor do ícone é
+> **idêntica** à do texto, e a distinção do item corrente continua vindo da
+> **espessura**: 4 px contra 2 px, exatamente como `H-72` mediu. O ícone não
+> virou o canal, que é o que o critério exigia.
+>
+> **`ITEM_BASE` passou de `block` para `flex items-center gap-2`**, nos sete
+> itens — consequência que a lista de arquivos não mencionava. `router.ts` não
+> ganhou uma linha: continua nas **97** que `D-16` mede, e o gatilho não se move.
+>
+> **`PageId` tem nove valores, e dois não são destino de menu.** `processDetail`
+> e `notFound` recebem `null` no mapa — o `typecheck` cobrou o segundo, que a
+> história não mencionava.
 
 **Objetivo:** cada destino do menu ganhar um ícone, para o reconhecimento não
 depender só da leitura do rótulo.
