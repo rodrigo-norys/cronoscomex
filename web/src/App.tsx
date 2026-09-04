@@ -3,6 +3,7 @@ import type { ApplyRefusal, HealthResponse } from './api-client.ts'
 import { AppSidebar } from './components/AppSidebar.tsx'
 import { ConflictDialog } from './components/ConflictDialog.tsx'
 import { FilterBar } from './components/FilterBar.tsx'
+import { FilterPanel } from './components/FilterPanel.tsx'
 import {
   LiveAnnouncement,
   PAGE_LIVE_REGION_ID,
@@ -67,6 +68,19 @@ export function App() {
   const mainRef = useRef<HTMLElement>(null)
 
   /**
+   * O painel de filtros e modal, e por isso o estado dele vive na CASCA (`H-82`,
+   * `D-30`): quem fica inerte enquanto ele esta aberto e a lateral, a barra de
+   * topo e a regiao de conteudo — tres nos que a barra de filtros nao alcanca.
+   *
+   * O gatilho tambem e da casca, pelo mesmo motivo do foco: `Esc` fecha e o foco
+   * volta para o botao, e quem fecha e o painel. Sem a devolucao o foco cai no
+   * `<body>` e a tabulacao recomeca do topo — `SC 2.4.3`, o defeito que `VN-4`
+   * mediu.
+   */
+  const [filtersOpen, setFiltersOpen] = useState(false)
+  const filterTriggerRef = useRef<HTMLButtonElement>(null)
+
+  /**
    * O foco so se move quando a navegacao PEDIU (`H-70`). O sinal e consumido
    * aqui, uma vez por troca de rota: o botao "voltar" emite o mesmo `popstate`
    * e nao o seta, entao ele nao move o foco — e o link da casca declara
@@ -100,6 +114,18 @@ export function App() {
     route.pageId !== 'workbookSetup' &&
     route.pageId !== 'notFound'
 
+  /**
+   * Pagina sem barra nao pode deixar o painel aberto: ele desapareceria com o
+   * foco dentro, e a tabulacao recomecaria do `<body>`. Fecha antes de pintar,
+   * porque `useEffect` deixaria um quadro com o painel sobre a pagina nova.
+   */
+  const panelOpen = filtersOpen && showFilters
+
+  const closeFilters = (): void => {
+    setFiltersOpen(false)
+    filterTriggerRef.current?.focus()
+  }
+
   return (
     <div className="min-h-screen bg-surface-base font-sans text-text-primary sm:flex">
       {/*
@@ -122,44 +148,64 @@ export function App() {
 
       {/* A lateral nao aparece na primeira execucao, pelo mesmo motivo de antes:
           nao ha dado a navegar, e o operador precisa apontar a planilha. */}
-      {!firstRun && <AppSidebar route={route} />}
+      {!firstRun && <AppSidebar route={route} inert={panelOpen} />}
 
       {/* `min-w-0` e obrigatorio: sem ele o filho flex assume `min-width: auto`
           e uma tabela larga empurra a coluna para fora, que e o defeito que
           `SC 1.4.10` cobra e `R01` ja tratou dentro de cada pagina. */}
       <div className="flex min-w-0 flex-1 flex-col">
-        <TopBar
-          title={pageOf(route)?.label ?? 'CronosComex'}
-          health={health}
-          refreshing={refreshing}
-          onRefresh={refresh}
-          onRefused={setRefusal}
-        />
-
-        {showFilters && (
-          <FilterBar filters={filters} options={options} optionsError={optionsError} />
-        )}
-
-        <StatusBanner health={health} />
-
-        {/* O no e o MESMO antes e depois de `healthError` ganhar valor: so o
-            conteudo muda. Envolver isto num condicional era o `ACHADO 11`. */}
-        <p
-          role="alert"
-          className={
-            healthError === null
-              ? 'sr-only'
-              : 'border-y border-state-error-border bg-state-error-bg px-6 py-3 text-sm text-state-error-fg'
-          }
-        >
-          {healthError !== null && (
-            <>
-              <strong className="font-semibold">Sem contato com o servidor.</strong> {healthError}
-            </>
-          )}
-        </p>
-
         {/*
+          A barra de topo fica FORA do contexto de posicionamento do veu, e isso
+          e a terceira determinacao de `D-30`: "Dados de 03/09/2026", `Aplicar
+          alteracoes` e `Atualizar` permanecem a vista com o painel aberto.
+          Cobrir a acao que grava no arquivo do operador seria esconder o que ele
+          precisa saber que existe. Inerte, sim; invisivel, nao.
+        */}
+        <div inert={panelOpen}>
+          <TopBar
+            title={pageOf(route)?.label ?? 'CronosComex'}
+            health={health}
+            refreshing={refreshing}
+            onRefresh={refresh}
+            onRefused={setRefusal}
+          />
+        </div>
+
+        {/* O contexto de posicionamento do veu: ele e `absolute` aqui dentro, e
+            por isso cobre a regiao de conteudo sem alcancar a barra de topo. */}
+        <div className="relative flex min-w-0 flex-1 flex-col">
+          <div inert={panelOpen} className="flex min-w-0 flex-1 flex-col">
+            {showFilters && (
+              <FilterBar
+                filters={filters}
+                options={options}
+                panelOpen={panelOpen}
+                triggerRef={filterTriggerRef}
+                onOpenPanel={() => setFiltersOpen(true)}
+              />
+            )}
+
+            <StatusBanner health={health} />
+
+            {/* O no e o MESMO antes e depois de `healthError` ganhar valor: so o
+            conteudo muda. Envolver isto num condicional era o `ACHADO 11`. */}
+            <p
+              role="alert"
+              className={
+                healthError === null
+                  ? 'sr-only'
+                  : 'border-y border-state-error-border bg-state-error-bg px-6 py-3 text-sm text-state-error-fg'
+              }
+            >
+              {healthError !== null && (
+                <>
+                  <strong className="font-semibold">Sem contato com o servidor.</strong>{' '}
+                  {healthError}
+                </>
+              )}
+            </p>
+
+            {/*
           `H-70`. `VN-4` mediu o foco caindo no `<body>` depois de abrir um
           recorte pelo ranking — 196 paradas de tabulacao pela frente em
           `/operacional`, e `SC 2.4.3`. O alvo e a landmark da casca, e nao um no
@@ -169,27 +215,40 @@ export function App() {
           anuncia ao receber o foco — mover o foco em silencio trocaria um
           defeito por outro. `tabIndex={-1}` nao acrescenta parada.
         */}
-        <main
-          id="conteudo"
-          ref={mainRef}
-          tabIndex={-1}
-          aria-label={pageOf(route)?.label}
-          className="px-6 py-6"
-        >
-          <Suspense fallback={<PageLoading />}>
-            {firstRun ? (
-              <WorkbookSetup dataVersion={dataVersion} firstRun onSaved={applyHealth} />
-            ) : (
-              <PageOutlet
-                route={route}
-                dataVersion={dataVersion}
-                health={health}
-                queryString={filters.queryString}
-                onWorkbookSaved={applyHealth}
-              />
-            )}
-          </Suspense>
-        </main>
+            <main
+              id="conteudo"
+              ref={mainRef}
+              tabIndex={-1}
+              aria-label={pageOf(route)?.label}
+              className="px-6 py-6"
+            >
+              <Suspense fallback={<PageLoading />}>
+                {firstRun ? (
+                  <WorkbookSetup dataVersion={dataVersion} firstRun onSaved={applyHealth} />
+                ) : (
+                  <PageOutlet
+                    route={route}
+                    dataVersion={dataVersion}
+                    health={health}
+                    queryString={filters.queryString}
+                    onWorkbookSaved={applyHealth}
+                  />
+                )}
+              </Suspense>
+            </main>
+          </div>
+
+          {/* Montado DEPOIS do conteudo inerte, e irmao dele: dentro, herdaria a
+              inercia; fora do contexto relativo, o veu cobriria a tela inteira. */}
+          {panelOpen && (
+            <FilterPanel
+              filters={filters}
+              options={options}
+              optionsError={optionsError}
+              onClose={closeFilters}
+            />
+          )}
+        </div>
       </div>
 
       {/*

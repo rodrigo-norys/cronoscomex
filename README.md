@@ -49,7 +49,13 @@ Isso é pedido **uma vez**. O caminho fica salvo, e nas próximas aberturas a
 leitura acontece sozinha. Para trocar de arquivo depois — na virada de ano, por
 exemplo — a mesma tela fica em *Configuração*, no menu.
 
-**Você não precisa editar arquivo nenhum**, em nenhum momento.
+**Você não edita arquivo nenhum**, em nenhum momento.
+
+Dois arquivos de configuração — os mapas de **cliente** e de **equipe** — são
+copiados por quem instala, e não por você. Sem eles a aplicação sobe e funciona:
+o que muda é o campo Cliente, que passa a mostrar a grafia da célula em vez do
+nome consolidado, e o Responsável, que faz o mesmo. Se for isso que você está
+vendo, avise quem instalou.
 
 ---
 
@@ -94,17 +100,29 @@ caminho da planilha na tela.
 <summary>Como refazer esta branch a partir da main</summary>
 
 Os arquivos vêm da `main`; só `iniciar.cmd` (na raiz) e este `README.md` são
-próprios daqui.
+próprios daqui, e nunca são sobrescritos.
+
+**A lista não se escreve à mão.** Quem a calcula é
+`scripts/sincronizar-distribuicao.ts`, que vive na `main`: ele parte de
+`src/http/server.ts` e `web/src/main.tsx`, segue o fecho transitivo dos imports
+— inclusive os `url()` das folhas de estilo, que é como as fontes entram —
+e soma os arquivos de suporte que nenhum import alcança.
 
 ```bash
-git switch --orphan distribuicao
-git checkout main -- src web/src web/index.html web/vite.config.ts \
-  config/color-map.json config/status-aliases.json config/app.json.exemplo \
-  scripts/iniciar.cmd scripts/porta.mjs scripts/esperar-porta.mjs \
-  package.json package-lock.json tsconfig.json .nvmrc .gitignore
+# a partir da main, com a arvore limpa
+node --experimental-strip-types scripts/sincronizar-distribuicao.ts
+node --experimental-strip-types scripts/sincronizar-distribuicao.ts --aplicar
 ```
 
-Depois recrie os dois arquivos próprios e confira que a árvore executa:
+Sem argumento ele confere e sai `1` se divergir. Com `--aplicar` ele troca para
+esta branch, prepara o índice e **para** — o commit e o push continuam sendo de
+quem está olhando.
+
+Uma lista escrita à mão já custou as seis fontes da interface, que nunca
+entraram na branch: como fonte ausente não produz erro, o operador via outra
+tipografia sem que nada reprovasse.
+
+Confira que a árvore executa:
 
 ```bash
 npm ci && npm run build && npm start
