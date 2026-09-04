@@ -52,10 +52,11 @@ function foldForSearch(text: string): string {
  * com os demais do mesmo filtro, e o conjunto entra em **E** com os outros
  * filtros — a combinacao acontece no servidor, aqui so se marca.
  *
- * **Desde `H-60` ela nao tem gatilho nem popover proprios**: quem abre, fecha,
- * devolve o foco e desenha a caixa e `FilterChip`, uma vez so para os treze
- * controles. Antes o comportamento vivia aqui e faltava nos outros dois — os
- * dois campos de data e o seletor de tres estados nunca tiveram popover.
+ * **Ela nao tem gatilho nem caixa proprios.** Ate `H-82` quem abria, fechava e
+ * devolvia o foco era o chip de `H-60`; agora ela e uma secao entre catorze
+ * dentro do `FilterPanel`, e abrir e fechar acontece uma vez so, para o painel
+ * inteiro. O comportamento ja vivera aqui antes de `H-60`, e faltava nos outros
+ * dois controles — os campos de data e o seletor de tres estados.
  *
  * A contagem ao lado de cada valor vem da rota e e sobre o **conjunto
  * completo**, nao sobre o ja filtrado: ela responde "quantos existem", nao

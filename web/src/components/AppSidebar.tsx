@@ -68,12 +68,18 @@ function NavItem({ page, current }: { page: (typeof NAV_PAGES)[number]; current:
   )
 }
 
-export function AppSidebar({ route }: { route: Route }) {
+/**
+ * `inert` chega por propriedade, e nao por um `<div>` em volta (`H-82`): a
+ * lateral e item do flex da raiz, com `shrink-0` e largura propria, e um
+ * involucro trocaria a inercia por um defeito de layout.
+ */
+export function AppSidebar({ route, inert = false }: { route: Route; inert?: boolean }) {
   const principais = NAV_PAGES.filter((page) => page.id !== FOOTER_PAGE_ID)
   const rodape = NAV_PAGES.filter((page) => page.id === FOOTER_PAGE_ID)
 
   return (
     <nav
+      inert={inert}
       aria-label="Páginas"
       className="flex shrink-0 flex-col gap-1 border-b border-border-subtle bg-surface-raised p-3 sm:w-54 sm:border-r sm:border-b-0"
     >

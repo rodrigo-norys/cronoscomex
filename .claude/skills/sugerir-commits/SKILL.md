@@ -39,6 +39,18 @@ Portões inegociáveis:
 - **Nunca `git add .` nem `git add -A`** — o agrupamento se perde. Só os caminhos exatos de cada
   commit. Aqui isso não é só disciplina: o hook `guard-dados-sensiveis.sh` **bloqueia** as duas
   formas, e `Bash(git add *)` está em `ask`.
+- **O índice pode chegar sujo, e aí o `git add` do plano leva mais do que os caminhos dele.**
+  Antes de commitar, leia `git status --porcelain` procurando marca na **primeira** coluna: ela
+  é o índice, e o que estiver lá entra no próximo commit sem ser citado. O caso que se paga
+  sozinho é `git rm` durante a implementação — ele **remove e prepara** de uma vez.
+  **Medido em `H-82`, 04/09/2026:** um `git rm web/src/components/FilterChip.tsx` deixou a
+  remoção preparada, e o primeiro commit saiu com 3 arquivos em vez de 2 — o `FilterBar`
+  daquele ponto importava o arquivo que o próprio commit apagava. Ponto **vermelho**, que é
+  exatamente o que o corte atômico existe para impedir. Custou `git reset --soft HEAD~1` mais
+  `git restore --staged <caminho>`; quem denunciou foi o `--stat` do commit não bater com o
+  plano, e não a suíte.
+- **Confira o `--stat` de cada commit contra o plano.** Número de arquivos que diverge é
+  sintoma, e é mais barato que descobrir pela suíte dois commits adiante.
 - Se um commit falhar no meio da sequência, **pare e reporte** — não contorne nem siga para o
   próximo.
 
