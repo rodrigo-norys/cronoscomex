@@ -2,7 +2,8 @@ import { useCallback, useMemo } from 'react'
 import { replaceQuery, useQuery } from '../router.ts'
 
 /**
- * Os parametros **da Pagina Operacional**: busca, ativos, ordenacao e pagina.
+ * Os parametros **da Pagina Operacional**: busca, recorte, ordenacao, tamanho
+ * de pagina e pagina.
  *
  * Vivem na URL pelo mesmo motivo dos quatorze filtros globais — recarregar
  * preserva, e um endereco descreve o que a tela mostra. Sao separados dos
@@ -38,18 +39,30 @@ const SORT_FIELDS: readonly SortField[] = [
   'status',
 ]
 
-export const PAGE_SIZE = 200
+/**
+ * Os quatro tamanhos que o seletor oferece (`D-31`).
+ *
+ * **`500` e teto, e nao "todas"**: com 649 processos a paginacao nunca
+ * desaparece, o rodape tem uma forma so, e o pior caso de renderizacao fica
+ * previsivel. `25` foi descartado — com a linha de 40 px de `H-61` ele nao
+ * enche uma tela de 1080 px. O teto da ROTA e outro: `MAX_LIMIT` e 1000 em
+ * `src/domain/process-query.ts`, entao `500` nunca esbarra nele.
+ */
+export const PAGE_SIZES = [50, 100, 200, 500] as const
+export const DEFAULT_PAGE_SIZE = 200
 
 export interface ProcessQuery {
   readonly search: string
   /**
-   * **`true` por padrao aqui**, ao contrario da rota, onde o padrao e `false`.
-   * A Pagina Operacional lista "processos ativos" (A-16); a rota serve tambem
-   * `H-22`, que precisa achar qualquer processo pela REF.
+   * **`false` por padrao desde `D-33`**, o mesmo da rota. A tela abria com os
+   * ativos e passou a abrir com todos; `A-16` nao muda — "ativo" continua
+   * sendo `categoria != desembaracado`, e o que inverteu foi o recorte padrao
+   * da tela, nao a definicao.
    */
   readonly activeOnly: boolean
   readonly sort: SortField
   readonly order: SortOrder
+  readonly limit: number
   readonly offset: number
   /** O que a pagina anexa a requisicao: os quatorze filtros **mais** estes. */
   readonly requestQuery: string
@@ -57,6 +70,7 @@ export interface ProcessQuery {
   setActiveOnly(value: boolean): void
   /** Alterna a direcao quando e a mesma coluna; comeca em `asc` numa nova. */
   toggleSort(field: SortField): void
+  setLimit(value: number): void
   setOffset(value: number): void
 }
 
@@ -66,29 +80,41 @@ function readSort(raw: string | null): SortField {
     : 'eta2'
 }
 
+/**
+ * Fora da lista do seletor cai no padrao — **inclusive valor que a rota
+ * aceitaria**, como `300`. O seletor tem quatro valores, e o que a tela precisa
+ * e conseguir desenhar o que a URL pede. Mesma tolerancia de `readSort` e do
+ * `offset`: valor ruim nao vira erro, vira o padrao.
+ */
+function readLimit(raw: string | null): number {
+  const value = Number(raw)
+  return (PAGE_SIZES as readonly number[]).includes(value) ? value : DEFAULT_PAGE_SIZE
+}
+
 export function useProcessQuery(): ProcessQuery {
   const query = useQuery()
 
   const search = query.get('search') ?? ''
-  const activeOnly = query.get('activeOnly') !== 'false'
+  const activeOnly = query.get('activeOnly') === 'true'
   const sort = readSort(query.get('sort'))
   const order: SortOrder = query.get('order') === 'desc' ? 'desc' : 'asc'
+  const limit = readLimit(query.get('limit'))
   const offsetRaw = Number(query.get('offset') ?? '0')
   const offset = Number.isInteger(offsetRaw) && offsetRaw >= 0 ? offsetRaw : 0
 
   const requestQuery = useMemo(() => {
     const params = new URLSearchParams(query)
-    // O padrao da PAGINA e `true`, e o da ROTA e `false`: sem escrever o valor
-    // explicitamente, uma URL sem o parametro traria os desembaracados.
+    // Explicito porque a URL guarda so o que difere do padrao: sem escrever o
+    // valor, `limit` e `activeOnly` chegariam a rota com o padrao DELA.
     params.set('activeOnly', String(activeOnly))
     params.set('sort', sort)
     params.set('order', order)
-    params.set('limit', String(PAGE_SIZE))
+    params.set('limit', String(limit))
     params.set('offset', String(offset))
     if (search === '') params.delete('search')
 
     return `?${params.toString()}`
-  }, [query, search, activeOnly, sort, order, offset])
+  }, [query, search, activeOnly, sort, order, limit, offset])
 
   const write = useCallback(
     (mutate: (draft: URLSearchParams) => void): void => {
@@ -100,8 +126,8 @@ export function useProcessQuery(): ProcessQuery {
     [query],
   )
 
-  // Mudar busca, recorte ou ordenacao volta para a primeira pagina: manter o
-  // `offset` mostraria a pagina 4 de um conjunto que agora tem duas.
+  // Mudar busca, recorte, ordenacao ou tamanho volta para a primeira pagina:
+  // manter o `offset` mostraria a pagina 4 de um conjunto que agora tem duas.
   const setSearch = useCallback(
     (value: string): void => {
       write((draft) => {
@@ -116,8 +142,8 @@ export function useProcessQuery(): ProcessQuery {
   const setActiveOnly = useCallback(
     (value: boolean): void => {
       write((draft) => {
-        if (value) draft.delete('activeOnly')
-        else draft.set('activeOnly', 'false')
+        if (value) draft.set('activeOnly', 'true')
+        else draft.delete('activeOnly')
         draft.delete('offset')
       })
     },
@@ -136,6 +162,17 @@ export function useProcessQuery(): ProcessQuery {
     [write, sort, order],
   )
 
+  const setLimit = useCallback(
+    (value: number): void => {
+      write((draft) => {
+        if (value === DEFAULT_PAGE_SIZE) draft.delete('limit')
+        else draft.set('limit', String(value))
+        draft.delete('offset')
+      })
+    },
+    [write],
+  )
+
   const setOffset = useCallback(
     (value: number): void => {
       write((draft) => {
@@ -151,11 +188,13 @@ export function useProcessQuery(): ProcessQuery {
     activeOnly,
     sort,
     order,
+    limit,
     offset,
     requestQuery,
     setSearch,
     setActiveOnly,
     toggleSort,
+    setLimit,
     setOffset,
   }
 }

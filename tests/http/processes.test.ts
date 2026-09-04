@@ -188,18 +188,34 @@ describe('GET /api/processes — envelope', () => {
   })
 })
 
-describe('busca — A-39', () => {
+describe('busca — A-39 e D-34', () => {
   const processos = [
-    process(2, { ref: 'FT501.26', billOfLading: 'NBSC260812', container: 'TCLU1234567' }),
+    process(2, {
+      ref: 'FT501.26',
+      billOfLading: 'NBSC260812',
+      container: 'TCLU1234567',
+      clientRaw: 'ABC25004',
+      importerRaw: 'IMPORTACOES DELTA',
+      vesselRaw: 'NAVIO ALFA BRAVO',
+    }),
     process(3, { ref: 'FT502.26', billOfLading: 'OUTRO', container: 'ZZZZ0000000' }),
   ]
 
-  it('casa em REF, BL ou CNTR', async () => {
-    for (const termo of ['FT501', 'NBSC260', 'TCLU123']) {
+  it('casa nos seis campos de texto da planilha', async () => {
+    for (const termo of ['FT501', 'NBSC260', 'TCLU123', 'ABC250', 'IMPORTACOES', 'BRAVO']) {
       const body = (await get(`/api/processes?search=${termo}`, processos)).json()
-      expect(body.total).toBe(1)
+      expect(body.total, `termo ${termo}`).toBe(1)
       expect(body.items[0].ref).toBe('FT501.26')
     }
+  })
+
+  /** A rota serve o consolidado em `client`, e ele NAO e buscavel (`D-34`):
+      quem casa e a celula CLT, servida em `clientProcess`. */
+  it('nao casa no cliente consolidado que ela propria serve', async () => {
+    const comLabel = [process(2, { clientRaw: 'ABC25004', clientLabel: 'GRUPO ACME' })]
+
+    expect((await get('/api/processes?search=GRUPO', comLabel)).json().total).toBe(0)
+    expect((await get('/api/processes?search=ABC', comLabel)).json().total).toBe(1)
   })
 
   it('ignora caixa e acento', async () => {

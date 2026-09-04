@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs'
 import { cleanup, render, screen, waitForElementToBeRemoved } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from '../src/App.tsx'
 import { LINHA_PENDENTE } from '../src/api-client.ts'
 import { NAV_PAGES, PROCESS_DETAIL_PAGE } from '../src/router.ts'
@@ -64,6 +64,25 @@ afterEach(() => {
   cleanup()
   window.history.replaceState(null, '', '/')
   vi.unstubAllGlobals()
+})
+
+/**
+ * O chunk da Página Histórico é carregado ANTES da primeira montagem — `PD-10`.
+ *
+ * **O diagnóstico da pendência era o alvo errado**, e a medição de 04/09/2026
+ * mostrou por quê. Ela propunha trocar a espera do fallback por uma asserção
+ * positiva; mas `findBy*` e `waitForElementToBeRemoved` usam o **mesmo**
+ * `asyncUtilTimeout` de 1.000 ms, então a troca move a forma da espera sem
+ * mover o prazo. O que estoura o prazo é o `import()` do Recharts — 377 kB, o
+ * maior chunk do pacote — acontecendo DENTRO da janela cronometrada.
+ *
+ * Medido: 357 ms com a máquina livre e 472 ms sob carga, contra os 1.000 ms do
+ * teto. Degradação de 1,3×, contra 5,1× dos casos de paginação — e é essa
+ * assimetria que separa espera cara de montagem cara. Pago aqui, uma vez e fora
+ * do teto, o carregamento deixa de disputar com a asserção.
+ */
+beforeAll(async () => {
+  await import('../src/pages/History.tsx')
 })
 
 describe('história concluída exige página montada', () => {

@@ -62,7 +62,7 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 | ID | Requisito | Histórias |
 |---|---|---|
 | RF-09 | Página Inicial com cartões-resumo das 4 categorias, total, Canal Vermelho, chegadas hoje/semana/15 dias, atrasados e documentos pendentes | H-16 |
-| RF-10 | Página Operacional: tabela de processos com busca por REF/BL/CNTR e calendário de chegadas por navio. **Abre com todos os processos, na ordem da planilha**; o operador reduz aos ativos por um controle próprio (`D-33`) | H-17, H-84, H-89 |
+| RF-10 | Página Operacional: tabela de processos com busca sobre os seis campos de texto da planilha (`D-34`) e calendário de chegadas por navio. **Abre com todos os processos, na ordem da planilha**; o operador reduz aos ativos por um controle próprio (`D-33`) | H-17, H-84, H-89, H-90 |
 | RF-11 | Página Clientes: ranking e distribuição por CLT e IMPORTADOR | H-18 |
 | RF-12 | Página Performance: tempo médio de envio documental por cliente, agente, navio e responsável, com denominador visível | H-19 |
 | RF-13 | Página Alertas: lista dos 6 alertas ordenada por severidade fixa | H-20 |
@@ -72,7 +72,7 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 | RF-31 | Página Configuração: apontar a planilha pela tela — com o diálogo de arquivo do sistema —, salvar o caminho sem editar JSON, e revalidar a partida sem reexecutar o atalho | H-34, H-35, H-36, H-37, H-38 |
 | RF-32 | Ordenar a tabela da Página Operacional por **qualquer** uma das nove colunas, com a ordem de categoria seguindo o fluxo do processo e não o alfabeto | H-77 |
 | RF-36 | Exibir, ao lado de Operacional e de Alertas na navegação, quantos itens o **recorte ativo** tem — o mesmo número que a página mostra ao abrir, ausente enquanto não se sabe e nunca zero por omissão | H-87 |
-| RF-37 | Achar um processo de qualquer tela por atalho de teclado, buscando REF, BL e contêiner (A-39), com os sete destinos do menu num grupo à parte | H-83 |
+| RF-37 | Achar um processo de qualquer tela por atalho de teclado, buscando os seis campos de texto da planilha (`A-39`, `D-34`), com os sete destinos do menu num grupo à parte | H-83, H-90 |
 | RF-38 | Escolher quantas linhas a tabela mostra por vez — 50, 100, 200 ou 500, com 200 como padrão — e manter o cabeçalho visível durante a rolagem | H-84 |
 
 > **Os RF acima de RF-30 nasceram depois do plano**, e a numeração é

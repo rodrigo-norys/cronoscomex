@@ -5,11 +5,11 @@ import { PageAlert } from '../components/PageAlert.tsx'
 import { ProcessTable } from '../components/ProcessTable.tsx'
 import { useIndicators } from '../hooks/useIndicators.ts'
 import { useProcesses } from '../hooks/useProcesses.ts'
-import { PAGE_SIZE, useProcessQuery } from '../hooks/useProcessQuery.ts'
+import { PAGE_SIZES, useProcessQuery } from '../hooks/useProcessQuery.ts'
 
 /**
- * Pagina Operacional (RF-10): tabela de processos ativos, busca por REF, BL e
- * CNTR (A-39), e o calendario de chegadas por navio.
+ * Pagina Operacional (RF-10): tabela de processos, busca sobre os seis campos
+ * de texto da planilha (`A-39`, `D-34`), e o calendario de chegadas por navio.
  *
  * Duas requisicoes: `GET /api/processes` para a lista, e `GET /api/indicators`
  * para `arrivalCalendar`. A segunda ja e feita pela Pagina Inicial, entao o
@@ -81,11 +81,16 @@ export function Operational({ queryString, dataVersion }: OperationalProps) {
                 onSort={query.toggleSort}
                 onEdited={() => setEditVersion((version) => version + 1)}
               />
-              <Pagination
+              {/* O rodape vem DEPOIS da grade no DOM, e e por isso que a grade
+                  existe: sem ela, chegar aqui pelo teclado custaria uma parada
+                  por celula editavel (`H-80`). */}
+              <TableFooter
                 total={processes.page.total}
                 offset={query.offset}
+                limit={query.limit}
                 shown={processes.page.items.length}
                 onOffset={query.setOffset}
+                onLimit={query.setLimit}
               />
             </>
           ) : (
@@ -111,7 +116,7 @@ function Controls({
   return (
     <div className="flex flex-wrap items-end gap-4">
       <label className="flex grow flex-col gap-1 text-xs text-text-secondary sm:max-w-md">
-        Buscar por REF, BL ou CNTR
+        Buscar em qualquer campo de texto
         <input
           type="search"
           value={query.search}
@@ -121,15 +126,17 @@ function Controls({
         />
       </label>
 
-      {/* A-16. O padrao da PAGINA e mostrar so os ativos; a rota tem o padrao
-          oposto, porque serve tambem quem procura um processo especifico. */}
+      {/* `D-33`: a tela abre com TODOS os processos, e o operador reduz aos
+          ativos por aqui. A definicao de `A-16` nao muda — "ativo" continua
+          sendo `categoria != desembaracado`; o que inverteu foi o recorte
+          padrao da tela, e com ele o rotulo do controle. */}
       <label className="flex items-center gap-2 pb-1.5 text-sm text-text-secondary">
         <input
           type="checkbox"
-          checked={!query.activeOnly}
-          onChange={(event) => query.setActiveOnly(!event.target.checked)}
+          checked={query.activeOnly}
+          onChange={(event) => query.setActiveOnly(event.target.checked)}
         />
-        Incluir desembaraçados
+        Ocultar desembaraçados
       </label>
 
       {/* A criacao fica ao lado da busca, e nao dentro da tabela: a tabela e
@@ -141,51 +148,82 @@ function Controls({
   )
 }
 
-function Pagination({
+/**
+ * A faixa a esquerda, o tamanho de pagina e a navegacao a direita.
+ *
+ * **O seletor aparece sempre, e a navegacao so quando ha o que navegar.** Sao
+ * perguntas diferentes: quantas linhas o operador quer ver nao depende de
+ * quantas existem, e um `<select>` que some ao filtrar seria controle que
+ * pisca.
+ */
+function TableFooter({
   total,
   offset,
+  limit,
   shown,
   onOffset,
+  onLimit,
 }: {
   total: number
   offset: number
+  limit: number
   shown: number
   onOffset: (value: number) => void
+  onLimit: (value: number) => void
 }) {
-  if (total <= PAGE_SIZE) {
-    return (
-      <p className="text-xs text-text-secondary">
-        {total} {total === 1 ? 'processo' : 'processos'}
-      </p>
-    )
-  }
-
+  const paginated = total > limit
   const first = total === 0 ? 0 : offset + 1
   const last = offset + shown
 
   return (
-    <nav aria-label="Paginação" className="flex items-center justify-between gap-3 text-sm">
+    <div className="flex flex-wrap items-center justify-between gap-3">
       <span className="text-xs text-text-secondary tabular-nums">
-        {first}–{last} de {total}
+        {paginated ? (
+          `${first}–${last} de ${total}`
+        ) : (
+          <>
+            {total} {total === 1 ? 'processo' : 'processos'}
+          </>
+        )}
       </span>
-      <span className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => onOffset(Math.max(0, offset - PAGE_SIZE))}
-          disabled={offset === 0}
-          className="rounded-control border border-border-control px-2 py-1 text-xs disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
-        >
-          Anterior
-        </button>
-        <button
-          type="button"
-          onClick={() => onOffset(offset + PAGE_SIZE)}
-          disabled={last >= total}
-          className="rounded-control border border-border-control px-2 py-1 text-xs disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
-        >
-          Próxima
-        </button>
+
+      <span className="flex items-center gap-3">
+        <label className="flex items-center gap-2 text-xs text-text-secondary">
+          Linhas por página
+          <select
+            value={limit}
+            onChange={(event) => onLimit(Number(event.target.value))}
+            className="rounded-control border border-border-control bg-surface-raised px-2 py-1 text-xs text-text-primary"
+          >
+            {PAGE_SIZES.map((size) => (
+              <option key={size} value={size}>
+                {size}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {paginated && (
+          <nav aria-label="Paginação" className="flex gap-2 text-sm">
+            <button
+              type="button"
+              onClick={() => onOffset(Math.max(0, offset - limit))}
+              disabled={offset === 0}
+              className="rounded-control border border-border-control px-2 py-1 text-xs disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
+            >
+              Anterior
+            </button>
+            <button
+              type="button"
+              onClick={() => onOffset(offset + limit)}
+              disabled={last >= total}
+              className="rounded-control border border-border-control px-2 py-1 text-xs disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
+            >
+              Próxima
+            </button>
+          </nav>
+        )}
       </span>
-    </nav>
+    </div>
   )
 }

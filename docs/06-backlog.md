@@ -30,8 +30,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E11 — A casca redesenhada ✅ | **H-57 … H-65, todas concluídas** | 3 | 6 | 0 |
 | E12 — Os achados da revisão de estilo ✅ | **H-73 … H-76, todas concluídas** | 2 | 1 | 1 |
 | E13 — O operacional que edita, ordena e cria ✅ | **H-77 … H-81, todas concluídas.** Épico **retroativo**: o código entrou em 02/09/2026 e as histórias foram escritas em 03/09 | 3 | 0 | 2 |
-| E14 — A casca que se opera, não só se lê | **H-82 e H-83 ✅; H-84 … H-89 abertas.** Primeiro épico **prospectivo** desde `E12`: as oito nascem antes do código (`D-29` a `D-33`) | 1 | 7 | 0 |
-| **Total** | **89** — 83 concluídas, 6 abertas | **34** | **51** | **4** |
+| E14 — A casca que se opera, não só se lê | **H-82 a H-84 e H-90 ✅; H-85 … H-89 abertas.** Primeiro épico **prospectivo** desde `E12`: as nove nascem antes do código (`D-29` a `D-34`) | 2 | 7 | 0 |
+| **Total** | **90** — 85 concluídas, 5 abertas | **35** | **51** | **4** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -188,12 +188,13 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 
 - [H-82 — Os filtros num painel, e a barra dizendo o recorte](#h-82) ✅
 - [H-83 — A busca alcançável do teclado](#h-83) ✅
-- [H-84 — O quadro que rola, e as linhas por página](#h-84)
+- [H-84 — O quadro que rola, e as linhas por página](#h-84) ✅
 - [H-85 — O carregamento que não colapsa a altura](#h-85)
 - [H-86 — Os sete ícones da lateral](#h-86)
 - [H-87 — A contagem que segue o recorte](#h-87)
 - [H-88 — O que falta declarar, à vista e alimentável](#h-88)
 - [H-89 — A ordem em que a planilha está](#h-89)
+- [H-90 — A busca sobre os seis campos de texto](#h-90) ✅
 
 
 ---
@@ -9454,6 +9455,72 @@ transformariam a busca em paleta de comandos.
 
 ### H-84 — O quadro que rola, e as linhas por página
 
+> ✅ **CONCLUÍDA em 04/09/2026.** **127 testes próprios** nos três arquivos que
+> ela toca, suíte em **1.884**.
+>
+> **`D-33` entrou junto, e é ele que faz a paginação existir.** Conferido na
+> planilha real em 04/09/2026: o recorte antigo dava **170 processos e uma
+> página só** — a paginação nunca aparecia, porque 170 < 200. O novo dá **650 em
+> 4 páginas** de 200, 7 de 100, 13 de 50 e 2 de 500. O controle inverteu de
+> "Incluir" para "Ocultar desembaraçados", e são **480** os que ele oculta.
+> `A-16` não mudou.
+>
+> **Duas divergências resolvidas antes do código, e as duas na guarda de
+> estilo.** A primeira: `tests/repo/estilo.test.ts` trata `max-h-[` como sinal
+> sintático **exclusivo** do painel modal e exige `border-border-modal` em toda
+> ocorrência — o teto de altura do quadro reprovaria a suíte. Resolvida
+> declarando a altura numa `@utility` do `index.css`, o padrão de
+> `panel-loading` e `button-primary`; `occurrencesOf` varre só `.ts`/`.tsx`,
+> então o sinal segue exclusivo e o cabeçalho da guarda foi corrigido para dizer
+> por quê. A segunda, que o backlog não previa: **`border-separate` apaga as
+> réguas das linhas, e não só a do cabeçalho.** No modelo separado o navegador
+> ignora borda de `tr`, `thead`, `tbody` e `col` (CSS 2.1 §17.6.1), e as duas
+> bordas horizontais viviam exatamente ali — migraram para as células, na
+> `@utility table-rules`.
+>
+> **Um terceiro achado que o backlog não enumerou:** a navegação por setas de
+> `H-80` foca a célula e o navegador rola o quadro até ela, mas o `<thead>`
+> grudado a cobriria. Resolvido com `scroll-margin-top` do tamanho do cabeçalho,
+> e **medido**: depois de 50 setas a célula ativa está na linha 51, dentro do
+> quadro e **abaixo** do cabeçalho.
+>
+> **Medido num Chrome real** (1280×900, 500 linhas): montagem em **213 ms**, 50
+> setas em **1.179 ms** (23,6 ms cada), e o cabeçalho a **1 px** do topo do
+> quadro depois de 8.000 px de rolagem — com a busca imóvel em 151 px e o
+> documento sem rolar. A 320 px o documento mede **305 px** de conteúdo em
+> 305 px de janela: não rola na horizontal, e o quadro rola, que é a exceção
+> bidimensional de `SC 1.4.10`. Sob `forced-colors: active` a borda do cabeçalho
+> sobrevive nos dois esquemas — **1 px preta** no claro e **branca** no escuro —
+> e o fundo do `th` fica opaco enquanto o da linha é transparente, então o
+> cabeçalho se distingue por duas vias.
+>
+> **O piso da altura foi medido, e o número do primeiro comentário estava
+> errado.** No cenário "Muito grande" — fonte-base de 24 px numa tela de 768 px
+> — a reserva vale 480 px, o teto cai para **288 px** e o piso de `15rem` vale
+> **360 px**; `min-height` vence `max-height`, o quadro fica com 360 e mostra
+> **quatro** linhas de 60 px além do cabeçalho de 61 px. Eu havia escrito seis,
+> por conta à mão que ignorava o cabeçalho. O critério pedia mais de uma.
+>
+> **`PD-10` fecha aqui, e o diagnóstico dela estava metade certo.** Medidos os
+> quatro casos antes de tocar em qualquer coisa: os três de paginação custavam
+> 494, 366 e 177 ms com a máquina livre e **2.542, 900 e 1.359 ms sob carga** —
+> 5,1×, 2,5× e 7,7×. Era montagem, e a pendência acertou: com `limit` em estado
+> de URL eles passaram a pedir páginas de 50 e caíram para **454, 226 e 146 ms
+> sob a mesma carga**. O quarto, o `Histórico`, era outra coisa: degradava
+> **1,3×** e tinha teto cinco vezes menor. A correção que a pendência propunha —
+> trocar por asserção positiva — **não resolveria**, porque `findBy*` e
+> `waitForElementToBeRemoved` usam o mesmo `asyncUtilTimeout` de 1.000 ms. O que
+> estourava era o `import()` do Recharts, 377 kB, dentro da janela cronometrada;
+> pago uma vez em `beforeAll`, o caso foi de **357 ms para 46 ms**, e 73 ms sob
+> carga.
+>
+> **Divergência aberta, não corrigida aqui:** a planilha real tem **650**
+> processos, e o backlog desta história calculou o pior caso com 649 — daí
+> "5.841 células" onde a medição dá **5.850**. Uma linha de diferença, criada
+> depois de `H-01`. Também ficou por fazer o que não é desta história: a seção 4
+> de `docs/09-rastreabilidade.md` para em `H-81`, e `H-82` e `H-83` não têm linha
+> lá.
+
 **Objetivo:** o cabeçalho da tabela acompanhar a rolagem, e o operador escolher
 quantas linhas vê de uma vez.
 
@@ -9857,6 +9924,144 @@ ordenar por coluna que a tabela não mostra.
 
 **Dependências:** `H-84`.
 **Tamanho:** M (9 arquivos, 1 contrato alterado)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-90"></a>
+
+### H-90 — A busca sobre os seis campos de texto
+
+> ✅ **CONCLUÍDA em 04/09/2026.** **214 testes próprios** nos cinco arquivos que
+> ela toca, suíte em **1.894**.
+>
+> **A fatia parou por uma divergência, e ela era a mais séria do dia:** `D-34`
+> **reverte o item (3) de `D-29`**, escrito um dia antes, que fechara o alcance
+> desta busca em três campos dizendo que "cliente e navio ficam fora" — e que
+> com isso fechara um dos dois itens abertos por `D-22`. O registro não dizia
+> nada disso. **O motivo de `D-29` não foi ignorado, foi respondido:** ele
+> excluía os campos porque estender obrigaria a *escolher* entre a grafia da
+> célula e o cliente consolidado, distintos desde `H-49`; `D-34` faz a escolha —
+> entra `clientRaw`, fica fora `clientLabel`. A reversão está escrita nos dois
+> lugares, com o precedente de `D-21`, para que `D-29` não seja citada depois
+> como recusa vigente.
+>
+> **Um defeito que o backlog não previu, e que a mudança agravaria.** O subtítulo
+> de cada resultado do `Ctrl+K` montava a linha com
+> `[client, billOfLading, container]`, sob o comentário *"o que casou nem sempre
+> é a REF"*. Depois de `D-34` ele mostraria `client` — o consolidado, o **único**
+> campo que a busca não casa — e omitiria importador, navio e processo do
+> cliente, que passaram a casar: procurar por um navio devolveria linhas sem nada
+> visivelmente correspondente. Trocado pelos cinco campos buscáveis além da REF,
+> com teste próprio.
+>
+> **A fábrica de estado impedia o teste da exclusão.** `makeProcess`, em
+> `tests/domain/process-query.test.ts`, espelhava `clientLabel` em `clientRaw` —
+> setar um setava os dois, e a asserção que separa a célula do consolidado era
+> inexprimível. Os dois campos foram separados, com fallback que preserva as
+> chamadas existentes.
+>
+> **Medido na planilha real em 04/09/2026, e os três campos novos cobrem mais
+> que os antigos:** `importerRaw` está preenchido em **614** das 650 linhas e
+> `clientRaw` em **612**, contra **585** de BL e CNTR. São **25** importadores
+> distintos, **70** navios e **509** processos de cliente — e **123** clientes
+> consolidados, que ficam de fora.
+>
+> **Dois casos-limite mudaram de peso ao serem medidos.** O espaço interno do
+> nome de navio, que o backlog tratava como detalhe: **581 das 650** linhas têm
+> espaço no navio, então a regra de `fold` — que preserva espaço porque buscar
+> não é agrupar — deixou de ser teórica e passou a reger 89% da planilha. Já o
+> espaço **duplo** não existe no dado: **zero** linhas, então `NAVIO  ALFA` é defesa
+> contra digitação, não contra o arquivo. E o acento aparece em **uma** linha só.
+>
+> **O termo curto casa muito, e o número é maior do que o backlog sugeria:**
+> um importador de **duas letras** passa a casar **77** processos, 11,8% da
+> planilha, e `NAVIO ALFA` casa **159**, 24,5%. A busca não ordena por relevância, e
+> `H-90` declarou isso fora de escopo; o número fica registrado para quem
+> reabrir a questão.
+>
+> **Nove rótulos em quatro arquivos**, mais **11 seletores** de teste em três —
+> `Operational.test.tsx`, `CommandSearch.test.tsx` e **`App.test.tsx`**, que a
+> lista da história não previa e que quebrou ao renomear o campo.
+
+> Nasce do uso, em 04/09/2026 (`D-34`), e **não depende de nenhuma outra**: o
+> alcance da busca é decisão de domínio, e nada em `E14` o toca.
+
+**Objetivo:** a busca da Página Operacional achar um processo pelo importador,
+pelo navio ou pelo processo do cliente — não só pelos três códigos.
+
+**Contrato:** `GET /api/processes` **não muda de forma**, e muda de
+**significado**: `search` deixa de casar em três campos e passa a casar em seis.
+`docs/05-contratos-api.md` descreve o parâmetro em prosa, e é essa linha que se
+reescreve.
+
+**Três determinações de `D-34`, não re-litigáveis:**
+
+1. **São seis campos, e o critério é a procedência do dado.** Entram
+   `clientRaw`, `importerRaw` e `vesselRaw` aos três de `A-39` — todos texto de
+   célula, buscáveis sem inventar formatação.
+2. **Cliente, ETA2 e Categoria ficam de fora**, e cada um por um motivo
+   diferente: o primeiro é o nome consolidado de `client-map.json` e não uma
+   célula, então um acerto ali não seria explicável pela planilha; o segundo é
+   data, e casar `30/12/2025` exigiria buscar sobre o texto formatado; o
+   terceiro é rótulo derivado de cinco regras, e o filtro global já oferece
+   aquele recorte.
+3. **O `Ctrl+K` acompanha.** As duas buscas servem a mesma rota, e separá-las
+   exigiria um parâmetro novo para sustentar dois comportamentos com o mesmo
+   nome.
+
+**`A-39` ganha divergência registrada, não correção silenciosa.** O achado
+resolveu uma lacuna de §2 delimitando REF, BL e CNTR; a ampliação o contraria, e
+a regra inviolável 1 manda documentar.
+
+**Arquivos:**
+- `src/domain/process-query.ts` — `SEARCHABLE` e o cabeçalho de `matchesSearch`
+- `tests/domain/process-query.test.ts` — um caso por campo novo
+- `tests/http/processes.test.ts` — a busca pela rota
+- `web/src/pages/Operational.tsx` — o rótulo do campo
+- `web/src/components/CommandSearch.tsx` — o `placeholder`, o `aria-label` e o
+  texto de resultado vazio
+- `web/src/hooks/useCommandSearch.ts` — o cabeçalho
+- `web/tests/Operational.test.tsx` · `web/tests/CommandSearch.test.tsx`
+- `docs/05-contratos-api.md` · `docs/02-requisitos.md` (`RF-10`, `RF-37`) ·
+  `docs/01-auditoria-especificacao.md` (`A-39`)
+
+**Critérios de aceite:**
+- **Dado** um termo que casa só o Importador, **então** o processo aparece.
+- **Dado** um termo que casa só o Navio, **então** o processo aparece.
+- **Dado** um termo que casa só o Processo do cliente, **então** o processo
+  aparece.
+- **Dado** um termo que casa só o nome **consolidado** do Cliente e nenhum dos
+  seis, **então** o processo **não** aparece — é a exclusão de `D-34`, e sem
+  teste ela vira acidente.
+- **Dado** `Ctrl+K` com o nome de um navio, **então** a busca por atalho acha o
+  processo, com o mesmo alcance da página.
+- **Dado** qualquer tela, **então** nenhum rótulo ainda diz "REF, BL ou CNTR":
+  são **nove** ocorrências em seis arquivos de código e três documentos, medidas
+  em 04/09/2026.
+
+**Casos-limite:**
+- **Termo vazio ou só espaço continua não filtrando** — é o estado inicial do
+  campo, e a garantia já existe em `matchesSearch`.
+- **`fold` não colapsa espaço interno, e isso passa a importar mais.** Nome de
+  navio tem espaço: `NAVIO ALFA BRAVO` casa por substring literal, e `NAVIO  ALFA`
+  com dois espaços **não** casa. O cabeçalho de `fold` já explica por quê —
+  agrupar e buscar são coisas diferentes.
+- **Acento no importador.** `fold` remove diacrítico, então `IMPORTACOES DELTA` e
+  `IMPORTAÇÕES DELTA` casam um ao outro; é a primeira vez que a busca alcança campo com
+  acento, porque REF, BL e CNTR não têm.
+- **Um termo curto passa a casar muito mais.** um termo de duas letras é um importador inteiro na
+  planilha, e como substring aparece em contêiner e BL — a busca não ordena por
+  relevância, e não é esta história que a inventa.
+- **Os seis campos são `string` não nula** em `Process`, então `fold` não recebe
+  `null` e o ramo de ausência não existe.
+
+**Fora desta história:** ordenar por relevância; destacar o trecho que casou; e
+buscar em Cliente, ETA2 ou Categoria, que `D-34` recusou com motivo.
+
+**Dependências:** nenhuma.
+**Tamanho:** P (9 arquivos, 0 contrato novo — o de `search` muda de prosa)
 
 [↑ Índice](#indice)
 

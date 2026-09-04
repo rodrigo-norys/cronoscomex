@@ -17,6 +17,17 @@ import { EditableCell } from './EditableCell.tsx'
  * As duas que sobram nao tem porta: REF e a chave natural, e Categoria sai de
  * cinco regras das quais so uma le a celula L (`A-22`) — editar o rotulo
  * gravaria numa celula que nao esta a vista.
+ *
+ * **Nenhuma celula declara tamanho de fonte**, e isso e invariante desde
+ * 04/09/2026. `H-61` decidiu a FAMILIA — mono onde ha codigo ou numero, porque
+ * monoespacada alinha os digitos entre linhas vizinhas e torna a coluna
+ * comparavel — e nunca decidiu o corpo. As cinco colunas de codigo nasceram
+ * `text-xs` e as quatro de texto livre ficaram nos `text-sm` da tabela, e o
+ * degrau de 12 contra 14 px desalinhava opticamente a mesma linha. Achado do
+ * usuario ao usar a tela. Agora todas herdam os 14 px da `<table>`, e o que
+ * separa codigo de texto e so a FORMA da letra. Medido: unificar custa **zero**
+ * numa janela de 1920 px, onde a tabela ja cabe, e **+42 px** em 1400 e 1280,
+ * onde ela ja rolava; a linha continua com os 40 px de `H-61`.
  */
 
 interface Column {
@@ -84,15 +95,21 @@ export function ProcessTable({ items, sort, order, onSort, onEdited }: ProcessTa
     fora da janela e reprova a suite — por isso este bloco vive aqui.
   */
   return (
-    // A tabela e larga; o scroll fica NELA, para a pagina nunca rolar na
-    // horizontal e levar o cabecalho junto.
-    <div className="overflow-x-auto rounded-container border border-border-subtle bg-surface-raised">
-      {/* biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: em ARIA `grid` e SUBCLASSE de `table`, e a APG constroi a grade assim; a regra existe contra `<div role="button">` */}
-      <table ref={grid.ref} role="grid" onKeyDown={grid.onKeyDown} className="w-full text-sm">
+    // O quadro rola nos DOIS eixos, e a pagina em nenhum: `R01` ja exigia o
+    // horizontal, e `D-31` trouxe o vertical para ca. A altura mora em
+    // `table-viewport`, no CSS, porque e `calc()` com piso.
+    <div className="table-viewport overflow-x-auto overflow-y-auto rounded-container border border-border-subtle bg-surface-raised">
+      <table
+        ref={grid.ref}
+        // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: em ARIA `grid` e SUBCLASSE de `table`, e a APG constroi a grade assim; a regra existe contra `<div role="button">`
+        role="grid"
+        onKeyDown={grid.onKeyDown}
+        className="table-rules w-full border-separate border-spacing-0 text-sm"
+      >
         <caption className="sr-only">
           Processos. Use as setas para percorrer as células, Enter para abrir a edição.
         </caption>
-        <thead className="border-b border-border-subtle bg-surface-sunken">
+        <thead>
           <tr>
             {COLUMNS.map((column, index) => (
               <HeaderCell
@@ -117,11 +134,8 @@ export function ProcessTable({ items, sort, order, onSort, onEdited }: ProcessTa
               **Sem faixa alternada**, e isso ja era verdade: o realce e o cursor,
               nao a paridade da linha. A assercao existe para nao voltar.
             */
-            <tr
-              key={item.ref}
-              className="motion-tint h-10 border-b border-border-subtle last:border-0 hover:bg-surface-hover"
-            >
-              <td {...grid.cellProps(index + 1, 0)} className="px-3 whitespace-nowrap font-mono">
+            <tr key={item.ref} className="motion-tint h-10 hover:bg-surface-hover">
+              <td {...grid.cellProps(index + 1, 0)} className="px-3 font-mono whitespace-nowrap">
                 <a
                   href={`/processo/${encodeURIComponent(item.ref)}`}
                   // Fora da ordem de tabulacao: quem tabula e a grade.
@@ -175,7 +189,7 @@ export function ProcessTable({ items, sort, order, onSort, onEdited }: ProcessTa
                 value={item.clientProcess}
                 display={item.clientProcess || '—'}
                 onCommit={(value) => enqueueEdit({ ref: item.ref, field: 'clientRaw', value })}
-                className="font-mono text-xs"
+                className="font-mono"
                 onEdited={onEdited}
               />
               <EditableCell
@@ -206,7 +220,7 @@ export function ProcessTable({ items, sort, order, onSort, onEdited }: ProcessTa
                 value={item.eta2 ?? ''}
                 display={formatDay(item.eta2)}
                 onCommit={(value) => enqueueEdit({ ref: item.ref, field: 'eta2', value })}
-                className="font-mono text-xs whitespace-nowrap tabular-nums"
+                className="font-mono whitespace-nowrap tabular-nums"
                 onEdited={onEdited}
               />
               <EditableCell
@@ -217,7 +231,7 @@ export function ProcessTable({ items, sort, order, onSort, onEdited }: ProcessTa
                 value={item.billOfLading}
                 display={item.billOfLading || '—'}
                 onCommit={(value) => enqueueEdit({ ref: item.ref, field: 'billOfLading', value })}
-                className="font-mono text-xs"
+                className="font-mono"
                 onEdited={onEdited}
               />
               <EditableCell
@@ -228,7 +242,7 @@ export function ProcessTable({ items, sort, order, onSort, onEdited }: ProcessTa
                 value={item.container}
                 display={item.container || '—'}
                 onCommit={(value) => enqueueEdit({ ref: item.ref, field: 'container', value })}
-                className="font-mono text-xs"
+                className="font-mono"
                 onEdited={onEdited}
               />
               <td {...grid.cellProps(index + 1, 8)} className="px-3 whitespace-nowrap">
@@ -275,7 +289,7 @@ function HeaderCell({
       scope="col"
       {...cell}
       {...(ariaSort ? { 'aria-sort': ariaSort } : {})}
-      className="h-10 px-3 text-left font-medium text-text-secondary"
+      className="sticky top-0 z-10 h-10 border-b border-border-subtle bg-surface-sunken px-3 text-left font-medium text-text-secondary"
     >
       <button
         type="button"

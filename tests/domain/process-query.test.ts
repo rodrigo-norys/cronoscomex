@@ -27,6 +27,11 @@ interface Fields {
   billOfLading?: string
   container?: string
   clientRaw?: string
+  /** Separado de `clientRaw` em `H-90`: a busca casa a CELULA e nao o
+      consolidado, e espelhar os dois tornaria a exclusao de `D-34` inexprimivel. */
+  clientLabel?: string
+  importerRaw?: string
+  vesselRaw?: string
   clientKey?: string
   importerKey?: string
   clientGroupKey?: string
@@ -45,11 +50,11 @@ function makeProcess(fields: Fields = {}): Process {
     sourceRow: row,
     ref: fields.ref ?? `FT${String(row).padStart(3, '0')}.26`,
     clientRaw: fields.clientRaw ?? '',
-    importerRaw: '',
+    importerRaw: fields.importerRaw ?? '',
     billOfLading: fields.billOfLading ?? '',
     agentRaw: '',
     container: fields.container ?? '',
-    vesselRaw: '',
+    vesselRaw: fields.vesselRaw ?? '',
     portRaw: '',
     goodsRaw: fields.goodsRaw ?? '',
     statusRaw: '',
@@ -61,7 +66,7 @@ function makeProcess(fields: Fields = {}): Process {
     docsSentDate: null,
     clientKey: fields.clientKey ?? '',
     clientProcessKey: fields.clientKey ?? '',
-    clientLabel: fields.clientRaw ?? '',
+    clientLabel: fields.clientLabel ?? fields.clientRaw ?? '',
     clientGroupKey: fields.clientGroupKey ?? '',
     importerKey: fields.importerKey ?? '',
     agentKey: '',
@@ -79,7 +84,7 @@ function makeProcess(fields: Fields = {}): Process {
   }
 }
 
-describe('matchesSearch — A-39', () => {
+describe('matchesSearch — A-39 e D-34', () => {
   const processo = makeProcess({
     ref: 'FT501.26',
     billOfLading: 'NBSC260812',
@@ -118,11 +123,69 @@ describe('matchesSearch — A-39', () => {
     expect(matchesSearch(processo, '   ')).toBe(true)
   })
 
-  it('nao casa fora dos tres campos de consulta', () => {
-    const outro = makeProcess({ ref: 'X', clientRaw: 'ACME LOG', goodsRaw: 'BAZAR' })
+  it('casa no processo do cliente — a CELULA CLT', () => {
+    expect(matchesSearch(makeProcess({ clientRaw: 'ABC25004' }), 'ABC250')).toBe(true)
+  })
+
+  it('casa no importador', () => {
+    expect(matchesSearch(makeProcess({ importerRaw: 'IMPORTACOES DELTA' }), 'IMPORTACOES')).toBe(
+      true,
+    )
+  })
+
+  it('casa no navio', () => {
+    expect(matchesSearch(makeProcess({ vesselRaw: 'NAVIO ALFA BRAVO' }), 'BRAVO')).toBe(true)
+  })
+
+  /**
+   * **A exclusao de `D-34`, e ela precisa de teste proprio.** `clientLabel` e o
+   * nome consolidado de `client-map.json`, e nao uma celula: um acerto ali nao
+   * seria explicavel pela planilha. `goodsRaw` fica fora por nao ser coluna da
+   * tabela. Sem esta assercao a exclusao vira acidente.
+   */
+  it('nao casa no cliente CONSOLIDADO nem na mercadoria', () => {
+    const outro = makeProcess({ ref: 'X', clientLabel: 'ACME LOG', goodsRaw: 'BAZAR' })
 
     expect(matchesSearch(outro, 'ACME')).toBe(false)
     expect(matchesSearch(outro, 'BAZAR')).toBe(false)
+  })
+
+  /** A celula e o consolidado sao campos distintos desde `H-49`, e `D-34`
+      escolheu entre eles: um casa, o outro nao. */
+  it('separa a celula do consolidado quando os dois diferem', () => {
+    const processo = makeProcess({ clientRaw: 'ABC25004', clientLabel: 'GRUPO ACME' })
+
+    expect(matchesSearch(processo, 'ABC')).toBe(true)
+    expect(matchesSearch(processo, 'GRUPO ACME')).toBe(false)
+  })
+
+  /**
+   * **O acento chega a busca por este campo.** REF, BL e CNTR nao tem acento —
+   * `fold` sempre o removeu, e ate `D-34` nenhum campo buscavel o exercia.
+   */
+  it('ignora acento no importador, nos dois sentidos', () => {
+    expect(
+      matchesSearch(makeProcess({ importerRaw: 'IMPORTAÇÕES DELTA' }), 'importacoes delta'),
+    ).toBe(true)
+    expect(
+      matchesSearch(makeProcess({ importerRaw: 'IMPORTACOES DELTA' }), 'importações delta'),
+    ).toBe(true)
+  })
+
+  /** Nome de navio tem espaco, e ate `D-34` nenhum campo buscavel tinha: o que
+      `fold` preserva deixa de ser detalhe teorico. */
+  it('preserva o espaco interno do nome de navio', () => {
+    const navio = makeProcess({ vesselRaw: 'NAVIO ALFA BRAVO' })
+
+    expect(matchesSearch(navio, 'NAVIO ALFA')).toBe(true)
+    expect(matchesSearch(navio, 'NAVIO  ALFA')).toBe(false)
+  })
+
+  /** Termo curto passa a casar muito mais, e a busca NAO ordena por relevancia
+      — `H-90` declarou isso fora de escopo. */
+  it('termo curto casa em mais de um campo, sem relevancia', () => {
+    expect(matchesSearch(makeProcess({ importerRaw: 'K2' }), 'K2')).toBe(true)
+    expect(matchesSearch(makeProcess({ container: 'TEMU7887K2' }), 'K2')).toBe(true)
   })
 
   /** `normKey` colapsa espaco interno porque agrupa; a busca nao pode, senao

@@ -128,21 +128,24 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**83 das 88 histórias estão concluídas**, e as cinco abertas são `E14`. O que cada uma aprendeu — número medido,
+**85 das 90 histórias estão concluídas**, e as cinco abertas são `E14`. O que cada uma aprendeu — número medido,
 defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
 `docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
 em aberto. **Este bloco diz só o que está aberto.**
 
 **`E9` a `E12` fecharam em 01/09/2026, e `E13` em 03/09/2026.** O que está aberto
-é **`E14`** — `H-82` a `H-87`, decididas em 03/09/2026 e **numeradas na ordem de
-execução**. **`H-82` e `H-83` fecharam em 04/09/2026**, e o padrão de foco modal nasceu na
-primeira e foi extraído para um hook na segunda. Restam: o quadro que rola com o cabeçalho fixo e o
-tamanho de página escolhível (`D-31`); o carregamento sem salto; o ícone por
-destino; e a contagem que segue o recorte (`D-29`). A sétima, `H-88`, não vem da revisão de interação: ela nasce de `PD-08` e tira o mapa de clientes da cópia manual (`D-32`). **Nenhuma toca contrato de rota** — medido:
-`GET /api/processes` já serve `total` com `activeOnly`, e `GET /api/alerts` já
-respeita os filtros. A ordem entre elas está no cabeçalho do épico. Restam também as **pendências abertas** abaixo — três delas esperam a
-máquina do operador, e **uma não**: o `ConflictDialog` de `PD-07` precisa de
-fixture que produza o conflito, e nenhuma das nove produz.
+é **`E14`** — `H-82` a `H-90`, decididas em 03 e 04/09/2026 e **numeradas na
+ordem de execução**, com `H-90` fora dela por ter nascido depois. **`H-82` a
+`H-84` e `H-90` fecharam em 04/09/2026.** Restam: o carregamento sem salto; o
+ícone por destino; a contagem que segue o recorte (`D-29`); o mapa de clientes
+sem cópia manual, que nasce de `PD-08` (`D-32`); e a ordem em que a planilha
+está (`D-33`) — **a única das cinco que toca contrato de rota**, porque altera
+`sort` em `docs/05-contratos-api.md`. A ordem entre elas
+está no cabeçalho do épico. Restam também as **três pendências abertas** abaixo,
+e nenhuma bloqueia implementação: `PD-09` espera só uma decisão, `PD-08` a
+próxima sincronização da branch `distribuicao`, e `PD-07` se divide — a paleta
+nominal quer a máquina do operador, e o `ConflictDialog` quer uma fixture que
+nenhuma das nove produz.
 
 > **`E13` é retroativo, e é o único do backlog que é.** O código entrou em
 > 02/09/2026 pelo PR #111 — edição na tabela, ordenação, criação de linha e a
@@ -213,7 +216,6 @@ Não bloqueiam a implementação. Fechar antes da entrega ao operador.
 
 | **PD-09** | **A premissa `P-15` ficou sem dono, e há uma frase da tela apoiada nela.** `P-15` — o OneDrive sincroniza o arquivo de lock `~$<nome>.xlsx` entre máquinas — está "não afirmada" desde o plano, e `docs/00-visao-escopo.md` e `A-58` mandavam medi-la em `H-30`, que **fechou em 18/08/2026 sem medir**. Mesmo padrão de `PD-05` entre 14 e 17/08/2026. A medição direta pede **duas máquinas com a mesma pasta sincronizada**, e nada indica que exista uma segunda conta com acesso à pasta da organização; o **proxy de uma máquina só** — abrir a planilha no Excel e observar se o `~$` sobe, pelo ícone do OneDrive ou pela visão web do SharePoint — responde a mesma pergunta. O que não pode ficar como está: `web/src/components/StatusBanner.tsx` afirma "Alguém está com a planilha aberta no Excel", que é a leitura **forte** da premissa. Ou ela é medida e a frase se justifica, ou a frase recua para o que é sabidamente verdadeiro — o arquivo está aberto **nesta** máquina — com o motivo no cabeçalho do componente | **Medido em 03/09/2026, e o proxy não é executável nesta instalação:** a planilha real do operador está em `Downloads`, **fora do OneDrive** — a pasta sincronizada existe e não a contém. `P-15` supõe o `~$` viajando entre máquinas por pasta compartilhada; sem isso, não há o que observar. **A leitura forte da frase é falsa por construção aqui**, e não por falta de medição: o `~$` só pode ser de quem abriu o arquivo NESTA máquina. Resta decidir entre recuar a frase de `StatusBanner.tsx` — o caminho que os fatos apoiam — ou medir `P-15` num cenário que o operador não usa |
 
-| **PD-10** | **A suíte reprova sob contenção por prazo, e o defeito não é de produto.** Quatro casos estouram o teto quando a máquina está carregada: `paginacao > avanca e volta a pagina`, `mostra a faixa e o total` e `desabilita Anterior`, em `web/tests/Operational.test.tsx`, mais `Histórico (/historico) — H-21`, em `web/tests/paginas-montadas.test.tsx`. **Foi ele que escondeu o defeito da grade** corrigido em 03/09/2026: os dois apareciam juntos sob carga, e a família de prazo é a que a carga reproduz — o que me levou a diagnosticar "timing" quando a causa da grade era uma atualização de estado perdida. **A consulta já foi escopada**, em 02/09/2026, e o comentário do próprio teste registra os 5 s medidos; o que sobra é o custo de **montar** 200 linhas com 6 células editáveis cada. O `Histórico` é outra causa: ele espera o fallback do `Suspense` **sumir**, com o teto próprio de 1.000 ms de `asyncUtilTimeout`. **Não subir `testTimeout` nem `asyncUtilTimeout`**: medido em 03/09/2026 que isso zera o sintoma e esconde o resto, que é como este defeito mascarou o da grade | **Quando `H-84` chegar**, e o vínculo é técnico: hoje o teste monta 200 itens porque `PAGE_SIZE` é constante fixa no cliente, e `H-84` torna o `limit` estado de URL — os casos passam a pedir páginas pequenas e continuam exercitando a paginação. **Antes de abrir a fatia, meça:** rode os quatro com `--testTimeout` alto sob contenção e registre o tempo de cada um, para separar montagem cara de espera mal formulada. A troca da espera do `Histórico` por uma asserção **positiva** (`findBy*` do conteúdo, em vez de esperar o fallback sumir) não depende de `H-84` e pode ir antes |
 
 Ao fechar uma pendência, remova a linha.
 
