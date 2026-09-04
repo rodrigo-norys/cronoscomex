@@ -70,7 +70,7 @@ export const MAX_LIMIT = 1000
  * Dobra texto para comparacao: sem caixa, sem acento.
  *
  * Nao reaproveita `normKey` de proposito. Aquele existe para **agrupar** —
- * colapsa espaco interno, porque `EVER  FAIR` e `EVER FAIR` sao o mesmo navio.
+ * colapsa espaco interno, porque `NAVIO  ALFA` e `NAVIO ALFA` sao o mesmo navio.
  * Aqui o espaco importa: quem digita um trecho de container espera casamento
  * literal do que ve, e colapsar mudaria o que casa.
  */

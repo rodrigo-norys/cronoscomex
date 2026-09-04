@@ -172,7 +172,7 @@ export function processFixture(overrides: Partial<ProcessDto> = {}): ProcessDto 
     billOfLading: 'NBSC260812',
     agent: 'B&M',
     container: 'TCLU1234567',
-    vessel: 'EVER FAIR',
+    vessel: 'NAVIO ALFA',
     port: 'RJ',
     goods: 'BAZAR',
     eta2: '2026-08-20',
@@ -310,7 +310,7 @@ export function filterOptionsFixture(
       { key: 'ACME-13', label: 'ACME-13', count: 1 },
     ],
     importers: [{ key: 'IMP', label: 'IMP', count: 3 }],
-    vessels: [{ key: 'EVER FAIR', label: 'EVER FAIR', count: 2 }],
+    vessels: [{ key: 'NAVIO ALFA', label: 'NAVIO ALFA', count: 2 }],
     agents: [{ key: 'AG', label: 'AG', count: 4 }],
     goods: [{ key: 'BAZAR', label: 'BAZAR', count: 9 }],
     ports: [

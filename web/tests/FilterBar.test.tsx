@@ -145,7 +145,7 @@ describe('o teto da frase', () => {
           category: ['em_andamento'],
           client: ['ACME'],
           importer: ['IMP'],
-          vessel: ['EVER FAIR'],
+          vessel: ['NAVIO ALFA'],
           port: ['RJ'],
           goods: ['BAZAR'],
         }),
