@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useRef } from 'react'
 import type { FilterOptionsResponse } from '../api-client.ts'
 import {
   type Filters,
@@ -6,6 +6,7 @@ import {
   type MultiFilterKey,
   type OutsideRjSelection,
 } from '../hooks/useFilters.ts'
+import { useModalFocus } from '../hooks/useModalFocus.ts'
 import { type FilterOption, MultiSelect } from './MultiSelect.tsx'
 
 /**
@@ -24,6 +25,11 @@ import { type FilterOption, MultiSelect } from './MultiSelect.tsx'
  * o gatilho. **Este e o primeiro modal do conjunto com teste**: o
  * `ConflictDialog` so abre com a planilha alterada durante a sessao, e por isso
  * a gestao de foco dele segue parada em `PD-07`.
+ *
+ * **O comportamento de foco saiu daqui em `H-83`**, para `useModalFocus`: a
+ * busca por atalho precisava do mesmo, e duas copias divergem. A inercia do
+ * resto da tela continua sendo da casca — `inert` se aplica aos IRMAOS desta
+ * sobreposicao, e daqui de dentro ele se aplicaria a ela propria.
  *
  * **O veu cobre a regiao de CONTEUDO, nao a tela** (terceira determinacao). Por
  * isso ele e `absolute` num contexto que a casca cria, e nao `fixed inset-0`
@@ -69,9 +75,6 @@ export const OUTSIDE_RJ_LABELS: Readonly<Record<Exclude<OutsideRjSelection, ''>,
   false: 'Não',
 }
 
-const FOCUSABLE =
-  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-
 interface FilterPanelProps {
   filters: Filters
   options: FilterOptionsResponse | null
@@ -84,61 +87,7 @@ export function FilterPanel({ filters, options, optionsError, onClose }: FilterP
   const panel = useRef<HTMLDivElement>(null)
   const heading = useRef<HTMLHeadingElement>(null)
 
-  /**
-   * O foco entra no TITULO, e nao no primeiro controle. Entrar num campo faz o
-   * leitor de tela anunciar o campo sem dizer onde ele esta; o titulo e o nome
-   * acessivel do dialogo, e ele responde as duas coisas. `tabIndex={-1}` nao
-   * acrescenta parada de tabulacao.
-   */
-  useEffect(() => {
-    heading.current?.focus()
-  }, [])
-
-  /**
-   * `Esc` fecha, e `Tab` circula DENTRO do painel.
-   *
-   * A prisao e manual porque `inert` no restante nao basta sozinho: ele tira os
-   * irmaos da ordem de tabulacao, mas a barra de endereco e a interface do
-   * navegador continuam depois do ultimo elemento — e o operador que passa
-   * daquele ponto perde o painel de vista sem que nada o traga de volta.
-   */
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent): void => {
-      if (event.key === 'Escape') {
-        event.stopPropagation()
-        onClose()
-        return
-      }
-      if (event.key !== 'Tab') return
-
-      const alvos = panel.current?.querySelectorAll<HTMLElement>(FOCUSABLE)
-      if (!alvos || alvos.length === 0) return
-
-      const primeiro = alvos[0]
-      const ultimo = alvos[alvos.length - 1]
-      if (primeiro === undefined || ultimo === undefined) return
-
-      // O titulo tem `tabIndex={-1}` e nao entra na lista: com o foco nele,
-      // `Tab` sem esta guarda sairia do painel na primeira tecla.
-      if (!event.shiftKey && (document.activeElement === ultimo || panel.current === null)) {
-        event.preventDefault()
-        primeiro.focus()
-        return
-      }
-      if (event.shiftKey && document.activeElement === primeiro) {
-        event.preventDefault()
-        ultimo.focus()
-        return
-      }
-      if (document.activeElement === heading.current) {
-        event.preventDefault()
-        ;(event.shiftKey ? ultimo : primeiro).focus()
-      }
-    }
-
-    document.addEventListener('keydown', onKeyDown)
-    return () => document.removeEventListener('keydown', onKeyDown)
-  }, [onClose])
+  useModalFocus({ container: panel, initialFocus: heading, onClose })
 
   return (
     <>
