@@ -366,6 +366,59 @@
 }
 
 /*
+ * O quadro da tabela da Pagina Operacional (`H-84`, `D-31`).
+ *
+ * **A rolagem vertical e do QUADRO, e nao da pagina** — a variante `C2`. Numa
+ * tela que edita, a acao que grava no arquivo nao pode sair de vista enquanto
+ * se trabalha, e por isso topo, filtros e busca ficam parados.
+ *
+ * **Altura relativa, nunca `h-*` fixo:** `R05` trata altura fixa em conteiner
+ * de texto como achado, porque impede o aumento de entrelinha de `SC 1.4.12`.
+ * A reserva de `20rem` e o que fica ACIMA do quadro — casca, controles e
+ * rodape — e esta em `rem` porque tudo aquilo cresce junto da fonte-base.
+ *
+ * **O piso tambem e em `rem`, e e ele que salva o pior caso.** Medido em
+ * 04/09/2026, no cenario "Muito grande" — fonte-base de 24 px numa tela de
+ * 768 px: a reserva vale 480 px e o teto cai para 288 px, o piso de `15rem`
+ * vale 360 px, e `min-height` vence `max-height` no CSS. O quadro fica com os
+ * 360 px e mostra QUATRO linhas de 60 px alem do cabecalho de 61 px — o
+ * criterio pedia mais de uma. Sem o piso seriam 288 px, e tres linhas.
+ *
+ * O `overflow` fica no `.tsx`, e nao aqui: `R01` e verificada por
+ * `tests/repo/estilo.test.ts`, que procura `overflow-x-auto` nas tres linhas
+ * acima da `<table>` e nao le CSS.
+ */
+@utility table-viewport {
+  max-height: calc(100dvh - 20rem);
+  min-height: 15rem;
+}
+
+/*
+ * As reguas horizontais do corpo da tabela, e o desvio do cabecalho grudado.
+ *
+ * **Elas estavam na `<tr>`, e nao podiam ficar la.** O cabecalho grudado exige
+ * `border-separate` — sob `border-collapse: collapse` o Chrome DESCARTA a borda
+ * de um `th` fixo, e a separacao some quando as linhas passam por baixo —, e no
+ * modelo separado o navegador ignora borda de `tr`, `thead`, `tbody` e `col`
+ * (CSS 2.1 §17.6.1). Deixadas onde estavam, a tabela INTEIRA perderia as
+ * reguas, e nao so o cabecalho.
+ *
+ * O `scroll-margin-top` e do tamanho do cabecalho: a navegacao por setas de
+ * `H-80` foca a celula, o navegador rola o quadro ate ela, e sem o desvio a
+ * linha alvo pararia debaixo do `<thead>`.
+ */
+@utility table-rules {
+  & tbody td {
+    @apply border-b border-border-subtle;
+    scroll-margin-top: 2.5rem;
+  }
+
+  & tbody tr:last-child td {
+    border-bottom-width: 0;
+  }
+}
+
+/*
  * Movimento (`H-64`). Duas duracoes, uma curva, e nada entre elas.
  *
  * **Declarado aqui, e nunca no `.tsx`.** `--radius-*` e `--ease-*` sao

@@ -85,7 +85,7 @@ nem configuração de lint aqui.
 |---|---|
 | `src\` | a aplicação — leitura da planilha, indicadores, servidor |
 | `web\` | a interface, compilada no primeiro uso |
-| `config\` | as cores e os apelidos de status reconhecidos |
+| `config\` | as cores, os apelidos de status e os dois mapas de negócio |
 | `scripts\` | a partida |
 
 `config\app.json` **não vem junto** e não precisa: ele nasce quando você salva o

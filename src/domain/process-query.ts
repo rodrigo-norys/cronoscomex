@@ -10,8 +10,33 @@ import type { Process } from './types.ts'
  * serializa (regra inviolavel 6, e o Biome quebra a build se for violada).
  */
 
-/** Os tres campos de consulta declarados em §2 da especificacao (A-39). */
-const SEARCHABLE = ['ref', 'billOfLading', 'container'] as const
+/**
+ * Os SEIS campos de texto da planilha (`D-34`).
+ *
+ * Eram tres ate 04/09/2026 — os de consulta declarados em §2 da especificacao
+ * (`A-39`), que a busca resolveu. O operador pediu "qualquer coluna", e o
+ * recorte que sobrou tem criterio: **procedencia do dado**. Estes seis sao
+ * texto de celula, e casam sem inventar formatacao.
+ *
+ * **Tres colunas da tabela ficam de fora, cada uma por um motivo diferente.**
+ * `clientLabel` e o nome CONSOLIDADO de `client-map.json` e nao uma celula —
+ * um acerto ali nao seria explicavel pela planilha. `eta2` e data, e casar
+ * `30/12/2025` seria buscar sobre o texto formatado, que e apresentacao. E
+ * `statusCategory` e rotulo derivado de cinco regras, cujo recorte o filtro
+ * global ja oferece.
+ *
+ * **A distincao entre `clientRaw` e `clientLabel` e o que `D-29` adiava**: ele
+ * fechou a busca em tres campos justamente para nao escolher entre os dois, e
+ * `D-34` escolhe. Entra a celula, fica fora o consolidado.
+ */
+const SEARCHABLE = [
+  'ref',
+  'clientRaw',
+  'importerRaw',
+  'vesselRaw',
+  'billOfLading',
+  'container',
+] as const
 
 /**
  * As dez ordens que a Pagina Operacional oferece — uma por coluna da tabela.
@@ -57,10 +82,15 @@ function fold(value: string): string {
 }
 
 /**
- * Busca por substring em REF, BL e CNTR (A-39).
+ * Busca por substring nos seis campos de `SEARCHABLE` (`A-39`, `D-34`).
  *
  * Termo vazio ou so espaco NAO filtra: e o estado inicial do campo, e tratar
  * como "nada casa" esvaziaria a tela sem o operador ter pedido.
+ *
+ * **Nao ordena por relevancia, e isso passa a se notar.** Com seis campos, um
+ * termo curto casa muito mais: um importador de DUAS letras e uma linha inteira, e
+ * aparece como substring em contentor e BL. A lista sai na ordem da consulta,
+ * como sempre saiu.
  */
 export function matchesSearch(process: Process, term: string): boolean {
   const needle = fold(term.trim())
