@@ -12,6 +12,8 @@ import {
 } from 'recharts'
 import type { MonthlyHistoryResponse } from '../api-client.ts'
 import { PageAlert } from '../components/PageAlert.tsx'
+import { Skeleton } from '../components/Skeleton.tsx'
+import { useFirstLoad } from '../hooks/useFirstLoad.ts'
 import { useHistory } from '../hooks/useHistory.ts'
 
 /**
@@ -139,6 +141,7 @@ interface HistoryProps {
 export function History({ queryString, dataVersion }: HistoryProps) {
   const [months, setMonths] = useState<WindowMonths>(DEFAULT_WINDOW)
   const state = useHistory(queryString, months, dataVersion)
+  const firstLoad = useFirstLoad('historico', state.status === 'pronto')
 
   if (state.status === 'erro') {
     return (
@@ -166,7 +169,11 @@ export function History({ queryString, dataVersion }: HistoryProps) {
   }
 
   if (state.status === 'carregando') {
-    return <p className="panel-loading">Carregando histórico…</p>
+    return firstLoad ? (
+      <Skeleton announcement="Carregando histórico." />
+    ) : (
+      <p className="panel-loading"></p>
+    )
   }
 
   const { series, reconstructed, historyStartedAt, truncated } = state.history

@@ -1,6 +1,8 @@
 import { PageAlert } from '../components/PageAlert.tsx'
 import { RankingBar } from '../components/RankingBar.tsx'
+import { Skeleton } from '../components/Skeleton.tsx'
 import { type MultiFilterKey, useFilters } from '../hooks/useFilters.ts'
+import { useFirstLoad } from '../hooks/useFirstLoad.ts'
 import { useIndicators } from '../hooks/useIndicators.ts'
 import { navigate } from '../router.ts'
 
@@ -52,6 +54,7 @@ const RANKINGS: readonly RankingDefinition[] = [
 
 export function Clients({ queryString, dataVersion }: ClientsProps) {
   const state = useIndicators(queryString, dataVersion)
+  const firstLoad = useFirstLoad('clientes', state.status === 'pronto')
   const filters = useFilters()
 
   /**
@@ -94,7 +97,11 @@ export function Clients({ queryString, dataVersion }: ClientsProps) {
   }
 
   if (state.status === 'carregando') {
-    return <p className="panel-loading">Carregando rankings…</p>
+    return firstLoad ? (
+      <Skeleton announcement="Carregando rankings." />
+    ) : (
+      <p className="panel-loading"></p>
+    )
   }
 
   const { rankings, meta } = state.indicators

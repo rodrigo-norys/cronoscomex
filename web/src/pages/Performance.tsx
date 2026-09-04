@@ -1,6 +1,7 @@
 import type { IndicatorsResponse } from '../api-client.ts'
 import { PageAlert } from '../components/PageAlert.tsx'
 import { RankingBar } from '../components/RankingBar.tsx'
+import { Skeleton } from '../components/Skeleton.tsx'
 import {
   type FilterSelection,
   MULTI_FILTER_LABELS,
@@ -8,6 +9,7 @@ import {
   type MultiFilterKey,
   useFilters,
 } from '../hooks/useFilters.ts'
+import { useFirstLoad } from '../hooks/useFirstLoad.ts'
 import { useIndicators } from '../hooks/useIndicators.ts'
 import { navigate } from '../router.ts'
 
@@ -58,6 +60,7 @@ const BREAKDOWNS: readonly BreakdownDefinition[] = [
 
 export function Performance({ queryString, dataVersion }: PerformanceProps) {
   const state = useIndicators(queryString, dataVersion)
+  const firstLoad = useFirstLoad('performance', state.status === 'pronto')
   const filters = useFilters()
 
   // Mesma regra da Pagina Clientes: aplicar, nao alternar, e escrever o filtro
@@ -94,7 +97,11 @@ export function Performance({ queryString, dataVersion }: PerformanceProps) {
   }
 
   if (state.status === 'carregando') {
-    return <p className="panel-loading">Carregando performance…</p>
+    return firstLoad ? (
+      <Skeleton announcement="Carregando performance." />
+    ) : (
+      <p className="panel-loading"></p>
+    )
   }
 
   const { documentaryLeadTime, leadTimeByGroup, rankings, meta } = state.indicators

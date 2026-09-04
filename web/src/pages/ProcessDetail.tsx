@@ -4,6 +4,8 @@ import { ColorFieldsForm } from '../components/ColorFieldsForm.tsx'
 import { EditProcessForm } from '../components/EditProcessForm.tsx'
 import { PageAlert } from '../components/PageAlert.tsx'
 import { PendingEditsPanel } from '../components/PendingEditsPanel.tsx'
+import { Skeleton } from '../components/Skeleton.tsx'
+import { useFirstLoad } from '../hooks/useFirstLoad.ts'
 import { useProcessDetail } from '../hooks/useProcessDetail.ts'
 
 /**
@@ -38,6 +40,7 @@ const CHANNEL_LABELS: Readonly<Record<ProcessDto['customsChannel'], string>> = {
 
 export function ProcessDetail({ processRef, dataVersion }: ProcessDetailProps) {
   const { state, refresh } = useProcessDetail(processRef, dataVersion)
+  const firstLoad = useFirstLoad('processo', state.status === 'pronto')
 
   if (state.status === 'erro') {
     return (
@@ -81,7 +84,11 @@ export function ProcessDetail({ processRef, dataVersion }: ProcessDetailProps) {
   }
 
   if (state.status === 'carregando') {
-    return <p className="panel-loading">Carregando processo…</p>
+    return firstLoad ? (
+      <Skeleton announcement="Carregando processo." />
+    ) : (
+      <p className="panel-loading">Carregando processo…</p>
+    )
   }
 
   const { process, anomalies, statusHistory, daysInCurrentCategory, pendingEdits } = state.detail

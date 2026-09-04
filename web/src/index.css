@@ -243,6 +243,8 @@
 
   --speed-fast: 110ms;
   --speed-base: 170ms;
+  /* A espera, e nao o controle: 110 ou 170 ms num esqueleto lem como piscar. */
+  --speed-pulse: 1400ms;
   --ease-brand: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
@@ -457,6 +459,27 @@
   animation: surface-appear var(--speed-base) var(--ease-brand);
 }
 
+/*
+ * A pulsacao do esqueleto de carregamento (`H-85`).
+ *
+ * **Declarada aqui, e nunca no `.tsx`**: `animate-pulse` do Tailwind reprovaria
+ * a guarda de `A10`, que nao admite utilitario de movimento fora deste arquivo.
+ * A opacidade e o unico canal que se move — nada desloca pixel —, e por isso o
+ * esqueleto nao arrasta o texto que esta ao lado dele.
+ *
+ * O piso de `0.45` e opacidade, e nao cor: a forma escurece e clareia sobre o
+ * proprio fundo, entao ela funciona nos dois esquemas sem token novo.
+ */
+@utility motion-pulse {
+  animation: skeleton-pulse var(--speed-pulse) var(--ease-brand) infinite;
+}
+
+@keyframes skeleton-pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+
 @keyframes surface-appear {
   from {
     opacity: 0;
@@ -501,6 +524,14 @@ button:not(:disabled):active {
    * interpolacao, nao a revelacao.
    */
   .motion-surface {
+    animation: none;
+  }
+
+  /*
+   * O esqueleto fica ESTATICO, e nao invisivel: ele continua ocupando a altura
+   * do conteudo, que e a razao de existir. O que cai e a pulsacao.
+   */
+  .motion-pulse {
     animation: none;
   }
 }
