@@ -205,9 +205,9 @@ describe('o que a série não cobre (A-43)', () => {
 
     // `H-44`: o bloco visível fica, e a região viva da casca anuncia. O portal
     // monta num efeito, então a região vem primeiro na espera.
-    expect((await findLiveRegion('status')).textContent).toMatch(
-      /é maior que o histórico existente/,
-    )
+    expect(
+      (await findLiveRegion('status', /é maior que o histórico existente/)).textContent,
+    ).toMatch(/é maior que o histórico existente/)
     expect(screen.getAllByText(/é maior que o histórico existente/)).toHaveLength(2)
   })
 
@@ -284,7 +284,7 @@ describe('os dois estados que não são zero', () => {
     api.historyWithoutRead()
     renderPage()
 
-    const aviso = await findLiveRegion('status')
+    const aviso = await findLiveRegion('status', /Nenhuma leitura/)
     expect(aviso.textContent).toMatch(/Nenhuma leitura da planilha foi concluída ainda/)
     expect(screen.queryByRole('table')).toBe(null)
   })

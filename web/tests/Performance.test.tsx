@@ -480,7 +480,7 @@ describe('estados que nao sao zero', () => {
     api.indicatorsWithoutRead()
     renderPage()
 
-    expect((await findLiveRegion('status')).textContent).toMatch(
+    expect((await findLiveRegion('status', /Nenhuma leitura/)).textContent).toMatch(
       /traço aqui não significa zero dia/,
     )
     expect(screen.getAllByText(/traço aqui não significa zero dia/)).toHaveLength(2)
