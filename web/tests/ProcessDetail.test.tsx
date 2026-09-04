@@ -219,7 +219,7 @@ describe('estados que nao sao zero', () => {
     api.processDetailWithoutRead()
     renderPage()
 
-    expect((await findLiveRegion('status')).textContent).not.toBe('')
+    expect((await findLiveRegion('status', /Nenhuma leitura/)).textContent).not.toBe('')
     expect(screen.getAllByText(/não significa que a REF não existe/)).toHaveLength(2)
     expect(screen.queryByRole('region', { name: 'Processo não encontrado' })).toBeNull()
   })

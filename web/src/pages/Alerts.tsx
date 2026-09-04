@@ -1,7 +1,9 @@
 import type { AlertsResponse } from '../api-client.ts'
 import { ALERT_LABELS, AlertRow, groupByProcess } from '../components/AlertRow.tsx'
 import { PageAlert } from '../components/PageAlert.tsx'
+import { Skeleton } from '../components/Skeleton.tsx'
 import { useAlerts } from '../hooks/useAlerts.ts'
+import { useFirstLoad } from '../hooks/useFirstLoad.ts'
 
 /**
  * Página Alertas (RF-13). **É fila de trabalho, não panorama** (A-59).
@@ -30,6 +32,7 @@ const TYPES_IN_SEVERITY_ORDER: readonly AlertType[] = [
 
 export function Alerts({ queryString, dataVersion }: AlertsProps) {
   const state = useAlerts(queryString, dataVersion)
+  const firstLoad = useFirstLoad('alertas', state.status === 'pronto')
 
   if (state.status === 'erro') {
     return (
@@ -61,7 +64,11 @@ export function Alerts({ queryString, dataVersion }: AlertsProps) {
   }
 
   if (state.status === 'carregando') {
-    return <p className="panel-loading">Carregando alertas…</p>
+    return firstLoad ? (
+      <Skeleton announcement="Carregando alertas." />
+    ) : (
+      <p className="panel-loading"></p>
+    )
   }
 
   const {

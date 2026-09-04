@@ -281,7 +281,7 @@ está fora de escopo por lacuna de dado (§4 da especificação).
     "responsible": [ /* GroupCount[] */ ]   // IND-20
   },
   "expectedVessels": [                       // IND-12
-    { "vesselKey": "EVER FAIR", "vesselLabel": "EVER FAIR", "eta2": "2026-08-06", "processCount": 0 }
+    { "vesselKey": "NAVIO ALFA", "vesselLabel": "NAVIO ALFA", "eta2": "2026-08-06", "processCount": 0 }
   ],
   "arrivalCalendar": [                       // H-17 — recorte de expectedVessels
     { "eta2": "2026-08-13", "processCount": 0, "vessels": [ /* ExpectedVessel[] */ ] }

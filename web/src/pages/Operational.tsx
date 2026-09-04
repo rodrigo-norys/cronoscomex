@@ -3,6 +3,8 @@ import { ArrivalCalendar } from '../components/ArrivalCalendar.tsx'
 import { NewRowButton } from '../components/NewRowButton.tsx'
 import { PageAlert } from '../components/PageAlert.tsx'
 import { ProcessTable } from '../components/ProcessTable.tsx'
+import { Skeleton } from '../components/Skeleton.tsx'
+import { useFirstLoad } from '../hooks/useFirstLoad.ts'
 import { useIndicators } from '../hooks/useIndicators.ts'
 import { useProcesses } from '../hooks/useProcesses.ts'
 import { PAGE_SIZES, useProcessQuery } from '../hooks/useProcessQuery.ts'
@@ -32,6 +34,7 @@ export function Operational({ queryString, dataVersion }: OperationalProps) {
   const [editVersion, setEditVersion] = useState(0)
   const processes = useProcesses(query.requestQuery, dataVersion + editVersion)
   const indicators = useIndicators(queryString, dataVersion)
+  const firstLoad = useFirstLoad('operacional', processes.status === 'pronto')
 
   const calendar =
     indicators.status === 'pronto' ? indicators.indicators.arrivalCalendar : undefined
@@ -94,9 +97,12 @@ export function Operational({ queryString, dataVersion }: OperationalProps) {
               />
             </>
           ) : (
-            processes.status === 'carregando' && (
+            processes.status === 'carregando' &&
+            (firstLoad ? (
+              <Skeleton announcement="Carregando processos." />
+            ) : (
               <p className="panel-loading">Carregando processos…</p>
-            )
+            ))
           )}
         </div>
 

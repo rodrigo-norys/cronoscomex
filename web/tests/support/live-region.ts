@@ -39,15 +39,29 @@ export function unmountLiveRegions(): void {
  * `H-43` e `H-44` puseram as regiões no DOM desde a montagem — é a condição do
  * anúncio. Esperar por "existe algum `role=alert`" passou a resolver no primeiro
  * render, antes de a mensagem chegar; o que se espera é o conteúdo.
+ *
+ * **`esperado` deixou de ser luxo em `H-85`.** Até o esqueleto de carregamento
+ * existir, a primeira coisa a chegar na região era sempre o anúncio do estado
+ * final, e "qualquer texto" bastava. Agora o carregamento anuncia primeiro —
+ * *"Carregando rankings."* —, e quem espera o anúncio de "sem leitura" resolve
+ * cedo, no texto errado, e lê a região no intervalo entre os dois. Passar o
+ * padrão elimina a corrida: a espera é pelo texto que o caso afirma.
  */
-export async function findLiveRegion(role: 'alert' | 'status'): Promise<HTMLElement> {
+export async function findLiveRegion(
+  role: 'alert' | 'status',
+  esperado?: RegExp,
+): Promise<HTMLElement> {
   const { waitFor } = await import('@testing-library/react')
   const id = role === 'alert' ? PAGE_LIVE_REGION_ID : PAGE_LIVE_STATUS_ID
 
   return waitFor(() => {
     const region = document.getElementById(id)
     if (region === null) throw new Error(`região viva ${id} não está montada`)
-    if ((region.textContent ?? '').trim() === '') throw new Error('região viva ainda sem texto')
+    const texto = (region.textContent ?? '').trim()
+    if (texto === '') throw new Error('região viva ainda sem texto')
+    if (esperado !== undefined && !esperado.test(texto)) {
+      throw new Error(`região viva diz "${texto}", e o caso espera ${esperado}`)
+    }
     return region
   })
 }

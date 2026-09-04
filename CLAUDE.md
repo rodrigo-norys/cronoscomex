@@ -128,7 +128,7 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**85 das 90 histórias estão concluídas**, e as cinco abertas são `E14`. O que cada uma aprendeu — número medido,
+**86 das 90 histórias estão concluídas**, e as quatro abertas são `E14`. O que cada uma aprendeu — número medido,
 defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
 `docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
 em aberto. **Este bloco diz só o que está aberto.**
@@ -136,11 +136,11 @@ em aberto. **Este bloco diz só o que está aberto.**
 **`E9` a `E12` fecharam em 01/09/2026, e `E13` em 03/09/2026.** O que está aberto
 é **`E14`** — `H-82` a `H-90`, decididas em 03 e 04/09/2026 e **numeradas na
 ordem de execução**, com `H-90` fora dela por ter nascido depois. **`H-82` a
-`H-84` e `H-90` fecharam em 04/09/2026.** Restam: o carregamento sem salto; o
-ícone por destino; a contagem que segue o recorte (`D-29`); o mapa de clientes
-sem cópia manual, que nasce de `PD-08` (`D-32`); e a ordem em que a planilha
-está (`D-33`) — **a única das cinco que toca contrato de rota**, porque altera
-`sort` em `docs/05-contratos-api.md`. A ordem entre elas
+`H-85` e `H-90` fecharam em 04/09/2026.** Restam: o ícone por destino; a
+contagem que segue o recorte (`D-29`); o mapa de clientes sem cópia manual, que
+nasce de `PD-08` (`D-32`); e a ordem em que a planilha está (`D-33`) — **a única
+das quatro que toca contrato de rota**, porque altera `sort` em
+`docs/05-contratos-api.md`. A ordem entre elas
 está no cabeçalho do épico. Restam também as **três pendências abertas** abaixo,
 e nenhuma bloqueia implementação: `PD-09` espera só uma decisão, `PD-08` a
 próxima sincronização da branch `distribuicao`, e `PD-07` se divide — a paleta

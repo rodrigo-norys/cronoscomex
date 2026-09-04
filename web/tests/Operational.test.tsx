@@ -366,6 +366,50 @@ describe('tamanho de pagina — H-84', () => {
   })
 })
 
+describe('esqueleto de carregamento — H-85', () => {
+  const esqueleto = () => document.querySelector('[aria-busy="true"]')
+
+  it('a primeira carga da sessao mostra o esqueleto', () => {
+    renderPage()
+
+    expect(esqueleto()).toBeTruthy()
+    expect(document.querySelectorAll('.motion-pulse').length).toBeGreaterThan(0)
+  })
+
+  /**
+   * **O caso que decidiu o desenho desta historia.** As sete paginas sao
+   * montadas com `key={dataVersion}` em `App.tsx`: quando o watcher rele a
+   * planilha, o React DESTROI a pagina e cria outra, e o estado volta a
+   * `carregando` com dado bom ainda em tela. Um esqueleto de altura cheia
+   * piscaria a tela inteira, sem o operador ter pedido nada — e justamente
+   * depois de ele aplicar edicoes, que e o que provoca a releitura.
+   *
+   * `unmount` mais `render` e exatamente o que a `key` faz. O registro de
+   * `useFirstLoad` vive num modulo por isso: dentro do componente seria
+   * destruido junto.
+   */
+  it('a remontagem por releitura NAO mostra o esqueleto', async () => {
+    const { unmount } = renderPage()
+    await screen.findByRole('grid')
+
+    unmount()
+    renderPage()
+
+    expect(esqueleto()).toBeNull()
+    expect(screen.getByText('Carregando processos…')).toBeTruthy()
+  })
+
+  /** Erro e texto, e continua sendo: forma no lugar de mensagem esconde o que
+      aconteceu. */
+  it('o estado de erro nao vira esqueleto', async () => {
+    api.failProcesses()
+    renderPage()
+
+    await findLiveRegion('alert', /Não foi possível carregar os processos/)
+    expect(esqueleto()).toBeNull()
+  })
+})
+
 describe('calendario de chegadas', () => {
   it('agrupa por dia e por navio, com o total do dia vindo do servidor', async () => {
     api.serveIndicators({
@@ -421,7 +465,7 @@ describe('estados que nao sao lista vazia', () => {
 
     // `H-44`: o bloco visível é `aria-hidden`, e quem anuncia é a região viva
     // da casca — um nó que já existia, que é o que o leitor de tela compara.
-    expect((await findLiveRegion('status')).textContent).toMatch(
+    expect((await findLiveRegion('status', /Nenhuma leitura/)).textContent).toMatch(
       /vazio aqui não significa nenhum processo/,
     )
     expect(screen.getAllByText(/vazio aqui não significa nenhum processo/)).toHaveLength(2)

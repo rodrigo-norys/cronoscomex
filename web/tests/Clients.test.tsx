@@ -228,7 +228,7 @@ describe('estados que nao sao zero', () => {
     api.indicatorsWithoutRead()
     renderPage()
 
-    expect((await findLiveRegion('status')).textContent).not.toBe('')
+    expect((await findLiveRegion('status', /Nenhuma leitura/)).textContent).not.toBe('')
     expect(screen.getAllByText(/não significa nenhum processo/)).toHaveLength(2)
     expect(screen.queryByRole('region', { name: 'Clientes' })).toBeNull()
   })

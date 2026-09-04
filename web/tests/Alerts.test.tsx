@@ -322,7 +322,7 @@ describe('casos-limite', () => {
     api.alertsWithoutRead()
     renderPage()
 
-    expect((await findLiveRegion('status')).textContent).not.toBe('')
+    expect((await findLiveRegion('status', /Nenhuma leitura/)).textContent).not.toBe('')
     expect(screen.getAllByText(/vazio aqui não significa ausência de pendências/)).toHaveLength(2)
     expect(screen.queryByRole('region', { name: 'Fila de alertas' })).toBeNull()
   })
