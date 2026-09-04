@@ -30,8 +30,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E11 — A casca redesenhada ✅ | **H-57 … H-65, todas concluídas** | 3 | 6 | 0 |
 | E12 — Os achados da revisão de estilo ✅ | **H-73 … H-76, todas concluídas** | 2 | 1 | 1 |
 | E13 — O operacional que edita, ordena e cria ✅ | **H-77 … H-81, todas concluídas.** Épico **retroativo**: o código entrou em 02/09/2026 e as histórias foram escritas em 03/09 | 3 | 0 | 2 |
-| E14 — A casca que se opera, não só se lê | **H-82 … H-88, todas abertas.** Primeiro épico **prospectivo** desde `E12`: as sete nascem antes do código (`D-29` a `D-32`) | 1 | 6 | 0 |
-| **Total** | **88** — 81 concluídas, 7 abertas | **34** | **50** | **4** |
+| E14 — A casca que se opera, não só se lê | **H-82 ✅; H-83 … H-88 abertas.** Primeiro épico **prospectivo** desde `E12`: as sete nascem antes do código (`D-29` a `D-32`) | 1 | 6 | 0 |
+| **Total** | **88** — 82 concluídas, 6 abertas | **34** | **50** | **4** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -186,7 +186,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 
 **[Épico E14 — A casca que se opera, não só se lê](#e14)**
 
-- [H-82 — Os filtros num painel, e a barra dizendo o recorte](#h-82)
+- [H-82 — Os filtros num painel, e a barra dizendo o recorte](#h-82) ✅
 - [H-83 — A busca alcançável do teclado](#h-83)
 - [H-84 — O quadro que rola, e as linhas por página](#h-84)
 - [H-85 — O carregamento que não colapsa a altura](#h-85)
@@ -9238,6 +9238,45 @@ primeiras são escolha do usuário, registradas em `D-29`:
 <a id="h-82"></a>
 
 ### H-82 — Os filtros num painel, e a barra dizendo o recorte
+
+> ✅ **CONCLUÍDA em 04/09/2026**, nos commits `6f3071f` e `59af87a`. **86 testes
+> próprios** nos três arquivos que ela toca — `FilterPanel`, `FilterBar` e a
+> casca —, suíte em **1.843**.
+>
+> **Os dois casos-limite que o jsdom não alcança foram medidos num Chrome real**,
+> por `tools/medir-navegador.mjs`. A 320 px o painel ocupa **305 px** — a largura
+> útil inteira — e `scrollWidth` iguala `clientWidth`: nenhuma rolagem horizontal
+> (`SC 1.4.10`, `VN-1`), que era o defeito dos popovers de largura fixa, onde
+> `H-65` mediu 6 dos 13 empurrando a página para fora. Sob `forced-colors:
+> active` a borda do painel resolve `rgb(255, 255, 255)`: com o véu descartado,
+> é ela que separa o painel do fundo — mesmo argumento de `border-modal` em
+> `H-62`.
+>
+> **A terceira determinação de `D-30` saiu confirmada por número.** O topo do véu
+> e a base da `<header>` coincidem em **59 px**: o véu começa exatamente onde a
+> barra de topo termina, e `Aplicar alterações` continua à vista. Em 320 px a
+> barra empilha e ocupa 476 px, então o painel nasce daí para baixo — consequência
+> aceita da determinação, não defeito novo.
+>
+> **O teste pegou um defeito de acessibilidade no gatilho.** O nome acessível saía
+> `Filtros14`: o `gap` do flex é espaço visual, não textual. É o mesmo caso que
+> `H-60` já media no chip, e a correção é a mesma — `aria-label` explícito.
+>
+> **Três divergências, todas resolvidas na abertura.** (1) `web/src/App.tsx`
+> faltava na lista: o `inert` da lateral, do topo e do conteúdo, e o contexto de
+> posicionamento do véu, não têm outro lugar onde morar — `AppSidebar` recebeu a
+> propriedade em vez de um invólucro, que quebraria o flex da raiz. (2)
+> `web/tests/FilterBar.test.tsx` também faltava, com **646 linhas e 39 testes**
+> escritos contra os treze chips. (3) `MultiSelect.tsx` citava `FilterChip` num
+> comentário — e **não** reprovaria a guarda de âncora morta: `IDENTIFIER` é
+> `/^[a-z]+[A-Z][A-Za-z0-9]*$/` e exige inicial minúscula, então PascalCase
+> escapa. Corrigido mesmo assim.
+>
+> **O primeiro commit saiu vermelho e foi refeito.** O `git rm` do `FilterChip`
+> durante a implementação deixou a remoção **preparada no índice**, e o `git add`
+> do plano a arrastou: o ponto tinha `FilterBar` importando o arquivo que ele
+> próprio apagava. `git reset --soft HEAD~1` mais `git restore --staged`
+> resolveram, e a lição virou portão em `.claude/skills/sugerir-commits`.
 
 > **Substitui a forma que `H-60` entregou, e não a corrige.** Os treze chips em
 > popover cumpriram o que aquela história prometia; o que mudou foi o critério —

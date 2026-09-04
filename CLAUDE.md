@@ -128,15 +128,15 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**81 das 88 histórias estão concluídas**, e as sete abertas são `E14`. O que cada uma aprendeu — número medido,
+**82 das 88 histórias estão concluídas**, e as seis abertas são `E14`. O que cada uma aprendeu — número medido,
 defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
 `docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
 em aberto. **Este bloco diz só o que está aberto.**
 
 **`E9` a `E12` fecharam em 01/09/2026, e `E13` em 03/09/2026.** O que está aberto
 é **`E14`** — `H-82` a `H-87`, decididas em 03/09/2026 e **numeradas na ordem de
-execução**: os filtros num painel sobreposto (`D-30`), que substitui a barra de
-chips de `H-60`; a busca por atalho; o quadro que rola com o cabeçalho fixo e o
+execução**. **`H-82` fechou em 04/09/2026**, e com ela nasceu o padrão de foco
+modal que as seguintes consomem. Restam: a busca por atalho; o quadro que rola com o cabeçalho fixo e o
 tamanho de página escolhível (`D-31`); o carregamento sem salto; o ícone por
 destino; e a contagem que segue o recorte (`D-29`). A sétima, `H-88`, não vem da revisão de interação: ela nasce de `PD-08` e tira o mapa de clientes da cópia manual (`D-32`). **Nenhuma toca contrato de rota** — medido:
 `GET /api/processes` já serve `total` com `activeOnly`, e `GET /api/alerts` já
@@ -439,7 +439,7 @@ processo e são abandonados. Os gatilhos abaixo são objetivos.
 | ~~**Ao concluir `H-13`**~~ | ~~Skill `novo-indicador`~~ | ✅ **Criada em 06/08/2026**, ao fechar `H-13`. Saiu da repetição real de `H-09` a `H-13`, com o formato já estabilizado — e com a omissão sistemática da rota como motivo principal |
 | ~~**Antes de iniciar a Fase 3** (`H-24`)~~ | ~~Subagent de review para manipulação de XML~~ | ✅ **Criado em 11/08/2026** como `revisor-xml`, antes da primeira linha de `H-24`. `H-24` tem **11** casos-limite — 8 no plano original, mais 3 que a própria revisão acrescentou (linha auto-fechada, célula ausente recebendo data, fórmula compartilhada) — e o custo de errar é a planilha da empresa. **Pagou-se na primeira invocação**: reprovou por dois defeitos reais, um deles gerando XML malformado, o outro reproduzindo A-56 no caso mais provável |
 | ~~**Ao concluir `H-20`**~~ | ~~Skill `nova-pagina`~~ | ✅ **Criada em 07/08/2026**, ao fechar `H-20`. Cinco páginas de `H-16` a `H-20` com o mesmo padrão — consumir rota → respeitar filtros globais → estado vazio explícito → nunca calcular no cliente —, e as mesmas coisas fora do plano toda vez. `H-22` foi a primeira história conduzida por ela |
-| **Ao acumular 20 `session_id` distintos** em `data/instrucoes-carregadas.log` | Conferir se cada rule dispara | As três de 31/08/2026 levaram ~1750 palavras do `CLAUDE.md` e **nada prova que carregam**. Rule que nunca apareça com `path_glob_match` ou volta para cá, ou tem o glob consertado — rule que não dispara não economizou contexto, escondeu a instrução. Se as cinco dispararem, o hook vira só observabilidade e esta linha sai. **Não virou asserção em `tests/repo/`** de propósito: dependeria de arquivo em `data/`, que é gitignored, e foi assim que o CI reprovou em `H-49` |
+| ~~**Ao acumular 20 `session_id` distintos**~~ | ~~Conferir se cada rule dispara~~ | ✅ **Conferido em 04/09/2026**, ao fechar `H-82`: **28 sessões** distintas no log, e **as cinco rules dispararam** — `documentacao` 19 vezes, `comentarios` 13, `operacao-windows` 7, `escrita-xlsx` 4, `distribuicao` 2. Nenhuma precisa voltar para cá nem ter o glob consertado, e o hook vira só observabilidade. **O log é TSV, não JSON** — a primeira contagem leu 0 por supor o formato errado |
 | **Se aparecer a aba `2027`** | Reexecutar `H-01` | `python3 tools/profile_workbook.py`, depois `tools/build_fixtures.py`. As abas `2025` e `2024` provam que **o esquema muda entre anos**. Risco R-14 |
 | **Nunca** | Subagents para paralelizar o backlog | O caminho crítico é uma cadeia sequencial de 18 sessões (`docs/07-plano-entrega.md §3`). Fan-out não encurta |
 
