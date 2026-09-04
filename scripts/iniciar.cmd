@@ -57,6 +57,9 @@ if errorlevel 1 (
   echo.
   echo   Leva poucos minutos, e precisa de internet.
   echo   Terminada a instalacao, de duplo clique NESTE MESMO atalho outra vez.
+  echo.
+  echo   Se esta janela ja estava aberta ANTES da instalacao, feche-a antes:
+  echo   uma janela so enxerga o Node novo se for aberta depois dele.
   goto :erro
 )
 
@@ -79,6 +82,9 @@ if !MAJOR! LSS 22 (
   echo   NAO e preciso desinstalar a versao !MAJOR!: o instalador coloca a 22
   echo   por cima, e a aplicacao passa a usar a nova.
   echo   Terminada a instalacao, de duplo clique NESTE MESMO atalho outra vez.
+  echo.
+  echo   Se esta janela ja estava aberta ANTES da instalacao, feche-a antes:
+  echo   uma janela so enxerga o Node novo se for aberta depois dele.
   goto :erro
 )
 
