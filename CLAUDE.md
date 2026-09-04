@@ -128,15 +128,15 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**82 das 88 histórias estão concluídas**, e as seis abertas são `E14`. O que cada uma aprendeu — número medido,
+**83 das 88 histórias estão concluídas**, e as cinco abertas são `E14`. O que cada uma aprendeu — número medido,
 defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
 `docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
 em aberto. **Este bloco diz só o que está aberto.**
 
 **`E9` a `E12` fecharam em 01/09/2026, e `E13` em 03/09/2026.** O que está aberto
 é **`E14`** — `H-82` a `H-87`, decididas em 03/09/2026 e **numeradas na ordem de
-execução**. **`H-82` fechou em 04/09/2026**, e com ela nasceu o padrão de foco
-modal que as seguintes consomem. Restam: a busca por atalho; o quadro que rola com o cabeçalho fixo e o
+execução**. **`H-82` e `H-83` fecharam em 04/09/2026**, e o padrão de foco modal nasceu na
+primeira e foi extraído para um hook na segunda. Restam: o quadro que rola com o cabeçalho fixo e o
 tamanho de página escolhível (`D-31`); o carregamento sem salto; o ícone por
 destino; e a contagem que segue o recorte (`D-29`). A sétima, `H-88`, não vem da revisão de interação: ela nasce de `PD-08` e tira o mapa de clientes da cópia manual (`D-32`). **Nenhuma toca contrato de rota** — medido:
 `GET /api/processes` já serve `total` com `activeOnly`, e `GET /api/alerts` já

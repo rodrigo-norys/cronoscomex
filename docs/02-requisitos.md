@@ -62,7 +62,7 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 | ID | Requisito | Histórias |
 |---|---|---|
 | RF-09 | Página Inicial com cartões-resumo das 4 categorias, total, Canal Vermelho, chegadas hoje/semana/15 dias, atrasados e documentos pendentes | H-16 |
-| RF-10 | Página Operacional: tabela de processos ativos com busca por REF/BL/CNTR e calendário de chegadas por navio | H-17 |
+| RF-10 | Página Operacional: tabela de processos com busca por REF/BL/CNTR e calendário de chegadas por navio. **Abre com todos os processos, na ordem da planilha**; o operador reduz aos ativos por um controle próprio (`D-33`) | H-17, H-84, H-89 |
 | RF-11 | Página Clientes: ranking e distribuição por CLT e IMPORTADOR | H-18 |
 | RF-12 | Página Performance: tempo médio de envio documental por cliente, agente, navio e responsável, com denominador visível | H-19 |
 | RF-13 | Página Alertas: lista dos 6 alertas ordenada por severidade fixa | H-20 |
