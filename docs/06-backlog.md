@@ -9193,22 +9193,31 @@ fatia. Aqui as cinco histórias existem antes da primeira linha.
 **Quatro determinações valem para o épico e não se re-litigam** — as três
 primeiras são escolha do usuário, registradas em `D-29`:
 
-1. **O ícone herda a cor do texto** (`A1`). Ele acompanha `text-primary` no item
-   corrente e `text-muted` no repouso, e **nenhuma cor nova entra no conjunto**.
-   `chart-1` a 6,01:1 — o par que `PROPOSTA §2` mediu — fica registrado como a
-   alternativa recusada, não como pendência.
-2. **A contagem é o número que a página mostra**, e não o do arquivo: a
-   Operacional abre filtrada por processo ativo (`A-16`), então a lateral conta
-   ativos. Medido em `H-17`: **169 ativos de 649**. O número da lateral e o da
-   tabela nunca divergem, que é a razão de existir da escolha.
-3. **A busca alcança REF, BL e contêiner** — os três campos que `A-39` já define
-   e `SEARCHABLE` já implementa — mais os sete destinos do menu. **Cliente e
-   navio ficam fora**, e isso fecha o primeiro dos dois itens que `D-22`
-   declarou em aberto: estendê-los exigiria decidir entre a grafia da célula e o
-   cliente consolidado, distintos desde `H-49`, e isso é regra nova em
-   `src/domain/`.
-4. **Nenhuma rota muda de contrato, e nenhum indicador muda de valor.** Medido
-   em 03/09/2026, e é o que derruba a estimativa inicial do épico:
+1. **O ícone herda a cor do texto** (`A1`), e **nenhuma cor nova entra no
+   conjunto**. `chart-1` a 6,01:1 — o par que `PROPOSTA §2` mediu — fica
+   registrado como a alternativa recusada, não como pendência. *(Esta linha
+   nomeava `text-primary` no corrente e `text-muted` no repouso; o item usa
+   `text-secondary`, e as duas metades se contradiziam — herdar a cor do texto e
+   pintar de outro token são coisas incompatíveis. `H-86` resolveu por
+   `currentColor`, que é o que ela de fato decide.)*
+2. **A contagem é o número que a página mostra**, e não o do arquivo: o número
+   da lateral e o da tabela nunca divergem, que é a razão de existir da escolha.
+   **O recorte que ela segue é o padrão VIGENTE da tela**, e não um valor fixado
+   aqui. *(Esta linha dizia "a Operacional abre filtrada por processo ativo,
+   169 ativos de 649"; `D-33` inverteu o padrão em 04/09/2026, e a tela abre com
+   os 650. Quem define o recorte é `useProcessQuery`, e a contagem espelha.)*
+3. **A busca alcança os seis campos de texto da planilha** (`A-39`, ampliada por
+   `D-34`) mais os sete destinos do menu. *(Esta linha fixava REF, BL e contêiner
+   e dizia que "cliente e navio ficam fora", fechando um dos dois itens que
+   `D-22` declarou em aberto. `D-34` reverteu em 04/09/2026 e fez a escolha que
+   ela adiava: entra `clientRaw`, a célula; fica fora `clientLabel`, o
+   consolidado. O fechamento do item de `D-22` permanece.)*
+4. **Nenhum indicador muda de valor, e nenhuma rota muda de FORMA.** Medido
+   em 03/09/2026, e é o que derruba a estimativa inicial do épico: *(a linha
+   dizia "nenhuma rota muda de contrato", e duas histórias posteriores mexeram
+   na prosa dele — `H-90` mudou o significado de `search`, e `H-89` altera a
+   lista de `sort`. Nenhuma muda a forma da resposta, que é o que o argumento
+   abaixo sustenta.)*
    `GET /api/processes` já devolve `total` respeitando os filtros **e**
    `activeOnly`, e `GET /api/alerts` já respeita os filtros por `RF-18`. O que
    falta é a casca **buscar** o que o servidor já serve — ela carrega apenas
@@ -9226,6 +9235,7 @@ primeiras são escolha do usuário, registradas em `D-29`:
 | 6 | `H-87` | M | Depende da linha do item, que `H-86` define, e acrescenta busca de dado à casca já estável |
 | 7 | `H-88` | M | A única que não vem da revisão de interação: nasce de `PD-08`, e não depende de nenhuma das outras |
 | 8 | `H-89` | M | **Depois de `H-84`, e o vínculo é de visibilidade:** a ordem só se distingue depois que a tela abre com os 650 — entre os 170 ativos, a ordenação por `eta2` e a da planilha são a mesma lista |
+| 9 | `H-90` | P | **Fora da revisão de interação, e sem lugar na ordem original:** nasce de `D-34` em 04/09/2026, depois desta tabela, e não depende de nenhuma das outras — o alcance da busca é decisão de domínio |
 
 > **A primeira ordem escrita punha o painel por último**, e ela estava errada
 > pelo mesmo motivo que o conjunto já pagou uma vez: um padrão de foco nascido
@@ -9824,10 +9834,17 @@ estrutura e não desenho.
 recorte ativo tem — o mesmo número que a página exibe ao ser aberta.
 
 **Contrato:** nenhum contrato novo. A casca passa a consumir
-`GET /api/processes` com `activeOnly=true` e `limit=1`, lendo apenas `total`, e
-`GET /api/alerts`, ambos com os filtros globais anexados. O `limit=1` é
-deliberado: sem ele a casca traria 200 processos a cada troca de filtro para
-exibir um número.
+`GET /api/processes` com `limit=1`, lendo apenas `total`, e `GET /api/alerts`,
+ambos com os filtros globais anexados. O `limit=1` é deliberado: sem ele a casca
+traria 200 processos a cada troca de filtro para exibir um número.
+
+> **O recorte NÃO é fixado aqui, e a versão anterior deste bloco fixava.** Ela
+> mandava consumir `activeOnly=true`, escrito antes de `D-33` inverter o padrão
+> da tela em 04/09/2026: implementada assim, a lateral diria **170** enquanto a
+> Operacional mostra **650** — exatamente a divergência que `D-29` recusou ao
+> descartar `rowsAccepted`. O que a contagem espelha é o padrão de
+> `useProcessQuery`, seja ele qual for; quando ele muda, o número acompanha sem
+> esta história ser reaberta.
 
 **Arquivos:**
 - `web/src/hooks/useNavCounts.ts` — novo
@@ -9835,8 +9852,12 @@ exibir um número.
 - `web/tests/App.test.tsx` · `web/tests/support/api-stub.ts`
 
 **Critérios de aceite:**
-- **Dado** o filtro vazio, **então** Operacional mostra o total de processos
-  **ativos** — medido em `H-17`: 169 de 649 — e Alertas, a contagem de alertas.
+- **Dado** o filtro vazio, **então** Operacional mostra o mesmo total que a
+  própria página exibe ao abrir — **650** em 04/09/2026, com o recorte padrão de
+  `D-33` — e Alertas, a contagem de alertas. O critério é a **igualdade** com a
+  tabela, não o número: `169 de 649` estava escrito aqui, e envelheceu duas
+  vezes — pela inversão do recorte e pela linha que a planilha ganhou desde
+  `H-17`.
 - **Dado** qualquer filtro global ativo, **então** os dois números acompanham o
   recorte, e o da lateral é igual ao que a página mostra ao abrir.
 - **Dado** que a busca ainda não respondeu, **então** o item aparece **sem**
@@ -9932,7 +9953,7 @@ GET /api/clients/pending
   conta e não ordena nada (regra inviolável 6).
 
 **Casos-limite:**
-- **A lista é longa por natureza:** 649 processos produzem **509 valores
+- **A lista é longa por natureza:** 650 processos produzem **509 valores
   distintos** em CLT (medido em `H-49`, 31/08/2026), e há **121 processos** com
   cliente ainda não declarado — o número que o cabeçalho de `client-mapper.ts`
   registra. A tela precisa de teto declarado e de ordem estável, não de rolagem
