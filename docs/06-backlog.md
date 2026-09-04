@@ -30,8 +30,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E11 — A casca redesenhada ✅ | **H-57 … H-65, todas concluídas** | 3 | 6 | 0 |
 | E12 — Os achados da revisão de estilo ✅ | **H-73 … H-76, todas concluídas** | 2 | 1 | 1 |
 | E13 — O operacional que edita, ordena e cria ✅ | **H-77 … H-81, todas concluídas.** Épico **retroativo**: o código entrou em 02/09/2026 e as histórias foram escritas em 03/09 | 3 | 0 | 2 |
-| E14 — A casca que se opera, não só se lê | **H-82 a H-84 e H-90 ✅; H-85 … H-89 abertas.** Primeiro épico **prospectivo** desde `E12`: as nove nascem antes do código (`D-29` a `D-34`) | 2 | 7 | 0 |
-| **Total** | **90** — 85 concluídas, 5 abertas | **35** | **51** | **4** |
+| E14 — A casca que se opera, não só se lê | **H-82 a H-85 e H-90 ✅; H-86 … H-89 abertas.** Primeiro épico **prospectivo** desde `E12`: as nove nascem antes do código (`D-29` a `D-34`) | 2 | 7 | 0 |
+| **Total** | **90** — 86 concluídas, 4 abertas | **35** | **51** | **4** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -189,7 +189,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-82 — Os filtros num painel, e a barra dizendo o recorte](#h-82) ✅
 - [H-83 — A busca alcançável do teclado](#h-83) ✅
 - [H-84 — O quadro que rola, e as linhas por página](#h-84) ✅
-- [H-85 — O carregamento que não colapsa a altura](#h-85)
+- [H-85 — O carregamento que não colapsa a altura](#h-85) ✅
 - [H-86 — Os sete ícones da lateral](#h-86)
 - [H-87 — A contagem que segue o recorte](#h-87)
 - [H-88 — O que falta declarar, à vista e alimentável](#h-88)
@@ -1674,7 +1674,7 @@ esta semana · Chegando em 15 dias · **Desembaraçados hoje** (A-64) ·
 > ETA2 veria uma tela de traços.
 >
 > **`matchesSearch` não reaproveita `normKey`, de propósito.** Aquele colapsa
-> espaço interno porque existe para **agrupar** — `EVER  FAIR` e `EVER FAIR` são
+> espaço interno porque existe para **agrupar** — `NAVIO  ALFA` e `NAVIO ALFA` são
 > o mesmo navio. Na busca o espaço importa: quem digita um trecho de container
 > espera casar o que vê. Há teste fixando a diferença nos dois sentidos.
 >
@@ -9625,6 +9625,73 @@ escolhido; e mudar a paginação em si, que continua por `offset`.
 <a id="h-85"></a>
 
 ### H-85 — O carregamento que não colapsa a altura
+
+> ✅ **CONCLUÍDA em 04/09/2026.** **217 testes próprios** nos sete arquivos que
+> ela toca, suíte em **1.903**.
+>
+> **O salto foi medido, e é 23× menor.** Num Chrome real, sobre a planilha real:
+> o parágrafo que estava ali media **70 px**, o quadro carregado da Operacional
+> mede **580 px**, e o esqueleto mede **602 px**. O deslocamento cai de
+> **510 px** para **22 px**.
+>
+> **A altura passou a ser UMA TELA, e não a do conteúdo — o critério de aceite
+> foi reescrito por medição.** Ele pedia que "o espaço ocupado seja o mesmo do
+> conteúdo carregado"; medido em 04/09/2026, a Página Alertas tem **9.198 px**
+> de conteúdo e a Performance **1.773 px**. Um esqueleto fiel daria **191
+> barras** pulsando e uma barra de rolagem enorme que some ao carregar — pior
+> que o salto que ele existe para tirar. O que o operador percebe é o
+> deslocamento do que está **à vista**; abaixo da dobra o conteúdo cresce sem
+> ninguém ver. Doze linhas de 40 px são 602 px, uma tela útil numa janela de
+> 900, e **o mesmo número serve todas as páginas** — some com isso a medição de
+> altura típica por página, que o backlog mandava registrar.
+>
+> **O caso-limite da recarga estava violado por construção, e foi ele que
+> decidiu o desenho.** As sete páginas são montadas com `key={dataVersion}` em
+> `App.tsx`: quando o watcher relê a planilha, o React **destrói** a página e
+> cria outra, o estado volta a `carregando`, e um esqueleto de altura cheia
+> piscaria a tela inteira — sem o operador ter pedido nada, e justamente depois
+> de ele aplicar edições, que é o que provoca a releitura. Hoje isso não
+> incomodava porque o parágrafo tinha 70 px.
+>
+> **`useProcesses` e as irmãs já faziam a coisa certa sozinhas:** mudar
+> `requestQuery` ou `dataVersion` dispara a requisição **sem** voltar o estado
+> para `carregando`, então ordenar e paginar nunca mostraram carregamento. Quem
+> quebrava era a `key`. A saída escolhida pelo usuário — entre três desenhadas —
+> foi guardar a marca **fora** de qualquer componente, em `useFirstLoad`: módulo
+> é o único escopo que a `key` não alcança. O preço é estado global, e ele se
+> paga com `resetLoadedPages` no `web/tests/setup.ts` — sem o reset, a segunda
+> montagem de uma página em qualquer arquivo já a encontraria marcada, e a
+> asserção passaria a depender da **ordem** dos casos.
+>
+> **Um defeito que a suíte encontrou e que o plano não previa:** o esqueleto
+> anuncia, e isso quebrou **seis** testes de estado em cinco páginas. Até aqui a
+> primeira coisa a chegar na região viva era sempre o anúncio do estado final, e
+> `findLiveRegion` esperava "qualquer texto"; com o carregamento anunciando
+> primeiro, ela resolvia cedo, no texto errado, e o caso lia a região no
+> intervalo entre os dois anúncios. O helper ganhou o padrão esperado como
+> parâmetro, e os seis casos passaram a esperar o texto que afirmam.
+>
+> **O critério dizia "o anúncio continua sendo textual", e não continuava:** o
+> par `aria-hidden` mais `LiveAnnouncement` existia em **dois** lugares —
+> `App.tsx` e `WorkbookSetup.tsx` — e em **nenhuma** das seis páginas, que
+> tinham só `<p className="panel-loading">`, visível e sem região viva. Trocar
+> por um esqueleto oculto **removeria** o único texto que o leitor de tela
+> recebia. Cada página ganhou o anúncio; não era "continua", era "passa a ser".
+>
+> **A pulsação nasceu no `index.css`, e não no `.tsx`**, porque a guarda de
+> `A10` reprova utilitário de movimento fora daquele arquivo — `animate-pulse`
+> do Tailwind quebraria a suíte antes de qualquer teste desta história. Ela
+> trouxe o terceiro token de tempo, `--speed-pulse`, com motivo: 110 e 170 ms
+> são de **controle**, e num esqueleto leem como piscar. Medido sob
+> `prefers-reduced-motion: reduce`: `animation-name` vira `none` e a duração
+> `0s`, e o esqueleto fica estático **sem** perder a altura, que é a razão de
+> existir.
+>
+> **Duas correções de lista:** `web/src/index.css` não estava nos arquivos e é
+> obrigatório, pela guarda acima; e a lista dizia "as seis páginas mais
+> `ProcessDetail.tsx`", quando `ProcessDetail` **é uma** das seis. `Home.tsx`
+> ficou de fora com motivo — carrega por `StatCard`, que já traz `aria-busy`
+> desde `H-16`.
 
 **Objetivo:** trocar o parágrafo "Carregando…" por um esqueleto com a altura do
 conteúdo real, para a página não saltar quando o dado chega.
