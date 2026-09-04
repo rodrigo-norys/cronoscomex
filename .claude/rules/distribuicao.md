@@ -12,9 +12,10 @@ paths:
 A branch `distribuicao` é o artefato: sem `docs/`, `tests/`, `tools/` nem
 `.claude/`, que não servem para nada em produção. **Sem contagem aqui de
 propósito** — o próprio `sincronizar-distribuicao.ts` mede e imprime os dois
-lados a cada execução, e os números que estavam escritos (108 arquivos, "3 de
-cada 4") nunca bateram: hoje a branch tem 117 e o script calcula **124**, porque
-as sete de `D-28` ainda não entraram. Ela **não recebe PR** — é artefato, não
+lados a cada execução, e os números que já estiveram escritos aqui (108 arquivos,
+"3 de cada 4", depois 117 contra 124) envelheceram todos. Rode o script: ele é a
+única fonte que não mente. `D-28` fechou em 03/09/2026, e a conferência de
+04/09/2026 acusou a branch sincronizada com a `main`. Ela **não recebe PR** — é artefato, não
 revisão.
 
 Sincronize com `node --experimental-strip-types scripts/sincronizar-distribuicao.ts`:
@@ -26,6 +27,15 @@ prepara os arquivos no índice e **para**, deixando você nela. Commit, push e o
 **Sincronize apenas a partir da `main` mesclada**, para o operador nunca receber
 código que o CI e a revisão do PR ainda não aceitaram. Decidido em 31/08/2026,
 depois de `H-48` ter ido para a distribuição antes do merge.
+
+**Baixar a árvore não é o mesmo que cloná-la.** A instalação de 04/09/2026 foi
+feita por download, sem `.git` — funciona, e custa duas coisas: não há
+`git pull` para atualizar, e não há `git status` para flagrar arquivo
+sobrescrito. Foi o `git status` que diagnosticou a tela preta da primeira
+tentativa, quando 101 arquivos de `src/` e `web/src/` apareceram numa versão
+anterior a `H-52` sobre um `.git` correto. O navegador só dizia
+`Uncaught TypeError` ao desestruturar `meta.period`, com `#root` vazio:
+**cliente compilado novo com servidor velho falha assim, e mudo.**
 
 **O que entra não é lista escrita à mão:** é o fecho transitivo dos imports a
 partir de `src/http/server.ts` e `web/src/main.tsx`, mais os arquivos de suporte
