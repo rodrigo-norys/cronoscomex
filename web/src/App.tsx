@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { ApplyRefusal, HealthResponse } from './api-client.ts'
 import { AppSidebar } from './components/AppSidebar.tsx'
+import { CommandSearch } from './components/CommandSearch.tsx'
 import { ConflictDialog } from './components/ConflictDialog.tsx'
 import { FilterBar } from './components/FilterBar.tsx'
 import { FilterPanel } from './components/FilterPanel.tsx'
@@ -81,6 +82,18 @@ export function App() {
   const filterTriggerRef = useRef<HTMLButtonElement>(null)
 
   /**
+   * A busca por atalho (`H-83`). Ela vive na casca pelo mesmo motivo do painel —
+   * a inercia e dos IRMAOS dela —, e porque alcanca as SETE telas: pendura-la
+   * numa pagina a tornaria indisponivel nas outras seis.
+   *
+   * O foco volta para o elemento que estava ativo quando ela abriu, e nao para
+   * um gatilho fixo: o gesto e um atalho, e o operador pode dispara-lo de
+   * qualquer lugar da tela.
+   */
+  const [searchOpen, setSearchOpen] = useState(false)
+  const focoAntesDaBusca = useRef<HTMLElement | null>(null)
+
+  /**
    * O foco so se move quando a navegacao PEDIU (`H-70`). O sinal e consumido
    * aqui, uma vez por troca de rota: o botao "voltar" emite o mesmo `popstate`
    * e nao o seta, entao ele nao move o foco — e o link da casca declara
@@ -121,10 +134,59 @@ export function App() {
    */
   const panelOpen = filtersOpen && showFilters
 
+  /**
+   * **A inercia e de QUALQUER sobreposicao aberta**, e nao mais do painel
+   * (`H-83`). Com duas, `panelOpen` como condicao deixaria a lateral e a barra
+   * de topo tabulaveis por baixo da busca.
+   */
+  const overlayOpen = panelOpen || searchOpen
+
   const closeFilters = (): void => {
     setFiltersOpen(false)
     filterTriggerRef.current?.focus()
   }
+
+  const closeSearch = (): void => {
+    setSearchOpen(false)
+    focoAntesDaBusca.current?.focus()
+  }
+
+  /**
+   * `Ctrl+K` / `⌘K` (`H-83`), com **duas recusas declaradas**.
+   *
+   * **Campo de edicao vence o atalho.** A Operacional edita celula desde `H-80`,
+   * e roubar a tecla de quem esta digitando perderia o texto. A guarda e a mesma
+   * de `useGridNavigation`: alvo que seja campo nao dispara.
+   *
+   * **Sobreposicao aberta tambem vence** — decisao de 04/09/2026, sobre o
+   * caso-limite que `H-83` deixou por declarar. Duas sobreposicoes empilhadas
+   * quebram as duas garantias de uma vez: qual delas prende o foco, e o painel
+   * ficaria inerte sob a busca sendo IRMAO dela, nao ancestral. O operador fecha
+   * com `Esc`, que ja e o gesto dele.
+   */
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent): void => {
+      if (event.key !== 'k' && event.key !== 'K') return
+      if (!event.ctrlKey && !event.metaKey) return
+
+      const alvo = event.target
+      if (
+        alvo instanceof HTMLInputElement ||
+        alvo instanceof HTMLTextAreaElement ||
+        (alvo instanceof HTMLElement && alvo.isContentEditable)
+      ) {
+        return
+      }
+      if (panelOpen || searchOpen) return
+
+      event.preventDefault()
+      focoAntesDaBusca.current = document.activeElement as HTMLElement | null
+      setSearchOpen(true)
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [panelOpen, searchOpen])
 
   return (
     <div className="min-h-screen bg-surface-base font-sans text-text-primary sm:flex">
@@ -148,7 +210,7 @@ export function App() {
 
       {/* A lateral nao aparece na primeira execucao, pelo mesmo motivo de antes:
           nao ha dado a navegar, e o operador precisa apontar a planilha. */}
-      {!firstRun && <AppSidebar route={route} inert={panelOpen} />}
+      {!firstRun && <AppSidebar route={route} inert={overlayOpen} />}
 
       {/* `min-w-0` e obrigatorio: sem ele o filho flex assume `min-width: auto`
           e uma tabela larga empurra a coluna para fora, que e o defeito que
@@ -161,7 +223,7 @@ export function App() {
           Cobrir a acao que grava no arquivo do operador seria esconder o que ele
           precisa saber que existe. Inerte, sim; invisivel, nao.
         */}
-        <div inert={panelOpen}>
+        <div inert={overlayOpen}>
           <TopBar
             title={pageOf(route)?.label ?? 'CronosComex'}
             health={health}
@@ -174,7 +236,7 @@ export function App() {
         {/* O contexto de posicionamento do veu: ele e `absolute` aqui dentro, e
             por isso cobre a regiao de conteudo sem alcancar a barra de topo. */}
         <div className="relative flex min-w-0 flex-1 flex-col">
-          <div inert={panelOpen} className="flex min-w-0 flex-1 flex-col">
+          <div inert={overlayOpen} className="flex min-w-0 flex-1 flex-col">
             {showFilters && (
               <FilterBar
                 filters={filters}
@@ -270,6 +332,10 @@ export function App() {
       */}
       <div id={PAGE_LIVE_REGION_ID} role="alert" className="sr-only" />
       <div id={PAGE_LIVE_STATUS_ID} role="status" className="sr-only" />
+
+      {searchOpen && (
+        <CommandSearch route={route} dataVersion={dataVersion} onClose={closeSearch} />
+      )}
 
       <ConflictDialog refusal={refusal} onClose={() => setRefusal(null)} />
     </div>
