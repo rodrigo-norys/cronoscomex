@@ -128,7 +128,7 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**81 das 87 histórias estão concluídas**, e as seis abertas são `E14`. O que cada uma aprendeu — número medido,
+**81 das 88 histórias estão concluídas**, e as sete abertas são `E14`. O que cada uma aprendeu — número medido,
 defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
 `docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
 em aberto. **Este bloco diz só o que está aberto.**
@@ -138,7 +138,7 @@ em aberto. **Este bloco diz só o que está aberto.**
 execução**: os filtros num painel sobreposto (`D-30`), que substitui a barra de
 chips de `H-60`; a busca por atalho; o quadro que rola com o cabeçalho fixo e o
 tamanho de página escolhível (`D-31`); o carregamento sem salto; o ícone por
-destino; e a contagem que segue o recorte (`D-29`). **Nenhuma toca contrato de rota** — medido:
+destino; e a contagem que segue o recorte (`D-29`). A sétima, `H-88`, não vem da revisão de interação: ela nasce de `PD-08` e tira o mapa de clientes da cópia manual (`D-32`). **Nenhuma toca contrato de rota** — medido:
 `GET /api/processes` já serve `total` com `activeOnly`, e `GET /api/alerts` já
 respeita os filtros. A ordem entre elas está no cabeçalho do épico. Restam também as **pendências abertas** abaixo — três delas esperam a
 máquina do operador, e **uma não**: o `ConflictDialog` de `PD-07` precisa de
@@ -190,19 +190,26 @@ Não bloqueiam a implementação. Fechar antes da entrega ao operador.
 > abre com janela na sessão gráfica, e `taskkill` sem `/F` é o `WM_CLOSE` do
 > clique no X. O que virou regra está na rule de operação em Windows.
 >
-> **`H-30` fechou sem elas, e o gatilho passou a ser a instalação — evento, não
-> história.** Nenhuma história futura as carrega: `H-33` e `H-34` não tocam
-> Windows nem o Excel real. Deixá-las apontando para uma história fechada
-> repetiria o que aconteceu com `PD-05` entre 14 e 17/08/2026, quando ficou sem
-> dono por `H-26` ter fechado sem o arquivo. **A primeira instalação na máquina
-> do operador é o momento em que as três linhas abaixo se resolvem juntas** —
-> incluindo a verificação do `iniciar.cmd`, que `H-30` não pôde exercer.
+> **A instalação aconteceu em 04/09/2026, e com ela `PD-01` fechou.** A árvore de
+> `distribuicao` foi baixada na máquina do operador, os dois mapas de negócio
+> copiados para `config\`, e a planilha apontada **pela tela**, sem `app.json`
+> prévio: `/api/health` respondeu `state: "pronto"`, 649 linhas lidas, zero em
+> quarentena. Era exatamente o que `PD-01` esperava.
+>
+> **Duas lições da instalação, que não estão em nenhuma história.** A pasta lá
+> **não é um repositório git** — foi baixada como árvore, não clonada —, então
+> não há `git pull` para atualizar nem `git status` para detectar arquivo
+> sobrescrito; e foi precisamente o `git status` que diagnosticou a tela preta da
+> primeira tentativa, quando 101 arquivos de `src/` e `web/src/` apareceram numa
+> versão anterior a `H-52` sobre um `.git` correto. O sintoma no navegador era
+> mudo: `Uncaught TypeError` ao desestruturar `meta.period`, `#root` vazio, fundo
+> escuro. **Cliente novo com servidor velho falha assim, e sem git não há o que
+> comparar.**
 
 | # | Pendência | Quando fechar |
 |---|---|---|
-| **PD-07** | **O resto de `VN-5` (forced colors), e sobrou pouco.** A pendência nasceu supondo que o procedimento exigia Windows, e **isso foi medido como falso em 31/08/2026**: o Chrome emula `forced-colors: active` no Linux, e o que o procedimento pergunta não é que cor o tema pinta, e sim se o desenho sobrevive quando as cores do autor são descartadas. **`H-65` fechou o item 4 por medição**: sob o modo forçado os dois esquemas são paletas de sistema **realmente distintas** — branco com `rgb(0, 0, 159)` e preto com `rgb(255, 255, 0)` —, e a lateral distingue o item corrente nas duas. **E o item 3(e) tinha o diagnóstico errado**, corrigido em `H-64`: `:hover` **casa** no headless, e o que faltava era o apontador **declarado** — o Tailwind v4 envolve todo `hover:` em `@media (hover: hover)`, e o headless responde `hover: none`. Resolvido pela flag `--blink-settings`, exposta como `apontadorFino`. **Sobram dois:** (1) a paleta **nominal** do Windows — Aquático e as demais —, que é confirmação de segunda ordem; (2) o `ConflictDialog` do item 3(d), que só abre com a planilha alterada durante a sessão | **O item (1) na primeira instalação**, junto de `PD-01`, `PD-06` e `PD-08`. O item (2) **não exige Windows** — exige uma fixture que produza o conflito, e nenhuma das nove produz; fecha junto da gestão de foco do diálogo, que está no mesmo bloqueio |
-| **PD-08** | **Os dois mapas de negócio de `H-48` precisam ser enviados à parte, e nada no procedimento de instalação diz isso.** Eles estão no `.gitignore` e a distribuição leva só os `.exemplo`, então a máquina do operador chega sem eles — o campo Cliente já mostra a grafia da célula em vez do nome consolidado. Decidido em 31/08/2026: fica com envio manual, e a solução é reexaminada em momento oportuno. Os detalhes, e as duas afirmações do `README.md` da distribuição que mentem sobre isso, estão em `.claude/rules/distribuicao.md` | **Junto com a primeira instalação:** `scp config/client-map.json config/team-map.json` para `config\` na máquina do operador, e corrija o `README.md` da distribuição. **Repita a cópia toda vez que a regra de consolidação ou a equipe mudar** — nenhum aviso existe para lembrar. **Medido em 03/09/2026, e há uma JANELA que decide a ordem das coisas.** O mapa de clientes da máquina divergiu do daqui (`e78616b8…` contra `d4b8b5dd…`), e quem gravou foi **esta** máquina, não a dele: a instalação do operador está em 31/08 e **não tem `process-client.ts`** — o `client-map-loader.ts` de lá não sabe gravar, e o arquivo dele está intacto desde 31/08 22:22. **Logo a cópia cega ainda é segura, e deixa de ser no instante em que a distribuição com `E13` chegar lá**, quando as duas pontas passam a escrever. Ordem correta: **copiar os mapas ANTES de atualizar a distribuição**; depois disso, reconciliar. O da equipe segue idêntico nos dois lados |
-| **PD-01** | `config/app.json` aponta para `CONTROLE DOS EMBARQUE.xlsx` na **raiz do projeto**, usado para validar a partida em `H-02`. Na máquina Windows precisa do caminho real da pasta sincronizada (`C:\Users\...\OneDrive - <org>\...`). O arquivo está no `.gitignore`, então o caminho de desenvolvimento não vaza. **`H-34` deu a saída, em 18/08/2026**, e **`H-35` tirou o último passo manual, em 19/08/2026**: o arquivo de configuração não precisa mais existir antes — ele nasce ao salvar o caminho na tela | **Primeira instalação na máquina do operador.** Não exige copiar nem editar arquivo nenhum: o passo 4 do `README.md` é apontar a planilha na tela, e continua existindo porque alguém precisa apontá-la uma vez |
+| **PD-07** | **O resto de `VN-5` (forced colors), e sobrou pouco.** A pendência nasceu supondo que o procedimento exigia Windows, e **isso foi medido como falso em 31/08/2026**: o Chrome emula `forced-colors: active` no Linux, e o que o procedimento pergunta não é que cor o tema pinta, e sim se o desenho sobrevive quando as cores do autor são descartadas. **`H-65` fechou o item 4 por medição**: sob o modo forçado os dois esquemas são paletas de sistema **realmente distintas** — branco com `rgb(0, 0, 159)` e preto com `rgb(255, 255, 0)` —, e a lateral distingue o item corrente nas duas. **E o item 3(e) tinha o diagnóstico errado**, corrigido em `H-64`: `:hover` **casa** no headless, e o que faltava era o apontador **declarado** — o Tailwind v4 envolve todo `hover:` em `@media (hover: hover)`, e o headless responde `hover: none`. Resolvido pela flag `--blink-settings`, exposta como `apontadorFino`. **Sobram dois:** (1) a paleta **nominal** do Windows — Aquático e as demais —, que é confirmação de segunda ordem; (2) o `ConflictDialog` do item 3(d), que só abre com a planilha alterada durante a sessão | **O item (1) na próxima visita à máquina.** A instalação de 04/09/2026 fechou `PD-01` e não o exerceu — ele é confirmação de segunda ordem, e ficou para trás sem custo. O item (2) **não exige Windows** — exige uma fixture que produza o conflito, e nenhuma das nove produz; fecha junto da gestão de foco do diálogo, que está no mesmo bloqueio |
+| **PD-08** | **Os dois mapas de negócio de `H-48` viajam à parte, e o `README.md` da distribuição ainda nega isso.** Eles estão no `.gitignore` e a árvore leva só os `.exemplo`. **A cópia manual foi feita em 04/09/2026 e funcionou** — `client-map.json` `d4b8b5dd…` e `team-map.json` `2054fe7b…` conferidos byte a byte nas duas pontas, e o campo Cliente passou a mostrar o nome consolidado. **O que sobra é documental:** o `README.md` da branch afirma em negrito "você não precisa editar arquivo nenhum" e descreve `config\` como só cores e apelidos de status; e o bloco "Como refazer esta branch" lista os arquivos a copiar **sem** os dois `.exemplo`, divergindo do script, que é quem vale. Os detalhes estão em `.claude/rules/distribuicao.md` | **Na próxima vez que a branch `distribuicao` for sincronizada**, já que `README.md` é exclusivo dela e não se corrige a partir da `main`. **A JANELA de 03/09 fechou:** a instalação do operador agora tem `E13` e grava no mapa, então **as duas pontas escrevem** e a cópia cega deixou de ser segura — daqui em diante, reconciliar antes de copiar. **Repita a cópia toda vez que a regra de consolidação ou a equipe mudar**: nenhum aviso existe para lembrar |
 
 | **PD-09** | **A premissa `P-15` ficou sem dono, e há uma frase da tela apoiada nela.** `P-15` — o OneDrive sincroniza o arquivo de lock `~$<nome>.xlsx` entre máquinas — está "não afirmada" desde o plano, e `docs/00-visao-escopo.md` e `A-58` mandavam medi-la em `H-30`, que **fechou em 18/08/2026 sem medir**. Mesmo padrão de `PD-05` entre 14 e 17/08/2026. A medição direta pede **duas máquinas com a mesma pasta sincronizada**, e nada indica que exista uma segunda conta com acesso à pasta da organização; o **proxy de uma máquina só** — abrir a planilha no Excel e observar se o `~$` sobe, pelo ícone do OneDrive ou pela visão web do SharePoint — responde a mesma pergunta. O que não pode ficar como está: `web/src/components/StatusBanner.tsx` afirma "Alguém está com a planilha aberta no Excel", que é a leitura **forte** da premissa. Ou ela é medida e a frase se justifica, ou a frase recua para o que é sabidamente verdadeiro — o arquivo está aberto **nesta** máquina — com o motivo no cabeçalho do componente | **Medido em 03/09/2026, e o proxy não é executável nesta instalação:** a planilha real do operador está em `Downloads`, **fora do OneDrive** — a pasta sincronizada existe e não a contém. `P-15` supõe o `~$` viajando entre máquinas por pasta compartilhada; sem isso, não há o que observar. **A leitura forte da frase é falsa por construção aqui**, e não por falta de medição: o `~$` só pode ser de quem abriu o arquivo NESTA máquina. Resta decidir entre recuar a frase de `StatusBanner.tsx` — o caminho que os fatos apoiam — ou medir `P-15` num cenário que o operador não usa |
 
@@ -249,10 +256,11 @@ pt-br, sem o tipo `test`.
 **O merge acontece no GitHub, não localmente.** `branch → commits → push da
 branch → PR → merge por lá`. Mesclar na `main` antes do push **mata o PR**.
 
-**A branch `distribuicao` é a árvore que vai para a máquina do operador** — 117
-arquivos hoje, contra **124 que o script calcula desde 03/09/2026**: as seis
-fontes de `H-58` e a licença delas nunca entraram, e a próxima sincronização as
-leva (`D-28`). Sem `docs/`, `tests/`, `tools/` nem `.claude/`. Ela **não recebe PR**:
+**A branch `distribuicao` é a árvore que vai para a máquina do operador** — **124
+arquivos, sincronizada com a `main`**, conferido em 04/09/2026. `D-28` fechou: as
+seis fontes de `H-58` e a licença delas entraram na sincronização de 03/09, e a
+instalação do operador renderiza com a tipografia certa desde então. Sem `docs/`,
+`tests/`, `tools/` nem `.claude/`. Ela **não recebe PR**:
 é artefato, não revisão. Confira com
 `node --experimental-strip-types scripts/sincronizar-distribuicao.ts`, e
 **sincronize apenas a partir da `main` mesclada**. O resto —  o que entra e por
