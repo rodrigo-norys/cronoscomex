@@ -185,7 +185,7 @@ Lista de processos, já filtrada.
 
 | Parâmetro adicional | Tipo | Padrão | Significado |
 |---|---|---|---|
-| `search` | `string` | — | Busca por substring, sem acento e sem caixa, em REF, BL e CNTR (A-39) |
+| `search` | `string` | — | Busca por substring, sem acento e sem caixa, nos **seis** campos de texto da planilha: REF, Processo do cliente (célula CLT), Importador, Navio, BL e CNTR (`A-39`, ampliado por `D-34`). **Não** casa o cliente **consolidado** que a própria resposta serve em `client`, nem ETA2 ou Categoria. Espaço interno é literal: `NAVIO ALFA` casa e `NAVIO  ALFA` não |
 | `activeOnly` | `boolean` | `false` | `true` restringe a `statusCategory ≠ desembaracado` (A-16) |
 | `sort` | `string` | `eta2` | `ref` · `client` · `clientProcess` · `importer` · `vessel` · `eta2` · `registrationDate` · `billOfLading` · `container` · `status` — uma por coluna da tabela. `client` ordena pelo **cliente consolidado** e `clientProcess` pelo valor da célula CLT: são ordens diferentes desde `H-49`. `status` ordena pelo **fluxo** (`em_andamento` → `em_desembaraco` → `desembaracado` → `fechado_aguardando_draft`), não pelo alfabeto, e nunca tem valor ausente |
 | `order` | `string` | `asc` | `asc` · `desc`. Nulos sempre por último |
