@@ -8,7 +8,8 @@ import { NAV_PAGES, navigate, type Route } from '../router.ts'
  * (`H-83`).
  *
  * **Nenhum contrato novo:** `GET /api/processes` com o `search` de `H-17`, sobre
- * REF, BL e CNTR (`A-39`). O casamento e do servidor — a lista que chega aqui ja
+ * os seis campos de texto da planilha (`A-39`, `D-34`). O casamento e do
+ * servidor — a lista que chega aqui ja
  * vem recortada, e nada e filtrado no navegador (regra inviolavel 6).
  *
  * **O foco e a inercia sao os de `H-82`**, por `useModalFocus`: o criterio de
@@ -73,8 +74,8 @@ export function CommandSearch({ route, dataVersion, onClose }: CommandSearchProp
               type="search"
               value={termo}
               onChange={(event) => setTermo(event.target.value)}
-              placeholder="Buscar por REF, BL ou contêiner"
-              aria-label="Buscar por REF, BL ou contêiner"
+              placeholder="Buscar em qualquer campo de texto"
+              aria-label="Buscar em qualquer campo de texto"
               className="w-full rounded-control border border-border-control bg-surface-base px-3 py-2 text-sm text-text-primary"
             />
           </div>
@@ -118,7 +119,7 @@ export function CommandSearch({ route, dataVersion, onClose }: CommandSearchProp
                   casou (regra inviolavel 3). */}
               {resultado.status === 'pronto' && resultado.items.length === 0 && (
                 <p className="px-2 py-2 text-sm text-text-muted">
-                  Nenhum processo com “{termo.trim()}” em REF, BL ou contêiner.
+                  Nenhum processo com “{termo.trim()}” nos campos de texto.
                 </p>
               )}
 
@@ -143,10 +144,24 @@ export function CommandSearch({ route, dataVersion, onClose }: CommandSearchProp
                           className="flex w-full flex-col gap-0.5 rounded-control px-2 py-1.5 text-left hover:bg-surface-hover"
                         >
                           <span className="font-mono text-sm text-text-primary">{item.ref}</span>
-                          {/* O que casou nem sempre e a REF: sem BL e contêiner
-                              a linha nao diz por que ela esta na lista. */}
+                          {/*
+                            O que casou nem sempre e a REF, e a linha precisa
+                            dizer por que esta na lista. **Sao os campos
+                            BUSCAVEIS, e nao os legiveis** (`H-90`): ate `D-34`
+                            este trecho mostrava `client`, o consolidado, que e
+                            justamente o unico campo que a busca NAO casa —
+                            procurar por um navio devolveria linhas sem nada
+                            visivelmente correspondente. Escolher qual mostrar
+                            por "o que casou" seria regra no cliente.
+                          */}
                           <span className="truncate text-xs text-text-secondary">
-                            {[item.client, item.billOfLading, item.container]
+                            {[
+                              item.clientProcess,
+                              item.importer,
+                              item.vessel,
+                              item.billOfLading,
+                              item.container,
+                            ]
                               .filter((campo) => campo !== '')
                               .join(' · ') || '—'}
                           </span>

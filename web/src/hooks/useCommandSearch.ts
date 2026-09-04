@@ -5,7 +5,8 @@ import { getProcesses, NoReadYetError, type ProcessDto } from '../api-client.ts'
  * A consulta da busca por atalho (`H-83`).
  *
  * **Nenhum contrato novo:** usa `GET /api/processes` com o `search` que `H-17`
- * ja serve, sobre REF, BL e CNTR (`A-39`). O casamento acontece no servidor, por
+ * ja serve, sobre os seis campos de texto da planilha (`A-39`, `D-34`). O
+ * casamento acontece no servidor, por
  * `matchesSearch`, que vive no dominio — filtrar a lista aqui poria regra de
  * negocio no cliente (regra inviolavel 6).
  *

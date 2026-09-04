@@ -859,7 +859,9 @@ describe('a busca por atalho', () => {
     fireEvent.keyDown(document, { key: 'k', ctrlKey: true })
 
     expect(await screen.findByRole('dialog', { name: 'Buscar processo' })).toBeTruthy()
-    expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: /Buscar por REF/ }))
+    expect(document.activeElement).toBe(
+      screen.getByRole('searchbox', { name: /Buscar em qualquer campo/ }),
+    )
   })
 
   /** O operador esta no Windows, mas o atalho do macOS nao custa nada. */

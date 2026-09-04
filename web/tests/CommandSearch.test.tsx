@@ -2,7 +2,7 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { CommandSearch } from '../src/components/CommandSearch.tsx'
 import type { Route } from '../src/router.ts'
-import { type ApiStub, processesFixture, stubApi } from './support/api-stub.ts'
+import { type ApiStub, processesFixture, processFixture, stubApi } from './support/api-stub.ts'
 
 /**
  * A busca por atalho (`H-83`). O componente e apresentacao mais consulta: quem
@@ -43,7 +43,9 @@ describe('a sobreposicao', () => {
 
     expect(caixa().getAttribute('aria-modal')).toBe('true')
     // A excecao declarada ao padrao de `H-82`: aqui o campo e o conteudo.
-    expect(document.activeElement).toBe(screen.getByRole('searchbox', { name: /Buscar por REF/ }))
+    expect(document.activeElement).toBe(
+      screen.getByRole('searchbox', { name: /Buscar em qualquer campo/ }),
+    )
   })
 
   it('Esc fecha', () => {
@@ -98,7 +100,7 @@ describe('os sete destinos', () => {
   it('o termo recorta os destinos', () => {
     renderSearch()
 
-    fireEvent.change(screen.getByRole('searchbox', { name: /Buscar por REF/ }), {
+    fireEvent.change(screen.getByRole('searchbox', { name: /Buscar em qualquer campo/ }), {
       target: { value: 'aler' },
     })
 
@@ -112,7 +114,7 @@ describe('a busca de processos', () => {
   it('termo curto nao vira requisicao', async () => {
     renderSearch()
 
-    fireEvent.change(screen.getByRole('searchbox', { name: /Buscar por REF/ }), {
+    fireEvent.change(screen.getByRole('searchbox', { name: /Buscar em qualquer campo/ }), {
       target: { value: 'F' },
     })
 
@@ -123,7 +125,7 @@ describe('a busca de processos', () => {
   it('consulta o servidor e lista o que ele devolveu', async () => {
     renderSearch()
 
-    fireEvent.change(screen.getByRole('searchbox', { name: /Buscar por REF/ }), {
+    fireEvent.change(screen.getByRole('searchbox', { name: /Buscar em qualquer campo/ }), {
       target: { value: 'FT501' },
     })
 
@@ -142,7 +144,7 @@ describe('a busca de processos', () => {
   it('escolher um processo abre o detalhe dele', async () => {
     const { onClose } = renderSearch()
 
-    fireEvent.change(screen.getByRole('searchbox', { name: /Buscar por REF/ }), {
+    fireEvent.change(screen.getByRole('searchbox', { name: /Buscar em qualquer campo/ }), {
       target: { value: 'FT501' },
     })
     const processos = within(caixa()).getByRole('region', { name: 'Processos' })
@@ -153,6 +155,40 @@ describe('a busca de processos', () => {
   })
 
   /**
+   * **A linha diz por que o processo esta na lista**, e `D-34` mudou quais
+   * campos servem para isso: ela mostrava `client` — o consolidado, que e
+   * justamente o unico campo que a busca NAO casa — e omitia importador e
+   * navio, que passaram a casar. Sem esta troca, procurar por um navio
+   * devolveria linhas sem nada visivelmente correspondente.
+   */
+  it('o subtitulo mostra os campos buscaveis, e nao o cliente consolidado', async () => {
+    stub.serveProcesses(
+      processesFixture([
+        processFixture({
+          ref: 'FT501.26',
+          client: 'GRUPO ACME',
+          clientProcess: 'ABC25004',
+          importer: 'IMPORTACOES DELTA',
+          vessel: 'NAVIO ALFA BRAVO',
+        }),
+      ]),
+    )
+    renderSearch()
+
+    fireEvent.change(screen.getByRole('searchbox', { name: /Buscar em qualquer campo/ }), {
+      target: { value: 'BRAVO' },
+    })
+
+    const processos = within(caixa()).getByRole('region', { name: 'Processos' })
+    const linha = await within(processos).findByRole('button', { name: /FT501\.26/ })
+
+    expect(linha.textContent).toContain('NAVIO ALFA BRAVO')
+    expect(linha.textContent).toContain('IMPORTACOES DELTA')
+    expect(linha.textContent).toContain('ABC25004')
+    expect(linha.textContent).not.toContain('GRUPO ACME')
+  })
+
+  /**
    * Estado proprio e afirmativo: lista vazia diria que a planilha nao tem o
    * processo, e o que se sabe e que o TERMO nao casou (regra inviolavel 3).
    */
@@ -160,7 +196,7 @@ describe('a busca de processos', () => {
     stub.serveProcesses(processesFixture([]))
     renderSearch()
 
-    fireEvent.change(screen.getByRole('searchbox', { name: /Buscar por REF/ }), {
+    fireEvent.change(screen.getByRole('searchbox', { name: /Buscar em qualquer campo/ }), {
       target: { value: 'ZZZZ' },
     })
 
@@ -171,7 +207,7 @@ describe('a busca de processos', () => {
     stub.failProcesses()
     renderSearch()
 
-    fireEvent.change(screen.getByRole('searchbox', { name: /Buscar por REF/ }), {
+    fireEvent.change(screen.getByRole('searchbox', { name: /Buscar em qualquer campo/ }), {
       target: { value: 'FT501' },
     })
 

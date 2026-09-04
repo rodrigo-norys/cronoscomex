@@ -123,7 +123,7 @@ describe('busca — A-39', () => {
     renderPage()
     await screen.findByRole('grid')
 
-    fireEvent.change(screen.getByLabelText(/Buscar por REF, BL ou CNTR/), {
+    fireEvent.change(screen.getByLabelText(/Buscar em qualquer campo de texto/), {
       target: { value: 'NBSC260' },
     })
 
@@ -136,30 +136,41 @@ describe('busca — A-39', () => {
     renderPage()
     await screen.findByRole('grid')
 
-    fireEvent.change(screen.getByLabelText(/Buscar por REF, BL ou CNTR/), { target: { value: '' } })
+    fireEvent.change(screen.getByLabelText(/Buscar em qualquer campo de texto/), {
+      target: { value: '' },
+    })
 
     expect(window.location.search).not.toContain('search=')
   })
 })
 
-describe('activeOnly — A-16', () => {
-  /** O padrao da PAGINA e `true`; o da ROTA e `false`, porque ela serve tambem
-   * `H-22`, que precisa achar qualquer processo pela REF. */
-  it('parte de activeOnly=true, sem parametro na URL', async () => {
+describe('activeOnly — A-16 e D-33', () => {
+  /** `D-33` inverteu o recorte padrao da TELA: ela abre com todos, e o padrao
+   * da pagina passou a ser o mesmo da rota. `A-16` nao muda — "ativo" continua
+   * sendo `categoria != desembaracado`. */
+  it('parte de activeOnly=false, sem parametro na URL', async () => {
     renderPage()
 
-    await waitFor(() => expect(lastProcessCall()).toContain('activeOnly=true'))
+    await waitFor(() => expect(lastProcessCall()).toContain('activeOnly=false'))
     expect(window.location.search).not.toContain('activeOnly')
   })
 
-  it('marcar "incluir desembaracados" manda false', async () => {
+  it('abre com o controle desmarcado', async () => {
     renderPage()
     await screen.findByRole('grid')
 
-    fireEvent.click(screen.getByLabelText('Incluir desembaraçados'))
+    const controle = screen.getByLabelText('Ocultar desembaraçados') as HTMLInputElement
+    expect(controle.checked).toBe(false)
+  })
 
-    await waitFor(() => expect(lastProcessCall()).toContain('activeOnly=false'))
-    expect(window.location.search).toContain('activeOnly=false')
+  it('marcar "ocultar desembaracados" manda true', async () => {
+    renderPage()
+    await screen.findByRole('grid')
+
+    fireEvent.click(screen.getByLabelText('Ocultar desembaraçados'))
+
+    await waitFor(() => expect(lastProcessCall()).toContain('activeOnly=true'))
+    expect(window.location.search).toContain('activeOnly=true')
   })
 })
 
@@ -226,46 +237,48 @@ describe('paginacao', () => {
     expect(screen.queryByRole('navigation', { name: 'Paginação' })).toBeNull()
   })
 
-  it('mostra a faixa e o total do conjunto filtrado inteiro', async () => {
-    const items = Array.from({ length: 200 }, (_, index) =>
-      processFixture({ ref: `FT${index}.26` }),
-    )
+  /**
+   * **Uma pagina de 50, e nao de 200** (`H-84`). O tamanho virou estado de URL,
+   * e estes casos pedem o menor que ainda pagina: o que eles exercitam e a
+   * navegacao, nunca a montagem.
+   *
+   * Medido em 04/09/2026, com `PAGE_SIZE` ainda fixo em 200: os tres custavam
+   * 494 ms, 366 ms e 177 ms com a maquina livre, e 2.542 ms, 900 ms e 1.359 ms
+   * sob carga — 5,1x, 2,5x e 7,7x. Era montagem, e nao espera: `desabilita
+   * Anterior` nao navega nem aguarda nada, e era justamente o que mais
+   * degradava. `PD-10` no `CLAUDE.md`.
+   */
+  function paginaPequena() {
+    window.history.replaceState(null, '', '/operacional?limit=50')
+    const items = Array.from({ length: 50 }, (_, index) => processFixture({ ref: `FT${index}.26` }))
     api.serveProcesses(processesFixture(items, { total: 649 }))
     renderPage()
+  }
 
-    expect(await screen.findByText('1–200 de 649')).toBeTruthy()
-  })
-
-  /**
-   * **Escopada a navegacao de proposito.** Uma pagina cheia tem 200 linhas com
-   * seis celulas editaveis cada, e uma consulta por papel na pagina inteira
-   * calcula o nome acessivel dos 1.200 botoes antes de achar "Próxima" —
-   * medido em 02/09/2026: 5 s, o teto do teste.
-   */
+  /** Escopada a navegacao: consulta por papel na pagina inteira calcula o nome
+      acessivel de cada botao de celula antes de achar "Próxima". */
   async function paginacao() {
     return within(await screen.findByRole('navigation', { name: 'Paginação' }))
   }
 
+  it('mostra a faixa e o total do conjunto filtrado inteiro', async () => {
+    paginaPequena()
+
+    expect(await screen.findByText('1–50 de 649')).toBeTruthy()
+  })
+
   it('avanca e volta a pagina', async () => {
-    const items = Array.from({ length: 200 }, (_, index) =>
-      processFixture({ ref: `FT${index}.26` }),
-    )
-    api.serveProcesses(processesFixture(items, { total: 649 }))
-    renderPage()
+    paginaPequena()
 
     fireEvent.click((await paginacao()).getByRole('button', { name: 'Próxima' }))
-    await waitFor(() => expect(lastProcessCall()).toContain('offset=200'))
+    await waitFor(() => expect(lastProcessCall()).toContain('offset=50'))
 
     fireEvent.click((await paginacao()).getByRole('button', { name: 'Anterior' }))
     await waitFor(() => expect(window.location.search).not.toContain('offset'))
   })
 
   it('desabilita Anterior na primeira pagina', async () => {
-    const items = Array.from({ length: 200 }, (_, index) =>
-      processFixture({ ref: `FT${index}.26` }),
-    )
-    api.serveProcesses(processesFixture(items, { total: 649 }))
-    renderPage()
+    paginaPequena()
 
     const anterior = (await paginacao()).getByRole('button', { name: 'Anterior' })
 
@@ -278,11 +291,78 @@ describe('paginacao', () => {
     renderPage()
     await screen.findByRole('grid')
 
-    fireEvent.change(screen.getByLabelText(/Buscar por REF, BL ou CNTR/), {
+    fireEvent.change(screen.getByLabelText(/Buscar em qualquer campo de texto/), {
       target: { value: 'X' },
     })
 
     expect(window.location.search).not.toContain('offset')
+  })
+})
+
+describe('tamanho de pagina — H-84', () => {
+  const seletor = () => screen.getByLabelText('Linhas por página') as HTMLSelectElement
+
+  it('oferece os quatro tamanhos, com 200 marcado por padrao', async () => {
+    renderPage()
+    await screen.findByRole('grid')
+
+    const rotulos = within(seletor())
+      .getAllByRole('option')
+      .map((opcao) => opcao.textContent)
+
+    expect(rotulos).toEqual(['50', '100', '200', '500'])
+    expect(seletor().value).toBe('200')
+  })
+
+  it('escolher um tamanho grava na URL e envia a rota', async () => {
+    renderPage()
+    await screen.findByRole('grid')
+
+    fireEvent.change(seletor(), { target: { value: '50' } })
+
+    await waitFor(() => expect(lastProcessCall()).toContain('limit=50'))
+    expect(window.location.search).toContain('limit=50')
+  })
+
+  /** Sair da pagina 9 de 50 para 500 por pagina apontaria para um lugar que
+      nao existe mais. */
+  it('trocar o tamanho volta para a primeira pagina', async () => {
+    window.history.replaceState(null, '', '/operacional?limit=50&offset=400')
+    renderPage()
+    await screen.findByRole('grid')
+
+    fireEvent.change(seletor(), { target: { value: '100' } })
+
+    await waitFor(() => expect(lastProcessCall()).toContain('offset=0'))
+    expect(window.location.search).not.toContain('offset')
+  })
+
+  /**
+   * Mesma tolerancia de `sort` e de `offset`: valor ruim vira o padrao, e nao
+   * erro. **`300` entra na lista de proposito** — a rota o aceitaria, porque
+   * `MAX_LIMIT` e 1000, e quem o recusa e o seletor, que tem quatro valores e
+   * precisa conseguir desenhar o que a URL pede.
+   */
+  it.each(['0', '-1', 'abc', '1001', '300'])('limit=%s cai no padrao', async (cru) => {
+    window.history.replaceState(null, '', `/operacional?limit=${cru}`)
+    renderPage()
+
+    await waitFor(() => expect(lastProcessCall()).toContain('limit=200'))
+    expect(seletor().value).toBe('200')
+  })
+
+  /** A fila e do SERVIDOR, e a tabela so reapresenta: trocar o tamanho e uma
+      consulta, e nenhuma consulta escreve. */
+  it('trocar o tamanho nao mexe na fila de edicoes', async () => {
+    api.serveProcesses(processesFixture([processFixture({ hasPendingEdits: true })], { total: 1 }))
+    renderPage()
+    await screen.findByRole('grid')
+
+    fireEvent.change(seletor(), { target: { value: '50' } })
+
+    await waitFor(() => expect(lastProcessCall()).toContain('limit=50'))
+    expect(api.calls.filter((chamada) => !chamada.startsWith('GET '))).toEqual([])
+    expect(screen.getByTitle('Tem edições pendentes de aplicação')).toBeTruthy()
   })
 })
 
@@ -453,6 +533,39 @@ describe('densidade e número na tabela (H-61)', () => {
     expect(celulas[0]?.className).toContain('font-mono')
     const data = celulas.find((celula) => celula.className.includes('tabular-nums'))
     expect(data?.className).toContain('font-mono')
+  })
+
+  /**
+   * **`H-61` fixou a família e nunca fixou o corpo**, e o conjunto divergiu por
+   * isso: as cinco colunas de código nasceram `text-xs` e as quatro de texto
+   * livre ficaram nos `text-sm` da tabela — 12 px contra 14 px na mesma linha,
+   * desalinhando opticamente a REF e o importador na mesma linha. Achado do usuário em
+   * 04/09/2026, olhando a tela, em duas passadas: a primeira pegou a REF, que
+   * era uma terceira combinação (mono em 14 px), e a segunda o degrau restante.
+   *
+   * **A asserção é a regra inteira, e por isso mira a ausência:** nenhuma
+   * célula declara tamanho, todas herdam os 14 px da `<table>`, e o que separa
+   * código de texto livre é só a forma da letra. Cobrar um valor deixaria
+   * passar a próxima coluna que nascesse com outro; cobrar a ausência não.
+   *
+   * Vale para o `<td>`, e não para os filhos: o chip de canal, o marcador de
+   * edição pendente e a seta de ordenação são adornos, e `text-xs` neles é
+   * deliberado.
+   */
+  it('nenhuma célula declara tamanho de fonte — todas herdam da tabela', async () => {
+    api.serveProcesses(processesFixture())
+    renderPage()
+
+    const primeira = (await screen.findAllByRole('row')).find(
+      (linha) => linha.closest('tbody') !== null,
+    ) as HTMLElement
+    const celulas = [...primeira.querySelectorAll('td')]
+    const comTamanho = celulas.filter((celula) =>
+      /\btext-(xs|sm|base|lg|xl|\[)/.test(celula.className),
+    )
+
+    expect(celulas.length).toBe(9)
+    expect(comTamanho.map((celula) => celula.className)).toEqual([])
   })
 
   /**

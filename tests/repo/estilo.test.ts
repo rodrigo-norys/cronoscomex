@@ -226,8 +226,14 @@ describe('C04 — o mesmo papel de UI tem a mesma forma', () => {
    * `border-border-modal`, que existe por causa do que está atrás: 4,66:1 no
    * claro e 5,66:1 no escuro.
    *
-   * O sinal sintático é `max-h-[`: só o modal limita a própria altura à
-   * viewport, porque só ele não rola com a página.
+   * O sinal sintático é `max-h-[`: no JSX, só o modal limita a própria altura
+   * em valor arbitrário.
+   *
+   * **`H-84` chegou perto e não o disputa.** O quadro da tabela também ganhou
+   * teto de altura, e ele mora numa `@utility` do `index.css` — `occurrencesOf`
+   * varre só `.ts`/`.tsx`, então o sinal segue exclusivo aqui. Se um dia esse
+   * teto voltar ao `.tsx`, é este comentário que explica por que a asserção
+   * abaixo passa a reprovar um elemento que não é modal.
    */
   const MODAL_ROLE = /max-h-\[/
 
@@ -302,6 +308,58 @@ describe('R01 — toda tabela rola dentro do próprio invólucro', () => {
     })
 
     expect(soltas.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
+  })
+})
+
+/**
+ * `H-84`, `D-31`. O quadro que rola com o cabeçalho grudado.
+ *
+ * Três asserções, e cada uma trava um caso-limite que o backlog enumerou:
+ *
+ * 1. **`border-separate` sem `border-spacing-0` abre vãos** entre as células. O
+ *    modelo separado não é escolha estética — é o que faz a borda do `<th>`
+ *    grudado sobreviver, porque sob `border-collapse: collapse` o Chrome a
+ *    descarta;
+ * 2. **o cabeçalho grudado precisa de fundo E de borda.** O fundo é o que
+ *    impede as linhas de aparecerem por baixo; a borda é o que separa os dois
+ *    sob `forced-colors: active`, onde cor de fundo do autor é descartada;
+ * 3. **`R05`** — quadro rolável com altura fixa impede o aumento de entrelinha
+ *    de `SC 1.4.12`. A altura sai de `dvh` com piso, na `@utility`, nunca de um
+ *    `h-*` no JSX.
+ */
+const STICKY_HEADER = /sticky top-0/
+const SEPARATED = /border-separate/
+const SCROLL_BOX = /overflow-y-auto/
+/** `(?<![\w-])` separa `h-10` de `max-h-56`: o segundo é teto, não altura. */
+const FIXED_HEIGHT = /(?<![\w-])h-(?:\d|\[)/
+
+describe('H-84 — o quadro rola e o cabeçalho fica', () => {
+  it('as regexes distinguem altura de teto — âncora contra guarda por vacuidade', () => {
+    expect(FIXED_HEIGHT.test('motion-tint h-10 hover:bg-surface-hover')).toBe(true)
+    expect(FIXED_HEIGHT.test('max-h-56 overflow-y-auto rounded-container')).toBe(false)
+    expect(FIXED_HEIGHT.test('min-h-0 flex-1 overflow-y-auto p-2')).toBe(false)
+    expect(occurrencesOf(STICKY_HEADER).length).toBeGreaterThan(0)
+    expect(occurrencesOf(SEPARATED).length).toBeGreaterThan(0)
+  })
+
+  it('toda tabela de bordas separadas zera o espaçamento', () => {
+    const vazadas = occurrencesOf(SEPARATED).filter((one) => !/border-spacing-0/.test(one.text))
+
+    expect(vazadas.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
+  })
+
+  it('todo cabeçalho grudado traz fundo e borda inferior', () => {
+    const nus = occurrencesOf(STICKY_HEADER).filter(
+      (one) => !/\bbg-\S+/.test(one.text) || !/\bborder-b\b/.test(one.text),
+    )
+
+    expect(nus.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
+  })
+
+  it('nenhum quadro rolável declara altura fixa', () => {
+    const travados = occurrencesOf(SCROLL_BOX).filter((one) => FIXED_HEIGHT.test(one.text))
+
+    expect(travados.map((one) => `${one.file}:${one.line} — ${one.text}`)).toEqual([])
   })
 })
 
