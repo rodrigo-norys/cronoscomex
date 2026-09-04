@@ -30,8 +30,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E11 — A casca redesenhada ✅ | **H-57 … H-65, todas concluídas** | 3 | 6 | 0 |
 | E12 — Os achados da revisão de estilo ✅ | **H-73 … H-76, todas concluídas** | 2 | 1 | 1 |
 | E13 — O operacional que edita, ordena e cria ✅ | **H-77 … H-81, todas concluídas.** Épico **retroativo**: o código entrou em 02/09/2026 e as histórias foram escritas em 03/09 | 3 | 0 | 2 |
-| E14 — A casca que se opera, não só se lê | **H-82 ✅; H-83 … H-88 abertas.** Primeiro épico **prospectivo** desde `E12`: as sete nascem antes do código (`D-29` a `D-32`) | 1 | 6 | 0 |
-| **Total** | **88** — 82 concluídas, 6 abertas | **34** | **50** | **4** |
+| E14 — A casca que se opera, não só se lê | **H-82 e H-83 ✅; H-84 … H-88 abertas.** Primeiro épico **prospectivo** desde `E12`: as sete nascem antes do código (`D-29` a `D-32`) | 1 | 6 | 0 |
+| **Total** | **88** — 83 concluídas, 5 abertas | **34** | **50** | **4** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -187,7 +187,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 **[Épico E14 — A casca que se opera, não só se lê](#e14)**
 
 - [H-82 — Os filtros num painel, e a barra dizendo o recorte](#h-82) ✅
-- [H-83 — A busca alcançável do teclado](#h-83)
+- [H-83 — A busca alcançável do teclado](#h-83) ✅
 - [H-84 — O quadro que rola, e as linhas por página](#h-84)
 - [H-85 — O carregamento que não colapsa a altura](#h-85)
 - [H-86 — Os sete ícones da lateral](#h-86)
@@ -9355,6 +9355,47 @@ nasce aqui.
 <a id="h-83"></a>
 
 ### H-83 — A busca alcançável do teclado
+
+> ✅ **CONCLUÍDA em 04/09/2026**, nos commits `520e37b` e `e270d48`. **80 testes
+> próprios** nos três arquivos que ela toca, suíte em **1.870**.
+>
+> **O mecanismo de `H-82` foi EXTRAÍDO, e não copiado.** O critério de aceite
+> exigia "o mesmo mecanismo, e não uma segunda implementação", e ele vivia
+> dentro do `FilterPanel`. Saiu para `web/src/hooks/useModalFocus.ts`, com teste
+> próprio — e **`FilterPanel.test.tsx` passou sem uma linha de alteração**, que é
+> a prova de que o comportamento é o mesmo. A **inércia** não entrou no hook:
+> `inert` se aplica aos IRMÃOS da sobreposição, e de dentro dela se aplicaria a
+> si própria; ela ficou na casca, onde passou a valer para **qualquer**
+> sobreposição aberta, e não só para o painel.
+>
+> **O caso-limite que o backlog deixou por declarar foi decidido:** `Ctrl+K` não
+> responde com sobreposição aberta. Duas sobreposições empilhadas quebram as duas
+> garantias de uma vez — qual delas prende o foco, e o painel ficaria inerte sob
+> a busca sendo irmão dela, não ancestral. A outra recusa, campo de edição
+> vencendo o atalho, reusa a guarda que `useGridNavigation` já tinha desde
+> `H-80`.
+>
+> **Medido num Chrome real**, os dois casos-limite que o jsdom não alcança: a
+> 320 px a caixa mede **273 px** numa janela de 305, com `scrollWidth` igual a
+> `clientWidth` — nenhuma rolagem horizontal (`SC 1.4.10`, `VN-1`); e sob
+> `forced-colors: active` a borda resolve `rgb(255, 255, 255)`, visível com o véu
+> descartado. Nos três cenários o foco entra no campo e os sete destinos
+> aparecem.
+>
+> **Conferido contra a planilha real:** os três campos de `A-39` casam e acham o
+> mesmo processo — `FT051.26` por REF, pelo BL `YMJAB232107292` e pelo contêiner
+> `YMMU7147705`. **O teto de duas letras se justifica pelo número:** `F` e `FT`
+> casam os **650**, porque o prefixo cobre a planilha inteira. E `FT051.26` está
+> **desembaraçado**, o que valida o `activeOnly=false`: a fila de trabalho é da
+> Operacional; aqui se acha um processo pela referência, inclusive fechado.
+>
+> **Três divergências, todas resolvidas na abertura.** (1) A extração do
+> mecanismo não estava prevista, e sem ela o critério de aceite era
+> inalcançável. (2) A consulta ganhou hook próprio, `useCommandSearch`, como os
+> outros onze do projeto — nenhum componente busca inline. (3) `App.tsx` estava
+> na lista com a ressalva errada: o backlog dizia "apenas se a navegação
+> exigir", e a navegação **não** exige — `router.ts` já resolvia; quem exigia era
+> a inércia.
 
 **Objetivo:** achar um processo de qualquer tela, sem passar pela Página
 Operacional.
