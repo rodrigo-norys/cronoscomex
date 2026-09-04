@@ -107,6 +107,7 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 | RF-33 | Editar o campo **onde ele está**, na própria tabela da Página Operacional: sete colunas editáveis, com Categoria de leitura porque ela sai de cinco regras das quais só uma lê a célula (A-22) | H-80 |
 | RF-34 | **Criar um processo novo** pela tela, enfileirado como as demais edições e gravado depois da última linha existente da aba `2026` sob comando explícito. A **remoção** de linha permanece fora de escopo (`D-25`) | H-78, H-79, H-80 |
 | RF-35 | Declarar o cliente consolidado de um processo pela tela, gravando a regra no mapa de clientes de `H-48` — e criando o arquivo quando ele não existe, que é o estado da máquina do operador em `PD-08` | H-79 |
+| RF-39 | Exibir quais grafias de CLT ainda **não** têm cliente declarado, com a contagem de processos de cada uma e independentes dos filtros globais, e permitir declarar cada uma dali | H-88 |
 
 ### 1.7. Histórico
 
