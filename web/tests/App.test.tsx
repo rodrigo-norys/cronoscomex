@@ -542,14 +542,90 @@ describe('filtros globais na casca', () => {
     expect(screen.queryByRole('region', { name: 'Filtros' })).toBeNull()
   })
 
-  it('marcar um filtro reflete na URL', async () => {
+  it('marcar um filtro no painel reflete na URL', async () => {
     render(<App />)
-    await screen.findByRole('button', { name: /Cliente/ })
 
-    fireEvent.click(screen.getByRole('button', { name: /Cliente/ }))
-    fireEvent.click(await screen.findByRole('checkbox', { name: /ACME/ }))
+    // `H-82`: os controles vivem no painel, e nao mais em treze chips na barra.
+    fireEvent.click(await screen.findByRole('button', { name: 'Filtros' }))
+    const cliente = within(await screen.findByRole('dialog', { name: 'Filtros' })).getByRole(
+      'region',
+      { name: 'Cliente' },
+    )
+    fireEvent.click(within(cliente).getByRole('checkbox', { name: /^ACME/ }))
 
     expect(window.location.search).toBe('?client=ACME')
+    // Filtrar e observar o efeito: o painel continua aberto (`D-30`).
+    expect(screen.getByRole('dialog', { name: 'Filtros' })).toBeTruthy()
+  })
+
+  /**
+   * `H-82`. O padrao de foco modal nasce aqui, e e o consumidor mais exigente do
+   * conjunto: `Esc` fecha E devolve o foco ao gatilho. Sem a devolucao o foco
+   * cai no `<body>` e a tabulacao recomeca do topo (`SC 2.4.3`, `VN-4`).
+   */
+  it('Esc fecha o painel e devolve o foco ao gatilho', async () => {
+    render(<App />)
+    const gatilho = await screen.findByRole('button', { name: 'Filtros' })
+
+    fireEvent.click(gatilho)
+    expect(await screen.findByRole('dialog', { name: 'Filtros' })).toBeTruthy()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+
+    expect(screen.queryByRole('dialog', { name: 'Filtros' })).toBeNull()
+    expect(document.activeElement).toBe(gatilho)
+  })
+
+  /**
+   * Terceira determinacao de `D-30`: o veu cobre a regiao de conteudo, e a barra
+   * de topo continua a vista. Cobrir `Aplicar alteracoes` esconderia a acao que
+   * grava no arquivo do operador.
+   */
+  it('com o painel aberto, a barra de topo segue visivel e o resto fica inerte', async () => {
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Filtros' }))
+    await screen.findByRole('dialog', { name: 'Filtros' })
+
+    expect(screen.getByRole('banner')).toBeTruthy()
+    expect(nav().hasAttribute('inert')).toBe(true)
+    expect(screen.getByRole('main').closest('[inert]')).not.toBeNull()
+  })
+
+  it('fechado, nada fica inerte', async () => {
+    render(<App />)
+    await screen.findByRole('button', { name: 'Filtros' })
+
+    expect(nav().hasAttribute('inert')).toBe(false)
+    expect(screen.getByRole('main').closest('[inert]')).toBeNull()
+  })
+
+  /** Reabrir nao pode empilhar dois paineis — o de baixo prenderia o foco. */
+  it('reabrir o painel nao empilha dois', async () => {
+    render(<App />)
+    const gatilho = await screen.findByRole('button', { name: 'Filtros' })
+
+    fireEvent.click(gatilho)
+    fireEvent.keyDown(document, { key: 'Escape' })
+    fireEvent.click(gatilho)
+
+    expect(screen.getAllByRole('dialog', { name: 'Filtros' })).toHaveLength(1)
+  })
+
+  /**
+   * A pagina sem barra nao pode deixar o painel aberto: ele desapareceria com o
+   * foco dentro, e a tabulacao recomecaria do `<body>` (`SC 2.4.3`).
+   */
+  it('navegar para pagina sem filtros fecha o painel', async () => {
+    render(<App />)
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Filtros' }))
+    await screen.findByRole('dialog', { name: 'Filtros' })
+
+    fireEvent.click(within(nav()).getByRole('link', { name: 'Configuração' }))
+
+    expect(screen.queryByRole('dialog', { name: 'Filtros' })).toBeNull()
+    expect(nav().hasAttribute('inert')).toBe(false)
   })
 
   it('trocar de pagina preserva o recorte montado', async () => {
@@ -560,8 +636,8 @@ describe('filtros globais na casca', () => {
 
     expect(window.location.pathname).toBe('/performance')
     expect(window.location.search).toBe('?client=ACME&category=em_andamento')
-    // `H-60`: o recorte ativo continua visivel SEM abrir nada — o chip diz o
-    // valor, e o botao de limpar diz quantos filtros recortam.
+    // `H-82`: o recorte ativo continua visivel SEM abrir nada — a linha de
+    // resumo o descreve, e o botao de limpar diz quantos filtros recortam.
     expect(await screen.findByRole('button', { name: 'Limpar 2' })).toBeTruthy()
   })
 

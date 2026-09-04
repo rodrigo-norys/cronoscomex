@@ -1,37 +1,38 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createRef } from 'react'
+import { describe, expect, it, vi } from 'vitest'
 import type { FilterOptionsResponse } from '../src/api-client.ts'
 import { FilterBar } from '../src/components/FilterBar.tsx'
-import type { Filters } from '../src/hooks/useFilters.ts'
+import type { Filters, MultiFilterKey } from '../src/hooks/useFilters.ts'
 import { filterOptionsFixture } from './support/api-stub.ts'
 
 /**
  * A barra e apresentacao pura: recebe a selecao e os manipuladores, e nao sabe
  * de URL nem de rede. O casamento com a URL e testado em `useFilters.test.tsx`,
- * e a integracao em `App.test.tsx`.
+ * a prisao de foco em `FilterPanel.test.tsx`, e a integracao em `App.test.tsx`.
+ *
+ * **Ate `H-82` ela era treze chips**; agora e UMA linha que descreve o recorte,
+ * mais o gatilho do painel. Os testes de popover sairam junto com o chip.
  */
+
+const VAZIO: Readonly<Record<MultiFilterKey, readonly string[]>> = {
+  client: [],
+  clientProcess: [],
+  clientGroup: [],
+  importer: [],
+  vessel: [],
+  agent: [],
+  goods: [],
+  category: [],
+  responsible: [],
+  colorResponsible: [],
+  channel: [],
+  port: [],
+}
 
 function filtersStub(overrides: Partial<Filters> = {}): Filters {
   return {
-    selection: {
-      etaFrom: '',
-      etaTo: '',
-      importerOutsideRj: '',
-      multi: {
-        client: [],
-        clientProcess: [],
-        clientGroup: [],
-        importer: [],
-        vessel: [],
-        agent: [],
-        goods: [],
-        category: [],
-        responsible: [],
-        colorResponsible: [],
-        channel: [],
-        port: [],
-      },
-    },
+    selection: { etaFrom: '', etaTo: '', importerOutsideRj: '', multi: VAZIO },
     activeCount: 0,
     queryString: '',
     toggle: vi.fn(),
@@ -43,604 +44,271 @@ function filtersStub(overrides: Partial<Filters> = {}): Filters {
   }
 }
 
-function renderBar(
-  filters: Filters = filtersStub(),
-  options: FilterOptionsResponse = filterOptionsFixture(),
-) {
-  return render(<FilterBar filters={filters} options={options} optionsError={null} />)
+/** A selecao com alguns multi preenchidos, sem repetir o objeto inteiro. */
+function comMulti(
+  partes: Partial<Record<MultiFilterKey, readonly string[]>>,
+  extras: Partial<Filters['selection']> = {},
+): Filters['selection'] {
+  return {
+    etaFrom: '',
+    etaTo: '',
+    importerOutsideRj: '',
+    ...extras,
+    multi: { ...VAZIO, ...partes },
+  }
 }
 
-beforeEach(() => {
-  // `pointerdown` fecha o painel; sem isto o `jsdom` nao tem o construtor.
-  if (!('PointerEvent' in window)) {
-    vi.stubGlobal('PointerEvent', MouseEvent)
-  }
-})
+function renderBar(
+  filters: Filters = filtersStub(),
+  options: FilterOptionsResponse | null = filterOptionsFixture(),
+  panelOpen = false,
+) {
+  const onOpenPanel = vi.fn()
+  const result = render(
+    <FilterBar
+      filters={filters}
+      options={options}
+      panelOpen={panelOpen}
+      triggerRef={createRef<HTMLButtonElement>()}
+      onOpenPanel={onOpenPanel}
+    />,
+  )
+  return { ...result, onOpenPanel }
+}
 
-afterEach(() => {
-  vi.unstubAllGlobals()
-})
+function frase(): string {
+  const bar = screen.getByRole('region', { name: 'Filtros' })
+  const paragrafo = bar.querySelector('p')
+  return paragrafo?.textContent ?? ''
+}
 
-describe('os treze chips', () => {
-  /**
-   * `H-60`. Eram treze controles sempre abertos; agora sao treze CHIPS, e o
-   * conteudo de cada um vive num popover. O periodo e o tri-estado ganharam
-   * chip proprio — antes eram os unicos controles sem forma comum.
-   */
-  it('monta os treze chips, e nenhum popover aberto', () => {
+describe('a linha de resumo', () => {
+  it('sem filtro ativo, diz o recorte padrao e nao oferece limpar', () => {
     renderBar()
+
+    expect(frase()).toBe('Todos os processos, sem recorte')
+    expect(screen.queryByRole('button', { name: /^Limpar/ })).toBeNull()
+    // O gatilho e o unico botao: e isso que faz a barra caber em UMA linha.
     const bar = screen.getByRole('region', { name: 'Filtros' })
-
-    // 11 de multipla escolha + periodo + tri-estado. Sem filtro ativo nao ha
-    // botao de limpar, entao os treze sao todos os botoes da barra.
-    expect(within(bar).getAllByRole('button')).toHaveLength(13)
-    expect(within(bar).getByRole('button', { name: /Período \(ETA2\)/ })).toBeTruthy()
-    expect(within(bar).getByRole('button', { name: /Importador fora do RJ/ })).toBeTruthy()
-    // O conteudo so existe com o popover aberto: e o que libera a linha.
-    expect(within(bar).queryByLabelText('ETA2 de')).toBeNull()
-    expect(bar.querySelectorAll('[aria-expanded="true"]')).toHaveLength(0)
+    expect(within(bar).getAllByRole('button')).toHaveLength(1)
   })
 
-  it('nao mostra contador nem botao de limpar sem filtro ativo', () => {
-    renderBar()
+  it('nomeia o filtro ativo por extenso, com o valor', () => {
+    renderBar(filtersStub({ selection: comMulti({ client: ['ACME'] }), activeCount: 1 }))
 
-    expect(screen.queryByRole('button', { name: 'Limpar' })).toBeNull()
+    expect(frase()).toBe('Cliente: ACME')
   })
 
-  it('mostra quantos filtros estao ativos no botao de limpar', () => {
-    const { rerender } = renderBar(filtersStub({ activeCount: 1 }))
-    expect(screen.getByRole('button', { name: 'Limpar 1' })).toBeTruthy()
+  /**
+   * O valor vira o ROTULO, e nao a chave: a chave e normalizada, e um resumo
+   * dizendo `ACME` onde a celula diz `Acme Logística` faria o operador duvidar
+   * do recorte.
+   */
+  it('usa o rotulo da opcao, nao a chave', () => {
+    renderBar(filtersStub({ selection: comMulti({ category: ['em_andamento'] }), activeCount: 1 }))
 
-    rerender(
-      <FilterBar
-        filters={filtersStub({ activeCount: 3 })}
-        options={filterOptionsFixture()}
-        optionsError={null}
-      />,
-    )
-    expect(screen.getByRole('button', { name: 'Limpar 3' })).toBeTruthy()
+    expect(frase()).toBe('Categoria: Em andamento')
+  })
+
+  it('cai na propria chave quando nenhuma opcao corresponde', () => {
+    // Acontece quando o endereco e digitado a mao.
+    renderBar(filtersStub({ selection: comMulti({ client: ['DIGITADO'] }), activeCount: 1 }))
+
+    expect(frase()).toBe('Cliente: DIGITADO')
+  })
+
+  it('chave vazia e valor legitimo, e diz "(em branco)"', () => {
+    renderBar(filtersStub({ selection: comMulti({ responsible: [''] }), activeCount: 1 }))
+
+    // A fixture rotula a chave vazia como "Sem responsável"; sem rotulo, o
+    // resumo cairia em "(em branco)" — nunca numa linha invisivel.
+    expect(frase()).toBe('Responsável: Sem responsável')
+  })
+
+  it('de dois valores em diante vira contagem', () => {
+    renderBar(filtersStub({ selection: comMulti({ port: ['RJ', 'RO'] }), activeCount: 1 }))
+
+    expect(frase()).toBe('Porto: 2 valores')
   })
 })
 
-describe('multipla escolha', () => {
-  it('abre o painel e lista os valores com a contagem', () => {
-    renderBar()
+describe('o teto da frase', () => {
+  /**
+   * Com seis filtros ativos a frase nao cabe em 1280 px. O corte e por FILTRO,
+   * nunca por caractere: truncar no meio de um valor diria "Cliente: Acme Log…"
+   * e deixaria o operador sem saber se ha mais de um Acme.
+   */
+  it('nomeia os dois primeiros e resume o resto', () => {
+    renderBar(
+      filtersStub({
+        selection: comMulti({
+          category: ['em_andamento'],
+          client: ['ACME'],
+          importer: ['IMP'],
+          vessel: ['EVER FAIR'],
+          port: ['RJ'],
+          goods: ['BAZAR'],
+        }),
+        activeCount: 6,
+      }),
+    )
 
-    fireEvent.click(screen.getByRole('button', { name: /Cliente/ }))
-
-    expect(screen.getByRole('checkbox', { name: /ACME/ })).toBeTruthy()
-    expect(screen.getByText('12')).toBeTruthy()
+    expect(frase()).toBe('Categoria: Em andamento · Cliente: ACME · e mais 4')
   })
 
-  it('marcar um valor chama toggle com o filtro e a chave', () => {
-    const filters = filtersStub()
-    renderBar(filters)
+  it('mantem a lista inteira no title, para nada sumir em silencio', () => {
+    renderBar(
+      filtersStub({
+        selection: comMulti({
+          category: ['em_andamento'],
+          client: ['ACME'],
+          importer: ['IMP'],
+        }),
+        activeCount: 3,
+      }),
+    )
 
-    fireEvent.click(screen.getByRole('button', { name: /Cliente/ }))
-    fireEvent.click(screen.getByRole('checkbox', { name: /ACME/ }))
+    const bar = screen.getByRole('region', { name: 'Filtros' })
+    expect(bar.querySelector('p')?.getAttribute('title')).toBe(
+      'Categoria: Em andamento · Cliente: ACME · Importador: IMP',
+    )
+  })
+})
 
-    expect(filters.toggle).toHaveBeenCalledWith('client', 'ACME')
+/**
+ * Sao QUATORZE filtros, e nao treze: `clientGroup` (`H-55`) conta e nao tem
+ * controle proprio. A frase que o ignorasse mostraria "2" no botao e nomearia
+ * um — a barra divergindo de `activeCount` no primeiro recorte por grupo.
+ */
+describe('clientGroup — o filtro sem controle proprio', () => {
+  it('entra na frase, logo depois de Cliente', () => {
+    renderBar(
+      filtersStub({
+        selection: comMulti({ client: ['ACME'], clientGroup: ['GRUPO-1'] }),
+        activeCount: 2,
+      }),
+      filterOptionsFixture({
+        clientGroups: [{ key: 'GRUPO-1', label: 'Grupo Um', count: 17, members: [] }],
+      }),
+    )
+
+    expect(frase()).toBe('Cliente: ACME · Grupo de clientes: Grupo Um')
   })
 
-  it('reflete o que ja esta selecionado', () => {
-    const filters = filtersStub()
-    const selected = {
-      ...filters,
-      selection: {
-        ...filters.selection,
-        multi: { ...filters.selection.multi, client: ['ACME'] },
-      },
-    }
-    renderBar(selected)
+  it('sozinho, ainda assim aparece', () => {
+    renderBar(
+      filtersStub({ selection: comMulti({ clientGroup: ['GRUPO-1'] }), activeCount: 1 }),
+      filterOptionsFixture({
+        clientGroups: [{ key: 'GRUPO-1', label: 'Grupo Um', count: 17, members: [] }],
+      }),
+    )
 
-    fireEvent.click(screen.getByRole('button', { name: /Cliente/ }))
-
-    expect(screen.getByRole('checkbox', { name: /ACME/ }).getAttribute('checked')).not.toBe('false')
-    expect((screen.getByRole('checkbox', { name: /ACME/ }) as HTMLInputElement).checked).toBe(true)
-  })
-
-  it('fecha o painel com Escape', () => {
-    renderBar()
-    const trigger = screen.getByRole('button', { name: /Cliente/ })
-
-    fireEvent.click(trigger)
-    expect(trigger.getAttribute('aria-expanded')).toBe('true')
-
-    fireEvent.keyDown(document, { key: 'Escape' })
-    expect(trigger.getAttribute('aria-expanded')).toBe('false')
-  })
-
-  it('nao oferece busca em lista curta, e oferece em lista longa', () => {
-    const longa = filterOptionsFixture({
-      clients: Array.from({ length: 40 }, (_, index) => ({
-        key: `C${index}`,
-        label: `CLIENTE ${index}`,
-        count: 1,
-      })),
-    })
-    render(<FilterBar filters={filtersStub()} options={longa} optionsError={null} />)
-
-    fireEvent.click(screen.getByRole('button', { name: /Canal/ }))
-    expect(screen.queryByRole('searchbox')).toBeNull()
-
-    fireEvent.keyDown(document, { key: 'Escape' })
-    fireEvent.click(screen.getByRole('button', { name: /Cliente/ }))
-    expect(screen.getByRole('searchbox')).toBeTruthy()
-  })
-
-  it('a busca ignora caixa e acento', () => {
-    const comAcento = filterOptionsFixture({
-      clients: Array.from({ length: 20 }, (_, index) => ({
-        key: `K${index}`,
-        label: index === 0 ? 'LOGÍSTICA MARÍTIMA' : `OUTRO ${index}`,
-        count: 1,
-      })),
-    })
-    render(<FilterBar filters={filtersStub()} options={comAcento} optionsError={null} />)
-
-    fireEvent.click(screen.getByRole('button', { name: /Cliente/ }))
-    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'maritima' } })
-
-    expect(screen.getByRole('checkbox', { name: /LOGÍSTICA MARÍTIMA/ })).toBeTruthy()
-    expect(screen.queryByRole('checkbox', { name: /OUTRO 1/ })).toBeNull()
-  })
-
-  it('diz que nada corresponde, em vez de painel vazio sem explicacao', () => {
-    const longa = filterOptionsFixture({
-      clients: Array.from({ length: 20 }, (_, index) => ({
-        key: `K${index}`,
-        label: `CLIENTE ${index}`,
-        count: 1,
-      })),
-    })
-    render(<FilterBar filters={filtersStub()} options={longa} optionsError={null} />)
-
-    fireEvent.click(screen.getByRole('button', { name: /Cliente/ }))
-    fireEvent.change(screen.getByRole('searchbox'), { target: { value: 'zzz' } })
-
-    expect(screen.getByText('Nenhum valor corresponde.')).toBeTruthy()
-  })
-
-  it('rotula a chave vazia, que e valor legitimo e viraria linha invisivel', () => {
-    const comVazio = filterOptionsFixture({
-      agents: [{ key: '', label: '', count: 7 }],
-    })
-    render(<FilterBar filters={filtersStub()} options={comVazio} optionsError={null} />)
-
-    fireEvent.click(screen.getByRole('button', { name: /Agente/ }))
-
-    expect(screen.getByText('(em branco)')).toBeTruthy()
+    expect(frase()).toBe('Grupo de clientes: Grupo Um')
   })
 })
 
 describe('periodo e tri-estado', () => {
-  it('o periodo escreve cada extremo no seu parametro', () => {
-    const filters = filtersStub()
-    renderBar(filters)
-    fireEvent.click(screen.getByRole('button', { name: /Período \(ETA2\)/ }))
+  it('com os dois extremos, mostra o intervalo', () => {
+    renderBar(
+      filtersStub({
+        selection: comMulti({}, { etaFrom: '2026-09-01', etaTo: '2026-09-30' }),
+        activeCount: 1,
+      }),
+    )
 
-    fireEvent.change(screen.getByLabelText('ETA2 de'), { target: { value: '2026-08-01' } })
-    fireEvent.change(screen.getByLabelText('ETA2 até'), { target: { value: '2026-08-31' } })
-
-    expect(filters.setRange).toHaveBeenCalledWith('etaFrom', '2026-08-01')
-    expect(filters.setRange).toHaveBeenCalledWith('etaTo', '2026-08-31')
+    expect(frase()).toBe('Período (ETA2): 01/09/2026 a 30/09/2026')
   })
 
-  /** Tres estados e nao caixa de marcar: `false` inclui apenas `false`, nunca
-   * `null` — cor nao reconhecida nao e o mesmo que "dentro do RJ". */
-  it('o importador fora do RJ tem tres estados', () => {
-    const filters = filtersStub()
-    renderBar(filters)
-    fireEvent.click(screen.getByRole('button', { name: /Importador fora do RJ/ }))
-    // Pelo papel, e nao pelo rotulo: desde `H-60` o chip tambem se chama
-    // "Importador fora do RJ", e `getByLabelText` casaria os dois.
-    const select = screen.getByRole('combobox')
+  it('com um extremo so, diz qual', () => {
+    const { rerender } = renderBar(
+      filtersStub({ selection: comMulti({}, { etaFrom: '2026-09-01' }), activeCount: 1 }),
+    )
+    expect(frase()).toBe('Período (ETA2): desde 01/09/2026')
 
-    expect(within(select).getAllByRole('option')).toHaveLength(3)
-
-    fireEvent.change(select, { target: { value: 'false' } })
-    expect(filters.setImporterOutsideRj).toHaveBeenCalledWith('false')
-  })
-})
-
-describe('opcoes ausentes', () => {
-  it('sobrevive sem opcoes carregadas, sem inventar catalogo (A-36)', () => {
-    render(<FilterBar filters={filtersStub()} options={null} optionsError={null} />)
-
-    fireEvent.click(screen.getByRole('button', { name: /Cliente/ }))
-
-    expect(screen.queryAllByRole('checkbox')).toHaveLength(0)
+    rerender(
+      <FilterBar
+        filters={filtersStub({
+          selection: comMulti({}, { etaTo: '2026-09-30' }),
+          activeCount: 1,
+        })}
+        options={filterOptionsFixture()}
+        panelOpen={false}
+        triggerRef={createRef<HTMLButtonElement>()}
+        onOpenPanel={vi.fn()}
+      />,
+    )
+    expect(frase()).toBe('Período (ETA2): até 30/09/2026')
   })
 
-  it('exibe a falha da rota de opcoes em vez de lista vazia silenciosa', () => {
-    render(<FilterBar filters={filtersStub()} options={null} optionsError="respondeu 503" />)
+  /**
+   * Tres estados, nao uma caixa de marcar: "Não" inclui apenas `false`, nunca
+   * `null` — cor nao reconhecida nao e o mesmo que "dentro do RJ".
+   */
+  it('o tri-estado exibe o rotulo do estado', () => {
+    renderBar(
+      filtersStub({
+        selection: comMulti({}, { importerOutsideRj: 'false' }),
+        activeCount: 1,
+      }),
+    )
 
-    expect(screen.getByRole('alert').textContent).toMatch(/opções de filtro: respondeu 503/)
-  })
-})
-
-/**
- * `H-49`. Dois controles, porque sao duas perguntas: um recorta a carteira do
- * cliente, o outro acha um processo pelo valor da celula CLT.
- */
-describe('cliente e processo do cliente', () => {
-  it('monta o controle do processo do cliente com as opcoes da rota', () => {
-    renderBar()
-
-    fireEvent.click(screen.getByRole('button', { name: /Processo do cliente/ }))
-
-    expect(screen.getByRole('checkbox', { name: /ACME-12/ })).toBeTruthy()
-  })
-
-  it('marcar um valor chama toggle com o filtro proprio', () => {
-    const filters = filtersStub()
-    renderBar(filters)
-
-    fireEvent.click(screen.getByRole('button', { name: /Processo do cliente/ }))
-    fireEvent.click(screen.getByRole('checkbox', { name: /ACME-12/ }))
-
-    expect(filters.toggle).toHaveBeenCalledWith('clientProcess', 'ACME-12')
+    expect(frase()).toBe('Importador fora do RJ: Não')
   })
 })
 
-/**
- * `H-55`. A arvore vive DENTRO do controle de Cliente: o grupo em cima, os
- * membros indentados, e cada nivel escrevendo no seu proprio parametro.
- */
-describe('grupo de clientes dentro do filtro Cliente', () => {
-  const comGrupo = () =>
-    filterOptionsFixture({
-      clients: [
-        { key: 'ACME', label: 'Acme Comércio', count: 12 },
-        { key: 'BETA', label: 'Beta Ltda', count: 5 },
-        { key: 'ZETA', label: 'Zeta', count: 3 },
-      ],
-      clientGroups: [
-        {
-          key: 'GRUPO-UM',
-          label: 'Grupo Um',
-          count: 17,
-          members: [
-            { key: 'ACME', label: 'Matriz', count: 12 },
-            { key: 'BETA', label: 'Beta Ltda', count: 5 },
-          ],
-        },
-      ],
-    })
-
-  function abrirCliente(filters = filtersStub()) {
-    render(<FilterBar filters={filters} options={comGrupo()} optionsError={null} />)
-    fireEvent.click(screen.getByRole('button', { name: /^Cliente/ }))
-    return filters
-  }
-
-  it('exibe o grupo com a soma e os membros com a contagem propria', () => {
-    abrirCliente()
-
-    expect(screen.getByRole('checkbox', { name: /Grupo Um/ })).toBeTruthy()
-    expect(screen.getByRole('checkbox', { name: /Matriz/ })).toBeTruthy()
-    expect(screen.getByText('17')).toBeTruthy()
-  })
-
-  it('marcar o grupo escreve no filtro clientGroup', () => {
-    const filters = abrirCliente()
-
-    fireEvent.click(screen.getByRole('checkbox', { name: /Grupo Um/ }))
-
-    expect(filters.toggle).toHaveBeenCalledWith('clientGroup', 'GRUPO-UM')
-  })
-
-  it('marcar um membro escreve no filtro client, como sempre', () => {
-    const filters = abrirCliente()
-
-    fireEvent.click(screen.getByRole('checkbox', { name: /Matriz/ }))
-
-    expect(filters.toggle).toHaveBeenCalledWith('client', 'ACME')
-  })
-
-  // A mesma chave nos dois lugares daria duas caixas para o mesmo cliente.
-  it('o membro NAO aparece tambem na lista solta', () => {
-    abrirCliente()
-
-    expect(screen.getAllByRole('checkbox', { name: /Beta Ltda/ })).toHaveLength(1)
-    expect(screen.getByRole('checkbox', { name: /Zeta/ })).toBeTruthy()
-  })
-})
-
-/**
- * `H-43`. A região de erro das opções existe desde a montagem.
- *
- * Um `role="alert"` que nasce já populado não é anunciado: o leitor de tela não
- * tem estado anterior com que comparar.
- */
-describe('a região viva das opções de filtro', () => {
-  it('monta a região vazia, sem caixa na tela, quando não há erro', () => {
-    const { container } = renderBar()
-
-    const regiao = screen.getByRole('alert')
-    expect(regiao.textContent).toBe('')
-    // O caso-limite: nenhuma caixa vazia. O estilo só entra com a mensagem.
-    expect(regiao.className).toBe('sr-only')
-    expect(container.querySelector('.bg-state-error-bg')).toBeNull()
-  })
-
-  it('escreve no mesmo nó quando o erro aparece', () => {
+describe('o gatilho do painel', () => {
+  it('declara que abre um dialogo, e o estado dele', () => {
     const { rerender } = renderBar()
-    const antes = screen.getByRole('alert')
+    const botao = screen.getByRole('button', { name: /Filtros/ })
+
+    expect(botao.getAttribute('aria-haspopup')).toBe('dialog')
+    expect(botao.getAttribute('aria-expanded')).toBe('false')
 
     rerender(
       <FilterBar
         filters={filtersStub()}
         options={filterOptionsFixture()}
-        optionsError="rede indisponível"
+        panelOpen
+        triggerRef={createRef<HTMLButtonElement>()}
+        onOpenPanel={vi.fn()}
       />,
     )
+    expect(screen.getByRole('button', { name: /Filtros/ }).getAttribute('aria-expanded')).toBe(
+      'true',
+    )
+  })
 
-    expect(screen.getByRole('alert')).toBe(antes)
-    expect(antes.textContent).toContain('rede indisponível')
+  it('avisa a casca ao ser acionado', () => {
+    const { onOpenPanel } = renderBar()
+
+    fireEvent.click(screen.getByRole('button', { name: /Filtros/ }))
+
+    expect(onOpenPanel).toHaveBeenCalledTimes(1)
+  })
+
+  it('mostra a contagem de filtros ativos', () => {
+    renderBar(filtersStub({ activeCount: 14 }))
+
+    expect(screen.getByRole('button', { name: 'Filtros, 14 ativos' })).toBeTruthy()
   })
 })
 
-/**
- * `H-66`. Dois controles vizinhos e independentes: um recorta por quem responde
- * pelo processo, o outro por o que a linha está pintada (`H-50`).
- */
-describe('responsável e cor do responsável', () => {
-  it('oferece os dois controles, com nomes que os distinguem', () => {
-    renderBar()
-    const bar = screen.getByRole('region', { name: 'Filtros' })
+describe('limpar', () => {
+  it('aparece com filtro ativo e chama clearAll', () => {
+    const clearAll = vi.fn()
+    renderBar(filtersStub({ activeCount: 3, clearAll }))
 
-    expect(within(bar).getByRole('button', { name: /^Responsável/ })).toBeTruthy()
-    expect(within(bar).getByRole('button', { name: /^Cor do responsável/ })).toBeTruthy()
-  })
+    fireEvent.click(screen.getByRole('button', { name: 'Limpar 3' }))
 
-  // As duas chaves de A-18 vêm do servidor e aparecem separadas no controle: a
-  // agregação acontece no recorte, não na lista de opções.
-  it('lista as quatro chaves de cor de TD-05', () => {
-    renderBar(
-      filtersStub(),
-      filterOptionsFixture({
-        colorResponsible: [
-          { key: 'colaborador1', label: 'Colaborador 1', count: 120 },
-          { key: 'colaborador2', label: 'Colaborador 2', count: 36 },
-          {
-            key: 'colaborador1_outros_clientes',
-            label: 'Colaborador 1 — outros clientes',
-            count: 9,
-          },
-          { key: 'indefinido', label: 'Indefinido', count: 484 },
-        ],
-      }),
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: /^Cor do responsável/ }))
-
-    expect(screen.getByRole('checkbox', { name: /Colaborador 1 — outros clientes/ })).toBeTruthy()
-    expect(screen.getByRole('checkbox', { name: /Indefinido/ })).toBeTruthy()
-  })
-
-  // Controle que some esconde que o recorte zerou (A-28). Ele fica, vazio.
-  it('aparece vazio quando nenhum processo do recorte tem cor de responsável', () => {
-    renderBar(filtersStub(), filterOptionsFixture({ colorResponsible: [] }))
-
-    const controle = screen.getByRole('button', { name: /^Cor do responsável/ })
-    expect(controle).toBeTruthy()
-
-    fireEvent.click(controle)
-    expect(screen.queryAllByRole('checkbox')).toHaveLength(0)
+    expect(clearAll).toHaveBeenCalledTimes(1)
   })
 })
 
-/**
- * `H-60`. O chip diz o recorte **sem abrir o popover** — é o que separa esta
- * forma de simplesmente esconder o filtro atrás de um botão.
- */
-describe('o chip diz o recorte ativo', () => {
-  const comSelecao = (multi: Partial<Record<string, readonly string[]>>) =>
-    filtersStub({
-      selection: {
-        ...filtersStub().selection,
-        multi: { ...filtersStub().selection.multi, ...multi },
-      },
-    })
+describe('opcoes ausentes', () => {
+  it('sem opcoes carregadas, a barra monta e a frase nao mente', () => {
+    renderBar(filtersStub({ selection: comMulti({ client: ['ACME'] }), activeCount: 1 }), null)
 
-  it('um valor vira o rótulo dele, e não a chave normalizada', () => {
-    // A chave e o rótulo precisam DIFERIR, senão a asserção passa sem medir
-    // nada: `clientKey` é normalizado, e um chip dizendo `ACME LOG` quando a
-    // célula diz `Acme Logística` faria o operador duvidar do recorte.
-    renderBar(
-      comSelecao({ client: ['ACME LOG'] }),
-      filterOptionsFixture({ clients: [{ key: 'ACME LOG', label: 'Acme Logística', count: 12 }] }),
-    )
-
-    expect(screen.getByRole('button', { name: /^Cliente: Acme Logística/ })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /^Cliente: ACME LOG/ })).toBeNull()
-  })
-
-  // Listar quatro clientes num chip ocuparia a linha que a fatia libera.
-  it('dois valores ou mais viram contagem', () => {
-    renderBar(comSelecao({ client: ['ACME', 'BETA'] }))
-
-    expect(screen.getByRole('button', { name: /^Cliente: 2 valores/ })).toBeTruthy()
-  })
-
-  // Chave vazia é valor legítimo do domínio — célula em branco na planilha.
-  it('a chave vazia tem rótulo próprio, e não vira chip sem valor', () => {
-    renderBar(comSelecao({ goods: [''] }))
-
-    expect(screen.getByRole('button', { name: /^Mercadoria: \(em branco\)/ })).toBeTruthy()
-  })
-
-  // Chave digitada no endereço, sem opção correspondente: o chip mostra a
-  // chave, nunca um chip aparentemente inativo.
-  it('chave sem opção correspondente cai na própria chave', () => {
-    renderBar(comSelecao({ vessel: ['NAVIO INEXISTENTE'] }))
-
-    expect(screen.getByRole('button', { name: /^Navio: NAVIO INEXISTENTE/ })).toBeTruthy()
-  })
-
-  /** Período é UM filtro que ocupa dois parâmetros, e o chip exibe o intervalo. */
-  it('o período exibe intervalo, e cada extremo sozinho tem forma própria', () => {
-    const base = filtersStub()
-    const { rerender } = renderBar(
-      filtersStub({ selection: { ...base.selection, etaFrom: '2026-02-01', etaTo: '2026-02-28' } }),
-    )
-    expect(screen.getByRole('button', { name: /01\/02\/2026 a 28\/02\/2026/ })).toBeTruthy()
-
-    const so = (campo: 'etaFrom' | 'etaTo', valor: string) =>
-      rerender(
-        <FilterBar
-          filters={filtersStub({ selection: { ...base.selection, [campo]: valor } })}
-          options={filterOptionsFixture()}
-          optionsError={null}
-        />,
-      )
-
-    so('etaFrom', '2026-02-01')
-    expect(screen.getByRole('button', { name: /desde 01\/02\/2026/ })).toBeTruthy()
-    so('etaTo', '2026-02-28')
-    expect(screen.getByRole('button', { name: /até 28\/02\/2026/ })).toBeTruthy()
-  })
-
-  /**
-   * Três estados, e o chip não pode reduzi-los a marcado/desmarcado: "Não"
-   * inclui apenas `false`, nunca `null` — cor não reconhecida não é o mesmo que
-   * "dentro do RJ".
-   */
-  it('o tri-estado exibe o rótulo do estado, não um sinal de marcado', () => {
-    const base = filtersStub()
-    const { rerender } = renderBar(
-      filtersStub({ selection: { ...base.selection, importerOutsideRj: 'false' } }),
-    )
-    expect(screen.getByRole('button', { name: /^Importador fora do RJ: Não/ })).toBeTruthy()
-
-    rerender(
-      <FilterBar
-        filters={filtersStub({ selection: { ...base.selection, importerOutsideRj: 'true' } })}
-        options={filterOptionsFixture()}
-        optionsError={null}
-      />,
-    )
-    expect(screen.getByRole('button', { name: /^Importador fora do RJ: Sim/ })).toBeTruthy()
-  })
-
-  /**
-   * Nome de cliente real estoura a linha. O chip trunca por CSS e guarda o
-   * valor completo no `title` — cortar em silêncio esconderia parte do recorte
-   * que o operador montou.
-   */
-  it('o rótulo longo trunca com o valor completo acessível', () => {
-    renderBar(comSelecao({ vessel: ['UM NOME DE NAVIO BEM MAIS LONGO QUE O CHIP'] }))
-    const chip = screen.getByRole('button', { name: /^Navio: UM NOME/ })
-
-    expect(chip.getAttribute('title')).toBe('Navio: UM NOME DE NAVIO BEM MAIS LONGO QUE O CHIP')
-    expect(chip.querySelector('.truncate')).toBeTruthy()
-  })
-})
-
-/**
- * `H-60`. O popover abre, fecha por `Esc` e por clique fora, e **devolve o foco
- * ao chip**. Sem a devolução o foco cai no `<body>` e o operador de teclado
- * recomeça a tabulação do topo — o defeito que `VN-4` mediu na navegação.
- */
-describe('o popover do chip', () => {
-  it('abre e fecha pelo próprio chip, anunciando o estado', () => {
-    renderBar()
-    const chip = screen.getByRole('button', { name: /^Cliente/ })
-
-    expect(chip.getAttribute('aria-expanded')).toBe('false')
-    fireEvent.click(chip)
-    expect(chip.getAttribute('aria-expanded')).toBe('true')
-    fireEvent.click(chip)
-    expect(chip.getAttribute('aria-expanded')).toBe('false')
-  })
-
-  it('Esc fecha e devolve o foco ao chip', () => {
-    renderBar()
-    const chip = screen.getByRole('button', { name: /^Cliente/ })
-    fireEvent.click(chip)
-
-    fireEvent.keyDown(document, { key: 'Escape' })
-
-    expect(chip.getAttribute('aria-expanded')).toBe('false')
-    expect(document.activeElement).toBe(chip)
-  })
-
-  it('clique fora fecha', () => {
-    renderBar()
-    const chip = screen.getByRole('button', { name: /^Cliente/ })
-    fireEvent.click(chip)
-
-    fireEvent.pointerDown(document.body)
-
-    expect(chip.getAttribute('aria-expanded')).toBe('false')
-  })
-
-  /** O segundo nível de `H-55` continua dentro do popover, com a árvore intacta. */
-  it('mantém a árvore de grupos dentro do popover de Cliente', () => {
-    renderBar(filtersStub(), filterOptionsFixture())
-    fireEvent.click(screen.getByRole('button', { name: /^Cliente/ }))
-
-    expect(screen.getByRole('checkbox', { name: /ACME/ })).toBeTruthy()
-  })
-
-  /**
-   * `H-64`. O jsdom nao aplica a folha externa, entao o que se pode afirmar
-   * aqui e o PAPEL declarado — que a duracao e a curva por tras dele sejam as
-   * do token e caiam sob reducao e do CSS, e `tests/repo/estilo.test.ts` cobra.
-   * Sem esta assercao, tirar a classe nao reprovaria nada.
-   */
-  /**
-   * `H-65`, `VN-1`. Em jsdom todo retangulo e zero, entao a geometria precisa
-   * ser encenada — e e ela que a regra decide. Os numeros sao os medidos em
-   * Chrome 151 a 320 px: painel de 256 px nascendo em `left: 184`, tela util de
-   * 305. O limite direito e 305 - 8 - 256 = 41, e o deslocamento, -143.
-   */
-  it('recolhe o painel que nasceria fora da tela, e nao move o que cabe', () => {
-    const tela = 305
-    Object.defineProperty(document.documentElement, 'clientWidth', {
-      configurable: true,
-      value: tela,
-    })
-
-    const encenar = (left: number): void => {
-      HTMLDivElement.prototype.getBoundingClientRect = function rect(this: HTMLDivElement) {
-        if (!this.className.includes('motion-surface')) return new DOMRect()
-        return new DOMRect(left, 0, 256, 288)
-      }
-    }
-
-    const original = HTMLDivElement.prototype.getBoundingClientRect
-
-    try {
-      encenar(184)
-      const { unmount } = renderBar()
-      fireEvent.click(screen.getByRole('button', { name: /^Cliente/ }))
-      const fora = document.querySelector('[class*="motion-surface"]') as HTMLElement
-
-      expect(fora.style.marginLeft).toBe('-143px')
-      unmount()
-
-      // O chip do comeco da linha ja cabe: 24 + 256 = 280, abaixo de 297.
-      encenar(24)
-      renderBar()
-      fireEvent.click(screen.getByRole('button', { name: /^Cliente/ }))
-      const dentro = document.querySelector('[class*="motion-surface"]') as HTMLElement
-
-      expect(dentro.style.marginLeft).toBe('')
-    } finally {
-      HTMLDivElement.prototype.getBoundingClientRect = original
-    }
-  })
-
-  it('o chip e o painel nomeiam o papel de movimento', () => {
-    renderBar()
-    const chip = screen.getByRole('button', { name: /^Cliente/ })
-    expect(chip.className).toContain('motion-tint')
-
-    fireEvent.click(chip)
-    const painel = document.getElementById(chip.getAttribute('aria-controls') ?? '')
-
-    expect(painel?.className).toContain('motion-surface')
+    // Sem a lista, o rotulo nao existe: cai na chave, que e o que se sabe.
+    expect(frase()).toBe('Cliente: ACME')
   })
 })
