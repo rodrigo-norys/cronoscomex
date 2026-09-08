@@ -334,6 +334,15 @@ export function filterOptionsFixture(
 export interface ApiStub {
   /** `METODO /caminho`, na ordem em que foram chamados. Prova a ordem de A-62. */
   readonly calls: string[]
+  /**
+   * O `AbortSignal` de cada chamada, no MESMO indice de `calls` (`H-87`).
+   *
+   * O stub resolve na hora, entao a corrida entre duas respostas nao acontece
+   * aqui — e a garantia que a interface oferece contra ela e o `abort` da
+   * requisicao anterior. Sem isto, o caso-limite so seria observavel por tempo,
+   * que e o que nenhum teste deve depender.
+   */
+  readonly signals: (AbortSignal | undefined)[]
   /** Os corpos enviados a `POST /api/edits`, na ordem — o que a edicao em linha
       precisa afirmar e o PAR campo/valor, e nao so que a rota foi chamada. */
   readonly editBodies: { ref: string; field: string; value: string | null }[]
@@ -392,6 +401,7 @@ export interface ApiStub {
  */
 export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
   const calls: string[] = []
+  const signals: (AbortSignal | undefined)[] = []
   const editBodies: { ref: string; field: string; value: string | null }[] = []
   let health = initial
   let healthFailure: string | null = null
@@ -448,6 +458,7 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
     vi.fn((input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input)
       calls.push(`${init?.method ?? 'GET'} ${url}`)
+      signals.push(init?.signal ?? undefined)
 
       // A query dos filtros vem anexada; o roteamento do stub e por caminho.
       const [path = url] = url.split('?')
@@ -677,6 +688,7 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
 
   return {
     calls,
+    signals,
     editBodies,
     serve: (next) => {
       health = next
