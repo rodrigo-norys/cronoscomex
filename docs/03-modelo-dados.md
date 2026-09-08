@@ -106,7 +106,7 @@ quando ele não mudou o suficiente para a recusa disparar.
 | B | CLT | `clientRaw` | string | sim (vazio) | |
 | C | IMPORTADOR | `importerRaw` | string | sim | |
 | D | BL | `billOfLading` | string | sim | Consulta apenas |
-| E | AGENTE | `agentRaw` | string | sim | **P-01** — confirmar em `H-01` |
+| E | AGENTE | `agentRaw` | string | sim | **P-01** — confirmada por `H-01` em 03/08/2026: a coluna E é `AGENTE` |
 | F | CNTR | `container` | string | sim | Consulta apenas |
 | G | NAVIO | `vesselRaw` | string | sim | |
 | H | ETA | `portRaw` | string | sim | **Porto**, não data |
@@ -117,7 +117,7 @@ quando ele não mudou o suficiente para a recusa disparar.
 | M | Coluna 13 | `boletoRaw` | string | sim | Fora de escopo — lido como texto puro |
 | N | R$ ENVIADO | `paymentRaw` | string | sim | Fora de escopo — tipo misto (A-45) |
 | O | DOCS ENVIADOS | `docsSentDate` | Date | sim | Vazio = documentação pendente |
-| P | (não documentada) | `columnPRaw` | string | sim | **P-02** — confirmar em `H-01` |
+| P | `Coluna1` | `columnPRaw` | string | sim | **P-02** — confirmada por `H-01` em 03/08/2026: cabeçalho `Coluna1`, 99,9% vazia |
 
 ---
 
@@ -181,8 +181,15 @@ demais não são avaliadas. A verificação de §2.2 **precede** a de §2.1 (A-2
 | `Desembaraçada` | `DESEMBARACADA` | sim | `desembaracado` | — |
 | `DESEMBARAÇADO` | `DESEMBARACADO` | não | `em_andamento` | `VARIANTE_STATUS_PROXIMA` |
 | `DESEMBARAÇAD` | `DESEMBARACAD` | não | `em_andamento` | `VARIANTE_STATUS_PROXIMA` |
-| `DESEMBARAÇADA EM 30/07` | `DESEMBARACADA EM 30/07` | não | `em_andamento` | `VARIANTE_STATUS_PROXIMA` |
+| `DESEMBARAÇADA EM 30/07` | `DESEMBARACADA EM 30/07` | não | `em_andamento` | **—** |
 | `AG BL ORIGINAL` | `AG BL ORIGINAL` | não | `em_andamento` | — |
+
+> **A linha acima dizia `VARIANTE_STATUS_PROXIMA` até 08/09/2026, e o limiar
+> logo abaixo a desmentia.** `DESEMBARACADA EM 30/07` está a distância **9** da
+> forma mais próxima do dicionário — calculado sobre as formas reais —, bem
+> acima do 3. É o mesmo caso que `A-53` registra e que
+> `VARIANT_DISTANCE_THRESHOLD` documenta: valor longe demais fica de fora **de
+> propósito**, para a lista de divergências não encher de ruído.
 
 **Regra de aproximação:** um valor cuja distância de Levenshtein até qualquer
 forma do dicionário seja **≤ 3** recebe a anomalia `VARIANTE_STATUS_PROXIMA` e
@@ -350,18 +357,23 @@ objetivo. Para a **escrita**, é decisivo — ver TD-05.1 (achado A-49).
 `H-01`, está em `config/color-map.json`; o exemplo abaixo é ilustrativo da
 estrutura:**
 
+> **O campo é `fillId`, e este exemplo dizia `styleId` até 08/09/2026** — três
+> parágrafos depois de o próprio documento explicar que a escrita troca o
+> `fillId` e nunca o `styleId` (`A-49`). `src/app/color-map-loader.ts` recusa um
+> mapa sem `fillId`, então o exemplo não era só impreciso: era incarregável.
+
 ```json
 {
   "version": 1,
   "anchorColumn": "A",
   "entries": [
-    { "styleKey": "argb:FF0070C0", "label": "Azul",         "responsible": "colaborador1",                 "customsChannel": "indefinido", "importerOutsideRj": false, "styleId": 12 },
-    { "styleKey": "argb:FF7030A0", "label": "Roxo",         "responsible": "colaborador2",                   "customsChannel": "indefinido", "importerOutsideRj": false, "styleId": 13 },
-    { "styleKey": "argb:FF00B050", "label": "Verde",        "responsible": "indefinido",             "customsChannel": "verde",      "importerOutsideRj": false, "styleId": 14 },
-    { "styleKey": "argb:FFFF0000", "label": "Vermelho",     "responsible": "indefinido",             "customsChannel": "vermelho",   "importerOutsideRj": false, "styleId": 15 },
-    { "styleKey": "argb:FFFFFF00", "label": "Amarelo forte","responsible": "indefinido",             "customsChannel": "indefinido", "importerOutsideRj": true,  "styleId": 16 },
-    { "styleKey": "argb:FFF5F0DC", "label": "Bege",         "responsible": "colaborador1_outros_clientes", "customsChannel": "indefinido", "importerOutsideRj": false, "styleId": 17 },
-    { "styleKey": "none",          "label": "Branco",       "responsible": "indefinido",             "customsChannel": "indefinido", "importerOutsideRj": false, "styleId": 0  }
+    { "styleKey": "argb:FF0070C0", "label": "Azul",         "responsible": "colaborador1",                 "customsChannel": "indefinido", "importerOutsideRj": false, "fillId": 12 },
+    { "styleKey": "argb:FF7030A0", "label": "Roxo",         "responsible": "colaborador2",                   "customsChannel": "indefinido", "importerOutsideRj": false, "fillId": 13 },
+    { "styleKey": "argb:FF00B050", "label": "Verde",        "responsible": "indefinido",             "customsChannel": "verde",      "importerOutsideRj": false, "fillId": 14 },
+    { "styleKey": "argb:FFFF0000", "label": "Vermelho",     "responsible": "indefinido",             "customsChannel": "vermelho",   "importerOutsideRj": false, "fillId": 15 },
+    { "styleKey": "argb:FFFFFF00", "label": "Amarelo forte","responsible": "indefinido",             "customsChannel": "indefinido", "importerOutsideRj": true,  "fillId": 16 },
+    { "styleKey": "argb:FFF5F0DC", "label": "Bege",         "responsible": "colaborador1_outros_clientes", "customsChannel": "indefinido", "importerOutsideRj": false, "fillId": 17 },
+    { "styleKey": "none",          "label": "Branco",       "responsible": "indefinido",             "customsChannel": "indefinido", "importerOutsideRj": false, "fillId": 0  }
   ]
 }
 ```

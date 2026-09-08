@@ -1,5 +1,5 @@
 {
-  "_comentario": "ESQUELETO, NAO CONFIGURACAO PRONTA. Os valores de styleKey e styleId abaixo sao ILUSTRATIVOS. Os reais sao produzidos por H-01 (npm run profile), no campo styleKeys do relatorio de perfilamento. Copie este arquivo para config/color-map.json e substitua styleKey e styleId pelos valores medidos. Ver ADR-0003 e a tabela TD-05 em 03-modelo-dados.md.",
+  "_comentario": "ESQUELETO, NAO CONFIGURACAO PRONTA. Os valores de styleKey e fillId abaixo sao ILUSTRATIVOS. Os reais sao produzidos pelo perfilamento de H-01. Copie este arquivo para config/color-map.json e substitua styleKey e fillId pelos valores medidos. ATE 08/09/2026 este esqueleto trazia styleId e o canal 'nenhum': o carregador REJEITA os dois — fillId e obrigatorio (A-49, TD-05.1) e o dominio de canal perdeu 'nenhum' em H-51. Ver ADR-0003 e a tabela TD-05 em 03-modelo-dados.md.",
 
   "version": 1,
   "anchorColumn": "A",
@@ -14,27 +14,27 @@
       "label": "Azul",
       "significado": "Processos do Colaborador 1",
       "responsible": "colaborador1",
-      "customsChannel": "nenhum",
+      "customsChannel": "indefinido",
       "importerOutsideRj": false,
-      "styleId": 12
+      "fillId": 12
     },
     {
       "styleKey": "argb:FF7030A0",
       "label": "Roxo",
       "significado": "Processos do Colaborador 2",
       "responsible": "colaborador2",
-      "customsChannel": "nenhum",
+      "customsChannel": "indefinido",
       "importerOutsideRj": false,
-      "styleId": 13
+      "fillId": 13
     },
     {
       "styleKey": "argb:FFF5F0DC",
       "label": "Bege",
       "significado": "Processos do Colaborador 1 pertencentes a outros clientes. Subcategoria de Colaborador 1 (achado A-18): o filtro Responsavel=Colaborador 1 seleciona colaborador1 E colaborador1_outros_clientes.",
       "responsible": "colaborador1_outros_clientes",
-      "customsChannel": "nenhum",
+      "customsChannel": "indefinido",
       "importerOutsideRj": false,
-      "styleId": 17
+      "fillId": 17
     },
     {
       "styleKey": "argb:FFFF0000",
@@ -43,40 +43,40 @@
       "responsible": "indefinido",
       "customsChannel": "vermelho",
       "importerOutsideRj": false,
-      "styleId": 15
+      "fillId": 15
     },
     {
       "styleKey": "argb:FFFFFF00",
       "label": "Amarelo forte",
       "significado": "Importador localizado fora do RJ. Decisao do usuario sobre o achado A-38: a linha amarela da foto 2 tem CANAL AMARELO no STATUS por coincidencia, nao por regra. Canal Amarelo nao e rastreavel de forma estruturada.",
       "responsible": "indefinido",
-      "customsChannel": "nenhum",
+      "customsChannel": "indefinido",
       "importerOutsideRj": true,
-      "styleId": 16
+      "fillId": 16
     },
     {
       "styleKey": "argb:FF00B050",
       "label": "Verde",
       "significado": "Processo desembaracado. NAO deriva nenhum campo: a cor jamais infere status (achado A-04). Presente no mapa apenas para que a linha nao caia em quarentena.",
       "responsible": "indefinido",
-      "customsChannel": "nenhum",
+      "customsChannel": "indefinido",
       "importerOutsideRj": false,
-      "styleId": 14
+      "fillId": 14
     },
     {
       "styleKey": "none",
       "label": "Branco (sem preenchimento)",
       "significado": "Processo em desembaracamento. NAO deriva nenhum campo: a foto 2 mostra linha branca com STATUS preenchido, refutando a coerencia afirmada em secao 3 da especificacao (achado A-04).",
       "responsible": "indefinido",
-      "customsChannel": "nenhum",
+      "customsChannel": "indefinido",
       "importerOutsideRj": false,
-      "styleId": 0
+      "fillId": 0
     }
   ],
 
   "_dominios": {
     "responsible": ["colaborador1", "colaborador2", "colaborador1_outros_clientes", "indefinido"],
-    "customsChannel": ["vermelho", "nenhum", "indefinido"],
+    "customsChannel": ["verde", "vermelho", "indefinido"],
     "importerOutsideRj": [true, false]
   },
 
@@ -85,6 +85,6 @@
     "NAO ha tolerancia nem aproximacao por proximidade de cor. argb:FF00B051 esta a um bit do verde argb:FF00B050 e NAO e reconhecido. Ver ADR-0003.",
     "Formatos validos de styleKey: 'argb:RRGGBBAA', 'theme:N|tint:D.DDDD' (tint arredondado a 4 casas), 'indexed:N', ou 'none'.",
     "Duas entradas com a mesma styleKey fazem a aplicacao falhar na partida, indicando a chave repetida.",
-    "styleId deve ser um estilo JA EXISTENTE no arquivo, obtido em H-01. A escrita de cor (H-27) reutiliza estilos existentes e nunca modifica xl/styles.xml."
+    "fillId deve ser um preenchimento JA EXISTENTE no arquivo, obtido em H-01. A escrita de cor (H-27) troca o fillId do xf da celula, e NAO o styleId: uma mesma cor vem de varios styleId (A-49). Gravar cor reutiliza preenchimentos existentes; gravar DATA em celula sem formato acrescenta a xl/styles.xml de forma estritamente aditiva (TD-05.1, passo 5b)."
   ]
 }
