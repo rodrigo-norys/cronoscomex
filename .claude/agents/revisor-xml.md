@@ -32,13 +32,21 @@ célula alvo antes e depois. Se faltar qualquer um, peça; não presuma.
    3 que a própria revisão acrescentou (linha auto-fechada, célula ausente
    recebendo data, fórmula compartilhada) —, isso é um achado.
 
-   **`appendRow` é a exceção, e é deliberada: ela NÃO tem história no backlog.**
-   A cirurgia tem três funções desde 02/09/2026 — `applyCellEdits`,
-   `applyRowFill` e `appendRow` —, e a enumeração da terceira está repartida em
-   três lugares, todos obrigatórios: `tests/io/xlsx-surgeon-append.test.ts`,
-   `tests/app/write-guard.test.ts` e `docs/05-contratos-api.md §3`. Sem os três
-   a lista muda entre invocações, e foi a divergência levantada em **todas** as
-   passagens daquele dia. Ver `.claude/rules/escrita-xlsx.md`.
+   **A cirurgia tem três funções desde 02/09/2026** — `applyCellEdits`,
+   `applyRowFill` e `appendRow`. A terceira sai de **`H-78`**, "Uma linha nova
+   depois da última que existe", com **cinco** casos-limite; se o total divergir
+   de cinco, isso é um achado, pela mesma régua de `H-24`.
+
+   *(Este bloco afirmou até 08/09/2026 que `appendRow` "NÃO tem história no
+   backlog". Era verdade quando foi escrito, em 02/09; `H-78` foi escrita
+   retroativamente em 03/09, e a instrução ficou mandando enumerar da fonte
+   errada.)*
+
+   **`H-78` cobre a cirurgia, e não o chamador.** Para o lado de quem chama —
+   `H-79` e `H-80` —, complemente com `tests/app/write-guard.test.ts` (piso de
+   `firstDataRow`, duas inserções, `refExists`, REF aparada, `TABELA_CHEIA`,
+   linhas vazias no fim da aba) e `docs/05-contratos-api.md §3`. Ver
+   `.claude/rules/escrita-xlsx.md`.
 3. `docs/03-modelo-dados.md` §TD-05.1 apenas se o patch mexer em estilo,
    `numFmt`, `fillId` ou `cellXf`.
 

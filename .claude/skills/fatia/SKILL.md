@@ -11,11 +11,11 @@ argument-hint: '[H-NN]'
 
 ## Casos-limite obrigatórios atribuídos a esta história
 
-Extraídos de `docs/08-qualidade-operacao.md` §1.3 — os 43 casos obrigatórios do
+Extraídos de `docs/08-qualidade-operacao.md` §1.3 — os 44 casos obrigatórios do
 projeto. Cada linha abaixo precisa virar um teste com o **valor concreto** que
 aparece nela.
 
-!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); grep -F "| ${H:?informe H-NN} |" docs/08-qualidade-operacao.md || echo "NENHUM caso obrigatório atribuído a esta história em §1.3 — os 43 casos cobrem 11 das 81 histórias, e a ausência aqui é esperada, não defeito. Os casos-limite do backlog continuam obrigatórios."`
+!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); grep -F "| ${H:?informe H-NN} |" docs/08-qualidade-operacao.md || echo "NENHUM caso obrigatório atribuído a esta história em §1.3 — os 44 casos cobrem 11 das 90 histórias, e a ausência aqui é esperada, não defeito. Os casos-limite do backlog continuam obrigatórios."`
 
 ## Linhas da matriz de rastreabilidade que citam esta história
 
@@ -149,6 +149,11 @@ estiver lá é divergência, e divergência **para** a implementação.
 
 ## Regras que valem durante toda a fatia
 
+- **Confira a decisão `D-NN` que originou a história.** Elas envelhecem: em
+  08/09/2026 as três determinações de `D-29` estavam erradas, e uma delas teria
+  produzido o defeito que ela existia para evitar — a lateral dizendo 170 com a
+  tabela em 650. Decisão citada pelo backlog é material da fatia, não pano de
+  fundo.
 - Use `TodoWrite` em paralelo, para acompanhamento.
 - Confira `node --version`. Se não devolver `v22.23.2`, prefixe `nvm use &&` em
   todo comando que execute Node — o shell reinicia a cada chamada.

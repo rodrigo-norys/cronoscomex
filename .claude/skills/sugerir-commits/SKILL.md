@@ -28,8 +28,15 @@ Portões inegociáveis:
   aprovar a execução, e perguntar de novo depois disso não acrescenta informação nenhuma — só
   gasta uma rodada. **A obrigação real é do plano, não da segunda pergunta:** plano vago não
   autoriza nada, por mais "sim" que receba.
-- **O prompt de permissão da ferramenta continua sendo a última barreira.** `git add` está em
-  `ask` nas regras do projeto, e é ele que dá o direito de veto no último instante.
+- **NÃO existe prompt de permissão para vetar no último instante**, e isto é medido:
+  `permissions.ask` tem exatamente dois itens — `Bash(npm install)` e `Bash(npm ci)` —, e
+  `Bash(git add *)` está em **`allow`** desde 31/08/2026, quando a sessão sem supervisão foi
+  aberta. **A frase anterior dizia o contrário e foi repetida a cada plano**, dando ao dono a
+  impressão de uma segunda chance de recusar que ele não tinha. O que protege é outra coisa, e
+  ela é real: o plano com os comandos literais **antes** do aceite, o hook
+  `guard-dados-sensiveis.sh` no `PreToolUse`, o portão antes do commit, e a `main` protegida
+  depois dele. Confira com `jq '.permissions.ask' .claude/settings.json` — a régua é o arquivo,
+  não esta linha.
 - **`git push` não entra aqui.** Push é para fora; esta skill para nos commits locais. Quem
   empurra a branch e abre o PR é `/sugerir-prs`.
 - **Nenhum dado real no commit.** Antes de agrupar, confira que nenhum diff carrega valor de
@@ -38,7 +45,7 @@ Portões inegociáveis:
   histórico do git não esquece. Se carregar, **pare e reporte**; não commite.
 - **Nunca `git add .` nem `git add -A`** — o agrupamento se perde. Só os caminhos exatos de cada
   commit. Aqui isso não é só disciplina: o hook `guard-dados-sensiveis.sh` **bloqueia** as duas
-  formas, e `Bash(git add *)` está em `ask`.
+  formas, e é a única barreira automática que resta — `Bash(git add *)` está em `allow`.
 - **O índice pode chegar sujo, e aí o `git add` do plano leva mais do que os caminhos dele.**
   Antes de commitar, leia `git status --porcelain` procurando marca na **primeira** coluna: ela
   é o índice, e o que estiver lá entra no próximo commit sem ser citado. O caso que se paga

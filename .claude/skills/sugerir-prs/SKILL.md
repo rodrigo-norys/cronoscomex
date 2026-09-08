@@ -8,7 +8,7 @@ argument-hint: '[branch-base]'
 
 Decide a **estrutura de entrega** de uma pilha de mudanças: quantos PRs, o que vai em cada um, e
 a descrição de cada. **Descrever 1 PR é o caso N=1** — uma pilha coesa vira um PR só.
-**Propõe e, com dupla autorização, executa** o passo para fora (push da branch + `gh pr create`).
+**Propõe e, com UM aceite, executa** o passo para fora (push da branch + `gh pr create`).
 Os **commits** locais são da `/sugerir-commits`; esta aqui cuida de abrir o PR.
 
 **Argumento opcional:** a branch base (padrão `main`).
@@ -16,7 +16,8 @@ Os **commits** locais são da `/sugerir-commits`; esta aqui cuida de abrir o PR.
 > **Esta skill publica.** Push e PR são irreversíveis na prática — o objeto de commit persiste no
 > GitHub mesmo depois de um force-push. Ela pode ser carregada automaticamente, mas o portão
 > abaixo não é opcional: **planejar é livre, executar não**. Nenhum push ou `gh` roda sem aceite
-> explícito, e ambos ainda passam pelo prompt de permissão da ferramenta.
+> explícito, e o aceite é a **única** barreira — `Bash(git push *)` está em `allow`, não em
+> `ask`.
 
 ## Pré-requisitos — confira, não presuma
 
@@ -54,8 +55,11 @@ Portões inegociáveis:
   se o plano tiver mostrado **os comandos literais, o remote e a base** antes. Perguntar de novo
   depois de uma aprovação assim não acrescenta informação: quem aprovou já viu o que seria
   executado e para onde. **Plano vago não autoriza nada**, por mais "sim" que receba.
-- **O prompt de permissão da ferramenta continua sendo a última barreira**, e é o que protege
-  contra o caso em que o plano e o comando divergiram.
+- **Não há prompt de permissão depois do aceite**, e por isso o plano precisa ser literal:
+  `Bash(git push *)` está em **`allow`** no `.claude/settings.json`, e `gh pr create` também.
+  Um plano que esconda o remote, a base ou o texto do corpo tira do dono a única chance de
+  recusar que ele tem. O que sobra contra plano e comando divergentes é a leitura do plano —
+  nada automático.
 - **Push e PR são para fora** — no GitHub não desfazem limpo. Confirmo o destino (remote, branch
   base) antes de rodar.
 - **Nenhum dado real no que vai para fora.** Título, corpo e os arquivos do diff **não** podem

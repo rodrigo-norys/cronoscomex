@@ -24,6 +24,13 @@ para a branch `distribuicao`** — recusando antes se a árvore estiver suja —
 prepara os arquivos no índice e **para**, deixando você nela. Commit, push e o
 `git switch` de volta são seus.
 
+**O script mede a branch LOCAL.** Ele diz "sincronizada com HEAD" com o commit
+ainda não empurrado — medido em 08/09/2026, quando `origin/distribuicao` ficou
+uma versão atrás e o dono precisou ser avisado. A conferência que não mente é
+`git rev-list --count origin/distribuicao..distribuicao`. Na árvore do operador,
+baixada sem `.git`, o efeito seria um `AppSidebar` importando um `NavIcon` que
+não chegou.
+
 **Sincronize apenas a partir da `main` mesclada**, para o operador nunca receber
 código que o CI e a revisão do PR ainda não aceitaram. Decidido em 31/08/2026,
 depois de `H-48` ter ido para a distribuição antes do merge.
@@ -79,8 +86,10 @@ da planilha, ou o envio virando passo do procedimento) é reexaminada em momento
 oportuno. **Enquanto o envio for manual, repita a cópia toda vez que a regra de
 consolidação ou a equipe mudar** — nenhum aviso existe para lembrar.
 
-**Duas coisas mentem hoje sobre isso**, e caem junto na primeira instalação: o
-`README.md` da branch afirma em negrito "você não precisa editar arquivo nenhum"
-e descreve `config\` como só cores e apelidos de status; e o bloco "Como refazer
-esta branch", no fim dele, lista os arquivos a copiar **sem** os dois `.exemplo`,
-divergindo do script, que é quem vale.
+**As duas coisas que mentiam sobre isso já foram corrigidas na branch.** O
+`README.md` dela ainda diz "você não precisa editar arquivo nenhum", mas a frase
+é sobre o OPERADOR e vem seguida do parágrafo que explica os dois mapas copiados
+por quem instala; o bloco "Como refazer esta branch" não lista arquivo nenhum —
+ele manda calcular pelo script; e a tabela de pastas passou a citar os dois mapas
+em 04/09/2026. **O que sobra de `PD-08` não é documental: é `H-88`**, que tira o
+mapa da cópia manual (`D-32`).
