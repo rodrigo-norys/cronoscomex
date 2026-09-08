@@ -153,7 +153,8 @@ export function resolveFillTarget(
 
 /**
  * Uma entrada por combinacao distinta, na ordem do mapa — o que a aplicacao
- * sabe GRAVAR. Sao seis no mapa real, contra nove entradas.
+ * sabe GRAVAR. Sao SETE no mapa real, contra nove entradas — medido em
+ * 08/09/2026 chamando a propria funcao; o comentario dizia seis.
  *
  * A interface oferece esta lista, e nao as nove: rotular uma opcao "Branco" e
  * gravar verde seria a tela afirmando o que o codigo nao faz. Branco e os tons
