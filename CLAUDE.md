@@ -132,7 +132,7 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**87 das 90 histórias estão concluídas**, e as três abertas são `E14`. O que cada uma aprendeu — número medido,
+**88 das 90 histórias estão concluídas**, e as duas abertas são `E14`. O que cada uma aprendeu — número medido,
 defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
 `docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
 em aberto. **Este bloco diz só o que está aberto.**
@@ -140,10 +140,10 @@ em aberto. **Este bloco diz só o que está aberto.**
 **`E9` a `E12` fecharam em 01/09/2026, e `E13` em 03/09/2026.** O que está aberto
 é **`E14`** — `H-82` a `H-90`, decididas em 03 e 04/09/2026 e **numeradas na
 ordem de execução**, com `H-90` fora dela por ter nascido depois. **`H-82` a
-`H-86` e `H-90` fecharam em 04/09/2026.** Restam: a contagem que segue o
-recorte (`D-29`); o mapa de clientes sem cópia manual, que nasce de `PD-08`
-(`D-32`); e a ordem em que a planilha está (`D-33`) — **a única das três que
-toca contrato de rota**, porque altera `sort` em `docs/05-contratos-api.md`. A ordem entre elas
+`H-86` e `H-90` fecharam em 04/09/2026, e `H-87` em 08/09/2026.** Restam: o mapa
+de clientes sem cópia manual, que nasce de `PD-08` (`D-32`); e a ordem em que a
+planilha está (`D-33`) — **a única das duas que toca contrato de rota**, porque
+altera `sort` em `docs/05-contratos-api.md`. A ordem entre elas
 está no cabeçalho do épico. Restam também as **três pendências abertas** abaixo,
 e nenhuma bloqueia implementação: `PD-09` espera só uma decisão, `PD-08` a
 próxima sincronização da branch `distribuicao`, e `PD-07` se divide — a paleta
@@ -487,6 +487,13 @@ python3 tools/profile_workbook.py "<caminho.xlsx>" /tmp/saida.json   # reperfila
 > confiável. Como aqui é branch por história, trocar de branch com o `dev`
 > rodando é rotina, e o sintoma — interface quebrando contra um contrato que o
 > código já cumpre — aponta para o lugar errado.
+
+> **Não rode `npm run build` nem `npm run verify` com o `dev` no ar.** O
+> `vite build` compartilha o `cacheDir` com o servidor de desenvolvimento e
+> apaga `node_modules/.vite/deps`: o cliente passa a receber `504` nos módulos
+> otimizados, `#root` fica vazio e **nada é registrado em log nenhum**. Medido
+> em 08/09/2026, ao validar `H-87`. Derrube o `dev` antes do portão, ou reinicie
+> depois dele.
 
 **Para conferir uma história contra a planilha real** — passo obrigatório antes
 de fechar —, monte o script no scratchpad e use `tools/carregar-planilha.mjs`,
