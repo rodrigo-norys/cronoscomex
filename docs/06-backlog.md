@@ -44,7 +44,7 @@ bloco; o índice agora é obrigado a concordar com ele.
 
 `H-30` teve a ressalva do bloco dela **levantada em 31/08/2026**: o
 `iniciar.cmd` foi executado na máquina do operador, sobe e carrega a planilha.
-`PD-06` guarda os três itens que ainda faltam.
+`PD-06` guardava os itens que faltavam, e **fechou em 03/09/2026** — os três últimos foram exercidos por SSH, e o registro está em `docs-windows/2026-09-03-pd06-fechada.md`.
 
 **Quatro histórias são G.** `H-50` desde `D-24`, `H-75` em `E12`, e `H-79` e
 `H-80` em `E13` — estas duas por medição do que já estava commitado: 29 e 15
@@ -695,7 +695,11 @@ export function classify(row: RawRow, aliases: string[]): Classification
   `CANAL_EM_TEXTO_STATUS`.
 - `STATUS = "desembaraçada"` → `desembaracado` (caixa).
 - `STATUS = "DESEMBARACADA"` (sem cedilha) → `desembaracado`.
-- `STATUS = "DESEMBARAÇADA EM 30/07"` → `em_andamento` + `VARIANTE_STATUS_PROXIMA`.
+- `STATUS = "DESEMBARAÇADA EM 30/07"` → `em_andamento`, **sem anomalia**: está a
+  distância 9 do dicionário, acima do limiar de 3, e fica de fora de propósito
+  (`A-53`). *(Este caso pedia `VARIANTE_STATUS_PROXIMA` até 08/09/2026,
+  contrariando o limiar da própria TD-02 e os testes de
+  `tests/domain/status-classifier.test.ts`, que sempre afirmaram o oposto.)*
 - REF preenchido, todas as demais colunas com apenas espaços →
   `fechado_aguardando_draft`.
 - `status-aliases.json` sem a chave `desembaracado` → a partida falha com
@@ -10197,8 +10201,8 @@ Os textos das 34 histórias **do plano original** foram varridos em busca de
 "escolher", "avaliar", "definir", "decidir" e "ver qual". As ocorrências
 encontradas foram eliminadas:
 
-> **A varredura nunca foi refeita.** O backlog tem 81 histórias hoje, e as 47
-> posteriores — `H-33` em diante, mais os épicos `E9` a `E13` — não passaram por
+> **A varredura nunca foi refeita.** O backlog tem 90 histórias hoje, e as 56
+> posteriores — `H-33` em diante, mais os épicos `E9` a `E14` — não passaram por
 > ela. As cinco de `E13` não poderiam passar: foram escritas **depois** do
 > código, e verbo de decisão em aberto num texto retroativo descreveria uma
 > escolha que já foi feita. A conclusão abaixo vale para o recorte varrido, não para o backlog.

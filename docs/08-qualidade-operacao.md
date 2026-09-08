@@ -18,7 +18,7 @@
 nem limiar nenhum reprova. Isto está registrado desde `PR-10` em
 `docs/governance-tooling-claude.md`, e a decisão de 03/09/2026 foi **corrigir a
 afirmação e não ligar a cobertura**: percentual de linha não verifica o que a
-lacuna de fato pede — que os 43 casos-limite obrigatórios de §1.3 tenham virado
+lacuna de fato pede — que os 44 casos-limite obrigatórios de §1.3 tenham virado
 teste — e ligar limiar por camada é mudança de código, com o backlog fechado.
 Quem quiser o número roda `npx vitest run --coverage`; ele não é portão.
 
@@ -96,7 +96,7 @@ ano (R-14).
 ### 1.3. Cobertura obrigatória por regra
 
 Toda regra classificatória e todo indicador precisa de teste com dado
-concreto. Os **43 casos** abaixo são obrigatórios e derivam das tabelas de
+concreto. Os **44 casos** abaixo são obrigatórios e derivam das tabelas de
 decisão de `03-modelo-dados.md`. A contagem foi verificada sobre a própria
 tabela.
 
