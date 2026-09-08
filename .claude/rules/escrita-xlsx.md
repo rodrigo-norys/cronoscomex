@@ -36,16 +36,23 @@ Ele não tem `Edit` nem `Write`, e é invocado **sem** o raciocínio de quem
 escreveu o código: começar cego é o mecanismo, não efeito colateral.
 
 **Onde ele acha os casos-limite.** Ele os enumera de `docs/06-backlog.md`, e a
-criação de linha (02/09/2026) ainda **não tem história lá**. A enumeração está
-repartida em três lugares, e os três precisam ir junto:
+criação de linha é **`H-78`** — cinco casos-limite, escrita retroativamente em
+03/09/2026. Ela é a fonte primária; os três arquivos abaixo a complementam,
+porque parte da enumeração vive fora do backlog:
+
+*(Esta seção afirmou até 08/09/2026 que a criação de linha "não tem história
+lá". Era verdade em 02/09, quando o código entrou sem história, e deixou de ser
+no dia seguinte. `.claude/agents/revisor-xml.md` repetia a mesma frase, e as
+duas peças desviavam a revisão da fonte primária ao mesmo tempo.)*
 
 | Arquivo | O que enumera |
 |---|---|
+| `docs/06-backlog.md` §`H-78` | **a fonte primária** — os cinco casos-limite da cirurgia |
 | `tests/io/xlsx-surgeon-append.test.ts` | a cirurgia — `appendRow` e as recusas dela |
 | `tests/app/write-guard.test.ts` | quem a chama — piso de `firstDataRow`, duas inserções, `refExists`, REF aparada, `TABELA_CHEIA`, linhas vazias no fim da aba |
 | `docs/05-contratos-api.md §3` | o contrato de `POST /api/edits/row` e do desvio em `POST /api/edits` |
 
-Sem os três, a revisão reenumera do zero e a lista muda entre invocações — foi a
+Sem as quatro, a revisão reenumera do zero e a lista muda entre invocações — foi a
 divergência que ele levantou em **todas** as passagens.
 
 **Ele reprovou QUATRO vezes em 02/09/2026, em cinco passagens — e o padrão é a

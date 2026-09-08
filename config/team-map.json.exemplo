@@ -3,7 +3,7 @@
 
   "version": 1,
 
-  "_comentario_por_que": "O responsavel vinha SO da cor da linha, e a cor cobre 157 das 649 linhas — as outras 492 ficavam em 'indefinido'. A lista de importadores de cada pessoa cobre 559, e a cor desempata parte do resto.",
+  "_comentario_por_que": "O responsavel vinha SO da cor da linha, e a cor cobre 165 das 649 linhas — as outras 484 ficavam em 'indefinido'. A lista de importadores de cada pessoa cobre 559, e a cor desempata parte do resto.",
 
   "_comentario_ordem": "Avaliacao, nesta ordem: 1) importador na lista de alguem · 2) membro com 'fallback', se o importador nao for vazio · 3) cor da linha apontando um membro · 4) nada. Quem casa primeiro leva.",
 

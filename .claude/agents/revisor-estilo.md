@@ -1,6 +1,6 @@
 ---
 name: revisor-estilo
-description: Revisor de estilização das sete páginas do painel, contra o corpus verificável de docs/estilizacao/corpus-estilo.md. Recebe a casca MAIS as sete páginas de uma vez, porque doze das quarenta regras são composicionais e não existem dentro de um arquivo. Devolve achados no formato fixo e um plano de ondas por dependência técnica, com contagem de arquivos. Não corrige, não edita, não redesenha.
+description: Revisor de estilização das sete páginas do painel, contra o corpus verificável de docs/estilizacao/corpus-estilo.md. Recebe a casca MAIS as sete páginas de uma vez, porque onze das quarenta regras são composicionais e não existem dentro de um arquivo. Devolve achados no formato fixo e um plano de ondas por dependência técnica, com contagem de arquivos. Não corrige, não edita, não redesenha.
 tools: Read, Grep, Glob, Bash
 model: opus
 ---

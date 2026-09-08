@@ -127,15 +127,16 @@ merecem atenção:
 
 Duplo clique em **`scripts\iniciar.cmd`**.
 
-Ele confere **três coisas, e só três** — Node instalado, Node 22 ou maior, e a
-interface compilada —, sobe o servidor e abre o navegador em
-`http://127.0.0.1:5173`. **Fechar a janela encerra a aplicação** — é assim que
-se desliga.
+Ele confere **quatro coisas, e só quatro** — Node instalado, Node 22 ou maior, a
+interface compilada, e o `config\app.json` sendo JSON válido, se ele existir —,
+sobe o servidor e abre o navegador em `http://127.0.0.1:5173`. **Fechar a janela
+encerra a aplicação** — é assim que se desliga.
 
-São três porque são as únicas anteriores ao navegador por natureza: sem elas não
-há servidor, e sem servidor não há tela para reportar coisa alguma. Tudo o mais
-— o caminho da planilha, o arquivo de configuração, os limiares — é resolvido no
-painel. E cada uma das três traz a receita completa: o que baixar, de onde, o
+São quatro porque são as únicas anteriores ao navegador por natureza: sem elas
+não há servidor, e sem servidor não há tela para reportar coisa alguma — a
+última porque um arquivo de configuração malformado mata o processo antes de ele
+escutar. Tudo o mais — o caminho da planilha, os limiares — é resolvido no
+painel. E cada uma das quatro traz a receita completa: o que baixar, de onde, o
 que fazer, e que basta executar o atalho de novo depois.
 
 Um caso continua parando a partida de propósito: `config/app.json` **existir e
@@ -238,9 +239,14 @@ idênticas**, incluindo as abas fora de escopo.
 
 ## Estado
 
-**32 das 34 histórias** de [`docs/06-backlog.md`](docs/06-backlog.md) estão
-concluídas — o bloco `✅ CONCLUÍDA` de cada uma é a fonte, e o backlog é onde o
-número se reconfere. Restam `H-33` e `H-34`.
+**87 das 90 histórias** de [`docs/06-backlog.md`](docs/06-backlog.md) estão
+concluídas — o bloco `✅ CONCLUÍDA` de cada uma é a fonte, e é lá que o número
+se reconfere, com `grep -c '✅ \*\*CONCLUÍDA' docs/06-backlog.md`. As três
+abertas são do épico `E14`: a contagem que segue o recorte na navegação, o mapa
+de clientes sem cópia manual, e a ordem em que a planilha está.
+
+O plano original tinha 34 histórias; as demais nasceram do uso, e cada épico
+posterior explica no próprio cabeçalho de onde veio.
 
 Todos os indicadores e alertas em escopo estão entregues, com uma exceção
 declarada: `IND-21` depende de uma coluna que a planilha não tem (decisão D-04).

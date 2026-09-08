@@ -330,7 +330,6 @@ cronoscomex/
 │     ├─ server.ts
 │     ├─ errors.ts
 │     ├─ filter-request.ts
-│     ├─ filter-request.ts
 │     └─ routes/              # 14 arquivos de rota — ver 05-contratos-api.md
 ├─ web/
 │  ├─ src/
@@ -344,7 +343,7 @@ cronoscomex/
 │  ├─ public/fonts/          # .woff2 versionados (H-58) — RNF-43, nenhum CDN
 │  └─ index.html
 ├─ tests/                     # projeto `servidor`, ambiente node
-│  ├─ domain/ · io/ · app/ · http/ · repo/
+│  ├─ domain/ · io/ · app/ · http/ · repo/ · tools/
 │  └─ fixtures/               # 9 .xlsx versionados — nunca a planilha real
 ├─ web/tests/                 # projeto `interface`, ambiente jsdom
 ├─ tools/                     # perfilador, gerador de fixtures e conferências

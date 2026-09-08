@@ -48,8 +48,10 @@ argument-hint: '[H-NN]'
    defasada.
 
    **Desde que o backlog fechou, em 01/09/2026, não há fase nem sucessora a
-   atualizar**: o bloco diz "As 81 histórias estão concluídas" e "Este bloco diz
-   só o que está aberto". O que se atualiza aqui é a lista de **pendências
+   atualizar**: o bloco diz quantas histórias estão concluídas e "Este bloco diz
+   só o que está aberto". *(Esta instrução citava a frase "As 81 histórias estão
+   concluídas", que o `CLAUDE.md` não contém desde que o total passou de 81 — a
+   citação literal envelhece, o ponteiro não.)* O que se atualiza aqui é a lista de **pendências
    abertas** — acrescente a que a história criou, remova a que ela fechou. Se a
    história não mexeu em nenhuma, o bloco não muda, e isso é o caso normal.
 
@@ -84,10 +86,8 @@ argument-hint: '[H-NN]'
 
 7. **Marcos de tooling.** Percorra a tabela `## Marcos de tooling` do
    `CLAUDE.md` e confira se algum gatilho **em aberto** foi atingido — os que
-   citavam `H-13`, `H-20` e `H-24` já estão riscados. O que resta em aberto hoje
-   é a contagem de 20 `session_id` distintos em
-   `data/instrucoes-carregadas.log` (conferir se cada rule dispara) e a aparição
-   da aba `2027`. Riscar a linha é parte do fechamento; o hook
+   citavam `H-13`, `H-20`, `H-24` e a contagem de `session_id` já estão riscados.
+   O que resta em aberto hoje é **a aparição da aba `2027`**, e só ela. Riscar a linha é parte do fechamento; o hook
    `conferir-alinhamento.sh` avisa, e `tests/repo/contratos.test.ts` reprova.
 
 ## Prova — imprima isto no final, sem editar

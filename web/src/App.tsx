@@ -41,7 +41,7 @@ const History = lazy(() =>
  *
  * Ela hospeda as sete paginas, carrega a faixa de estado que A-57 exige em
  * **todas** elas, concentra as tres frentes de A-62, e monta os quatorze filtros
- * globais. Nao calcula nada: os 21 indicadores e os cinco alertas vem prontos
+ * globais. Nao calcula nada: os 21 indicadores e os seis alertas vem prontos
  * do servidor, ja recortados (regra inviolavel 6).
  *
  * **O eixo e lateral desde `H-59`** (`D-22`). Eram quatro faixas horizontais

@@ -297,7 +297,7 @@ Nada aqui foi promovido ao corpus principal. Fonte de nível 4 a 6, explicitada 
 6. "Suportar modo escuro" como item de checklist — não há SC que exija; convertida na leitura de arquitetura + D01–D07 condicionais.
 7. "Otimizar alvos para toque (44×44)" — SC 2.5.5 é AAA e o ponteiro alvo é mouse; cortada na Fase 2, com o piso AA de 24×24 mantido em A05.
 
-**2 — Contraexemplos.** Todas as 23 regras LOCAL e todas as 12 COMPOSICIONAL têm contraexemplo. As 5 de EXECUÇÃO também receberam, ainda que não fosse obrigatório.
+**2 — Contraexemplos.** Todas as **24** regras LOCAL e todas as **11** COMPOSICIONAL têm contraexemplo. *(Este parágrafo dizia 23 e 12, contra o "LOCAL 24 · COMPOSICIONAL 11" do resumo por balde, no mesmo documento. Recontado em 08/09/2026 sobre as tabelas.)* As 5 de EXECUÇÃO também receberam, ainda que não fosse obrigatório.
 
 **3 — A Fase 2 corta de verdade.** Nove famílias inteiras foram excluídas com fonte: breakpoints de telefone como meta de design, alvos de toque de 44px, desempenho móvel, i18n/RTL, conformidade legal de site público, SC 1.2.x, os AAA de contraste e de foco, o formato DTCG e o APCA. E a exclusão foi assimétrica de propósito: **nenhum critério de nível A ou AA de acessibilidade foi dispensado**, porque o beneficiário é o operador, não o público.
 

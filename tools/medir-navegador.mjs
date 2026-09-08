@@ -1,4 +1,5 @@
 import { spawn } from 'node:child_process'
+import { createServer } from 'node:net'
 import { copyFileSync, existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
@@ -397,6 +398,99 @@ export async function comNavegador(opcoes, fn) {
       // Perfil orfao em /tmp e consequencia aceita, e declarada.
     }
   }
+}
+
+/** Uma porta livre, perguntada ao SO. Escolher a mao colide com o `dev` no ar. */
+async function portaLivre() {
+  return new Promise((ok, falha) => {
+    const servidor = createServer()
+    servidor.on('error', falha)
+    servidor.listen(0, LOOPBACK_HOST, () => {
+      const { port } = servidor.address()
+      servidor.close(() => ok(port))
+    })
+  })
+}
+
+const LOOPBACK_HOST = '127.0.0.1'
+
+/**
+ * A MESMA sonda sobre N cenarios, com a aplicacao subindo e caindo uma vez so.
+ *
+ * **Existe porque o preambulo foi reescrito OITO vezes** em 04 e 08/09/2026 —
+ * `abrirAplicacao`, porta escolhida a mao, laco de espera pelo carregamento,
+ * `fechar`, `JSON.stringify` no fim. Duas dessas vezes custaram uma execucao
+ * extra por defeito no andaime, e nao na medida: um backtick dentro de template
+ * literal, e um `tail` que cortou o JSON pela metade.
+ *
+ * **A porta e pedida ao SO**, e nao escolhida: a sequencia 5199, 5211, 5213,
+ * 5214, 5217… daquelas oito execucoes existia so para nao colidir com o `dev`.
+ *
+ * **A espera padrao e o texto "Carregando" sumir do `<main>`**, que serve tanto
+ * ao esqueleto de `H-85` quanto ao paragrafo que ele substituiu. Um seletor em
+ * `esperarPor` troca o criterio; uma funcao assume o controle inteiro.
+ *
+ * @param {{
+ *   fixture?: string,
+ *   rota: string | ((cenario: object) => string),
+ *   cenarios: Array<{nome: string} & object>,
+ *   sonda: string | ((pagina: object, cenario: object) => Promise<unknown>),
+ *   esperarPor?: string | ((pagina: object) => Promise<void>),
+ * }} opcoes
+ * @returns {Promise<Record<string, unknown>>} um resultado por `nome` de cenario
+ */
+export async function medirCenarios({ fixture, rota, cenarios, sonda, esperarPor }) {
+  const app = await abrirAplicacao({ fixture, porta: await portaLivre() })
+  const medida = {}
+
+  try {
+    for (const cenario of cenarios) {
+      const { nome, ...opcoesDoNavegador } = cenario
+      const caminho = typeof rota === 'function' ? rota(cenario) : rota
+
+      medida[nome] = await comNavegador(
+        { url: `${app.baseUrl}${caminho}`, ...opcoesDoNavegador },
+        async (pagina) => {
+          if (typeof esperarPor === 'function') await esperarPor(pagina)
+          else if (typeof esperarPor === 'string') await pagina.esperarSeletor(esperarPor)
+          else await esperarCarregamento(pagina)
+
+          return typeof sonda === 'function' ? sonda(pagina, cenario) : pagina.avaliar(sonda)
+        },
+      )
+    }
+  } finally {
+    // `finally` porque uma sonda que lanca nao pode deixar o servidor no ar:
+    // o proximo `medirCenarios` pediria outra porta e o anterior seguiria
+    // servindo a fixture, com o watcher ligado.
+    await app.fechar()
+  }
+
+  return medida
+}
+
+/**
+ * O fim do carregamento, por DOIS sinais — e o segundo nao e redundante.
+ *
+ * **O esqueleto de `H-85` nao poe texto no `<main>`:** as barras sao
+ * `aria-hidden` e o anuncio sai por portal para a regiao viva da casca, fora
+ * dele. Uma espera que so procurasse "Carregando" retornaria no ato e mediria a
+ * pagina vazia — medido em 08/09/2026, ao provar esta funcao: a Pagina Alertas
+ * devolveu 900 px, a altura da janela, contra os 9.248 reais.
+ *
+ * `aria-busy` cobre o esqueleto e os cartoes de `StatCard`; o texto cobre o
+ * paragrafo, que ainda aparece na remontagem por releitura.
+ */
+async function esperarCarregamento(pagina, tentativas = 200) {
+  for (let i = 0; i < tentativas; i++) {
+    const carregando = await pagina.avaliar(`(() => {
+      if (document.querySelector('[aria-busy="true"]') !== null) return true
+      return (document.querySelector('main')?.textContent ?? '').includes('Carregando')
+    })()`)
+    if (!carregando) return
+    await esperar(25)
+  }
+  throw new Error('a pagina ainda estava carregando depois de 5 s')
 }
 
 /**

@@ -928,7 +928,7 @@ formulário de cor.
 ```jsonc
 { "options": [
     { "label": "Verde (tom A)", "responsible": "indefinido",
-      "customsChannel": "nenhum", "importerOutsideRj": false }
+      "customsChannel": "indefinido", "importerOutsideRj": false }
 ] }
 ```
 
@@ -946,7 +946,7 @@ Enfileira alteração dos campos codificados em cor. Os três são gravados como
 célula-âncora.
 
 ```jsonc
-{ "responsible": "colaborador2", "customsChannel": "nenhum", "importerOutsideRj": false }
+{ "responsible": "colaborador2", "customsChannel": "indefinido", "importerOutsideRj": false }
 ```
 
 A combinação enviada precisa corresponder a **pelo menos uma** entrada de
@@ -972,12 +972,13 @@ aplicação não escreve.
 
 | `responsible` | `customsChannel` | `importerOutsideRj` | Cor gravada | `fillId` |
 |---|---|---|---|---|
-| `indefinido` | `nenhum` | `false` | Verde (tom A) | 2 |
-| `colaborador1` | `nenhum` | `false` | Azul | 8 |
-| `colaborador2` | `nenhum` | `false` | Roxo (tom A) | 27 |
-| `colaborador1_outros_clientes` | `nenhum` | `false` | Bege | 9 |
+| `indefinido` | `verde` | `false` | Verde (tom A) | 2 |
+| `colaborador1` | `indefinido` | `false` | Azul | 8 |
+| `colaborador2` | `indefinido` | `false` | Roxo (tom A) | 27 |
+| `colaborador1_outros_clientes` | `indefinido` | `false` | Bege | 9 |
 | `indefinido` | `vermelho` | `false` | Vermelho | 7 |
-| `indefinido` | `nenhum` | `true` | Amarelo forte | 10 |
+| `indefinido` | `indefinido` | `true` | Amarelo forte | 10 |
+| `indefinido` | `indefinido` | `false` | Branco (do tema) | 13 |
 
 A tabela é **derivada** de `config/color-map.json`, não uma segunda fonte: o
 `fillId` vem da entrada, e mudar o mapa muda o que a rota aceita.
@@ -1014,7 +1015,7 @@ só, então a última escolha vence; e uma **linha nova** (`rowInsert`), também
   "field": "eta2", "value": "2026-08-06", "previous": "2026-08-04", "ts": "…" }
 
 { "kind": "color", "id": "…", "ref": "FT533.26", "sourceRow": 483,
-  "target": { "responsible": "colaborador2", "customsChannel": "nenhum",
+  "target": { "responsible": "colaborador2", "customsChannel": "indefinido",
               "importerOutsideRj": false },
   "label": "Roxo (tom A)", "previousLabel": "Verde (tom A)",
   "previousStyleKey": "argb:FF00FF00", "ts": "…" }
