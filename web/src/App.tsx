@@ -15,6 +15,7 @@ import { TopBar } from './components/TopBar.tsx'
 import { useAppData } from './hooks/useAppData.ts'
 import { useFilterOptions } from './hooks/useFilterOptions.ts'
 import { useFilters } from './hooks/useFilters.ts'
+import { useNavCounts } from './hooks/useNavCounts.ts'
 import { Alerts } from './pages/Alerts.tsx'
 import { Clients } from './pages/Clients.tsx'
 import { Home } from './pages/Home.tsx'
@@ -116,6 +117,14 @@ export function App() {
    */
   const firstRun = health !== null && health.state === 'degradado' && health.lastReadAt === null
 
+  /**
+   * A contagem que a lateral exibe (`H-87`). Ela so busca quando ha o que
+   * contar: em `firstRun` a lateral nem monta, e antes da primeira resposta de
+   * `/api/health` ainda nao se sabe se ela vai montar — duas requisicoes por
+   * leitura para uma coluna que nao esta na tela seriam ruido puro.
+   */
+  const navCounts = useNavCounts(filters.queryString, dataVersion, health !== null && !firstRun)
+
   // O detalhe de um processo e sobre UM processo, achado pela REF: recortar o
   // conjunto nao muda o que ele mostra. Endereco desconhecido nao tem dado
   // nenhum a filtrar. E sem leitura nenhuma nao ha o que recortar.
@@ -210,7 +219,7 @@ export function App() {
 
       {/* A lateral nao aparece na primeira execucao, pelo mesmo motivo de antes:
           nao ha dado a navegar, e o operador precisa apontar a planilha. */}
-      {!firstRun && <AppSidebar route={route} inert={overlayOpen} />}
+      {!firstRun && <AppSidebar route={route} counts={navCounts} inert={overlayOpen} />}
 
       {/* `min-w-0` e obrigatorio: sem ele o filho flex assume `min-width: auto`
           e uma tabela larga empurra a coluna para fora, que e o defeito que

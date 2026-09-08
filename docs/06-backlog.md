@@ -30,8 +30,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E11 — A casca redesenhada ✅ | **H-57 … H-65, todas concluídas** | 3 | 6 | 0 |
 | E12 — Os achados da revisão de estilo ✅ | **H-73 … H-76, todas concluídas** | 2 | 1 | 1 |
 | E13 — O operacional que edita, ordena e cria ✅ | **H-77 … H-81, todas concluídas.** Épico **retroativo**: o código entrou em 02/09/2026 e as histórias foram escritas em 03/09 | 3 | 0 | 2 |
-| E14 — A casca que se opera, não só se lê | **H-82 a H-86 e H-90 ✅; H-87 … H-89 abertas.** Primeiro épico **prospectivo** desde `E12`: as nove nascem antes do código (`D-29` a `D-34`) | 2 | 7 | 0 |
-| **Total** | **90** — 87 concluídas, 3 abertas | **35** | **51** | **4** |
+| E14 — A casca que se opera, não só se lê | **H-82 a H-87 e H-90 ✅; H-88 e H-89 abertas.** Primeiro épico **prospectivo** desde `E12`: as nove nascem antes do código (`D-29` a `D-34`) | 2 | 7 | 0 |
+| **Total** | **90** — 88 concluídas, 2 abertas | **35** | **51** | **4** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -191,7 +191,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-84 — O quadro que rola, e as linhas por página](#h-84) ✅
 - [H-85 — O carregamento que não colapsa a altura](#h-85) ✅
 - [H-86 — Os sete ícones da lateral](#h-86) ✅
-- [H-87 — A contagem que segue o recorte](#h-87)
+- [H-87 — A contagem que segue o recorte](#h-87) ✅
 - [H-88 — O que falta declarar, à vista e alimentável](#h-88)
 - [H-89 — A ordem em que a planilha está](#h-89)
 - [H-90 — A busca sobre os seis campos de texto](#h-90) ✅
@@ -9833,6 +9833,50 @@ estrutura e não desenho.
 <a id="h-87"></a>
 
 ### H-87 — A contagem que segue o recorte
+
+> ✅ **CONCLUÍDA em 08/09/2026.** **13 testes próprios** em
+> `web/tests/App.test.tsx`, suíte em **1.919**.
+>
+> **A igualdade com a página foi medida, e é o critério:** na planilha real, a
+> lateral diz **650** e a tabela `1–200 de 650`; em Alertas os dois textos são
+> idênticos — **169 processos pedem ação**. O recorte não foi fixado aqui, e a
+> conferência mostra por quê: com `activeOnly=true`, como a versão anterior do
+> bloco mandava, a lateral diria **170** contra os 650 da tabela.
+>
+> **`GET /api/alerts` não serve "a contagem de alertas", e a divergência subiu
+> na fatia.** A resposta tem `items` e `countsByType`, nenhum total; a página
+> mostra dois números diferentes — os seis cartões por tipo e o cabeçalho da
+> fila. Escolha do usuário na abertura: o número é o do **cabeçalho**, pela
+> mesma `groupByProcess` que a página usa. Medido depois, e a escolha se pagou:
+> **179 alertas em 105 processos** sem o histórico, e **169** processos com ele
+> — `items.length` poria dois números divergentes na mesma tela, que é o que
+> `D-29` existe para evitar. Somá-los seria pior: o critério de aceite proíbe o
+> cliente somar.
+>
+> **O tom do número de Operacional reprovou, e quem pegou foi o Chrome.**
+> `text-muted` media **4,38:1** no claro e **4,32:1** no escuro sobre
+> `action-soft` — o fundo do item corrente, o único do conjunto que pinta fundo
+> —, contra o piso de 4,5:1. O token foi calibrado contra `surface-raised` em
+> `H-39`, e nenhum teste de unidade alcança isso. Corrigido pelo mesmo mecanismo
+> do ícone de `H-86`: **o número herda a cor do item**, sem cor nova (`D-29`).
+> Os oito pares medidos passam, de **5,51:1** a **15,68:1**. `state-error-fg`,
+> que o caso-limite exigia para Alertas, passava desde o início nos dois fundos.
+>
+> **O nome acessível saía grudado — "Operacional650 processos".** O texto de
+> apoio nasceu como `sr-only` ao lado do número, e o cálculo do nome concatena
+> os nós filhos **sem separador**, aparando o espaço de cada um. Virou
+> `aria-label`, com o rótulo visível abrindo o label (`SC 2.5.3`).
+>
+> **O stub passou a registrar o `AbortSignal` de cada chamada.** Ele resolve na
+> hora, então a inversão entre duas respostas não acontece ali — a garantia que
+> a interface oferece é o `abort` da busca anterior, e sem os sinais o
+> caso-limite só seria observável por tempo.
+>
+> **A tela branca durante a validação não era do código:** `vite build`
+> compartilha o `cacheDir` com o `dev`, e rodar `npm run verify` com ele no ar
+> apaga `node_modules/.vite/deps`. O cliente passa a receber `504` nos módulos
+> otimizados, `#root` fica vazio e nada é registrado. Irmão do caso do
+> `git switch` que o `CLAUDE.md` já registra.
 
 **Objetivo:** Operacional e Alertas mostrarem, ao lado do rótulo, quantos itens o
 recorte ativo tem — o mesmo número que a página exibe ao ser aberta.

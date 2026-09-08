@@ -1,9 +1,17 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { App } from '../src/App.tsx'
+import type { AlertsResponse } from '../src/api-client.ts'
 import { PAGE_LIVE_REGION_ID } from '../src/components/PageAlert.tsx'
 import { NAV_PAGES, WORKBOOK_SETUP_PAGE } from '../src/router.ts'
-import { type ApiStub, healthFixture, indicatorsFixture, stubApi } from './support/api-stub.ts'
+import {
+  type ApiStub,
+  alertsFixture,
+  healthFixture,
+  indicatorsFixture,
+  processesFixture,
+  stubApi,
+} from './support/api-stub.ts'
 
 /**
  * A casca de `H-15`: navegacao entre as sete paginas, a faixa de estado que
@@ -990,5 +998,202 @@ describe('a busca por atalho', () => {
 
     expect(await screen.findByRole('dialog', { name: 'Buscar processo' })).toBeTruthy()
     expect(screen.queryByRole('region', { name: 'Filtros' })).toBeNull()
+  })
+})
+
+/**
+ * A contagem da lateral (`H-87`, `D-29`).
+ *
+ * **O criterio e a IGUALDADE com a pagina, e nao um numero.** Ele ja envelheceu
+ * duas vezes no backlog — pela inversao do recorte (`D-33`) e pela linha que a
+ * planilha ganhou desde `H-17` —, entao os testes fixam o que o servidor
+ * devolve e conferem que a lateral repete aquilo, sem recontar.
+ */
+describe('a contagem da lateral', () => {
+  type Alert = AlertsResponse['items'][number]
+
+  function alerta(ref: string, type: Alert['type'] = 'eta_vencida'): Alert {
+    return {
+      type,
+      severity: 1,
+      ref,
+      sourceRow: 502,
+      eta2: '2026-07-20',
+      daysOverdue: 18,
+      message: 'ETA2 vencida ha 18 dias',
+    }
+  }
+
+  /** As buscas da LATERAL, distinguidas das da tabela pelo `limit=1`. */
+  function chamadasDeContagem(): string[] {
+    return api.calls.filter(
+      (call) => call.startsWith('GET /api/processes?') && call.endsWith('limit=1'),
+    )
+  }
+
+  function sinalDe(call: string): AbortSignal | undefined {
+    return api.signals[api.calls.indexOf(call)]
+  }
+
+  it('mostra em Operacional o total que o servidor devolveu, e nao um numero recontado', async () => {
+    api.serveProcesses(processesFixture([], { total: 650 }))
+    render(<App />)
+
+    const item = await within(nav()).findByRole('link', { name: 'Operacional, 650 processos' })
+    expect(within(item).getByText('650')).toBeTruthy()
+  })
+
+  /**
+   * O numero de Alertas e o do CABECALHO DA FILA — "N processos pedem acao" —,
+   * e nao o de alertas: tres alertas em dois processos dao 2. Dois numeros
+   * divergentes na mesma tela e o defeito que `D-29` existe para evitar.
+   */
+  it('mostra em Alertas os processos que pedem acao, agrupados como a pagina agrupa', async () => {
+    api.serveAlerts(
+      alertsFixture({
+        items: [alerta('FT501.26'), alerta('FT501.26', 'canal_vermelho'), alerta('FT502.26')],
+      }),
+    )
+    render(<App />)
+
+    expect(
+      await within(nav()).findByRole('link', { name: 'Alertas, 2 processos pedem ação' }),
+    ).toBeTruthy()
+  })
+
+  it('anexa os filtros globais e pede limit=1, para nao trazer 200 processos por um numero', async () => {
+    window.history.replaceState(null, '', '/?client=ACME')
+    render(<App />)
+
+    await waitFor(() =>
+      expect(api.calls).toContain('GET /api/processes?client=ACME&activeOnly=false&limit=1'),
+    )
+    expect(api.calls).toContain('GET /api/alerts?client=ACME')
+  })
+
+  /**
+   * O recorte NAO e fixado na historia: ele vem de `useProcessQuery`, e
+   * `navigate` preserva a query entre paginas. Com `activeOnly` fixado em
+   * `true` — como a versao anterior do backlog mandava —, a lateral diria 170
+   * com a tabela em 650 (`D-33`, medido em 04/09/2026).
+   */
+  it('espelha o recorte vigente da tela, e nao um valor fixado', async () => {
+    window.history.replaceState(null, '', '/operacional?activeOnly=true')
+    render(<App />)
+
+    await waitFor(() => expect(api.calls).toContain('GET /api/processes?activeOnly=true&limit=1'))
+  })
+
+  /** Ordenar ou paginar nao muda `total`: refazer a contagem ali seria trabalho
+      jogado fora a cada clique de coluna. */
+  it('nao leva ordenacao nem pagina na busca da contagem', async () => {
+    window.history.replaceState(null, '', '/operacional?sort=ref&order=desc&offset=400')
+    render(<App />)
+
+    await waitFor(() => expect(chamadasDeContagem()).toHaveLength(1))
+    const busca = chamadasDeContagem()[0] ?? ''
+    expect(busca).not.toContain('sort=')
+    expect(busca).not.toContain('order=')
+    expect(busca).not.toContain('offset=')
+  })
+
+  it('sem resposta ainda, o item aparece SEM contagem — nunca com zero', () => {
+    render(<App />)
+
+    expect(within(nav()).getByRole('link', { name: 'Operacional' })).toBeTruthy()
+    expect(within(nav()).getByRole('link', { name: 'Alertas' })).toBeTruthy()
+  })
+
+  /** Contagem zero legitima e diferente de contagem ausente: a primeira e uma
+      afirmacao do servidor sobre um recorte que nao casa nada. */
+  it('contagem zero legitima mostra 0', async () => {
+    api.serveProcesses(processesFixture([], { total: 0 }))
+    render(<App />)
+
+    const item = await within(nav()).findByRole('link', { name: 'Operacional, 0 processos' })
+    expect(within(item).getByText('0')).toBeTruthy()
+  })
+
+  it('busca que falha deixa o item sem numero, e a tela sem erro', async () => {
+    api.failProcesses()
+    api.failAlerts()
+    render(<App />)
+
+    await waitFor(() => expect(chamadasDeContagem()).toHaveLength(1))
+    expect(within(nav()).getByRole('link', { name: 'Operacional' })).toBeTruthy()
+    expect(within(nav()).getByRole('link', { name: 'Alertas' })).toBeTruthy()
+    expect(screen.queryByText(/Não foi possível/)).toBeNull()
+  })
+
+  it('sem leitura concluida, tambem nao ha numero', async () => {
+    api.processesWithoutRead()
+    api.alertsWithoutRead()
+    render(<App />)
+
+    await waitFor(() => expect(chamadasDeContagem()).toHaveLength(1))
+    expect(within(nav()).getByRole('link', { name: 'Operacional' })).toBeTruthy()
+    expect(within(nav()).getByRole('link', { name: 'Alertas' })).toBeTruthy()
+  })
+
+  /**
+   * A garantia contra a corrida e o `abort` da busca anterior — o stub resolve
+   * na hora, entao a inversao so seria observavel por tempo, e nenhum teste
+   * deve depender disso.
+   */
+  it('troca de filtro aborta a busca anterior, para a resposta antiga nao sobrescrever a nova', async () => {
+    render(<App />)
+    await waitFor(() => expect(chamadasDeContagem()).toHaveLength(1))
+    const primeira = chamadasDeContagem()[0] ?? ''
+
+    act(() => {
+      window.history.replaceState(null, '', '/?client=ACME')
+      window.dispatchEvent(new PopStateEvent('popstate'))
+    })
+
+    await waitFor(() => expect(chamadasDeContagem()).toHaveLength(2))
+    expect(sinalDe(primeira)?.aborted).toBe(true)
+  })
+
+  /** O numero e mono e tabular como toda contagem do conjunto, e o de Alertas
+      usa `state-error-fg` — 6,37:1 no claro e 7,53:1 no escuro sobre
+      `surface-raised`, medidos em `H-87`. */
+  it('desenha o numero em mono tabular, com o tom de cada destino', async () => {
+    api.serveProcesses(processesFixture([], { total: 650 }))
+    api.serveAlerts(alertsFixture({ items: [alerta('FT501.26')] }))
+    render(<App />)
+
+    const operacional = await within(nav()).findByRole('link', {
+      name: 'Operacional, 650 processos',
+    })
+    const total = within(operacional).getByText('650')
+    expect(total.className).toContain('font-mono')
+    expect(total.className).toContain('tabular-nums')
+    expect(operacional.getAttribute('aria-label')).toBe('Operacional, 650 processos')
+
+    const alertas = within(nav()).getByRole('link', { name: 'Alertas, 1 processo pede ação' })
+    expect(within(alertas).getByText('1').className).toContain('text-state-error-fg')
+  })
+
+  /** Os outros cinco destinos nao tem numero que signifique recorte. */
+  it('nao numera Inicio, Clientes, Performance, Historico nem Configuracao', async () => {
+    api.serveProcesses(processesFixture([], { total: 650 }))
+    render(<App />)
+    await within(nav()).findByRole('link', { name: 'Operacional, 650 processos' })
+
+    for (const nome of ['Início', 'Clientes', 'Performance', 'Histórico', 'Configuração']) {
+      expect(within(nav()).getByRole('link', { name: nome })).toBeTruthy()
+    }
+  })
+
+  /** Na primeira execucao a lateral nem monta: buscar ali seriam duas
+      requisicoes por leitura para uma coluna fora da tela. */
+  it('nao busca contagem na primeira execucao', async () => {
+    api.serve(
+      healthFixture({ state: 'degradado', lastReadAt: null, degradedReason: 'sem caminho' }),
+    )
+    render(<App />)
+    await screen.findByRole('heading', { name: 'Aponte a planilha para começar' })
+
+    expect(chamadasDeContagem()).toEqual([])
   })
 })
