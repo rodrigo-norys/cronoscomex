@@ -115,8 +115,12 @@ tools/         perfilador (virada de ano), verificador de strip-types,
 config/        app.json, color-map.json, status-aliases.json, e os dois mapas
                de negocio de H-48 — client-map.json e team-map.json, nao
                versionados, com `.exemplo` versionado ao lado
-tests/         domain/, io/, app/, http/, fixtures/ — ambiente `node`
+tests/         domain/, io/, app/, http/, repo/, tools/, fixtures/ — ambiente `node`
 web/tests/     componentes e casca — ambiente `jsdom`
+scripts/       a partida em Windows (iniciar.cmd), o dev, e a sincronizacao da
+               branch `distribuicao`
+docs/          o plano — os 11 numerados, mais adr/, e as auditorias que
+               geraram os épicos posteriores
 ```
 
 **A suíte tem dois projetos**, declarados em `vitest.config.ts`: `servidor` roda
@@ -162,12 +166,16 @@ cujos 14 achados foram todos resolvidos ou declarados não normativos.
 
 **A medição no navegador é `tools/medir-navegador.mjs`**, versionada em
 01/09/2026 depois de ser reconstruída do zero em duas sessões. Ela sobe a
-aplicação sobre uma fixture, com os três caminhos de escrita num diretório
-temporário, e mede num Chrome real por CDP — largura, contraste com `oklch`
+aplicação sobre uma fixture, com todos os caminhos de escrita num diretório
+temporário — são oito destinos, enumerados no cabeçalho do próprio arquivo —, e mede num Chrome real por CDP — largura, contraste com `oklch`
 resolvido pelo navegador, paradas de tabulação, `forced-colors`,
 `prefers-color-scheme`, `prefers-reduced-motion`, o apontador com cursor e a
 fonte-base do cenário "Muito grande". Rode com
 `LOG_LEVEL=silent` e depois de `npm run build`.
+
+> **Para N cenários, use `medirCenarios`** — ela pede a porta ao SO, espera o
+> carregamento e fecha a aplicação. Montar o preâmbulo à mão custou oito scripts
+> iguais em 04 e 08/09/2026, e dois deles falharam no andaime, não na medida.
 
 > **A numeração foi refeita em 19/08/2026** para acompanhar a ordem do backlog, e
 > **o histórico do git continua citando os números antigos** — a branch e os
@@ -212,9 +220,7 @@ Não bloqueiam a implementação. Fechar antes da entrega ao operador.
 |---|---|---|
 | **PD-07** | **O resto de `VN-5` (forced colors), e sobrou pouco.** A pendência nasceu supondo que o procedimento exigia Windows, e **isso foi medido como falso em 31/08/2026**: o Chrome emula `forced-colors: active` no Linux, e o que o procedimento pergunta não é que cor o tema pinta, e sim se o desenho sobrevive quando as cores do autor são descartadas. **`H-65` fechou o item 4 por medição**: sob o modo forçado os dois esquemas são paletas de sistema **realmente distintas** — branco com `rgb(0, 0, 159)` e preto com `rgb(255, 255, 0)` —, e a lateral distingue o item corrente nas duas. **E o item 3(e) tinha o diagnóstico errado**, corrigido em `H-64`: `:hover` **casa** no headless, e o que faltava era o apontador **declarado** — o Tailwind v4 envolve todo `hover:` em `@media (hover: hover)`, e o headless responde `hover: none`. Resolvido pela flag `--blink-settings`, exposta como `apontadorFino`. **Sobram dois:** (1) a paleta **nominal** do Windows — Aquático e as demais —, que é confirmação de segunda ordem; (2) o `ConflictDialog` do item 3(d), que só abre com a planilha alterada durante a sessão | **O item (1) na próxima visita à máquina.** A instalação de 04/09/2026 fechou `PD-01` e não o exerceu — ele é confirmação de segunda ordem, e ficou para trás sem custo. O item (2) **não exige Windows** — exige uma fixture que produza o conflito, e nenhuma das nove produz; fecha junto da gestão de foco do diálogo, que está no mesmo bloqueio |
 | **PD-08** | **Os dois mapas de negócio de `H-48` viajam à parte, e o `README.md` da distribuição ainda nega isso.** Eles estão no `.gitignore` e a árvore leva só os `.exemplo`. **A cópia manual foi feita em 04/09/2026 e funcionou** — `client-map.json` `d4b8b5dd…` e `team-map.json` `2054fe7b…` conferidos byte a byte nas duas pontas, e o campo Cliente passou a mostrar o nome consolidado. **O que sobra é documental:** o `README.md` da branch afirma em negrito "você não precisa editar arquivo nenhum" e descreve `config\` como só cores e apelidos de status; e o bloco "Como refazer esta branch" lista os arquivos a copiar **sem** os dois `.exemplo`, divergindo do script, que é quem vale. Os detalhes estão em `.claude/rules/distribuicao.md` | **Na próxima vez que a branch `distribuicao` for sincronizada**, já que `README.md` é exclusivo dela e não se corrige a partir da `main`. **A JANELA de 03/09 fechou:** a instalação do operador agora tem `E13` e grava no mapa, então **as duas pontas escrevem** e a cópia cega deixou de ser segura — daqui em diante, reconciliar antes de copiar. **Repita a cópia toda vez que a regra de consolidação ou a equipe mudar**: nenhum aviso existe para lembrar |
-
 | **PD-09** | **A premissa `P-15` ficou sem dono, e há uma frase da tela apoiada nela.** `P-15` — o OneDrive sincroniza o arquivo de lock `~$<nome>.xlsx` entre máquinas — está "não afirmada" desde o plano, e `docs/00-visao-escopo.md` e `A-58` mandavam medi-la em `H-30`, que **fechou em 18/08/2026 sem medir**. Mesmo padrão de `PD-05` entre 14 e 17/08/2026. A medição direta pede **duas máquinas com a mesma pasta sincronizada**, e nada indica que exista uma segunda conta com acesso à pasta da organização; o **proxy de uma máquina só** — abrir a planilha no Excel e observar se o `~$` sobe, pelo ícone do OneDrive ou pela visão web do SharePoint — responde a mesma pergunta. O que não pode ficar como está: `web/src/components/StatusBanner.tsx` afirma "Alguém está com a planilha aberta no Excel", que é a leitura **forte** da premissa. Ou ela é medida e a frase se justifica, ou a frase recua para o que é sabidamente verdadeiro — o arquivo está aberto **nesta** máquina — com o motivo no cabeçalho do componente | **Medido em 03/09/2026, e o proxy não é executável nesta instalação:** a planilha real do operador está em `Downloads`, **fora do OneDrive** — a pasta sincronizada existe e não a contém. `P-15` supõe o `~$` viajando entre máquinas por pasta compartilhada; sem isso, não há o que observar. **A leitura forte da frase é falsa por construção aqui**, e não por falta de medição: o `~$` só pode ser de quem abriu o arquivo NESTA máquina. Resta decidir entre recuar a frase de `StatusBanner.tsx` — o caminho que os fatos apoiam — ou medir `P-15` num cenário que o operador não usa |
-
 
 Ao fechar uma pendência, remova a linha.
 
@@ -257,8 +263,10 @@ pt-br, sem o tipo `test`.
 **O merge acontece no GitHub, não localmente.** `branch → commits → push da
 branch → PR → merge por lá`. Mesclar na `main` antes do push **mata o PR**.
 
-**A branch `distribuicao` é a árvore que vai para a máquina do operador** — **124
-arquivos, sincronizada com a `main`**, conferido em 04/09/2026. `D-28` fechou: as
+**A branch `distribuicao` é a árvore que vai para a máquina do operador.**
+**Sem contagem aqui**, pela mesma razão que `.claude/rules/distribuicao.md` já
+declara: o número envelhece a cada história que acrescenta arquivo, e já esteve
+errado em 108, 117 e 124. Quem mede é o script, a cada execução. `D-28` fechou: as
 seis fontes de `H-58` e a licença delas entraram na sincronização de 03/09, e a
 instalação do operador renderiza com a tipografia certa desde então. Sem `docs/`,
 `tests/`, `tools/` nem `.claude/`. Ela **não recebe PR**:
@@ -296,7 +304,7 @@ invocada** — é lá que mora o porquê de cada regra, sem custar contexto aqui
 **Subagentes** (`.claude/agents/`). `revisor-xml` é o revisor adversarial da
 escrita cirúrgica: invocado **antes de commitar** qualquer mudança em
 `src/io/xlsx-surgeon.ts`, `src/app/write-guard.ts` ou em código que reescreva
-bytes do `.xlsx` — `H-24`, `H-25` e `H-27`. Não tem `Edit` nem `Write`, e é
+bytes do `.xlsx` — `H-24` a `H-27` e `H-78`, a criação de linha. Não tem `Edit` nem `Write`, e é
 invocado **sem** o raciocínio de quem escreveu o código: começar cego é o
 mecanismo, não um efeito colateral. Enumera os casos-limite do backlog a cada
 invocação, em vez de carregar cópia deles. **`model: opus` fixado, não
@@ -306,7 +314,7 @@ nível em silêncio quando a sessão que a invoca estiver em outro modelo.
 `revisor-estilo` revisa a estilização das sete páginas contra o corpus
 verificável de `docs/estilizacao/corpus-estilo.md` — 40 regras com identificador
 de norma, sinal sintático e contraexemplo. **Recebe a casca MAIS as sete páginas
-de uma vez**, porque 12 das 40 regras são composicionais: a violação delas não
+de uma vez**, porque 11 das 40 regras são composicionais: a violação delas não
 existe dentro de um arquivo, é a diferença entre arquivos. Também não tem `Edit`
 nem `Write`, e `model: opus` pelo mesmo motivo do anterior — o eixo de contraste
 exige converter `oklch()` para sRGB e calcular a razão da WCAG com a conta à
@@ -322,7 +330,7 @@ token nas sessões que não tocam o assunto. São cinco:
 | `comentarios.md` | `src/`, `web/`, `tests/` — a régua de comentários |
 | `documentacao.md` | `docs/` e `.md` da raiz — números afirmados em prosa. Carrega em quase toda sessão, porque o protocolo de fatia lê `docs/`, e por isso é curta |
 | `escrita-xlsx.md` | `xlsx-surgeon.ts`, `write-guard.ts` — o procedimento do `revisor-xml` e a forma medida do `calcChain` |
-| `operacao-windows.md` | `scripts/` — os sete itens de `PD-06` e a lição que já se pagou |
+| `operacao-windows.md` | `scripts/` — o que `PD-06` deixou como regra, e a lição que já se pagou |
 | `distribuicao.md` | o script de sincronização e os `.exemplo` — o que entra na branch, e `PD-08` |
 
 **As três últimas nasceram em 31/08/2026, do `CLAUDE.md`**, que era carregado em
@@ -397,8 +405,9 @@ comandos que **perdem trabalho ou reescrevem história**: `reset --hard`,
 roda sempre** — o hook é `PreToolUse` e não vê commit feito fora do Claude Code.
 
 **Guarda de contrato:** `tests/repo/contratos.test.ts` e
-`web/tests/paginas-montadas.test.tsx`, no `verify` e no CI. Sete asserções,
-nenhuma com lista fixa: rota sem teste, contrato de `GET /api/indicators`
+`web/tests/paginas-montadas.test.tsx`, no `verify` e no CI. **Sem número aqui**
+— ele dizia sete e os dois arquivos somam 22 blocos `it()`, contando âncoras.
+Nenhuma asserção tem lista fixa: rota sem teste, contrato de `GET /api/indicators`
 divergindo do documento, história `✅ CONCLUÍDA` sem página montada, peça de
 `.claude/` que o `CLAUDE.md` não menciona, **âncora morta em comentário** — ID
 do plano, caminho de arquivo ou identificador em camelCase — e **gatilho de
@@ -451,7 +460,7 @@ processo e são abandonados. Os gatilhos abaixo são objetivos.
 - **Comentários:** a régua está em `.claude/rules/comentarios.md` e carrega
   sozinha ao tocar `src/`, `web/` ou `tests/`. Não repita nada dela aqui.
 - Toda regra classificatória precisa de teste com os valores concretos das
-  tabelas de decisão. Os 43 casos obrigatórios estão em
+  tabelas de decisão. Os 44 casos obrigatórios estão em
   `docs/08-qualidade-operacao.md §1.3`.
 
 ## Comandos
