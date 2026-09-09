@@ -30,8 +30,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E11 — A casca redesenhada ✅ | **H-57 … H-65, todas concluídas** | 3 | 6 | 0 |
 | E12 — Os achados da revisão de estilo ✅ | **H-73 … H-76, todas concluídas** | 2 | 1 | 1 |
 | E13 — O operacional que edita, ordena e cria ✅ | **H-77 … H-81, todas concluídas.** Épico **retroativo**: o código entrou em 02/09/2026 e as histórias foram escritas em 03/09 | 3 | 0 | 2 |
-| E14 — A casca que se opera, não só se lê | **H-82 a H-87 e H-90 ✅; H-88, H-89 e H-91 abertas.** Primeiro épico **prospectivo** desde `E12`: as nove primeiras nascem antes do código (`D-29` a `D-34`), e `H-91` entra em 08/09/2026 por `D-35` | 2 | 7 | 1 |
-| **Total** | **91** — 88 concluídas, 3 abertas | **35** | **51** | **5** |
+| E14 — A casca que se opera, não só se lê | **H-82 a H-88 e H-90 ✅; H-89 e H-91 abertas.** Primeiro épico **prospectivo** desde `E12`: as nove primeiras nascem antes do código (`D-29` a `D-34`), e `H-91` entra em 08/09/2026 por `D-35` | 2 | 7 | 1 |
+| **Total** | **91** — 89 concluídas, 2 abertas | **35** | **51** | **5** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -194,7 +194,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-85 — O carregamento que não colapsa a altura](#h-85) ✅
 - [H-86 — Os sete ícones da lateral](#h-86) ✅
 - [H-87 — A contagem que segue o recorte](#h-87) ✅
-- [H-88 — O mapa de clientes, operável na tela](#h-88)
+- [H-88 — O mapa de clientes, operável na tela](#h-88) ✅
 - [H-89 — A ordem em que a planilha está](#h-89)
 - [H-90 — A busca sobre os seis campos de texto](#h-90) ✅
 - [H-91 — O mapa de equipe, editável na tela](#h-91)
@@ -9940,6 +9940,80 @@ Performance, Histórico e Configuração não têm número que signifique recort
 <a id="h-88"></a>
 
 ### H-88 — O mapa de clientes, operável na tela
+
+> ✅ **CONCLUÍDA em 09/09/2026.** **95 testes próprios** — 30 em
+> `tests/domain/pending-clients.test.ts`, 24 em `tests/http/clients.test.ts`, 31
+> em `web/tests/Clients.test.tsx`, 6 no plano de regra e 4 na gravação do pai —,
+> suíte em **2.016**.
+>
+> **A história foi reescrita DUAS vezes durante a execução, e as duas por uso.**
+> A primeira versão (`D-35`) só sabia criar regra `exact`: medido no dia, as
+> **111 grafias** sem cliente caem em **16 prefixos aparentes**, e três deles
+> cobrem 98 — o painel pediria 111 declarações manuais, 83 delas valendo um
+> processo cada. A segunda veio do usuário ao **usar** a primeira, e absorveu a
+> história de grupos: para ele não há dois conceitos, há **um nome que recebe
+> conjuntos da coluna CLT**, e o pai é o que acontece quando o segundo chega ao
+> mesmo nome.
+>
+> **A heurística óbvia está errada, e a diferença é de sete.** Grafia pendente
+> NÃO é aquela em que `clientKey === clientProcessKey`: `planClientRule` usa
+> `normKey(label)` como chave da entrada, então uma grafia declarada com o
+> próprio valor como nome resolveria para si mesma. Medido na planilha real: a
+> igualdade acusa **118** contra as **111** que de fato faltam. A agregação
+> chama `resolveClient(...).mapped`.
+>
+> **`Y` casa `YT-769`, e o número prova a previsão.** Simulado contra o mapa
+> real: `prefix: Y` alcança **62 grafias** — os 4 `Y*` mais os 58 `YT-*` —,
+> enquanto `YT` declarado antes reduz `Y` a 4. Sem ver o alcance, o operador
+> declara supondo quatro e leva sessenta e duas. A previsão virou condição para
+> gravar (determinação 5), e a regra nova entra no **fim** do mapa, de modo que
+> o que já tem dono continua com ele (determinação 6).
+>
+> **Um estado inválido apareceu só na simulação contra o mapa real.**
+> `BUENO → AV` produzia um pai `AV` com o filho `AV` — pai dentro de pai, que
+> `ClientGroupIndex` não representa, porque é um mapa cliente → **um** grupo.
+> Recusado com `NOME_E_FILHO`. Nenhum teste de unidade o pegaria: ele só existe
+> com um pai já formado.
+>
+> **Dois defeitos meus, achados pelo usuário ao usar a tela.** O valor digitado
+> ia para o arquivo sem normalizar — um `yt` minúsculo entre doze regras em
+> maiúscula —, e `saveClientRule` compara `normKey(rule.value)` com `plan.value`:
+> a segunda declaração do mesmo valor não reconheceria a primeira e duplicaria a
+> regra. E o **rótulo** do filho saía de `normKey` junto com a chave, então quem
+> digitava "Kelly" via "KELLY" declarado; a chave normaliza, o rótulo preserva a
+> grafia, e é a mesma divisão de `clientKey`/`clientLabel`.
+>
+> **O critério do que é declaração legítima foi estabelecido pelo usuário em
+> 09/09/2026, e reduziu o mapa.** Um nome que só se justifica olhando **outra
+> coluna** é suposição: saíram `Vertex` (`prefix BXA`), `Dahao Pesca`
+> (`prefix ZHOU`) e `Rikko`, que nomeava também RAND, ECLIPSE, BUENO e FUSION,
+> mais cinco cuja procedência ele não reconheceu. De **11 entradas para 3**, e as
+> grafias sem cliente foram de 112 para **187** de 509. O critério ficou escrito
+> no `_origem` do próprio arquivo, que é onde ele sobrevive.
+>
+> **O painel mudou de página no meio da execução** (`D-36`), revertendo a
+> determinação 1 de `D-32` — terceira reversão registrada do projeto, depois de
+> `D-21` e `D-34`. Ele virou **componente**, e por isso a mudança custou o que
+> custou: `ClientDeclaration.tsx` não é parte de página nenhuma, e a que o
+> hospeda pode mudar de novo.
+>
+> **O layout foi decidido por um painel de seis lentes independentes** (`D-37`),
+> e ele encontrou um erro que era meu: `items-start`, que eu tinha acrescentado
+> horas antes "para o card sozinho não esticar", **não tem esse efeito** —
+> `align-items` é no-op em item sozinho na sua linha de grade. Medido nas duas
+> configurações: **478/382** com a classe, **478/478** sem, e Mercadorias em 440
+> nos dois. O único efeito observável era manter o par desigual.
+>
+> **A guarda de âncora pegou o commit da interface**, que citava `D-36` e `D-37`
+> quando elas ainda nasceriam dois commits adiante. A regra que já vale para
+> contrato de rota vale para decisão: **ela viaja com o código que a cita, ou
+> antes**. Custou um `git reset --soft`; provar no fim da pilha teria custado
+> `reset HEAD~2`.
+>
+> **Fora daqui, por escolha do usuário:** apagar regra de cliente **entrou** na
+> última hora (determinação 10) — os dois botões de desfazer passaram a apagar a
+> declaração junto, e a operação intermediária, tirar do pai mantendo a
+> declaração, deixou de existir.
 
 > **`E14` cresceu de seis para sete histórias em 03/09/2026** (`D-32`), e esta é a
 > única que não veio da revisão de interação: ela nasce de `PD-08`, medida em
