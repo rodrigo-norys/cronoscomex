@@ -10,6 +10,9 @@ export type ApiErrorCode =
   /** A linha existe so na fila: nao da para repintar o que nao foi gravado. */
   | 'LINHA_NAO_GRAVADA'
   | 'EDICAO_NAO_ENCONTRADA'
+  /** `H-88`: o agrupamento, ou o cliente dentro dele, nao existe mais. */
+  | 'GRUPO_INEXISTENTE'
+  | 'MEMBRO_INEXISTENTE'
   | 'EXCEL_ABERTO'
   | 'ARQUIVO_MUDOU'
   | 'EDICAO_OBSOLETA'

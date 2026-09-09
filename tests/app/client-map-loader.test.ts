@@ -231,7 +231,14 @@ describe('saveClientRule', () => {
     const path = join(dir, 'novo.json')
 
     saveClientRule(
-      { kind: 'entrada-nova', key: 'ALFA', label: 'Alfa', value: 'ALF-1', beforeKey: null },
+      {
+        kind: 'entrada-nova',
+        match: 'exact',
+        key: 'ALFA',
+        label: 'Alfa',
+        value: 'ALF-1',
+        beforeKey: null,
+      },
       path,
     )
 
@@ -251,7 +258,14 @@ describe('saveClientRule', () => {
     })
 
     saveClientRule(
-      { kind: 'entrada-nova', key: 'ZETA', label: 'Zeta', value: 'ZZZ', beforeKey: null },
+      {
+        kind: 'entrada-nova',
+        match: 'exact',
+        key: 'ZETA',
+        label: 'Zeta',
+        value: 'ZZZ',
+        beforeKey: null,
+      },
       path,
     )
 
@@ -267,7 +281,14 @@ describe('saveClientRule', () => {
     const path = escrever({ version: 1, clients: [clienteValido] })
 
     saveClientRule(
-      { kind: 'entrada-nova', key: 'ZETA', label: 'Zeta', value: 'ALF-1', beforeKey: 'ALFA' },
+      {
+        kind: 'entrada-nova',
+        match: 'exact',
+        key: 'ZETA',
+        label: 'Zeta',
+        value: 'ALF-1',
+        beforeKey: 'ALFA',
+      },
       path,
     )
 
@@ -284,7 +305,14 @@ describe('saveClientRule', () => {
     })
 
     saveClientRule(
-      { kind: 'regra-acrescentada', key: 'ZETA', label: 'Zeta', value: 'ALF-1', beforeKey: 'ALFA' },
+      {
+        kind: 'regra-acrescentada',
+        match: 'exact',
+        key: 'ZETA',
+        label: 'Zeta',
+        value: 'ALF-1',
+        beforeKey: 'ALFA',
+      },
       path,
     )
 
@@ -303,7 +331,14 @@ describe('saveClientRule', () => {
     })
 
     saveClientRule(
-      { kind: 'regra-acrescentada', key: 'ALFA', label: 'Alfa', value: 'ALF-1', beforeKey: null },
+      {
+        kind: 'regra-acrescentada',
+        match: 'exact',
+        key: 'ALFA',
+        label: 'Alfa',
+        value: 'ALF-1',
+        beforeKey: null,
+      },
       path,
     )
 
@@ -314,7 +349,14 @@ describe('saveClientRule', () => {
     const path = join(dir, 'intocado.json')
 
     saveClientRule(
-      { kind: 'sem-efeito', key: 'ALFA', label: 'Alfa', value: 'ALF-1', beforeKey: null },
+      {
+        kind: 'sem-efeito',
+        match: 'exact',
+        key: 'ALFA',
+        label: 'Alfa',
+        value: 'ALF-1',
+        beforeKey: null,
+      },
       path,
     )
 
@@ -330,11 +372,129 @@ describe('saveClientRule', () => {
     expect(() =>
       saveClientRule({
         kind: 'entrada-nova',
+        match: 'exact',
         key: 'ALFA',
         label: 'Alfa',
         value: 'ALF-1',
         beforeKey: null,
       }),
     ).toThrow(ClientMapError)
+  })
+})
+
+/**
+ * A gravacao do PAI (`H-88`, determinacao 8).
+ *
+ * O caso vem do mapa real do operador: `AV → Vivi` cria o cliente, e
+ * `YT → Vivi` transforma-o em pai com os dois por filhos.
+ */
+describe('saveClientRule com pai', () => {
+  it('converte o cliente que existia em filho, nomeado pelo valor da regra dele', () => {
+    const path = escrever({
+      version: 1,
+      clients: [{ key: 'VIVI', label: 'Vivi', rules: [{ match: 'prefix', value: 'AV' }] }],
+    })
+
+    saveClientRule(
+      {
+        kind: 'grupo-criado',
+        key: 'VIVI',
+        match: 'contains',
+        label: 'Vivi',
+        value: 'YT',
+        beforeKey: null,
+        child: { key: 'YT', label: 'YT' },
+        demoted: { key: 'AV', label: 'AV' },
+      },
+      path,
+    )
+
+    const gravado = JSON.parse(readFileSync(path, 'utf-8'))
+    expect(gravado.clients).toEqual([
+      // O que era "Vivi" passa a se chamar "AV" — as REGRAS seguem intactas.
+      { key: 'AV', label: 'AV', rules: [{ match: 'prefix', value: 'AV' }] },
+      { key: 'YT', label: 'YT', rules: [{ match: 'contains', value: 'YT' }] },
+    ])
+    expect(gravado.groups).toEqual([
+      { key: 'VIVI', label: 'Vivi', members: [{ client: 'AV' }, { client: 'YT' }] },
+    ])
+  })
+
+  it('acrescenta o filho ao pai que ja existe, sem tocar nos irmaos', () => {
+    const path = escrever({
+      version: 1,
+      clients: [{ key: 'AV', label: 'AV', rules: [{ match: 'prefix', value: 'AV' }] }],
+      groups: [{ key: 'VIVI-GRUPO', label: 'Vivi', members: [{ client: 'AV' }] }],
+    })
+
+    saveClientRule(
+      {
+        kind: 'membro-acrescentado',
+        key: 'VIVI-GRUPO',
+        match: 'contains',
+        label: 'Vivi',
+        value: 'YT',
+        beforeKey: null,
+        child: { key: 'YT', label: 'YT' },
+      },
+      path,
+    )
+
+    const gravado = JSON.parse(readFileSync(path, 'utf-8'))
+    expect(gravado.groups[0].members).toEqual([{ client: 'AV' }, { client: 'YT' }])
+    expect(gravado.clients.map((entry: { key: string }) => entry.key)).toEqual(['AV', 'YT'])
+  })
+
+  it('nao duplica o filho que o pai ja tem', () => {
+    const path = escrever({
+      version: 1,
+      clients: [{ key: 'YT', label: 'YT', rules: [{ match: 'contains', value: 'YT' }] }],
+      groups: [{ key: 'VIVI-GRUPO', label: 'Vivi', members: [{ client: 'YT' }] }],
+    })
+
+    saveClientRule(
+      {
+        kind: 'membro-acrescentado',
+        key: 'VIVI-GRUPO',
+        match: 'contains',
+        label: 'Vivi',
+        value: 'YT',
+        beforeKey: null,
+        child: { key: 'YT', label: 'YT' },
+      },
+      path,
+    )
+
+    const gravado = JSON.parse(readFileSync(path, 'utf-8'))
+    expect(gravado.groups[0].members).toEqual([{ client: 'YT' }])
+    expect(gravado.clients).toHaveLength(1)
+  })
+
+  /** As chaves `_comentario_*` sao lidas em execucao: a gravacao as preserva. */
+  it('preserva as chaves de comentario do arquivo do operador', () => {
+    const path = escrever({
+      _origem: 'ditado pelo operador',
+      _comentario_ordem: 'a primeira que casa vence',
+      version: 1,
+      clients: [{ key: 'VIVI', label: 'Vivi', rules: [{ match: 'prefix', value: 'AV' }] }],
+    })
+
+    saveClientRule(
+      {
+        kind: 'grupo-criado',
+        key: 'VIVI',
+        match: 'contains',
+        label: 'Vivi',
+        value: 'YT',
+        beforeKey: null,
+        child: { key: 'YT', label: 'YT' },
+        demoted: { key: 'AV', label: 'AV' },
+      },
+      path,
+    )
+
+    const gravado = JSON.parse(readFileSync(path, 'utf-8'))
+    expect(gravado._origem).toBe('ditado pelo operador')
+    expect(gravado._comentario_ordem).toBe('a primeira que casa vence')
   })
 })

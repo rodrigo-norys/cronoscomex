@@ -6,7 +6,11 @@ import {
   saveClientRule,
 } from '../../app/client-map-loader.ts'
 import { store as defaultStore, type StoreAccess } from '../../app/process-store.ts'
-import { type ClientMapEntry, planClientRule } from '../../domain/client-mapper.ts'
+import {
+  type ClientGroup,
+  type ClientMapEntry,
+  planClientRule,
+} from '../../domain/client-mapper.ts'
 import { normKey } from '../../domain/normalizer.ts'
 import { apiError } from '../errors.ts'
 import { refuseDuringWrite } from './edits.ts'
@@ -35,8 +39,20 @@ import { refuseDuringWrite } from './edits.ts'
  */
 
 export interface ClientRuleResponse {
-  /** O que aconteceu com o arquivo — `sem-efeito` quando ja resolvia assim. */
-  outcome: 'entrada-nova' | 'regra-acrescentada' | 'sem-efeito'
+  /**
+   * O que aconteceu com o arquivo — `sem-efeito` quando ja resolvia assim.
+   *
+   * **Os dois de pai entram em `H-88`**, e valem aqui pelo mesmo motivo que
+   * valem no painel: o comportamento nao pode depender de ONDE o operador
+   * declarou. Declarar pela tabela um nome que ja tem conjunto faz nascer o pai,
+   * igual ao painel da Pagina Configuracao.
+   */
+  outcome:
+    | 'entrada-nova'
+    | 'regra-acrescentada'
+    | 'sem-efeito'
+    | 'grupo-criado'
+    | 'membro-acrescentado'
   /** A chave do cliente, normalizada. */
   key: string
   label: string
@@ -50,6 +66,8 @@ interface ClientRequestBody {
 
 const REJECTIONS: Record<string, string> = {
   ROTULO_VAZIO: 'Informe o nome do cliente.',
+  NOME_E_FILHO:
+    'Esse nome ja esta dentro de outro. Declare no nome de cima, ou tire-o de la primeiro.',
   CELULA_VAZIA:
     'A celula "Processo do cliente" esta vazia, e a regra casa o valor dela. Preencha-a primeiro.',
 }
@@ -62,6 +80,8 @@ export function registerProcessClientRoute(
    * rota planejar contra uma ordem diferente da que resolve a coluna.
    */
   clientMap: readonly ClientMapEntry[] = [],
+  /** Os grupos do mesmo arquivo — o pai vem antes do cliente na busca do alvo. */
+  clientGroups: readonly ClientGroup[] = [],
   /** Ponto de injecao para teste. `saveClientRule` recusa o padrao sob teste. */
   clientMapPath: string = DEFAULT_CLIENT_MAP_PATH,
   /**
@@ -78,6 +98,7 @@ export function registerProcessClientRoute(
    * errado.
    */
   let map = clientMap
+  let groups = clientGroups
 
   app.put('/api/processes/:ref/client', async (request, reply) => {
     if (refuseDuringWrite(store, reply)) return reply
@@ -111,7 +132,14 @@ export function registerProcessClientRoute(
     // `clientProcessKey` e a celula B normalizada, e nao `clientKey` — este ja e
     // o resultado da consolidacao, e planejar sobre ele criaria regra sobre o
     // proprio nome do cliente em vez de sobre o que a planilha guarda.
-    const plan = planClientRule(process.clientProcessKey, process.importerKey, body.label, map)
+    const plan = planClientRule(
+      process.clientProcessKey,
+      process.importerKey,
+      body.label,
+      map,
+      'exact',
+      groups,
+    )
 
     if (typeof plan === 'string') {
       return reply.code(400).send(apiError('CORPO_INVALIDO', REJECTIONS[plan] ?? plan))
@@ -121,6 +149,7 @@ export function registerProcessClientRoute(
       saveClientRule(plan, clientMapPath)
       const next = loadClientMap(clientMapPath)
       map = next.clients
+      groups = next.groups
       if (applyClientMap) await applyClientMap(next)
     }
 

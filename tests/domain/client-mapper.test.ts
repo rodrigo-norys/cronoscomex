@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  type ClientGroup,
   type ClientMapEntry,
   indexClientGroups,
   normalizeClientGroups,
@@ -175,6 +176,7 @@ describe('planClientRule', () => {
     // acrescenta regra nenhuma, e dizer isso e diferente de falhar.
     expect(planClientRule('ALF-1', '', 'Alfa', map)).toEqual({
       kind: 'sem-efeito',
+      match: 'exact',
       key: 'ALFA',
       label: 'Alfa',
       value: 'ALF-1',
@@ -186,6 +188,7 @@ describe('planClientRule', () => {
   it('cria a entrada no fim quando nada casava a celula', () => {
     expect(planClientRule('ZZZ-9', '', 'Zeta', map)).toEqual({
       kind: 'entrada-nova',
+      match: 'exact',
       key: 'ZETA',
       label: 'Zeta',
       value: 'ZZZ-9',
@@ -201,6 +204,7 @@ describe('planClientRule', () => {
   it('poe a entrada nova ANTES da que casa hoje', () => {
     expect(planClientRule('ALF-1', '', 'Zeta', map)).toEqual({
       kind: 'entrada-nova',
+      match: 'exact',
       key: 'ZETA',
       label: 'Zeta',
       value: 'ALF-1',
@@ -208,28 +212,83 @@ describe('planClientRule', () => {
     })
   })
 
-  it('so acrescenta a regra quando a entrada alvo ja vem antes da que casa', () => {
-    // `gama` e a primeira do mapa, e `ALF-1` casa `alfa`, que vem depois: a
-    // regra nova ja vence onde a entrada esta. A entrada e achada pelo NOME
-    // ("Gama Trading"), e a chave dela — `GAMA` — e o que a gravacao procura.
+  /**
+   * **O SEGUNDO conjunto num nome faz nascer o pai** (`H-88`, determinação 8).
+   *
+   * Ate 08/09/2026 isto devolvia `regra-acrescentada`, somando a regra ao
+   * cliente que ja existia. O usuario descreveu outro comportamento ao usar a
+   * tela: para ele nao ha dois conceitos — ha um nome que recebe conjuntos, e o
+   * pai e o que acontece no segundo. O cliente que existia vira filho, nomeado
+   * pelo valor da PRIMEIRA regra dele.
+   */
+  it('faz nascer o pai quando o nome ja tem conjunto, com os dois por filhos', () => {
     expect(planClientRule('ALF-1', '', 'Gama Trading', map)).toEqual({
-      kind: 'regra-acrescentada',
+      kind: 'grupo-criado',
+      match: 'exact',
       key: 'GAMA',
       label: 'Gama Trading',
       value: 'ALF-1',
       beforeKey: null,
+      child: { key: 'ALF-1', label: 'ALF-1' },
+      demoted: { key: 'G', label: 'G' },
     })
   })
 
-  it('manda mover a entrada alvo quando ela esta DEPOIS da que casa', () => {
-    // `eps` e a ultima; `G1` casa `gama`, a primeira. Sem mover, a regra `exact`
-    // acrescentada em `eps` ficaria atras e nunca seria alcancada.
-    expect(planClientRule('G1', 'IMPORTADORA UM', 'Épsilon', map)).toEqual({
-      kind: 'regra-acrescentada',
-      key: 'EPS',
-      label: 'Épsilon',
-      value: 'G1',
-      beforeKey: 'GAMA',
+  it('o filho herdado leva o valor da primeira regra, e nao o rotulo do pai', () => {
+    const plano = planClientRule('G1', 'IMPORTADORA UM', 'Épsilon', map)
+
+    // "Épsilon > Épsilon" nao diria nada; "Épsilon > EPS" diz de onde veio.
+    expect(plano).toMatchObject({ kind: 'grupo-criado', demoted: { key: 'EPS' } })
+  })
+
+  /**
+   * O nome ja e um PAI: o conjunto entra como mais um filho, sem converter nada.
+   * O pai vem antes do cliente na busca do alvo — com `Vivi` e `VIVI` existindo
+   * ao mesmo tempo, que foi o defeito de 08/09/2026, quem recebe e o pai.
+   */
+  it('acrescenta o filho quando o nome ja e um pai', () => {
+    const grupos: ClientGroup[] = [
+      { key: 'VIVI-GRUPO', label: 'Vivi', members: [{ client: 'AV' }] },
+    ]
+
+    expect(planClientRule('YT', '', 'Vivi', map, 'contains', grupos)).toEqual({
+      kind: 'membro-acrescentado',
+      match: 'contains',
+      key: 'VIVI-GRUPO',
+      label: 'Vivi',
+      value: 'YT',
+      beforeKey: null,
+      child: { key: 'YT', label: 'YT' },
+    })
+  })
+
+  /**
+   * Pai dentro de pai nao existe no modelo: `ClientGroupIndex` e cliente → UM
+   * grupo. Achado em 08/09/2026, simulando declaracoes contra o mapa real.
+   */
+  it('recusa declarar num nome que ja e filho de outro', () => {
+    const grupos: ClientGroup[] = [
+      { key: 'VIVI-GRUPO', label: 'Vivi', members: [{ client: 'AV' }] },
+    ]
+
+    expect(planClientRule('BUENO', '', 'AV', map, 'prefix', grupos)).toBe('NOME_E_FILHO')
+  })
+
+  it('nao repete o filho que o pai ja tem', () => {
+    const grupos: ClientGroup[] = [
+      { key: 'VIVI-GRUPO', label: 'Vivi', members: [{ client: 'YT' }] },
+    ]
+
+    expect(planClientRule('YT', '', 'Vivi', map, 'contains', grupos)).toMatchObject({
+      kind: 'sem-efeito',
+    })
+  })
+
+  /** O valor digitado entra normalizado: `yt` e `YT` sao a mesma regra, e
+      grava-los diferente duplicaria a entrada na segunda declaracao. */
+  it('normaliza o valor digitado', () => {
+    expect(planClientRule('  yt  ', '', 'Novo', map, 'contains')).toMatchObject({
+      value: 'YT',
     })
   })
 })

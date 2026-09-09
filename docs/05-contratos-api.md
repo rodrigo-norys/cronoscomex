@@ -876,6 +876,211 @@ no-op silencioso (regra inviolável 2).
 
 ---
 
+### `GET /api/clients`
+
+**Toda** a coluna CLT, com o dono de cada grafia — a base do painel que `H-88`
+põe na Página Configuração.
+
+**Não é marcada [F], e é a única rota de leitura em que isso vale** (`D-32`,
+determinação 2). O que ela serve é estado de **configuração**, não recorte: se
+seguisse os filtros globais, filtrar por um cliente esconderia a dívida e o
+operador concluiria que declarou tudo.
+
+**Ela traz o declarado também**, e isso mudou em 08/09/2026: a primeira versão
+listava só o que faltava declarar, e com isso tornava impossível pela tela
+agrupar uma grafia que **já** é cliente — ela sumia da lista.
+
+`key` é a chave normalizada de `TD-04`, e é ela que casa a regra; `label` é a
+grafia da célula. `client` é o cliente a que ela pertence hoje, `null` quando
+nenhuma regra casa; `parent` é o pai desse cliente, `null` quando ele não está
+em nenhum. `samples` traz até três REF.
+
+**Célula CLT vazia não entra**: é ausência de dado, não cliente por declarar.
+
+A ordem é `count` decrescente, desempatada pela `key` crescente — sem o
+desempate a lista sairia na ordem de inserção, que muda quando alguém insere
+linha na planilha.
+
+`names` são os nomes que o campo de declaração oferece, e viajam junto porque
+respondem à mesma pergunta — o estado do mapa. **Quem já é filho de um pai não
+aparece**: quem recebe conjunto é o pai. `isParent` distingue os dois, porque
+declarar num pai acrescenta um filho em vez de somar regra.
+
+`declared` é a outra metade da tela: os clientes **já declarados**, com o peso de
+cada um. Ela lista **clientes, e não grafias** — `AV` consolida 304 células que
+diriam todas "Vivi › AV" —, e é sobre o cliente que o desfazer age. Cliente cuja
+regra não casa nada aparece com zero, e não some: regra que não casa é erro de
+declaração que o operador precisa ver.
+
+```jsonc
+{
+  "items": [
+    { "key": "YT-769", "label": "YT-769", "count": 0, "samples": ["FT498.26"],
+      "client": null, "parent": null },
+    { "key": "AV-480", "label": "AV-480", "count": 0, "samples": ["FT502.26"],
+      "client": { "key": "AV", "label": "AV" },
+      "parent": { "key": "VIVI-GRUPO", "label": "Vivi" } }
+  ],
+  "declared": [
+    { "key": "AV", "label": "AV", "keys": 0, "count": 0,
+      "parent": { "key": "VIVI-GRUPO", "label": "Vivi" } }
+  ],
+  "total": 0,
+  "names": [ { "key": "VIVI-GRUPO", "label": "Vivi", "isParent": true } ]
+}
+```
+
+| Código | Quando |
+|---|---|
+| `200` | Sempre que houve leitura, inclusive com `items` vazio |
+| `503 ARQUIVO_INDISPONIVEL` | Nunca houve leitura. Lista vazia afirmaria que não falta declarar nada |
+
+---
+
+### `GET /api/clients/preview`
+
+O que uma regra **candidata** capturaria, antes de ela ser gravada (`H-88`).
+
+**Existe porque prefixo captura mais do que parece, e isso está medido nos dados
+do operador:** `Y` e `YT` são prefixos distintos na planilha, e `Y` **casa**
+`YT-769`. Sem ver o alcance, declarar `Y` supondo quatro grafias alcança
+sessenta e duas. `D-35` faz da previsão condição para gravar.
+
+Como `GET /api/clients/pending`, **não é marcada [F]**: o alcance é sobre a
+planilha inteira, não sobre o recorte da tela.
+
+| Parâmetro | Valores |
+|---|---|
+| `match` | `prefix`, `contains` ou `exact` |
+| `value` | O texto a comparar. Normalizado por `TD-04` antes de casar |
+
+`keys` e `processes` contam o que a regra **passaria a consolidar**.
+`alreadyMapped` traz as grafias que ela casa e **não leva**, por já terem dono —
+elas ficam fora daquelas contagens de propósito: a regra nova entra no fim do
+mapa, e a primeira entrada que casa vence. É informação, não perda.
+
+```jsonc
+{
+  "match": "prefix", "value": "Y",
+  "keys": 0, "processes": 0,
+  "samples": ["Y2601", "Y2602"],
+  "alreadyMapped": [ { "key": "YT-769", "label": "Beta", "count": 0 } ]
+}
+```
+
+Valor vazio devolve alcance zero em vez de erro: é o estado do campo antes de o
+operador digitar, e a gravação o recusaria de qualquer forma.
+
+| Código | Quando |
+|---|---|
+| `200` | Sempre que houve leitura |
+| `400 FILTRO_INVALIDO` | `match` fora da lista, ou `value` ausente |
+| `503 ARQUIVO_INDISPONIVEL` | Nunca houve leitura |
+
+---
+
+### `POST /api/clients/rules`
+
+Declara o cliente de uma grafia ou de um grupo delas (`H-88`).
+
+**Não enfileira e não toca no `.xlsx`**, pelo mesmo motivo de
+`PUT /api/processes/:ref/client`: a regra vive em `client-map.json`, que é de
+onde a coluna Cliente lê desde `H-49`. O efeito vale na leitura seguinte.
+
+**A diferença para aquela rota é o alvo.** Ela declara a partir de **uma REF** —
+é a edição em linha da Operacional. Esta declara a partir da **grafia**, e aceita
+`match`, que é o que permite cobrir um grupo inteiro de uma vez.
+
+**O importador não qualifica a regra aqui**, e é deliberado: a regra vale para a
+grafia, não para uma linha. Qualificar por importador recusaria a declaração de
+um grupo cujas linhas têm importadores diferentes — o caso normal do prefixo.
+
+**Regra abrangente não disputa lugar.** `exact` é cirúrgica e entra **antes** da
+entrada que já casa a grafia, senão a edição vira no-op silencioso (regra
+inviolável 2); `prefix` e `contains` entram no **fim**, e o que já tem dono
+continua como está.
+
+**O `value` entra normalizado por `TD-04`.** Digitado, ele chega em qualquer
+caixa; gravado sem normalizar, a segunda declaração do mesmo valor não reconhece
+a primeira e acrescenta uma regra duplicada.
+
+**O que a rota faz depende do nome**, e é o comportamento que o operador
+descreveu em 08/09/2026 — para ele não há dois conceitos, há um nome que recebe
+conjuntos da coluna CLT:
+
+| `label` | `outcome` | O que acontece |
+|---|---|---|
+| não existe | `entrada-nova` | Vira um cliente comum |
+| já é um cliente | `grupo-criado` | Ele vira **pai**: o conjunto que tinha passa a filho, nomeado pelo **valor da primeira regra dele**, e o novo entra como irmão |
+| já é um pai | `membro-acrescentado` | O conjunto entra como mais um filho |
+| já resolvia assim | `sem-efeito` | Nada é gravado |
+
+O filho leva o **valor** por nome, e não o rótulo do pai: "Vivi > Vivi" não diz
+nada, "Vivi > AV" diz — e o valor é o que a própria coluna CLT explica.
+
+**O pai vem antes do cliente na busca do alvo.** Com um cliente e um pai de nomes
+parecidos — `VIVI` ao lado de `Vivi`, que foi o defeito de 08/09/2026 —, quem
+recebe o conjunto é o pai.
+
+```jsonc
+// corpo
+{ "match": "prefix", "value": "D", "label": "Cliente D" }
+
+// resposta
+{ "outcome": "entrada-nova", "key": "CLIENTE D", "label": "Cliente D",
+  "value": "D", "match": "prefix" }
+```
+
+| Código | Quando |
+|---|---|
+| `201` | Regra gravada, com entrada nova ou acrescentada a uma existente |
+| `200` | `sem-efeito`: já resolvia assim, e o arquivo não mudou |
+| `400 CORPO_INVALIDO` | `match` fora da lista, `label` vazio, `value` vazio, ou `label` que já é **filho** de outro nome — pai dentro de pai não existe no modelo |
+| `409 ESCRITA_EM_ANDAMENTO` | Aplicação em curso |
+| `503 ARQUIVO_INDISPONIVEL` | Nunca houve leitura |
+
+---
+
+### `DELETE /api/clients/groups/:key/members/:client` · `DELETE /api/clients/groups/:key`
+
+Desfaz o agrupamento (`H-88`, determinação 9). A primeira tira **um** cliente do
+pai; a segunda desfaz o pai inteiro.
+
+**Elas apagam a declaração junto**, e isso é escolha do usuário em 08/09/2026:
+desagrupar e desdeclarar viraram uma operação só. Sai o vínculo **e** a regra do
+cliente, e as grafias dele voltam a não ter dono. `removed` diz quais entradas
+saíram.
+
+**A operação intermediária deixou de existir**: tirar um cliente do pai mantendo
+a declaração dele não é mais possível. Foi o custo aceito, e o ganho é que
+desfazer uma declaração errada não exige mais editar o arquivo à mão.
+
+**Pai com um filho só deixa de ser pai.** Tirando o penúltimo, ele é desfeito na
+mesma operação: árvore de um galho é ruído, e o ranking mostraria o mesmo número
+duas vezes, indentado uma nele. `dissolved` diz quando isso aconteceu. **O filho
+que sobra não é apagado** — ele não foi pedido, e some do agrupamento por
+consequência.
+
+```jsonc
+// DELETE /api/clients/groups/VIVI-GRUPO/members/KELLY
+{ "outcome": "membro-removido", "key": "VIVI-GRUPO", "client": "KELLY",
+  "removed": ["KELLY"], "dissolved": false }
+
+// DELETE /api/clients/groups/VIVI-GRUPO
+{ "outcome": "grupo-desfeito", "key": "VIVI-GRUPO", "client": null,
+  "removed": ["AV", "CHUN", "KELLY"], "dissolved": true }
+```
+
+| Código | Quando |
+|---|---|
+| `200` | Desfeito |
+| `404 GRUPO_INEXISTENTE` | Não há agrupamento com essa chave |
+| `404 MEMBRO_INEXISTENTE` | O cliente não está nesse agrupamento |
+| `409 ESCRITA_EM_ANDAMENTO` | Aplicação em curso |
+| `503 ARQUIVO_INDISPONIVEL` | Nunca houve leitura |
+
+---
+
 ### `POST /api/edits`
 
 Enfileira uma edição. **Não toca no `.xlsx`.**

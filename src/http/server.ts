@@ -21,6 +21,7 @@ import type { TeamMember } from '../domain/team-mapper.ts'
 import { createWatcher, DEFAULT_DEBOUNCE_MS, type Watcher } from '../io/watcher.ts'
 import { registerAlertsRoute } from './routes/alerts.ts'
 import { registerApplyRoute } from './routes/apply.ts'
+import { registerClientsRoutes } from './routes/clients.ts'
 import { registerConfigRoutes } from './routes/config.ts'
 import { registerEditsRoutes } from './routes/edits.ts'
 import { registerFilterOptionsRoute } from './routes/filter-options.ts'
@@ -130,7 +131,8 @@ export function buildServer(
   registerHistoryRoute(app, config, store, historyPath)
   registerEditsRoutes(app, store, queuePath)
   registerProcessColorRoute(app, store, colorMap)
-  registerProcessClientRoute(app, store, clientMap, clientMapPath, applyClientMap)
+  registerProcessClientRoute(app, store, clientMap, clientGroups, clientMapPath, applyClientMap)
+  registerClientsRoutes(app, store, clientMap, clientGroups, clientMapPath, applyClientMap)
   registerApplyRoute(app)
 
   // Por ultimo: `GET /*` e o catch-all, e registra-la antes nao mudaria o
