@@ -1,3 +1,4 @@
+import { ClientDeclaration } from '../components/ClientDeclaration.tsx'
 import { PageAlert } from '../components/PageAlert.tsx'
 import { RankingBar } from '../components/RankingBar.tsx'
 import { Skeleton } from '../components/Skeleton.tsx'
@@ -53,6 +54,22 @@ const RANKINGS: readonly RankingDefinition[] = [
 ]
 
 export function Clients({ queryString, dataVersion }: ClientsProps) {
+  return (
+    <div className="flex flex-col gap-6">
+      {/*
+        **O painel vem ANTES dos rankings, e FORA do estado deles** (`D-36`).
+        Ele e a ferramenta que conserta o que os rankings mostram: escondido
+        quando o indicador falha, o operador perderia justamente a saida. Os
+        rankings tem `return` antecipado nos quatro estados, e por isso moram num
+        componente proprio abaixo.
+      */}
+      <ClientDeclaration dataVersion={dataVersion} />
+      <Rankings queryString={queryString} dataVersion={dataVersion} />
+    </div>
+  )
+}
+
+function Rankings({ queryString, dataVersion }: ClientsProps) {
   const state = useIndicators(queryString, dataVersion)
   const firstLoad = useFirstLoad('clientes', state.status === 'pronto')
   const filters = useFilters()
@@ -113,6 +130,21 @@ export function Clients({ queryString, dataVersion }: ClientsProps) {
         por ele e abrir a Página Operacional.
       </p>
 
+      {/*
+        **Pares, e nao tres colunas** (`D-37`, emendada em 09/09/2026). A primeira
+        versao do arranjo pos os tres na mesma linha para nao deixar espaco
+        vazio; o usuario preferiu o par — dois lado a lado, e o terceiro embaixo
+        do primeiro, ocupando **uma** coluna. O espaco ao lado dele fica
+        reservado no mesmo tamanho, para a quarta dimensao quando ela existir.
+
+        **Sem `items-start`, e a ausencia e deliberada.** Ele esteve aqui por
+        algumas horas em 09/09/2026, para "o card sozinho nao esticar" — efeito
+        que a classe NAO tem: `align-items` opera no eixo de bloco, e um item
+        sozinho na sua linha DEFINE a altura dela, entao `stretch` nele e no-op.
+        Medido nesta pagina, num Chrome real a 1920: com a classe, o par sai
+        478/382; sem ela, 478/478, e Mercadorias fica em 440 nos dois casos. O
+        unico efeito observavel era impedir o par de ficar uniforme.
+      */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {RANKINGS.map((ranking) => (
           <RankingBar
