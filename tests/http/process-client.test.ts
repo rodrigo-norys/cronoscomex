@@ -5,7 +5,11 @@ import Fastify from 'fastify'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { type ClientMap, loadClientMap } from '../../src/app/client-map-loader.ts'
 import type { StoreAccess, StoreState } from '../../src/app/process-store.ts'
-import { type ClientMapEntry, normalizeClientMap } from '../../src/domain/client-mapper.ts'
+import {
+  type ClientGroup,
+  type ClientMapEntry,
+  normalizeClientMap,
+} from '../../src/domain/client-mapper.ts'
 import type { Process } from '../../src/domain/types.ts'
 import { registerProcessClientRoute } from '../../src/http/routes/process-client.ts'
 
@@ -95,10 +99,14 @@ function state(overrides: Partial<StoreState> = {}): StoreState {
 
 const aplicados: ClientMap[] = []
 
-function buildApp(initial: StoreState = state(), map: readonly ClientMapEntry[] = []) {
+function buildApp(
+  initial: StoreState = state(),
+  map: readonly ClientMapEntry[] = [],
+  groups: readonly ClientGroup[] = [],
+) {
   const store: StoreAccess = { getState: () => initial, reload: async () => undefined }
   const app = Fastify({ logger: false })
-  registerProcessClientRoute(app, store, map, mapPath, async (next) => {
+  registerProcessClientRoute(app, store, map, groups, mapPath, async (next) => {
     aplicados.push(next)
   })
   return app

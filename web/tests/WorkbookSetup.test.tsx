@@ -24,6 +24,28 @@ async function campoDoCaminho(): Promise<HTMLInputElement> {
   return (await screen.findByLabelText(/caminho completo/i)) as HTMLInputElement
 }
 
+/**
+ * A regiao viva do CAMINHO da planilha.
+ *
+ * **A tela passou a ter DUAS** em `H-88`: esta e a da declaracao de cliente, que
+ * vive dentro da secao "Clientes por declarar". Ambas existem desde a montagem,
+ * vazias, porque regiao viva que nasce populada nao e anunciada (`ACHADO 11`) —
+ * entao `getByRole('alert')` acha duas e falha. A do caminho e a PRIMEIRA no
+ * DOM por construcao: a secao de clientes e montada depois dela.
+ */
+function avisoDoCaminho(): HTMLElement {
+  const [primeiro] = screen.getAllByRole('alert')
+  if (primeiro === undefined) throw new Error('nenhuma regiao viva na tela')
+  return primeiro
+}
+
+/** A confirmacao do CAMINHO, pelo mesmo motivo de `avisoDoCaminho`. */
+function confirmacaoDoCaminho(): HTMLElement {
+  const [primeiro] = screen.getAllByRole('status')
+  if (primeiro === undefined) throw new Error('nenhuma regiao de status na tela')
+  return primeiro
+}
+
 beforeEach(() => {
   api = stubApi()
   onSaved = vi.fn()
@@ -63,7 +85,7 @@ describe('WorkbookSetup', () => {
     })
 
     await waitFor(() => expect(api.calls).toContain('PUT /api/config/workbook'))
-    expect(screen.getByRole('alert').textContent).toBe('')
+    expect(avisoDoCaminho().textContent).toBe('')
   })
 
   it('mostra a frase que o servidor escreveu, e nao o codigo do erro', async () => {
@@ -78,8 +100,8 @@ describe('WorkbookSetup', () => {
       fireEvent.click(screen.getByRole('button', { name: /carregar esta planilha/i }))
     })
 
-    await waitFor(() => expect(screen.getByRole('alert').textContent).toMatch(/pasta do OneDrive/i))
-    expect(screen.getByRole('alert').textContent).not.toMatch(/CAMINHO_INVALIDO/)
+    await waitFor(() => expect(avisoDoCaminho().textContent).toMatch(/pasta do OneDrive/i))
+    expect(avisoDoCaminho().textContent).not.toMatch(/CAMINHO_INVALIDO/)
   })
 
   /**
@@ -90,10 +112,10 @@ describe('WorkbookSetup', () => {
   it('mantem a regiao de alerta no DOM desde a montagem', async () => {
     render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
 
-    const regiao = screen.getByRole('alert')
+    const regiao = avisoDoCaminho()
     await campoDoCaminho()
 
-    expect(screen.getByRole('alert')).toBe(regiao)
+    expect(avisoDoCaminho()).toBe(regiao)
   })
 
   it('avisa que o caminho salvo nao aponta para arquivo nenhum', async () => {
@@ -165,9 +187,7 @@ describe('WorkbookSetup', () => {
 
       await clicar('D:/planilha.xlsx')
 
-      await waitFor(() =>
-        expect(screen.getByRole('status').textContent).toMatch(/649 processos lidos/),
-      )
+      await waitFor(() => expect(confirmacaoDoCaminho().textContent).toMatch(/649 processos lidos/))
     })
 
     it('concorda o plural com um processo so', async () => {
@@ -176,7 +196,7 @@ describe('WorkbookSetup', () => {
 
       await clicar('D:/planilha.xlsx')
 
-      await waitFor(() => expect(screen.getByRole('status').textContent).toMatch(/1 processo lido/))
+      await waitFor(() => expect(confirmacaoDoCaminho().textContent).toMatch(/1 processo lido/))
     })
 
     /**
@@ -197,11 +217,9 @@ describe('WorkbookSetup', () => {
 
       await clicar('D:/sem-a-aba.xlsx')
 
-      await waitFor(() =>
-        expect(screen.getByRole('alert').textContent).toMatch(/caminho foi salvo/i),
-      )
-      expect(screen.getByRole('alert').textContent).toMatch(/A aba 2026 nao existe/)
-      expect(screen.getByRole('status').textContent).toBe('')
+      await waitFor(() => expect(avisoDoCaminho().textContent).toMatch(/caminho foi salvo/i))
+      expect(avisoDoCaminho().textContent).toMatch(/A aba 2026 nao existe/)
+      expect(confirmacaoDoCaminho().textContent).toBe('')
     })
 
     /**
@@ -225,7 +243,7 @@ describe('WorkbookSetup', () => {
 
       await clicar('D:/documento.docx')
 
-      await waitFor(() => expect(screen.getByRole('alert').textContent).toMatch(/\.xlsx/))
+      await waitFor(() => expect(avisoDoCaminho().textContent).toMatch(/\.xlsx/))
       expect(onSaved).not.toHaveBeenCalled()
     })
 
@@ -237,7 +255,7 @@ describe('WorkbookSetup', () => {
       render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
       const inventario = await screen.findByRole('region', { name: /o que está configurado/i })
 
-      const posicao = screen.getByRole('alert').compareDocumentPosition(inventario)
+      const posicao = avisoDoCaminho().compareDocumentPosition(inventario)
 
       expect(posicao & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     })
@@ -246,13 +264,13 @@ describe('WorkbookSetup', () => {
       render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
 
       await clicar('D:/planilha.xlsx')
-      await waitFor(() => expect(screen.getByRole('status').textContent).not.toBe(''))
+      await waitFor(() => expect(confirmacaoDoCaminho().textContent).not.toBe(''))
 
       api.failSaveWorkbookPath('Nao ha nenhum arquivo nesse caminho.')
       await clicar('D:/sumiu.xlsx')
 
-      await waitFor(() => expect(screen.getByRole('alert').textContent).toMatch(/nenhum arquivo/))
-      expect(screen.getByRole('status').textContent).toBe('')
+      await waitFor(() => expect(avisoDoCaminho().textContent).toMatch(/nenhum arquivo/))
+      expect(confirmacaoDoCaminho().textContent).toBe('')
     })
 
     /**
@@ -340,7 +358,7 @@ describe('WorkbookSetup', () => {
       expect((screen.getByLabelText(/caminho completo/i) as HTMLInputElement).value).toBe(
         'C:/OneDrive/atual.xlsx',
       )
-      expect(screen.getByRole('alert').textContent).toBe('')
+      expect(avisoDoCaminho().textContent).toBe('')
     })
 
     /**
@@ -359,9 +377,9 @@ describe('WorkbookSetup', () => {
       await escolher()
 
       await waitFor(() =>
-        expect(screen.getByRole('alert').textContent).toMatch(/Digite o caminho da planilha/),
+        expect(avisoDoCaminho().textContent).toMatch(/Digite o caminho da planilha/),
       )
-      expect(screen.getByRole('alert').textContent).not.toMatch(/SELETOR_INDISPONIVEL/)
+      expect(avisoDoCaminho().textContent).not.toMatch(/SELETOR_INDISPONIVEL/)
       expect((screen.getByLabelText(/caminho completo/i) as HTMLInputElement).disabled).toBe(false)
     })
 
@@ -369,12 +387,12 @@ describe('WorkbookSetup', () => {
       api.failBrowse(501, 'SELETOR_INDISPONIVEL', 'Esta maquina nao abre o seletor.')
       render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
       await escolher()
-      await waitFor(() => expect(screen.getByRole('alert').textContent).not.toBe(''))
+      await waitFor(() => expect(avisoDoCaminho().textContent).not.toBe(''))
 
       api.serveBrowse('C:/OneDrive/enfim.xlsx')
       await escolher()
 
-      await waitFor(() => expect(screen.getByRole('alert').textContent).toBe(''))
+      await waitFor(() => expect(avisoDoCaminho().textContent).toBe(''))
     })
   })
 
@@ -614,3 +632,11 @@ describe('WorkbookSetup', () => {
     })
   })
 })
+
+/**
+ * A divida de declaracao do mapa de clientes (`H-88`).
+ *
+ * Os numeros vem da planilha real, medidos em 08/09/2026: **111 grafias** sem
+ * cliente declarado, **140 processos**, e **83 delas valendo um processo cada** —
+ * e e isso que faz o teto e a ordem estavel importarem.
+ */

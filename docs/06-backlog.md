@@ -30,8 +30,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E11 — A casca redesenhada ✅ | **H-57 … H-65, todas concluídas** | 3 | 6 | 0 |
 | E12 — Os achados da revisão de estilo ✅ | **H-73 … H-76, todas concluídas** | 2 | 1 | 1 |
 | E13 — O operacional que edita, ordena e cria ✅ | **H-77 … H-81, todas concluídas.** Épico **retroativo**: o código entrou em 02/09/2026 e as histórias foram escritas em 03/09 | 3 | 0 | 2 |
-| E14 — A casca que se opera, não só se lê | **H-82 a H-87 e H-90 ✅; H-88 e H-89 abertas.** Primeiro épico **prospectivo** desde `E12`: as nove nascem antes do código (`D-29` a `D-34`) | 2 | 7 | 0 |
-| **Total** | **90** — 88 concluídas, 2 abertas | **35** | **51** | **4** |
+| E14 — A casca que se opera, não só se lê | **H-82 a H-88 e H-90 ✅; H-89 e H-91 abertas.** Primeiro épico **prospectivo** desde `E12`: as nove primeiras nascem antes do código (`D-29` a `D-34`), e `H-91` entra em 08/09/2026 por `D-35` | 2 | 7 | 1 |
+| **Total** | **91** — 89 concluídas, 2 abertas | **35** | **51** | **5** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -46,8 +46,10 @@ bloco; o índice agora é obrigado a concordar com ele.
 `iniciar.cmd` foi executado na máquina do operador, sobe e carrega a planilha.
 `PD-06` guardava os itens que faltavam, e **fechou em 03/09/2026** — os três últimos foram exercidos por SSH, e o registro está em `docs-windows/2026-09-03-pd06-fechada.md`.
 
-**Quatro histórias são G.** `H-50` desde `D-24`, `H-75` em `E12`, e `H-79` e
-`H-80` em `E13` — estas duas por medição do que já estava commitado: 29 e 15
+**Cinco histórias são G.** `H-50` desde `D-24`, `H-75` em `E12`, `H-79` e
+`H-80` em `E13`, e `H-88` desde `D-35` — **a única cujo G é escolha declarada**,
+e não diagnóstico: a medição de 08/09/2026 mostrou que a versão M pediria 111
+declarações manuais, e o usuário preferiu a história maior. As outras quatro — estas duas por medição do que já estava commitado: 29 e 15
 arquivos, e duas rotas novas. **Nas duas o rótulo é diagnóstico, não escolha**,
 e é o preço de escrever a história depois do código: fatiar em M teria sido
 decisão de antes. As três
@@ -192,9 +194,10 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-85 — O carregamento que não colapsa a altura](#h-85) ✅
 - [H-86 — Os sete ícones da lateral](#h-86) ✅
 - [H-87 — A contagem que segue o recorte](#h-87) ✅
-- [H-88 — O que falta declarar, à vista e alimentável](#h-88)
+- [H-88 — O mapa de clientes, operável na tela](#h-88) ✅
 - [H-89 — A ordem em que a planilha está](#h-89)
 - [H-90 — A busca sobre os seis campos de texto](#h-90) ✅
+- [H-91 — O mapa de equipe, editável na tela](#h-91)
 
 
 ---
@@ -9936,95 +9939,267 @@ Performance, Histórico e Configuração não têm número que signifique recort
 ---
 <a id="h-88"></a>
 
-### H-88 — O que falta declarar, à vista e alimentável
+### H-88 — O mapa de clientes, operável na tela
+
+> ✅ **CONCLUÍDA em 09/09/2026.** **95 testes próprios** — 30 em
+> `tests/domain/pending-clients.test.ts`, 24 em `tests/http/clients.test.ts`, 31
+> em `web/tests/Clients.test.tsx`, 6 no plano de regra e 4 na gravação do pai —,
+> suíte em **2.016**.
+>
+> **A história foi reescrita DUAS vezes durante a execução, e as duas por uso.**
+> A primeira versão (`D-35`) só sabia criar regra `exact`: medido no dia, as
+> **111 grafias** sem cliente caem em **16 prefixos aparentes**, e três deles
+> cobrem 98 — o painel pediria 111 declarações manuais, 83 delas valendo um
+> processo cada. A segunda veio do usuário ao **usar** a primeira, e absorveu a
+> história de grupos: para ele não há dois conceitos, há **um nome que recebe
+> conjuntos da coluna CLT**, e o pai é o que acontece quando o segundo chega ao
+> mesmo nome.
+>
+> **A heurística óbvia está errada, e a diferença é de sete.** Grafia pendente
+> NÃO é aquela em que `clientKey === clientProcessKey`: `planClientRule` usa
+> `normKey(label)` como chave da entrada, então uma grafia declarada com o
+> próprio valor como nome resolveria para si mesma. Medido na planilha real: a
+> igualdade acusa **118** contra as **111** que de fato faltam. A agregação
+> chama `resolveClient(...).mapped`.
+>
+> **`Y` casa `YT-769`, e o número prova a previsão.** Simulado contra o mapa
+> real: `prefix: Y` alcança **62 grafias** — os 4 `Y*` mais os 58 `YT-*` —,
+> enquanto `YT` declarado antes reduz `Y` a 4. Sem ver o alcance, o operador
+> declara supondo quatro e leva sessenta e duas. A previsão virou condição para
+> gravar (determinação 5), e a regra nova entra no **fim** do mapa, de modo que
+> o que já tem dono continua com ele (determinação 6).
+>
+> **Um estado inválido apareceu só na simulação contra o mapa real.**
+> `BUENO → AV` produzia um pai `AV` com o filho `AV` — pai dentro de pai, que
+> `ClientGroupIndex` não representa, porque é um mapa cliente → **um** grupo.
+> Recusado com `NOME_E_FILHO`. Nenhum teste de unidade o pegaria: ele só existe
+> com um pai já formado.
+>
+> **Dois defeitos meus, achados pelo usuário ao usar a tela.** O valor digitado
+> ia para o arquivo sem normalizar — um `yt` minúsculo entre doze regras em
+> maiúscula —, e `saveClientRule` compara `normKey(rule.value)` com `plan.value`:
+> a segunda declaração do mesmo valor não reconheceria a primeira e duplicaria a
+> regra. E o **rótulo** do filho saía de `normKey` junto com a chave, então quem
+> digitava "Kelly" via "KELLY" declarado; a chave normaliza, o rótulo preserva a
+> grafia, e é a mesma divisão de `clientKey`/`clientLabel`.
+>
+> **O critério do que é declaração legítima foi estabelecido pelo usuário em
+> 09/09/2026, e reduziu o mapa.** Um nome que só se justifica olhando **outra
+> coluna** é suposição: saíram `Vertex` (`prefix BXA`), `Dahao Pesca`
+> (`prefix ZHOU`) e `Rikko`, que nomeava também RAND, ECLIPSE, BUENO e FUSION,
+> mais cinco cuja procedência ele não reconheceu. De **11 entradas para 3**, e as
+> grafias sem cliente foram de 112 para **187** de 509. O critério ficou escrito
+> no `_origem` do próprio arquivo, que é onde ele sobrevive.
+>
+> **O painel mudou de página no meio da execução** (`D-36`), revertendo a
+> determinação 1 de `D-32` — terceira reversão registrada do projeto, depois de
+> `D-21` e `D-34`. Ele virou **componente**, e por isso a mudança custou o que
+> custou: `ClientDeclaration.tsx` não é parte de página nenhuma, e a que o
+> hospeda pode mudar de novo.
+>
+> **O layout foi decidido por um painel de seis lentes independentes** (`D-37`),
+> e ele encontrou um erro que era meu: `items-start`, que eu tinha acrescentado
+> horas antes "para o card sozinho não esticar", **não tem esse efeito** —
+> `align-items` é no-op em item sozinho na sua linha de grade. Medido nas duas
+> configurações: **478/382** com a classe, **478/478** sem, e Mercadorias em 440
+> nos dois. O único efeito observável era manter o par desigual.
+>
+> **A guarda de âncora pegou o commit da interface**, que citava `D-36` e `D-37`
+> quando elas ainda nasceriam dois commits adiante. A regra que já vale para
+> contrato de rota vale para decisão: **ela viaja com o código que a cita, ou
+> antes**. Custou um `git reset --soft`; provar no fim da pilha teria custado
+> `reset HEAD~2`.
+>
+> **Fora daqui, por escolha do usuário:** apagar regra de cliente **entrou** na
+> última hora (determinação 10) — os dois botões de desfazer passaram a apagar a
+> declaração junto, e a operação intermediária, tirar do pai mantendo a
+> declaração, deixou de existir.
 
 > **`E14` cresceu de seis para sete histórias em 03/09/2026** (`D-32`), e esta é a
 > única que não veio da revisão de interação: ela nasce de `PD-08`, medida em
 > campo na terceira visita à máquina do operador.
+>
+> **Ampliada duas vezes em 08/09/2026, e a medição é o motivo das duas.** A
+> primeira (`D-35`) trouxe a declaração por PREFIXO: as **111 grafias** sem
+> cliente declarado caem em **16 prefixos aparentes**, e três deles cobrem 98
+> delas — sem o prefixo, o painel pediria 111 declarações manuais. A segunda veio
+> do usuário ao **usar** a primeira, e absorveu a história de grupos: para ele
+> não há dois conceitos, há **um nome que recebe conjuntos da coluna CLT**, e o
+> grupo é o que acontece quando o segundo conjunto chega ao mesmo nome.
 
-**Objetivo:** o operador ver quais grafias de CLT ainda não têm cliente
-declarado, ordenadas pelo que mais pesa, e declarar cada uma dali mesmo.
+**Objetivo:** o operador ver toda a coluna CLT com o dono de cada grafia, dizer a
+que cliente um conjunto pertence — uma grafia, um prefixo ou um trecho —, e
+desfazer o que agrupou.
 
-**Contrato:** rota nova.
+**Contrato:** cinco rotas novas.
 
+```jsonc
+// GET /api/clients — a coluna CLT inteira, com o dono de cada grafia
+{ "items": [ { "key": "YT-769", "label": "YT-769", "count": 0,
+               "samples": ["FT498.26"], "client": null, "parent": null } ],
+  "total": 0,
+  // Os nomes que o campo sugere, para nao nascer um "VIVI" ao lado de "Vivi"
+  "names": [ { "key": "VIVI-GRUPO", "label": "Vivi", "isParent": true } ] }
+
+// GET /api/clients/preview?match=prefix&value=D — o alcance ANTES de gravar
+{ "match": "prefix", "value": "D", "keys": 0, "processes": 0,
+  "samples": ["D2530", "D2529"],
+  "alreadyMapped": [ { "key": "YT-769", "label": "Beta", "count": 0 } ] }
+
+// POST /api/clients/rules — atribui o conjunto a um nome
+// corpo: { "match": "prefix", "value": "AV", "label": "Vivi" }
+{ "outcome": "entrada-nova" | "regra-acrescentada" | "grupo-criado"
+           | "membro-acrescentado" | "sem-efeito",
+  "key": "AV", "label": "Vivi", "value": "AV", "match": "prefix" }
+
+// DELETE /api/clients/groups/:key/members/:client — tira o filho do pai
+// DELETE /api/clients/groups/:key — desfaz o pai, preservando os filhos
 ```
-GET /api/clients/pending
-{ "items": [ { "key": "XYZ101", "count": 14, "samples": ["FT498.26", "FT471.26"] } ], "total": 0 }
-```
 
-> **A seção desta rota em `05-contratos-api.md` viaja com o commit que a serve,
-> ou depois dele.** Rota documentada e não servida reprova
+> **A seção destas rotas em `05-contratos-api.md` viaja com o commit que as
+> serve, ou depois dele.** Rota documentada e não servida reprova
 > `tests/repo/contratos.test.ts`, e isso já custou `git reset HEAD~2` em `H-26` e
 > `HEAD~1` em 02/09/2026.
 
-**Quatro determinações, decididas em `D-32` e não re-litigáveis:**
+**Nove determinações — quatro de `D-32`, três de `D-35`, duas da emenda de
+08/09/2026 — não re-litigáveis:**
 
-1. **O painel vive na Página Configuração**, ao lado do caminho da planilha. É
-   manutenção de configuração, não análise: a Página Clientes é analítica, e dar
-   dois papéis a ela foi recusado.
-2. **A contagem ignora os filtros globais.** É dívida de configuração, não
-   recorte — se seguisse o filtro, filtrar por um cliente faria a dívida
-   "sumir", e o operador concluiria que declarou tudo.
+1. **O painel vive na Página Clientes, acima dos gráficos** (`D-36`). *(Esta
+   linha o punha na Página Configuração, dizendo que dar dois papéis a uma
+   página analítica fora recusado. O usuário reverteu em 09/09/2026, depois de
+   **usar** a tela: declarar cliente e olhar o ranking de clientes são o mesmo
+   trabalho, e separá-los obrigava a trocar de página para conferir o efeito de
+   cada declaração. Terceira reversão de determinação do projeto, depois de
+   `D-21` e `D-34`.)* Ele é **componente**, não parte da página, e é montado
+   **fora** do estado dos rankings — escondido quando o indicador falha, o
+   operador perderia a ferramenta que conserta o que o ranking mostra.
+2. **A lista ignora os filtros globais.** É dívida de configuração, não recorte —
+   se seguisse o filtro, filtrar por um cliente faria a dívida "sumir", e o
+   operador concluiria que declarou tudo.
 3. **Chave vazia não é pendência.** Processo sem CLT é ausência de dado, não
    cliente por declarar; `resolveClient` devolve `{ key: '', mapped: false }`
-   para ela, e ela **não** entra na lista.
+   para ela, e ela **não** entra na lista. Medido: **38 linhas** das 650.
 4. **A aplicação não sugere agrupamento.** A lista mostra o que existe e conta;
-   quem decide que duas grafias são o mesmo cliente é o operador. Heurística
-   aqui adivinharia, e a regra inviolável 3 proíbe — o cabeçalho de
-   `client-mapper.ts` registra o caso que o prova: um prefixo de **62 processos**
-   cobre **três** clientes, distinguíveis só pelo importador.
+   quem digita o valor e o nome é o operador. Heurística aqui adivinharia, e a
+   regra inviolável 3 proíbe — o cabeçalho de `client-mapper.ts` registra o caso
+   que o prova: um prefixo de **62 processos** cobre **três** clientes,
+   distinguíveis só pelo importador.
+5. **Nenhuma regra é gravada sem a pré-visualização do alcance.** `Y` e `YT` são
+   prefixos distintos na planilha, e `Y` **casa** `YT-769`: sem ver o alcance, o
+   operador declara supondo quatro grafias e alcança sessenta e duas.
+6. **A regra nova entra no FIM da lista, e nunca rouba chave já declarada.** A
+   primeira entrada que casa vence (`resolveClient`), então declarar `Y` depois
+   de `YT` deixa os `YT-*` com o dono que já têm — `alreadyMapped` é informação,
+   não perda.
+7. **A ordem é `count` desc, depois `key` asc**, e a lista rola dentro de um
+   quadro de altura fixa em vez de crescer. Medido: a maior grafia pendente tem
+   **3** processos e **83 das 111** têm exatamente **1** — sem desempate a lista
+   sai na ordem de inserção, que muda quando alguém insere linha na planilha.
+8. **O pai nasce no SEGUNDO conjunto, e não é um conceito à parte.** `AV → Vivi`
+   cria o cliente; `YT → Vivi` transforma-o em pai com **dois** filhos. Cada
+   filho é nomeado pelo **valor da regra** — `AV` e `YT` —, e não pelo rótulo do
+   pai, que produziria "Vivi > Vivi". Com mais de uma regra no cliente original,
+   o filho leva o **primeiro** valor: é o caso de `Rikko`, que tem cinco.
+9. **Pai com um filho só deixa de ser pai.** Tirando os filhos um a um, no último
+   ele volta a ser cliente comum — uma árvore de um galho é ruído, e o ranking
+   passaria a mostrar o mesmo número duas vezes, indentado.
+10. **Desfazer apaga a declaração junto**, e os dois botões fazem as duas coisas.
+    *(A determinação 9 original parava no vínculo, e "apagar regra de cliente"
+    estava em `Fora desta história`. O usuário fundiu as duas em 08/09/2026, ao
+    ver que uma declaração errada só saía editando o JSON. **A operação
+    intermediária deixou de existir** — tirar um cliente do pai mantendo a
+    declaração dele —, e o custo foi aceito. **Os rótulos ficam como estão**:
+    "Tirar de Vivi" passa a apagar `AV` inteiro, e a alternativa de renomeá-los
+    para "Apagar AV" foi oferecida e recusada.)*
 
 **Arquivos:**
-- `src/domain/client-mapper.ts` — a agregação das chaves sem regra, pura
-- `src/http/routes/clients-pending.ts` — nova · `src/http/server.ts`
-- `docs/05-contratos-api.md` — a seção da rota
+- `src/domain/client-mapper.ts` — a agregação de toda a coluna com o dono de cada
+  grafia, o alcance de uma regra candidata, e o plano da atribuição, inclusive a
+  conversão em pai. Tudo puro
+- `src/app/client-map-loader.ts` — a gravação da conversão, e as duas remoções
+- `src/http/routes/clients.ts` — nova, serve as cinco rotas ·
+  `src/http/server.ts` — registro, com o mapa e o ponto de injeção do caminho
+- `docs/05-contratos-api.md` — as seções das cinco rotas
+- `web/src/api-client.ts` — as cinco funções de rede
 - `web/src/hooks/usePendingClients.ts` — novo
-- `web/src/pages/WorkbookSetup.tsx` — a seção do painel
-- `tests/domain/client-mapper.test.ts` · `tests/http/clients-pending.test.ts` ·
-  `web/tests/WorkbookSetup.test.tsx`
+- `web/src/components/ClientDeclaration.tsx` — o painel, novo ·
+  `web/src/pages/Clients.tsx` — a montagem · `web/src/index.css` — o quadro que rola
+- `tests/domain/pending-clients.test.ts` · `tests/domain/client-mapper.test.ts` ·
+  `tests/app/client-map-loader.test.ts` · `tests/http/clients.test.ts` ·
+  `web/tests/Clients.test.tsx` · `web/tests/support/api-stub.ts`
 
 **Critérios de aceite:**
-- **Dado** o mapa como está hoje, **então** a rota devolve as chaves de CLT que
-  **nenhuma regra casa**, cada uma com a contagem de processos e alguns `ref` de
-  exemplo, ordenadas por contagem decrescente.
+- **Dado** o mapa como está, **então** a lista traz **todas** as grafias da coluna
+  CLT — declaradas e não —, cada uma com a grafia, a contagem, REFs de exemplo e
+  a quem pertence hoje, por contagem decrescente e desempatada pela chave.
 - **Dado** qualquer filtro global ativo, **então** a lista e as contagens **não
-  mudam** (determinação 2).
-- **Dado** um processo sem CLT, **então** ele não aparece na lista nem soma em
-  nenhuma contagem.
-- **Dado** que o operador declara o cliente de uma chave, **então** a regra vai
-  para o mapa por `saveClientRule` — que **já existe** desde `E13` — e a chave
-  **sai** da lista na recarga seguinte.
+  mudam**.
+- **Dado** um processo sem CLT, **então** ele não aparece nem soma.
+- **Dado** um valor digitado, **então** a tela mostra quantas grafias e quantos
+  processos ele capturaria, e quais dessas chaves **já têm dono**, antes de gravar.
+- **Dado** um nome que ainda não existe, **então** a atribuição cria o cliente, e
+  o ranking passa a mostrá-lo.
+- **Dado** um nome que já existe, **então** a atribuição faz dele um pai com os
+  dois conjuntos por filhos, e o ranking mostra **uma** barra somada com os
+  filhos indentados — sem código novo no gráfico, que faz isso desde `H-56`.
+- **Dado** que o operador tira um filho do pai, **então** o filho volta ao ranking
+  com a contagem que sempre teve, e nenhuma regra dele muda.
+- **Dado** que o operador desfaz o pai, **então** todos os filhos voltam separados.
 - **Dado** que o mapa não existe em disco, **então** a tela funciona e a lista
-  traz todas as chaves: `saveClientRule` cria o arquivo na primeira declaração,
-  e nada precisa ser copiado antes.
-- **Dado** o cálculo, **então** ele é do domínio: o cliente não agrupa, não
-  conta e não ordena nada (regra inviolável 6).
+  traz todas as grafias.
+- **Dado** o cálculo, **então** ele é do domínio: o cliente não agrupa, não conta,
+  não ordena e não decide alcance (regra inviolável 6).
 
 **Casos-limite:**
-- **A lista é longa por natureza:** 650 processos produzem **509 valores
-  distintos** em CLT (medido em `H-49`, 31/08/2026), e há **121 processos** com
-  cliente ainda não declarado — o número que o cabeçalho de `client-mapper.ts`
-  registra. A tela precisa de teto declarado e de ordem estável, não de rolagem
-  infinita.
-- **Nome de cliente é dado pessoal** (regra inviolável 8): a rota o devolve para
-  a tela, e **nunca** para o log — nem em erro.
-- **Duas chaves que o operador declara para o mesmo cliente** produzem duas
-  regras no mesmo `clients[]`, e a segunda não pode apagar a primeira.
-- **Declarar não conserta retroativamente o histórico** (`A-43`): o mapa muda a
-  leitura seguinte, e o que já foi gravado em `data/history.jsonl` fica.
-- **A chave normalizada de `TD-04`** é o que casa a regra; a lista exibe a
-  grafia da célula, e as duas podem diferir em caixa e acento.
+- **111 grafias pendentes de 509 distintas, 140 processos, 11 entradas de mapa, 1
+  pai com 3 filhos e 38 linhas sem CLT** — medido na planilha real em
+  08/09/2026, depois de limpas duas entradas de teste. O número que o backlog e o
+  cabeçalho de `client-mapper.ts` traziam era **121 processos**, medido em `H-49`.
+- **A heurística óbvia está errada:** grafia pendente NÃO é aquela em que
+  `clientKey === clientProcessKey`. `planClientRule` usa `normKey(label)` como
+  chave da entrada, então uma grafia declarada com o próprio valor como nome vira
+  falso positivo — medido, a igualdade acusa **118** contra as **111** reais.
+- **`Y` capturando `YT-769`**: a previsão de `prefix: Y` lista as chaves já
+  mapeadas que ela alcança, e a gravação não as move.
+- **O valor digitado entra normalizado.** Vindo de `process-client.ts` ele já
+  era; digitado, não. Um `yt` minúsculo foi gravado assim em 08/09/2026 entre
+  doze regras em maiúscula, e `saveClientRule` compara `normKey(rule.value)` com
+  `plan.value` — a segunda declaração do mesmo valor não reconheceria a primeira
+  e acrescentaria uma regra duplicada.
+- **A grafia e a chave podem diferir em caixa e acento** (`TD-04`). Medido: nas
+  **612** linhas com CLT preenchida, **zero** diferem hoje.
+- **`Rikko` tem cinco regras**, e virar filho pelo primeiro valor é o caso que
+  distingue a determinação 8 de um `Rikko > Rikko` sem sentido.
+- **Tirar o penúltimo filho** desfaz o pai (determinação 9), e o teste precisa do
+  valor concreto: o pai de hoje tem **três**.
+- **Nome que já é filho não recebe conjunto**, e é recusa e não contorno:
+  declarar em `AV`, que está dentro de `Vivi`, faria nascer um pai `AV` com o
+  filho `AV` — pai dentro de pai, que `ClientGroupIndex` não representa, porque
+  é um mapa cliente → **um** grupo. A tela já não oferece o filho na lista de
+  nomes; a recusa é a defesa para quem digita. **Achado em 08/09/2026**,
+  simulando as declarações contra o mapa real — nenhum teste de unidade o
+  pegaria, porque só aparece com um pai já formado.
+- Nome de cliente é dado pessoal (regra inviolável 8): as rotas o devolvem para a
+  tela, e **nunca** para o log — nem em erro.
+- **Declarar não conserta retroativamente o histórico** (`A-43`).
 - **O arquivo pode estar somente-leitura** — `saveClientRule` já traduz isso, e a
-  tela precisa mostrar a mensagem dele em vez de falhar em silêncio.
+  tela mostra a mensagem dele em vez de falhar em silêncio.
+- **A gravação preserva o JSON cru**, inclusive as seis chaves `_comentario_*` e
+  `_origem` que o arquivo real tem.
 
-**Fora desta história:** sugerir agrupamentos (determinação 4); editar o
-`team-map.json`, que a aplicação não grava e chega por cópia; e a seção `groups`
-do mapa, que é agrupamento de clientes já declarados e não dívida.
+**Fora desta história:** sugerir agrupamentos (determinação 4); e o
+`team-map.json`, que é `H-91`. *(Apagar regra de cliente estava aqui e **saiu**
+no mesmo dia: a determinação 10 a fundiu com o desfazer.)*
 
 **Dependências:** nenhuma.
-**Tamanho:** M (8 arquivos, 1 contrato novo)
+**Tamanho:** G (15 arquivos, 5 contratos novos) — **e o G é escolha declarada,
+não diagnóstico**: `D-35` preferiu a história maior à versão que pediria 111
+cliques, e a emenda de 08/09 absorveu os grupos porque separá-los exporia na tela
+a distinção que a simplificação existe para apagar. O corte interno é em três
+pontos verdes — a lista completa, a atribuição com conversão, e o desfazer.
 
 [↑ Índice](#indice)
+
 
 ---
 
@@ -10233,6 +10408,87 @@ buscar em Cliente, ETA2 ou Categoria, que `D-34` recusou com motivo.
 
 **Dependências:** nenhuma.
 **Tamanho:** P (9 arquivos, 0 contrato novo — o de `search` muda de prosa)
+
+[↑ Índice](#indice)
+
+
+---
+
+<a id="h-91"></a>
+
+### H-91 — O mapa de equipe, editável na tela
+
+> Nasce de `D-35`, em 08/09/2026, e é a última das **duas**: o `team-map.json` é o
+> **único** dos dois mapas de negócio que a aplicação nunca escreveu —
+> `team-map-loader.ts` só lê.
+>
+> **Era `H-92` até 08/09/2026**, e assumiu o número da história de grupos quando
+> `D-35` foi emendada e aquela foi absorvida por `H-88`. A renumeração é segura
+> porque nenhuma das duas chegou a ser commitada.
+
+**Objetivo:** o operador declarar quem é responsável por quais importadores, sem
+editar o `team-map.json` à mão nem recebê-lo por cópia.
+
+**Contrato:** duas rotas novas.
+
+```jsonc
+// GET /api/team — os membros e os importadores ainda sem dono
+{ "members": [ { "key": "membro1", "label": "Membro 1",
+                 "importers": ["IMP A"], "colorResponsible": "colaborador1" } ],
+  "unassigned": [ { "key": "IMP B", "count": 0 } ] }
+
+// PUT /api/team/:key — cria ou redefine um membro
+// corpo: { "label": "Membro 1", "importers": ["IMP A"], "colorResponsible": "colaborador1" }
+```
+
+**Três determinações de `D-35`:**
+
+1. **É caminho de escrita NOVO**, e a regra inviolável 7 vale inteira: ponto de
+   injeção na assinatura de `buildServer`, e recusa do caminho padrão sob
+   `NODE_ENV=test`. O projeto já pagou isto duas vezes — `H-28` gravou 649
+   eventos no arquivo do operador, e `H-34` sobrescreveu a configuração dele
+   **em silêncio**, porque a gravação preserva os demais campos.
+2. **A cor continua desempatando, e `D-23` não é reaberta.** `H-50` mediu que o
+   importador preenche 559 das 649 linhas e a cor cobre mais 48; a tela edita a
+   fonte, não a regra de precedência.
+3. **Nome de pessoa é dado pessoal** (regra inviolável 8): a rota o devolve para
+   a tela e nunca para o log.
+
+**Arquivos:**
+- `src/app/team-map-loader.ts` — `saveTeamMember`, com o ponto de injeção
+- `src/http/routes/team.ts` — nova · `src/http/server.ts` — registro
+- `docs/05-contratos-api.md` — as seções das duas rotas
+- `web/src/api-client.ts` · `web/src/hooks/useTeamMap.ts` — novo
+- `web/src/pages/WorkbookSetup.tsx` — a seção do painel
+- `tests/app/team-map-loader.test.ts` · `tests/http/team.test.ts` ·
+  `web/tests/WorkbookSetup.test.tsx` · `web/tests/support/api-stub.ts`
+
+**Critérios de aceite:**
+- **Dado** um importador sem dono, **então** ele aparece na lista de
+  não-atribuídos com a contagem de processos.
+- **Dado** que o operador atribui o importador a um membro, **então** o campo
+  Responsável passa a mostrá-lo na leitura seguinte, e `IND-20` acompanha.
+- **Dado** `NODE_ENV=test`, **então** a gravação no caminho padrão é **recusada**,
+  como `history-store` e `saveWorkbookPath` já fazem.
+- **Dado** o `team-map.json` com `_comentario_*` e `_origem`, **então** eles
+  sobrevivem à gravação.
+
+**Casos-limite:**
+- **O mapa tem 2 membros hoje**, com `key`, `label`, `importers` e
+  `colorResponsible` — medido em 08/09/2026.
+- **42 processos ficam sem responsável** mesmo com importador e cor (medido em
+  `H-50`, 01/09/2026): a tela mostra o número, e não o esconde.
+- **Um importador atribuído a dois membros** é recusado: `IND-20` conta por
+  pessoa, e a soma deixaria de fechar.
+- **Remover o último importador de um membro** deixa o membro sem linha nenhuma,
+  e isso é legítimo — a pessoa existe, a carteira dela é que está vazia.
+
+**Fora desta história:** o `client-map.json` inteiro, que é `H-88`; e
+editar as cores de responsável, que vivem em `config/color-map.json` e são outra
+fonte.
+
+**Dependências:** `H-88`.
+**Tamanho:** M (11 arquivos, 2 contratos novos)
 
 [↑ Índice](#indice)
 

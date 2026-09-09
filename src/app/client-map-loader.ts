@@ -2,6 +2,7 @@ import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
 import {
   type ClientGroup,
   type ClientGroupMember,
+  type ClientGroupRemoval,
   type ClientMapEntry,
   type ClientMatch,
   type ClientRule,
@@ -314,6 +315,20 @@ export function saveClientRule(plan: ClientRulePlan, path?: string): void {
   }
 
   const clients = Array.isArray(raw.clients) ? [...(raw.clients as RawEntry[])] : []
+
+  /**
+   * Os dois kinds de PAI gravam outra coisa, e por isso saem antes (`H-88`).
+   *
+   * `grupo-criado` **transforma** o cliente que existia: ele deixa `clients[]`
+   * com o rotulo do pai e volta com o nome do valor da propria regra, ao lado do
+   * conjunto novo, e o pai passa a viver em `groups[]`. `membro-acrescentado` so
+   * cria o filho e o pendura no pai que ja existe.
+   */
+  if (plan.kind === 'grupo-criado' || plan.kind === 'membro-acrescentado') {
+    saveClientParent(raw, clients, plan, target)
+    return
+  }
+
   const at = clients.findIndex(
     (entry) => typeof entry.key === 'string' && normKey(entry.key) === plan.key,
   )
@@ -322,11 +337,16 @@ export function saveClientRule(plan: ClientRulePlan, path?: string): void {
     at === -1 ? { key: plan.key, label: plan.label, rules: [] } : (clients[at] as RawEntry)
 
   const rules = Array.isArray(entry.rules) ? [...(entry.rules as ClientRule[])] : []
+  // O `match` vem do PLANO desde `H-88`: era `exact` fixo, e a declaracao por
+  // prefixo gravaria uma regra que casa uma grafia so — silenciosamente inutil
+  // para o operador que acabou de ver a previsao de 62 processos.
   const already = rules.some(
     (rule) =>
-      rule.match === 'exact' && normKey(rule.value) === plan.value && rule.importer === undefined,
+      rule.match === plan.match &&
+      normKey(rule.value) === plan.value &&
+      rule.importer === undefined,
   )
-  if (!already) rules.push({ match: 'exact', value: plan.value })
+  if (!already) rules.push({ match: plan.match, value: plan.value })
   entry.rules = rules
 
   if (at !== -1) clients.splice(at, 1)
@@ -347,6 +367,16 @@ export function saveClientRule(plan: ClientRulePlan, path?: string): void {
   }
 
   raw.clients = clients
+  writeRawMap(raw, target)
+}
+
+/**
+ * A gravacao do arquivo, atomica por `rename` (`H-88` a extraiu).
+ *
+ * O temporario ao lado do alvo, e nao em `/tmp`: `rename` entre sistemas de
+ * arquivos diferentes nao e atomico, e o mapa vive na pasta do operador.
+ */
+function writeRawMap(raw: Record<string, unknown>, target: string): void {
   const temporary = `${target}.tmp`
   try {
     writeFileSync(temporary, `${JSON.stringify(raw, null, 2)}\n`, 'utf-8')
@@ -357,4 +387,123 @@ export function saveClientRule(plan: ClientRulePlan, path?: string): void {
         'Confira se o arquivo nao esta somente-leitura.',
     )
   }
+}
+
+/**
+ * Aplica o que `planGroupRemoval` decidiu (`H-88`).
+ *
+ * **Nenhum cliente e apagado.** Sai o vinculo, e nao a regra: o cliente volta ao
+ * ranking com a contagem que sempre teve.
+ */
+export function removeClientGroup(removal: ClientGroupRemoval, path?: string): void {
+  const target = resolveClientMapPath(path)
+  if (!existsSync(target)) return
+
+  let raw: Record<string, unknown>
+  try {
+    raw = JSON.parse(readFileSync(target, 'utf-8')) as Record<string, unknown>
+  } catch (cause) {
+    throw new ClientMapError(`${target} nao e um JSON valido: ${(cause as Error).message}`)
+  }
+
+  const groups = Array.isArray(raw.groups) ? [...(raw.groups as RawGroup[])] : []
+  const at = groups.findIndex(
+    (group) => typeof group.key === 'string' && normKey(group.key) === normKey(removal.key),
+  )
+  if (at === -1) return
+
+  if (removal.kind === 'grupo-desfeito' || removal.dissolves) {
+    groups.splice(at, 1)
+  } else {
+    const group = groups[at] as RawGroup
+    const members = Array.isArray(group.members) ? (group.members as { client: string }[]) : []
+    group.members = members.filter(
+      (member) => normKey(member.client) !== normKey(removal.client ?? ''),
+    )
+  }
+
+  /**
+   * **As entradas saem junto** (08/09/2026): desagrupar e desdeclarar viraram
+   * uma operacao so, por escolha do usuario. O filho que SOBRA quando o pai se
+   * dissolve nao e apagado — ele nao foi pedido.
+   */
+  if (removal.removes.length > 0) {
+    const apagar = new Set(removal.removes.map((key) => normKey(key)))
+    const clients = Array.isArray(raw.clients) ? (raw.clients as RawEntry[]) : []
+    raw.clients = clients.filter(
+      (entry) => typeof entry.key !== 'string' || !apagar.has(normKey(entry.key)),
+    )
+  }
+
+  raw.groups = groups
+  writeRawMap(raw, target)
+}
+
+interface RawGroup {
+  key?: unknown
+  label?: unknown
+  members?: unknown
+}
+
+/**
+ * Grava os dois kinds de pai (`H-88`).
+ *
+ * **O cliente que existia nao e apagado, e sim RENOMEADO pelo valor da regra
+ * dele.** As regras seguem intactas: o que muda e a chave e o rotulo, para que o
+ * ranking mostre "Vivi > AV" em vez de "Vivi > Vivi". Foi a determinacao 8, e o
+ * nome sai do valor porque e o que a propria coluna CLT explica.
+ */
+function saveClientParent(
+  raw: Record<string, unknown>,
+  clients: RawEntry[],
+  plan: ClientRulePlan,
+  target: string,
+): void {
+  const child = plan.child
+  if (child === undefined) return
+
+  if (plan.kind === 'grupo-criado' && plan.demoted !== undefined) {
+    const at = clients.findIndex(
+      (entry) => typeof entry.key === 'string' && normKey(entry.key) === plan.key,
+    )
+    const existing = at === -1 ? undefined : clients[at]
+    if (existing !== undefined) {
+      existing.key = plan.demoted.key
+      existing.label = plan.demoted.label
+    }
+  }
+
+  // O filho novo entra no FIM: regra que disputa lugar e so a `exact` sobre uma
+  // grafia, e aqui o operador esta declarando um conjunto.
+  if (!clients.some((entry) => typeof entry.key === 'string' && normKey(entry.key) === child.key)) {
+    clients.push({
+      key: child.key,
+      label: child.label,
+      rules: [{ match: plan.match, value: plan.value }],
+    })
+  }
+
+  const groups = Array.isArray(raw.groups) ? [...(raw.groups as RawGroup[])] : []
+  const groupAt = groups.findIndex(
+    (group) => typeof group.key === 'string' && normKey(group.key) === plan.key,
+  )
+
+  if (groupAt === -1) {
+    groups.push({
+      key: plan.key,
+      label: plan.label,
+      members: [{ client: plan.demoted?.key ?? child.key }, { client: child.key }].filter(
+        (member, index, all) => all.findIndex((other) => other.client === member.client) === index,
+      ),
+    })
+  } else {
+    const group = groups[groupAt] as RawGroup
+    const members = Array.isArray(group.members) ? [...(group.members as { client: string }[])] : []
+    if (!members.some((member) => member.client === child.key)) members.push({ client: child.key })
+    group.members = members
+  }
+
+  raw.clients = clients
+  raw.groups = groups
+  writeRawMap(raw, target)
 }

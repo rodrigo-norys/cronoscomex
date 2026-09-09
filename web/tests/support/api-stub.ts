@@ -1,6 +1,11 @@
 import { vi } from 'vitest'
 import type { AlertsResponse } from '../../../src/http/routes/alerts.ts'
 import type { ApplyResponse } from '../../../src/http/routes/apply.ts'
+import type {
+  ClientKeysResponse,
+  ClientRuleCreatedResponse,
+  RuleReachResponse,
+} from '../../../src/http/routes/clients.ts'
 import type { WorkbookConfigResponse } from '../../../src/http/routes/config.ts'
 import type { FilterOptionsResponse } from '../../../src/http/routes/filter-options.ts'
 import type { HealthResponse } from '../../../src/http/routes/health.ts'
@@ -112,6 +117,73 @@ export function indicatorsFixture(
  * `H-29` este stub servia data pura, e por isso o defeito de formatacao da
  * Pagina Alertas passou despercebido.
  */
+/**
+ * A coluna CLT como a rota a serve (`H-88`). Medido na planilha real em
+ * 08/09/2026: **509 grafias distintas**, das quais 111 sem cliente declarado, e
+ * a maior pendente valendo 3 processos. `items` traz um recorte da FORMA — uma
+ * grafia livre e uma declarada dentro de um pai —, e cada teste serve a lista
+ * que exercita.
+ */
+export function clientKeysFixture(overrides: Partial<ClientKeysResponse> = {}): ClientKeysResponse {
+  return {
+    items: [
+      {
+        key: 'YT-769',
+        label: 'YT-769',
+        count: 3,
+        samples: ['FT498.26', 'FT471.26'],
+        client: null,
+        parent: null,
+      },
+      // Uma grafia JA declarada e dentro de um pai: a lista mostra o estado
+      // inteiro desde 08/09/2026, e nao so o que falta.
+      {
+        key: 'AV-480',
+        label: 'AV-480',
+        count: 1,
+        samples: ['FT502.26'],
+        client: { key: 'AV', label: 'AV' },
+        parent: { key: 'VIVI-GRUPO', label: 'Vivi' },
+      },
+    ],
+    total: 2,
+    // Os declarados sao CLIENTES, nao grafias: `AV` consolida 304 celulas que
+    // diriam todas "Vivi > AV", e desfazer age sobre o cliente.
+    declared: [
+      {
+        key: 'AV',
+        label: 'AV',
+        parent: { key: 'VIVI-GRUPO', label: 'Vivi' },
+        keys: 304,
+        count: 304,
+      },
+      { key: 'DENNIS', label: 'Dennis', parent: null, keys: 24, count: 47 },
+    ],
+    names: [
+      { key: 'VIVI-GRUPO', label: 'Vivi', isParent: true, children: 4 },
+      { key: 'DENNIS', label: 'Dennis', isParent: false, children: 0 },
+    ],
+    ...overrides,
+  }
+}
+
+/**
+ * O alcance de uma regra candidata (`H-88`). Os numeros sao os do exemplo que
+ * `D-35` registra: `Y` alcanca quatro grafias livres, e casa duas que ja tem
+ * dono — `YT-769` e `YT-777`.
+ */
+export function ruleReachFixture(overrides: Partial<RuleReachResponse> = {}): RuleReachResponse {
+  return {
+    match: 'prefix',
+    value: 'Y',
+    keys: 4,
+    processes: 4,
+    samples: ['Y2601', 'Y2602', 'YT-769'],
+    alreadyMapped: [],
+    ...overrides,
+  }
+}
+
 export function alertsFixture(overrides: Partial<AlertsResponse> = {}): AlertsResponse {
   return {
     items: [],
@@ -352,6 +424,19 @@ export interface ApiStub {
   failOptions(): void
   serveIndicators(indicators: IndicatorsResponse): void
   serveAlerts(alerts: AlertsResponse): void
+  serveClientKeys(pending: ClientKeysResponse): void
+  serveRuleReach(reach: RuleReachResponse): void
+  /** `DELETE /api/clients/groups/...` passa a recusar com esta mensagem. */
+  failRemoveGroup(message: string): void
+  /** Os `DELETE` de agrupamento, na ordem — a URL diz o que foi pedido. */
+  readonly removals: string[]
+  /** `POST /api/clients/rules` passa a recusar com esta mensagem. Distinto de
+      `failClientRule`, que e a rota por REF de `H-79`. */
+  failCreateClientRule(message: string): void
+  /** Os corpos enviados a `POST /api/clients/rules`, na ordem. */
+  readonly ruleBodies: { match: string; value: string; label: string }[]
+  clientKeysWithoutRead(): void
+  failClientKeys(): void
   alertsWithoutRead(): void
   failAlerts(): void
   serveHistory(history: MonthlyHistoryResponse): void
@@ -411,6 +496,13 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
   let indicatorsStatus = 200
   let alerts = alertsFixture()
   let alertsStatus = 200
+  let clientKeys = clientKeysFixture()
+  let clientKeysStatus = 200
+  let ruleReach = ruleReachFixture()
+  let removeFailure: string | null = null
+  const removals: string[] = []
+  let createRuleFailure: string | null = null
+  const ruleBodies: { match: string; value: string; label: string }[] = []
   let history = monthlyHistoryFixture()
   let historyStatus = 200
   let quarantine = quarantineFixture()
@@ -468,6 +560,77 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
           ok: indicatorsStatus === 200,
           status: indicatorsStatus,
           json: () => Promise.resolve(indicators),
+        } as Response)
+      }
+
+      if (path.startsWith('/api/clients/groups/') && init?.method === 'DELETE') {
+        removals.push(path)
+        if (removeFailure !== null) {
+          const message = removeFailure
+          return Promise.resolve({
+            ok: false,
+            status: 404,
+            json: () => Promise.resolve({ error: { code: 'GRUPO_INEXISTENTE', message } }),
+          } as Response)
+        }
+        const membro = path.includes('/members/')
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              outcome: membro ? 'membro-removido' : 'grupo-desfeito',
+              key: 'VIVI-GRUPO',
+              client: membro ? decodeURIComponent(path.split('/members/')[1] ?? '') : null,
+              // Desagrupar e desdeclarar sao uma operacao so (08/09/2026).
+              removed: membro
+                ? [decodeURIComponent(path.split('/members/')[1] ?? '')]
+                : ['AV', 'CHUN', 'KELLY'],
+              dissolved: !membro,
+            }),
+        } as Response)
+      }
+
+      if (path === '/api/clients/rules') {
+        if (init?.method === 'POST' && typeof init.body === 'string') {
+          ruleBodies.push(JSON.parse(init.body))
+        }
+        if (createRuleFailure !== null) {
+          const message = createRuleFailure
+          return Promise.resolve({
+            ok: false,
+            status: 400,
+            json: () => Promise.resolve({ error: { code: 'CORPO_INVALIDO', message } }),
+          } as Response)
+        }
+        const enviado = JSON.parse(String(init?.body ?? '{}'))
+        return Promise.resolve({
+          ok: true,
+          status: 201,
+          json: () =>
+            Promise.resolve({
+              outcome: 'entrada-nova',
+              key: String(enviado.label ?? '').toUpperCase(),
+              label: enviado.label,
+              value: enviado.value,
+              match: enviado.match,
+            } as ClientRuleCreatedResponse),
+        } as Response)
+      }
+
+      if (path === '/api/clients/preview') {
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () => Promise.resolve(ruleReach),
+        } as Response)
+      }
+
+      if (path === '/api/clients') {
+        return Promise.resolve({
+          ok: clientKeysStatus === 200,
+          status: clientKeysStatus,
+          json: () => Promise.resolve(clientKeys),
         } as Response)
       }
 
@@ -733,6 +896,26 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
     },
     serveAlerts: (next) => {
       alerts = next
+    },
+    serveClientKeys: (next) => {
+      clientKeys = next
+    },
+    serveRuleReach: (next) => {
+      ruleReach = next
+    },
+    failRemoveGroup: (message) => {
+      removeFailure = message
+    },
+    removals,
+    failCreateClientRule: (message) => {
+      createRuleFailure = message
+    },
+    ruleBodies,
+    clientKeysWithoutRead: () => {
+      clientKeysStatus = 503
+    },
+    failClientKeys: () => {
+      clientKeysStatus = 500
     },
     alertsWithoutRead: () => {
       alertsStatus = 503

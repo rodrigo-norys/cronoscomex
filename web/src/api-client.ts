@@ -1,7 +1,14 @@
 import type { Conflict, WriteRefusal } from '../../src/app/write-guard.ts'
+import type { ClientMatch, ClientName, DeclaredClient } from '../../src/domain/client-mapper.ts'
 import type { ColorTarget } from '../../src/domain/color-mapper.ts'
 import type { AlertsResponse } from '../../src/http/routes/alerts.ts'
 import type { ApplyResponse } from '../../src/http/routes/apply.ts'
+import type {
+  ClientGroupRemovedResponse,
+  ClientKeysResponse,
+  ClientRuleCreatedResponse,
+  RuleReachResponse,
+} from '../../src/http/routes/clients.ts'
 import type { WorkbookConfigResponse } from '../../src/http/routes/config.ts'
 import type { EditsListResponse, EnqueuedEditResponse } from '../../src/http/routes/edits.ts'
 import type { FilterOptionsResponse } from '../../src/http/routes/filter-options.ts'
@@ -34,11 +41,17 @@ import type { QuarantineResponse } from '../../src/http/routes/quarantine.ts'
 export type {
   AlertsResponse,
   ApplyResponse,
+  ClientGroupRemovedResponse,
+  ClientKeysResponse,
+  ClientMatch,
+  ClientName,
+  ClientRuleCreatedResponse,
   ClientRuleResponse,
   ColorOption,
   ColorOptionsResponse,
   ColorTarget,
   Conflict,
+  DeclaredClient,
   EditsListResponse,
   EnqueuedColorResponse,
   EnqueuedEditResponse,
@@ -50,6 +63,7 @@ export type {
   ProcessDto,
   ProcessesResponse,
   QuarantineResponse,
+  RuleReachResponse,
 }
 
 /**
@@ -141,6 +155,95 @@ export async function getProcesses(
  * a apresentar, e lista vazia ali afirmaria ausencia de pendencia — que e o
  * oposto de "ainda nao se sabe".
  */
+/**
+ * Toda a coluna CLT, com o dono de cada grafia (`H-88`).
+ *
+ * **Sem `queryString`, e isso e a determinacao 2 de `D-32`** — a unica rota de
+ * leitura da aplicacao que ignora os filtros globais. Anexa-los faria filtrar
+ * por um cliente esconder a divida, e o operador concluiria que declarou tudo.
+ *
+ * Mesmo `503` de `getIndicators`: lista vazia enquanto nao houve leitura
+ * afirmaria que nao falta declarar nada.
+ */
+export async function getClientKeys(signal?: AbortSignal): Promise<ClientKeysResponse> {
+  const response = await fetch('/api/clients', signal ? { signal } : undefined)
+  if (response.status === 503) throw new NoReadYetError('GET /api/clients')
+  if (!response.ok) throw new Error(`GET /api/clients respondeu ${response.status}`)
+
+  return (await response.json()) as ClientKeysResponse
+}
+
+/**
+ * O alcance de uma regra candidata, ANTES de grava-la (`H-88`).
+ *
+ * Sem `queryString`, como `getClientKeys`: o alcance e sobre a planilha
+ * inteira, e nao sobre o recorte da tela (`D-32`, determinacao 2).
+ */
+export async function getRuleReach(
+  match: ClientMatch,
+  value: string,
+  signal?: AbortSignal,
+): Promise<RuleReachResponse> {
+  const query = `?match=${match}&value=${encodeURIComponent(value)}`
+  const response = await fetch(`/api/clients/preview${query}`, signal ? { signal } : undefined)
+  if (response.status === 503) throw new NoReadYetError('GET /api/clients/preview')
+  if (!response.ok) throw new Error(`GET /api/clients/preview respondeu ${response.status}`)
+
+  return (await response.json()) as RuleReachResponse
+}
+
+/**
+ * Declara o cliente de uma grafia ou de um prefixo (`H-88`).
+ *
+ * **Nao enfileira e nao toca o `.xlsx`**, pelo mesmo motivo de
+ * `setProcessClient`: a regra vive em `client-map.json`, e a fila existe para
+ * adiar a escrita no arquivo da empresa. O efeito vale na leitura seguinte.
+ *
+ * A mensagem de recusa chega ao operador sem traducao — ele nao e tecnico, e e
+ * ele quem vai corrigir o que digitou.
+ */
+export async function createClientRule(
+  match: ClientMatch,
+  value: string,
+  label: string,
+): Promise<ClientRuleCreatedResponse> {
+  const response = await fetch('/api/clients/rules', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ match, value, label }),
+  })
+  if (!response.ok) {
+    const body = (await response.json()) as { error?: { message?: string } }
+    throw new Error(body.error?.message ?? `POST /api/clients/rules respondeu ${response.status}`)
+  }
+
+  return (await response.json()) as ClientRuleCreatedResponse
+}
+
+/**
+ * Desfaz o agrupamento (`H-88`, determinacao 9).
+ *
+ * `client` nulo desfaz o PAI inteiro; com ele, tira so aquele cliente. **Nenhum
+ * cliente e apagado**: sai o vinculo, e nao a regra.
+ */
+export async function removeClientGroup(
+  groupKey: string,
+  clientKey: string | null,
+): Promise<ClientGroupRemovedResponse> {
+  const path =
+    clientKey === null
+      ? `/api/clients/groups/${encodeURIComponent(groupKey)}`
+      : `/api/clients/groups/${encodeURIComponent(groupKey)}/members/${encodeURIComponent(clientKey)}`
+
+  const response = await fetch(path, { method: 'DELETE' })
+  if (!response.ok) {
+    const body = (await response.json()) as { error?: { message?: string } }
+    throw new Error(body.error?.message ?? `DELETE ${path} respondeu ${response.status}`)
+  }
+
+  return (await response.json()) as ClientGroupRemovedResponse
+}
+
 export async function getAlerts(
   queryString: string,
   signal?: AbortSignal,
