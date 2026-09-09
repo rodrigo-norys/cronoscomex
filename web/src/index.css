@@ -396,6 +396,25 @@
 }
 
 /*
+ * O quadro da lista de clientes por declarar (`H-88`).
+ *
+ * **Em `rem`, e nao em pixel**, pelo mesmo motivo de `table-viewport`: a linha
+ * cresce com a fonte-base, e um teto fixo mostraria menos linhas conforme o
+ * operador aumenta o texto (`SC 1.4.4`). Medido em 08/09/2026 num Chrome real,
+ * com fonte-base de 16 px: `26rem` mostra DEZ das 111 grafias, e a secao inteira
+ * fica em 496 px contra os 1.832 px da pagina.
+ *
+ * **Ele mora aqui, e nao no `.tsx`, e isso nao e estilo:** `max-h-[` no JSX e o
+ * sinal sintatico que `tests/repo/estilo.test.ts` usa para reconhecer o painel
+ * MODAL, o unico que pode usar `border-border-modal`. Um teto arbitrario no
+ * componente reprova a guarda `C04` — que e exatamente o que aconteceu na
+ * primeira versao desta lista.
+ */
+@utility pending-viewport {
+  max-height: 26rem;
+}
+
+/*
  * As reguas horizontais do corpo da tabela, e o desvio do cabecalho grudado.
  *
  * **Elas estavam na `<tr>`, e nao podiam ficar la.** O cabecalho grudado exige
