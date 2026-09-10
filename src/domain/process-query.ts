@@ -155,7 +155,8 @@ function sortKey(process: Process, field: SortField): string | number | null {
  * "Sempre" inclui a ordem descendente, e e ai que a implementacao ingenua erra:
  * inverter o comparador inteiro jogaria os nulos para o topo em `desc`, e o
  * operador que inverte a coluna de ETA2 veria uma tela de tracos — medido, a
- * planilha tem **64 processos sem ETA2**. O nulo nao participa da inversao —
+ * planilha tem **65 processos sem ETA2** (10/09/2026, sobre 650 linhas; eram 64
+ * quando ela tinha 649). O nulo nao participa da inversao —
  * ele e ausencia de valor, nao um valor extremo.
  *
  * Empate desempata por `sourceRow`, que e unico **entre as linhas do arquivo**:
