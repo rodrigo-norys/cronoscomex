@@ -144,8 +144,9 @@ acrescentada em 08/09/2026 por `D-35`. **`H-82` a `H-86` e `H-90` fecharam em
 04/09/2026, `H-87` em 08/09/2026 e `H-88` em 09/09/2026.** Restam duas: `H-91` —
 o mapa de equipe operável pela tela, que sai de `PD-08` (`D-32`) — e a ordem em
 que a planilha está (`D-33`), **a única das duas que toca contrato de rota
-existente**, porque altera `sort` em `docs/05-contratos-api.md`. `H-91` vive na
-branch `E14/clientes-editaveis`, que já traz `H-88` e chega à `main` num PR só. Restam também as **três pendências abertas** abaixo,
+existente**, porque altera `sort` em `docs/05-contratos-api.md`. **A branch de integração de `D-35` fechou com uma
+história só:** `H-88` chegou à `main` sozinha pelo PR #123, e `H-91` vai em
+branch e PR próprios — a emenda está na linha de `D-35`. Restam também as **três pendências abertas** abaixo,
 e nenhuma bloqueia implementação: `PD-09` espera só uma decisão, `PD-08` a
 próxima sincronização da branch `distribuicao`, e `PD-07` se divide — a paleta
 nominal quer a máquina do operador, e o `ConflictDialog` quer uma fixture que
