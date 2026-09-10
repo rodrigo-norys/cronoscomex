@@ -7,7 +7,7 @@ import { Skeleton } from '../components/Skeleton.tsx'
 import { useFirstLoad } from '../hooks/useFirstLoad.ts'
 import { useIndicators } from '../hooks/useIndicators.ts'
 import { useProcesses } from '../hooks/useProcesses.ts'
-import { PAGE_SIZES, useProcessQuery } from '../hooks/useProcessQuery.ts'
+import { PAGE_SIZES, SORT_LABELS, useProcessQuery } from '../hooks/useProcessQuery.ts'
 
 /**
  * Pagina Operacional (RF-10): tabela de processos, busca sobre os seis campos
@@ -150,6 +150,52 @@ function Controls({
       <div className="pb-0.5">
         <NewRowButton onCreated={onEdited} />
       </div>
+
+      <SortState query={query} />
+    </div>
+  )
+}
+
+/**
+ * A ordem vigente, nomeada, e o botao que a descarta (`H-89`).
+ *
+ * **Mora na faixa da PAGINA, e nao na barra de filtros**, que e da casca e vale
+ * para seis paginas — `sort` so existe nesta. Aqui ele fica ao lado dos irmaos
+ * dele no mesmo hook, a busca e o recorte, e a 17 px do cabecalho que produziu
+ * a ordenacao, contra ~1474 px do canto direito da faixa de cima em 1920.
+ *
+ * **`ml-auto` nao e enfeite:** ele absorve a entrada e a saida do bloco, entao
+ * aparecer e sumir nao desloca o `Nova linha`.
+ *
+ * **O foco vai para o cabecalho da coluna que estava ordenada** antes de o
+ * bloco se desmontar. Sem isso o foco cai no `<body>` e a tabulacao recomeca do
+ * topo — `SC 2.4.3`, o mesmo defeito que `VN-4` mediu na navegacao.
+ */
+function SortState({ query }: { query: ReturnType<typeof useProcessQuery> }) {
+  if (query.sort === 'sourceRow' && query.order === 'asc') return null
+
+  const direcao = query.order === 'asc' ? 'crescente' : 'decrescente'
+  const nome =
+    query.sort === 'sourceRow'
+      ? 'Ordem da planilha, invertida'
+      : `${SORT_LABELS[query.sort]}, ${direcao}`
+
+  return (
+    <div className="ml-auto flex items-center gap-2.5 pb-1">
+      <p className="text-sm text-text-secondary">
+        Ordenado por <span className="font-medium text-text-primary">{nome}</span>
+      </p>
+      <button
+        type="button"
+        onClick={() => {
+          const cabecalho = document.querySelector<HTMLElement>('th[aria-sort] button')
+          query.clearSort()
+          cabecalho?.focus()
+        }}
+        className="motion-tint shrink-0 rounded-control border border-border-control bg-surface-raised px-2.5 py-1 text-sm text-text-secondary hover:text-text-primary"
+      >
+        Limpar ordenação
+      </button>
     </div>
   )
 }

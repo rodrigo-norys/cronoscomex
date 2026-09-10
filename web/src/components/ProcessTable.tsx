@@ -1,6 +1,6 @@
 import { enqueueEdit, type ProcessDto, setProcessClient } from '../api-client.ts'
 import { type GridNavigation, useGridNavigation } from '../hooks/useGridNavigation.ts'
-import type { SortField, SortOrder } from '../hooks/useProcessQuery.ts'
+import { SORT_LABELS, type SortField, type SortOrder } from '../hooks/useProcessQuery.ts'
 import { navigate } from '../router.ts'
 import { EditableCell } from './EditableCell.tsx'
 
@@ -32,9 +32,12 @@ import { EditableCell } from './EditableCell.tsx'
 
 interface Column {
   readonly key: string
-  readonly label: string
   readonly sortBy: SortField
 }
+
+/** O rotulo vem de `SORT_LABELS`: a faixa de controles nomeia a MESMA ordem ao
+    dizer o que o botao Limpar ordenacao vai desfazer (`H-89`). */
+const labelOf = (column: Column): string => SORT_LABELS[column.sortBy]
 
 /**
  * As nove colunas, **todas** ordenaveis desde 02/09/2026.
@@ -45,15 +48,15 @@ interface Column {
  * diferentes (`H-49`), e e por isso que sao duas colunas.
  */
 const COLUMNS: readonly Column[] = [
-  { key: 'ref', label: 'REF', sortBy: 'ref' },
-  { key: 'client', label: 'Cliente', sortBy: 'client' },
-  { key: 'clientProcess', label: 'Processo do cliente', sortBy: 'clientProcess' },
-  { key: 'importer', label: 'Importador', sortBy: 'importer' },
-  { key: 'vessel', label: 'Navio', sortBy: 'vessel' },
-  { key: 'eta2', label: 'ETA2', sortBy: 'eta2' },
-  { key: 'billOfLading', label: 'BL', sortBy: 'billOfLading' },
-  { key: 'container', label: 'CNTR', sortBy: 'container' },
-  { key: 'status', label: 'Categoria', sortBy: 'status' },
+  { key: 'ref', sortBy: 'ref' },
+  { key: 'client', sortBy: 'client' },
+  { key: 'clientProcess', sortBy: 'clientProcess' },
+  { key: 'importer', sortBy: 'importer' },
+  { key: 'vessel', sortBy: 'vessel' },
+  { key: 'eta2', sortBy: 'eta2' },
+  { key: 'billOfLading', sortBy: 'billOfLading' },
+  { key: 'container', sortBy: 'container' },
+  { key: 'status', sortBy: 'status' },
 ]
 
 const CATEGORY_LABELS: Record<ProcessDto['statusCategory'], string> = {
@@ -299,7 +302,7 @@ function HeaderCell({
         tabIndex={-1}
         className="motion-tint flex items-center gap-1 hover:text-text-primary"
       >
-        {column.label}
+        {labelOf(column)}
         <span aria-hidden="true" className="text-xs">
           {active ? (order === 'asc' ? '▲' : '▼') : '↕'}
         </span>
