@@ -39,7 +39,12 @@ const SEARCHABLE = [
 ] as const
 
 /**
- * As dez ordens que a Pagina Operacional oferece — uma por coluna da tabela.
+ * As onze ordens que a Pagina Operacional oferece — dez por coluna da tabela,
+ * mais `sourceRow`, que e a ordem FISICA do arquivo e nao tem coluna.
+ *
+ * `sourceRow` e o padrao desde `H-89`, e entra como valor de `sort` em vez de
+ * caso especial de "sem `sort`": tratado como ausencia, o operador que ordenou
+ * por uma coluna nao teria como voltar (`D-33`).
  *
  * Eram cinco ate 02/09/2026, e a tabela mostrava nove colunas: quatro
  * cabecalhos nao eram clicaveis, sem que a tela dissesse por que. `client` e
@@ -49,6 +54,7 @@ const SEARCHABLE = [
  * valores distintos em CLT.
  */
 export const SORT_FIELDS = [
+  'sourceRow',
   'ref',
   'client',
   'clientProcess',
@@ -111,6 +117,8 @@ export function isActive(process: Process): boolean {
  */
 function sortKey(process: Process, field: SortField): string | number | null {
   switch (field) {
+    case 'sourceRow':
+      return process.sourceRow
     case 'ref':
       return process.ref === '' ? null : process.ref
     case 'eta2':
@@ -167,7 +175,9 @@ function sortKey(process: Process, field: SortField): string | number | null {
  * `sourceRow: 0` (`UNWRITTEN_ROW`), entao duas insercoes pendentes empatam entre
  * si e ordenam ANTES de qualquer linha real. Deliberado: elas sao o que o
  * operador acabou de digitar, e o `sort` estavel preserva a ordem de chegada
- * entre elas. Achado do revisor-xml, registrado em vez de corrigido — inventar
+ * entre elas. **Desde `H-89` isso vale tambem para a ordem PADRAO da tela**, e
+ * nao so para o desempate: com `sort: 'sourceRow'`, a linha pendente abre no
+ * topo — o backlog afirmava o contrario, e a divergencia foi corrigida la. Achado do revisor-xml, registrado em vez de corrigido — inventar
  * um numero para ordenar reintroduziria o endereco falso que `UNWRITTEN_ROW`
  * existe para evitar.
  */

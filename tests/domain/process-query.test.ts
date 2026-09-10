@@ -5,6 +5,7 @@ import {
   MAX_LIMIT,
   matchesSearch,
   paginate,
+  SORT_FIELDS,
   sortProcesses,
 } from '../../src/domain/process-query.ts'
 import type { Process, StatusCategory } from '../../src/domain/types.ts'
@@ -344,6 +345,49 @@ describe('sortProcesses — as colunas que nao tinham ordem', () => {
     // Toda linha tem uma das quatro (TD-01): nao ha balde de nulos preso no fim,
     // entao descendente inverte as quatro inteiras.
     expect(sortProcesses(todos, 'status', 'desc').map((p) => p.ref)).toEqual(['C', 'A', 'D', 'B'])
+  })
+})
+
+/**
+ * A ordem FISICA do arquivo, que `H-89` promoveu de desempate a padrao (`D-33`).
+ *
+ * Ela e o unico campo sem coluna na tabela, e o unico que nunca e nulo — o ramo
+ * de ausencia de `sortProcesses` nao e alcancavel por ele, ao contrario de
+ * `eta2`, que tem 65 ausencias nas 650 linhas (medido em 10/09/2026).
+ */
+describe('sortProcesses — sourceRow, a ordem da planilha', () => {
+  const terceira = makeProcess({ sourceRow: 12, ref: 'C' })
+  const primeira = makeProcess({ sourceRow: 4, ref: 'A' })
+  const segunda = makeProcess({ sourceRow: 9, ref: 'B' })
+
+  it('ordena pela linha do arquivo, crescente', () => {
+    expect(
+      sortProcesses([terceira, primeira, segunda], 'sourceRow', 'asc').map((p) => p.ref),
+    ).toEqual(['A', 'B', 'C'])
+  })
+
+  it('descendente devolve a planilha de tras para a frente', () => {
+    expect(
+      sortProcesses([primeira, terceira, segunda], 'sourceRow', 'desc').map((p) => p.ref),
+    ).toEqual(['C', 'B', 'A'])
+  })
+
+  /**
+   * `UNWRITTEN_ROW` e zero, entao a linha que o operador acabou de criar e ainda
+   * nao aplicou abre no TOPO — e nao no fim, onde ela estara depois de gravada.
+   * O backlog de `H-89` afirmava o contrario ate 10/09/2026; quem esta certo e a
+   * projecao, que se recusa a inventar um numero de linha (`D-25`).
+   */
+  it('a linha ainda nao gravada vem antes de todas', () => {
+    const pendente = makeProcess({ sourceRow: 0, ref: 'NOVA' })
+
+    expect(
+      sortProcesses([segunda, pendente, primeira], 'sourceRow', 'asc').map((p) => p.ref),
+    ).toEqual(['NOVA', 'A', 'B'])
+  })
+
+  it('`sourceRow` esta entre os campos que a rota aceita', () => {
+    expect(SORT_FIELDS).toContain('sourceRow')
   })
 })
 
