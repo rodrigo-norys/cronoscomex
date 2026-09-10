@@ -10260,8 +10260,14 @@ sort  padrao: sourceRow  (era eta2)
   04/09/2026. Entre os 170 ativos, **nenhuma**.
 - **`sourceRow` nunca é nulo**, então o ramo de nulos de `sortProcesses` não é
   alcançado por ele — diferente de `eta2`, que tem 65 ausências.
-- **Linha criada por `H-78`** recebe `sourceRow` maior que todas: ela aparece no
-  fim, que é onde ela está na planilha.
+- **Linha criada por `H-78`, já gravada**, recebe `sourceRow` maior que todas: ela
+  aparece no fim, que é onde ela está na planilha. **Enquanto pendente é o
+  oposto, e isso é deliberado:** a projeção marca `sourceRow: 0`
+  (`UNWRITTEN_ROW`), então ela ordena **antes** de qualquer linha real — achado
+  do `revisor-xml`, registrado no cabeçalho de `sortProcesses` em vez de
+  corrigido, porque inventar um número reintroduziria o endereço falso que
+  `UNWRITTEN_ROW` existe para evitar. Com `sourceRow` como padrão, o processo
+  recém-digitado e ainda não aplicado passa a abrir **no topo** da tabela.
 - **Ordem estável:** duas linhas nunca empatam em `sourceRow`, então o desempate
   secundário deixa de ser alcançável por este campo.
 
@@ -10425,6 +10431,12 @@ buscar em Cliente, ETA2 ou Categoria, que `D-34` recusou com motivo.
 > **Era `H-92` até 08/09/2026**, e assumiu o número da história de grupos quando
 > `D-35` foi emendada e aquela foi absorvida por `H-88`. A renumeração é segura
 > porque nenhuma das duas chegou a ser commitada.
+>
+> **A branch de integração acabou antes dela, e a emenda de `D-35` registra o
+> desfecho.** As três frentes iam à `main` num PR só; `H-88` foi mesclada
+> **sozinha** em 09/09/2026, pelo PR #123, porque ficou usável sem esta — que é
+> outro arquivo e outra página. Esta nasce em branch própria, sobre a `main` que
+> já traz `H-88`.
 
 **Objetivo:** o operador declarar quem é responsável por quais importadores, sem
 editar o `team-map.json` à mão nem recebê-lo por cópia.
