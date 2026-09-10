@@ -186,7 +186,9 @@ interface ProcessesQuery {
 class QueryError extends Error {}
 
 function parseSort(raw: string | undefined): SortField {
-  if (raw === undefined) return 'eta2'
+  // `sourceRow` desde `H-89`: sem `sort`, a tela abre na ordem em que as linhas
+  // estao na planilha (`D-33`).
+  if (raw === undefined) return 'sourceRow'
   if ((SORT_FIELDS as readonly string[]).includes(raw)) return raw as SortField
   throw new QueryError(`"sort" deve ser um de: ${SORT_FIELDS.join(', ')}.`)
 }

@@ -118,22 +118,21 @@ em `src/`; por que uma guarda existe, no cabeçalho do próprio script ou teste.
 atingido com folga: as 649 linhas da aba `2026` são aceitas com **0% de
 quarentena** (`H-07`), contra o limite de 2% de RNF-24.
 
-**89 das 91 histórias estão concluídas.** `E9`, `E10`, `E11` e `E12` fecharam em
+**91 das 92 histórias estão concluídas.** `E9`, `E10`, `E11` e `E12` fecharam em
 01/09/2026, e `E13` em 03/09/2026. Os **seis** épicos posteriores ao plano não
 têm fase atribuída; a ordem entre eles vive no cabeçalho de cada um, em
 `06-backlog.md`.
 
-**`E14` é o épico aberto** — `H-82` a `H-91`, as nove primeiras numeradas na ordem de execução,
-com `H-90` fora dela por ter nascido depois. **Seis fecharam em 04/09/2026**:
-os filtros num painel sobreposto (`D-30`), a busca por atalho, o quadro que rola
-com cabeçalho fixo e tamanho de página escolhível (`D-31` e `D-33`), o
-carregamento sem salto de altura, o ícone por destino, e a busca sobre os seis
-campos de texto (`D-34`); **a contagem que segue o recorte (`D-29`) fechou em
-08/09/2026, e a contagem que segue o recorte junto**; **`H-88` fechou em
-09/09/2026**, com o mapa de clientes operável pela tela. **Restam duas:** o mapa
-de equipe (`D-32`) e a ordem em que a
-planilha está (`D-33`) — esta última é a única que toca contrato de rota, porque
-altera `sort` em `05-contratos-api.md`. Três dos quatro épicos posteriores ao
+**`E14` é o épico aberto** — `H-82` a `H-92`, as nove primeiras numeradas na ordem de execução,
+com `H-90`, `H-91` e `H-92` fora dela por terem nascido depois. **Seis fecharam
+em 04/09/2026**: os filtros num painel sobreposto (`D-30`), a busca por atalho, o
+quadro que rola com cabeçalho fixo e tamanho de página escolhível (`D-31` e
+`D-33`), o carregamento sem salto de altura, o ícone por destino, e a busca sobre
+os seis campos de texto (`D-34`); **a contagem que segue o recorte (`D-29`) fechou
+em 08/09/2026**; **`H-88` fechou em 09/09/2026**, com o mapa de clientes operável
+pela tela; e **`H-89` e `H-92` em 10/09/2026** — a ordem da planilha como padrão,
+com o botão que a devolve (`D-38`), e o recorte em fichas descartáveis (`D-39`).
+**Resta uma:** o mapa de equipe, que sai de `PD-08`. Três dos quatro épicos posteriores ao
 plano nasceram de documentos de auditoria que estão em `docs/estilizacao/`,
 `docs/uso/` e `docs/redesign/PROPOSTA.md` sem nunca terem virado história.
 

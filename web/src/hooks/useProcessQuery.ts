@@ -12,6 +12,7 @@ import { replaceQuery, useQuery } from '../router.ts'
  */
 
 export type SortField =
+  | 'sourceRow'
   | 'ref'
   | 'client'
   | 'clientProcess'
@@ -24,9 +25,32 @@ export type SortField =
   | 'status'
 export type SortOrder = 'asc' | 'desc'
 
+/**
+ * O nome de cada ordem na tela. Mora aqui, e nao em `ProcessTable`, pelo motivo
+ * que `MULTI_FILTER_LABELS` ja registra em `useFilters`: dois mapas de rotulo
+ * divergem no primeiro renomeado. `COLUMNS` consome este, e o `Record` completo
+ * faz de rotulo faltando um erro de tipo.
+ *
+ * `sourceRow` e o unico sem coluna na tabela — ele nomeia a ordem do arquivo.
+ */
+export const SORT_LABELS: Readonly<Record<SortField, string>> = {
+  sourceRow: 'Ordem da planilha',
+  ref: 'REF',
+  client: 'Cliente',
+  clientProcess: 'Processo do cliente',
+  importer: 'Importador',
+  vessel: 'Navio',
+  eta2: 'ETA2',
+  registrationDate: 'Registro (RG)',
+  billOfLading: 'BL',
+  container: 'CNTR',
+  status: 'Categoria',
+}
+
 /** Espelha `SORT_FIELDS` de `src/domain/process-query.ts`: valor fora da lista
     cai no padrao em vez de chegar a rota e voltar 400. */
 const SORT_FIELDS: readonly SortField[] = [
+  'sourceRow',
   'ref',
   'client',
   'clientProcess',
@@ -70,6 +94,8 @@ export interface ProcessQuery {
   setActiveOnly(value: boolean): void
   /** Alterna a direcao quando e a mesma coluna; comeca em `asc` numa nova. */
   toggleSort(field: SortField): void
+  /** Descarta a ordenacao e devolve a tela a ordem da planilha (`H-89`). */
+  clearSort(): void
   setLimit(value: number): void
   setOffset(value: number): void
 }
@@ -77,7 +103,7 @@ export interface ProcessQuery {
 function readSort(raw: string | null): SortField {
   return raw !== null && (SORT_FIELDS as readonly string[]).includes(raw)
     ? (raw as SortField)
-    : 'eta2'
+    : 'sourceRow'
 }
 
 /**
@@ -162,6 +188,24 @@ export function useProcessQuery(): ProcessQuery {
     [write, sort, order],
   )
 
+  /**
+   * APAGA `sort` e `order` em vez de escrever `sort=sourceRow`: a URL guarda so
+   * o que difere do padrao, como `setLimit` e `setActiveOnly` ja fazem, e
+   * `readSort` devolve `sourceRow` na ausencia. Apagar `order` junto e
+   * obrigatorio — `order=desc` orfao daria a planilha de tras para a frente.
+   *
+   * Isso NAO contradiz a determinacao 1 de `H-89`: la `sourceRow` e valor de
+   * `sort` para o dominio e para a rota, onde ele precisa ser pedivel. Aqui e
+   * so codificacao de URL.
+   */
+  const clearSort = useCallback((): void => {
+    write((draft) => {
+      draft.delete('sort')
+      draft.delete('order')
+      draft.delete('offset')
+    })
+  }, [write])
+
   const setLimit = useCallback(
     (value: number): void => {
       write((draft) => {
@@ -194,6 +238,7 @@ export function useProcessQuery(): ProcessQuery {
     setSearch,
     setActiveOnly,
     toggleSort,
+    clearSort,
     setLimit,
     setOffset,
   }

@@ -175,11 +175,11 @@ describe('activeOnly — A-16 e D-33', () => {
 })
 
 describe('ordenacao', () => {
-  it('parte de eta2 ascendente', async () => {
+  it('parte da ordem da planilha, ascendente', async () => {
     renderPage()
 
     await waitFor(() => {
-      expect(lastProcessCall()).toContain('sort=eta2')
+      expect(lastProcessCall()).toContain('sort=sourceRow')
       expect(lastProcessCall()).toContain('order=asc')
     })
   })
@@ -195,9 +195,19 @@ describe('ordenacao', () => {
     return within(coluna).getByRole('button')
   }
 
+  /**
+   * Com o padrao em `sourceRow`, o PRIMEIRO clique numa coluna comeca em `asc` —
+   * antes de `H-89` ele invertia, porque a tela ja abria ordenada por ETA2.
+   */
   it('clicar na mesma coluna alterna a direcao', async () => {
     renderPage()
     await screen.findByRole('grid')
+
+    fireEvent.click(cabecalho(/ETA2/))
+    await waitFor(() => {
+      expect(lastProcessCall()).toContain('sort=eta2')
+      expect(lastProcessCall()).toContain('order=asc')
+    })
 
     fireEvent.click(cabecalho(/ETA2/))
     await waitFor(() => expect(lastProcessCall()).toContain('order=desc'))
@@ -219,12 +229,85 @@ describe('ordenacao', () => {
     })
   })
 
+  /**
+   * No padrao NENHUMA coluna e marcada: `sourceRow` nao tem coluna, e anunciar
+   * ETA2 como ordenada seria falso. Quem diz a ordem em palavras passa a ser a
+   * faixa de controles.
+   */
+  it('no padrao nenhuma coluna esta marcada para o leitor de tela', async () => {
+    renderPage()
+    await screen.findByRole('grid')
+
+    const marcadas = screen
+      .getAllByRole('columnheader')
+      .filter((th) => th.getAttribute('aria-sort') !== null)
+
+    expect(marcadas).toHaveLength(0)
+  })
+
   it('marca a coluna ordenada para o leitor de tela', async () => {
     renderPage()
     await screen.findByRole('grid')
 
-    const eta2 = screen.getAllByRole('columnheader').find((th) => th.textContent?.includes('ETA2'))
-    expect(eta2?.getAttribute('aria-sort')).toBe('ascending')
+    fireEvent.click(cabecalho(/ETA2/))
+
+    await waitFor(() => {
+      const eta2 = screen
+        .getAllByRole('columnheader')
+        .find((th) => th.textContent?.includes('ETA2'))
+      expect(eta2?.getAttribute('aria-sort')).toBe('ascending')
+    })
+  })
+
+  /**
+   * O botao que `D-38` pos no lugar do terceiro clique: explicito, e so existe
+   * quando ha o que limpar.
+   */
+  describe('limpar ordenacao', () => {
+    it('no padrao, o bloco nao existe', async () => {
+      renderPage()
+      await screen.findByRole('grid')
+
+      expect(screen.queryByRole('button', { name: 'Limpar ordenação' })).toBeNull()
+    })
+
+    it('nomeia a ordem vigente quando ha ordenacao', async () => {
+      window.history.replaceState(null, '', '/operacional?sort=eta2&order=desc')
+      renderPage()
+      await screen.findByRole('grid')
+
+      expect(screen.getByText(/Ordenado por/).textContent).toContain('ETA2, decrescente')
+      expect(screen.getByRole('button', { name: 'Limpar ordenação' })).toBeTruthy()
+    })
+
+    it('limpar devolve a ordem da planilha e some do endereco', async () => {
+      window.history.replaceState(null, '', '/operacional?sort=eta2&order=desc')
+      renderPage()
+      await screen.findByRole('grid')
+
+      fireEvent.click(screen.getByRole('button', { name: 'Limpar ordenação' }))
+
+      await waitFor(() => {
+        expect(window.location.search).not.toContain('sort=')
+        expect(window.location.search).not.toContain('order=')
+        expect(lastProcessCall()).toContain('sort=sourceRow')
+      })
+      expect(screen.queryByRole('button', { name: 'Limpar ordenação' })).toBeNull()
+    })
+
+    /**
+     * `sort=sourceRow&order=desc` so se alcanca pela barra de enderecos, e sem
+     * esta clausula seria um estado visivel SEM caminho de volta — o defeito que
+     * a historia existe para fechar, reintroduzido pela porta dos fundos.
+     */
+    it('a planilha invertida tambem oferece o botao', async () => {
+      window.history.replaceState(null, '', '/operacional?sort=sourceRow&order=desc')
+      renderPage()
+      await screen.findByRole('grid')
+
+      expect(screen.getByText(/Ordenado por/).textContent).toContain('Ordem da planilha, invertida')
+      expect(screen.getByRole('button', { name: 'Limpar ordenação' })).toBeTruthy()
+    })
   })
 })
 

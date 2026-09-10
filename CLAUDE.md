@@ -132,7 +132,7 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**89 das 91 histórias estão concluídas**, e as duas abertas são `E14`. O que cada uma aprendeu — número medido,
+**91 das 92 histórias estão concluídas**, e a única aberta é `E14`. O que cada uma aprendeu — número medido,
 defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
 `docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
 em aberto. **Este bloco diz só o que está aberto.**
@@ -141,11 +141,11 @@ em aberto. **Este bloco diz só o que está aberto.**
 é **`E14`** — `H-82` a `H-90`, decididas em 03 e 04/09/2026 e **numeradas na
 ordem de execução**, com `H-90` fora dela por ter nascido depois, mais `H-91`,
 acrescentada em 08/09/2026 por `D-35`. **`H-82` a `H-86` e `H-90` fecharam em
-04/09/2026, `H-87` em 08/09/2026 e `H-88` em 09/09/2026.** Restam duas: `H-91` —
-o mapa de equipe operável pela tela, que sai de `PD-08` (`D-32`) — e a ordem em
-que a planilha está (`D-33`), **a única das duas que toca contrato de rota
-existente**, porque altera `sort` em `docs/05-contratos-api.md`. `H-91` vive na
-branch `E14/clientes-editaveis`, que já traz `H-88` e chega à `main` num PR só. Restam também as **três pendências abertas** abaixo,
+04/09/2026, `H-87` em 08/09/2026, `H-88` em 09/09/2026, e `H-89` e `H-92` em
+10/09/2026.** Resta uma: `H-91` — o mapa de equipe operável pela tela, que sai de
+`PD-08`. **A branch de integração de `D-35` fechou com uma
+história só:** `H-88` chegou à `main` sozinha pelo PR #123, e `H-91` vai em
+branch e PR próprios — a emenda está na linha de `D-35`. Restam também as **três pendências abertas** abaixo,
 e nenhuma bloqueia implementação: `PD-09` espera só uma decisão, `PD-08` a
 próxima sincronização da branch `distribuicao`, e `PD-07` se divide — a paleta
 nominal quer a máquina do operador, e o `ConflictDialog` quer uma fixture que
