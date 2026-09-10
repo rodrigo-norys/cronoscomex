@@ -30,8 +30,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E11 — A casca redesenhada ✅ | **H-57 … H-65, todas concluídas** | 3 | 6 | 0 |
 | E12 — Os achados da revisão de estilo ✅ | **H-73 … H-76, todas concluídas** | 2 | 1 | 1 |
 | E13 — O operacional que edita, ordena e cria ✅ | **H-77 … H-81, todas concluídas.** Épico **retroativo**: o código entrou em 02/09/2026 e as histórias foram escritas em 03/09 | 3 | 0 | 2 |
-| E14 — A casca que se opera, não só se lê | **H-82 a H-88 e H-90 ✅; H-89 e H-91 abertas.** Primeiro épico **prospectivo** desde `E12`: as nove primeiras nascem antes do código (`D-29` a `D-34`), e `H-91` entra em 08/09/2026 por `D-35` | 2 | 7 | 1 |
-| **Total** | **91** — 89 concluídas, 2 abertas | **35** | **51** | **5** |
+| E14 — A casca que se opera, não só se lê | **H-82 a H-90 e H-92 ✅; só `H-91` aberta.** Primeiro épico **prospectivo** desde `E12`: as nove primeiras nascem antes do código (`D-29` a `D-34`), `H-91` entra em 08/09/2026 por `D-35`, e `H-92` em 10/09/2026 por `D-39` | 3 | 7 | 1 |
+| **Total** | **92** — 91 concluídas, 1 aberta | **36** | **51** | **5** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -195,9 +195,10 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-86 — Os sete ícones da lateral](#h-86) ✅
 - [H-87 — A contagem que segue o recorte](#h-87) ✅
 - [H-88 — O mapa de clientes, operável na tela](#h-88) ✅
-- [H-89 — A ordem em que a planilha está](#h-89)
+- [H-89 — A ordem em que a planilha está](#h-89) ✅
 - [H-90 — A busca sobre os seis campos de texto](#h-90) ✅
 - [H-91 — O mapa de equipe, editável na tela](#h-91)
+- [H-92 — O recorte em fichas, cada uma descartável](#h-92) ✅
 
 
 ---
@@ -10207,9 +10208,27 @@ pontos verdes — a lista completa, a atribuição com conversão, e o desfazer.
 
 ### H-89 — A ordem em que a planilha está
 
-> Nasce do uso, em 04/09/2026 (`D-33`), e **depende de `H-84`**: a ordem só se
+> ✅ **CONCLUÍDA em 10/09/2026.** **12 testes próprios** — 4 no domínio, 3 na
+> rota e 5 na interface —, suíte em **2.030**. **Conferida na planilha real:** o
+> padrão novo reproduz a ordem do arquivo **linha a linha**, e **271 das 650**
+> linhas mudam de posição contra o padrão anterior, **nenhuma** entre as 170
+> ativas — o número de 04/09 confere.
+>
+> **A medição derrubou uma premissa de `D-33`:** a planilha não está em ordem de
+> ETA2, e sim de **Registro** — zero pares fora de ordem entre as 483 linhas com
+> data, contra **27** quebras em ETA2. Nada na história muda por isso, porque ela
+> ordena por `sourceRow`, que é a ordem física e não depende de qual critério a
+> produziu; a divergência está registrada em `D-33`.
+>
+> **Nasce do uso, em 04/09/2026 (`D-33`)**, e dependia de `H-84`: a ordem só se
 > torna visível depois que a tela passa a abrir com os 650 — entre os 170
 > ativos, a ordenação por `eta2` e a da planilha são a mesma lista.
+>
+> **`D-38` trocou o caminho de volta em 10/09/2026:** era o terceiro clique no
+> cabeçalho, e passou a ser um **botão explícito** na faixa de controles. O
+> terceiro clique **sai** — dois caminhos para a mesma coisa, um deles invisível,
+> é o oposto de explícito. A frase "Todos os processos, sem recorte" sai da barra
+> de filtros no mesmo commit, e pelo mesmo critério.
 
 **Objetivo:** `/operacional` sem parâmetro abrir na ordem em que as linhas estão
 na planilha, e o operador poder voltar a ela depois de ordenar por qualquer
@@ -10240,16 +10259,27 @@ sort  padrao: sourceRow  (era eta2)
 - `src/domain/process-query.ts` — `SORT_FIELDS` e `sortKey`
 - `src/http/routes/processes.ts` — o padrão de `parseSort`
 - `docs/05-contratos-api.md` — a linha de `sort`
-- `web/src/hooks/useProcessQuery.ts` — `readSort` e o terceiro clique
-- `web/src/pages/Operational.tsx` · `web/src/components/ProcessTable.tsx`
+- `web/src/hooks/useProcessQuery.ts` — `readSort`, `SORT_LABELS` e `clearSort`
+- `web/src/pages/Operational.tsx` — o bloco que nomeia a ordem e a descarta
+- `web/src/components/ProcessTable.tsx` — os rótulos passam a vir do hook
+- `web/src/components/FilterBar.tsx` — a frase do estado vazio sai (`D-38`)
 - `tests/domain/process-query.test.ts` · `tests/http/processes.test.ts` ·
-  `web/tests/Operational.test.tsx`
+  `web/tests/Operational.test.tsx` · `web/tests/FilterBar.test.tsx`
 
 **Critérios de aceite:**
 - **Dado** `/operacional` sem parâmetro, **então** as linhas saem na ordem de
   `sourceRow` crescente — a mesma da planilha.
 - **Dado** um clique num cabeçalho, **então** a coluna ordena `asc`; no segundo,
-  `desc`; **no terceiro, volta a `sourceRow`**.
+  `desc`; e o ciclo para aí — **não há terceiro estado** (`D-38`).
+- **Dado** que há ordenação por coluna, **então** a faixa de controles nomeia a
+  ordem vigente e oferece **Limpar ordenação**; sem ordenação, o bloco **não
+  existe**.
+- **Dado** um clique em Limpar ordenação, **então** a lista volta à ordem da
+  planilha, `sort` e `order` **saem do endereço**, e o foco vai para o cabeçalho
+  que estava ordenado — o botão se desmonta, e sem isso o foco cairia no `body`
+  (`SC 2.4.3`).
+- **Dado** que nenhum filtro está ativo, **então** a barra de filtros **não diz
+  nada** — a frase "Todos os processos, sem recorte" saiu (`D-38`).
 - **Dado** qualquer filtro aplicado, **então** a ordem **não muda** — filtro
   recorta, ordenação ordena, e as duas são independentes.
 - **Dado** `sort=sourceRow` no endereço, **então** a rota aceita, e não responde
@@ -10275,7 +10305,7 @@ sort  padrao: sourceRow  (era eta2)
 ordenar por coluna que a tabela não mostra.
 
 **Dependências:** `H-84`.
-**Tamanho:** M (9 arquivos, 1 contrato alterado)
+**Tamanho:** M (10 arquivos, 1 contrato alterado)
 
 [↑ Índice](#indice)
 
@@ -10501,6 +10531,67 @@ fonte.
 
 **Dependências:** `H-88`.
 **Tamanho:** M (11 arquivos, 2 contratos novos)
+
+[↑ Índice](#indice)
+
+
+---
+
+<a id="h-92"></a>
+
+### H-92 — O recorte em fichas, cada uma descartável
+
+> ✅ **CONCLUÍDA em 10/09/2026.** Nasce de `D-39`, no mesmo dia, ao ver a barra
+> com o número `3` sobre "Categoria: Em andamento · Cliente: AV · e mais 1".
+> Entregue **junto de `H-89`**, por escolha do usuário: as duas tocam a mesma
+> faixa, e `D-38` acabara de mexer nela.
+
+**Objetivo:** o operador ver **quantos valores** marcou e descartar cada um sem
+abrir o painel.
+
+**Contrato:** nenhum. A barra lê o que já está na URL, e a remoção usa `toggle`,
+que existe desde `H-52`.
+
+**Duas determinações de `D-39`:**
+
+1. **O número do gatilho conta VALORES, e não filtros.** Dois clientes marcados
+   são dois. `activeCount` **fica como está** e continua contando filtros: a
+   Página Performance escreve "N filtros ativos" ao descrever o escopo, e mudar
+   o significado dele mentiria lá. Quem nasce é `activeValueCount`.
+2. **O teto é quatro fichas**, e o excedente vira uma ficha de contagem que abre
+   o painel — escolha do usuário entre teto, rolagem lateral e quebra de linha.
+
+**Arquivos:**
+- `web/src/hooks/useFilters.ts` — `activeValueCount` e `countActiveValues`
+- `web/src/components/FilterBar.tsx` — `activeChips`, as fichas e o teto
+- `web/tests/FilterBar.test.tsx` · `web/tests/FilterPanel.test.tsx` — a fábrica
+
+**Critérios de aceite:**
+- **Dado** dois valores marcados no mesmo filtro, **então** o gatilho mostra `2`
+  e a barra mostra duas fichas.
+- **Dado** um clique no `×` de uma ficha, **então** aquele valor sai e os demais
+  do mesmo filtro **permanecem**.
+- **Dado** mais de quatro valores, **então** aparecem quatro fichas e uma de
+  contagem, que abre o painel.
+- **Dado** nenhum filtro, **então** a barra mostra só o gatilho.
+
+**Casos-limite:**
+- **Chave sem opção correspondente** cai na própria chave — acontece quando o
+  endereço é digitado à mão.
+- **Chave vazia é valor legítimo** e diz o rótulo da opção, ou `(em branco)`.
+- **`clientGroup` produz ficha** como os demais, apesar de não ter controle
+  próprio (`H-55`) — senão o número diverge da contagem de fichas.
+- **Período é UMA ficha** e ocupa dois parâmetros: removê-la limpa os dois.
+- **O nome longo trunca na ficha** e continua inteiro no `title`, com o filtro de
+  origem junto — `AV` sozinho é ambíguo entre Cliente e Processo do cliente.
+- **A planilha real oferece 509 valores em Processo do cliente**, 220 em
+  Mercadoria e 133 em Cliente (medido em 10/09/2026): o teto não é decoração.
+
+**Fora desta história:** ordenar as fichas por relevância; e a barra da Página
+Performance, que descreve o escopo em prosa e continua com `activeCount`.
+
+**Dependências:** nenhuma.
+**Tamanho:** P (4 arquivos, 0 contrato)
 
 [↑ Índice](#indice)
 
