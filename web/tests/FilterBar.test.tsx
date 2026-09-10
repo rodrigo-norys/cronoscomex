@@ -34,6 +34,7 @@ function filtersStub(overrides: Partial<Filters> = {}): Filters {
   return {
     selection: { etaFrom: '', etaTo: '', importerOutsideRj: '', multi: VAZIO },
     activeCount: 0,
+    activeValueCount: 0,
     queryString: '',
     toggle: vi.fn(),
     setRange: vi.fn(),
@@ -76,27 +77,61 @@ function renderBar(
   return { ...result, onOpenPanel }
 }
 
-function frase(): string {
+/** O rotulo VISIVEL de cada ficha, na ordem em que aparecem. O `x` fica fora:
+    ele e decorativo, e o nome acessivel vive no `aria-label` do botao. */
+function fichas(): string[] {
   const bar = screen.getByRole('region', { name: 'Filtros' })
-  const paragrafo = bar.querySelector('p')
-  return paragrafo?.textContent ?? ''
+  return within(bar)
+    .queryAllByRole('button', { name: /^Remover filtro / })
+    .map((botao) => botao.querySelector('span')?.textContent ?? '')
 }
 
-describe('a linha de resumo', () => {
-  it('sem filtro ativo, diz o recorte padrao e nao oferece limpar', () => {
+describe('a linha de fichas', () => {
+  /**
+   * A frase do estado vazio SAIU em 10/09/2026. Ela dizia "Todos os processos,
+   * sem recorte" e afirmava o falso com `Ocultar desembaracados` ligado — o
+   * checkbox vive em `useProcessQuery`, e esta barra e da casca.
+   */
+  it('sem filtro ativo, nao diz nada e nao oferece limpar', () => {
     renderBar()
 
-    expect(frase()).toBe('Todos os processos, sem recorte')
+    expect(fichas()).toEqual([])
     expect(screen.queryByRole('button', { name: /^Limpar/ })).toBeNull()
     // O gatilho e o unico botao: e isso que faz a barra caber em UMA linha.
     const bar = screen.getByRole('region', { name: 'Filtros' })
     expect(within(bar).getAllByRole('button')).toHaveLength(1)
   })
 
-  it('nomeia o filtro ativo por extenso, com o valor', () => {
-    renderBar(filtersStub({ selection: comMulti({ client: ['ACME'] }), activeCount: 1 }))
+  it('cada valor marcado vira uma ficha com o nome dele', () => {
+    renderBar(filtersStub({ selection: comMulti({ client: ['ACME'] }), activeValueCount: 1 }))
 
-    expect(frase()).toBe('Cliente: ACME')
+    expect(fichas()).toEqual(['ACME'])
+  })
+
+  /**
+   * O `x` e o contrato da ficha: ele tira UM valor e preserva os outros do mesmo
+   * filtro — `toggle`, e nao `clearAll`.
+   */
+  it('clicar na ficha remove aquele valor, e so ele', () => {
+    const toggle = vi.fn()
+    renderBar(
+      filtersStub({
+        selection: comMulti({ client: ['ACME', 'BETA'] }),
+        activeValueCount: 2,
+        toggle,
+      }),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: 'Remover filtro Cliente: ACME' }))
+
+    expect(toggle).toHaveBeenCalledTimes(1)
+    expect(toggle).toHaveBeenCalledWith('client', 'ACME')
+  })
+
+  it('dois valores do mesmo filtro sao duas fichas', () => {
+    renderBar(filtersStub({ selection: comMulti({ port: ['RJ', 'RO'] }), activeValueCount: 2 }))
+
+    expect(fichas()).toHaveLength(2)
   })
 
   /**
@@ -105,73 +140,68 @@ describe('a linha de resumo', () => {
    * do recorte.
    */
   it('usa o rotulo da opcao, nao a chave', () => {
-    renderBar(filtersStub({ selection: comMulti({ category: ['em_andamento'] }), activeCount: 1 }))
+    renderBar(
+      filtersStub({ selection: comMulti({ category: ['em_andamento'] }), activeValueCount: 1 }),
+    )
 
-    expect(frase()).toBe('Categoria: Em andamento')
+    expect(fichas()).toEqual(['Em andamento'])
   })
 
   it('cai na propria chave quando nenhuma opcao corresponde', () => {
     // Acontece quando o endereco e digitado a mao.
-    renderBar(filtersStub({ selection: comMulti({ client: ['DIGITADO'] }), activeCount: 1 }))
+    renderBar(filtersStub({ selection: comMulti({ client: ['DIGITADO'] }), activeValueCount: 1 }))
 
-    expect(frase()).toBe('Cliente: DIGITADO')
+    expect(fichas()).toEqual(['DIGITADO'])
   })
 
   it('chave vazia e valor legitimo, e diz "(em branco)"', () => {
-    renderBar(filtersStub({ selection: comMulti({ responsible: [''] }), activeCount: 1 }))
+    renderBar(filtersStub({ selection: comMulti({ responsible: [''] }), activeValueCount: 1 }))
 
-    // A fixture rotula a chave vazia como "Sem responsável"; sem rotulo, o
-    // resumo cairia em "(em branco)" — nunca numa linha invisivel.
-    expect(frase()).toBe('Responsável: Sem responsável')
-  })
-
-  it('de dois valores em diante vira contagem', () => {
-    renderBar(filtersStub({ selection: comMulti({ port: ['RJ', 'RO'] }), activeCount: 1 }))
-
-    expect(frase()).toBe('Porto: 2 valores')
+    // A fixture rotula a chave vazia como "Sem responsável"; sem rotulo, a ficha
+    // cairia em "(em branco)" — nunca numa ficha invisivel.
+    expect(fichas()).toEqual(['Sem responsável'])
   })
 })
 
-describe('o teto da frase', () => {
-  /**
-   * Com seis filtros ativos a frase nao cabe em 1280 px. O corte e por FILTRO,
-   * nunca por caractere: truncar no meio de um valor diria "Cliente: Acme Log…"
-   * e deixaria o operador sem saber se ha mais de um Acme.
-   */
-  it('nomeia os dois primeiros e resume o resto', () => {
-    renderBar(
-      filtersStub({
-        selection: comMulti({
-          category: ['em_andamento'],
-          client: ['ACME'],
-          importer: ['IMP'],
-          vessel: ['NAVIO ALFA'],
-          port: ['RJ'],
-          goods: ['BAZAR'],
-        }),
-        activeCount: 6,
-      }),
-    )
-
-    expect(frase()).toBe('Categoria: Em andamento · Cliente: ACME · e mais 4')
+describe('o teto das fichas', () => {
+  const seisValores = filtersStub({
+    selection: comMulti({
+      category: ['em_andamento'],
+      client: ['ACME'],
+      importer: ['IMP'],
+      vessel: ['NAVIO ALFA'],
+      port: ['RJ'],
+      goods: ['BAZAR'],
+    }),
+    activeValueCount: 6,
   })
 
-  it('mantem a lista inteira no title, para nada sumir em silencio', () => {
-    renderBar(
-      filtersStub({
-        selection: comMulti({
-          category: ['em_andamento'],
-          client: ['ACME'],
-          importer: ['IMP'],
-        }),
-        activeCount: 3,
-      }),
-    )
+  /**
+   * Acima de quatro as fichas nao cabem em uma linha a 1280 px — e foi a
+   * multiplicidade que matou os treze chips de `H-60`, medidos em 1437 px contra
+   * 1064 disponiveis. O excedente vira UMA ficha de contagem.
+   */
+  it('mostra as quatro primeiras e resume o resto', () => {
+    renderBar(seisValores)
 
-    const bar = screen.getByRole('region', { name: 'Filtros' })
-    expect(bar.querySelector('p')?.getAttribute('title')).toBe(
-      'Categoria: Em andamento · Cliente: ACME · Importador: IMP',
-    )
+    expect(fichas()).toEqual(['Em andamento', 'ACME', 'IMP', 'NAVIO ALFA'])
+    expect(screen.getByRole('button', { name: /e mais 2/ })).toBeTruthy()
+  })
+
+  it('a ficha de contagem abre o painel, onde o resto esta', () => {
+    const { onOpenPanel } = renderBar(seisValores)
+
+    fireEvent.click(screen.getByRole('button', { name: /e mais 2/ }))
+
+    expect(onOpenPanel).toHaveBeenCalledTimes(1)
+  })
+
+  it('cada ficha leva o filtro de origem no title, para o valor nao ficar ambiguo', () => {
+    renderBar(filtersStub({ selection: comMulti({ client: ['ACME'] }), activeValueCount: 1 }))
+
+    expect(
+      screen.getByRole('button', { name: 'Remover filtro Cliente: ACME' }).getAttribute('title'),
+    ).toBe('Cliente: ACME')
   })
 })
 
@@ -181,29 +211,29 @@ describe('o teto da frase', () => {
  * um — a barra divergindo de `activeCount` no primeiro recorte por grupo.
  */
 describe('clientGroup — o filtro sem controle proprio', () => {
-  it('entra na frase, logo depois de Cliente', () => {
+  it('entra nas fichas, logo depois de Cliente', () => {
     renderBar(
       filtersStub({
         selection: comMulti({ client: ['ACME'], clientGroup: ['GRUPO-1'] }),
-        activeCount: 2,
+        activeValueCount: 2,
       }),
       filterOptionsFixture({
         clientGroups: [{ key: 'GRUPO-1', label: 'Grupo Um', count: 17, members: [] }],
       }),
     )
 
-    expect(frase()).toBe('Cliente: ACME · Grupo de clientes: Grupo Um')
+    expect(fichas()).toEqual(['ACME', 'Grupo Um'])
   })
 
   it('sozinho, ainda assim aparece', () => {
     renderBar(
-      filtersStub({ selection: comMulti({ clientGroup: ['GRUPO-1'] }), activeCount: 1 }),
+      filtersStub({ selection: comMulti({ clientGroup: ['GRUPO-1'] }), activeValueCount: 1 }),
       filterOptionsFixture({
         clientGroups: [{ key: 'GRUPO-1', label: 'Grupo Um', count: 17, members: [] }],
       }),
     )
 
-    expect(frase()).toBe('Grupo de clientes: Grupo Um')
+    expect(fichas()).toEqual(['Grupo Um'])
   })
 })
 
@@ -212,24 +242,40 @@ describe('periodo e tri-estado', () => {
     renderBar(
       filtersStub({
         selection: comMulti({}, { etaFrom: '2026-09-01', etaTo: '2026-09-30' }),
-        activeCount: 1,
+        activeValueCount: 1,
       }),
     )
 
-    expect(frase()).toBe('Período (ETA2): 01/09/2026 a 30/09/2026')
+    expect(fichas()).toEqual(['01/09/2026 a 30/09/2026'])
+  })
+
+  /** O periodo ocupa dois parametros e e UM filtro: a ficha limpa os dois. */
+  it('remover a ficha de periodo limpa os dois extremos', () => {
+    const setPeriod = vi.fn()
+    renderBar(
+      filtersStub({
+        selection: comMulti({}, { etaFrom: '2026-09-01', etaTo: '2026-09-30' }),
+        activeValueCount: 1,
+        setPeriod,
+      }),
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /Remover filtro Período \(ETA2\)/ }))
+
+    expect(setPeriod).toHaveBeenCalledWith('', '')
   })
 
   it('com um extremo so, diz qual', () => {
     const { rerender } = renderBar(
-      filtersStub({ selection: comMulti({}, { etaFrom: '2026-09-01' }), activeCount: 1 }),
+      filtersStub({ selection: comMulti({}, { etaFrom: '2026-09-01' }), activeValueCount: 1 }),
     )
-    expect(frase()).toBe('Período (ETA2): desde 01/09/2026')
+    expect(fichas()).toEqual(['desde 01/09/2026'])
 
     rerender(
       <FilterBar
         filters={filtersStub({
           selection: comMulti({}, { etaTo: '2026-09-30' }),
-          activeCount: 1,
+          activeValueCount: 1,
         })}
         options={filterOptionsFixture()}
         panelOpen={false}
@@ -237,7 +283,7 @@ describe('periodo e tri-estado', () => {
         onOpenPanel={vi.fn()}
       />,
     )
-    expect(frase()).toBe('Período (ETA2): até 30/09/2026')
+    expect(fichas()).toEqual(['até 30/09/2026'])
   })
 
   /**
@@ -248,11 +294,11 @@ describe('periodo e tri-estado', () => {
     renderBar(
       filtersStub({
         selection: comMulti({}, { importerOutsideRj: 'false' }),
-        activeCount: 1,
+        activeValueCount: 1,
       }),
     )
 
-    expect(frase()).toBe('Importador fora do RJ: Não')
+    expect(fichas()).toEqual(['Não'])
   })
 })
 
@@ -286,8 +332,10 @@ describe('o gatilho do painel', () => {
     expect(onOpenPanel).toHaveBeenCalledTimes(1)
   })
 
-  it('mostra a contagem de filtros ativos', () => {
-    renderBar(filtersStub({ activeCount: 14 }))
+  /** O numero conta VALORES desde `H-92`: o operador o confere contando fichas.
+      `activeCount`, que conta filtros, continua servindo a Pagina Performance. */
+  it('mostra a contagem de valores marcados', () => {
+    renderBar(filtersStub({ activeCount: 3, activeValueCount: 14 }))
 
     expect(screen.getByRole('button', { name: 'Filtros, 14 ativos' })).toBeTruthy()
   })
@@ -296,7 +344,7 @@ describe('o gatilho do painel', () => {
 describe('limpar', () => {
   it('aparece com filtro ativo e chama clearAll', () => {
     const clearAll = vi.fn()
-    renderBar(filtersStub({ activeCount: 3, clearAll }))
+    renderBar(filtersStub({ activeValueCount: 3, clearAll }))
 
     fireEvent.click(screen.getByRole('button', { name: 'Limpar 3' }))
 
@@ -305,10 +353,10 @@ describe('limpar', () => {
 })
 
 describe('opcoes ausentes', () => {
-  it('sem opcoes carregadas, a barra monta e a frase nao mente', () => {
-    renderBar(filtersStub({ selection: comMulti({ client: ['ACME'] }), activeCount: 1 }), null)
+  it('sem opcoes carregadas, a barra monta e a ficha nao mente', () => {
+    renderBar(filtersStub({ selection: comMulti({ client: ['ACME'] }), activeValueCount: 1 }), null)
 
     // Sem a lista, o rotulo nao existe: cai na chave, que e o que se sabe.
-    expect(frase()).toBe('Cliente: ACME')
+    expect(fichas()).toEqual(['ACME'])
   })
 })

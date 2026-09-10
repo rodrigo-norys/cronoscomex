@@ -32,6 +32,7 @@ function filtersStub(overrides: Partial<Filters> = {}): Filters {
   return {
     selection: { etaFrom: '', etaTo: '', importerOutsideRj: '', multi: VAZIO },
     activeCount: 0,
+    activeValueCount: 0,
     queryString: '',
     toggle: vi.fn(),
     setRange: vi.fn(),
