@@ -258,8 +258,26 @@ describe('ordenacao', () => {
     process(4, { ref: 'A', eta2: civil('2026-08-01') }),
   ]
 
-  it('o padrao e eta2 ascendente', async () => {
+  /**
+   * `H-89` trocou o padrao de `eta2` para `sourceRow`: sem `sort`, a resposta sai
+   * na ordem FISICA do arquivo. Aqui isso e visivel porque as tres linhas estao
+   * em ordem de ETA2 invertida em relacao a de linha.
+   */
+  it('o padrao e a ordem da planilha, ascendente', async () => {
     const body = (await get('/api/processes', processos)).json()
+
+    expect(body.items.map((p: { ref: string }) => p.ref)).toEqual(['B', 'C', 'A'])
+  })
+
+  it('aceita sort=sourceRow sem responder FILTRO_INVALIDO', async () => {
+    const resposta = await get('/api/processes?sort=sourceRow&order=desc', processos)
+
+    expect(resposta.statusCode).toBe(200)
+    expect(resposta.json().items.map((p: { ref: string }) => p.ref)).toEqual(['A', 'C', 'B'])
+  })
+
+  it('sort=eta2 continua disponivel, agora explicito', async () => {
+    const body = (await get('/api/processes?sort=eta2', processos)).json()
 
     expect(body.items.map((p: { ref: string }) => p.ref)).toEqual(['A', 'B', 'C'])
   })
