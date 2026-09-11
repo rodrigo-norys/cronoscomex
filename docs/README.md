@@ -42,10 +42,10 @@ Leia nesta ordem. Cada documento pressupõe o anterior.
 | 4 | [03-modelo-dados.md](03-modelo-dados.md) | Modelo em memória, arquivos locais e **as 9 tabelas de decisão** — TD-01 a TD-06, mais TD-05.1 (escrita de estilo), TD-04.1 (consolidação do cliente, `H-49`) e TD-04.2 (grupo de clientes, `H-55`) | H-04, H-05, H-06, H-07, H-27 |
 | 5 | [04-arquitetura.md](04-arquitetura.md) | Diagramas de contexto, containers e componentes; estrutura de diretórios | H-02 |
 | 6 | [05-contratos-api.md](05-contratos-api.md) | Rotas, schemas, códigos de erro e campos editáveis | Qualquer rota |
-| 7 | [06-backlog.md](06-backlog.md) | **91 histórias executáveis** em 14 épicos (`E1` a `E14`), com contrato, aceite e casos-limite — 89 concluídas, **as 2 de `E14` abertas** | — |
+| 7 | [06-backlog.md](06-backlog.md) | **96 histórias executáveis** em 15 épicos (`E1` a `E15`), com contrato, aceite e casos-limite — 91 concluídas, **a de `E14` e as 4 de `E15` abertas** | — |
 | 8 | [07-plano-entrega.md](07-plano-entrega.md) | 5 fases, grafo de dependências, caminho crítico e **16 riscos** — `R-03` encerrado por `H-01`, `R-09` por `H-33`, `R-16` aberto por `E11`. **As fases cobrem o plano original e só ele** | Planejar a ordem |
 | 9 | [08-qualidade-operacao.md](08-qualidade-operacao.md) | Testes, ingestão, observabilidade, LGPD e build | Escrever testes |
-| 10 | [09-rastreabilidade.md](09-rastreabilidade.md) | Matriz de indicador/alerta → história → teste → status, mais uma linha por história concluída | Verificar cobertura |
+| 10 | [09-rastreabilidade.md](09-rastreabilidade.md) | Matriz de indicador/alerta → história → teste → status, mais uma linha por história — concluída ou aberta, desde 11/09/2026 | Verificar cobertura |
 | 11 | [10-governanca.md](10-governanca.md) | Quem decide o quê, protocolo de mudança de escopo, ciclo de vida de ADR, *definition of done* e o log de decisões | Mudar escopo ou reabrir um ADR |
 
 ### Para entender por quê
@@ -118,12 +118,12 @@ em `src/`; por que uma guarda existe, no cabeçalho do próprio script ou teste.
 atingido com folga: as 649 linhas da aba `2026` são aceitas com **0% de
 quarentena** (`H-07`), contra o limite de 2% de RNF-24.
 
-**91 das 92 histórias estão concluídas.** `E9`, `E10`, `E11` e `E12` fecharam em
-01/09/2026, e `E13` em 03/09/2026. Os **seis** épicos posteriores ao plano não
+**91 das 96 histórias estão concluídas.** `E9`, `E10`, `E11` e `E12` fecharam em
+01/09/2026, e `E13` em 03/09/2026. Os **sete** épicos posteriores ao plano não
 têm fase atribuída; a ordem entre eles vive no cabeçalho de cada um, em
 `06-backlog.md`.
 
-**`E14` é o épico aberto** — `H-82` a `H-92`, as nove primeiras numeradas na ordem de execução,
+**`E14` e `E15` são os épicos abertos** — `H-82` a `H-92`, as nove primeiras numeradas na ordem de execução,
 com `H-90`, `H-91` e `H-92` fora dela por terem nascido depois. **Seis fecharam
 em 04/09/2026**: os filtros num painel sobreposto (`D-30`), a busca por atalho, o
 quadro que rola com cabeçalho fixo e tamanho de página escolhível (`D-31` e
@@ -132,7 +132,7 @@ os seis campos de texto (`D-34`); **a contagem que segue o recorte (`D-29`) fech
 em 08/09/2026**; **`H-88` fechou em 09/09/2026**, com o mapa de clientes operável
 pela tela; e **`H-89` e `H-92` em 10/09/2026** — a ordem da planilha como padrão,
 com o botão que a devolve (`D-38`), e o recorte em fichas descartáveis (`D-39`).
-**Resta uma:** o mapa de equipe, que sai de `PD-08`. Três dos quatro épicos posteriores ao
+**De `E14` resta uma:** o mapa de equipe, que sai de `PD-08`. **`E15` abre com quatro** — `H-93` a `H-96`, de `D-40` a `D-43` —, e nelas a cor deixa de ser dado e a tabela passa a espelhar a planilha. Três dos quatro épicos posteriores ao
 plano nasceram de documentos de auditoria que estão em `docs/estilizacao/`,
 `docs/uso/` e `docs/redesign/PROPOSTA.md` sem nunca terem virado história.
 

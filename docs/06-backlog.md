@@ -26,12 +26,13 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E7 — Operação ✅ | H-30 … H-36 | 3 | 4 | 0 |
 | E8 — A configuração alcançável ✅ | H-37, H-38 | 0 | 2 | 0 |
 | E9 — Estilização ✅ | **H-39 … H-47 e H-67 … H-72, todas concluídas** | 7 | 8 | 0 |
-| E10 — As melhorias de uso ✅ | **H-48 … H-56 e H-66, todas concluídas.** `H-50` é uma das **quatro** G do backlog — as outras são `H-75`, em `E12`, e `H-79` e `H-80`, em `E13` | 2 | 7 | 1 |
+| E10 — As melhorias de uso ✅ | **H-48 … H-56 e H-66, todas concluídas.** `H-50` é uma das G do backlog — **sem número aqui**, porque a coluna G desta tabela já o computa e a suíte a confere | 2 | 7 | 1 |
 | E11 — A casca redesenhada ✅ | **H-57 … H-65, todas concluídas** | 3 | 6 | 0 |
 | E12 — Os achados da revisão de estilo ✅ | **H-73 … H-76, todas concluídas** | 2 | 1 | 1 |
 | E13 — O operacional que edita, ordena e cria ✅ | **H-77 … H-81, todas concluídas.** Épico **retroativo**: o código entrou em 02/09/2026 e as histórias foram escritas em 03/09 | 3 | 0 | 2 |
-| E14 — A casca que se opera, não só se lê | **H-82 a H-90 e H-92 ✅; só `H-91` aberta.** Primeiro épico **prospectivo** desde `E12`: as nove primeiras nascem antes do código (`D-29` a `D-34`), `H-91` entra em 08/09/2026 por `D-35`, e `H-92` em 10/09/2026 por `D-39` | 3 | 7 | 1 |
-| **Total** | **92** — 91 concluídas, 1 aberta | **36** | **51** | **5** |
+| E14 — A casca que se opera, não só se lê | **H-82 a H-90 e H-92 ✅; só `H-91` aberta.** Primeiro épico **prospectivo** desde `E12`: as nove primeiras nascem antes do código (`D-29` a `D-34`), `H-91` entra em 08/09/2026 por `D-35`, e `H-92` em 10/09/2026 por `D-39`. `H-91` passou de M para **G** na fatia de 11/09, quando o contrato dela dobrou | 3 | 6 | 2 |
+| E15 — A tabela é a planilha, e a cor é só cor | **`H-93` a `H-96`, todas abertas.** Nasce de `D-40` a `D-43`, em 10 e 11/09/2026: a cor deixa de apontar responsável e vira aparência, e a tabela passa a espelhar o arquivo — as 16 colunas com o nome do cabeçalho. `H-93` veio de `E14` em 11/09, por estar grande demais. `H-96` nasce de defeito **simulado**, não observado | 0 | 3 | 1 |
+| **Total** | **96** — 91 concluídas, 5 abertas | **36** | **53** | **7** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -46,10 +47,12 @@ bloco; o índice agora é obrigado a concordar com ele.
 `iniciar.cmd` foi executado na máquina do operador, sobe e carrega a planilha.
 `PD-06` guardava os itens que faltavam, e **fechou em 03/09/2026** — os três últimos foram exercidos por SSH, e o registro está em `docs-windows/2026-09-03-pd06-fechada.md`.
 
-**Cinco histórias são G.** `H-50` desde `D-24`, `H-75` em `E12`, `H-79` e
-`H-80` em `E13`, e `H-88` desde `D-35` — **a única cujo G é escolha declarada**,
+**Sete histórias são G.** `H-50` desde `D-24`, `H-75` em `E12`, `H-79` e
+`H-80` em `E13`, `H-91` desde a fatia de 11/09/2026, `H-96` em `E15`, e `H-88`
+desde `D-35` — **a única cujo G é escolha declarada**,
 e não diagnóstico: a medição de 08/09/2026 mostrou que a versão M pediria 111
-declarações manuais, e o usuário preferiu a história maior. As outras quatro — estas duas por medição do que já estava commitado: 29 e 15
+declarações manuais, e o usuário preferiu a história maior. `H-91` e `H-96`
+nasceram G nas decisões de 11/09/2026. As demais — estas duas por medição do que já estava commitado: 29 e 15
 arquivos, e duas rotas novas. **Nas duas o rótulo é diagnóstico, não escolha**,
 e é o preço de escrever a história depois do código: fatiar em M teria sido
 decisão de antes. As três
@@ -199,6 +202,13 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-90 — A busca sobre os seis campos de texto](#h-90) ✅
 - [H-91 — O mapa de equipe, editável na tela](#h-91)
 - [H-92 — O recorte em fichas, cada uma descartável](#h-92) ✅
+
+**[Épico E15 — A tabela é a planilha, e a cor é só cor](#e15)**
+
+- [H-93 — A cor sai da regra de responsável](#h-93)
+- [H-94 — O fundo da célula é a cor da planilha, e a casca recua de tom](#h-94)
+- [H-95 — As dezesseis colunas, com o nome literal do cabeçalho](#h-95)
+- [H-96 — A coluna se resolve por nome, e não por letra](#h-96)
 
 
 ---
@@ -8825,6 +8835,11 @@ canônica, e não coincidência:
 
 ### H-77 — A tabela ordena pelas nove colunas
 
+> **A contagem desta história deixa de valer em `H-95`**, que leva a tabela das
+> nove colunas para **dezessete** — as dezesseis da planilha mais a Categoria
+> derivada, que fica —, e tira a coluna derivada Cliente. O título fica como está: ele descreve o que a história entregou, e
+> reescrevê-lo apagaria o registro. O que muda é `RF-32`, emendado por `D-43`.
+
 > ✅ **CONCLUÍDA em 02/09/2026**, no commit `94fa3e3`. História escrita
 > retroativamente em 03/09/2026.
 >
@@ -10467,20 +10482,32 @@ buscar em Cliente, ETA2 ou Categoria, que `D-34` recusou com motivo.
 > **sozinha** em 09/09/2026, pelo PR #123, porque ficou usável sem esta — que é
 > outro arquivo e outra página. Esta nasce em branch própria, sobre a `main` que
 > já traz `H-88`.
+>
+> **EMENDADA em 11/09/2026, antes da primeira linha de código.** O usuário
+> descreveu o comportamento que quer, e ele é o de `H-88`: *"deve poder criar e
+> desfazer responsáveis. E conforme os importadores vão ficando sem responsáveis,
+> esses importadores vão caindo em Sem responsável. Sem responsável age como um
+> responsável."* O contrato vai de **duas** rotas para **quatro**, `colorResponsible`
+> sai dele por `D-40`, e o caso-limite da carteira vazia deixa de ser dúvida: não
+> existe "membro sem critério" como erro, porque a operação é **desfazer**, e não
+> esvaziar.
 
 **Objetivo:** o operador declarar quem é responsável por quais importadores, sem
 editar o `team-map.json` à mão nem recebê-lo por cópia.
 
-**Contrato:** duas rotas novas.
+**Contrato:** quatro rotas novas, espelhando `H-88`.
 
 ```jsonc
-// GET /api/team — os membros e os importadores ainda sem dono
+// GET /api/team — os responsáveis, as carteiras, e os importadores sem dono
 { "members": [ { "key": "membro1", "label": "Membro 1",
-                 "importers": ["IMP A"], "colorResponsible": "colaborador1" } ],
+                 "importers": ["IMP A"], "count": 0 } ],
   "unassigned": [ { "key": "IMP B", "count": 0 } ] }
 
-// PUT /api/team/:key — cria ou redefine um membro
-// corpo: { "label": "Membro 1", "importers": ["IMP A"], "colorResponsible": "colaborador1" }
+// PUT    /api/team/:key   — cria ou redefine um responsável
+// corpo: { "label": "Membro 1", "importers": ["IMP A"] }
+
+// DELETE /api/team/:key                      — desfaz; a carteira cai em "Sem responsável"
+// DELETE /api/team/:key/importers/:importer  — tira um importador; ele cai em "Sem responsável"
 ```
 
 **Três determinações de `D-35`:**
@@ -10490,19 +10517,34 @@ editar o `team-map.json` à mão nem recebê-lo por cópia.
    `NODE_ENV=test`. O projeto já pagou isto duas vezes — `H-28` gravou 649
    eventos no arquivo do operador, e `H-34` sobrescreveu a configuração dele
    **em silêncio**, porque a gravação preserva os demais campos.
-2. **A cor continua desempatando, e `D-23` não é reaberta.** `H-50` mediu que o
-   importador preenche 559 das 649 linhas e a cor cobre mais 48; a tela edita a
-   fonte, não a regra de precedência.
+2. ~~**A cor continua desempatando, e `D-23` não é reaberta.**~~ *(**REVERTIDA
+   por `D-40` em 10/09/2026**, e é a **nona** reversão do projeto, pela lista da §5
+   de `docs/10-governanca.md`.
+   `H-50` mediu que o importador preenche 559 das 649 linhas e a cor cobre mais
+   48 — e são esses 48 que `H-93` move para "Sem responsável". A tela continua
+   editando a fonte; o que mudou é que a fonte passou a ser a única. Aqui a
+   consequência é o contrato: `colorResponsible` **não entra** no corpo do `PUT`,
+   porque `H-93` o removeria do arquivo logo depois.)*
 3. **Nome de pessoa é dado pessoal** (regra inviolável 8): a rota o devolve para
    a tela e nunca para o log.
 
-**Arquivos:**
-- `src/app/team-map-loader.ts` — `saveTeamMember`, com o ponto de injeção
+**Arquivos** *(a lista original tinha 11 e omitia seis; a fatia de 11/09/2026
+achou as divergências antes do código)*:
+- `src/domain/team-mapper.ts` — os planos e a lista de sem dono *(divergência)*
+- `src/app/team-map-loader.ts` — a gravação e a remoção, com o ponto de injeção
+- `src/app/process-store.ts` — a reprojeção com o mapa novo *(divergência)*
 - `src/http/routes/team.ts` — nova · `src/http/server.ts` — registro
-- `docs/05-contratos-api.md` — as seções das duas rotas
+- `src/http/routes/indicators.ts` · `src/http/routes/filter-options.ts` — as duas
+  capturam o mapa **por valor** na partida, e sem isso gravar não muda nada até
+  reiniciar *(divergência)*
+- `docs/05-contratos-api.md` — as seções das quatro rotas
 - `web/src/api-client.ts` · `web/src/hooks/useTeamMap.ts` — novo
 - `web/src/pages/WorkbookSetup.tsx` — a seção do painel
-- `tests/app/team-map-loader.test.ts` · `tests/http/team.test.ts` ·
+- `tools/medir-navegador.mjs` — o **nono** destino temporário; sem ele a medição
+  de navegador grava no `team-map.json` do operador, como `H-34` mediu com o
+  `app.json` *(divergência)*
+- `tests/domain/team-mapper.test.ts` *(divergência)* ·
+  `tests/app/team-map-loader.test.ts` · `tests/http/team.test.ts` ·
   `web/tests/WorkbookSetup.test.tsx` · `web/tests/support/api-stub.ts`
 
 **Critérios de aceite:**
@@ -10514,23 +10556,37 @@ editar o `team-map.json` à mão nem recebê-lo por cópia.
   como `history-store` e `saveWorkbookPath` já fazem.
 - **Dado** o `team-map.json` com `_comentario_*` e `_origem`, **então** eles
   sobrevivem à gravação.
+- **Dado** um responsável desfeito, **então** a carteira inteira dele cai em
+  "Sem responsável", nenhum processo fica sem grupo, e `IND-20` continua
+  fechando com o total.
+- **Dado** um importador tirado da carteira, **então** só ele cai em "Sem
+  responsável", e os demais daquele responsável ficam onde estavam.
 
 **Casos-limite:**
-- **O mapa tem 2 membros hoje**, com `key`, `label`, `importers` e
-  `colorResponsible` — medido em 08/09/2026.
+- **O mapa tem 2 membros hoje**, medido em 08/09/2026, cobrindo **202** e **357**
+  das 649 linhas pelas carteiras que o usuário declarou em 10/09/2026.
 - **42 processos ficam sem responsável** mesmo com importador e cor (medido em
-  `H-50`, 01/09/2026): a tela mostra o número, e não o esconde.
+  `H-50`, 01/09/2026, e confirmado em 10/09): a tela mostra o número.
+- **`MPA` é o único importador que nenhuma carteira alcança** — 55 processos, 13
+  deles ativos —, e **35 linhas têm o campo IMPORTADOR em branco**, que nenhum
+  mapa de equipe alcança por construção.
 - **Um importador atribuído a dois membros** é recusado: `IND-20` conta por
-  pessoa, e a soma deixaria de fechar.
-- **Remover o último importador de um membro** deixa o membro sem linha nenhuma,
-  e isso é legítimo — a pessoa existe, a carteira dela é que está vazia.
+  pessoa, e a soma deixaria de fechar. A comparação é por `ownsImporter`, e não
+  por igualdade de chave: listar `ACME` num e `ACME - SC` noutro é a mesma
+  sobreposição, porque o sufixo de filial casa.
+- **Desfazer um responsável** devolve a carteira inteira a "Sem responsável" —
+  é o `DELETE` de `H-88` aplicado a pessoas, e não uma edição campo a campo.
+- **Carteira vazia é legítima**: alguém entrou na equipe e ainda não recebeu
+  importador. Hoje `validateMember` **recusa** esse arquivo e mata a partida com
+  `process.exit(1)`; a validação afrouxa para exigir só a chave.
 
 **Fora desta história:** o `client-map.json` inteiro, que é `H-88`; e
 editar as cores de responsável, que vivem em `config/color-map.json` e são outra
 fonte.
 
 **Dependências:** `H-88`.
-**Tamanho:** M (11 arquivos, 2 contratos novos)
+**Tamanho:** G (17 arquivos, 4 contratos novos) *(era M com 11 arquivos; a fatia de
+11/09/2026 acrescentou seis e o contrato dobrou)*
 
 [↑ Índice](#indice)
 
@@ -10598,15 +10654,442 @@ Performance, que descreve o escopo em prosa e continua com `activeCount`.
 
 ---
 
+<a id="e15"></a>
+
+## Épico E15 — A tabela é a planilha, e a cor é só cor
+
+Nasce do pedido do usuário de **10/09/2026**, ao ver o que `H-91` entregaria, e
+o gatilho foi uma frase sobre outra coisa: perguntado se queria uma coluna
+Responsável na tabela, ele recusou e descreveu, no lugar, a tabela que quer —
+todas as colunas da planilha, com o nome exato do cabeçalho, e a cor de cada
+célula como ela está no Excel.
+
+**O épico tem duas metades, e a segunda é a razão da primeira caber aqui.**
+`H-93` **tira** o significado da cor — ela deixa de apontar responsável —, e
+`H-94` a torna pura aparência, pintando a célula com o que o arquivo diz. É a
+mesma tese em dois passos: a cor sai de campo derivado e vira o que sempre
+pareceu ser. `H-95` e `H-96` completam o espelho, com as colunas.
+
+**`H-93` nasceu em `E14` e foi movida para cá em 11/09/2026**, por escolha do
+usuário — *"o E14 já está muito grande"* —, e a mudança melhorou o encaixe: ela
+depende de `H-91`, que fica em `E14`, mas o assunto dela é a cor, e é aqui que a
+cor se resolve.
+
+**O épico inverte o que a tabela é.** De `H-17` até `H-92` ela foi um **recorte
+escolhido**: nove colunas, sete da planilha e duas derivadas, com rótulos que a
+interface decidiu. A partir daqui ela é a **planilha** — o que o arquivo tem, com
+o nome que o arquivo dá, na cor que o arquivo pinta. O que a aplicação calcula
+continua existindo, e sai da tabela para onde já vivia.
+
+**Quatro determinações valem para o épico e não se re-litigam**, todas escolha
+do usuário em 10 e 11/09/2026, registradas em `D-41`, `D-42` e `D-43`:
+
+1. **A cor é aparência, e não dado.** Ela pinta a célula e não vira filtro, nem
+   indicador, nem anomalia. O usuário foi consultado sobre o significado do
+   verde-claro e do ciano em `R$ ENVIADO` e do amarelo em `STATUS`, e respondeu
+   "deixe assim por enquanto". A regra inviolável 4 não é tocada: a cor continua
+   sem inferir status, e agora não infere mais nada.
+2. **O fundo pintado ganha exceção declarada de contraste.** Os dois roxos
+   reprovam a WCAG AA com qualquer cor de texto — 3,49 e 3,41 com `#14161a`,
+   4,05 e 3,96 com preto puro. O usuário escolheu o fundo inteiro mesmo assim,
+   com a frase "quero ver como fica primeiro": a cor é dado do arquivo dele, não
+   escolha do autor, e o valor textual continua na célula.
+3. **A coluna que a planilha ganhar NÃO aparece sozinha.** O pedido original era
+   esse — "se for criada uma nova coluna, ela deva aparecer" —, e o usuário o
+   **descartou** em 11/09/2026, depois de ver o que ele custava: uma coluna nova
+   não diz se é texto ou data, se conta para `onlyRefFilled`, se é editável nem
+   se é filtrável, e responder por ela violaria a regra inviolável 3. As 16
+   colunas de hoje são as 16 colunas, e `H-96` cuida do dia em que mudarem.
+4. **Nenhuma funcionalidade se perde**, e foi condição declarada: "os JSONs já
+   afirmo que devem continuar existindo". A coluna Cliente sai da tabela e a
+   consolidação inteira fica — filtro, ranking, Página Clientes, agrupamento. O
+   usuário explicou para que ela existe: "a única intenção de fazer agrupamentos
+   como de Vivi é que apareça subdividido nos gráficos".
+
+**A única capacidade que o épico remove** é declarar o cliente a partir de um
+processo (`PUT /api/processes/:ref/client`, `RF-35`), cujo único consumidor é a
+coluna que sai. A ressalva foi apresentada ao usuário em 11/09/2026 e ele
+manteve a decisão: declarar passa a ser só pelo painel da Página Clientes, por
+grafia e por prefixo. Fica registrado o que isso custa — uma grafia já capturada
+por regra de prefixo não aparece em lista nenhuma do painel, que só mostra as
+sem dono.
+
+---
+
+<a id="h-93"></a>
+
+### H-93 — A cor sai da regra de responsável
+
+> Nasce de `D-40`, em 10/09/2026, e **reabre `D-23`** — a decisão que fazia a cor
+> valer como fonte de responsável quando o mapa de equipe estava ausente.
+>
+> **A determinação 2 de `H-91` fica falsa com esta história.** Ela diz "a cor
+> continua desempatando, e `D-23` não é reaberta", e é a **nona** reversão de
+> determinação do projeto. O motivo não é técnico: com a tela de `H-91`
+> existindo, o argumento que sustentava a cor deixa de valer por mérito, e não
+> por decreto — quem não tem importador declarado passa a ter onde declará-lo.
+
+**Objetivo:** o responsável de um processo vir **apenas** do mapa de equipe, e o
+que nenhuma carteira alcança ficar visivelmente em "Sem responsável".
+
+**Contrato:** nenhuma rota nova. `resolveTeam` perde dois dos quatro níveis.
+
+```
+antes:  importador → fallback → cor → nada
+depois: importador → nada
+```
+
+**Três determinações de `D-40`:**
+
+1. **A cor sai dos níveis 0 e 3.** O nível 0 é `D-23` — mapa vazio devolvendo a
+   própria chave de cor —, e o 3 é o desempate. O campo `colorResponsible` de
+   `TeamMember` some, e com ele o `fallback`, recusado pelo usuário em
+   10/09/2026 com a frase que virou o desenho: "o fallback deve cair no Sem
+   responsável, que aí o usuário já sabe que tem que definir um".
+2. **"Sem responsável" é destino, e não ausência.** Ele já existe como
+   `UNASSIGNED_RESPONSIBLE_LABEL` e já viaja em `knownResponsibles`, então já
+   aparece no filtro e no ranking de `IND-20` — esta história não o cria, apenas
+   passa a alimentá-lo.
+3. **A anomalia `RESPONSAVEL_DIVERGENTE` some junto**, e vale registrar que ela
+   é removida **antes de ter detectado a primeira ocorrência**: zero em
+   31/08/2026 e zero de novo em 10/09/2026. Foi criada deliberadamente com zero
+   medidas, para que a primeira não passasse despercebida.
+
+**Arquivos:**
+- `src/domain/team-mapper.ts` — os dois níveis, o campo e o `conflict`
+- `src/domain/process-builder.ts` — o produtor da anomalia
+- `src/domain/types.ts` — a anomalia sai do tipo
+- `src/app/team-map-loader.ts` — `validateMember` deixa de exigir critério
+- `docs/00-visao-escopo.md` — "Campos derivados de cor" perde Responsável
+- `docs/01-auditoria-especificacao.md` — `A-18` e `A-28`: a cor deixa de
+  desempatar `responsible`
+- `docs/09-rastreabilidade.md` — `§3.4`, a coluna "Campo derivado" das três cores
+- `tests/domain/team-mapper.test.ts` · `tests/domain/process-builder.test.ts` ·
+  `tests/domain/indicators-rankings.test.ts` · `tests/app/process-store.test.ts` ·
+  `tests/app/team-map-loader.test.ts` · `tests/http/filter-options.test.ts` ·
+  `tests/http/indicators.test.ts`
+
+**Critérios de aceite:**
+- **Dado** um processo cujo importador não está em carteira nenhuma, **então**
+  ele fica em "Sem responsável", qualquer que seja a cor da linha.
+- **Dado** o mapa de equipe ausente, **então** os processos ficam todos em "Sem
+  responsável" — e não com a chave de cor, como `D-23` fazia.
+- **Dado** o ranking de `IND-20`, **então** "Sem responsável" aparece como um
+  grupo, e a soma fecha com o total.
+
+**Casos-limite:**
+- **48 processos migram para "Sem responsável"**, e **todos os 48 são ativos**
+  (medido em 10/09/2026 sobre as 649 linhas reais): 13 de `MPA` e 35 com o campo
+  IMPORTADOR em branco. O total sai de 42 para **90**.
+- **Hoje nenhum processo ativo fica sem responsável**, e depois ficam 48 — é a
+  mudança que o operador vê, e a tela não a esconde.
+- **As 35 linhas de importador vazio não são recuperáveis pelo mapa**, e sim
+  preenchendo a coluna C, que já é editável na tabela desde `H-80`.
+- **Zero conflitos entre cor e importador** em 10/09/2026, como em 31/08 — o
+  campo que os contava sai sem nunca ter contado um.
+
+**Fora desta história:** a tela do mapa de equipe, que é `H-91`; e a cor da
+célula na tabela, que é `H-94` e não tem relação com responsável.
+
+**Dependências:** `H-91`. A ordem não é preferência: sem a tela, os 48 ficam sem
+responsável e sem conserto, e a instalação limpa de `PD-08` abre com as 649
+linhas vazias.
+**Tamanho:** M (14 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+
+---
+
+<a id="h-94"></a>
+
+### H-94 — O fundo da célula é a cor da planilha, e a casca recua de tom
+
+> Nasce de `D-41`, em 10/09/2026. **É a primeira vez que a cor atravessa a API
+> no fluxo normal** — até aqui a `styleKey` só saía pelo relatório de
+> quarentena, e a interface nunca pintou nada.
+
+**Objetivo:** o operador ver, na tabela, a mesma pintura que vê no Excel.
+
+**Contrato:** `GET /api/processes` ganha a cor por célula, e o `color-map.json`
+ganha a cor de exibição que hoje não tem.
+
+```jsonc
+// config/color-map.json — campo novo em cada entrada
+{ "styleKey": "argb:FFFFE599", "display": "#FFE599", "…": "…" }
+
+// GET /api/processes — por processo, o preenchimento de cada coluna
+{ "items": [ { "ref": "FT498.26", "fills": { "A": "#00FF0D", "M": "#FFFFFF" } } ] }
+```
+
+**Três determinações de `D-41` e `D-42`:**
+
+1. **A cor de exibição é DECLARADA, nunca resolvida.** `config/color-map.json`
+   não tem hex nenhum hoje — conferido nas 9 entradas —, e `theme:0|tint:0`
+   pinta 56 células sem ser RGB. Resolver `theme` mais `tint` é exatamente o que
+   `src/io/style-extractor.ts` se recusa a fazer, e continua recusando: o campo
+   `display` é declaração de aparência, e a `styleKey` segue literal.
+2. **Tons próximos se unificam por lista declarada**, e o mecanismo é o próprio
+   `display`: duas chaves com o mesmo hex ficam unificadas por construção, sem
+   estrutura nova. Confirma a recusa da alternativa A2 do `ADR-0003` — unificar
+   por limiar calculado —, e os números autorizam: dos 78 pares, **5 estão
+   abaixo do limiar de percepção** e o sexto salta para **15,88**, um abismo de
+   fator 9.
+3. **Chave sem `display` não recebe cor inventada.** A célula fica sem fundo,
+   com marca visível. Buraco visível é melhor que valor errado invisível.
+
+**Arquivos:**
+- `config/color-map.json` — `display` nas 9 entradas, mais as 4 chaves que o
+  mapa não conhece. **Não há `.exemplo` deste mapa**: ele é versionado direto, e
+  viaja na branch `distribuicao`
+- `docs/01-auditoria-especificacao.md` — `A-44`: a emenda sobre K, L e N
+- `docs/03-modelo-dados.md` — `TD-05`: a entrada do mapa ganha `display`
+- `src/app/color-map-loader.ts` — validação do campo novo
+- `src/domain/color-mapper.ts` · `src/domain/types.ts` — o preenchimento por
+  célula em `RawRow`, aditivo
+- `src/io/xlsx-parts.ts` — `buildRow` guarda o estilo de cada célula, hoje
+  descartado depois de decidir formato numérico
+- `src/domain/process-builder.ts` — o campo chega ao processo
+- `src/http/routes/processes.ts` · `docs/05-contratos-api.md`
+- `web/src/index.css` — o fundo da tabela nos dois temas
+- `web/src/components/ProcessTable.tsx` — a pintura e o realce de linha
+- `web/src/components/EditableCell.tsx` — o texto sobre célula pintada
+- `tests/domain/` · `tests/app/color-map-loader.test.ts` · `tests/http/processes.test.ts` ·
+  `web/tests/Operational.test.tsx` · `tests/repo/estilo.test.ts`
+
+**Critérios de aceite:**
+- **Dado** uma célula com preenchimento na planilha, **então** ela aparece com
+  aquele preenchimento na tabela.
+- **Dado** uma chave de estilo sem `display` declarado, **então** a célula fica
+  sem fundo e a ausência é visível — nunca a cor mais próxima.
+- **Dado** o tema claro, **então** o fundo da tabela é `#f4f5f7`; **dado** o
+  tema escuro, **então** é `#1b1e24`.
+- **Dado** o cursor sobre uma linha, **então** o realce é **contorno** e
+  sobrevive sobre célula pintada.
+
+**Casos-limite:**
+- **13 cores distintas** nas células A–P, e `config/color-map.json` conhece **9**.
+  As outras quatro pintam **1.237 células** nos 649 processos, concentradas em
+  `Coluna 13` e `R$ ENVIADO`.
+- **As três chaves brancas ficam unificadas** por escolha do usuário em
+  11/09/2026: `argb:FFFFFFFF` (466 células, 442 linhas), `theme:0|tint:0.0000`
+  (56 células, 19 linhas) e `argb:FFF6F8F9` (32 células, 31 linhas). A segunda
+  inclui a **linha 485 inteira, de A a L** — a "1 linha branca" que `H-01`
+  registrou.
+- **36 das 649 linhas divergem internamente** dentro de A–L: 19 são ruído de
+  tom A contra tom B, imperceptível a ΔE 0,21 e 0,62; **16 carregam amarelo
+  forte** — 11 na coluna `STATUS` —; e 1 é buraco, célula sem preenchimento em
+  linha pintada. Isso **contradiz `A-44`**, que afirma que "as colunas K e L
+  acompanham a cor da linha", e a emenda é desta história.
+- **87,4% das células têm cor** — 9.080 de 10.384 (649 linhas × A–P), contando o
+  preenchimento herdado de `<row customFormat="1">` nas células ausentes do XML;
+  sem essa herança são 87,3%. O fundo da tabela aparece nos 12,6% restantes —
+  é por isso que o rebaixamento de tom é sutil e o realce por fundo não
+  sobrevive.
+- **O fundo cabe em exatamente um degrau**, nos dois temas: no claro o degrau
+  seguinte — `#f0f2f5` — deixa o texto `muted` (`#6a6f77`) em **4,51**, a um
+  centésimo do piso de 4,5 de `H-39`, e o degrau depois dele reprova em 4,05; no
+  escuro, o seguinte leva `muted` (`#81878f`) a **4,18** e reprova. Quem fixa o
+  degrau é o `muted`, e não o `secondary`, que sobrevive aos dois — 6,20 e 6,49.
+- **Os dois roxos reprovam com qualquer cor de texto**, e a exceção é declarada
+  em `D-41` — não é defeito a corrigir depois.
+- **`ADR-0003` não é tocado.** A cor do PROCESSO continua saindo da âncora, a
+  coluna A, e as demais colunas seguem ignoradas **para esse fim**.
+
+**Fora desta história:** a cor virar filtro, indicador ou anomalia — o usuário
+adiou o significado dela; as colunas que ainda não aparecem, que são `H-95`; e
+gravar cor de célula, que continua sendo `PATCH /api/processes/:ref/color` e
+pinta a linha, não a célula.
+
+**Dependências:** nenhuma.
+**Tamanho:** M (18 arquivos, 1 contrato alterado)
+
+[↑ Índice](#indice)
+
+
+---
+
+<a id="h-95"></a>
+
+### H-95 — As dezesseis colunas, com o nome literal do cabeçalho
+
+> Nasce de `D-43`, em 10/09/2026. **A tabela existe desde `H-17` e mostra 9
+> colunas desde `H-49`**, e
+> 7 delas vêm da planilha: faltam nove colunas do arquivo, e duas das nove
+> exibidas são calculadas.
+
+**Objetivo:** a tabela mostrar todas as colunas da aba, com o nome que a linha 1
+dá, e o operador escolher quais quer ver.
+
+**Contrato:** nenhuma rota nova — **as 16 colunas já viajam no DTO** —, e **uma
+rota SAI**: `PUT /api/processes/:ref/client`, cujo único consumidor é a coluna
+Cliente (`RF-35`, revogado por `D-43`). O que
+muda é o cliente, mais o rótulo, que passa a vir do arquivo.
+
+**Quatro determinações de `D-43`:**
+
+1. **O rótulo é o texto literal da linha 1**, e a aplicação passa a lê-la — hoje
+   o parser a pula por `firstDataRow`, e `headerRow` existe em `config/app.json`
+   sem ninguém ler o conteúdo. Os 16 textos **já estão em memória** a cada
+   leitura, porque o pool de strings compartilhadas é global: descobrir os nomes
+   não custa um byte a mais.
+2. **A coluna derivada Cliente sai**, e a consolidação fica inteira. Sai também
+   o único caminho de declarar cliente por processo, e a perda está registrada
+   no cabeçalho do épico.
+3. **A Categoria fica.** Ela é derivada, como Cliente, e a diferença é que não
+   tem coluna equivalente no arquivo: `TD-01` a calcula de `STATUS` e do
+   preenchimento das demais colunas, em cinco regras das quais só uma lê a
+   célula L (`A-22`), e removê-la tiraria da tela a informação que organiza o
+   painel inteiro.
+4. **As 16 aparecem por padrão, e esconder é que é declaração do operador.** É o
+   que `RF-42` exige — exibir todas as colunas da aba — e o que o pedido de
+   `D-43` diz; o que a escolha do operador faz é **tirar**. As 16 medem cerca de **3.000 px** nas larguras que ele mesmo ajustou no
+   Excel, contra **1.023 px** das 7 de planilha de hoje, e a tabela já rola
+   horizontalmente abaixo de 1920 px com 9 colunas.
+
+**Arquivos:**
+- `src/io/xlsx-parts.ts` — a leitura da linha de cabeçalho
+- `src/io/xlsx-reader.ts` · `src/domain/types.ts` — os rótulos no resultado
+- `src/http/routes/processes.ts` · `docs/05-contratos-api.md` — os rótulos na resposta
+- `web/src/components/ProcessTable.tsx` — as 16 colunas e a saída de Cliente
+- `web/src/hooks/useProcessQuery.ts` — a escolha de colunas em estado de URL
+- `src/http/routes/process-client.ts` · `src/http/server.ts` ·
+  `tests/http/process-client.test.ts` — a rota que sai com a coluna
+- `web/src/pages/Operational.tsx` — o controle de colunas visíveis
+- `web/src/api-client.ts`
+- `docs/02-requisitos.md` — `RF-32` perde "nove colunas", e `RF-33` o "sete
+  colunas editáveis"
+- `web/tests/Operational.test.tsx` · `tests/io/` · `tests/http/processes.test.ts`
+
+**Critérios de aceite:**
+- **Dado** a aba `2026`, **então** a tabela oferece as 16 colunas dela, cada uma
+  com o texto da linha 1 por cabeçalho.
+- **Dado** que o operador esconde uma coluna, **então** a escolha sobrevive à
+  navegação e à releitura.
+- **Dado** a coluna Cliente, **então** ela não aparece mais na tabela — e o
+  filtro, o ranking e a Página Clientes seguem intactos.
+
+**Casos-limite:**
+- **A coluna H tem cabeçalho `ETA` e conteúdo de PORTO** — `RIO`, `MULTIRIO`,
+  `MULTI`, `SC`, `RO`, cinco valores em 607 células. O cabeçalho **mente** sobre
+  o conteúdo, e a tabela mostra o que o arquivo diz: corrigir na tela criaria
+  uma segunda verdade. A coluna I, `ETA2`, é data de verdade.
+- **`Coluna 13` e `Coluna1` são nomes que o Excel gerou sozinho**, e aparecem
+  assim. `Coluna1` tem **uma** linha preenchida em 649.
+- **`DOCS ENVIADOS` está preenchida em 20,6% das linhas** — 134 de 649, medido
+  aqui em 11/09/2026, contra os **20,7%** que `CLAUDE.md`, `docs/02-requisitos.md`
+  e `A-52` afirmam desde `H-01`; a divergência fica registrada, e nenhum lado é
+  corrigido em silêncio (regra inviolável 1) — e `R$ ENVIADO` em
+  56,9% — coluna vazia continua aparecendo, porque a ausência é informação.
+- **Nove blocos de teste da interface dependem da geometria de 9 colunas**, e
+  cinco deles nem citam Cliente: contam células de tabulação e navegam por
+  `Ctrl+End`.
+- **Oito linhas do plano afirmam "nove colunas"** — `RF-32`, a entrada do índice
+  e o título de `H-77`, três linhas do bloco `✅ CONCLUÍDA` dele, e duas da
+  rastreabilidade. Só `RF-32` é emendado: o registro de `H-77` fica como está.
+  **`RF-33` não é um deles** — ele diz "sete colunas editáveis".
+
+**Fora desta história:** a coluna que a planilha ganhar depois, que é `H-96`; e
+tornar editável na tabela alguma das nove colunas que passam a aparecer — as 15
+já são editáveis no domínio, e expor cada uma é decisão à parte.
+
+**Dependências:** `H-94`, pela ordem de conflito no mesmo arquivo.
+**Tamanho:** M (16 arquivos, 1 contrato alterado, 1 rota removida)
+
+[↑ Índice](#indice)
+
+
+---
+
+<a id="h-96"></a>
+
+### H-96 — A coluna se resolve por nome, e não por letra
+
+> Nasce de `D-43`, em 10/09/2026, e é a **única história do backlog que nasce de
+> um defeito simulado, e não observado**. Nada quebra hoje.
+>
+> **Escrita e NÃO executada, por escolha do usuário em 11/09/2026** (`D-43`):
+> fica documentada como anteparo conhecido e não entra na fila. Reabrir exige
+> ordem dele.
+
+**Objetivo:** inserir ou mover uma coluna na planilha deixar de trocar os dados
+de lugar em silêncio.
+
+**Contrato:** nenhuma rota nova. O vínculo coluna→campo passa de posição para
+nome, e a divergência vira relatório.
+
+**Duas determinações de `D-43`:**
+
+1. **O modo de falha de hoje é MUDO, e está medido.** Deslocar uma coluna faz
+   **616 dos 650 processos** lerem o dado do vizinho e **580 categorias** de
+   status ficarem erradas — e a aplicação continua respondendo 650 processos,
+   quarentena zero, nenhuma anomalia. É o mesmo perfil de `H-34`, que
+   sobrescreveu a configuração do operador porque a gravação preservava os
+   demais campos.
+2. **Cabeçalho divergente AVISA, e nunca recusa.** Falhar fechado aqui é pior
+   que o defeito: a máquina do operador não é um repositório git — a árvore foi
+   baixada, não clonada —, e uma diferença de caixa no cabeçalho derrubaria o
+   painel lá sem nada para comparar. O campo fica vazio, nomeadamente, e a
+   divergência aparece na tela: `Coluna D: esperado "BL", encontrado "NOVA"`.
+
+**Arquivos:**
+- `src/domain/process-builder.ts` — `COLUMN` liga por nome
+- `src/domain/status-classifier.ts` — `onlyRefFilled` percorre as colunas
+  presentes na linha, e não uma lista fixa
+- `src/domain/types.ts` — o esquema resolvido
+- `src/io/xlsx-parts.ts` · `src/io/xlsx-reader.ts`
+- `src/http/routes/health.ts` — a divergência no painel de saúde
+- `docs/03-modelo-dados.md` — `§1.2` deixa de mapear por letra
+- `docs/05-contratos-api.md`
+- `web/src/components/StatusBanner.tsx` — o aviso
+- `tests/domain/` · `tests/io/` · `tests/repo/contratos.test.ts`
+
+**Critérios de aceite:**
+- **Dado** uma coluna inserida antes de `IMPORTADOR`, **então** todos os campos
+  continuam lendo a coluna certa.
+- **Dado** um cabeçalho renomeado, **então** o campo correspondente fica vazio e
+  a tela nomeia as duas pontas — nunca o dado do vizinho.
+- **Dado** qualquer divergência, **então** a aplicação sobe e serve a planilha:
+  a recusa é proibida nesta história.
+
+**Casos-limite:**
+- **O teste que a história obriga:** deslocar as colunas em memória e exigir
+  **zero divergência** em todos os campos das 649 linhas. Sem ele a história não
+  fecha, e ele roda sobre as nove fixtures, que já trazem os 16 cabeçalhos na
+  linha 1.
+- **`onlyRefFilled` classifica 34 linhas hoje**, e a mudança é comportamentalmente
+  idêntica: percorrer as colunas presentes dá **34** também, medido.
+- **A Tabela do Excel é a segunda testemunha e NÃO é dependência:** a aba tem
+  `xl/tables/table1.xml` com os 16 nomes idênticos à linha 1, e **nenhuma das
+  nove fixtures o tem**. A linha 1 é a fonte primária e testável.
+- **A escrita cirúrgica não muda.** `put` e `putDate` já recebem a letra, e o
+  esquema resolvido a entrega — `src/io/xlsx-surgeon.ts` fica fora, e com ele o
+  `revisor-xml` deixa de ser dependência de nascimento.
+
+**Fora desta história:** a coluna descoberta aparecer na tabela, que `D-43`
+descartou; e promover coluna nova a filtro, ordem ou edição.
+
+**Dependências:** `H-95`, e a ordem é o anteparo: `H-95` põe o cabeçalho lido na
+tela **antes** de ele virar chave. Se a leitura estiver errada, o operador vê o
+nome errado no cabeçalho da tabela, ao custo de uma conversa — e não com 616
+processos lendo o vizinho.
+**Tamanho:** G (12 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
 ### Varredura de verbos de decisão em aberto
 
 Os textos das 34 histórias **do plano original** foram varridos em busca de
 "escolher", "avaliar", "definir", "decidir" e "ver qual". As ocorrências
 encontradas foram eliminadas:
 
-> **A varredura nunca foi refeita.** O backlog tem 90 histórias hoje, e as 56
-> posteriores — `H-33` em diante, mais os épicos `E9` a `E14` — não passaram por
-> ela. As cinco de `E13` não poderiam passar: foram escritas **depois** do
+> **A varredura nunca foi refeita.** O backlog tem 96 histórias hoje, e as **64**
+> posteriores — `H-33` em diante, o que já inclui os épicos `E9` a `E15` — não
+> passaram por ela. *(A redação anterior dizia "`H-33` em diante, mais os épicos
+> `E9` a `E14`", e o "mais" contava o mesmo conjunto duas vezes — foi por isso
+> que o 56 nunca bateu com nada.)* As cinco de `E13` não poderiam passar: foram escritas **depois** do
 > código, e verbo de decisão em aberto num texto retroativo descreveria uma
 > escolha que já foi feita. A conclusão abaixo vale para o recorte varrido, não para o backlog.
 

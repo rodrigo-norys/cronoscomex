@@ -18,6 +18,7 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 | RF-06 | Registrar em quarentena, com motivo estruturado, toda linha não interpretável, sem descartá-la silenciosamente | A-03, A-21 | H-07 |
 | RF-07 | Detectar alteração externa do arquivo e reprocessar automaticamente | "tempo real", §1 | H-08 |
 | RF-08 | Emitir relatório de divergências: RG em processo não desembaraçado, intervalo documental negativo, texto de canal no STATUS, variante de grafia não catalogada | A-05, A-30, A-06, A-03 | H-07 |
+| RF-44 | Reportar divergência entre o cabeçalho encontrado e o esquema declarado, nomeando as duas pontas, sem descartar linha nem inventar campo | H-96 |
 
 ### 1.2. Indicadores (§4)
 
@@ -70,10 +71,13 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 | RF-15 | Tela de detalhe do processo, exibindo o texto original de STATUS e todos os campos, inclusive os fora de escopo | H-22 |
 | RF-16 | Painel de saúde da ingestão: última leitura, linhas lidas, quarentena e divergências | H-16, H-31 |
 | RF-31 | Página Configuração: apontar a planilha pela tela — com o diálogo de arquivo do sistema —, salvar o caminho sem editar JSON, e revalidar a partida sem reexecutar o atalho | H-34, H-35, H-36, H-37, H-38 |
-| RF-32 | Ordenar a tabela da Página Operacional por **qualquer** uma das nove colunas, com a ordem de categoria seguindo o fluxo do processo e não o alfabeto | H-77 |
+| RF-32 | Ordenar a tabela da Página Operacional por **qualquer** uma das suas colunas, com a ordem de categoria seguindo o fluxo do processo e não o alfabeto *(dizia "nove colunas" até `D-43`, que leva a tabela às dezesseis da planilha)* | H-77, H-95 |
 | RF-36 | Exibir, ao lado de Operacional e de Alertas na navegação, quantos itens o **recorte ativo** tem — o mesmo número que a página mostra ao abrir, ausente enquanto não se sabe e nunca zero por omissão | H-87 |
 | RF-37 | Achar um processo de qualquer tela por atalho de teclado, buscando os seis campos de texto da planilha (`A-39`, `D-34`), com os sete destinos do menu num grupo à parte | H-83, H-90 |
 | RF-38 | Escolher quantas linhas a tabela mostra por vez — 50, 100, 200 ou 500, com 200 como padrão — e manter o cabeçalho visível durante a rolagem | H-84 |
+| RF-41 | Exibir, como fundo de cada célula da tabela, a cor de preenchimento que ela tem na planilha — e **nunca** inferir dado a partir dela | H-94 |
+| RF-42 | Exibir todas as colunas da aba em escopo, com o texto literal da linha de cabeçalho por rótulo | H-95 |
+| RF-43 | Escolher quais colunas a tabela mostra, com a escolha no endereço — como os demais parâmetros da Página Operacional (`useProcessQuery`) —, sobrevivendo à navegação e à releitura | H-95 |
 
 > **Os RF acima de RF-30 nasceram depois do plano**, e a numeração é
 > cronológica, não posicional: eles ficam na seção do tema a que pertencem, e o
@@ -104,10 +108,11 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 | RF-26 | Validar o arquivo após a escrita e restaurar o backup automaticamente em caso de falha | H-25 |
 | RF-27 | Editar os campos codificados em cor (responsável, canal, importador fora do RJ) | H-27 |
 | RF-28 | Descartar edições pendentes individualmente ou em bloco, antes da aplicação | H-23 |
-| RF-33 | Editar o campo **onde ele está**, na própria tabela da Página Operacional: sete colunas editáveis, com Categoria de leitura porque ela sai de cinco regras das quais só uma lê a célula (A-22) | H-80 |
+| RF-33 | Editar o campo **onde ele está**, na própria tabela da Página Operacional, com Categoria de leitura porque ela sai de cinco regras das quais só uma lê a célula (A-22) *(dizia "sete colunas editáveis" até `D-43`; o domínio declara quinze, e quantas a tabela expõe deixa de ser número fixado aqui)* | H-80, H-95 |
 | RF-34 | **Criar um processo novo** pela tela, enfileirado como as demais edições e gravado depois da última linha existente da aba `2026` sob comando explícito. A **remoção** de linha permanece fora de escopo (`D-25`) | H-78, H-79, H-80 |
-| RF-35 | Declarar o cliente consolidado de um processo pela tela, gravando a regra no mapa de clientes de `H-48` — e criando o arquivo quando ele não existe, que é o estado da máquina do operador em `PD-08` | H-79 |
+| RF-35 | ~~Declarar o cliente consolidado de um processo pela tela~~ *(**REVOGADO por `D-43`** em 11/09/2026: o único consumidor era a coluna Cliente da tabela, que sai em `H-95`. Declarar passa a ser só pelo painel da Página Clientes, por grafia e por prefixo — `RF-39`. A perda foi apresentada ao usuário e ele manteve a decisão: uma grafia já capturada por regra de prefixo não aparece em lista nenhuma do painel)* | H-79, H-95 |
 | RF-39 | Exibir quais grafias de CLT ainda **não** têm cliente declarado, com a contagem de processos de cada uma e independentes dos filtros globais, e permitir declarar cada uma dali | H-88 |
+| RF-40 | Declarar quem é responsável por quais importadores pela tela, gravando em `team-map.json`, e desfazer um responsável devolvendo a carteira dele a "Sem responsável" | H-91 |
 
 ### 1.7. Histórico
 

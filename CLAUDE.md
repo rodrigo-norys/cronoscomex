@@ -132,20 +132,22 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**91 das 92 histórias estão concluídas**, e a única aberta é `E14`. O que cada uma aprendeu — número medido,
+**91 das 96 histórias estão concluídas**, e os épicos abertos são `E14` e `E15`. O que cada uma aprendeu — número medido,
 defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
 `docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
 em aberto. **Este bloco diz só o que está aberto.**
 
-**`E9` a `E12` fecharam em 01/09/2026, e `E13` em 03/09/2026.** O que está aberto
-é **`E14`** — `H-82` a `H-90`, decididas em 03 e 04/09/2026 e **numeradas na
-ordem de execução**, com `H-90` fora dela por ter nascido depois, mais `H-91`,
-acrescentada em 08/09/2026 por `D-35`. **`H-82` a `H-86` e `H-90` fecharam em
-04/09/2026, `H-87` em 08/09/2026, `H-88` em 09/09/2026, e `H-89` e `H-92` em
-10/09/2026.** Resta uma: `H-91` — o mapa de equipe operável pela tela, que sai de
-`PD-08`. **A branch de integração de `D-35` fechou com uma
-história só:** `H-88` chegou à `main` sozinha pelo PR #123, e `H-91` vai em
-branch e PR próprios — a emenda está na linha de `D-35`. Restam também as **três pendências abertas** abaixo,
+**`E9` a `E12` fecharam em 01/09/2026, e `E13` em 03/09/2026.** De **`E14`**
+resta uma: `H-91`, o mapa de equipe operável pela tela.
+
+**`E15` nasceu em 10/09/2026 e é o épico aberto novo** — `H-93` a `H-96`, de
+`D-40` a `D-43`, e tem duas metades. `H-93` **reabre `D-23`**: a cor deixa de
+definir o responsável, e 48 processos ativos passam a "Sem responsável" — ela
+depende de `H-91`, e a ordem não é preferência, porque sem a tela esses 48 ficam
+sem conserto. `H-94` a `H-96` fazem a tabela espelhar a planilha: as 16 colunas
+com o nome do cabeçalho, e a cor de cada célula como fundo. **`H-96` fica escrita
+e não executada**, por escolha do usuário, e a coluna descoberta — "coluna nova
+aparece sozinha" — foi pedida em 10/09 e **descartada em 11/09**, por `D-43`. Restam também as **três pendências abertas** abaixo,
 e nenhuma bloqueia implementação: `PD-09` espera só uma decisão, `PD-08` a
 próxima sincronização da branch `distribuicao`, e `PD-07` se divide — a paleta
 nominal quer a máquina do operador, e o `ConflictDialog` quer uma fixture que
@@ -322,6 +324,33 @@ exige converter `oklch()` para sRGB e calcular a razão da WCAG com a conta à
 mostra. Devolve achados em formato fixo e um plano de **ondas por dependência
 técnica**, cada uma declarando quantos arquivos toca.
 
+`revisor-docs` revisa mudança em `docs/`, no `CLAUDE.md` e nos dois
+`README.md` — invocado **antes de commitar**, como `revisor-xml`, sem `Edit`
+nem `Write` e com `model: opus` pelo mesmo motivo. **Ele começa onde
+`tests/repo/documentacao.test.ts` para**, e a divisão está escrita **dentro
+dele**, não no teste: a guarda cobra o que é computável — índice, contagens,
+matriz, requisito revogado —, e o revisor cobra o que não é. São **cinco**
+famílias: número cuja **base** está errada, **citação de identificador que
+existe e diz outra coisa**, elo da cascata não alcançado **e não declarado**,
+contradição entre duas afirmações **do mesmo diff**, e emenda que apaga
+registro. A segunda é a razão de ele existir: medido, **zero** das 5.458
+citações de ID em prosa apontam para identificador inexistente, então linter
+nenhum as alcança — é semântica.
+
+> **Nasceu de repetição medida:** **51 defeitos** numa passada de ~490 linhas,
+> em 11/09/2026, e a família de citação sobreviveu inteira à revisão automática.
+> **A linha dele na tabela de marcos foi escrita DEPOIS do evento**, e é a
+> primeira que é — as quatro anteriores declararam o gatilho antes de ele ser
+> atingido. Registro isso em vez de apagar: a tabela vale como anteparo quando
+> o gatilho precede a peça, e aqui ela documenta, não previu.
+>
+> **A primeira invocação dele foi sobre o diff que o cria, e reprovou 15 itens**
+> — números sem recorte, um exemplo que envelheceu no commit anterior, e um
+> comando publicado como prova que o próprio arquivo falsificava. Ele **não**
+> confere o que a guarda já confere, e isso é instrução dele, não convenção —
+> duas fontes de verdade que divergem é o defeito que este repositório mais
+> registra.
+
 **Rules** (`.claude/rules/`). Instrução com `paths:` no frontmatter, que entra em
 contexto **só quando o Claude lê arquivo que casa o glob** — e por isso não custa
 token nas sessões que não tocam o assunto. São cinco:
@@ -329,7 +358,7 @@ token nas sessões que não tocam o assunto. São cinco:
 | Rule | Carrega ao tocar |
 |---|---|
 | `comentarios.md` | `src/`, `web/`, `tests/` — a régua de comentários |
-| `documentacao.md` | `docs/` e `.md` da raiz — números afirmados em prosa. Carrega em quase toda sessão, porque o protocolo de fatia lê `docs/`, e por isso é curta |
+| `documentacao.md` | `docs/` e `.md` da raiz — números afirmados em prosa, e a chamada do `revisor-docs` antes de commitar. Carrega em quase toda sessão, porque o protocolo de fatia lê `docs/`, e por isso é curta: 51 linhas |
 | `escrita-xlsx.md` | `xlsx-surgeon.ts`, `write-guard.ts` — o procedimento do `revisor-xml` e a forma medida do `calcChain` |
 | `operacao-windows.md` | `scripts/` — o que `PD-06` deixou como regra, e a lição que já se pagou |
 | `distribuicao.md` | o script de sincronização e os `.exemplo` — o que entra na branch, e `PD-08` |
@@ -417,6 +446,27 @@ documentada e não servida NÃO é coberta** — esta linha afirmou que era até
 17/08/2026, enquanto o cabeçalho do próprio teste dizia o contrário. **A guarda não substitui a fatia;
 libera a atenção dela.**
 
+**Guarda de documentação:** `tests/repo/documentacao.test.ts`, desde 11/09/2026.
+Os dois acima guardam o eixo **documento↔código**; este guarda o outro —
+**documento contra documento** —, que é onde metade do trabalho acontece.
+Medido em 11/09/2026: **220 dos 445** commits não-merge da `main` tocam
+**apenas** `docs/`, `CLAUDE.md` ou `README.md`, e o `.md` do repositório tem
+mais linhas que `src/` e `web/src/` somados. Ele cobra o índice do backlog
+agrupando cada história sob o épico do corpo, as contagens P/M/G de cada linha
+do resumo, a matriz concordando com o backlog história a história, requisito
+revogado que segue "Entregue", e o total de histórias afirmado em prosa — em
+`docs/`, em `.claude/`, no `CLAUDE.md` e nos dois `README.md`. Nenhuma
+expectativa é lista fixa: épico, história e requisito novos entram sem tocar no
+arquivo.
+
+> **Nasceu de defeito observado, não de previsão.** O agrupamento do índice era
+> o único elo que asserção nenhuma via, e quem o achou foi o usuário, a olho, em
+> 11/09/2026 — as quatro histórias de `E15` listadas sob o cabeçalho de `E14`.
+> Na mesma execução ele reprovou **dois números vivos** que a revisão
+> adversarial não pegara, e um deles estava na skill que conduz a história.
+> **`docs/sessao-autonoma/` é isento**, e a isenção é estrutural: são relatórios
+> datados, e reprovar neles ensinaria a reescrever registro histórico.
+
 **`npm run test:strip`** importa os módulos de `src/` sob
 `--experimental-strip-types`, que é como a aplicação roda de verdade. **Nada de
 `parameter property`, `enum`, `namespace` ou decorator em `src/`.**
@@ -451,6 +501,7 @@ processo e são abandonados. Os gatilhos abaixo são objetivos.
 | ~~**Antes de iniciar a Fase 3** (`H-24`)~~ | ~~Subagent de review para manipulação de XML~~ | ✅ **Criado em 11/08/2026** como `revisor-xml`, antes da primeira linha de `H-24`. `H-24` tem **11** casos-limite — 8 no plano original, mais 3 que a própria revisão acrescentou (linha auto-fechada, célula ausente recebendo data, fórmula compartilhada) — e o custo de errar é a planilha da empresa. **Pagou-se na primeira invocação**: reprovou por dois defeitos reais, um deles gerando XML malformado, o outro reproduzindo A-56 no caso mais provável |
 | ~~**Ao concluir `H-20`**~~ | ~~Skill `nova-pagina`~~ | ✅ **Criada em 07/08/2026**, ao fechar `H-20`. Cinco páginas de `H-16` a `H-20` com o mesmo padrão — consumir rota → respeitar filtros globais → estado vazio explícito → nunca calcular no cliente —, e as mesmas coisas fora do plano toda vez. `H-22` foi a primeira história conduzida por ela |
 | ~~**Ao acumular 20 `session_id` distintos**~~ | ~~Conferir se cada rule dispara~~ | ✅ **Conferido em 04/09/2026**, ao fechar `H-82`: **28 sessões** distintas no log, e **as cinco rules dispararam** — `documentacao` 19 vezes, `comentarios` 13, `operacao-windows` 7, `escrita-xlsx` 4, `distribuicao` 2. Nenhuma precisa voltar para cá nem ter o glob consertado, e o hook vira só observabilidade. **O log é TSV, não JSON** — a primeira contagem leu 0 por supor o formato errado |
+| ~~**Ao medir defeito de documentação em lote**~~ | ~~Guarda `documentacao.test.ts` e subagent `revisor-docs`~~ | ✅ **Criados em 11/09/2026**, no dia em que o gatilho foi atingido: **51 defeitos confirmados** numa passada de ~490 linhas, e um deles achado **a olho pelo dono depois de a suíte passar**. Nasceram como par, e a divisão é declarada nos dois: a guarda cobra o computável, o revisor cobra o que não é. **A ordem importou** — a guarda reprova qualquer ponto em que as cópias divirjam, então precisou nascer depois de `README.md` e backlog concordarem, senão reprovaria o próprio histórico que a introduziu |
 | **Se aparecer a aba `2027`** | Reexecutar `H-01` | `python3 tools/profile_workbook.py`, depois `tools/build_fixtures.py`. As abas `2025` e `2024` provam que **o esquema muda entre anos**. Risco R-14 |
 | **Nunca** | Subagents para paralelizar o backlog | O caminho crítico é uma cadeia sequencial de 18 sessões (`docs/07-plano-entrega.md §3`). Fan-out não encurta |
 
