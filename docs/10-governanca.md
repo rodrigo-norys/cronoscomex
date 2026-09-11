@@ -275,7 +275,7 @@ apagá-las esconderia que a escolha mudou.
 | Ausente | Por quê |
 |---|---|
 | Política de branch | **Deixou de ser ausência.** O argumento de 03/08/2026 — "um desenvolvedor, branch por história seria cerimônia sem revisor" — caiu quando o portão passou a fazer o papel do revisor: branch por história ou `<tipo>/<escopo>-<descrição>`, merge só por PR, `main` protegida com `bypass_actors` vazio. Vive em `CLAUDE.md` |
-| Processo de code review | Não há segundo revisor **humano**. Os substitutos, em camadas: `revisor-xml` e `revisor-estilo` em `.claude/agents/`, a guarda de contrato em `tests/repo/`, o portão local `npm run verify`, e `verify.yml` + `dados-sensiveis.yml` como checks obrigatórios do PR |
+| Processo de code review | Não há segundo revisor **humano**. Os substitutos, em camadas: `revisor-xml`, `revisor-estilo` e `revisor-docs` em `.claude/agents/`, a guarda de contrato e a de documentação em `tests/repo/`, o portão local `npm run verify`, e `verify.yml` + `dados-sensiveis.yml` como checks obrigatórios do PR. *(As duas últimas entraram em 11/09/2026: o revisor cobre mudança de documento, e a guarda cobre o que nela é computável.)* |
 | SLA de resposta, RACI, matriz de aprovação | Duas pessoas |
 | Versionamento semântico do produto | Aplicação local sem distribuição pública |
 | Processo de release | **Deixou de ser ausência, e não é `git pull`.** O release é a branch `distribuicao`, calculada por `scripts/sincronizar-distribuicao.ts` a partir da `main` mesclada e **baixada como árvore** na máquina do operador — que não é repositório git (medido em 04/09/2026, ao fechar `PD-01`). O detalhe está em `.claude/rules/distribuicao.md` |
