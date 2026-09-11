@@ -15,7 +15,7 @@ Extraídos de `docs/08-qualidade-operacao.md` §1.3 — os 44 casos obrigatório
 projeto. Cada linha abaixo precisa virar um teste com o **valor concreto** que
 aparece nela.
 
-!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); grep -F "| ${H:?informe H-NN} |" docs/08-qualidade-operacao.md || echo "NENHUM caso obrigatório atribuído a esta história em §1.3 — os 44 casos cobrem 11 das 90 histórias, e a ausência aqui é esperada, não defeito. Os casos-limite do backlog continuam obrigatórios."`
+!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); grep -F "| ${H:?informe H-NN} |" docs/08-qualidade-operacao.md || echo "NENHUM caso obrigatório atribuído a esta história em §1.3 — os 44 casos cobrem 11 histórias, e a ausência aqui é esperada, não defeito. Os casos-limite do backlog continuam obrigatórios."`
 
 ## Linhas da matriz de rastreabilidade que citam esta história
 

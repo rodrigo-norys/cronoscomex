@@ -132,20 +132,22 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**91 das 92 histórias estão concluídas**, e a única aberta é `E14`. O que cada uma aprendeu — número medido,
+**91 das 96 histórias estão concluídas**, e os épicos abertos são `E14` e `E15`. O que cada uma aprendeu — número medido,
 defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
 `docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
 em aberto. **Este bloco diz só o que está aberto.**
 
-**`E9` a `E12` fecharam em 01/09/2026, e `E13` em 03/09/2026.** O que está aberto
-é **`E14`** — `H-82` a `H-90`, decididas em 03 e 04/09/2026 e **numeradas na
-ordem de execução**, com `H-90` fora dela por ter nascido depois, mais `H-91`,
-acrescentada em 08/09/2026 por `D-35`. **`H-82` a `H-86` e `H-90` fecharam em
-04/09/2026, `H-87` em 08/09/2026, `H-88` em 09/09/2026, e `H-89` e `H-92` em
-10/09/2026.** Resta uma: `H-91` — o mapa de equipe operável pela tela, que sai de
-`PD-08`. **A branch de integração de `D-35` fechou com uma
-história só:** `H-88` chegou à `main` sozinha pelo PR #123, e `H-91` vai em
-branch e PR próprios — a emenda está na linha de `D-35`. Restam também as **três pendências abertas** abaixo,
+**`E9` a `E12` fecharam em 01/09/2026, e `E13` em 03/09/2026.** De **`E14`**
+resta uma: `H-91`, o mapa de equipe operável pela tela.
+
+**`E15` nasceu em 10/09/2026 e é o épico aberto novo** — `H-93` a `H-96`, de
+`D-40` a `D-43`, e tem duas metades. `H-93` **reabre `D-23`**: a cor deixa de
+definir o responsável, e 48 processos ativos passam a "Sem responsável" — ela
+depende de `H-91`, e a ordem não é preferência, porque sem a tela esses 48 ficam
+sem conserto. `H-94` a `H-96` fazem a tabela espelhar a planilha: as 16 colunas
+com o nome do cabeçalho, e a cor de cada célula como fundo. **`H-96` fica escrita
+e não executada**, por escolha do usuário, e a coluna descoberta — "coluna nova
+aparece sozinha" — foi pedida em 10/09 e **descartada em 11/09**, por `D-43`. Restam também as **três pendências abertas** abaixo,
 e nenhuma bloqueia implementação: `PD-09` espera só uma decisão, `PD-08` a
 próxima sincronização da branch `distribuicao`, e `PD-07` se divide — a paleta
 nominal quer a máquina do operador, e o `ConflictDialog` quer uma fixture que
@@ -416,6 +418,27 @@ reavaliação de `D-16` atingido sem registro** reprovam a suíte. **Rota
 documentada e não servida NÃO é coberta** — esta linha afirmou que era até
 17/08/2026, enquanto o cabeçalho do próprio teste dizia o contrário. **A guarda não substitui a fatia;
 libera a atenção dela.**
+
+**Guarda de documentação:** `tests/repo/documentacao.test.ts`, desde 11/09/2026.
+Os dois acima guardam o eixo **documento↔código**; este guarda o outro —
+**documento contra documento** —, que é onde metade do trabalho acontece.
+Medido em 11/09/2026: **220 dos 445** commits não-merge da `main` tocam
+**apenas** `docs/`, `CLAUDE.md` ou `README.md`, e o `.md` do repositório tem
+mais linhas que `src/` e `web/src/` somados. Ele cobra o índice do backlog
+agrupando cada história sob o épico do corpo, as contagens P/M/G de cada linha
+do resumo, a matriz concordando com o backlog história a história, requisito
+revogado que segue "Entregue", e o total de histórias afirmado em prosa — em
+`docs/`, em `.claude/`, no `CLAUDE.md` e nos dois `README.md`. Nenhuma
+expectativa é lista fixa: épico, história e requisito novos entram sem tocar no
+arquivo.
+
+> **Nasceu de defeito observado, não de previsão.** O agrupamento do índice era
+> o único elo que asserção nenhuma via, e quem o achou foi o usuário, a olho, em
+> 11/09/2026 — as quatro histórias de `E15` listadas sob o cabeçalho de `E14`.
+> Na mesma execução ele reprovou **dois números vivos** que a revisão
+> adversarial não pegara, e um deles estava na skill que conduz a história.
+> **`docs/sessao-autonoma/` é isento**, e a isenção é estrutural: são relatórios
+> datados, e reprovar neles ensinaria a reescrever registro histórico.
 
 **`npm run test:strip`** importa os módulos de `src/` sob
 `--experimental-strip-types`, que é como a aplicação roda de verdade. **Nada de
