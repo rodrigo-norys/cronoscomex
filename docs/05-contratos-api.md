@@ -833,6 +833,12 @@ e a célula visível não mudava.
 
 ### `PUT /api/processes/:ref/client`
 
+> **SAI em `H-95`, por `D-43`** (11/09/2026). O único consumidor é a coluna
+> Cliente da tabela da Página Operacional, que a história remove; declarar passa
+> a ser só pelo painel da Página Clientes (`RF-39`). A seção fica até lá, porque
+> a rota está servida e `tests/repo/contratos.test.ts` cobra contrato de rota
+> viva.
+
 Declara a que **cliente** pertence a célula CLT de um processo. **Não enfileira
 e não toca no `.xlsx`**: grava a regra em `config/client-map.json`, que é de
 onde a coluna Cliente já lia. Por isso o efeito é imediato e não passa pelo
