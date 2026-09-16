@@ -20,11 +20,11 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
  * **Nada aqui toca estado real** — nem a planilha do operador, nem `data/`, nem
  * `config/app.json`, nem `config/client-map.json`, **nem a fixture versionada**.
  * `abrirAplicacao` COPIA a planilha para o temporario e injeta os demais
- * caminhos de escrita; sao **oito destinos, todos sob `area`**, e a lista se
+ * caminhos de escrita; sao **nove destinos, todos sob `area`**, e a lista se
  * confere com `grep -n "join(area" tools/medir-navegador.mjs`:
  *
  *     planilha.xlsx · quarantine.json · history.jsonl · pending-edits.jsonl
- *     backups/ · aplicadas/ · client-map.json · app.json
+ *     backups/ · aplicadas/ · client-map.json · app.json · team-map.json
  *
  * A copia e o `app.json` entraram em 02/09/2026: sem a primeira, "Aplicar
  * alteracoes" numa medicao gravaria na fixture do repositorio; sem o segundo,
@@ -76,7 +76,9 @@ const esperar = (ms) => new Promise((ok) => setTimeout(ok, ms))
 export async function abrirAplicacao({ fixture = 'cores.xlsx', porta = 5199 } = {}) {
   const { loadColorMap } = await modulo('src/app/color-map-loader.ts')
   const { loadStatusAliases } = await modulo('src/app/status-aliases-loader.ts')
-  const { initStore, refreshClientMap, reload, store } = await modulo('src/app/process-store.ts')
+  const { initStore, refreshClientMap, refreshTeamMap, reload, store } = await modulo(
+    'src/app/process-store.ts',
+  )
   const { buildServer, LOOPBACK } = await modulo('src/http/server.ts')
 
   const area = mkdtempSync(join(tmpdir(), 'cronos-medicao-'))
@@ -188,6 +190,12 @@ export async function abrirAplicacao({ fixture = 'cores.xlsx', porta = 5199 } = 
     // O que `main` passa: sem ele a regra e gravada e a tela segue mostrando a
     // consolidacao antiga — a medicao veria um defeito que a aplicacao nao tem.
     (mapa) => refreshClientMap(mapa.clients, mapa.groups),
+    // Caminho de escrita de `H-91`: o painel de equipe grava em `team-map.json`.
+    // Sem este argumento a medicao reescreveria a EQUIPE do operador — a recusa
+    // de `saveTeamMember` so vale sob `NODE_ENV=test`, e aqui nao vale (ver a
+    // nota do cabecalho). Mesmo modo de falha que `H-34` mediu com o `app.json`.
+    join(area, 'team-map.json'),
+    (equipe) => refreshTeamMap(equipe),
   )
   await app.listen({ host: LOOPBACK, port: porta })
 
