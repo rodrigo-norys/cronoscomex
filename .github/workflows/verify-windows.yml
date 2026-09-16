@@ -63,5 +63,14 @@ jobs:
       - name: Testes
         run: npm test
 
+      # Roda MESMO com os testes vermelhos, e e por isso que existe: a primeira
+      # execucao deste job, em 16/09/2026, reprovou 6 dos 12 blocos de
+      # tests/io/watcher.test.ts — exatamente os 6 que esperam o watcher
+      # disparar —, e uma suite so diz QUE falhou, nunca ONDE. O diagnostico
+      # separa biblioteca, filtro proprio e caminho de producao.
+      - name: Diagnostico do watcher
+        if: always()
+        run: node --experimental-strip-types scripts/diagnostico-watcher.mjs
+
       - name: Build
         run: npm run build
