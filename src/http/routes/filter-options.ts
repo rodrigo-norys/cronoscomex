@@ -127,7 +127,6 @@ export function registerFilterOptionsRoute(
   clientGroups: readonly ClientGroup[] = [],
   teamMap: readonly TeamMember[] = [],
 ): void {
-  const responsibles = knownResponsibles(teamMap)
   app.get('/api/filters/options', (_request, reply) => {
     const state = store.getState()
 
@@ -143,6 +142,10 @@ export function registerFilterOptionsRoute(
     }
 
     const { processes } = state
+    // Derivado por REQUISICAO — ver a nota em `indicators.ts`: `refreshTeamMap`
+    // reescreve este array no lugar quando o painel de `H-91` grava, e um
+    // `const` do registro ofereceria a equipe anterior ate o reinicio.
+    const responsibles = knownResponsibles(teamMap)
     const body: FilterOptionsResponse = {
       clients: optionsOf(
         processes,

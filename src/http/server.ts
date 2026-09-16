@@ -9,6 +9,7 @@ import {
   initStore,
   reconfigureWorkbook,
   refreshClientMap,
+  refreshTeamMap,
   reload,
   type StoreAccess,
 } from '../app/process-store.ts'
@@ -34,6 +35,7 @@ import { registerProcessesRoute } from './routes/processes.ts'
 import { registerQuarantineRoute } from './routes/quarantine.ts'
 import { registerReloadRoute } from './routes/reload.ts'
 import { registerStaticRoute } from './routes/static.ts'
+import { registerTeamRoutes } from './routes/team.ts'
 
 /**
  * Endereco de escuta. RNF-29: o processo escuta EXCLUSIVAMENTE em loopback.
@@ -114,6 +116,15 @@ export function buildServer(
   clientMapPath?: string,
   /** Reprojeta com o mapa novo. Ausente, so grava — o certo em teste. */
   applyClientMap?: (map: ClientMap) => Promise<void>,
+  /**
+   * Caminho do mapa de equipe (`H-91`), o QUARTO caminho de escrita da
+   * aplicacao. Ponto de injecao para teste: `saveTeamMember` recusa o padrao sob
+   * `NODE_ENV=test`, e um default nesta assinatura anularia a guarda em todo
+   * teste que monta o servidor — o modo de falha que `H-28` e `H-34` pagaram.
+   */
+  teamMapPath?: string,
+  /** Reprojeta com a equipe nova. Ausente, so grava — o certo em teste. */
+  applyTeamMap?: (map: readonly TeamMember[]) => Promise<void>,
 ): FastifyInstance {
   // Silencioso sob teste: a saida do Vitest e o relatorio, nao o log do servidor.
   const app = Fastify({
@@ -133,6 +144,7 @@ export function buildServer(
   registerProcessColorRoute(app, store, colorMap)
   registerProcessClientRoute(app, store, clientMap, clientGroups, clientMapPath, applyClientMap)
   registerClientsRoutes(app, store, clientMap, clientGroups, clientMapPath, applyClientMap)
+  registerTeamRoutes(app, store, teamMap, teamMapPath, applyTeamMap)
   registerApplyRoute(app)
 
   // Por ultimo: `GET /*` e o catch-all, e registra-la antes nao mudaria o
@@ -225,6 +237,8 @@ async function main(): Promise<void> {
     clientEntries,
     undefined,
     (map) => refreshClientMap(map.clients, map.groups),
+    undefined,
+    (members) => refreshTeamMap(members),
   )
 
   try {
