@@ -102,6 +102,18 @@ const { version: versaoChokidar } = await import(
 ).then((m) => m.default)
 info(`chokidar: ${versaoChokidar}`)
 
+/**
+ * O modulo REAL, importado uma vez e usado nos passos 4 e 5.
+ *
+ * Os dois precisam falar do mesmo codigo que roda em producao. Em 16/09/2026
+ * o passo 4 era uma copia colada do filtro, e quando `watcher.ts` foi
+ * corrigido a copia virou fossil: o script seguiu imprimindo "defeito de
+ * producao" sobre codigo que nao existia mais em lugar nenhum.
+ */
+const { createWatcher, samePath } = await import(
+  pathToFileURL(resolve(RAIZ, 'src/io/watcher.ts')).href
+)
+
 // ── 2 ────────────────────────────────────────────────────────────────────────
 passo('Forma dos caminhos — a causa candidata da falha de tests/repo/distribuicao.test.ts')
 const exemplo = relative(RAIZ, resolve(RAIZ, 'web/src', './pages/History.tsx'))
@@ -150,11 +162,14 @@ passo('chokidar com o `ignored` de src/io/watcher.ts — e o que ele recebe')
     ignoreInitial: true,
     depth: 0,
     persistent: true,
-    // Copia literal do filtro de producao, com um registro em volta: o que
-    // interessa medir nao e o veredicto do filtro, e sim QUE STRING ele recebe.
+    // A comparacao vem de `watcher.ts`, e e essa a parte que importa: foi
+    // copia-la que fez este passo mentir depois da correcao. O resto do filtro
+    // segue replicado aqui — `stats?.isDirectory()` e o `basename` —, e essa
+    // replica continua podendo divergir; o registro em volta existe porque o
+    // que se quer medir nao e so o veredicto, e sim QUE STRING chega.
     ignored: (candidate, stats) => {
       let decisao
-      if (candidate === diretorio) decisao = false
+      if (samePath(candidate, diretorio)) decisao = false
       else if (stats?.isDirectory()) decisao = true
       else decisao = basename(candidate) !== nomeArquivo
       if (vistos.length < 12) vistos.push({ candidate, decisao })
@@ -174,7 +189,7 @@ passo('chokidar com o `ignored` de src/io/watcher.ts — e o que ele recebe')
   info('candidatos que o filtro recebeu:')
   if (vistos.length === 0) info('  (nenhum — o filtro nunca foi chamado)')
   for (const { candidate, decisao } of vistos) {
-    const marca = candidate === diretorio ? ' == diretorio' : ''
+    const marca = samePath(candidate, diretorio) ? ' == diretorio' : ''
     info(`  ${decisao ? 'IGNORA ' : 'aceita '} ${JSON.stringify(candidate)}${marca}`)
   }
 
@@ -189,7 +204,6 @@ passo('chokidar com o `ignored` de src/io/watcher.ts — e o que ele recebe')
 // ── 5 ────────────────────────────────────────────────────────────────────────
 passo('createWatcher real — o caminho de producao, ponta a ponta')
 {
-  const { createWatcher } = await import(pathToFileURL(resolve(RAIZ, 'src/io/watcher.ts')).href)
   const { dir, arquivo } = criarArea('cronos-diag-prod-')
 
   let chamadas = 0
