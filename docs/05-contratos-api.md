@@ -208,8 +208,24 @@ Lista de processos, já filtrada.
 | `limit` | `number` | `200` | 1 a 1000 |
 | `offset` | `number` | `0` | ≥ 0 |
 
+**`headerLabels` traz o nome de cada coluna, por letra, como a linha 1 da
+planilha o escreve** (`H-95`). Ele viaja na resposta e não por item: é
+propriedade da **aba**, e repeti-lo em cada processo custaria 16 pares por linha
+numa página de até 500.
+
+**Sai literal.** Medido em 16/09/2026 na aba real: `A REF`, `B CLT`,
+`C IMPORTADOR`, `D BL`, `E AGENTE`, `F CNTR`, `G NAVIO`, **`H ETA`**,
+`I ETA2`, `J MERCADORIA`, `K RG`, `L STATUS`, `M Coluna 13`, `N R$ ENVIADO`,
+`O DOCS ENVIADOS`, `P Coluna1`. A coluna `H` se chama `ETA` e **guarda porto**;
+`M` e `P` têm nomes que o Excel gerou sozinho. A tabela mostra o que o arquivo
+diz — corrigir na tela criaria uma segunda verdade (regra inviolável 1).
+
+**Coluna sem nome não entra no objeto:** ausência de rótulo não vira rótulo
+vazio, e quem consome decide o que pôr no lugar.
+
 ```jsonc
-{ "items": [ /* ProcessDto[] */ ], "total": 0, "limit": 200, "offset": 0 }
+{ "items": [ /* ProcessDto[] */ ], "total": 0, "limit": 200, "offset": 0,
+  "headerLabels": { "A": "REF", "H": "ETA", "M": "Coluna 13" } }
 ```
 
 | Código | Situação |
@@ -771,10 +787,12 @@ existe na aba, nunca a REF de uma linha existente sendo trocada.
 
 `clientLabel` — a coluna **Cliente** da tela — também não é editável por
 `POST /api/edits`, e por um motivo diferente: ele não é célula nenhuma. Sai de
-`config/client-map.json` cruzando a célula B com o importador (`H-49`), e o
-caminho de volta é `PUT /api/processes/:ref/client`, documentado abaixo. A
-célula B continua sendo editada pelo campo `clientRaw`, que é o que a coluna
-"Processo do cliente" mostra.
+`config/client-map.json` cruzando a célula B com o importador (`H-49`). **O
+caminho de volta era `PUT /api/processes/:ref/client`, e ele SAIU em `H-95`**
+junto da coluna Cliente, seu único consumidor (`RF-35`, revogado por `D-43`):
+declarar passa a ser só pelo painel da Página Clientes, em
+`POST /api/clients/rules`. A célula B continua sendo editada pelo campo
+`clientRaw`, que é o que a coluna `CLT` mostra.
 
 Os campos derivados de cor (`colorResponsible`, `customsChannel`,
 `importerOutsideRj`) são editáveis pela rota dedicada abaixo, e **não** por
@@ -842,57 +860,6 @@ e a célula visível não mudava.
 | `400 CORPO_INVALIDO` | `ref` ausente ou vazia, ou valor inválido em algum campo |
 | `400 CAMPO_NAO_EDITAVEL` | Campo fora da lista |
 | `409 REF_DUPLICADA` | Já existe processo com essa REF |
-| `409 ESCRITA_EM_ANDAMENTO` | Aplicação em curso |
-| `503 ARQUIVO_INDISPONIVEL` | Nunca houve leitura |
-
----
-
-### `PUT /api/processes/:ref/client`
-
-> **SAI em `H-95`, por `D-43`** (11/09/2026). O único consumidor é a coluna
-> Cliente da tabela da Página Operacional, que a história remove; declarar passa
-> a ser só pelo painel da Página Clientes (`RF-39`). A seção fica até lá, porque
-> a rota está servida e `tests/repo/contratos.test.ts` cobra contrato de rota
-> viva.
-
-Declara a que **cliente** pertence a célula CLT de um processo. **Não enfileira
-e não toca no `.xlsx`**: grava a regra em `config/client-map.json`, que é de
-onde a coluna Cliente já lia. Por isso o efeito é imediato e não passa pelo
-`Aplicar alterações` — não há nada para gravar na planilha, e o arquivo é local
-e reversível.
-
-```jsonc
-{ "label": "Aventura" }
-```
-
-```jsonc
-{
-  "outcome": "entrada-nova",   // ou "regra-acrescentada", ou "sem-efeito"
-  "key": "AVENTURA",           // chave normalizada da entrada
-  "label": "Aventura",
-  "value": "AV-480"            // o valor da célula CLT que a regra passou a casar
-}
-```
-
-**O alcance é uma linha.** A regra gravada é `exact` sobre o valor da célula,
-então declarar o cliente de `AV-480` não move `AV-397` nem as outras do mesmo
-prefixo. Inferir o prefixo a partir de uma linha seria adivinhar, e na planilha
-real um prefixo de 62 processos cobre **três** clientes (regra inviolável 3).
-
-**A entrada é encontrada pelo nome**, não pela chave: digitar "Aventura" quando
-já existe uma entrada com esse rótulo acrescenta a regra **nela**, em vez de
-criar um segundo cliente com o mesmo nome.
-
-**A posição importa, e é o mecanismo.** A primeira entrada que casa vence, então
-a entrada alvo é inserida ou movida para **antes** da que casava a célula até
-então. Sem isso a regra `exact` nunca seria alcançada, e a edição viraria um
-no-op silencioso (regra inviolável 2).
-
-| Código | Situação |
-|---|---|
-| `200` | Gravado, ou `sem-efeito` quando a célula já resolvia para aquele cliente |
-| `400 CORPO_INVALIDO` | `label` ausente, vazio, ou célula CLT vazia — a regra casa o valor dela |
-| `404 PROCESSO_NAO_ENCONTRADO` | Nenhum processo com a REF |
 | `409 ESCRITA_EM_ANDAMENTO` | Aplicação em curso |
 | `503 ARQUIVO_INDISPONIVEL` | Nunca houve leitura |
 
@@ -1005,13 +972,15 @@ operador digitar, e a gravação o recusaria de qualquer forma.
 
 Declara o cliente de uma grafia ou de um grupo delas (`H-88`).
 
-**Não enfileira e não toca no `.xlsx`**, pelo mesmo motivo de
-`PUT /api/processes/:ref/client`: a regra vive em `client-map.json`, que é de
-onde a coluna Cliente lê desde `H-49`. O efeito vale na leitura seguinte.
+**Não enfileira e não toca no `.xlsx`**: a regra vive em `client-map.json`, que
+é de onde a consolidação lê desde `H-49`. O efeito vale na leitura seguinte.
 
-**A diferença para aquela rota é o alvo.** Ela declara a partir de **uma REF** —
-é a edição em linha da Operacional. Esta declara a partir da **grafia**, e aceita
-`match`, que é o que permite cobrir um grupo inteiro de uma vez.
+**É o único caminho de declarar cliente desde `H-95`.** Havia outro, a partir de
+**uma REF** — `PUT /api/processes/:ref/client`, a edição em linha da Operacional
+—, e ele saiu com a coluna Cliente da tabela (`D-43`). Esta declara a partir da
+**grafia**, e aceita `match`, que é o que permite cobrir um grupo inteiro de uma
+vez. **O custo está registrado:** uma grafia já capturada por regra de prefixo
+não aparece em lista nenhuma do painel, que só mostra as sem dono.
 
 **O importador não qualifica a regra aqui**, e é deliberado: a regra vale para a
 grafia, não para uma linha. Qualificar por importador recusaria a declaração de
@@ -1666,7 +1635,6 @@ requisição, então rodar o `build` com o servidor no ar dispensa reiniciá-lo.
 | `DELETE /api/edits` | H-23 |
 | `POST /api/edits/row` | H-78, H-79, H-80 — histórias escritas retroativamente em 03/09/2026 (`D-26`) |
 | `PATCH /api/processes/:ref/color` | H-27 |
-| `PUT /api/processes/:ref/client` | H-79, H-80 — idem, `D-26` |
 | `GET /api/clients`, `GET /api/clients/preview`, `POST /api/clients/rules`, `DELETE /api/clients/groups/:key` | H-88 |
 | `GET /api/team`, `PUT /api/team/:key`, `DELETE /api/team/:key`, `DELETE /api/team/:key/importers/:importer` | H-91 |
 | `GET /api/config/workbook` | H-34, H-35, H-36 |

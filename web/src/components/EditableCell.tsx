@@ -10,12 +10,13 @@ import { LiveAnnouncement } from './PageAlert.tsx'
  * que aparece na celula e a dele. Uma segunda tabela de regras no cliente
  * divergiria da primeira no ajuste seguinte (regra inviolavel 6).
  *
- * **Duas rotas usam esta celula, e por isso ela nao conhece nenhuma das duas.**
- * As seis colunas que sao celula da planilha enfileiram em `POST /api/edits`;
- * Cliente declara a regra de consolidacao em
- * `PUT /api/processes/:ref/client`, que nao enfileira nada. Categoria fica de
- * fora: ela sai de cinco regras das quais so uma le a celula L (`A-22`), e
- * editar o rotulo gravaria numa celula que nao esta a vista.
+ * **Ela nao conhece a rota que a grava**, e isso ficou mais simples em `H-95`:
+ * eram duas portas, e sobrou uma. As seis colunas que sao celula da planilha
+ * enfileiram em `POST /api/edits`; a segunda porta era a coluna Cliente, que
+ * declarava a regra de consolidacao sem enfileirar nada, e ela saiu junto com a
+ * coluna (`D-43`). Categoria continua de fora: ela sai de cinco regras das quais
+ * so uma le a celula L (`A-22`), e editar o rotulo gravaria numa celula que nao
+ * esta a vista.
  */
 
 interface EditableCellProps {

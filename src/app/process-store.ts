@@ -47,6 +47,17 @@ export interface StoreState {
   fileHash: string | null
   /** Nome real da aba lida. Difere da config quando ela traz `null`. */
   sheetName: string | null
+  /**
+   * Os rotulos da linha de cabecalho, por letra de coluna (`H-95`).
+   *
+   * **Passam pelo store porque e ele que a rota le.** O plano listava o leitor
+   * e a rota e pulava este elo; sem campo aqui, `GET /api/processes` nao teria
+   * de onde tira-los.
+   *
+   * Uma leitura que falha nao os descarta, como nao descarta os processos: a
+   * tabela continua nomeando as colunas com o que a ultima leitura boa disse.
+   */
+  headerLabels: Record<string, string>
   lastReadAt: Date | null
   lastReadOk: boolean
   degradedReason: string | null
@@ -127,6 +138,7 @@ function emptyState(): StoreState {
     processes: [],
     fileHash: null,
     sheetName: null,
+    headerLabels: {},
     lastReadAt: null,
     lastReadOk: false,
     degradedReason: null,
@@ -357,6 +369,7 @@ async function runReload(deps: StoreOptions): Promise<void> {
       processes: result.processes,
       fileHash: read.fileHash,
       sheetName: read.sheetName,
+      headerLabels: read.headerLabels,
       lastReadAt: read.readAt,
       lastReadOk: true,
       degradedReason: null,

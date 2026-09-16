@@ -15,7 +15,6 @@ import type { FilterOptionsResponse } from '../../src/http/routes/filter-options
 import type { HealthResponse } from '../../src/http/routes/health.ts'
 import type { MonthlyHistoryResponse } from '../../src/http/routes/history.ts'
 import type { IndicatorsResponse } from '../../src/http/routes/indicators.ts'
-import type { ClientRuleResponse } from '../../src/http/routes/process-client.ts'
 import type {
   ColorOption,
   ColorOptionsResponse,
@@ -51,7 +50,6 @@ export type {
   ClientMatch,
   ClientName,
   ClientRuleCreatedResponse,
-  ClientRuleResponse,
   ColorOption,
   ColorOptionsResponse,
   ColorTarget,
@@ -203,9 +201,12 @@ export async function getRuleReach(
 /**
  * Declara o cliente de uma grafia ou de um prefixo (`H-88`).
  *
- * **Nao enfileira e nao toca o `.xlsx`**, pelo mesmo motivo de
- * `setProcessClient`: a regra vive em `client-map.json`, e a fila existe para
- * adiar a escrita no arquivo da empresa. O efeito vale na leitura seguinte.
+ * **Nao enfileira e nao toca o `.xlsx`**: a regra vive em `client-map.json`, e
+ * a fila existe para adiar a escrita no arquivo da empresa. O efeito vale na
+ * leitura seguinte.
+ *
+ * **E o unico caminho de declarar cliente desde `H-95`.** Havia outro, a partir
+ * de uma REF, e ele saiu com a coluna Cliente da tabela (`D-43`).
  *
  * A mensagem de recusa chega ao operador sem traducao — ele nao e tecnico, e e
  * ele quem vai corrigir o que digitou.
@@ -430,32 +431,6 @@ export async function enqueueRow(
 
   const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null
   throw new Error(body?.error?.message ?? `POST /api/edits/row respondeu ${response.status}`)
-}
-
-/**
- * Declara a que cliente pertence a celula CLT de um processo.
- *
- * **Nao enfileira, e nao toca o `.xlsx`**: grava a regra em
- * `client-map.json`, que e de onde a coluna Cliente ja saia. Por isso o
- * efeito e imediato e nao passa por `Aplicar alteracoes`.
- */
-export async function setProcessClient(
-  ref: string,
-  label: string,
-  signal?: AbortSignal,
-): Promise<ClientRuleResponse> {
-  const response = await fetch(`/api/processes/${encodeURIComponent(ref)}/client`, {
-    method: 'PUT',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ label }),
-    ...(signal ? { signal } : {}),
-  })
-  if (response.ok) return (await response.json()) as ClientRuleResponse
-
-  const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null
-  throw new Error(
-    body?.error?.message ?? `PUT /api/processes/:ref/client respondeu ${response.status}`,
-  )
 }
 
 /** As combinacoes que a aplicacao sabe gravar. Fonte: `config/color-map.json`. */

@@ -35,6 +35,7 @@ function state(overrides: Partial<StoreState> = {}): StoreState {
     processes: [],
     fileHash: 'sha256:abc',
     sheetName: '2026',
+    headerLabels: {},
     lastReadAt: new Date('2026-08-18T12:00:00.000Z'),
     lastReadOk: true,
     degradedReason: null,

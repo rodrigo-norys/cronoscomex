@@ -37,9 +37,9 @@ import { refuseDuringWrite } from './edits.ts'
  * As rotas so serializam. Quem decide o que e pendencia, o que uma regra
  * alcanca e onde ela entra no arquivo e o dominio (regra inviolavel 6).
  *
- * **A gravacao nao passa pelo `Aplicar alteracoes`**, pelo mesmo motivo de
- * `process-client.ts`: nao ha o que escrever na planilha, e a fila existe para
- * adiar a escrita no arquivo da empresa. O mapa e local e reversivel.
+ * **A gravacao nao passa pelo `Aplicar alteracoes`**: nao ha o que escrever na
+ * planilha, e a fila existe para adiar a escrita no arquivo da empresa. O mapa
+ * e local e reversivel.
  */
 export interface ClientKeysResponse {
   items: ClientKeyEntry[]
@@ -121,9 +121,8 @@ export function registerClientsRoutes(
   app: FastifyInstance,
   store: StoreAccess = defaultStore,
   /**
-   * O mapa em memoria — o MESMO que o store recebeu, pelo motivo de
-   * `process-client.ts`: lido de novo aqui, a lista discordaria da coluna
-   * Cliente que a tabela mostra.
+   * O mapa em memoria — o MESMO que o store recebeu: lido de novo aqui, a
+   * lista discordaria da consolidacao que o resto do painel mostra.
    */
   clientMap: readonly ClientMapEntry[] = [],
   /** Os grupos do mesmo arquivo — quem tem pai, e qual. */
@@ -134,9 +133,9 @@ export function registerClientsRoutes(
   applyClientMap?: (map: ClientMap) => Promise<void>,
 ): void {
   /**
-   * O mapa CORRENTE. Reatribuido depois de cada gravacao pelo mesmo motivo de
-   * `process-client.ts`: o parametro e um instantaneo da partida, e a segunda
-   * declaracao seguida planejaria contra a ordem anterior a primeira.
+   * O mapa CORRENTE. Reatribuido depois de cada gravacao porque o parametro e
+   * um instantaneo da partida: sem isso, a segunda declaracao seguida
+   * planejaria contra a ordem anterior a primeira.
    */
   let map = clientMap
   let groups = clientGroups

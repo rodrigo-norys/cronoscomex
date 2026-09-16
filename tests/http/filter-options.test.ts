@@ -91,6 +91,7 @@ function state(processes: Process[] = []): StoreState {
     processes,
     fileHash: 'sha256:abc',
     sheetName: '2026',
+    headerLabels: {},
     lastReadAt: new Date('2026-08-06T14:22:31.004Z'),
     lastReadOk: true,
     degradedReason: null,

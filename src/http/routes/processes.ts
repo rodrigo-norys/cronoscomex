@@ -157,6 +157,21 @@ export interface ProcessesResponse {
   total: number
   limit: number
   offset: number
+  /**
+   * O nome de cada coluna, por letra, como a linha 1 da planilha o escreve
+   * (`H-95`).
+   *
+   * **Viaja na resposta, e nao por item:** e propriedade da ABA, e repeti-lo em
+   * cada processo custaria 16 pares por linha numa pagina de ate 500.
+   *
+   * **Sai LITERAL, e a tabela mostra o que o arquivo diz.** A coluna `H` se
+   * chama `ETA` e guarda porto — `RIO`, `MULTIRIO`, `SC` —, e `M` e `P` se
+   * chamam `Coluna 13` e `Coluna1`, nomes que o Excel gerou sozinho. Corrigir
+   * qualquer um na tela criaria uma segunda verdade (regra inviolavel 1).
+   *
+   * Coluna sem nome nao entra: ausencia de rotulo nao vira rotulo vazio.
+   */
+  headerLabels: Record<string, string>
 }
 
 function toDto(process: Process, hasPendingEdits = false): ProcessDto {
@@ -366,6 +381,7 @@ export function registerProcessesRoute(
       total: matching.length,
       limit,
       offset,
+      headerLabels: state.headerLabels,
     }
     return reply.code(200).send(body)
   })

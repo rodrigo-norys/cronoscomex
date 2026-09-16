@@ -4,13 +4,27 @@ import { readFile } from 'node:fs/promises'
 import { unzipSync } from 'fflate'
 import type { AppConfig } from '../app/config.ts'
 import type { RawRow } from '../domain/types.ts'
-import { decodePart, parseSharedStrings, parseSheetRows, parseStyles } from './xlsx-parts.ts'
+import {
+  decodePart,
+  parseHeaderLabels,
+  parseSharedStrings,
+  parseSheetRows,
+  parseStyles,
+} from './xlsx-parts.ts'
 
 export type { RawCell, RawCellType, RawRow } from '../domain/types.ts'
 export { ANCHOR_COLUMN } from './xlsx-parts.ts'
 
 export interface ReadResult {
   rows: RawRow[]
+  /**
+   * Os rotulos da linha de cabecalho, por letra de coluna (`H-95`).
+   *
+   * E o que a tabela mostra por nome de coluna, e sai LITERAL do arquivo: `H`
+   * se chama `ETA` e guarda porto, `M` e `P` se chamam `Coluna 13` e `Coluna1`.
+   * Coluna sem nome nao entra — ausencia de rotulo nao vira rotulo vazio.
+   */
+  headerLabels: Record<string, string>
   /** sha256:<hex> do conteudo binario. Base da defesa de hash em H-25. */
   fileHash: string
   readAt: Date
@@ -140,12 +154,25 @@ export async function readWorkbook(config: AppConfig): Promise<ReadResult> {
     )
   }
 
-  const rows = parseSheetRows(decodePart(sheetXml), {
+  const sheet = decodePart(sheetXml)
+  // Uma composicao so, usada pelas duas varreduras: montar duas faria o pool de
+  // strings e a tabela de estilos serem interpretados duas vezes por leitura.
+  const parseOptions = {
     sharedStrings: parseSharedStrings(decodePart(parts[SHARED_STRINGS_PATH])),
     styles: parseStyles(decodePart(parts[STYLES_PATH])),
     firstDataRow: config.firstDataRow,
     date1904,
-  })
+  }
 
-  return { rows, fileHash: hashBytes(buffer), readAt: new Date(), sheetName, sheetPath }
+  const rows = parseSheetRows(sheet, parseOptions)
+  const headerLabels = parseHeaderLabels(sheet, parseOptions, config.headerRow)
+
+  return {
+    rows,
+    headerLabels,
+    fileHash: hashBytes(buffer),
+    readAt: new Date(),
+    sheetName,
+    sheetPath,
+  }
 }
