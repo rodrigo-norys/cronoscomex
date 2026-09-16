@@ -132,19 +132,19 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**91 das 96 histórias estão concluídas**, e os épicos abertos são `E14` e `E15`. O que cada uma aprendeu — número medido,
+**92 das 96 histórias estão concluídas**, e o épico aberto é `E15`. O que cada uma aprendeu — número medido,
 defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
 `docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
 em aberto. **Este bloco diz só o que está aberto.**
 
-**`E9` a `E12` fecharam em 01/09/2026, e `E13` em 03/09/2026.** De **`E14`**
-resta uma: `H-91`, o mapa de equipe operável pela tela.
+**`E9` a `E12` fecharam em 01/09/2026, `E13` em 03/09/2026 e `E14` em
+16/09/2026** — este último com `H-91`, o mapa de equipe operável pela tela.
 
-**`E15` nasceu em 10/09/2026 e é o épico aberto novo** — `H-93` a `H-96`, de
+**`E15` nasceu em 10/09/2026 e é o único épico aberto** — `H-93` a `H-96`, de
 `D-40` a `D-43`, e tem duas metades. `H-93` **reabre `D-23`**: a cor deixa de
 definir o responsável, e 48 processos ativos passam a "Sem responsável" — ela
-depende de `H-91`, e a ordem não é preferência, porque sem a tela esses 48 ficam
-sem conserto. `H-94` a `H-96` fazem a tabela espelhar a planilha: as 16 colunas
+dependia de `H-91`, entregue em 16/09/2026, e a ordem não era preferência,
+porque sem a tela esses 48 ficariam sem conserto. `H-94` a `H-96` fazem a tabela espelhar a planilha: as 16 colunas
 com o nome do cabeçalho, e a cor de cada célula como fundo. **`H-96` fica escrita
 e não executada**, por escolha do usuário, e a coluna descoberta — "coluna nova
 aparece sozinha" — foi pedida em 10/09 e **descartada em 11/09**, por `D-43`. Restam também as **três pendências abertas** abaixo,
