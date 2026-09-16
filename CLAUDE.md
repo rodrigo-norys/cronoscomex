@@ -257,7 +257,7 @@ do uso. Nada aqui repete o que está lá — abra quando a linha disser.
 
 ## Infraestrutura de agente
 
-**Versionamento.** Há repositório git, com remote **privado** em `origin`.
+**Versionamento.** Há repositório git, com remote **público** em `origin`.
 Nunca commite direto na `main`: branch por história (`H-NN/<tipo>-<descrição>`)
 ou, fora de história, `<tipo>/<escopo>-<descrição>`. Escopos: `domain`, `io`,
 `app`, `http`, `web`, `tools`, `config`, `docs`, `claude`, `repo`. Mensagem em
