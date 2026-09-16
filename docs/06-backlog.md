@@ -6,6 +6,19 @@ a ponta. Nenhuma história é "criar a camada X".
 **Tamanho** (critério objetivo): **P** = até 3 arquivos e nenhum contrato novo ·
 **M** = até 8 arquivos ou 1 contrato novo · **G** = acima disso.
 
+> **O rótulo é um alerta, e por isso vale para o que ainda não fechou.** `D-24`
+> declara a função dele — "avisar que a fatia é longa" — e foi assim que `H-50`
+> foi cortada em duas antes de ser executada. Numa história fechada o alerta já
+> não tem o que avisar, e o rótulo passa a ser registro do que foi entregue.
+>
+> **Sete histórias fechadas trazem rótulo abaixo da régua** — `H-48`, `H-49`,
+> `H-51`, `H-55`, `H-89`, `H-90` e `H-92`, medidas em 16/09/2026 — e **não são
+> reescritas**, pela mesma convenção que manteve "nove colunas" no título de
+> `H-77`. A divergência fica registrada aqui, uma vez, em vez de sete emendas em
+> registro entregue. `tests/repo/documentacao.test.ts` cobra a régua **apenas nas
+> histórias sem bloco de conclusão**, que é onde ela ainda serve para alguma
+> coisa.
+
 Nenhuma história contém verbo de decisão em aberto. Onde houver alternativa,
 ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.md`.
 
@@ -31,8 +44,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E12 — Os achados da revisão de estilo ✅ | **H-73 … H-76, todas concluídas** | 2 | 1 | 1 |
 | E13 — O operacional que edita, ordena e cria ✅ | **H-77 … H-81, todas concluídas.** Épico **retroativo**: o código entrou em 02/09/2026 e as histórias foram escritas em 03/09 | 3 | 0 | 2 |
 | E14 — A casca que se opera, não só se lê | **H-82 a H-90 e H-92 ✅; só `H-91` aberta.** Primeiro épico **prospectivo** desde `E12`: as nove primeiras nascem antes do código (`D-29` a `D-34`), `H-91` entra em 08/09/2026 por `D-35`, e `H-92` em 10/09/2026 por `D-39`. `H-91` passou de M para **G** na fatia de 11/09, quando o contrato dela dobrou | 3 | 6 | 2 |
-| E15 — A tabela é a planilha, e a cor é só cor | **`H-93` a `H-96`, todas abertas.** Nasce de `D-40` a `D-43`, em 10 e 11/09/2026: a cor deixa de apontar responsável e vira aparência, e a tabela passa a espelhar o arquivo — as 16 colunas com o nome do cabeçalho. `H-93` veio de `E14` em 11/09, por estar grande demais. `H-96` nasce de defeito **simulado**, não observado | 0 | 3 | 1 |
-| **Total** | **96** — 91 concluídas, 5 abertas | **36** | **53** | **7** |
+| E15 — A tabela é a planilha, e a cor é só cor | **`H-93` a `H-96`, todas abertas.** Nasce de `D-40` a `D-43`, em 10 e 11/09/2026: a cor deixa de apontar responsável e vira aparência, e a tabela passa a espelhar o arquivo — as 16 colunas com o nome do cabeçalho. `H-93` veio de `E14` em 11/09, por estar grande demais. `H-96` nasce de defeito **simulado**, não observado. **As quatro são G**, pela régua do topo | 0 | 0 | 4 |
+| **Total** | **96** — 91 concluídas, 5 abertas | **36** | **50** | **10** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -47,8 +60,9 @@ bloco; o índice agora é obrigado a concordar com ele.
 `iniciar.cmd` foi executado na máquina do operador, sobe e carrega a planilha.
 `PD-06` guardava os itens que faltavam, e **fechou em 03/09/2026** — os três últimos foram exercidos por SSH, e o registro está em `docs-windows/2026-09-03-pd06-fechada.md`.
 
-**Sete histórias são G.** `H-50` desde `D-24`, `H-75` em `E12`, `H-79` e
-`H-80` em `E13`, `H-91` desde a fatia de 11/09/2026, `H-96` em `E15`, e `H-88`
+**Dez histórias são G.** `H-50` desde `D-24`, `H-75` em `E12`, `H-79` e
+`H-80` em `E13`, `H-91` desde a fatia de 11/09/2026, as **quatro** de `E15` —
+`H-93` a `H-96`, rotuladas pela régua em 16/09/2026 —, e `H-88`
 desde `D-35` — **a única cujo G é escolha declarada**,
 e não diagnóstico: a medição de 08/09/2026 mostrou que a versão M pediria 111
 declarações manuais, e o usuário preferiu a história maior. `H-91` e `H-96`
@@ -10794,7 +10808,7 @@ célula na tabela, que é `H-94` e não tem relação com responsável.
 **Dependências:** `H-91`. A ordem não é preferência: sem a tela, os 48 ficam sem
 responsável e sem conserto, e a instalação limpa de `PD-08` abre com as 649
 linhas vazias.
-**Tamanho:** M (14 arquivos, 0 contrato novo)
+**Tamanho:** G (14 arquivos, 0 contrato novo)
 
 [↑ Índice](#indice)
 
@@ -10902,7 +10916,7 @@ gravar cor de célula, que continua sendo `PATCH /api/processes/:ref/color` e
 pinta a linha, não a célula.
 
 **Dependências:** nenhuma.
-**Tamanho:** M (18 arquivos, 1 contrato alterado)
+**Tamanho:** G (18 arquivos, 1 contrato alterado)
 
 [↑ Índice](#indice)
 
@@ -10994,7 +11008,7 @@ tornar editável na tabela alguma das nove colunas que passam a aparecer — as 
 já são editáveis no domínio, e expor cada uma é decisão à parte.
 
 **Dependências:** `H-94`, pela ordem de conflito no mesmo arquivo.
-**Tamanho:** M (16 arquivos, 1 contrato alterado, 1 rota removida)
+**Tamanho:** G (16 arquivos, 1 contrato alterado, 1 rota removida)
 
 [↑ Índice](#indice)
 

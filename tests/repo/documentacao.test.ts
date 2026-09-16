@@ -24,6 +24,8 @@ const REQUISITOS = readFileSync('docs/02-requisitos.md', 'utf-8')
 interface Historia {
   id: string
   tamanho: string
+  /** Quantos arquivos o bloco declara; `-1` quando o texto não traz o número. */
+  arquivos: number
   concluida: boolean
 }
 
@@ -37,6 +39,7 @@ function historias(): Historia[] {
       {
         id,
         tamanho: /\*\*Tamanho:\*\*\s*(\w)/.exec(bloco)?.[1] ?? '?',
+        arquivos: Number(/\*\*Tamanho:\*\*[^(]*\((\d+)\s*arquivos?/.exec(bloco)?.[1] ?? -1),
         concluida: /✅ \*\*CONCLUÍDA/.test(bloco),
       },
     ]
@@ -151,6 +154,50 @@ describe('a tabela de resumo do backlog bate linha a linha', () => {
 
     expect(declaradas).toBeDefined()
     expect(Number(declaradas)).toBe(TOTAL - CONCLUIDAS)
+  })
+})
+
+/**
+ * A régua do topo do backlog — `P` até 3 arquivos, `M` até 8, `G` acima — é um
+ * ALERTA, e `D-24` declara a função dela: "avisar que a fatia é longa". Foi
+ * assim que `H-50` foi cortada em duas **antes** de ser executada.
+ *
+ * **Só as abertas são cobradas, e a assimetria é o ponto.** Em história fechada
+ * o rótulo já não alerta coisa nenhuma — a fatia foi executada —, e ele passa a
+ * ser registro do que foi entregue. Sete fechadas trazem rótulo abaixo da
+ * régua, declaradas uma vez no topo do backlog em vez de reescritas, pela mesma
+ * convenção que manteve "nove colunas" no título de `H-77`.
+ *
+ * O critério é o número de arquivos, e só ele: o "ou 1 contrato novo" da régua
+ * apenas ALARGA `M`, nunca o estreita, então ignorá-lo não produz falso
+ * positivo. Medido em 16/09/2026: as quatro de `E15` estavam rotuladas abaixo
+ * da régua — `H-94` dizia `M` com **18** arquivos.
+ */
+describe('o tamanho declarado respeita a régua, nas histórias abertas', () => {
+  const ORDEM = ['P', 'M', 'G']
+  const abertas = HISTORIAS.filter((historia) => !historia.concluida && historia.arquivos >= 0)
+
+  /** O menor rótulo que a régua admite para um bloco com tantos arquivos. */
+  function minimo(arquivos: number): string {
+    if (arquivos > 8) return 'G'
+    return arquivos > 3 ? 'M' : 'P'
+  }
+
+  it('encontra as abertas — âncora contra guarda verde por vacuidade', () => {
+    expect(abertas.length).toBeGreaterThan(0)
+  })
+
+  it('nenhuma história aberta declara tamanho abaixo do que a régua exige', () => {
+    const violacoes = abertas
+      .filter(
+        (historia) => ORDEM.indexOf(historia.tamanho) < ORDEM.indexOf(minimo(historia.arquivos)),
+      )
+      .map(
+        (historia) =>
+          `${historia.id}: declarado ${historia.tamanho} com ${historia.arquivos} arquivos, a régua exige ${minimo(historia.arquivos)}`,
+      )
+
+    expect(violacoes).toEqual([])
   })
 })
 
