@@ -2,7 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { createWatcher, DEFAULT_DEBOUNCE_MS, type Watcher } from '../../src/io/watcher.ts'
+import { createWatcher, DEFAULT_DEBOUNCE_MS, samePath, type Watcher } from '../../src/io/watcher.ts'
 
 /**
  * O watcher depende de eventos reais do sistema de arquivos, entao os testes
@@ -231,5 +231,34 @@ describe('createWatcher', () => {
 
     writeFileSync(filePath, 'v2')
     await waitFor(() => calls === 2)
+  })
+})
+
+/**
+ * O defeito que `verify-windows` revelou em 16/09/2026, travado aqui.
+ *
+ * Roda em QUALQUER sistema, porque o que se verifica e a comparacao, nao o
+ * sistema de arquivos. Sem isto a regressao so reapareceria num runner Windows
+ * — e foi exatamente assim que ela atravessou a suite inteira.
+ */
+describe('samePath', () => {
+  it('casa as duas convencoes de separador', () => {
+    expect(samePath('C:/base/pasta', 'C:\\base\\pasta')).toBe(true)
+  })
+
+  it('casa um caminho POSIX consigo mesmo', () => {
+    expect(samePath('/tmp/cronos', '/tmp/cronos')).toBe(true)
+  })
+
+  it('continua distinguindo caminhos diferentes', () => {
+    expect(samePath('C:/base/a', 'C:/base/b')).toBe(false)
+    expect(samePath('/tmp/a', '/tmp/b')).toBe(false)
+  })
+
+  it('nao confunde a pasta observada com o arquivo dentro dela', () => {
+    // O caso real do defeito: o chokidar entrega a PASTA, e o `basename` dela
+    // nunca e o nome do arquivo alvo. Se a igualdade falhar, a pasta e
+    // ignorada e o watcher emudece.
+    expect(samePath('C:/base/pasta', 'C:\\base\\pasta\\planilha.xlsx')).toBe(false)
   })
 })

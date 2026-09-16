@@ -16,6 +16,22 @@ import { type ChokidarOptions, type FSWatcher, watch } from 'chokidar'
 /** RNF-17. Somado ao parse, atende o RNF-14 (<= 5 s). */
 export const DEFAULT_DEBOUNCE_MS = 2000
 
+/**
+ * Compara dois caminhos ignorando a convencao de separador.
+ *
+ * Medido em 16/09/2026, na primeira execucao de `verify-windows`: o chokidar
+ * entrega o candidato como `C:/...` mesmo no Windows, enquanto `dirname()`
+ * devolve `C:\...`. A igualdade de string entre os dois e SEMPRE falsa la, e o
+ * preco era total — o diretorio observado caia na regra seguinte, era ignorado,
+ * e o watcher nao emitia evento nenhum na maquina do operador.
+ *
+ * Exportada para teste de proposito: o defeito vivia dentro de uma closure, e
+ * por isso atravessou a suite inteira sem que assercao nenhuma o alcancasse.
+ */
+export function samePath(a: string, b: string): boolean {
+  return a.replaceAll('\\', '/') === b.replaceAll('\\', '/')
+}
+
 export interface Watcher {
   start(): void
   stop(): void
@@ -44,7 +60,7 @@ export function createWatcher(filePath: string, debounceMs: number = DEFAULT_DEB
     depth: 0,
     persistent: true,
     ignored: (candidate, stats) => {
-      if (candidate === directory) return false
+      if (samePath(candidate, directory)) return false
       if (stats?.isDirectory()) return true
       return basename(candidate) !== fileName
     },

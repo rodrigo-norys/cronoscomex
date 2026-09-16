@@ -38,7 +38,7 @@ autenticar `gh` é decisão do usuário, não sua.
 
 Mesma disciplina da `/sugerir-commits` — **um aceite só**, decidido em
 **07/08/2026** —, mas aqui o passo executável é **para fora** (torna branch e PR
-visíveis no GitHub, para quem tiver acesso; o remote em `origin` é **privado**)
+visíveis no GitHub para qualquer pessoa; o remote em `origin` é **público**)
 — por isso os portões valem em dobro:
 
 1. **Eu sugiro** o plano — quantos PRs, o escopo de cada um, a branch, o título, o corpo em

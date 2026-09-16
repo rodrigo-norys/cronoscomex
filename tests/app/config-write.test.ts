@@ -17,8 +17,15 @@ import {
 let dir: string
 let workbook: string
 
-/** `chmod` nao restringe o superusuario: sob root a assercao seria vacua. */
-const semPrivilegio = process.getuid?.() !== 0
+/**
+ * `chmod` nao restringe o superusuario: sob root a assercao seria vacua.
+ *
+ * E no Windows ele nao restringe ninguem. Pior: `process.getuid` nem existe
+ * la, entao `undefined !== 0` dava `true` e a guarda se declarava satisfeita
+ * exatamente onde deveria barrar — medido na primeira execucao de
+ * `verify-windows`, em 16/09/2026.
+ */
+const semPrivilegio = process.platform !== 'win32' && process.getuid?.() !== 0
 
 beforeEach(() => {
   dir = mkdtempSync(join(tmpdir(), 'cronos-cfg-'))
@@ -70,14 +77,21 @@ describe('checkWorkbookPath', () => {
     expect(checkWorkbookPath(`  "${workbook}"  `).reason).toBeNull()
   })
 
-  /** Aspas de um lado so nao sao envolvimento: o nome fica como esta. */
-  it('nao remove aspas soltas, que fazem parte do nome no Linux', () => {
-    const aspas = join(dir, 'com"aspas.xlsx')
-    writeFileSync(aspas, 'conteudo irrelevante')
+  /**
+   * Aspas de um lado so nao sao envolvimento: o nome fica como esta. So no
+   * POSIX: `"` e caractere invalido em nome de arquivo no Windows, e o
+   * `writeFileSync` falha antes de a assercao ser alcancada.
+   */
+  it.skipIf(process.platform === 'win32')(
+    'nao remove aspas soltas, que fazem parte do nome no Linux',
+    () => {
+      const aspas = join(dir, 'com"aspas.xlsx')
+      writeFileSync(aspas, 'conteudo irrelevante')
 
-    expect(checkWorkbookPath(aspas).reason).toBeNull()
-    expect(checkWorkbookPath(`"${workbook}`).resolved).not.toBe(workbook)
-  })
+      expect(checkWorkbookPath(aspas).reason).toBeNull()
+      expect(checkWorkbookPath(`"${workbook}`).resolved).not.toBe(workbook)
+    },
+  )
 
   it('recusa quem nao e .xlsx antes de conferir existencia', () => {
     writeFileSync(join(dir, 'planilha.xls'), 'x')

@@ -257,7 +257,7 @@ do uso. Nada aqui repete o que está lá — abra quando a linha disser.
 
 ## Infraestrutura de agente
 
-**Versionamento.** Há repositório git, com remote **privado** em `origin`.
+**Versionamento.** Há repositório git, com remote **público** em `origin`.
 Nunca commite direto na `main`: branch por história (`H-NN/<tipo>-<descrição>`)
 ou, fora de história, `<tipo>/<escopo>-<descrição>`. Escopos: `domain`, `io`,
 `app`, `http`, `web`, `tools`, `config`, `docs`, `claude`, `repo`. Mensagem em
@@ -441,6 +441,18 @@ comandos que **perdem trabalho ou reescrevem história**: `reset --hard`,
 `main`. `verify.yml` roda o portão inteiro com o Node de `.nvmrc`;
 `dados-sensiveis.yml` roda `verifica-dados-sensiveis.sh`. **É a única camada que
 roda sempre** — o hook é `PreToolUse` e não vê commit feito fora do Claude Code.
+**`verify-windows.yml` roda em `windows-latest` e NÃO é obrigatório**, desde
+16/09/2026: RNF-26 declara Windows como alvo e nenhuma execução rodava lá.
+**Separado, nunca matriz dentro de `verify.yml`** — a matriz renomearia o
+contexto para `verify (ubuntu-latest)`, o ruleset exige o literal `verify`, e a
+`main` ficaria desprotegida parecendo protegida. Ver `docs/08` §5.2.
+
+**Três proteções são configuração, não arquivo** — ligadas em 16/09/2026 e
+conferíveis por `gh api`: **secret scanning** e **push protection**, porque o
+repositório é público e `verifica-dados-sensiveis.sh` não procura credencial
+nenhuma; e **Dependabot com alertas ligados e updates automáticos desligados**,
+porque as versões são fixadas exatas e PR por pacote briga com a regra de não
+trocar versão sem motivo registrado.
 
 **Guarda de contrato:** `tests/repo/contratos.test.ts` e
 `web/tests/paginas-montadas.test.tsx`, no `verify` e no CI. **Sem número aqui**
@@ -488,7 +500,9 @@ arquivo.
 
 **A `main` está protegida** pelo ruleset `main protegida`, ativo e com
 `bypass_actors` **vazio** — nem o dono do repositório escapa. Quatro regras:
-`pull_request`, `required_status_checks` (`verify` e `dados-sensiveis`),
+`pull_request`, `required_status_checks` (`verify` e `dados-sensiveis`, com
+`strict_required_status_checks_policy` **ligado desde 16/09/2026** — a branch
+precisa estar atualizada com a `main` para mesclar),
 `non_fast_forward` e `deletion`. É configuração do GitHub, não arquivo
 versionado; leia o estado real com
 `gh api repos/<owner>/<repo>/rulesets/<id>` em vez de confiar nesta linha.
