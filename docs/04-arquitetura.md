@@ -155,7 +155,7 @@ efeito colateral em disco. Verde = fronteira.
 | `normalizer` | Normalizar texto para agrupamento e converter célula em data | `string \| number \| Date` | `string` normalizada, `Date \| null`, anomalias |
 | `status-classifier` | Aplicar TD-01 e devolver a categoria canônica | `RawRow`, `status-aliases.json` | `StatusCategory`, anomalias |
 | `client-mapper` | Consolidar a grafia da célula CLT num cliente e num grupo (TD-04.1, TD-04.2) | `RawRow`, `client-map.json` | `client`, `clientGroup` |
-| `team-mapper` | Resolver a pessoa por trás de `responsible`, pelo importador com a cor desempatando (`H-50`) | `RawRow`, `team-map.json`, `ColorResponsible` | `responsible` |
+| `team-mapper` | Resolver a pessoa por trás de `responsible`, **pelo importador e só por ele** (`H-50`; a cor saiu em `H-93`) | `RawRow`, `team-map.json` | `responsible` |
 | `process-builder` | Compor o `Process` a partir dos anteriores e decidir aceite ou quarentena | `RawRow[]` e os módulos acima | `Process[]`, `QuarantineItem[]` |
 | `quarantine-reporter` | Persistir o relatório de linhas não interpretadas e de divergências | `QuarantineItem[]` | `data/quarantine.json` |
 | `process-store` | Guardar o conjunto corrente em memória e aplicar os filtros globais | `Process[]`, `FilterSet` | `Process[]` filtrado |
