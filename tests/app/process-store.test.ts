@@ -739,7 +739,6 @@ describe('initStore — o mapa de equipe chega a composicao (H-50)', () => {
           key: 'membro1',
           label: 'Primeiro',
           importers: ['importadora um'],
-          colorResponsible: [],
         },
       ]),
     })
@@ -750,13 +749,14 @@ describe('initStore — o mapa de equipe chega a composicao (H-50)', () => {
     expect(process?.responsibleLabel).toBe('Primeiro')
   })
 
-  // `D-23`: sem mapa o campo mostra o que a cor mostra, e nao fica vazio.
-  it('sem mapa, o responsavel vale a chave de cor', async () => {
+  // `H-93` reabriu `D-23`: sem mapa o campo fica VAZIO, e nao com a chave de
+  // cor. E o estado de quem ainda nao declarou a equipe, e a tela o mostra.
+  it('sem mapa, ninguem tem responsavel', async () => {
     start({ readWorkbookFn: lerUmaLinha })
     await reload()
 
     const [process] = getState().processes
-    expect(process?.responsible).toBe('indefinido')
+    expect(process?.responsible).toBe('')
     expect(process?.colorResponsible).toBe('indefinido')
   })
 })

@@ -190,24 +190,21 @@ describe('GET /api/filters/options', () => {
     await app.close()
   })
 
-  // Sem mapa de equipe o dominio de `responsible` e o das cores — `D-23`.
-  it('devolve os quatro responsaveis e os tres canais, com rotulo em pt-br', async () => {
+  // **Sem mapa de equipe sobra UMA opcao de responsavel desde `H-93`** — a
+  // chave vazia. Eram as quatro chaves de cor, que era o estado de `D-23`.
+  it('sem equipe declarada, oferece so "sem responsavel" e os tres canais', async () => {
     const app = buildServer(
       config,
-      fakeStore(
-        state([process({ responsible: 'colaborador1', colorResponsible: 'colaborador1' })]),
-      ),
+      fakeStore(state([process({ responsible: '', colorResponsible: 'colaborador1' })])),
     )
 
     const body = (await app.inject({ method: 'GET', url: '/api/filters/options' })).json()
 
-    expect(body.responsible).toHaveLength(4)
+    expect(body.responsible).toEqual([{ key: '', label: 'Sem responsável', count: 1 }])
     expect(body.channels).toHaveLength(3)
-    expect(body.responsible[0]).toEqual({
-      key: 'colaborador1',
-      label: 'Colaborador 1',
-      count: 1,
-    })
+    // A COR continua com as quatro chaves: ela nao perdeu significado, perdeu
+    // a atribuicao. Sao campos independentes desde `H-50`.
+    expect(body.colorResponsible).toHaveLength(4)
     expect(body.channels.map((o: { label: string }) => o.label)).toContain('Canal Vermelho')
 
     await app.close()
@@ -219,8 +216,8 @@ describe('GET /api/filters/options', () => {
    */
   describe('responsavel e cor do responsavel (H-50)', () => {
     const equipe = normalizeTeamMap([
-      { key: 'membro1', label: 'Primeiro', importers: ['importadora um'], colorResponsible: [] },
-      { key: 'membro2', label: 'Segundo', importers: ['importadora dois'], colorResponsible: [] },
+      { key: 'membro1', label: 'Primeiro', importers: ['importadora um'] },
+      { key: 'membro2', label: 'Segundo', importers: ['importadora dois'] },
     ])
     const comEquipe = (processes: Process[]) =>
       buildServer(

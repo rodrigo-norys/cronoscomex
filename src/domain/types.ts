@@ -37,21 +37,22 @@ export type ColorResponsible =
   | 'indefinido'
 
 /**
- * A pessoa que responde pelo processo (`H-50`), atribuida pelo IMPORTADOR com a
- * cor desempatando o que a lista de importadores nao alcanca — `resolveTeam`.
+ * A pessoa que responde pelo processo (`H-50`), atribuida pelo IMPORTADOR — e
+ * so por ele desde `H-93`, quando `D-40` tirou o desempate por cor
+ * (`resolveTeam`).
  *
  * **Dominio ABERTO, e por isso e `string`:** a chave vem de
  * `team-map.json`, que nao e versionado (regra inviolavel 8). Ate `H-50`
  * eram quatro chaves fixas, e fecha-lo agora exigiria escrever no codigo os
  * membros da equipe do operador.
  *
- * Dois valores tem significado proprio:
- *  - `''` — sem responsavel. Medido: 42 dos 649, sem importador na lista e sem
- *    cor de responsavel (docs/uso/RESULTADO.md §3). Chave vazia e valor de
- *    dominio, nunca ausencia de dado.
- *  - uma chave de `ColorResponsible` — apenas enquanto NAO houver mapa de
- *    equipe (`D-23`). Nesse estado o campo mostra o que a cor diz, que e o
- *    comportamento anterior a `H-50`, e a resolucao declara `source: 'cor'`.
+ * `''` e "sem responsavel", e e valor de dominio — nunca ausencia de dado.
+ * Medido em 10/09/2026: **90 dos 649**, contra 42 antes de `H-93`.
+ *
+ * **A chave de cor deixou de habitar este dominio em `H-93`.** Ate ali, sem
+ * mapa de equipe, o campo carregava uma chave de `ColorResponsible` (`D-23`);
+ * `D-40` tirou a cor da regra, e sem equipe declarada o campo fica vazio nas
+ * 649 linhas — que e o que diz a verdade sobre o que o operador declarou.
  */
 export type Responsible = string
 
@@ -77,15 +78,15 @@ export type AnomalyCode =
   | 'DATA_SEM_ANO'
   | 'COR_NAO_MAPEADA'
   | 'VARIANTE_STATUS_PROXIMA'
-  /**
-   * O importador atribui o processo a uma pessoa e a cor da linha aponta outra
-   * (`H-50`). O importador vence, e a divergencia fica visivel.
-   *
-   * Medido: ZERO ocorrencias em 31/08/2026 (docs/uso/RESULTADO.md §3), e e
-   * exatamente por isso que o codigo precisa existir antes da primeira — ela
-   * seria uma atribuicao errada que ninguem veria acontecer.
-   */
-  | 'RESPONSAVEL_DIVERGENTE'
+
+/*
+  `RESPONSAVEL_DIVERGENTE` saiu em `H-93`, e sai **sem nunca ter detectado uma
+  ocorrencia**: zero em 31/08/2026 e zero em 10/09/2026. Ela existia para a
+  primeira divergencia entre o importador e a cor, que ninguem veria acontecer —
+  e deixa de ter sentido quando a cor para de atribuir responsavel (`D-40`).
+  Registrar isto e o ponto: o codigo foi criado deliberadamente com zero
+  medidas, e morreu assim.
+*/
 
 /** Motivos de rejeicao para o relatorio de quarentena. Ver TD-06. */
 export type QuarantineReason = 'REF_AUSENTE' | 'REF_DUPLICADA' | 'COR_NAO_MAPEADA'
@@ -191,9 +192,11 @@ export interface Process {
   /**
    * A pessoa que responde pelo processo (`H-50`). `''` quando ninguem responde.
    *
-   * Ate `H-50` este campo era a cor, e a cor passou a ser `colorResponsible`.
-   * Medido em 31/08/2026: a cor preenchia 157 das 649; o importador preenche
-   * 559, o desempate pela cor mais 48, e 42 ficam sem responsavel.
+   * **Vem do IMPORTADOR, e so dele, desde `H-93`.** Ate `H-50` este campo era a
+   * cor, e a cor virou `colorResponsible`; ate `H-93` ela ainda desempatava.
+   * Medido em 10/09/2026: o importador preenche **559** das 649, e **90** ficam
+   * sem responsavel — os 48 que o desempate cobria migraram, e sao todos
+   * ativos.
    */
   readonly responsible: Responsible
   /**

@@ -21,7 +21,6 @@ const membroValido = {
   key: 'membro1',
   label: 'Primeiro',
   importers: ['importadora um'],
-  colorResponsible: ['colaborador2'],
 }
 
 function escrever(conteudo: unknown): string {
@@ -48,14 +47,7 @@ describe('loadTeamMap', () => {
   it('carrega e normaliza os importadores, preservando o rotulo', () => {
     const map = loadTeamMap(escrever({ version: 1, members: [membroValido] }))
 
-    expect(map).toEqual([
-      {
-        key: 'membro1',
-        label: 'Primeiro',
-        importers: ['IMPORTADORA UM'],
-        colorResponsible: ['colaborador2'],
-      },
-    ])
+    expect(map).toEqual([{ key: 'membro1', label: 'Primeiro', importers: ['IMPORTADORA UM'] }])
   })
 
   it('usa a chave como rotulo quando "label" falta', () => {
@@ -73,16 +65,21 @@ describe('loadTeamMap', () => {
     expect(() => loadTeamMap(escrever({ version: 1 }))).toThrow(/precisa ter a lista "members"/)
   })
 
-  it('recusa cor de responsavel fora do dominio de TD-05', () => {
+  // `H-93`: a carga IGNORA `colorResponsible` e `fallback` em vez de recusa-los.
+  // O mapa e do operador e foi escrito quando eles valiam; matar a partida por
+  // um campo obsoleto o deixaria sem painel.
+  it('IGNORA os campos que sairam em H-93, sem recusar o arquivo', () => {
     const path = escrever({
       version: 1,
-      members: [{ ...membroValido, colorResponsible: ['colaborador3'] }],
+      members: [{ ...membroValido, colorResponsible: ['colaborador3'], fallback: 'nem booleano' }],
     })
 
-    expect(() => loadTeamMap(path)).toThrow(/colorResponsible\[0\] invalido: colaborador3/)
+    expect(loadTeamMap(path)).toEqual([
+      { key: 'membro1', label: 'Primeiro', importers: ['IMPORTADORA UM'] },
+    ])
   })
 
-  it('aceita membro com carteira vazia, sem cor e sem fallback', () => {
+  it('aceita membro com carteira vazia', () => {
     /*
       **A validacao afrouxou em `H-91`**, e ate ali este arquivo matava a
       partida com `process.exit(1)`.
@@ -93,49 +90,23 @@ describe('loadTeamMap', () => {
       importador, e recusar o arquivo transformaria um estado normal do painel
       em painel nenhum. A pessoa aparece com zero, como `A-28` ja manda.
     */
-    const path = escrever({
-      version: 1,
-      members: [{ key: 'membro1', importers: [], colorResponsible: [] }],
-    })
+    const path = escrever({ version: 1, members: [{ key: 'membro1', importers: [] }] })
 
-    expect(loadTeamMap(path)).toEqual([
-      { key: 'membro1', label: 'membro1', importers: [], colorResponsible: [] },
-    ])
+    expect(loadTeamMap(path)).toEqual([{ key: 'membro1', label: 'membro1', importers: [] }])
   })
 
-  it('aceita membro sem importadores quando ele e o fallback', () => {
-    const path = escrever({
-      version: 1,
-      members: [{ key: 'membro2', importers: [], colorResponsible: [], fallback: true }],
-    })
-
-    expect(loadTeamMap(path)[0]?.fallback).toBe(true)
-  })
-
-  it('recusa DOIS fallbacks, nomeando os dois', () => {
-    // Dois "todo o resto" seriam uma ordem de avaliacao disfarcada de conjunto:
-    // o primeiro levaria tudo, e o segundo pareceria uma pessoa sem processos.
-    const path = escrever({
-      version: 1,
-      members: [
-        { key: 'membro1', importers: [], colorResponsible: [], fallback: true },
-        { key: 'membro2', importers: [], colorResponsible: [], fallback: true },
-      ],
-    })
-
-    expect(() => loadTeamMap(path)).toThrow(/"membro1", "membro2"/)
-  })
+  /*
+    **Os tres testes de `fallback` sairam em `H-93`**, com o proprio campo
+    (`D-40`). Eles mediam o membro que recebia "todo o resto", a recusa de dois
+    deles e a recusa do valor nao-booleano. O usuario o dispensou com a frase
+    que virou o desenho: "o fallback deve cair no Sem responsavel, que ai o
+    usuario ja sabe que tem que definir um".
+  */
 
   it('recusa chave de membro repetida', () => {
     const path = escrever({ version: 1, members: [membroValido, membroValido] })
 
     expect(() => loadTeamMap(path)).toThrow(/members\[0\] e members\[1\]/)
-  })
-
-  it('recusa "fallback" que nao e booleano', () => {
-    const path = escrever({ version: 1, members: [{ ...membroValido, fallback: 'sim' }] })
-
-    expect(() => loadTeamMap(path)).toThrow(/fallback deve ser true ou false/)
   })
 
   it('recusa importador vazio na lista, apontando o indice', () => {
@@ -175,7 +146,7 @@ describe('saveTeamMember', () => {
     )
 
     expect(loadTeamMap(path)).toEqual([
-      { key: 'membro1', label: 'Primeiro', importers: ['IMPORTADORA UM'], colorResponsible: [] },
+      { key: 'membro1', label: 'Primeiro', importers: ['IMPORTADORA UM'] },
     ])
   })
 
@@ -198,10 +169,10 @@ describe('saveTeamMember', () => {
     expect(raw.version).toBe(1)
   })
 
-  it('PRESERVA os campos que esta historia nao conhece', () => {
-    // `colorResponsible` e `fallback` saem em `H-93`. Apaga-los aqui
-    // anteciparia a remocao sem a historia que a explica — e sem os testes que
-    // medem quantos processos migram.
+  it('PRESERVA os campos que a aplicacao nao le mais', () => {
+    // `colorResponsible` e `fallback` deixaram de valer em `H-93`, e a gravacao
+    // nao os apaga: o arquivo e do operador, e reescrever nele o que a historia
+    // nao pediu e o que a gravacao crua existe para evitar. A carga os ignora.
     const path = escrever({
       version: 1,
       members: [
