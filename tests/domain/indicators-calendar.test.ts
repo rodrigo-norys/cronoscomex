@@ -59,6 +59,8 @@ function process({ eta2 = null, vessel = '', statusCategory = 'em_andamento' }: 
     customsChannel: 'indefinido',
     importerOutsideRj: null,
     styleKey: 'none',
+    cellStyleKeys: {},
+    fills: {},
     anomalies: [],
   }
 }

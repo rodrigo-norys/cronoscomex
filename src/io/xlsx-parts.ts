@@ -313,6 +313,17 @@ function readCell(
 function buildRow(rowNumber: number, inner: string, options: SheetParseOptions): RawRow {
   const anchorIndex = columnIndex(ANCHOR_COLUMN)
   const values = new Map<number, RawCell>()
+  /**
+   * O estilo de CADA celula (`H-94`), que ate aqui era lido e descartado — ele
+   * so servia para decidir formato numerico e para a ancora.
+   *
+   * **A herança de `<row customFormat="1">` NAO e implementada**, e a omissao e
+   * declarada: `buildRow` recebe o interior da linha, e nao os atributos dela,
+   * e o ganho nao paga a mudanca de assinatura. Medido em 16/09/2026: com a
+   * heranca sao 87,4% das celulas com cor, sem ela 87,3% — uma decima de ponto,
+   * ~10 celulas em 10.400.
+   */
+  const styleIds = new Map<number, number | null>()
   let anchorStyleId: number | null = null
   let lastColumn = 0
   let previousColumn = 0
@@ -328,6 +339,7 @@ function buildRow(rowNumber: number, inner: string, options: SheetParseOptions):
     previousColumn = column
     lastColumn = Math.max(lastColumn, column)
     if (column === anchorIndex) anchorStyleId = styleId
+    styleIds.set(column, styleId)
 
     values.set(column, readCell(attributes, cell[2] ?? '', styleId, options))
   }
@@ -337,11 +349,24 @@ function buildRow(rowNumber: number, inner: string, options: SheetParseOptions):
   // de inexistente pelo tipo. Depois da ultima celula presente nao ha nada —
   // linha que termina em H nao ganha I..P.
   const cells: Record<string, RawCell> = {}
+  const cellStyleKeys: Record<string, string> = {}
   for (let column = 1; column <= lastColumn; column++) {
-    cells[columnLetter(column)] = values.get(column) ?? emptyCell()
+    const letter = columnLetter(column)
+    cells[letter] = values.get(column) ?? emptyCell()
+    // Coluna ausente do XML nao entra: `NO_FILL` explicito e "medi e nao tem
+    // preenchimento", e a ausencia da chave e "nao havia celula". A distincao e
+    // a mesma que `ColorSource` faz desde 02/09/2026.
+    if (styleIds.has(column)) {
+      cellStyleKeys[letter] = options.styles.styleKeyOf(styleIds.get(column) ?? null)
+    }
   }
 
-  return { sourceRow: rowNumber, cells, styleKey: options.styles.styleKeyOf(anchorStyleId) }
+  return {
+    sourceRow: rowNumber,
+    cells,
+    styleKey: options.styles.styleKeyOf(anchorStyleId),
+    cellStyleKeys,
+  }
 }
 
 /** Le o sheetData de UMA aba — a que esta em escopo. Ver regra inviolavel 10. */

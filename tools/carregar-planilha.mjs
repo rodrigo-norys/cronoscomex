@@ -70,7 +70,8 @@ const modulo = (caminho) => import(pathToFileURL(resolve(RAIZ, caminho)).href)
  */
 export async function carregarPlanilha({ quarantinePath, historyPath } = {}) {
   const { loadConfig } = await modulo('src/app/config.ts')
-  const { loadColorMap } = await modulo('src/app/color-map-loader.ts')
+  const { loadCellFills, loadColorMap } = await modulo('src/app/color-map-loader.ts')
+  const { indexDisplay } = await modulo('src/domain/color-mapper.ts')
   const { loadStatusAliases } = await modulo('src/app/status-aliases-loader.ts')
   const { loadClientMap } = await modulo('src/app/client-map-loader.ts')
   const { loadTeamMap } = await modulo('src/app/team-map-loader.ts')
@@ -100,6 +101,11 @@ export async function carregarPlanilha({ quarantinePath, historyPath } = {}) {
     clientMap: clientMap.clients,
     clientGroups: clientMap.groups,
     teamMap: loadTeamMap(),
+    // `H-94`, e foi ESTE esquecimento que a conferencia pegou: sem o indice a
+    // cor nao chega ao `Process`, e `fills` sai vazio nas 650 linhas. Terceira
+    // vez que o modo de falha aparece — `H-49` com o mapa de clientes, `H-50`
+    // com o de equipe, e agora a cor. Teste nenhum pega: todos injetam vazio.
+    displayIndex: indexDisplay(loadColorMap(), loadCellFills()),
     quarantinePath: quarantinePath ?? join(area, 'quarantine.json'),
     historyPath: historyPath ?? join(area, 'history.jsonl'),
   })

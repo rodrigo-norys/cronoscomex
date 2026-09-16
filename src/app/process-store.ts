@@ -96,8 +96,16 @@ export interface StoreOptions {
    * de cores — a alternativa varreria a lista de grupos por linha lida.
    */
   clientGroups?: readonly ClientGroup[]
-  /** Mapa de equipe de `H-48`. Vazio faz a atribuicao cair na cor (`H-50`). */
+  /**
+   * Mapa de equipe de `H-48`. Vazio deixa TODO processo sem responsavel desde
+   * `H-93` — antes dele a atribuicao caia na cor (`D-23`).
+   */
   teamMap?: readonly TeamMember[]
+  /**
+   * Chave de estilo → cor de exibicao (`H-94`), ja indexada. Ausente, a tabela
+   * nao pinta: e o certo em teste, e o estado de um mapa sem `display`.
+   */
+  displayIndex?: ReadonlyMap<string, string>
   quarantinePath?: string
   /** Ponto de injecao para teste; em producao, `data/history.jsonl`. */
   historyPath?: string
@@ -131,6 +139,9 @@ function emptyState(): StoreState {
     pendingEdits: [],
   }
 }
+
+/** Sem `display` declarado a tabela nao pinta — uma instancia so, nao por linha. */
+const NO_DISPLAY: ReadonlyMap<string, string> = new Map()
 
 let options: StoreOptions | null = null
 let colorMapIndex: ReadonlyMap<string, ColorMapEntry> = new Map()
@@ -185,6 +196,7 @@ export function getState(): StoreState {
     clientMap: options.clientMap ?? [],
     clientGroups: clientGroupIndex,
     teamMap: options.teamMap ?? [],
+    displayIndex: options.displayIndex ?? NO_DISPLAY,
   })
 
   return { ...current, processes, pendingEdits: edits }
@@ -336,6 +348,7 @@ async function runReload(deps: StoreOptions): Promise<void> {
       clientMap: deps.clientMap ?? [],
       clientGroups: clientGroupIndex,
       teamMap: deps.teamMap ?? [],
+      displayIndex: deps.displayIndex ?? NO_DISPLAY,
     })
 
     const durationMs = Math.round(performance.now() - startedAt)
@@ -581,6 +594,7 @@ export function rebuildProcesses(rows: RawRow[]): Process[] {
     clientMap: options.clientMap ?? [],
     clientGroups: clientGroupIndex,
     teamMap: options.teamMap ?? [],
+    displayIndex: options.displayIndex ?? NO_DISPLAY,
   }).processes
 }
 

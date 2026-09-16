@@ -37,6 +37,8 @@ function process(sourceRow: number, statusCategory: StatusCategory): Process {
     customsChannel: 'indefinido',
     importerOutsideRj: null,
     styleKey: 'none',
+    cellStyleKeys: {},
+    fills: {},
     anomalies: [],
   }
 }

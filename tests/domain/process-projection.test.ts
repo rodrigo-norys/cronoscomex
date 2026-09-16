@@ -62,6 +62,8 @@ function process(overrides: Partial<Process> = {}): Process {
     customsChannel: 'indefinido',
     importerOutsideRj: null,
     styleKey: 'none',
+    cellStyleKeys: {},
+    fills: {},
     anomalies: [],
     ...overrides,
   }

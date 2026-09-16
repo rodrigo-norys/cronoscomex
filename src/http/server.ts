@@ -1,7 +1,7 @@
 import { pathToFileURL } from 'node:url'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { type ClientMap, ClientMapError, loadClientMap } from '../app/client-map-loader.ts'
-import { ColorMapError, loadColorMap } from '../app/color-map-loader.ts'
+import { ColorMapError, loadCellFills, loadColorMap } from '../app/color-map-loader.ts'
 import { type AppConfig, ConfigError, loadConfig, WORKBOOK_UNSET } from '../app/config.ts'
 import { createLogger, type Logger } from '../app/logger.ts'
 import {
@@ -17,7 +17,7 @@ import { loadStatusAliases, StatusAliasesError } from '../app/status-aliases-loa
 import { loadTeamMap, TeamMapError } from '../app/team-map-loader.ts'
 import { initWriteGuard, retargetWatcher } from '../app/write-guard.ts'
 import type { ClientGroup, ClientMapEntry } from '../domain/client-mapper.ts'
-import type { ColorMapEntry } from '../domain/color-mapper.ts'
+import { type ColorMapEntry, indexDisplay } from '../domain/color-mapper.ts'
 import type { TeamMember } from '../domain/team-mapper.ts'
 import { createWatcher, DEFAULT_DEBOUNCE_MS, type Watcher } from '../io/watcher.ts'
 import { registerAlertsRoute } from './routes/alerts.ts'
@@ -207,6 +207,11 @@ async function main(): Promise<void> {
       clientMap: clientMap.clients,
       clientGroups: clientMap.groups,
       teamMap,
+      // `H-94`. As duas listas do mesmo arquivo: as entradas com significado e
+      // as que so pintam. Lido aqui, na partida, como os demais mapas — um
+      // `display` malformado mata a partida com mensagem, em vez de deixar a
+      // tabela cinza sem explicacao.
+      displayIndex: indexDisplay(colorMap, loadCellFills()),
       logger,
     })
   } catch (error) {

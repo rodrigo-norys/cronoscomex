@@ -710,6 +710,7 @@ describe('ESCRITA_INVALIDA', () => {
             sourceRow: SOURCE_ROW,
             cells: { B: { value: 'OUTRA COISA', type: 'string' } },
             styleKey: '',
+            cellStyleKeys: {},
           },
         ],
         fileHash: HASH_FALSO,

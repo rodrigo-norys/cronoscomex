@@ -277,3 +277,48 @@ describe('parseSheetRows — forma da linha', () => {
     expect(parseSheetRows(sheet(''), options())).toEqual([])
   })
 })
+
+/**
+ * `H-94`. O estilo de CADA celula, que ate aqui era lido e descartado — so a
+ * ancora e o formato numerico o usavam.
+ */
+describe('parseSheetRows — a chave de estilo de cada celula', () => {
+  const porColuna: StyleIndex = {
+    styleKeyOf: (id) => (id === 165 ? 'argb:FF00FF00' : id === 279 ? 'argb:FFFFFF00' : 'none'),
+    isDateFormat: () => false,
+  }
+
+  it('guarda a chave de cada celula, e nao so a da ancora', () => {
+    // E o caso medido na planilha real: a linha 488 e azul de A a K e AMARELA
+    // na coluna L, que e `STATUS`. Antes de `H-94` isso se perdia na leitura.
+    const [linha] = parseSheetRows(
+      sheet('<row r="2"><c r="A2" s="165"/><c r="B2" s="279" t="s"><v>0</v></c></row>'),
+      options({ styles: porColuna }),
+    )
+
+    expect(linha?.cellStyleKeys).toEqual({ A: 'argb:FF00FF00', B: 'argb:FFFFFF00' })
+    // A ancora continua sendo a coluna A, e `ADR-0003` nao e tocado.
+    expect(linha?.styleKey).toBe('argb:FF00FF00')
+  })
+
+  it('celula AUSENTE do XML nao entra: "nao havia celula" nao e "sem cor"', () => {
+    // A distincao e a mesma de `ColorSource` desde 02/09/2026 — `none` explicito
+    // e medida, chave ausente e ausencia de medida.
+    const [linha] = parseSheetRows(
+      sheet('<row r="2"><c r="A2" s="165"/><c r="C2" s="165" t="s"><v>0</v></c></row>'),
+      options({ styles: porColuna }),
+    )
+
+    expect(Object.keys(linha?.cells ?? {})).toEqual(['A', 'B', 'C'])
+    expect(Object.keys(linha?.cellStyleKeys ?? {})).toEqual(['A', 'C'])
+  })
+
+  it('celula sem atributo de estilo vale "none", e isso E uma medida', () => {
+    const [linha] = parseSheetRows(
+      sheet('<row r="2"><c r="A2" t="s"><v>0</v></c></row>'),
+      options({ styles: porColuna }),
+    )
+
+    expect(linha?.cellStyleKeys).toEqual({ A: 'none' })
+  })
+})

@@ -17,7 +17,7 @@ function linha(overrides: Record<string, string | null> = {}): RawRow {
   for (const [column, value] of Object.entries(overrides)) {
     cells[column] = cell(value)
   }
-  return { sourceRow: 2, cells, styleKey: 'none' }
+  return { sourceRow: 2, cells, styleKey: 'none', cellStyleKeys: {} }
 }
 
 /** Linha com REF preenchido e todas as demais colunas vazias. */
@@ -25,7 +25,7 @@ function soRef(ref = 'FT600.26', overrides: Record<string, string | null> = {}):
   const cells: Record<string, RawCell> = {}
   for (const column of ALL_COLUMNS) cells[column] = cell(column === 'A' ? ref : null)
   for (const [column, value] of Object.entries(overrides)) cells[column] = cell(value)
-  return { sourceRow: 2, cells, styleKey: 'none' }
+  return { sourceRow: 2, cells, styleKey: 'none', cellStyleKeys: {} }
 }
 
 describe('classify — TD-01, regra 3: desembaracado', () => {

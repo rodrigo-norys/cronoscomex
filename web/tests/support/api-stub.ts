@@ -262,6 +262,9 @@ export function processFixture(overrides: Partial<ProcessDto> = {}): ProcessDto 
     paymentRaw: '',
     columnPRaw: '',
     anomalies: [],
+    // `H-94`: vazio significa SEM fundo, e nunca branco — coluna ausente do
+    // objeto e a determinacao 3 de `D-41`. Cada teste serve o que exercita.
+    fills: {},
     hasPendingEdits: false,
     ...overrides,
   }

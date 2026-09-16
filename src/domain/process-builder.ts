@@ -4,7 +4,7 @@ import {
   resolveClient,
   resolveClientGroup,
 } from './client-mapper.ts'
-import { type ColorMapEntry, resolveColorIndexed } from './color-mapper.ts'
+import { type ColorMapEntry, resolveCellFills, resolveColorIndexed } from './color-mapper.ts'
 import { normKey, parseCellDate } from './normalizer.ts'
 import { classify } from './status-classifier.ts'
 import { resolveTeam, type TeamMember } from './team-mapper.ts'
@@ -73,6 +73,15 @@ export interface BuildDeps {
    * motivo de `clientMap`: ela refaz o processo inteiro por `buildProcesses`.
    */
   teamMap?: readonly TeamMember[]
+  /**
+   * Chave de estilo → cor de exibicao (`H-94`), ja indexada por `indexDisplay`.
+   *
+   * Ausente, `fills` sai vazio e a tabela nao pinta nada — que e o certo em
+   * teste e o estado de quem nao declarou `display` no mapa. **Nao afeta
+   * classificacao nenhuma:** a cor do processo continua saindo da ancora, e
+   * `ADR-0003` nao e tocado.
+   */
+  displayIndex?: ReadonlyMap<string, string>
 }
 
 /** Mapeamento coluna -> campo. Ver docs/03-modelo-dados.md secao 1.2. */
@@ -206,6 +215,8 @@ function buildOne(row: RawRow, deps: BuildDeps): { process: Process; unmappedCol
     customsChannel: color.customsChannel,
     importerOutsideRj: color.importerOutsideRj,
     styleKey: row.styleKey,
+    cellStyleKeys: row.cellStyleKeys,
+    fills: resolveCellFills(row.cellStyleKeys, deps.displayIndex),
     anomalies: [],
   }
 
@@ -261,7 +272,15 @@ export function toRawRow(process: Process): RawRow {
   putDate(COLUMN.docsSent, process.docsSentDate)
   put(COLUMN.columnP, process.columnPRaw)
 
-  return { sourceRow: process.sourceRow, cells, styleKey: process.styleKey }
+  // `cellStyleKeys` volta INTACTO: `refreshClientMap` e `refreshTeamMap`
+  // re-derivam por aqui com o processo no ar, e devolver o objeto vazio
+  // apagaria a pintura da tabela a cada troca de mapa, em silencio.
+  return {
+    sourceRow: process.sourceRow,
+    cells,
+    styleKey: process.styleKey,
+    cellStyleKeys: process.cellStyleKeys,
+  }
 }
 
 /**

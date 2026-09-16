@@ -94,6 +94,8 @@ function process({
     customsChannel,
     importerOutsideRj,
     styleKey: 'none',
+    cellStyleKeys: {},
+    fills: {},
     anomalies: [],
   }
 }
