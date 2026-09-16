@@ -123,6 +123,15 @@ const EXCLUSIVOS = ['README.md', 'iniciar.cmd']
  */
 const IMPORT_RELATIVO = /(?:\bfrom|\bimport)\s*\(?\s*['"](\.[^'"]+)['"]/g
 
+/**
+ * A arvore calculada e comparada com `git ls-tree`, e o git fala barra normal
+ * em todo sistema. Sem isto, `relative()` e `join()` devolvem `web\src\...` no
+ * Windows e a arvore inteira aparece como faltando — medido em 16/09/2026.
+ */
+function paraPosix(caminho: string): string {
+  return caminho.replaceAll('\\', '/')
+}
+
 function importsDe(arquivo: string): string[] {
   const conteudo = readFileSync(join(RAIZ, arquivo), 'utf-8')
   const base = dirname(arquivo)
@@ -133,7 +142,7 @@ function importsDe(arquivo: string): string[] {
     // sabe disso: sem a guarda, um especificador vazio viraria a propria RAIZ,
     // e a arvore ganharia uma entrada que nao e arquivo nenhum.
     if (especificador === undefined) continue
-    alvos.push(relative(RAIZ, resolve(RAIZ, base, especificador)))
+    alvos.push(paraPosix(relative(RAIZ, resolve(RAIZ, base, especificador))))
   }
   return alvos
 }
@@ -163,7 +172,7 @@ function assetsDe(arquivo: string): string[] {
 
   for (const [, caminho] of conteudo.matchAll(URL_ABSOLUTA_CSS)) {
     if (caminho === undefined) continue
-    alvos.push(join(PUBLICO, caminho))
+    alvos.push(paraPosix(join(PUBLICO, caminho)))
   }
   return alvos
 }
