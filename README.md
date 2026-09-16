@@ -239,11 +239,11 @@ idênticas**, incluindo as abas fora de escopo.
 
 ## Estado
 
-**92 das 96 histórias** de [`docs/06-backlog.md`](docs/06-backlog.md) estão
+**93 das 96 histórias** de [`docs/06-backlog.md`](docs/06-backlog.md) estão
 concluídas — o bloco `✅ CONCLUÍDA` de cada uma é a fonte, e é lá que o número
-se reconfere, com `grep -c '✅ \*\*CONCLUÍDA' docs/06-backlog.md`. As quatro
-abertas são as de `E15`, em que a cor deixa de ser dado e a tabela passa a
-espelhar a planilha.
+se reconfere, com `grep -c '✅ \*\*CONCLUÍDA' docs/06-backlog.md`. As três
+abertas são as restantes de `E15`, em que a tabela passa a espelhar a
+planilha.
 
 O plano original tinha 34 histórias; as demais nasceram do uso, e cada épico
 posterior explica no próprio cabeçalho de onde veio.
