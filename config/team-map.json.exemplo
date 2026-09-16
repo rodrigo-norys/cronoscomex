@@ -15,6 +15,12 @@
 
   "_comentario_fallback": "OPCIONAL, e no maximo um membro pode declara-lo — dois seriam uma ordem de avaliacao disfarcada de conjunto, e a carga recusa. Com ele ativo o desempate por cor nunca roda, porque nao sobra caso. NAO alcanca importador vazio: 'todo o resto' fala de importadores que existem, e varrer as linhas em branco para alguem esconderia que o campo nao foi preenchido.",
 
+  "_comentario_edicao_pela_tela": "H-91: este arquivo e ESCRITO pela Pagina Configuracao, e nao so lido. A gravacao preserva as chaves com prefixo '_' e os campos que ela nao conhece — 'colorResponsible' e 'fallback' continuam onde estao. Editar a mao continua valendo; as duas pontas escrevem o mesmo formato.",
+
+  "_comentario_carteira_vazia": "H-91: 'importers' vazia e LEGITIMA — alguem entrou na equipe e ainda nao recebeu importador, e a pessoa aparece no painel com zero. Ate H-91 a carga recusava esse membro e matava a partida, pelo argumento de que ele nunca receberia processo; o argumento caiu quando a tela passou a cria-lo. O que a carga ainda exige e a chave.",
+
+  "_comentario_chave_impessoal": "A chave gerada pela tela e 'membroN', com o primeiro N livre. Ela NUNCA sai do nome digitado: a chave viaja pelo dominio, entra no ranking de IND-20 e vira parametro de URL no filtro Responsavel, e deriva-la do nome levaria o nome da pessoa para todos esses lugares (regra inviolavel 8).",
+
   "_comentario_ausencia": "Sem este arquivo a atribuicao cai inteira no desempate por cor, que e o comportamento anterior a H-50. Processo que nao casa nada fica SEM responsavel, visivel e contado — empurra-lo para alguem produziria um numero plausivel e errado.",
 
   "members": [

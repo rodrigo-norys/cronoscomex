@@ -457,6 +457,44 @@ export async function refreshClientMap(
   current = { ...current, processes: rebuildProcesses(current.processes.map(toRawRow)) }
 }
 
+/**
+ * Troca o mapa de equipe com o processo no ar, e reprojeta (`H-91`).
+ *
+ * Existe pelo mesmo motivo de `refreshClientMap`: o mapa deixou de ser so
+ * configuracao de partida. Atribuir um importador a alguem grava em
+ * `team-map.json`, e sem este passo o campo Responsavel continuaria mostrando a
+ * atribuicao antiga ate o proximo reinicio.
+ *
+ * **Reescreve o array NO LUGAR, em vez de trocar a referencia** — e a mesma
+ * escolha que `reconfigureWorkbook` faz com o `AppConfig`, e aqui ela e o que
+ * faz a gravacao valer. `registerIndicatorsRoute` e `registerFilterOptionsRoute`
+ * capturaram ESTE array na partida; trocar o objeto as deixaria servindo a
+ * equipe anterior, e o operador veria a pessoa que acabou de criar sumir do
+ * ranking. As duas derivam `knownResponsibles` por requisicao exatamente porque
+ * o conteudo muda sob os pes delas.
+ *
+ * **Re-deriva em memoria, e NAO chama `reload`**, pelo motivo medido em
+ * 02/09/2026 com o mapa de clientes: `runReload` sai antes de recompor quando o
+ * hash do arquivo nao mudou, e aqui quem mudou foi o MAPA — o arquivo esta
+ * igual de proposito.
+ */
+export async function refreshTeamMap(members: readonly TeamMember[]): Promise<void> {
+  const deps = options
+  if (!deps) {
+    throw new StoreNotInitializedError('initStore precisa ser chamado antes de refreshTeamMap.')
+  }
+
+  // Uma leitura em voo terminaria DEPOIS, gravando processos derivados do mapa
+  // antigo por cima destes.
+  await settle()
+
+  const live = deps.teamMap
+  if (Array.isArray(live)) (live as TeamMember[]).splice(0, live.length, ...members)
+  else deps.teamMap = members
+
+  current = { ...current, processes: rebuildProcesses(current.processes.map(toRawRow)) }
+}
+
 let reconfiguring: Promise<void> | null = null
 
 /**
