@@ -33,19 +33,24 @@ Reconferir é obrigação de quem edita, não de quem lê depois. **Se não der 
 reconferir em um comando, a frase está mal escrita** — conserte a frase, não
 só o número.
 
-## Antes de commitar mudança em documento
+## O `revisor-docs` existe, e quem o invoca é o dono
 
-**Invoque o `revisor-docs`**, como `escrita-xlsx.md` manda invocar o
-`revisor-xml`. Ele recebe o diff e devolve um parecer por afirmação: cada número
-reconferido, cada identificador citado aberto no arquivo, cada elo da cascata
-declarado alcançado ou não.
+**Não há gatilho, e a ausência é decisão de 11/09/2026, não esquecimento.**
+Nenhuma skill o chama, nenhum hook o dispara, e esta rule **não** manda
+invocá-lo — ela diz o que ele faz, para a decisão ser informada.
 
-Por que não basta o portão: `tests/repo/documentacao.test.ts` cobra o que é
+O que ele pega, e o portão não: `tests/repo/documentacao.test.ts` cobra o que é
 computável — índice, contagens, matriz, requisito revogado. Medido em
 11/09/2026, **zero das 5.458 citações de ID em prosa apontam para identificador
 inexistente**: o defeito não é o ID que sumiu, é o ID que existe e **diz outra
 coisa**. Isso é semântica, e nenhuma asserção a alcança.
 
-**A régua de quando invocar é o diff, não o tamanho.** Uma passada de ~490
-linhas em 11/09/2026 produziu 51 defeitos confirmados, e um deles passou pela
-suíte e foi achado a olho pelo dono.
+**O que a medição diz sobre quando ele se paga**, para quem for decidir:
+
+- o retorno cresce com o **tamanho** e com a **densidade de citação cruzada** —
+  23 achados em 584 linhas de épico novo, 15 em 231 de um agente; emenda de três
+  linhas não tem o que ele ache;
+- ele custa **~200 mil tokens e ~20 minutos** por invocação;
+- **não é reprodutível**: três execuções sobre o mesmo diff concordaram em 23%,
+  e metade dos achados apareceu uma vez só. Uma execução limpa **não** é prova
+  de que não há defeito.

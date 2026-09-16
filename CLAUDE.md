@@ -324,9 +324,9 @@ exige converter `oklch()` para sRGB e calcular a razão da WCAG com a conta à
 mostra. Devolve achados em formato fixo e um plano de **ondas por dependência
 técnica**, cada uma declarando quantos arquivos toca.
 
-`revisor-docs` revisa mudança em `docs/`, no `CLAUDE.md` e nos dois
-`README.md` — invocado **antes de commitar**, como `revisor-xml`, sem `Edit`
-nem `Write` e com `model: opus` pelo mesmo motivo. **Ele começa onde
+`revisor-docs` revisa mudança em `docs/`, em `.claude/`, no `CLAUDE.md` e nos
+dois `README.md` — **invocado sob demanda do usuário, e não antes de commitar**,
+sem `Edit` nem `Write` e com `model: opus` pelo mesmo motivo. **Ele começa onde
 `tests/repo/documentacao.test.ts` para**, e a divisão está escrita **dentro
 dele**, não no teste: a guarda cobra o que é computável — índice, contagens,
 matriz, requisito revogado —, e o revisor cobra o que não é. São **cinco**
@@ -344,6 +344,14 @@ nenhum as alcança — é semântica.
 > atingido. Registro isso em vez de apagar: a tabela vale como anteparo quando
 > o gatilho precede a peça, e aqui ela documenta, não previu.
 >
+> **Não há gatilho, e a ausência é decisão do usuário em 11/09/2026**, tomada
+> depois de o custo ser medido: **~200 mil tokens e ~20 minutos** por invocação,
+> para **~30%** das divergências conhecidas. E ele **não é reprodutível** — três
+> execuções sobre o mesmo diff concordaram em **23%**, com metade dos achados
+> aparecendo uma vez só, e quatro itens recebendo veredictos **opostos**. Uma
+> execução limpa não prova ausência de defeito. O piso automático é a guarda,
+> que roda no `verify` e no CI sem depender de ninguém invocar nada.
+>
 > **A primeira invocação dele foi sobre o diff que o cria, e reprovou 15 itens**
 > — números sem recorte, um exemplo que envelheceu no commit anterior, e um
 > comando publicado como prova que o próprio arquivo falsificava. Ele **não**
@@ -358,7 +366,7 @@ token nas sessões que não tocam o assunto. São cinco:
 | Rule | Carrega ao tocar |
 |---|---|
 | `comentarios.md` | `src/`, `web/`, `tests/` — a régua de comentários |
-| `documentacao.md` | `docs/` e `.md` da raiz — números afirmados em prosa, e a chamada do `revisor-docs` antes de commitar. Carrega em quase toda sessão, porque o protocolo de fatia lê `docs/`, e por isso é curta: 51 linhas |
+| `documentacao.md` | `docs/` e `.md` da raiz — números afirmados em prosa, e o que o `revisor-docs` custa e pega, para quem for decidir invocá-lo. **Ela não manda invocar**: não há gatilho. Carrega em quase toda sessão, porque o protocolo de fatia lê `docs/`, e por isso é curta |
 | `escrita-xlsx.md` | `xlsx-surgeon.ts`, `write-guard.ts` — o procedimento do `revisor-xml` e a forma medida do `calcChain` |
 | `operacao-windows.md` | `scripts/` — o que `PD-06` deixou como regra, e a lição que já se pagou |
 | `distribuicao.md` | o script de sincronização e os `.exemplo` — o que entra na branch, e `PD-08` |
@@ -454,10 +462,17 @@ Medido em 11/09/2026: **220 dos 445** commits não-merge da `main` tocam
 mais linhas que `src/` e `web/src/` somados. Ele cobra o índice do backlog
 agrupando cada história sob o épico do corpo, as contagens P/M/G de cada linha
 do resumo, a matriz concordando com o backlog história a história, requisito
-revogado que segue "Entregue", e o total de histórias afirmado em prosa — em
-`docs/`, em `.claude/`, no `CLAUDE.md` e nos dois `README.md`. Nenhuma
+revogado que segue "Entregue", o total de histórias afirmado em prosa — em
+`docs/`, em `.claude/`, no `CLAUDE.md` e nos dois `README.md` — e o **tamanho
+declarado contra a régua do topo, só nas histórias abertas**. Nenhuma
 expectativa é lista fixa: épico, história e requisito novos entram sem tocar no
 arquivo.
+
+> **A régua é cobrada só no que ainda não fechou, e a assimetria é o desenho.**
+> `D-24` declara a função do rótulo — "avisar que a fatia é longa" —, e em
+> história fechada não há mais o que avisar. Medido em 16/09/2026: **dez** das
+> 96 estavam abaixo da régua; as três abertas de `E15` foram corrigidas, e as
+> sete fechadas ficam declaradas no topo do backlog em vez de reescritas.
 
 > **Nasceu de defeito observado, não de previsão.** O agrupamento do índice era
 > o único elo que asserção nenhuma via, e quem o achou foi o usuário, a olho, em

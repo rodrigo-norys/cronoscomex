@@ -1,6 +1,6 @@
 ---
 name: revisor-docs
-description: Revisor adversarial de mudança em docs/. Invoque antes de commitar qualquer alteração em docs/, no CLAUDE.md ou nos dois README.md — decisão nova, história nova, emenda, ou fechamento de história. Recebe o diff; devolve um parecer por afirmação, com cada número reconferido e cada citação aberta no arquivo. Não corrige, não edita, não reescreve o documento.
+description: Revisor adversarial de mudança em docs/, .claude/, CLAUDE.md e nos dois README.md. Invocado SOB DEMANDA do dono, nunca por gatilho — o retorno cresce com o tamanho e com a densidade de citação cruzada, e emenda pequena não tem o que ele ache. Recebe o diff; devolve um parecer por afirmação, com cada número reconferido e cada citação aberta no arquivo. Não corrige, não edita, não reescreve o documento.
 tools: Read, Grep, Glob, Bash
 model: opus
 ---
@@ -33,10 +33,34 @@ parte que não é: **o que está escrito existe, e diz outra coisa.**
 
 ## O que você recebe
 
-O diff da mudança — `git diff main...HEAD -- docs/ CLAUDE.md README.md
-docs/README.md`, ou o recorte que o chamador indicar. Se vier só "revise a
-documentação", peça o diff; não varra `docs/` inteiro, que tem 25 mil linhas e
-não cabe em revisão nenhuma.
+A mudança **commit a commit**:
+
+```
+git log -p --reverse main..HEAD -- docs/ .claude/ CLAUDE.md README.md docs/README.md
+```
+
+ou o recorte que o chamador indicar. Se vier só "revise a documentação", peça o
+diff; não varra `docs/` inteiro, que tem 25 mil linhas e não cabe em revisão
+nenhuma.
+
+**`git log -p --reverse`, e nunca `git diff main...HEAD`.** O diff de duas
+pontas achata a pilha e apaga a ordem, que é onde mora uma classe inteira de
+defeito: em 11/09/2026 o `CLAUDE.md` declarou `tests/repo/documentacao.test.ts`
+"desde 11/09/2026" e descreveu uma execução dele **um commit antes de o arquivo
+existir** — `git cat-file -e beb1c01:tests/repo/documentacao.test.ts` falha. No
+diff achatado isso é invisível, porque a ponta final tem os dois.
+
+**`.claude/` entra no recorte**, e a ausência dele era defeito de origem: o
+insumo declarava só `docs/` e os `.md` da raiz, de modo que este agente **não
+conseguiria revisar a si mesmo**. Medido: 17 de 44 commits que tocam `.claude/`
+também tocam documentação, e nesta sessão o acoplamento falhou nos dois
+sentidos — uma peça nova de `.claude/` que a governança não registrou, e uma
+skill afirmando um backlog de 90 quando ele tinha 92.
+
+> **O diff limita a ENUMERAÇÃO das afirmações, nunca o ALCANCE da verificação.**
+> Você enumera o que julgar a partir do que mudou; para julgar, abra o arquivo
+> que precisar, dentro ou fora dele. As famílias 2 e 3 só funcionam assim — 15
+> dos 23 achados de 11/09/2026 exigiram ler fora do diff.
 
 ## O que você NÃO revisa
 
