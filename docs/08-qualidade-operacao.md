@@ -391,6 +391,38 @@ roda o portão inteiro com o Node de `.nvmrc`, e `dados-sensiveis.yml` roda
 `PreToolUse` e não vê commit feito fora do Claude Code. Não há implantação
 remota: a aplicação roda numa máquina só.
 
+**`verify-windows.yml` entrou em 16/09/2026, e não é obrigatório.** RNF-26
+declara Windows como alvo e, até ali, **nenhuma** execução de CI havia rodado
+lá — `tests/http/partida.test.ts` registra que o modo de falha mudo da partida
+custou uma sessão inteira na máquina do operador (`PD-06`), e o cabeçalho dele
+declara que nenhum runner do projeto executa em Windows. Ele roda `test:strip`,
+`typecheck`, `npm test` e `build`; ficam de fora `test:hooks` e `test:dados`,
+que são `bash` com `jq` e protegem algo que não depende do sistema operacional.
+**É workflow separado, e não uma matriz dentro de `verify.yml`**: a matriz
+renomearia o contexto do check para `verify (ubuntu-latest)`, e como o ruleset
+exige o literal `verify`, o gate obrigatório nunca mais seria satisfeito — a
+`main` ficaria desprotegida com a aparência de protegida. Promovê-lo a check
+exige uma série estável de execuções verdes primeiro.
+
+**Três proteções do repositório são configuração, não arquivo versionado**, e
+foram ligadas em 16/09/2026. **Secret scanning e push protection**: o
+repositório é público, e `verifica-dados-sensiveis.sh` — medido — não procura
+credencial nenhuma, só planilha, `config/`, imagem, caminho absoluto e o nome do
+dono; push protection é a única camada que atua **antes** de o dado existir no
+histórico, que aqui é decisivo porque histórico público não se reescreve.
+**Dependabot com alertas ligados e updates automáticos desligados**: as 18
+dependências têm versão fixada exata, e PR por pacote brigaria com a regra de
+não trocar versão sem motivo registrado. **`strict_required_status_checks_policy`
+ligado** no ruleset: sem ele, um PR verde de dias atrás mescla sem revalidar
+contra a `main`, e as guardas deste repositório reprovam por estado **global** da
+árvore — a única falha de `verify` do histórico foi exatamente isso, uma âncora
+morta em `tests/repo/contratos.test.ts`.
+
+> §5.3 afirma que **não há segredos**, e continua verdade: é uma afirmação sobre
+> a aplicação, não sobre o commit acidental. O `.gitignore` registra que a aba
+> `CNPJ` carrega dado de acesso de terceiros, e é esse o risco que push
+> protection cobre.
+
 O portão local é o mesmo comando, e é obrigatório antes de qualquer entrega:
 
 ```

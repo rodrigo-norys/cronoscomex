@@ -1,0 +1,67 @@
+name: verify-windows
+
+# O portao no sistema operacional do operador.
+#
+# RNF-26 declara Windows como alvo, e ate aqui NENHUMA execucao de CI rodou la:
+# os dois workflows existentes sao ubuntu-latest. O custo disso ja foi pago uma
+# vez — tests/http/partida.test.ts registra que o modo de falha mudo da partida
+# custou uma sessao inteira na maquina do operador (PD-06), e o proprio
+# cabecalho dele declara que "nenhum runner deste projeto executa em Windows".
+#
+# NAO e check obrigatorio. Ele nasce observando: o ruleset `main protegida`
+# continua exigindo apenas `verify` e `dados-sensiveis`, e promove-lo depende de
+# ele passar de forma estavel primeiro.
+#
+# **Workflow separado, e nao uma matriz dentro de verify.yml, de proposito.**
+# Acrescentar `strategy.matrix.os` la renomearia o contexto do check para
+# "verify (ubuntu-latest)", e o ruleset exige o contexto literal "verify" — o
+# gate obrigatorio passaria a nunca ser satisfeito, e a main ficaria sem
+# protecao com a aparencia de estar protegida.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: verify-windows-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      # A cadeia do portao MENOS os dois primeiros elos. `test:hooks` e
+      # `test:dados` sao bash e exigem `jq`; o que eles protegem — dado do
+      # operador na arvore versionada — nao depende do sistema operacional, e
+      # ubuntu-latest ja os roda em todo PR. Replicar aqui compraria manutencao
+      # de shell sem cobrir risco novo.
+      #
+      # O que sobra e exatamente o que muda entre SO: resolucao de modulo sob
+      # --experimental-strip-types, separador de caminho, fim de linha e o
+      # build da SPA.
+      - name: Strip types
+        run: npm run test:strip
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Testes
+        run: npm test
+
+      - name: Build
+        run: npm run build
