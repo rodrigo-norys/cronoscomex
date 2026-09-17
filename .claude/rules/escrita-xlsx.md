@@ -68,6 +68,34 @@ do achado anterior**:
 
 **Corrigir sem reinvocar teria trocado um defeito por outro, quatro vezes.**
 
+## Reinvoque o revisor CERTO, e não sempre o mesmo
+
+A instrução acima — reinvocar depois de corrigir — diz *quando*, e não *quem*.
+**Medido em 17/09/2026, em `H-96`: quatro passagens, de ~200 a ~240 mil tokens
+cada.** As três primeiras aprovaram; a quarta reprovou, e os **dois** fundamentos
+dela eram documentais — o total da suíte errado, e um comentário de teste
+afirmando que a leitura "recusa a promoção" quando o código faz o oposto,
+contradizendo o teste quarenta linhas abaixo **no mesmo arquivo**.
+
+**Na terceira passagem, a maior parte dos achados era número ou frase em
+comentário** — a família que o `revisor-docs` declara cobrir, e o `revisor-xml`,
+não: "número cuja **base** está errada", "citação de identificador que existe e
+diz outra coisa", e "contradição entre duas afirmações **do mesmo diff**".
+
+| Se a rodada de correção tocou… | reinvoque |
+|---|---|
+| código que reescreve bytes do `.xlsx` — a cirurgia, o guard, a ordem das defesas | **`revisor-xml`**, como manda a seção acima |
+| só comentário, número, documento ou asserção de teste | **ofereça o `revisor-docs`** ao dono, e siga |
+
+**"Ofereça", e não "invoque":** o `revisor-docs` **não tem gatilho, por decisão
+do usuário em 11/09/2026**, tomada depois de o custo dele ser medido. Disparar
+por conta própria um subagente daquele porte contraria a decisão.
+
+**O erro a evitar é tratar esta rule como configuração, e não como julgamento.**
+Em 17/09/2026 a quarta passagem foi disparada por aplicação literal dela, com o
+diagnóstico correto já escrito na própria sessão — "estou usando o revisor da
+escrita cirúrgica como revisor de prosa" — e mesmo assim.
+
 ## A cadeia de cálculo, e a premissa que foi REFUTADA — `PD-05`, fechada em 01/09/2026
 
 A pendência supunha que o Excel emite o atributo `i` apenas na **primeira**
