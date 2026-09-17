@@ -115,6 +115,57 @@
   --color-surface-table: #f4f5f7;
 
   /*
+   * A tinta sobre a celula PINTADA (`H-97`).
+   *
+   * **UM token, e nao dois.** Ate 16/09/2026 eram dois — escura e clara —, e a
+   * escolha entre eles saia da luminancia do fundo. O usuario pediu PRETO nas
+   * nove cores, inclusive no roxo, que era a unica a usar a clara: sem segunda
+   * tinta nao ha o que escolher, e a funcao de luminancia saiu junto.
+   *
+   * **Ele NAO se redefine no esquema escuro, e e isso que o torna correto:** o
+   * fundo vem do arquivo do operador, nao do tema — verde e verde nos dois —, e
+   * uma tinta que virasse clara no escuro devolveria o defeito que ela
+   * conserta. Por isso vive so aqui, e o bloco de baixo nao o toca.
+   *
+   * *(Este comentario NAO escreve a consulta de media por extenso, e a omissao e
+   * deliberada: `tests/repo/estilo.test.ts` acha o bloco escuro por
+   * `indexOf` do literal, e cita-lo aqui faria a guarda analisar este
+   * comentario no lugar dele — medido em 16/09/2026, com tres assercoes
+   * reprovando.)*
+   *
+   * **Medido em 16/09/2026 sobre as 9 cores de `config/color-map.json`:** preto
+   * leva oito delas a AA com folga — o verde de 5.723 celulas a **15,30**, o
+   * vermelho a **5,25** — e **reprova no roxo, em 4,05**, contra o piso de 4,5.
+   * O texto do tema escuro media **1,16** sobre o verde, que foi o defeito
+   * original, reportado com um print.
+   *
+   * **O roxo e excecao DECLARADA, por ordem do usuario em 16/09/2026**, depois
+   * de ver a prova de tinta. Branco o levava a 5,19 e passava; ele preferiu o
+   * preto uniforme nas nove, e a uniformidade e o que se ganhou em troca dos
+   * 0,45 que faltam.
+   *
+   * *(A determinacao 2 de `D-41` chegou a ser REFUTADA por medicao — ela
+   * declarava os roxos irreparaveis "com qualquer cor de texto" tendo medido so
+   * `#14161a` e preto, nunca BRANCO. A refutacao continua correta como fato, e
+   * deixou de valer como pratica: a excecao voltou inteira, agora por ESCOLHA e
+   * nao por impossibilidade.)*
+   *
+   * **A paleta nao vence aqui de proposito:** `#14161a` e o `text-primary` do
+   * tema claro e seria a escolha coerente com o resto do conjunto, mas o fundo
+   * destas celulas nao e superficie da aplicacao — e a cor do arquivo dele.
+   */
+  --color-cell-ink: #000000;
+
+  /*
+   * O peso que acompanha a tinta (`H-97`). **Nao e enfeite:** preto e o fim da
+   * escala de cor, e engrossar o traco foi a unica alavanca que sobrou depois
+   * que a tinta chegou ao extremo. 600 e o maior dos tres pesos versionados em
+   * `web/public/fonts/` — um quarto o navegador sintetizaria, engordando o
+   * traco de forma irregular (`H-58`).
+   */
+  --weight-cell-ink: 600;
+
+  /*
    * Texto. `muted` NAO adota o `#868d97` do mockup: ele mede 3.35:1 sobre
    * `surface-raised`, contra um piso de 4.5:1 — exatamente o defeito que `H-39`
    * corrigiu, de volta. `#6a6f77` mede 5.06:1 (PROPOSTA §2.2).

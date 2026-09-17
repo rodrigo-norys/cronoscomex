@@ -1,4 +1,5 @@
 import type { HealthResponse, IndicatorsResponse } from '../api-client.ts'
+import { ArrivalCalendar } from '../components/ArrivalCalendar.tsx'
 import { IngestionHealth } from '../components/IngestionHealth.tsx'
 import { LiveAnnouncement, PageAlert } from '../components/PageAlert.tsx'
 import { StatCard, type StatVariant } from '../components/StatCard.tsx'
@@ -187,6 +188,16 @@ export function Home({ health, queryString, dataVersion }: HomeProps) {
       {state.status === 'pronto' && (
         <ChannelPanel distribution={state.indicators.channelDistribution} />
       )}
+
+      {/*
+        O calendario de chegadas veio da Pagina Operacional em `H-98`, e esta e a
+        casa natural dele: `IND-12` e indicador, e esta pagina ja pedia
+        `GET /api/indicators` — a mudanca nao cria requisicao nenhuma.
+        **Remove-lo sem realocar deixaria `IND-12` calculado, servido e sem
+        tela**, que e exatamente o defeito que `A-65` varreu em `IND-13`,
+        `IND-17` e `IND-20`.
+      */}
+      {state.status === 'pronto' && <ArrivalCalendar days={state.indicators.arrivalCalendar} />}
 
       <IngestionHealth health={health} quarantine={quarantine} />
     </div>

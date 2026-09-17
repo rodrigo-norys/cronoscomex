@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react'
+import { lazy, Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import type { ApplyRefusal, HealthResponse } from './api-client.ts'
 import { AppSidebar } from './components/AppSidebar.tsx'
 import { CommandSearch } from './components/CommandSearch.tsx'
@@ -16,6 +16,7 @@ import { useAppData } from './hooks/useAppData.ts'
 import { useFilterOptions } from './hooks/useFilterOptions.ts'
 import { useFilters } from './hooks/useFilters.ts'
 import { useNavCounts } from './hooks/useNavCounts.ts'
+import { PAGE_PARAMS } from './hooks/useProcessQuery.ts'
 import { Alerts } from './pages/Alerts.tsx'
 import { Clients } from './pages/Clients.tsx'
 import { Home } from './pages/Home.tsx'
@@ -24,7 +25,7 @@ import { Performance } from './pages/Performance.tsx'
 import { NotFoundPage, PendingPage } from './pages/Placeholders.tsx'
 import { ProcessDetail } from './pages/ProcessDetail.tsx'
 import { WorkbookSetup } from './pages/WorkbookSetup.tsx'
-import { consumePendingPageFocus, pageOf, type Route, useRoute } from './router.ts'
+import { consumePendingPageFocus, pageOf, type Route, replaceQuery, useRoute } from './router.ts'
 
 /**
  * A Pagina Historico e a unica que importa o Recharts, e ele responde por 374
@@ -103,6 +104,37 @@ export function App() {
   // biome-ignore lint/correctness/useExhaustiveDependencies: gatilho deliberado; a rota nao e lida aqui, e sem ela o efeito nunca reagiria a troca de pagina
   useEffect(() => {
     if (consumePendingPageFocus()) mainRef.current?.focus()
+  }, [route])
+
+  /**
+   * Os parametros da Pagina Operacional nao sobrevivem a saida dela (`H-99`).
+   *
+   * `navigate` preserva a query inteira, e isso e CERTO para os quatorze filtros
+   * globais — trocar de pagina nunca limpa o recorte que o operador montou. Mas
+   * `limit`, `sort`, `hidden` e os demais sao daquela pagina, e `useProcessQuery`
+   * ja declarava a separacao sem que ninguem a cumprisse: o operador via
+   * `?limit=500` no endereco das outras seis telas, onde nao significa nada.
+   *
+   * **Na casca, e nao em `navigate`.** Saber a que pagina um parametro pertence e
+   * conhecimento de PAGINA, nao de roteamento, e `H-59` ja recusou pelo mesmo
+   * motivo: `router.ts` esta a tres linhas do limiar de tamanho que `D-16`
+   * declara como gatilho de reavaliacao, e dispara-lo por um dado que nao e de
+   * rota seria pagar a reavaliacao pelo motivo errado.
+   *
+   * `useLayoutEffect` para a correcao acontecer antes da pintura, e
+   * `replaceQuery` porque ele usa `replaceState`: o operador nao apertaria
+   * "voltar" para desfazer uma limpeza que nao pediu. Nao ha laco — a segunda
+   * passada nao encontra nenhum dos parametros e sai na guarda.
+   */
+  useLayoutEffect(() => {
+    if (route.pageId === 'operational') return
+
+    const draft = new URLSearchParams(window.location.search)
+    if (!PAGE_PARAMS.some((key) => draft.has(key))) return
+
+    for (const key of PAGE_PARAMS) draft.delete(key)
+    const text = draft.toString()
+    replaceQuery(text === '' ? '' : `?${text}`)
   }, [route])
 
   /**
@@ -413,7 +445,7 @@ function PageOutlet({ route, dataVersion, health, queryString, onWorkbookSaved }
   }
 
   if (route.pageId === 'operational') {
-    return <Operational key={dataVersion} queryString={queryString} dataVersion={dataVersion} />
+    return <Operational key={dataVersion} dataVersion={dataVersion} />
   }
 
   if (route.pageId === 'clients') {

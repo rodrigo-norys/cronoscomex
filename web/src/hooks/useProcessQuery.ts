@@ -1,4 +1,5 @@
 import { useCallback, useMemo } from 'react'
+import { MAX_LIMIT } from '../../../src/domain/process-query.ts'
 import { replaceQuery, useQuery } from '../router.ts'
 
 /**
@@ -72,8 +73,43 @@ const SORT_FIELDS: readonly SortField[] = [
  * enche uma tela de 1080 px. O teto da ROTA e outro: `MAX_LIMIT` e 1000 em
  * `src/domain/process-query.ts`, entao `500` nunca esbarra nele.
  */
-export const PAGE_SIZES = [50, 100, 200, 500] as const
+export const PAGE_SIZES = [50, 100, 200, 500, MAX_LIMIT] as const
 export const DEFAULT_PAGE_SIZE = 200
+
+/**
+ * O nome de cada tamanho na tela (`H-100`).
+ *
+ * **`MAX_LIMIT` se chama "Todas", e a opcao existe por ordem do usuario em
+ * 16/09/2026.** `D-31` fixara o oposto — "500 e teto, e nao todas" —, para a
+ * paginacao nunca desaparecer e o pior caso de renderizacao ficar previsivel;
+ * ele pediu a opcao mesmo assim, e a emenda fica registrada.
+ *
+ * **Ela nao mente por construcao**, e e por isso que o valor e `MAX_LIMIT` e
+ * nao um sentinela: passando de 1000 processos, o rodape volta a paginar e diz
+ * de quantos, em vez de cortar em silencio (regra inviolavel 2). Medido em
+ * `H-84`: 500 linhas montam em 213 ms, e as 650 de hoje cabem numa pagina so.
+ */
+export const pageSizeLabel = (size: number): string => (size === MAX_LIMIT ? 'Todas' : String(size))
+
+/**
+ * Os parametros que sao DESTA pagina, e nao da casca (`H-99`).
+ *
+ * O cabecalho deste arquivo ja declarava a separacao desde `H-84`; o que
+ * faltava era alguem cumpri-la. `navigate` preserva a query inteira — certo
+ * para os quatorze filtros globais, porque trocar de pagina nao limpa o recorte
+ * —, e com isso `?limit=500` viajava para as outras seis telas, onde nao
+ * significa nada. **Quem os apaga e a casca, ao SAIR daqui**, e nao o roteador:
+ * ver o efeito em `web/src/App.tsx`.
+ */
+export const PAGE_PARAMS = [
+  'search',
+  'activeOnly',
+  'sort',
+  'order',
+  'limit',
+  'offset',
+  'hidden',
+] as const
 
 /**
  * As colunas que o operador ESCONDEU, por chave (`H-95`).

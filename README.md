@@ -239,7 +239,7 @@ idênticas**, incluindo as abas fora de escopo.
 
 ## Estado
 
-**95 das 96 histórias** de [`docs/06-backlog.md`](docs/06-backlog.md) estão
+**99 das 101 histórias** de [`docs/06-backlog.md`](docs/06-backlog.md) estão
 concluídas — o bloco `✅ CONCLUÍDA` de cada uma é a fonte, e é lá que o número
 se reconfere, com `grep -c '✅ \*\*CONCLUÍDA' docs/06-backlog.md`. A única
 aberta é `H-96`, escrita e **não executada** por escolha do usuário.

@@ -1,29 +1,38 @@
 import { useState } from 'react'
-import { ArrivalCalendar } from '../components/ArrivalCalendar.tsx'
 import { NewRowButton } from '../components/NewRowButton.tsx'
 import { PageAlert } from '../components/PageAlert.tsx'
 import { COLUMNS, labelOf, ProcessTable } from '../components/ProcessTable.tsx'
 import { Skeleton } from '../components/Skeleton.tsx'
 import { useFirstLoad } from '../hooks/useFirstLoad.ts'
-import { useIndicators } from '../hooks/useIndicators.ts'
 import { useProcesses } from '../hooks/useProcesses.ts'
-import { PAGE_SIZES, SORT_LABELS, useProcessQuery } from '../hooks/useProcessQuery.ts'
+import {
+  PAGE_SIZES,
+  pageSizeLabel,
+  SORT_LABELS,
+  useProcessQuery,
+} from '../hooks/useProcessQuery.ts'
 
 /**
- * Pagina Operacional (RF-10): tabela de processos, busca sobre os seis campos
- * de texto da planilha (`A-39`, `D-34`), e o calendario de chegadas por navio.
+ * Pagina Operacional (RF-10): tabela de processos e busca sobre os seis campos
+ * de texto da planilha (`A-39`, `D-34`).
  *
- * Duas requisicoes: `GET /api/processes` para a lista, e `GET /api/indicators`
- * para `arrivalCalendar`. A segunda ja e feita pela Pagina Inicial, entao o
- * padrao e conhecido — nenhum numero e derivado aqui.
+ * **Uma requisicao so, e o calendario de chegadas saiu daqui** (`H-98`). Ele foi
+ * para a Pagina Inicial, que ja pedia `GET /api/indicators` — nenhuma requisicao
+ * nova nasce da mudanca, e `IND-12` continua apresentado, que era a condicao.
+ * Com ele foi embora a coluna lateral de 20rem: a tabela de `H-95` tem 17
+ * colunas e mede cerca de 3.000 px, e disputava largura com um painel que nao e
+ * dela.
+ *
+ * **`queryString` saiu junto, e a ausencia dela e o ponto:** os quatorze filtros
+ * globais chegam a rota por `useProcessQuery`, que os le da URL. A pagina nao
+ * precisa deles em prop nenhuma.
  */
 
 interface OperationalProps {
-  queryString: string
   dataVersion: number
 }
 
-export function Operational({ queryString, dataVersion }: OperationalProps) {
+export function Operational({ dataVersion }: OperationalProps) {
   const query = useProcessQuery()
   /**
    * A edicao em linha nao muda `dataVersion` — ele e o relogio da CASCA, e sobe
@@ -33,11 +42,7 @@ export function Operational({ queryString, dataVersion }: OperationalProps) {
    */
   const [editVersion, setEditVersion] = useState(0)
   const processes = useProcesses(query.requestQuery, dataVersion + editVersion)
-  const indicators = useIndicators(queryString, dataVersion)
   const firstLoad = useFirstLoad('operacional', processes.status === 'pronto')
-
-  const calendar =
-    indicators.status === 'pronto' ? indicators.indicators.arrivalCalendar : undefined
 
   return (
     <div className="flex flex-col gap-4">
@@ -69,50 +74,49 @@ export function Operational({ queryString, dataVersion }: OperationalProps) {
       )}
 
       {/*
-        `minmax(0,1fr)`, e nao `1fr`: `1fr` e `minmax(auto,1fr)`, e o `auto`
-        minimo e a largura INTRINSECA da tabela — o grid entao recusa encolher e
-        empurra o conteudo para fora da tela (`SC 1.4.10`). Medido em
-        01/09/2026: com `1fr` o documento estourava entre 1024 px, onde `lg:`
-        liga, e ~1240 px; `H-59` estreitou a coluna em 216 px e levou o estouro
-        ate 1440. O `overflow-x-auto` de `R01` esta na tabela e nao alcanca
-        isto: quem se recusa a encolher e a TRILHA do grid, acima dele.
+        **Uma trilha so, desde `H-98`.** Era um grid de duas, com 20rem fixos
+        para o calendario de chegadas; ele foi para a Pagina Inicial e a tabela
+        ficou com a largura inteira.
+
+        O `minmax(0,1fr)` que vivia aqui existia porque `1fr` e
+        `minmax(auto,1fr)`, e o `auto` minimo e a largura INTRINSECA da tabela —
+        o grid entao recusava encolher e empurrava o conteudo para fora da tela
+        (`SC 1.4.10`, medido em 01/09/2026). **Sem a segunda trilha nao ha o que
+        negociar**, e quem contem a rolagem passa a ser o `overflow-x-auto` de
+        `R01`, na propria tabela.
       */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex flex-col gap-3">
-          {processes.status === 'pronto' ? (
-            <>
-              <ProcessTable
-                items={processes.page.items}
-                sort={query.sort}
-                order={query.order}
-                onSort={query.toggleSort}
-                onEdited={() => setEditVersion((version) => version + 1)}
-                headerLabels={processes.page.headerLabels}
-                hidden={query.hidden}
-              />
-              {/* O rodape vem DEPOIS da grade no DOM, e e por isso que a grade
+      <div className="flex flex-col gap-3">
+        {processes.status === 'pronto' ? (
+          <>
+            <ProcessTable
+              items={processes.page.items}
+              sort={query.sort}
+              order={query.order}
+              onSort={query.toggleSort}
+              onEdited={() => setEditVersion((version) => version + 1)}
+              headerLabels={processes.page.headerLabels}
+              hidden={query.hidden}
+            />
+            {/* O rodape vem DEPOIS da grade no DOM, e e por isso que a grade
                   existe: sem ela, chegar aqui pelo teclado custaria uma parada
                   por celula editavel (`H-80`). */}
-              <TableFooter
-                total={processes.page.total}
-                offset={query.offset}
-                limit={query.limit}
-                shown={processes.page.items.length}
-                onOffset={query.setOffset}
-                onLimit={query.setLimit}
-              />
-            </>
+            <TableFooter
+              total={processes.page.total}
+              offset={query.offset}
+              limit={query.limit}
+              shown={processes.page.items.length}
+              onOffset={query.setOffset}
+              onLimit={query.setLimit}
+            />
+          </>
+        ) : (
+          processes.status === 'carregando' &&
+          (firstLoad ? (
+            <Skeleton announcement="Carregando processos." />
           ) : (
-            processes.status === 'carregando' &&
-            (firstLoad ? (
-              <Skeleton announcement="Carregando processos." />
-            ) : (
-              <p className="panel-loading">Carregando processos…</p>
-            ))
-          )}
-        </div>
-
-        {calendar !== undefined && <ArrivalCalendar days={calendar} />}
+            <p className="panel-loading">Carregando processos…</p>
+          ))
+        )}
       </div>
     </div>
   )
@@ -326,7 +330,7 @@ function TableFooter({
           >
             {PAGE_SIZES.map((size) => (
               <option key={size} value={size}>
-                {size}
+                {pageSizeLabel(size)}
               </option>
             ))}
           </select>

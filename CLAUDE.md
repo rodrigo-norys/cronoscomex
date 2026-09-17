@@ -132,23 +132,25 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**95 das 96 histórias estão concluídas**, e o épico aberto é `E15`. O que cada uma aprendeu — número medido,
+**99 das 101 histórias estão concluídas**, e o épico aberto é `E16`. O que cada uma aprendeu — número medido,
 defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
 `docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
 em aberto. **Este bloco diz só o que está aberto.**
 
-**`E9` a `E12` fecharam em 01/09/2026, `E13` em 03/09/2026 e `E14` em
-16/09/2026** — este último com `H-91`, o mapa de equipe operável pela tela.
+**`E9` a `E12` fecharam em 01/09/2026, `E13` em 03/09/2026, e `E14` e `E15` em
+16/09/2026** — `E14` com `H-91`, o mapa de equipe operável pela tela; `E15` com
+`H-93` a `H-95`, que tiraram o significado da cor e levaram a tabela às 16
+colunas da planilha. **`H-96` fica escrita e não executada**, por escolha do
+usuário.
 
-**`E15` nasceu em 10/09/2026 e é o único épico aberto** — `H-93` a `H-96`, de
-`D-40` a `D-43`, e tem duas metades. **A primeira fechou em 16/09/2026 com
-`H-93`**, que reabriu `D-23`: a cor deixou de definir o responsável, e 48
-processos ativos — 48 de 48 — passaram a "Sem responsável". **`H-94` e `H-95`
-fecharam no mesmo dia**: a cor de cada célula virou fundo da tabela, e ela passou
-a mostrar as 16 colunas
-com o nome do cabeçalho, e a cor de cada célula como fundo. **`H-96` fica escrita
-e não executada**, por escolha do usuário, e a coluna descoberta — "coluna nova
-aparece sozinha" — foi pedida em 10/09 e **descartada em 11/09**, por `D-43`. Restam também as **três pendências abertas** abaixo,
+**`E16` nasceu em 16/09/2026 e é o único épico aberto** — `H-97` a `H-101`, de
+`D-44`. Ele é o primeiro que nasce de **usar** a tela, e não de plano, auditoria
+ou proposta: o usuário abriu a Operacional que `E15` entregou e os pedidos
+saíram do que ele viu. As quatro primeiras fecharam no mesmo dia — a tinta da
+célula pintada, o calendário que mudou de página, os parâmetros que deixaram de
+vazar para as outras seis telas, e o "Todas as linhas". **`H-101`, o autoajuste
+de largura de coluna, fica escrita e não executada**, por escolha do usuário.
+Restam também as **três pendências abertas** abaixo,
 e nenhuma bloqueia implementação: `PD-09` espera só uma decisão, `PD-08` a
 próxima sincronização da branch `distribuicao`, e `PD-07` se divide — a paleta
 nominal quer a máquina do operador, e o `ConflictDialog` quer uma fixture que
