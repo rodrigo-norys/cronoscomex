@@ -10,8 +10,9 @@ import { buildServer } from '../../src/http/server.ts'
  * Seis histórias fecharam com a mesma falha de plano: a regra entrou, e a fiação
  * que a entrega ficou de fora da lista de arquivos. `src/http/routes/indicators.ts`
  * foi esquecida **cinco vezes seguidas**, de `H-09` a `H-13`; `H-14` esqueceu o
- * registro da rota e o teste dela. `/fatia` pergunta e pega — mas custa uma
- * conversa por história, e só funciona enquanto alguém invoca a skill.
+ * registro da rota e o teste dela. `/abrir-historia` pergunta e pega — mas
+ * custa uma conversa por história, e só funciona enquanto alguém invoca a
+ * skill.
  *
  * Estas asserções não substituem o protocolo de fatia: o que ele pega é da outra
  * classe — `styleId` em vez de `fillId` em `H-27`, a chave vazia em `H-18`. Isso
@@ -581,6 +582,54 @@ describe('o CLAUDE.md menciona toda peça de .claude/', () => {
       claudeMd.includes(piece),
       `${piece} existe em .claude/ e o CLAUDE.md não a menciona — atualize o bloco ## Infraestrutura de agente`,
     ).toBe(true)
+  })
+})
+
+/**
+ * O nome de cada peça vive em DOIS lugares: o diretório da skill — ou o arquivo
+ * do subagente —, que é por onde o Claude Code a invoca, e o `name:` do
+ * frontmatter, que é como ela se anuncia na listagem. O frontmatter não é
+ * executado, então divergir não quebra nada na hora: a peça passa a ser chamada
+ * por um nome e a se apresentar por outro, e nada acusa.
+ *
+ * O modo de falha é renomear — `git mv` do diretório sem tocar no frontmatter,
+ * ou o inverso. A asserção acima cobre o elo com o `CLAUDE.md`; esta cobre o elo
+ * entre as duas fontes do nome. Sem lista fixa: a expectativa é o disco.
+ */
+function declaredNames(): { path: string; onDisk: string; declared: string }[] {
+  const found: { path: string; onDisk: string; declared: string }[] = []
+  const declaredIn = (file: string): string =>
+    /^name:\s*(.+)$/m.exec(readFileSync(file, 'utf-8'))?.[1]?.trim() ?? ''
+
+  if (existsSync('.claude/skills')) {
+    for (const entry of readdirSync('.claude/skills', { withFileTypes: true })) {
+      const file = `.claude/skills/${entry.name}/SKILL.md`
+      if (!entry.isDirectory() || !existsSync(file)) continue
+      found.push({ path: file, onDisk: entry.name, declared: declaredIn(file) })
+    }
+  }
+  if (existsSync('.claude/agents')) {
+    for (const file of readdirSync('.claude/agents')) {
+      if (!file.endsWith('.md')) continue
+      const path = `.claude/agents/${file}`
+      found.push({ path, onDisk: file.replace(/\.md$/, ''), declared: declaredIn(path) })
+    }
+  }
+
+  return found
+}
+
+const DECLARED = declaredNames()
+
+describe('o nome declarado por cada peça de .claude/ é o nome em disco', () => {
+  it('encontra as peças — âncora contra guarda verde por vacuidade', () => {
+    expect(DECLARED.length).toBeGreaterThan(5)
+  })
+
+  it.each(DECLARED)('$onDisk declara o próprio nome', ({ path, onDisk, declared }) => {
+    expect(declared, `${path} declara "name: ${declared}", mas é invocada como "${onDisk}"`).toBe(
+      onDisk,
+    )
   })
 })
 

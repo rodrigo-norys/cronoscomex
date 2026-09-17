@@ -86,7 +86,7 @@ Não re-derive isto; está medido.
 
 | Camada | Versão |
 |---|---|
-| Node | **22.23.2** LTS — fixado em `.nvmrc` e `engines` |
+| Node | **22.23.2** LTS em `.nvmrc`; `engines` aceita `>=22.12.0 <23` |
 | TypeScript | 7.0.2 (fallback declarado: 5.9.3, se a build falhar) |
 | Fastify | 5.12.1 |
 | fflate | 0.8.3 — leitura e escrita cirúrgica no zip |
@@ -114,13 +114,14 @@ tools/         apoio — perfilador da planilha (virada de ano), verificador
                portão, carga da planilha real e medição de tela num Chrome.
                Sem lista fechada: o cabeçalho de cada arquivo diz o que faz,
                e esta linha já esteve incompleta
-config/        app.json, color-map.json, status-aliases.json, e os dois mapas
-               de negocio de H-48 — client-map.json e team-map.json, nao
-               versionados, com `.exemplo` versionado ao lado
+config/        color-map.json e status-aliases.json, versionados; app.json e os
+               dois mapas de negócio de H-48 — client-map.json e team-map.json —
+               NÃO versionados, cada um com `.exemplo` versionado ao lado
 tests/         domain/, io/, app/, http/, repo/, tools/, fixtures/ — ambiente `node`
 web/tests/     componentes e casca — ambiente `jsdom`
-scripts/       a partida em Windows (iniciar.cmd), o dev, e a sincronizacao da
-               branch `distribuicao`
+scripts/       a partida em Windows (iniciar.cmd), o dev, a sincronização da
+               branch `distribuicao`, e os apoios de porta e diagnóstico.
+               Sem lista fechada, como tools/
 docs/          o plano — os 11 numerados, mais adr/, e as auditorias que
                geraram os épicos posteriores
 ```
@@ -134,18 +135,19 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**100 das 101 histórias estão concluídas**, e o épico aberto é `E16`. O que cada uma aprendeu — número medido,
-defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
-`docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
-em aberto. **Este bloco diz só o que está aberto.**
+**100 das 101 histórias estão concluídas**, e o épico aberto é `E16`. O que
+cada uma aprendeu — número medido, defeito encontrado, decisão tomada — está
+no bloco `✅ CONCLUÍDA` dela em `docs/06-backlog.md`, e é lá que se procura
+antes de reabrir decisão que pareça em aberto. **Este bloco diz só o que está
+aberto.**
 
-**`E9` a `E12` fecharam em 01/09/2026, `E13` em 03/09/2026, e `E14` e `E15` em
-16/09/2026** — `E14` com `H-91`, o mapa de equipe operável pela tela; `E15` com
-`H-93` a `H-95`, que tiraram o significado da cor e levaram a tabela às 16
-colunas da planilha. **`H-96` fechou em 17/09/2026**, reaberta por ordem do
-usuário depois de seis dias fora da fila: o cabeçalho passa a ser **conferido**
-contra a linha 1, a leitura avisa e não recusa, e a **escrita** recusa quando
-uma coluna mudou de lugar.
+**`E9` a `E12` fecharam em 01/09/2026, `E13` em 03/09/2026, `E14` em 16/09/2026
+e `E15` em 17/09/2026** — `E14` com `H-91`, o mapa de equipe operável pela
+tela; `E15` com `H-93` a `H-96`, que tiraram o significado da cor e levaram a
+tabela às 17 colunas — as 16 da aba, mais a Categoria. **`H-96` fechou o
+épico**, reaberta por ordem do usuário depois de seis dias fora da fila: o
+cabeçalho passa a ser **conferido** contra a linha 1, a leitura avisa e não
+recusa, e a **escrita** recusa quando uma coluna mudou de lugar.
 
 **`E16` nasceu em 16/09/2026 e é o único épico aberto** — `H-97` a `H-101`, de
 `D-44`. Ele é o primeiro que nasce de **usar** a tela, e não de plano, auditoria
@@ -177,11 +179,11 @@ cujos 14 achados foram todos resolvidos ou declarados não normativos.
 **A medição no navegador é `tools/medir-navegador.mjs`**, versionada em
 01/09/2026 depois de ser reconstruída do zero em duas sessões. Ela sobe a
 aplicação sobre uma fixture, com todos os caminhos de escrita num diretório
-temporário — são oito destinos, enumerados no cabeçalho do próprio arquivo —, e mede num Chrome real por CDP — largura, contraste com `oklch`
-resolvido pelo navegador, paradas de tabulação, `forced-colors`,
-`prefers-color-scheme`, `prefers-reduced-motion`, o apontador com cursor e a
-fonte-base do cenário "Muito grande". Rode com
-`LOG_LEVEL=silent` e depois de `npm run build`.
+temporário — são oito destinos, enumerados no cabeçalho do próprio arquivo —,
+e mede num Chrome real por CDP — largura, contraste com `oklch` resolvido pelo
+navegador, paradas de tabulação, `forced-colors`, `prefers-color-scheme`,
+`prefers-reduced-motion`, o apontador com cursor e a fonte-base do cenário
+"Muito grande". Rode com `LOG_LEVEL=silent` e depois de `npm run build`.
 
 > **Para N cenários, use `medirCenarios`** — ela pede a porta ao SO, espera o
 > carregamento e fecha a aplicação. Montar o preâmbulo à mão custou oito scripts
@@ -243,8 +245,8 @@ do uso. Nada aqui repete o que está lá — abra quando a linha disser.
   encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` da história em
   `docs/06-backlog.md`. Abra antes de reabrir decisão que pareça em aberto.
 - **Regra de tela:** `/nova-pagina`. **Regra de indicador ou alerta:**
-  `/novo-indicador`. A `/fatia` despacha para a certa por teste textual na lista
-  de arquivos.
+  `/novo-indicador`. A `/abrir-historia` despacha para a certa por teste textual
+  na lista de arquivos.
 - **Invariante de um módulo:** cabeçalho do próprio arquivo em `src/`.
 - **Por que uma guarda existe:** cabeçalho do próprio script, hook, workflow ou
   teste.
@@ -304,7 +306,7 @@ invocada** — é lá que mora o porquê de cada regra, sem custar contexto aqui
 
 | Skill | Conduz |
 |---|---|
-| `/fatia H-NN` | abre a história com contrato e casos-limite; confere a lista de arquivos e **despacha** para a skill certa |
+| `/abrir-historia H-NN` | abre a história com contrato e casos-limite; confere a lista de arquivos e **despacha** para a skill certa |
 | `/nova-pagina` | uma página, pelo padrão de `H-16` a `H-20` |
 | `/novo-indicador IND-NN` | um indicador pelas quatro camadas: domínio → teste → rota → planilha real |
 | `/fechar-historia H-NN` | o portão, a *definition of done*, os três documentos e a prova |
@@ -314,12 +316,13 @@ invocada** — é lá que mora o porquê de cada regra, sem custar contexto aqui
 **Subagentes** (`.claude/agents/`). `revisor-xml` é o revisor adversarial da
 escrita cirúrgica: invocado **antes de commitar** qualquer mudança em
 `src/io/xlsx-surgeon.ts`, `src/app/write-guard.ts` ou em código que reescreva
-bytes do `.xlsx` — `H-24` a `H-27` e `H-78`, a criação de linha. Não tem `Edit` nem `Write`, e é
-invocado **sem** o raciocínio de quem escreveu o código: começar cego é o
-mecanismo, não um efeito colateral. Enumera os casos-limite do backlog a cada
-invocação, em vez de carregar cópia deles. **`model: opus` fixado, não
-herdado** — herdar faria a revisão de maior consequência do projeto cair de
-nível em silêncio quando a sessão que a invoca estiver em outro modelo.
+bytes do `.xlsx` — `H-24` a `H-27` e `H-78`, a criação de linha. Não tem
+`Edit` nem `Write`, e é invocado **sem** o raciocínio de quem escreveu o
+código: começar cego é o mecanismo, não um efeito colateral. Enumera os
+casos-limite do backlog a cada invocação, em vez de carregar cópia deles.
+**`model: opus` fixado, não herdado** — herdar faria a revisão de maior
+consequência do projeto cair de nível em silêncio quando a sessão que a invoca
+estiver em outro modelo.
 
 `revisor-estilo` revisa a estilização das sete páginas contra o corpus
 verificável de `docs/estilizacao/corpus-estilo.md` — 40 regras com identificador
@@ -387,8 +390,8 @@ casa o glob, e o hook `InstructionsLoaded` chega a expor `load_reason: compact`.
 O que não sobrevive é o disparo sem leitura. **O gatilho é `Read`, não `Write`**,
 e isso é limitação medida, não escolha: criar arquivo novo em `scripts/` não
 carrega `operacao-windows.md` (issue #23478 do `claude-code`). Editar carrega,
-porque o harness exige `Read` antes de `Edit`. Quem garante é a asserção em `tests/repo/`. Regra
-inviolável não vai para cá.
+porque o harness exige `Read` antes de `Edit`. Quem garante é a asserção em
+`tests/repo/`. Regra inviolável não vai para cá.
 
 **Hooks** (`.claude/hooks/`). `guard-dados-sensiveis.sh` (`PreToolUse`) bloqueia
 o que pode publicar dado de cliente e falha **fechado**.
@@ -464,15 +467,16 @@ trocar versão sem motivo registrado.
 
 **Guarda de contrato:** `tests/repo/contratos.test.ts` e
 `web/tests/paginas-montadas.test.tsx`, no `verify` e no CI. **Sem número aqui**
-— ele dizia sete e os dois arquivos somam 22 blocos `it()`, contando âncoras.
+— ele dizia sete e os dois arquivos somam 23 blocos `it()`, contando âncoras.
 Nenhuma asserção tem lista fixa: rota sem teste, contrato de `GET /api/indicators`
 divergindo do documento, história `✅ CONCLUÍDA` sem página montada, peça de
-`.claude/` que o `CLAUDE.md` não menciona, **âncora morta em comentário** — ID
+`.claude/` que o `CLAUDE.md` não menciona, **nome de peça divergindo entre o
+diretório e o `name:` do frontmatter**, **âncora morta em comentário** — ID
 do plano, caminho de arquivo ou identificador em camelCase — e **gatilho de
 reavaliação de `D-16` atingido sem registro** reprovam a suíte. **Rota
 documentada e não servida NÃO é coberta** — esta linha afirmou que era até
-17/08/2026, enquanto o cabeçalho do próprio teste dizia o contrário. **A guarda não substitui a fatia;
-libera a atenção dela.**
+17/08/2026, enquanto o cabeçalho do próprio teste dizia o contrário.
+**A guarda não substitui a fatia; libera a atenção dela.**
 
 **Guarda de documentação:** `tests/repo/documentacao.test.ts`, desde 11/09/2026.
 Os dois acima guardam o eixo **documento↔código**; este guarda o outro —
@@ -532,7 +536,7 @@ A estrutura `.claude/` foi deliberadamente mantida mínima. Skill e subagent
 escritos antes de existir repetição observada viram adivinhação do próprio
 processo e são abandonados. Os gatilhos abaixo são objetivos.
 
-| Gatilho | O que criar | Por quê agora e não antes |
+| Gatilho | O que criar | Por que agora e não antes |
 |---|---|---|
 | ~~**Ao concluir `H-13`**~~ | ~~Skill `novo-indicador`~~ | ✅ **Criada em 06/08/2026**, ao fechar `H-13`. Saiu da repetição real de `H-09` a `H-13`, com o formato já estabilizado — e com a omissão sistemática da rota como motivo principal |
 | ~~**Antes de iniciar a Fase 3** (`H-24`)~~ | ~~Subagent de review para manipulação de XML~~ | ✅ **Criado em 11/08/2026** como `revisor-xml`, antes da primeira linha de `H-24`. `H-24` tem **11** casos-limite — 8 no plano original, mais 3 que a própria revisão acrescentou (linha auto-fechada, célula ausente recebendo data, fórmula compartilhada) — e o custo de errar é a planilha da empresa. **Pagou-se na primeira invocação**: reprovou por dois defeitos reais, um deles gerando XML malformado, o outro reproduzindo A-56 no caso mais provável |
@@ -556,7 +560,7 @@ processo e são abandonados. Os gatilhos abaixo são objetivos.
 
 ```bash
 nvm use             # Node 22.23.2, conforme .nvmrc
-npm run verify      # portas + guard + dados-sensiveis + strip-types + lint + typecheck + test + build
+npm run verify      # o portão inteiro — a ORDEM está em scripts.verify, no package.json
 npm test            # Vitest
 npm run dev         # servidor (5173) + interface (5174), no mesmo terminal
 npm run dev:server  # só a API, em 5173
@@ -603,8 +607,8 @@ um defeito do plano ainda custa uma conversa em vez de um retrabalho. Foi
 assim que o erro de `H-27` (trocar `styleId` em vez de `fillId`) apareceu antes
 de virar código.
 
-Use **`/fatia H-NN`**: a skill monta o gabarito já com o contrato da história,
-os casos-limite obrigatórios e as linhas da rastreabilidade.
+Use **`/abrir-historia H-NN`**: a skill monta o gabarito já com o contrato da
+história, os casos-limite obrigatórios e as linhas da rastreabilidade.
 
 Regras do protocolo:
 
