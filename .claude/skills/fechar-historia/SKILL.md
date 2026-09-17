@@ -40,6 +40,19 @@ argument-hint: '[H-NN]'
    de execução — `grep` devolveu 273 onde o Vitest reportava 279. É aqui que o
    número mora, e só aqui.
 
+   **E este campo é o ÚLTIMO a se escrever, depois do portão final.** Medido em
+   `H-96`, 17/09/2026: ele errou **quatro vezes** antes de fechar, e três delas
+   porque a correção de um achado da revisão acrescentava teste e invalidava o
+   número já corrigido na rodada anterior. Escrever antes do último portão
+   garante reincidência, e guarda nenhuma o alcança —
+   `tests/repo/documentacao.test.ts` cobra o total de **histórias** afirmado em
+   prosa, não a contagem da suíte.
+
+   **Contar blocos `it(` também erra**, e foi o que produziu um dos quatro: um
+   `it.each`, ou um `it` dentro de laço, faz um bloco render N testes. O total do
+   Vitest é o único, e o número de ARQUIVOS muda junto — diga de quanto para
+   quanto nos dois.
+
 4. **Rastreabilidade.** Atualize o `Status` de cada linha de
    `docs/09-rastreabilidade.md` que cite a história.
 
