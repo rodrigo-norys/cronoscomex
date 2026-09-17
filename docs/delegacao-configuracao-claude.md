@@ -109,7 +109,7 @@ sessão inteira perdida investigando um `bad option`.
 `CLAUDE.md`. Ramo **R6** (atrito sobre operação segura, frequente, de escopo
 estreito) + **R5** (fato invariante que muda decisão em qualquer sessão).
 
-### M-2 · Skill `/fatia` — abrir uma história
+### M-2 · Skill `/abrir-historia` — abrir uma história
 
 **Tarefa:** o protocolo de fatia, obrigatório antes da primeira linha de código
 de **cada** história (`CLAUDE.md:192-237`; `docs/10-governanca.md:79`, primeiro
@@ -197,7 +197,7 @@ hoje nessa condição frágil:
 
 | Instrução recorrente | Onde vive hoje | Sobrevive? | O que resolve |
 |---|---|---|---|
-| **O contrato fixado da história em execução** (assinaturas, rota, schema) — `docs/06-backlog.md` | Saída de `Read` no histórico | **Não.** Vira resumo | **M-2** (`/fatia` injeta e é reinjetada) |
+| **O contrato fixado da história em execução** (assinaturas, rota, schema) — `docs/06-backlog.md` | Saída de `Read` no histórico | **Não.** Vira resumo | **M-2** (`/abrir-historia` injeta e é reinjetada) |
 | **Os casos-limite obrigatórios da história** — `docs/08-qualidade-operacao.md:60-115`, 43 casos com valor concreto | Saída de `Read` no histórico | **Não** | **M-2** |
 | **Correções que o usuário dá no meio da fatia** (a classe do erro de `H-27`, `styleId` × `fillId`) | Só no chat | **Não** | Escrever no `CLAUDE.md` (foi o que o projeto fez) ou na memória automática. Não há mecanismo que salve isso sozinho |
 | As 10 regras invioláveis, a tabela de stack, os fatos medidos, o bloco `## Estado`, as 5 regras do protocolo | `CLAUDE.md` da raiz | **Sim** — reinjetado do disco | Nada a fazer |
@@ -420,7 +420,7 @@ inclusive nas de leitura e depuração, para um procedimento que só se aplica a
 iniciar história); a tabela de sobrevivência à compactação (§2.1); o caminho
 crítico de 18 sessões (`docs/07-plano-entrega.md:145`).
 
-**Mecanismo:** skill `.claude/skills/fatia/SKILL.md`, com injeção de contexto
+**Mecanismo:** skill `.claude/skills/abrir-historia/SKILL.md`, com injeção de contexto
 dinâmico trazendo (a) a seção da história em `06-backlog.md`, (b) as linhas de
 `08` §1.3 atribuídas àquela história, (c) as linhas de `09-rastreabilidade.md`
 que a citam. **Condição inseparável:** remover as l. 202–226 do `CLAUDE.md` no
@@ -612,7 +612,7 @@ com H-12 em seguida — **não criar ainda**.
 
 | Risco | Como foi tratado |
 |---|---|
-| `/fatia` duplicar o `CLAUDE.md` | A proposta **é** mover, não copiar. A remoção das l. 193–217 é **condição de adoção**, não sugestão. Adotar a skill sem remover o gabarito torna o item **net-negativo** — está escrito assim no artefato |
+| `/abrir-historia` duplicar o `CLAUDE.md` | A proposta **é** mover, não copiar. A remoção das l. 193–217 é **condição de adoção**, não sugestão. Adotar a skill sem remover o gabarito torna o item **net-negativo** — está escrito assim no artefato |
 | `/fechar-historia` virar capacidade sem conferência | A skill **termina imprimindo três `grep`** que são o critério de aceite. Sem eles o item não passaria na lei de conservação |
 | `/verificar-rota` como invólucro fino | **Cortada.** Sobraram só as três regras de permissão (LAC-4) |
 | Skill `novo-indicador` antecipada | **Cortada.** O gatilho do projeto (`CLAUDE.md:247`) é a conclusão de `H-13`; observadas 3 das 5 repetições |
@@ -634,7 +634,7 @@ de cada linha · **C** = custo de criar e manter, em linhas de arquivo ·
 | # | Item | Componente | Ramo | R (método) | C | Razão | Depende de |
 |---|---|---|---|---|---|---|---|
 | **1** | `Bash(nvm use)` + 1 linha no `CLAUDE.md` (LAC-1) | AUTORIZAR + CORRIGIR + ESPECIFICAR | R6 + R5 | **≥ 20** diálogos (1 por história restante) + 1 classe de diagnóstico errado | 2 | ~10 | — |
-| **2** | Skill `/fatia` (LAC-2) | ESPECIFICAR | R2 | **20** aberturas × (3 documentos que o usuário deixa de apontar) + sobrevivência à compactação | 55 (e **−25** no `CLAUDE.md`) | ~0,7 | edição do `CLAUDE.md` |
+| **2** | Skill `/abrir-historia` (LAC-2) | ESPECIFICAR | R2 | **20** aberturas × (3 documentos que o usuário deixa de apontar) + sobrevivência à compactação | 55 (e **−25** no `CLAUDE.md`) | ~0,7 | edição do `CLAUDE.md` |
 | **3** | Skill `/fechar-historia` (LAC-3) | VERIFICAR | R3 | **20** fechamentos × 8 itens conferidos à mão, mais o defeito observado em `H-06` | 45 | ~3,6 (por item de DoD) | item 1 |
 | **4** | 3 regras de `curl` em loopback (LAC-4) | VERIFICAR + AUTORIZAR | R6 | **≥ 6** diálogos + fecha o laço de conferência contra o arquivo real | 3 | ~2,0 | **P-2** (porta real) |
 | **5** | 4 regras de `Edit` em código, teste e docs (LAC-5) | AUTORIZAR | R6 | **≥ 18** diálogos (piso); teto desconhecido | 4 | ≥ 4,5, mas **com incerteza declarada** | `deny Edit` da auditoria anterior; confiança de workspace |
@@ -667,7 +667,7 @@ sessão.
 |---|---|
 | Remover o gabarito do `CLAUDE.md` (l. 202–226) | **−25 linhas** |
 | Acrescentar 1 linha no bloco de comandos (LAC-1) | +1 linha |
-| `description` de `/fatia` na listagem de skills | +1 linha (teto de 1.536 caracteres somando `description` e `when_to_use`) |
+| `description` de `/abrir-historia` na listagem de skills | +1 linha (teto de 1.536 caracteres somando `description` e `when_to_use`) |
 | `description` de `/fechar-historia` | +1 linha |
 | Corpos das duas skills | **0** — carregam sob demanda |
 | Regras de permissão | **0** — não são contexto |
@@ -753,22 +753,22 @@ Substitua `5173` pela porta real de `config/app.json` (pergunta **P-2**).
 "Bash(npm run lint:fix)"
 ```
 
-### 8.2 `.claude/skills/fatia/SKILL.md`
+### 8.2 `.claude/skills/abrir-historia/SKILL.md`
 
-**Destino:** `.claude/skills/fatia/SKILL.md` (o nome do comando vem do nome do
-**diretório**: `/fatia`).
+**Destino:** `.claude/skills/abrir-historia/SKILL.md` (o nome do comando vem do nome do
+**diretório**: `/abrir-historia`).
 **Condição de adoção — inseparável:** remover as linhas **202–226** do
 `CLAUDE.md` (o bloco ` ```markdown … ``` `), mantendo lá o cabeçalho da seção
 (l. 192), a frase de gatilho e as 5 regras do protocolo (l. 228–237),
-acrescentando à regra 1 a menção a `/fatia`. **Adotar a skill sem remover o
+acrescentando à regra 1 a menção a `/abrir-historia`. **Adotar a skill sem remover o
 gabarito produz duplicação entre skill e `CLAUDE.md` — o anti-padrão — e piora
 o problema.**
 
 ````markdown
 ---
-name: fatia
+name: abrir-historia
 description: Abre uma história do backlog do CronosComex montando o checklist do protocolo de fatia, com o contrato fixado, os critérios de aceite e os casos-limite obrigatórios já embutidos. Use ao iniciar qualquer história H-NN, antes de escrever a primeira linha de código.
-when_to_use: Quando o usuário disser "vamos para a H-11", "iniciar H-12", "próxima história" ou invocar /fatia H-NN.
+when_to_use: Quando o usuário disser "vamos para a H-11", "iniciar H-12", "próxima história" ou invocar /abrir-historia H-NN.
 argument-hint: [H-NN]
 ---
 
@@ -998,7 +998,7 @@ segurança). Nada mais deste projeto se beneficia de execução sem o usuário.
 | Conteúdo de `data/**` | **Não inspecionado por política vigente** (`settings.json:27`). Nem o conteúdo, nem a listagem de nomes | Nada deste diagnóstico depende disso |
 | Conteúdo de `CONTROLE DOS EMBARQUE.xlsx`, `planilha1.jpeg`, `planilha2.jpeg` | **Não abertos por decisão** — nenhuma regra os protege, mas contêm dado de cliente | Nada aqui depende disso |
 | A suíte não foi executada | O build escreve em `dist/` e o teste de log plausivelmente escreve em `data/` — o enunciado proíbe alterar o estado do repositório | (a) A legibilidade da saída de falha do portão é **inferida** da configuração das três ferramentas, não observada. (b) A divergência de **6 casos** entre a contagem estática (273) e o `CLAUDE.md:112` (279) fica sem explicação. A mesma diferença de 6 aparecia antes de `H-11` (246 × 252), o que sugere origem estrutural — provavelmente casos gerados por laço ou `describe` aninhado — e não deriva de nenhuma história |
-| Se `$ARGUMENTS` é substituído **antes** de o comando de contexto dinâmico `` !`…` `` executar | A página de skills descreve as duas mecânicas separadamente e não declara a ordem entre elas | Afeta o artefato 8.2. **Teste de 30 segundos:** criar a skill e rodar `/fatia H-11`. Se o bloco vier vazio, aplicar o plano B escrito no próprio artefato |
+| Se `$ARGUMENTS` é substituído **antes** de o comando de contexto dinâmico `` !`…` `` executar | A página de skills descreve as duas mecânicas separadamente e não declara a ordem entre elas | Afeta o artefato 8.2. **Teste de 30 segundos:** criar a skill e rodar `/abrir-historia H-11`. Se o bloco vier vazio, aplicar o plano B escrito no próprio artefato |
 | Se o "não pergunte novamente" de modificação de arquivo vale por arquivo ou por sessão | A tabela de `/docs/pt/permissions#permission-system` diz apenas *"Até o final da sessão"* | Afeta a magnitude da LAC-5 — por isso ela está em 5º e não em 2º |
 | Se as regras `allow` de `.claude/settings.json` estão **em vigor hoje** | Dependem de o diálogo de confiança do workspace ter sido aceito. Sem `.git`, a confiança é indexada pelo diretório de lançamento. Não é observável de dentro da sessão | Se não foram aceitas, **nenhuma** das 19 entradas está valendo e todo o custo AUTORIZAR medido está subestimado. Verificável pelo usuário com `/permissions` |
 | Páginas `/docs/pt/slash-commands` e `/docs/pt/commands` | **Duas tentativas de leitura falharam** (`Command failed with no output`) | Os fatos sobre comandos personalizados vêm da página de skills, que declara a fusão e a referência de frontmatter comum. Nenhuma afirmação sobre comandos depende exclusivamente das páginas não lidas |
@@ -1050,7 +1050,7 @@ Cada uma muda o roteiro. Em ordem de impacto.
 - **Consequência de não responder:** o item 4 do roteiro fica bloqueado, e T-4
   continua sendo a única tarefa do projeto sem laço de verificação próprio.
 
-### P-3 — Aceita mover as 25 linhas do gabarito do `CLAUDE.md` para a skill `/fatia`?
+### P-3 — Aceita mover as 25 linhas do gabarito do `CLAUDE.md` para a skill `/abrir-historia`?
 
 - **Recomendado: sim**, mantendo no `CLAUDE.md` a frase de gatilho e as 5 regras
   do protocolo. O `CLAUDE.md` cai de 261 para ~236 linhas, mais perto do alvo

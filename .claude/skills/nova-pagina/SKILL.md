@@ -1,7 +1,7 @@
 ---
 name: nova-pagina
-description: Conduz uma página do CronosComex pelo padrão que `H-16` a `H-20` estabeleceram — hook com os quatro estados, filtros globais anexados, estado vazio afirmativo, nada calculado no cliente, montagem na casca e o stub estendido. Carrega as seis omissões medidas, cada uma com a história em que mordeu. Use ao implementar qualquer página nova, DEPOIS de `/fatia H-NN`.
-when_to_use: Quando o usuário disser "implementa a Página Histórico", "falta a tela de X", "cria a página do detalhe" ou invocar /nova-pagina. Dentro de uma história, use depois de /fatia H-NN — a fatia abre a história, esta skill conduz a página dela.
+description: Conduz uma página do CronosComex pelo padrão que `H-16` a `H-20` estabeleceram — hook com os quatro estados, filtros globais anexados, estado vazio afirmativo, nada calculado no cliente, montagem na casca e o stub estendido. Carrega as seis omissões medidas, cada uma com a história em que mordeu. Use ao implementar qualquer página nova, DEPOIS de `/abrir-historia H-NN`.
+when_to_use: Quando o usuário disser "implementa a Página Histórico", "falta a tela de X", "cria a página do detalhe" ou invocar /nova-pagina. Dentro de uma história, use depois de /abrir-historia H-NN — ela abre a história, esta skill conduz a página dela.
 argument-hint: '[H-NN]'
 ---
 

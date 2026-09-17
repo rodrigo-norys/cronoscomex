@@ -1,7 +1,7 @@
 ---
 name: novo-indicador
 description: Abre um indicador IND-NN do CronosComex com o ciclo completo já montado — função pura no domínio, teste com os valores da tabela de decisão, campo no contrato de GET /api/indicators e a conferência contra a planilha real. Carrega as armadilhas medidas em H-09 a H-13, para que não sejam redescobertas. Use ao implementar qualquer indicador novo.
-when_to_use: Quando o usuário disser "implementa o IND-14", "falta o indicador de X", "acrescenta o campo na rota de indicadores" ou invocar /novo-indicador IND-NN. Dentro de uma história, use DEPOIS de /fatia H-NN — a fatia abre a história, esta skill conduz cada indicador dela.
+when_to_use: Quando o usuário disser "implementa o IND-14", "falta o indicador de X", "acrescenta o campo na rota de indicadores" ou invocar /novo-indicador IND-NN. Dentro de uma história, use DEPOIS de /abrir-historia H-NN — ela abre a história, esta skill conduz cada indicador dela.
 argument-hint: '[IND-NN]'
 ---
 

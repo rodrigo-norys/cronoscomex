@@ -304,13 +304,14 @@ const PALHEIRO = [
  * conferida em `contratos.test.ts` — é a única que nunca esteve errada. Das
  * demais, **duas estavam erradas quando esta asserção foi escrita**, em
  * 11/09/2026: `README.md` dizia "89 das 91 histórias" e
- * `.claude/skills/fatia/SKILL.md` dizia "11 das 90 histórias", contra 91 de 96.
+ * `.claude/skills/abrir-historia/SKILL.md` dizia "11 das 90 histórias", contra
+ * 91 de 96.
  * A segunda é a que pesa: a skill que conduz a história, e que manda copiar do
  * plano "copiados, não inventados", mentia sobre o tamanho do plano.
  *
  * **`.claude/` está no palheiro de propósito:** a peça que conduz a história é
- * a que menos pode mentir sobre o backlog, porque a `/fatia` manda copiar do
- * plano, "copiados, não inventados".
+ * a que menos pode mentir sobre o backlog, porque a `/abrir-historia` manda
+ * copiar do plano, "copiados, não inventados".
  *
  * A forma casada é estreita — `N das M histórias` —, e é isso que a torna
  * segura: ela só casa afirmação sobre o conjunto vigente, nunca número

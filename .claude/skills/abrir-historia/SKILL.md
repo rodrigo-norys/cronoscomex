@@ -1,7 +1,7 @@
 ---
-name: fatia
+name: abrir-historia
 description: Abre uma história do backlog do CronosComex montando o checklist do protocolo de fatia, com o contrato fixado, os critérios de aceite e os casos-limite obrigatórios já embutidos. Use ao iniciar qualquer história H-NN, antes de escrever a primeira linha de código.
-when_to_use: Quando o usuário disser "vamos para a H-12", "iniciar H-13", "próxima história" ou invocar /fatia H-NN.
+when_to_use: Quando o usuário disser "vamos para a H-12", "iniciar H-13", "próxima história" ou invocar /abrir-historia H-NN.
 argument-hint: '[H-NN]'
 ---
 

@@ -21,7 +21,7 @@ do repositório (sem `git init`, sem `npm install`, sem execução da suíte).
 > **Aplicado:** `git init -b main` sem remote · `.gitignore` +2 entradas ·
 > `settings.json` reescrito (12 `allow` · 3 `ask` · 13 `deny` ·
 > `disableBypassPermissionsMode`) · hook `PreToolUse` com 27 casos de regressão ·
-> skills `/fatia` e `/fechar-historia` · `CLAUDE.md` de 261 → **239 linhas**.
+> skills `/abrir-historia` e `/fechar-historia` · `CLAUDE.md` de 261 → **239 linhas**.
 > `npm run verify` passa: 20 arquivos, **279 testes**, build OK, sob Node
 > `v22.23.2`.
 >
@@ -59,7 +59,7 @@ do repositório (sem `git init`, sem `npm install`, sem execução da suíte).
 > têm valor literal verificável e **15 de 15 estão cobertos**; 12 expressam o
 > valor em prosa. Um verificador mecânico enxergaria 56% e erraria 1 em 15.
 > **Veredito mantido: lacuna nomeada, sem peça** — agora por medição, não por
-> julgamento. Mitigação de graça: `/fatia` lista os casos da história e
+> julgamento. Mitigação de graça: `/abrir-historia` lista os casos da história e
 > `/fechar-historia` pergunta por eles.
 >
 > **Não aplicado, e por quê:** as três regras de `curl` em loopback (Onda 1) —
@@ -95,7 +95,7 @@ mentalmente, algo concreto se perde.
 | **2** | `.claude/settings.json` consolidado (auditoria §8.1 **+** `Bash(nvm use)`) | **PR-01** (Node errado), **PR-06** (perfilador pré-autorizado despeja credenciais), **PR-07** (`git add *` anula o `.gitignore`), **PR-08** (regras param de casar em outra máquina) | Regra de permissão — ramo **R6** | 0 |
 | **3** | Hook `PreToolUse` `guard-dados-sensiveis.sh` | **PR-06**, **PR-07**, **PR-09** (redirecionamento escreve sob regra de aparência somente-leitura) | Hook — ramo **R1**: determinístico e obrigatório | 0 |
 | **4** | Change-set do `CLAUDE.md` (3 fatos invariantes) | **PR-01**, **PR-05**, **PR-06** — o agente age errado por **não saber** que o Node precisa de prefixo, que não há desfazer, e que o repositório será publicado | `CLAUDE.md` — ramo **R5**, por exceção | 0 |
-| **5** | Skill `/fatia` + remoção de 25 linhas do `CLAUDE.md` | **PR-02** — o contrato da história não sobrevive à compactação; `CLAUDE.md` a 261 linhas contra alvo de 200 | Skill — ramo **R2** | 1 |
+| **5** | Skill `/abrir-historia` + remoção de 25 linhas do `CLAUDE.md` | **PR-02** — o contrato da história não sobrevive à compactação; `CLAUDE.md` a 261 linhas contra alvo de 200 | Skill — ramo **R2** | 1 |
 | **6** | Skill `/fechar-historia` | **PR-03** — *definition of done* de 8 itens × 3 documentos, 20 repetições restantes, **1 falha medida em 12** | Skill — ramo **R3** | 1 |
 
 **Saldo de contexto fixo: negativo** (≈ −20 linhas). Nenhuma peça aumenta o que
@@ -451,7 +451,7 @@ não entra.
    (T2); ROCm, `skills/` versionado (T3).
 2. **Premissa:** o procedimento repete o bastante para amortizar o arquivo **e**
    o formato já estabilizou.
-3. **Vale aqui?** **Sim para duas, não para as outras.** `/fatia`: 20 repetições
+3. **Vale aqui?** **Sim para duas, não para as outras.** `/abrir-historia`: 20 repetições
    restantes, formato fixado no `CLAUDE.md`. `/fechar-historia`: 12 execuções
    feitas, 20 restantes, **1 falha medida**. `novo-indicador`: 3 de 5
    repetições, e `H-11` **já divergiu do ciclo previsto** ao extrair
@@ -756,7 +756,7 @@ estreita → regra de permissão.
 
 ---
 
-### Peça 5 · Skill `/fatia` (**+ remoção de 25 linhas do `CLAUDE.md`**)
+### Peça 5 · Skill `/abrir-historia` (**+ remoção de 25 linhas do `CLAUDE.md`**)
 
 - **Problema:** **PR-02**.
 - **Prática:** **MP-2** e **MP-8**, ambas quórum ✅. Vereditos: ADAPTAR; ADOTAR.
@@ -766,7 +766,7 @@ estreita → regra de permissão.
   (T1 `context-window`). Não é `CLAUDE.md` porque só se aplica ao abrir história
   e custaria 46 linhas em ~18 sessões. Não é subagent porque o produto é o
   contrato **na conversa principal**, onde a implementação acontece.
-- **Gatilho:** `/fatia H-NN`, ou pela `description` quando o usuário disser
+- **Gatilho:** `/abrir-historia H-NN`, ou pela `description` quando o usuário disser
   "vamos para a H-12".
 - **Entrada/saída:** entrada — `H-NN`. Saída — a seção do backlog, os
   casos-limite atribuídos, as linhas da rastreabilidade, e o gabarito a
@@ -874,7 +874,7 @@ Cada peça do conjunto mínimo, removida mentalmente:
 | Peça 2 (settings) | O perfilador segue pré-autorizado contra a regra inviolável 10; o portão segue rodando na versão errada; as proteções seguem quebrando em `H-30`. **Perde-se muito** |
 | Peça 3 (hook) | G2 perde **o único controle** sobre string de comando composto, redirecionamento e `git add -f`. Tudo o mais vira intenção. **Perde-se muito** |
 | Peça 4 (`CLAUDE.md`) | A peça 2 dá a permissão de `nvm use` mas nada diz ao agente para usá-la; o agente segue assumindo que existe desfazer. **Perde-se muito** |
-| Peça 5 (`/fatia`) | O contrato segue exposto à compactação e o `CLAUDE.md` segue crescendo. **Perde-se muito** |
+| Peça 5 (`/abrir-historia`) | O contrato segue exposto à compactação e o `CLAUDE.md` segue crescendo. **Perde-se muito** |
 | Peça 6 (`/fechar-historia`) | O defeito medido em `H-06` se repete, 20 vezes de oportunidade. **Perde-se muito** |
 | `Edit(/src/**)` etc. | Mais diálogos. **Nada quebra** → corretamente **fora** do mínimo |
 | Regras de `curl` | A conferência segue manual. **Nada regride** → corretamente **fora** do mínimo |
@@ -1101,14 +1101,14 @@ O perfilador **não** é comando de rotina. Só na virada de ano, sob a regra 11
 > justificativa (passa a haver `git revert`) mas **mantém a segunda** — o
 > checkpoint continua sem alcançar subprocesso. Manter o texto como está.
 
-### 9.5 `.claude/skills/fatia/SKILL.md`
+### 9.5 `.claude/skills/abrir-historia/SKILL.md`
 
-**Destino:** `.claude/skills/fatia/SKILL.md` — o nome do comando vem do nome do
-**diretório**: `/fatia`.
+**Destino:** `.claude/skills/abrir-historia/SKILL.md` — o nome do comando vem do nome do
+**diretório**: `/abrir-historia`.
 **Condição inseparável:** remover do `CLAUDE.md` as 25 linhas do bloco
 ` ```markdown … ``` ` do protocolo de fatia, mantendo lá o cabeçalho da seção, a
 frase de gatilho e as 5 regras do protocolo, e acrescentando à regra 1 a menção
-a `/fatia`.
+a `/abrir-historia`.
 
 Campos obrigatórios segundo `/docs/pt/skills` (04/08/2026): **nenhum campo de
 frontmatter é obrigatório**; `description` é *recomendada* e é o que faz o Claude
@@ -1116,9 +1116,9 @@ carregar a skill sozinho.
 
 ````markdown
 ---
-name: fatia
+name: abrir-historia
 description: Abre uma história do backlog do CronosComex montando o checklist do protocolo de fatia, com o contrato fixado, os critérios de aceite e os casos-limite obrigatórios já embutidos. Use ao iniciar qualquer história H-NN, antes de escrever a primeira linha de código.
-when_to_use: Quando o usuário disser "vamos para a H-12", "iniciar H-13", "próxima história" ou invocar /fatia H-NN.
+when_to_use: Quando o usuário disser "vamos para a H-12", "iniciar H-13", "próxima história" ou invocar /abrir-historia H-NN.
 argument-hint: [H-NN]
 ---
 
@@ -1290,7 +1290,7 @@ Bloco `sandbox` em `.claude/settings.local.json` → `docs/auditoria-configuraca
 | A suíte de testes não foi executada | O build escreve em `dist/` e o teste de log plausivelmente escreve em `data/` — alteraria o estado do repositório | (a) A legibilidade da saída de falha do portão é **inferida** da configuração das três ferramentas. (b) A divergência de **6 casos** (273 estático × 279 declarado, PR-04) fica sem explicação |
 | `tools/profile_workbook.py` não foi executado nem lido linha a linha | Executá-lo materializaria o dump que PR-06 descreve | PR-06 repousa em `[obs-2ª]` — medição da auditoria anterior, com números de linha citados |
 | Se o casamento Bash trata `>` e `>>` como parte do mesmo comando | A doc lista os separadores reconhecidos e **não** menciona redirecionamento. **Inferência, não afirmação documental** | PR-09 depende disso. **Teste empírico de 30 segundos**, com o `settings.json` atual: pedir `npm test -- --reporter=json > /tmp/x.json`. Se rodar sem prompt, PR-09 está confirmado |
-| Se `$ARGUMENTS` é substituído **antes** de o comando `` !`…` `` executar | A página de skills descreve as duas mecânicas separadamente e não declara a ordem | Afeta §9.5. Teste: criar a skill e rodar `/fatia H-12`. Se o bloco vier vazio, aplicar o plano B escrito no artefato |
+| Se `$ARGUMENTS` é substituído **antes** de o comando `` !`…` `` executar | A página de skills descreve as duas mecânicas separadamente e não declara a ordem | Afeta §9.5. Teste: criar a skill e rodar `/abrir-historia H-12`. Se o bloco vier vazio, aplicar o plano B escrito no artefato |
 | Se o "não pergunte novamente" de modificação de arquivo vale por arquivo ou por sessão | A tabela de `/docs/pt/permissions` diz apenas *"até o final da sessão"* | Afeta a magnitude do ganho das regras `Edit` — é por isso que elas estão **fora** do conjunto mínimo |
 | Se as regras `allow` de `.claude/settings.json` estão **em vigor hoje** | Dependem do diálogo de confiança do workspace ter sido aceito. Não é observável de dentro da sessão | Se não foram aceitas, **nenhuma** das 19 entradas vale e o custo de autorização está subestimado. **Verificável pelo usuário com `/permissions`** |
 | Limites numéricos de reinjeção de skill após compactação (5.000 tokens/skill, 25.000 total) | Afirmados em `docs/delegacao-configuracao-claude.md` §2.1. **Não os reencontrei** na página `context-window` nesta sessão | O que **verifiquei** é a afirmação qualitativa: *"Only skills you actually invoked are preserved"*. É ela que sustenta a peça 5; os números não |
@@ -1364,7 +1364,7 @@ sistemas removidos de todos os documentos antes de qualquer publicação.
   mas não hipotética num repositório cujos documentos o agente é instruído a ler
   no início de **cada** história.
 
-### D-5 — Aceita mover as 25 linhas do gabarito do `CLAUDE.md` para `/fatia`?
+### D-5 — Aceita mover as 25 linhas do gabarito do `CLAUDE.md` para `/abrir-historia`?
 
 - **Recomendado: sim**, mantendo no `CLAUDE.md` a frase de gatilho e as 5 regras
   do protocolo. O arquivo cai de ~269 para ~244 linhas e o gabarito passa a
