@@ -198,7 +198,12 @@ describe('o que o cliente duplica do servidor', () => {
     // Ancora na contagem REAL, e nao abaixo dela: calibrada folgada, ela nao
     // detectaria a propria cegueira — foi assim que a versao anterior passou
     // aprovando enquanto dois membros escapavam.
-    expect(doServidor).toHaveLength(8)
+    //
+    // **10 desde 17/09/2026**, com `CABECALHO_DESLOCADO` e `CABECALHO_VAZIO`
+    // (`H-96`). Os dois percorreram os mesmos cinco elos de `TABELA_CHEIA`: a
+    // uniao, `ApiErrorCode`, os dois `Record` da rota, a lista do cliente e esta
+    // ancora — e cada elo so apareceu depois de o anterior ser resolvido.
+    expect(doServidor).toHaveLength(10)
     expect(doServidor.filter((codigo) => !naTela.includes(codigo))).toEqual([])
   })
 

@@ -239,10 +239,15 @@ idênticas**, incluindo as abas fora de escopo.
 
 ## Estado
 
-**99 das 101 histórias** de [`docs/06-backlog.md`](docs/06-backlog.md) estão
+**100 das 101 histórias** de [`docs/06-backlog.md`](docs/06-backlog.md) estão
 concluídas — o bloco `✅ CONCLUÍDA` de cada uma é a fonte, e é lá que o número
 se reconfere, com `grep -c '✅ \*\*CONCLUÍDA' docs/06-backlog.md`. A única
-aberta é `H-96`, escrita e **não executada** por escolha do usuário.
+aberta é `H-101`, o autoajuste de largura de coluna, escrita e **não executada**
+por escolha do usuário.
+
+*(Esta frase dizia `H-96` até 17/09/2026, e estava errada desde 16/09: `H-101`
+nasceu aberta com `E16` e a frase não acompanhou. `H-96` foi reaberta por ordem
+do usuário e fechou em 17/09.)*
 
 O plano original tinha 34 histórias; as demais nasceram do uso, e cada épico
 posterior explica no próprio cabeçalho de onde veio.

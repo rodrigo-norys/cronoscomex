@@ -46,6 +46,7 @@ describe('GET /api/health', () => {
       fileHash: 'sha256:abc',
       sheetName: '2026',
       headerLabels: {},
+      schemaDivergences: [],
       lastReadAt: new Date('2026-08-07T12:00:00.000Z'),
       lastReadOk: true,
       degradedReason: null,
@@ -76,6 +77,80 @@ describe('GET /api/health', () => {
     await app.close()
   })
 
+  /**
+   * `H-96`. A divergencia de cabecalho viaja NESTE corpo, e nao em rota propria.
+   *
+   * **A lista de chaves acima nao basta**: ela passaria igual com o campo saindo
+   * sempre vazio. O que este teste guarda e o CONTEUDO chegando inteiro — a tela
+   * nomeia as duas pontas (`RF-44`), e para isso precisa de `expected` e `found`,
+   * nao de um contador.
+   */
+  it('serializa a divergencia de cabecalho com as duas pontas', async () => {
+    const comDivergencia: StoreState = {
+      // **A leitura seguiu**: divergencia avisa e nao impede nada (17/09/2026).
+      // O estado e `pronto`, os processos entraram, e o aviso viaja ao lado.
+      state: 'pronto',
+      processes: [],
+      fileHash: 'sha256:abc',
+      sheetName: '2026',
+      headerLabels: {},
+      lastReadAt: new Date('2026-09-17T12:00:00.000Z'),
+      lastReadOk: true,
+      degradedReason: null,
+      lastReadDurationMs: 120,
+      rowsRead: 0,
+      rowsAccepted: 0,
+      rowsQuarantined: 0,
+      externalLock: false,
+      conflictFiles: [],
+      pendingEdits: [],
+      schemaDivergences: [
+        {
+          kind: 'AUSENTE',
+          column: 'D',
+          expectedColumn: 'D',
+          expected: 'BL',
+          found: 'BL ORIGINAL',
+          span: 1,
+          duplicateOf: null,
+        },
+      ],
+    }
+    const app = buildServer(config, {
+      getState: () => comDivergencia,
+      reload: async () => undefined,
+    })
+
+    const body = (await app.inject({ method: 'GET', url: '/api/health' })).json()
+
+    // O painel nao para: serve o dado E o aviso, ao mesmo tempo.
+    expect(body.state).toBe('pronto')
+    expect(body.schemaDivergences).toEqual([
+      {
+        kind: 'AUSENTE',
+        column: 'D',
+        expectedColumn: 'D',
+        expected: 'BL',
+        found: 'BL ORIGINAL',
+        span: 1,
+        duplicateOf: null,
+      },
+    ])
+
+    await app.close()
+  })
+
+  /** Cabecalho batendo: a lista sai vazia, e nao ausente. */
+  it('cabecalho que bate serializa lista vazia', async () => {
+    const app = buildServer(config)
+
+    const body = (await app.inject({ method: 'GET', url: '/api/health' })).json()
+
+    expect(body.schemaDivergences).toEqual([])
+
+    await app.close()
+  })
+
   it('fixa a lista completa de campos do contrato', async () => {
     const app = buildServer(config)
 
@@ -92,6 +167,7 @@ describe('GET /api/health', () => {
       'rowsAccepted',
       'rowsQuarantined',
       'rowsRead',
+      'schemaDivergences',
       'sheetName',
       'sourceFileHash',
       'state',
@@ -138,6 +214,7 @@ describe('GET /api/health', () => {
       fileHash: 'sha256:abc',
       sheetName: '2026',
       headerLabels: {},
+      schemaDivergences: [],
       lastReadAt: new Date('2026-08-06T14:22:31.004Z'),
       lastReadOk: true,
       degradedReason: null,

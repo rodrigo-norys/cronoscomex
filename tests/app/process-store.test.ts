@@ -16,10 +16,53 @@ import {
 } from '../../src/app/process-store.ts'
 import { normalizeClientMap } from '../../src/domain/client-mapper.ts'
 import type { ColorMapEntry } from '../../src/domain/color-mapper.ts'
+import { DECLARED_HEADERS } from '../../src/domain/sheet-schema.ts'
 import { normalizeTeamMap } from '../../src/domain/team-mapper.ts'
 import type { RawRow } from '../../src/domain/types.ts'
 import { enqueue } from '../../src/io/edit-queue.ts'
 import type { ReadResult } from '../../src/io/xlsx-reader.ts'
+
+/**
+ * O cabecalho que a planilha real tem, para estes testes nao carregarem
+ * divergencia de esquema no estado.
+ *
+ * **A leitura NUNCA recusa por cabecalho** — `H-96`, determinacao 2 —, entao
+ * `headerLabels: {}` nao impediria nada aqui: ele apenas poria um
+ * `CABECALHO_VAZIO` em `schemaDivergences`, que recusa a ESCRITA e aparece no
+ * painel. Estes testes medem outra coisa — concorrencia, mapa de clientes,
+ * mapa de equipe —, e cabecalho que bate os deixa sem esse ruido.
+ *
+ * *(A frase anterior dizia que `H-96` "recusa a promocao quando a linha 1 nao
+ * casa o esquema", e contradizia o teste `a divergencia AVISA e nao impede a
+ * leitura`, no mesmo arquivo. Achado do revisor-xml.)*
+ *
+ * Vem de `DECLARED_HEADERS` em vez de copiado: duas fontes divergem no
+ * primeiro ajuste.
+ */
+const CABECALHO = { ...DECLARED_HEADERS }
+
+/**
+ * Uma linha crua qualquer, no nivel do modulo.
+ *
+ * **Existe porque a que havia era de escopo privado.** `initStore — o mapa de
+ * clientes` declara a sua propria `linha`, e os testes de `H-96` ficam noutro
+ * `describe`: usa-la de la e `ReferenceError`, que o `catch` de `runReload`
+ * engole e transforma em `degradado` com `schemaDivergences` vazio.
+ *
+ * O diagnostico custou caro porque, na versao daquele momento, a recusa de
+ * LEITURA por cabecalho produzia esse mesmo retrato — dois estados
+ * indistinguiveis. **Aquele ramo saiu no mesmo dia**, por decisao do usuario,
+ * e hoje `degradado` com a lista vazia so pode ser excecao engolida.
+ */
+const linhaCrua = (client: string): RawRow => ({
+  sourceRow: 2,
+  cells: {
+    A: { value: 'FT002.26', type: 'string' },
+    B: { value: client, type: 'string' },
+  },
+  styleKey: 'none',
+  cellStyleKeys: {},
+})
 
 const COLOR_MAP: ColorMapEntry[] = [
   {
@@ -273,7 +316,7 @@ describe('process-store — concorrencia', () => {
         fileHash: `sha256:${'a'.repeat(64)}`,
         readAt: new Date('2026-08-03T12:00:00Z'),
         sheetName: '2026',
-        headerLabels: {},
+        headerLabels: CABECALHO,
         sheetPath: 'xl/worksheets/sheet1.xml',
       }
     }
@@ -300,7 +343,7 @@ describe('process-store — concorrencia', () => {
         fileHash: `sha256:${String(reads).repeat(64).slice(0, 64)}`,
         readAt: new Date('2026-08-03T12:00:00Z'),
         sheetName: '2026',
-        headerLabels: {},
+        headerLabels: CABECALHO,
         sheetPath: 'xl/worksheets/sheet1.xml',
       }
     }
@@ -388,6 +431,112 @@ describe('process-store — eventos de log (H-31)', () => {
     })
   })
 
+  /**
+   * `H-96`. O cabecalho nao bate: a leitura NAO vira processo.
+   *
+   * O defeito que isto mata esta medido em `D-43` — deslocar uma coluna faz
+   * **616 dos 650** processos lerem o dado do vizinho e **580 categorias**
+   * ficarem erradas, com quarentena zero e nenhuma anomalia. Mudo, e no arquivo
+   * da empresa.
+   */
+  it('a divergencia AVISA e nao impede a leitura', async () => {
+    const logger = spyLogger()
+    start({
+      logger,
+      readWorkbookFn: async () => ({
+        rows: [linhaCrua('ACM-29')],
+        fileHash: `sha256:${'e'.repeat(64)}`,
+        readAt: new Date('2026-09-17T12:00:00Z'),
+        sheetName: '2026',
+        // Uma coluna inserida antes de IMPORTADOR: tudo a direita anda.
+        headerLabels: { ...CABECALHO, C: 'NOVA', D: 'IMPORTADOR', E: 'BL' },
+        sheetPath: 'xl/worksheets/sheet1.xml',
+      }),
+    })
+    await reload()
+
+    const estado = getState()
+    // O painel NAO para: le, promove, e avisa ao mesmo tempo.
+    expect(estado.state).toBe('pronto')
+    expect(estado.processes).toHaveLength(1)
+    expect(estado.lastReadOk).toBe(true)
+    expect(estado.degradedReason).toBeNull()
+    // E o aviso viaja junto, nomeando as duas pontas (`RF-44`).
+    expect(estado.schemaDivergences.length).toBeGreaterThan(0)
+    expect(logger.entries.find((e) => e.event === 'read.failed')).toBeUndefined()
+  })
+
+  /**
+   * **Cabecalho RENOMEADO nao move dado**, e por isso a leitura segue inteira:
+   * `BL` vira `BL ORIGINAL` e continua na coluna `D`, entao ler por letra da o
+   * mesmo resultado. O que muda e o operador passar a saber.
+   *
+   * *(Coluna APAGADA seria outra coisa: tudo a direita anda, e isso vira
+   * `DESLOCADO`, nao `AUSENTE`.)*
+   */
+  it('cabecalho renomeado nao impede nada, e nomeia as duas pontas', async () => {
+    start({
+      readWorkbookFn: async () => ({
+        rows: [linhaCrua('ACM-29')],
+        fileHash: `sha256:${'f'.repeat(64)}`,
+        readAt: new Date('2026-09-17T12:00:00Z'),
+        sheetName: '2026',
+        headerLabels: { ...CABECALHO, D: 'BL ORIGINAL' },
+        sheetPath: 'xl/worksheets/sheet1.xml',
+      }),
+    })
+
+    await reload()
+
+    const estado = getState()
+    expect(estado.state).toBe('pronto')
+    expect(estado.processes).toHaveLength(1)
+    expect(estado.schemaDivergences).toHaveLength(1)
+    expect(estado.schemaDivergences[0]?.expected).toBe('BL')
+    expect(estado.schemaDivergences[0]?.found).toBe('BL ORIGINAL')
+  })
+
+  /**
+   * O aviso e o retrato da leitura que ACABOU de acontecer, e nao um acumulado:
+   * consertado o cabecalho, a lista volta a vazia sozinha. Sem isto a tela
+   * seguiria avisando de algo que o operador ja resolveu.
+   */
+  it('o aviso some sozinho quando o cabecalho e consertado', async () => {
+    let cabecalho: Record<string, string> = { ...CABECALHO }
+    let hash = 'a'
+    start({
+      readWorkbookFn: async () => ({
+        rows: [linhaCrua('ACM-29')],
+        fileHash: `sha256:${hash.repeat(64)}`,
+        readAt: new Date('2026-09-17T12:00:00Z'),
+        sheetName: '2026',
+        headerLabels: cabecalho,
+        sheetPath: 'xl/worksheets/sheet1.xml',
+      }),
+    })
+
+    await reload()
+    expect(getState().processes).toHaveLength(1)
+
+    cabecalho = { ...CABECALHO, D: 'BL ORIGINAL' }
+    hash = 'b'
+    await reload()
+
+    // Le, promove e avisa — as tres coisas na mesma leitura.
+    expect(getState().state).toBe('pronto')
+    expect(getState().processes).toHaveLength(1)
+    expect(getState().schemaDivergences).toHaveLength(1)
+
+    // Consertado o cabecalho, a divergencia some — senao a tela seguiria
+    // avisando de algo que o operador ja resolveu.
+    cabecalho = { ...CABECALHO }
+    hash = 'c'
+    await reload()
+
+    expect(getState().state).toBe('pronto')
+    expect(getState().schemaDivergences).toEqual([])
+  })
+
   // Ler deu certo; quebrou na composicao. E defeito nosso, nao do arquivo.
   it('classifica falha de composicao como ERRO_INTERNO', async () => {
     const logger = spyLogger()
@@ -398,7 +547,7 @@ describe('process-store — eventos de log (H-31)', () => {
         fileHash: `sha256:${'b'.repeat(64)}`,
         readAt: new Date('2026-08-04T12:00:00Z'),
         sheetName: '2026',
-        headerLabels: {},
+        headerLabels: CABECALHO,
         sheetPath: 'xl/worksheets/sheet1.xml',
       }),
     })
@@ -489,7 +638,7 @@ describe('settle', () => {
           fileHash: `sha256:${'c'.repeat(64)}`,
           readAt: new Date('2026-08-14T12:00:00Z'),
           sheetName: '2026',
-          headerLabels: {},
+          headerLabels: CABECALHO,
           sheetPath: 'xl/worksheets/sheet1.xml',
         }
       },
@@ -524,7 +673,7 @@ describe('settle', () => {
           fileHash: `sha256:${'d'.repeat(64)}`,
           readAt: new Date('2026-08-14T12:00:00Z'),
           sheetName: '2026',
-          headerLabels: {},
+          headerLabels: CABECALHO,
           sheetPath: 'xl/worksheets/sheet1.xml',
         }
       },
@@ -605,7 +754,7 @@ describe('process-store — reconfiguracao do caminho (H-34)', () => {
           fileHash: 'sha256:x',
           readAt: new Date(),
           sheetName: '2026',
-          headerLabels: {},
+          headerLabels: CABECALHO,
           sheetPath: 'xl/worksheets/sheet1.xml',
         }
       },
@@ -644,7 +793,7 @@ describe('process-store — reconfiguracao do caminho (H-34)', () => {
           fileHash: 'sha256:x',
           readAt: new Date(),
           sheetName: '2026',
-          headerLabels: {},
+          headerLabels: CABECALHO,
           sheetPath: 'xl/worksheets/sheet1.xml',
         }
       },
@@ -685,7 +834,7 @@ describe('initStore — o mapa de clientes chega a composicao', () => {
     fileHash: `sha256:${'c'.repeat(64)}`,
     readAt: new Date('2026-08-31T12:00:00Z'),
     sheetName: '2026',
-    headerLabels: {},
+    headerLabels: CABECALHO,
     sheetPath: 'xl/worksheets/sheet1.xml',
   })
 
@@ -738,7 +887,7 @@ describe('initStore — o mapa de equipe chega a composicao (H-50)', () => {
     fileHash: `sha256:${'d'.repeat(64)}`,
     readAt: new Date('2026-09-01T12:00:00Z'),
     sheetName: '2026',
-    headerLabels: {},
+    headerLabels: CABECALHO,
     sheetPath: 'xl/worksheets/sheet1.xml',
   })
 

@@ -24,6 +24,17 @@ export type ApiErrorCode =
   | 'ESCRITA_INVALIDA'
   /** A folga da Tabela do Excel acabou (02/09/2026). */
   | 'TABELA_CHEIA'
+  /**
+   * Uma coluna mudou de lugar na planilha (`H-96`, 17/09/2026). Recusa de
+   * ESCRITA apenas: a leitura segue, e o painel mostra o dado com o aviso.
+   */
+  | 'CABECALHO_DESLOCADO'
+  /**
+   * A linha de cabecalho esta em branco (`H-96`, 17/09/2026). Recusa de ESCRITA
+   * apenas, como a anterior — e separada dela porque a causa e outra: nao ha
+   * deslocamento detectado, ha impossibilidade de detectar.
+   */
+  | 'CABECALHO_VAZIO'
   | 'CAMINHO_INVALIDO'
   | 'CONFIG_NAO_GRAVAVEL'
   | 'SELETOR_INDISPONIVEL'

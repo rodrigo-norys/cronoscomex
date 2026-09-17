@@ -35,6 +35,7 @@ function result(overrides: Partial<WriteResult> = {}): WriteResult {
     actualHash: null,
     fileState: 'intacto',
     archivedQueuePath: null,
+    schemaDivergence: null,
     ...overrides,
   }
 }
@@ -94,7 +95,20 @@ describe('POST /api/edits/apply — sucesso', () => {
   })
 })
 
-describe('POST /api/edits/apply — as sete recusas', () => {
+/**
+ * **Sem contagem no titulo, e a lista NAO e a uniao inteira.** `TABELA_CHEIA`
+ * nunca entrou aqui, desde 02/09/2026 — buraco preexistente, apontado pelo
+ * revisor-xml e deixado como esta porque nao rastreia a `H-96`.
+ *
+ * Os dois codigos de cabecalho entraram: sem eles o `409` deles nao tinha
+ * assercao em execucao — so a exaustividade do `Record` no `tsc`, que garante
+ * que a chave existe e nao o que ela vale.
+ *
+ * **Isto NAO cobre o conteudo da mensagem.** A assercao comum e `length > 20`,
+ * e as duas passam de 170 caracteres: qualquer texto a satisfaz. O conteudo
+ * tem teste proprio, logo abaixo. Achado do revisor-xml.
+ */
+describe('POST /api/edits/apply — o codigo de cada recusa', () => {
   it.each([
     ['EXCEL_ABERTO', 409],
     ['ARQUIVO_MUDOU', 409],
@@ -102,6 +116,8 @@ describe('POST /api/edits/apply — as sete recusas', () => {
     ['NADA_A_APLICAR', 409],
     ['ESCRITA_EM_ANDAMENTO', 409],
     ['ESCRITA_INVALIDA', 500],
+    ['CABECALHO_DESLOCADO', 409],
+    ['CABECALHO_VAZIO', 409],
     ['ARQUIVO_INDISPONIVEL', 503],
   ] as const)('mapeia %s para %i', async (refusal, status) => {
     const response = await post(result({ refusal }))
@@ -110,6 +126,36 @@ describe('POST /api/edits/apply — as sete recusas', () => {
     expect(response.json().error.code).toBe(refusal)
     // A mensagem termina na acao do operador: recusa sem saida e so um beco.
     expect(response.json().error.message.length).toBeGreaterThan(20)
+  })
+
+  /**
+   * **O CONTEUDO das duas mensagens de cabecalho, e e ele que prova o desenho
+   * de `H-96`.** Os codigos sao separados porque as INSTRUCOES ao operador se
+   * excluem: uma manda desfazer o que ele fez, e a outra nao pode mandar isso,
+   * porque ali ele nao desfez nem fez nada — a linha 1 esta em branco, e o que
+   * se pede e restaurar.
+   *
+   * Sem esta assercao, reusar um codigo para os dois casos passaria no `it.each`
+   * acima sem sintoma nenhum.
+   */
+  it('so o deslocamento manda desfazer; o cabecalho vazio manda restaurar', async () => {
+    const deslocado = await post(result({ refusal: 'CABECALHO_DESLOCADO' }))
+    const vazio = await post(result({ refusal: 'CABECALHO_VAZIO' }))
+
+    expect(deslocado.json().error.message).toContain('Desfaca a mudanca no Excel')
+    expect(vazio.json().error.message).not.toContain('Desfaca')
+    expect(vazio.json().error.message).toContain('Restaure o cabecalho no Excel')
+  })
+
+  /**
+   * **A mensagem de `CABECALHO_VAZIO` nao afirma mais que a linha INTEIRA esta
+   * vazia**, porque o codigo passou a cobrir tambem o rotulo apagado de uma
+   * coluna so. Quem diz qual e o `detail`.
+   */
+  it('a mensagem de cabecalho vazio nao afirma que a linha 1 toda esta vazia', async () => {
+    const response = await post(result({ refusal: 'CABECALHO_VAZIO' }))
+
+    expect(response.json().error.message).toContain('coluna sem nome na linha 1')
   })
 })
 
@@ -180,12 +226,37 @@ describe('POST /api/edits/apply — o detail de cada recusa', () => {
 
   /**
    * `restored: false` em recusa que nunca chegou a gravar diria ao operador que
-   * houve o que desfazer. Quatro das sete recusas nem tocam no arquivo.
+   * houve o que desfazer — e varias recusas nem chegam a ABRIR o arquivo. Sem
+   * contagem: a frase dizia "quatro das sete", e as duas metades envelheceram.
    */
   it('omite o detail inteiro quando nao ha o que detalhar', async () => {
     const response = await post(result({ refusal: 'EXCEL_ABERTO' }))
 
     expect(response.json().error).not.toHaveProperty('detail')
+  })
+
+  /**
+   * **A frase que nomeia a coluna, no `detail`.** Sem ela a recusa diz o que
+   * fazer e nao ONDE: o painel que nomeia as duas pontas e montado so na Pagina
+   * Configuracao e no arranque a frio, e o botao `Aplicar alteracoes` nao vive
+   * nessas telas. Achado do revisor-xml.
+   *
+   * **A recusa que nao conferiu cabecalho nao ganha o campo** — e o par
+   * obrigatorio: sem ele, um `detail` que sempre o incluisse passaria.
+   */
+  it('leva a frase da divergencia em recusa de cabecalho, e so nela', async () => {
+    const comColuna = await post(
+      result({
+        refusal: 'CABECALHO_DESLOCADO',
+        schemaDivergence: '"IMPORTADOR" saiu do lugar: era esperada em C, e está em D.',
+      }),
+    )
+    const semCabecalho = await post(result({ refusal: 'EXCEL_ABERTO' }))
+
+    expect(comColuna.json().error.detail.schemaDivergence).toBe(
+      '"IMPORTADOR" saiu do lugar: era esperada em C, e está em D.',
+    )
+    expect(semCabecalho.json().error).not.toHaveProperty('detail')
   })
 
   it('nao expoe backupPath em recusa que deixou o arquivo intacto', async () => {

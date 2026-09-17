@@ -71,12 +71,14 @@ Parâmetro com valor fora do domínio → `400 FILTRO_INVALIDO`.
 | `REF_DUPLICADA` | 409 | Linha nova cuja `ref` já está na fila |
 | `LINHA_NAO_GRAVADA` | 409 | Edição de célula sobre linha nova ainda não aplicada ao arquivo |
 | `TABELA_CHEIA` | 409 | A folga da Tabela do Excel acabou; a aplicação **recusa** em vez de gravar fora dela |
+| `CABECALHO_DESLOCADO` | 409 | Uma coluna mudou de lugar; gravar escreveria na coluna errada (`H-96`). **Recusa de escrita apenas** — a leitura segue |
+| `CABECALHO_VAZIO` | 409 | A linha 1 está sem nomes, e sem eles um deslocamento real fica invisível à conferência (`H-96`). **Recusa de escrita apenas** — a leitura segue |
 | `CAMINHO_INVALIDO` | 400 | Caminho de planilha que não resolve, não existe ou não tem a aba (`H-34`) |
 | `CONFIG_NAO_GRAVAVEL` | 500 | `config/app.json` não pôde ser escrito (`H-35`) |
 | `SELETOR_INDISPONIVEL` | 503 | O sistema não oferece diálogo de arquivo (`H-37`) |
 | `SELETOR_FALHOU` | 500 | O diálogo abriu e falhou |
 
-> **Vinte e três códigos, e é a lista inteira** — `src/http/errors.ts` é a
+> **Vinte e cinco códigos, e é a lista inteira** — `src/http/errors.ts` é a
 > fonte, e **nenhuma guarda confere esta tabela contra ela**: a afirmação de que
 > `tests/repo/contratos.test.ts` o fazia esteve aqui até 16/09/2026 e não tinha
 > lastro — o arquivo não cita `ApiErrorCode` em asserção nenhuma. Foi por isso
@@ -168,11 +170,51 @@ Estado do processo. Nunca falha enquanto o servidor responder.
   "rowsQuarantined": 0,
   "pendingEditsCount": 0,
   "degradedReason": null,
+  "schemaDivergences": [],        // H-96 — o que o cabeçalho tem de diferente
   "externalLock": false,          // H-32 — existe ~$<nome>.xlsx na pasta
   "conflictFiles": [],            // H-32 — arquivos de conflito do OneDrive
   "today": "2026-08-07"           // H-15 — dia civil do servidor, no fuso configurado
 }
 ```
+
+`schemaDivergences` é a lista de `H-96`, e **vazia é o caso normal**: o cabeçalho
+da planilha bate com o esquema declarado. Cada item tem a forma:
+
+```jsonc
+{
+  "kind": "DESLOCADO",   // AUSENTE | DESLOCADO | DUPLICADO | EXTRA | CABECALHO_VAZIO
+  "column": "D",         // onde o cabeçalho ESTÁ
+  "expectedColumn": "C", // onde o esquema o esperava
+  "expected": "IMPORTADOR",
+  "found": "IMPORTADOR",
+  "span": 14,            // quantas colunas o MESMO deslocamento alcança
+  "duplicateOf": null    // em DUPLICADO, de quem é o nome repetido
+}
+```
+
+**Ela viaja neste corpo, e não em rota própria**, por dois motivos. A casca já faz
+*poll* do health a cada 5 s, então o aviso e o contador da lateral não custam
+requisição nenhuma. E ela existe justamente quando **não** há leitura boa — em
+`firstRun` a casca desliga as contagens da lateral, e uma rota própria chegaria
+muda no único momento em que o operador precisa dela.
+
+`degradedReason` diz a frase; isto diz **quais** colunas, para a tela nomear as
+duas pontas (`RF-44`). O `span` existe porque uma edição não pode virar catorze
+avisos: inserir uma coluna desloca 14, e o operador fez **um** gesto.
+
+**Divergência avisa e não impede nada.** A leitura segue, os processos entram, e
+o painel nunca para — decisão do usuário em 17/09/2026. Isso **confirma a
+determinação 2 de `D-43`** ("cabeçalho divergente avisa, e nunca recusa"), que
+uma versão anterior desta história chegou a emendar e voltou atrás.
+
+Fica registrado o que a escolha custa: com as colunas deslocadas, `D-43` mediu
+**616 dos 650** processos lendo o dado do vizinho e **580 categorias** erradas. A
+diferença para o estado anterior a `H-96` é que isso deixa de ser **silencioso** —
+a tela nomeia as duas pontas e a lateral conta as mudanças.
+
+**A escrita é pergunta separada**, e é por isso que o item carrega o `kind`:
+`DESLOCADO` é a única divergência que troca dado de lugar, e gravar sob ela
+alcança o arquivo da empresa, onde não há desfazer.
 
 `externalLock` e `conflictFiles` são **sinal, nunca ação** (A-58): a leitura
 acontece igual e o painel continua servindo o dado. A recusa de escrita com
@@ -807,8 +849,8 @@ da linha, não de valor de célula (`H-27`).
 ### `POST /api/edits/row`
 
 Enfileira uma **linha nova**. **Não toca no `.xlsx`** — a escrita é do
-`Aplicar alterações`, com as mesmas seis defesas das demais edições, mais uma
-que só ela tem.
+`Aplicar alterações`, com as mesmas defesas das demais edições, mais uma que só
+ela tem.
 
 ```jsonc
 { "ref": "FT900.26", "values": { "clientRaw": "CLIENTE NOVO", "eta2": "2026-09-30" } }
@@ -1543,9 +1585,45 @@ A fila **não** é descartada em nenhum caminho de erro. O operador relê e deci
 | Código | Situação |
 |---|---|
 | 200 | Gravado e validado |
-| 409 | `EXCEL_ABERTO` · `ARQUIVO_MUDOU` · `EDICAO_OBSOLETA` · `NADA_A_APLICAR` · `ESCRITA_EM_ANDAMENTO` · `TABELA_CHEIA` |
+| 409 | `EXCEL_ABERTO` · `ARQUIVO_MUDOU` · `EDICAO_OBSOLETA` · `NADA_A_APLICAR` · `ESCRITA_EM_ANDAMENTO` · `TABELA_CHEIA` · `CABECALHO_DESLOCADO` · `CABECALHO_VAZIO` |
 | 500 | `ESCRITA_INVALIDA` — três desfechos, distinguidos pelo `detail`; ver a nota abaixo |
 | 503 | `ARQUIVO_INDISPONIVEL` |
+
+> **`CABECALHO_DESLOCADO` e `CABECALHO_VAZIO` entraram em 17/09/2026**, com
+> `H-96`, e são as **duas** recusas que nascem de um estado que a **leitura**
+> aceita. Uma coluna mudou de lugar na planilha: o painel segue mostrando o dado
+> e o aviso — decisão do usuário, o painel nunca para —, mas gravar escreveria na
+> **coluna física errada** do arquivo da empresa, onde não há desfazer nem
+> `git status`, porque a árvore na máquina dele foi baixada e não clonada.
+>
+> **`CABECALHO_VAZIO` não é um alias do outro, e a diferença é a causa.** Não há
+> deslocamento *detectado* — há impossibilidade de detectar: sem o nome com que
+> conferir, um deslocamento real fica invisível, e gravar trataria "não
+> conferível" como "conferido e certo", que é adivinhar (regra inviolável 3). O
+> código é separado porque a **mensagem** é outra: mandar desfazer a mudança no
+> Excel nomearia uma coluna que não saiu do lugar, e o operador procuraria o que
+> não existe.
+>
+> **Ele cobre dois estados, e não só a linha 1 inteira em branco:** o rótulo
+> **apagado** de uma coluna declarada tem a mesma consequência, porque um
+> deslocamento que alcance só colunas sem rótulo passa invisível. Por isso a
+> mensagem diz "coluna sem nome na linha 1", e não que a linha toda está vazia —
+> **qual** coluna vem no `detail`.
+>
+> **Renome não recusa**, e é o contraste que define a regra: `AUSENTE` com o
+> rótulo trocado por **outro nome** deixa a coluna onde estava, e gravar nela
+> continua acertando; `AUSENTE` com o rótulo **apagado** recusa. A separação é
+> feita por `blockingDivergence`, em `src/domain/sheet-schema.ts`. A recusa
+> acontece **antes de abrir o arquivo**, e devolve o observador. **Nada é
+> gravado, e a fila fica intacta.**
+>
+> **O `detail` das duas carrega `schemaDivergence`**, a frase que nomeia as duas
+> pontas — `"IMPORTADOR" saiu do lugar: era esperada em C, e está em D.` Ela vem
+> montada do servidor, de `describeDivergence`, e não é remontada no cliente:
+> duas fontes para o mesmo texto divergiriam. **Existe porque a instrução
+> sozinha não bastava** — o painel que nomeia a coluna é montado só na Página
+> Configuração e no arranque a frio, e o botão `Aplicar alterações` não vive
+> nessas telas.
 
 > **`TABELA_CHEIA` entrou em 02/09/2026**, com a criação de linha. `Tabela1`
 > cobre `A1:P997` contra 745 linhas escritas, então há folga; quando ela acabar,

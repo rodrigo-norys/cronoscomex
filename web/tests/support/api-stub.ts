@@ -356,6 +356,8 @@ export function healthFixture(overrides: Partial<HealthResponse> = {}): HealthRe
     rowsQuarantined: 0,
     pendingEditsCount: 0,
     degradedReason: null,
+    // `H-96`: vazio e o caso normal — o cabecalho da planilha bate.
+    schemaDivergences: [],
     externalLock: false,
     conflictFiles: [],
     today: '2026-08-07',

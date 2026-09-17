@@ -86,6 +86,7 @@ function state(overrides: Partial<StoreState> = {}): StoreState {
     fileHash: 'sha256:abc',
     sheetName: '2026',
     headerLabels: {},
+    schemaDivergences: [],
     lastReadAt: new Date('2026-08-07T12:00:00.000Z'),
     lastReadOk: true,
     degradedReason: null,

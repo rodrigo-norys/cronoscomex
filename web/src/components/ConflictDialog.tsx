@@ -96,6 +96,16 @@ export function ConflictDialog({ refusal, onClose }: ConflictDialogProps) {
 
         <p className="mt-2 text-sm text-text-secondary">{refusal.message}</p>
 
+        {/*
+          `H-96`: QUAL coluna, e nao so o que fazer. A mensagem acima diz a
+          acao; esta linha diz onde. Sem ela o operador precisava sair desta
+          tela e abrir a Pagina Configuracao para descobrir a coluna, e e nesta
+          que ele acabou de apertar `Aplicar alteracoes`. Achado do revisor-xml.
+        */}
+        {refusal.schemaDivergence !== null && (
+          <p className="mt-2 text-sm font-medium text-text-primary">{refusal.schemaDivergence}</p>
+        )}
+
         {refusal.restored && refusal.backupPath !== null && (
           <p
             className={`mt-3 flex items-start gap-2 rounded-container border border-state-warning-border bg-state-warning-bg px-3 py-2 text-sm text-state-warning-fg ${severityBand('warning')}`}

@@ -132,7 +132,7 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**99 das 101 histórias estão concluídas**, e o épico aberto é `E16`. O que cada uma aprendeu — número medido,
+**100 das 101 histórias estão concluídas**, e o épico aberto é `E16`. O que cada uma aprendeu — número medido,
 defeito encontrado, decisão tomada — está no bloco `✅ CONCLUÍDA` dela em
 `docs/06-backlog.md`, e é lá que se procura antes de reabrir decisão que pareça
 em aberto. **Este bloco diz só o que está aberto.**
@@ -140,8 +140,10 @@ em aberto. **Este bloco diz só o que está aberto.**
 **`E9` a `E12` fecharam em 01/09/2026, `E13` em 03/09/2026, e `E14` e `E15` em
 16/09/2026** — `E14` com `H-91`, o mapa de equipe operável pela tela; `E15` com
 `H-93` a `H-95`, que tiraram o significado da cor e levaram a tabela às 16
-colunas da planilha. **`H-96` fica escrita e não executada**, por escolha do
-usuário.
+colunas da planilha. **`H-96` fechou em 17/09/2026**, reaberta por ordem do
+usuário depois de seis dias fora da fila: o cabeçalho passa a ser **conferido**
+contra a linha 1, a leitura avisa e não recusa, e a **escrita** recusa quando
+uma coluna mudou de lugar.
 
 **`E16` nasceu em 16/09/2026 e é o único épico aberto** — `H-97` a `H-101`, de
 `D-44`. Ele é o primeiro que nasce de **usar** a tela, e não de plano, auditoria

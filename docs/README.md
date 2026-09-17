@@ -118,8 +118,8 @@ em `src/`; por que uma guarda existe, no cabeçalho do próprio script ou teste.
 atingido com folga: as 649 linhas da aba `2026` são aceitas com **0% de
 quarentena** (`H-07`), contra o limite de 2% de RNF-24.
 
-**99 das 101 histórias estão concluídas.** `E9`, `E10`, `E11` e `E12` fecharam em
-01/09/2026, `E13` em 03/09/2026 e `E14` em 16/09/2026. Os **sete** épicos posteriores ao plano não
+**100 das 101 histórias estão concluídas.** `E9`, `E10`, `E11` e `E12` fecharam em
+01/09/2026, `E13` em 03/09/2026, e `E14` e `E15` em 16/09/2026. Os **oito** épicos posteriores ao plano não
 têm fase atribuída; a ordem entre eles vive no cabeçalho de cada um, em
 `06-backlog.md`.
 
@@ -132,7 +132,14 @@ os seis campos de texto (`D-34`); **a contagem que segue o recorte (`D-29`) fech
 em 08/09/2026**; **`H-88` fechou em 09/09/2026**, com o mapa de clientes operável
 pela tela; e **`H-89` e `H-92` em 10/09/2026** — a ordem da planilha como padrão,
 com o botão que a devolve (`D-38`), e o recorte em fichas descartáveis (`D-39`).
-**`H-91` fechou o épico em 16/09/2026**: o mapa de equipe operável pela tela, que sai de `PD-08`. **`E15` abriu com quatro** — `H-93` a `H-96`, de `D-40` a `D-43` —, e nelas a cor deixa de ser dado e a tabela passa a espelhar a planilha. **`H-93`, `H-94` e `H-95` fecharam em 16/09/2026** — a cor saiu da regra de responsável, passou a pintar cada célula, e a tabela virou o espelho da planilha, com as 16 colunas e o nome que a linha 1 lhes dá. **`H-96` fica escrita e não executada**, por escolha do usuário. Três dos quatro épicos posteriores ao
+**`H-91` fechou o épico em 16/09/2026**: o mapa de equipe operável pela tela, que sai de `PD-08`. **`E15` abriu com quatro** — `H-93` a `H-96`, de `D-40` a `D-43` —, e nelas a cor deixa de ser dado e a tabela passa a espelhar a planilha. **`H-93`, `H-94` e `H-95` fecharam em 16/09/2026** — a cor saiu da regra de responsável, passou a pintar cada célula, e a tabela virou o espelho da planilha, com as 16 colunas e o nome que a linha 1 lhes dá. **`H-96` fechou o épico em 17/09/2026**, reaberta por ordem do usuário: o cabeçalho passa a ser conferido contra a linha 1, e a divergência aparece na tela em vez de trocar dado de lugar em silêncio.
+
+**`E16` nasceu em 16/09/2026 e é o único aberto** — `H-97` a `H-101`, de `D-44`,
+e é o primeiro épico que vem de **usar** a tela, e não de plano, auditoria ou
+proposta. As quatro primeiras fecharam no mesmo dia; **`H-101`, o autoajuste de
+largura de coluna, fica escrita e não executada**, por escolha do usuário.
+
+Três dos épicos posteriores ao
 plano nasceram de documentos de auditoria que estão em `docs/estilizacao/`,
 `docs/uso/` e `docs/redesign/PROPOSTA.md` sem nunca terem virado história.
 

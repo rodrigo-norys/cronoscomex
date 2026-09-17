@@ -231,8 +231,8 @@ export function registerEditsRoutes(
    * `POST /api/edits/row` — a linha NOVA (02/09/2026).
    *
    * **Enfileira, e nao grava.** A linha aparece na tabela pela projecao e vai
-   * para a planilha no `Aplicar alteracoes`, com as mesmas seis defesas das
-   * demais edicoes. O numero da linha NAO e decidido aqui: quem o resolve e o
+   * para a planilha no `Aplicar alteracoes`, com as mesmas defesas das demais
+   * edicoes. O numero da linha NAO e decidido aqui: quem o resolve e o
    * `write-guard`, contra a leitura do momento da escrita.
    */
   app.post('/api/edits/row', (request, reply) => {

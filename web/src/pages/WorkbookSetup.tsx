@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import type { ConfigFieldReport, ConfigFieldSource } from '../../../src/app/config.ts'
+import type { SchemaDivergence } from '../../../src/domain/sheet-schema.ts'
 import type { WorkbookConfigResponse } from '../../../src/http/routes/config.ts'
 import type { HealthResponse } from '../api-client.ts'
 import { LiveAnnouncement } from '../components/PageAlert.tsx'
+import { SchemaDivergences } from '../components/SchemaDivergences.tsx'
 import { SeverityIcon, severityBand } from '../components/SeverityMark.tsx'
 import { TeamMap } from '../components/TeamMap.tsx'
 import { useWorkbookConfig } from '../hooks/useWorkbookConfig.ts'
@@ -28,9 +30,19 @@ import { useWorkbookConfig } from '../hooks/useWorkbookConfig.ts'
 export function WorkbookSetup({
   dataVersion,
   firstRun,
+  schemaDivergences,
   onSaved,
 }: {
   dataVersion: number
+  /**
+   * O que o cabecalho da planilha tem de diferente do esquema declarado
+   * (`H-96`). Vazio e o caso normal, e a secao nem aparece.
+   *
+   * **Desce por prop, e a pagina nao busca.** A casca ja faz *poll* do health a
+   * cada 5 s; buscar de novo aqui daria duas fontes para o mesmo dado, e elas
+   * divergiriam no intervalo entre os dois pedidos.
+   */
+  schemaDivergences: readonly SchemaDivergence[]
   /** Primeira execucao: nao houve leitura nenhuma, e nao ha painel para voltar. */
   firstRun: boolean
   /**
@@ -258,6 +270,18 @@ export function WorkbookSetup({
         Depois porque `WorkbookSetup.test.tsx` identifica a regiao viva do
         CAMINHO como a PRIMEIRA do DOM, e este painel traz a segunda.
       */}
+      {/*
+        O painel de divergencia vem ANTES de `TeamMap`, e tambem FORA do
+        condicional de `pronto` (`H-96`) — pelo mesmo motivo que ele: o
+        cabecalho divergente nao depende de a configuracao do caminho ter
+        carregado, e escondê-lo atras dela tiraria o aviso do operador
+        justamente quando outra coisa falhou.
+
+        Antes de `TeamMap` para nao deslocar a segunda regiao viva do DOM, que o
+        teste identifica por ordem.
+      */}
+      <SchemaDivergences divergences={schemaDivergences} />
+
       <TeamMap dataVersion={dataVersion} />
     </section>
   )
