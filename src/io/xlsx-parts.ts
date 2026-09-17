@@ -374,10 +374,10 @@ function buildRow(rowNumber: number, inner: string, options: SheetParseOptions):
  * Os rotulos da linha de CABECALHO, por letra de coluna (`H-95`).
  *
  * **A linha 1 era lida e jogada fora.** `parseSheetRows` a pula por
- * `firstDataRow`, e `headerRow` existia em `config/app.json` sem ninguem ler o
- * conteudo dela. Os textos ja estao em memoria a cada leitura — o pool de
- * strings compartilhadas e global ao arquivo —, entao descobrir os nomes nao
- * custa um byte a mais.
+ * `firstDataRow`, e `headerRow` existia na configuracao da aplicacao sem
+ * ninguem ler o conteudo dela. Os textos ja estao em memoria a cada leitura — o
+ * pool de strings compartilhadas e global ao arquivo —, entao descobrir os
+ * nomes nao custa um byte a mais.
  *
  * **A funcao e separada, e nao um segundo retorno de `parseSheetRows`:** aquela
  * assinatura e consumida pelo leitor e por dezenas de testes, e alargar o
