@@ -239,24 +239,21 @@ describe('agentRanking — IND-17 com overdueCount (A-27)', () => {
 })
 
 describe('responsibleRanking — IND-20 com as chaves conhecidas (A-28)', () => {
-  // As chaves vem do mapa de equipe, e nao dos processos: `H-50`. Sem mapa, o
-  // dominio e o das cores, que e o estado de `D-23`.
+  // As chaves vem do mapa de equipe, e nao dos processos: `H-50`. **Sem mapa
+  // sobra so a chave vazia desde `H-93`** — o dominio das quatro cores era o
+  // estado de `D-23`, que `D-40` reabriu.
   const semMapa = knownResponsibles([])
   const comMapa = knownResponsibles([
-    { key: 'membro1', label: 'Membro 1', importers: ['ACME'], colorResponsible: [] },
-    { key: 'membro2', label: 'Membro 2', importers: ['BETA'], colorResponsible: [] },
+    { key: 'membro1', label: 'Membro 1', importers: ['ACME'] },
+    { key: 'membro2', label: 'Membro 2', importers: ['BETA'] },
   ])
 
-  it('devolve as quatro chaves de cor sem mapa de equipe, inclusive as zeradas', () => {
-    const lista = responsibleRanking([process({ responsible: 'colaborador1' })], semMapa)
+  it('sem mapa de equipe, oferece so a chave sem responsavel', () => {
+    // O ranking passa a dizer a verdade sobre um operador que ainda nao
+    // declarou a equipe: tudo dele esta sem dono.
+    const lista = responsibleRanking([process({ responsible: '' })], semMapa)
 
-    expect(lista.map((g) => g.key).sort()).toEqual([
-      'colaborador1',
-      'colaborador1_outros_clientes',
-      'colaborador2',
-      'indefinido',
-    ])
-    expect(lista.find((g) => g.key === 'colaborador2')?.count).toBe(0)
+    expect(lista).toEqual([{ key: '', label: 'Sem responsável', count: 1 }])
   })
 
   // O peso da chave vazia mede quanto da planilha nao tem dono — o papel que
@@ -302,11 +299,14 @@ describe('responsibleRanking — IND-20 com as chaves conhecidas (A-28)', () => 
     })
   })
 
-  it('devolve as chaves conhecidas zeradas para conjunto vazio', () => {
+  // `H-93`: eram as QUATRO chaves de cor sem mapa de equipe (`D-23`), e sobrou
+  // a vazia. O que o teste guarda nao mudou: a chave conhecida aparece ZERADA
+  // em vez de sumir, que e a razao de A-28.
+  it('devolve a chave conhecida zerada para conjunto vazio', () => {
     const lista = responsibleRanking([], semMapa)
 
-    expect(lista).toHaveLength(4)
-    expect(lista.every((g) => g.count === 0)).toBe(true)
+    expect(lista).toHaveLength(1)
+    expect(lista[0]).toMatchObject({ key: '', label: 'Sem responsável', count: 0 })
   })
 })
 

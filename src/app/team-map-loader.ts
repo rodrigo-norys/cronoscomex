@@ -6,7 +6,6 @@ import {
   type TeamMemberSave,
   type TeamRemoval,
 } from '../domain/team-mapper.ts'
-import type { ColorResponsible } from '../domain/types.ts'
 
 /**
  * Carrega e valida `team-map.json`. O I/O vive aqui (ADR-0006).
@@ -29,13 +28,6 @@ export class TeamMapError extends Error {
   override readonly name = 'TeamMapError'
 }
 
-const COLOR_RESPONSIBLE: readonly ColorResponsible[] = [
-  'colaborador1',
-  'colaborador2',
-  'colaborador1_outros_clientes',
-  'indefinido',
-]
-
 export interface TeamMapFile {
   version: number
   members: TeamMember[]
@@ -54,17 +46,6 @@ function validateStringList(raw: unknown, where: string): string[] {
   })
 }
 
-function validateColorResponsible(raw: unknown, where: string): ColorResponsible[] {
-  return validateStringList(raw, where).map((value, index) => {
-    if (!(COLOR_RESPONSIBLE as readonly string[]).includes(value)) {
-      throw new TeamMapError(
-        `${where}[${index}] invalido: ${value}. Valores: ${COLOR_RESPONSIBLE.join(', ')}.`,
-      )
-    }
-    return value as ColorResponsible
-  })
-}
-
 function validateMember(raw: unknown, position: number): TeamMember {
   const where = `members[${position}]`
   if (!raw || typeof raw !== 'object') {
@@ -78,15 +59,7 @@ function validateMember(raw: unknown, position: number): TeamMember {
       `${where}.key e obrigatorio. Use chave impessoal — o nome vai em "label".`,
     )
   }
-  if (member.fallback !== undefined && typeof member.fallback !== 'boolean') {
-    throw new TeamMapError(`${where}.fallback deve ser true ou false.`)
-  }
-
   const importers = validateStringList(member.importers, `${where}.importers`)
-  const colorResponsible = validateColorResponsible(
-    member.colorResponsible,
-    `${where}.colorResponsible`,
-  )
 
   /*
     **Carteira vazia e LEGITIMA desde `H-91`**, e a validacao afrouxou para
@@ -105,19 +78,20 @@ function validateMember(raw: unknown, position: number): TeamMember {
     key,
     label: typeof member.label === 'string' && member.label.trim() !== '' ? member.label : key,
     importers,
-    colorResponsible,
-    ...(member.fallback === undefined ? {} : { fallback: member.fallback }),
   }
 }
 
 /**
  * Le o mapa de equipe. Lista vazia quando o arquivo nao existe.
  *
- * As duas unicidades conferidas — chave repetida e `fallback` duplicado — sao
- * as que produzem comportamento silenciosamente errado. Duas pessoas
- * reivindicando "todo o resto" seriam uma ordem de avaliacao disfarcada de
- * conjunto: a primeira levaria tudo, e a segunda pareceria uma pessoa sem
- * processos em vez de um erro de configuracao.
+ * **A unicidade conferida e a da CHAVE**, e ela e a que produz comportamento
+ * silenciosamente errado: duas entradas com a mesma chave fariam a segunda
+ * parecer uma pessoa sem processos em vez de um erro de configuracao.
+ *
+ * A checagem de `fallback` duplicado saiu em `H-93`, com o proprio `fallback`
+ * (`D-40`). Os campos que sobrarem em arquivos antigos sao **ignorados**, nao
+ * recusados: o mapa do operador foi escrito quando eles valiam, e matar a
+ * partida por um campo obsoleto o deixaria sem painel.
  */
 export function loadTeamMap(path: string = DEFAULT_TEAM_MAP_PATH): TeamMember[] {
   if (!existsSync(path)) return []
@@ -149,15 +123,6 @@ export function loadTeamMap(path: string = DEFAULT_TEAM_MAP_PATH): TeamMember[] 
       )
     }
     seen.set(member.key, position)
-  }
-
-  const fallbacks = members.filter((member) => member.fallback === true)
-  if (fallbacks.length > 1) {
-    throw new TeamMapError(
-      `${path} tem ${fallbacks.length} membros com "fallback": ` +
-        `${fallbacks.map((member) => `"${member.key}"`).join(', ')}.\n` +
-        'No maximo um pode receber os importadores que ninguem reivindica.',
-    )
   }
 
   return normalizeTeamMap(members)
@@ -231,10 +196,11 @@ function readRawTeamMap(target: string): Record<string, unknown> {
  * repositorio manda preservar — sao a documentacao do formato, lidas por quem
  * abre o arquivo.
  *
- * **Os campos que esta historia nao conhece sobrevivem na entrada**:
- * `colorResponsible` e `fallback` continuam onde estavam. Eles saem em `H-93`,
- * e apaga-los aqui anteciparia a remocao sem a historia que a explica — e sem
- * os testes que medem quantos processos migram.
+ * **Os campos que a aplicacao nao le mais sobrevivem na entrada.**
+ * `colorResponsible` e `fallback` deixaram de valer em `H-93` (`D-40`), e a
+ * gravacao nao os apaga: o arquivo e do operador, e reescrever nele o que esta
+ * historia nao pediu e exatamente o que a gravacao crua existe para evitar. A
+ * carga os ignora.
  *
  * **Arquivo ausente e criado**, e nao e caso de erro: e o estado da maquina do
  * operador (`PD-08`), onde a distribuicao leva so o `.exemplo`.

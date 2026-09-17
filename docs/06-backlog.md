@@ -44,8 +44,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E12 — Os achados da revisão de estilo ✅ | **H-73 … H-76, todas concluídas** | 2 | 1 | 1 |
 | E13 — O operacional que edita, ordena e cria ✅ | **H-77 … H-81, todas concluídas.** Épico **retroativo**: o código entrou em 02/09/2026 e as histórias foram escritas em 03/09 | 3 | 0 | 2 |
 | E14 — A casca que se opera, não só se lê ✅ | **H-82 a H-92 ✅ — o épico fechou em 16/09/2026, com `H-91`.** Primeiro épico **prospectivo** desde `E12`: as nove primeiras nascem antes do código (`D-29` a `D-34`), `H-91` entra em 08/09/2026 por `D-35`, e `H-92` em 10/09/2026 por `D-39`. `H-91` passou de M para **G** na fatia de 11/09, quando o contrato dela dobrou | 3 | 6 | 2 |
-| E15 — A tabela é a planilha, e a cor é só cor | **`H-93` a `H-96`, todas abertas.** Nasce de `D-40` a `D-43`, em 10 e 11/09/2026: a cor deixa de apontar responsável e vira aparência, e a tabela passa a espelhar o arquivo — as 16 colunas com o nome do cabeçalho. `H-93` veio de `E14` em 11/09, por estar grande demais. `H-96` nasce de defeito **simulado**, não observado. **As quatro são G**, pela régua do topo | 0 | 0 | 4 |
-| **Total** | **96** — 92 concluídas, 4 abertas | **36** | **50** | **10** |
+| E15 — A tabela é a planilha, e a cor é só cor | **`H-93` ✅; `H-94` a `H-96` abertas.** Nasce de `D-40` a `D-43`, em 10 e 11/09/2026: a cor deixa de apontar responsável e vira aparência, e a tabela passa a espelhar o arquivo — as 16 colunas com o nome do cabeçalho. `H-93` veio de `E14` em 11/09, por estar grande demais. `H-96` nasce de defeito **simulado**, não observado. **As quatro são G**, pela régua do topo | 0 | 0 | 4 |
+| **Total** | **96** — 93 concluídas, 3 abertas | **36** | **50** | **10** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -219,7 +219,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 
 **[Épico E15 — A tabela é a planilha, e a cor é só cor](#e15)**
 
-- [H-93 — A cor sai da regra de responsável](#h-93)
+- [H-93 — A cor sai da regra de responsável](#h-93) ✅
 - [H-94 — O fundo da célula é a cor da planilha, e a casca recua de tom](#h-94)
 - [H-95 — As dezesseis colunas, com o nome literal do cabeçalho](#h-95)
 - [H-96 — A coluna se resolve por nome, e não por letra](#h-96)
@@ -10775,6 +10775,44 @@ sem dono.
 <a id="h-93"></a>
 
 ### H-93 — A cor sai da regra de responsável
+
+> ✅ **CONCLUÍDA em 16/09/2026.** Suíte em **2110 testes, 86 arquivos**, portão
+> inteiro verde. **São onze testes a MENOS que antes**, e o sinal está certo:
+> esta história remove comportamento. Saíram os dois da anomalia
+> `RESPONSAVEL_DIVERGENTE`, os três do membro que recebia "todo o resto", o do
+> desempate por cor e os do mapa vazio devolvendo a chave de cor; entraram os
+> que provam o **inverso** deles — sem mapa, ninguém tem responsável.
+>
+> **Medido na planilha real em 16/09/2026, e o plano acertou número a número.**
+> `membro2` cai de **405 para 357** — exatamente os 48 que a cor cobria —,
+> `membro1` fica em 202, e o sem-responsável vai de 43 para **91**. Os números
+> do backlog são 357, 202 e 90: a diferença de uma unidade é a 650ª linha
+> sintética de `D-28`, que nunca entra em agregado real. **Dos que migraram, 48
+> de 48 são ativos**, como `D-40` previu, e a composição fecha: 55 de `MPA` mais
+> 36 sem IMPORTADOR. A soma por responsável continua fechando com o total.
+>
+> **A fatia achou nove divergências, e cinco eram documento afirmando o
+> contrário do código.** Fora da lista do backlog estavam o `.exemplo` do mapa
+> de equipe, `src/http/routes/filter-options.ts`, `tests/http/team.test.ts` —
+> que não existia quando a lista foi escrita —, `docs/03-modelo-dados.md` e a
+> §1.3 de `docs/05-contratos-api.md`. **A última já estava errada antes desta
+> história:** ela declarava `type Responsible` como as quatro chaves de cor,
+> enquanto `types.ts` diz `string` **desde `H-50`** — quinze dias de divergência
+> que guarda nenhuma via. É o **segundo** defeito preexistente encontrado nesse
+> arquivo em 16/09/2026, depois da tabela de códigos de erro de `H-91`.
+>
+> **E a varredura final achou mais quatro, já com o código pronto:**
+> `docs/04-arquitetura.md` descrevia o `team-mapper` recebendo
+> `ColorResponsible`, duas linhas da matriz diziam "com a cor desempatando", e o
+> próprio `types.ts` tinha a frase do desempate na **abertura** do bloco que eu
+> já havia reescrito no meio. **A lição é sobre o método, não sobre o
+> descuido:** trocar um parágrafo não garante que o resto do bloco concorde com
+> ele, e quem pegou os quatro foi um `grep` por *"desempat"* — não a leitura.
+>
+> **O que sobreviveu de propósito:** `colorResponsible` continua sendo campo do
+> `Process`, com filtro próprio e as quatro chaves; a agregação de `A-18` segue
+> onde `H-50` a pôs. A cor não perdeu significado — perdeu a atribuição, que é o
+> que `D-41` a seguir transforma em pura aparência.
 
 > Nasce de `D-40`, em 10/09/2026, e **reabre `D-23`** — a decisão que fazia a cor
 > valer como fonte de responsável quando o mapa de equipe estava ausente.

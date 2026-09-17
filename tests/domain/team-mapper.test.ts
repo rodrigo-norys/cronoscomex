@@ -13,9 +13,12 @@ import {
 /**
  * H-48. A atribuicao pura, sem I/O.
  *
- * A forma vem de `docs/uso/RESULTADO.md §3`: uma pessoa com lista de
- * importadores e a cor roxa, outra com lista e as cores azul e bege. Os nomes
- * sao ficticios — regra inviolavel 8.
+ * **A cor saiu em `H-93`** (`D-40`): o criterio e o IMPORTADOR, e so ele. Os
+ * blocos que mediam o desempate por cor, o membro que recebia "todo o resto" e
+ * o mapa vazio devolvendo a chave de cor foram removidos junto com o
+ * comportamento — o que sobra deles sao os dois testes de NAO-atribuicao
+ * abaixo, que provam o contrario do que aqueles provavam. Os nomes sao
+ * ficticios — regra inviolavel 8.
  */
 
 const map = normalizeTeamMap([
@@ -23,128 +26,69 @@ const map = normalizeTeamMap([
     key: 'membro1',
     label: 'Primeiro',
     importers: ['importadora um', 'importadora dois'],
-    colorResponsible: ['colaborador2'],
   },
   {
     key: 'membro2',
     label: 'Segundo',
     importers: ['importadora quatro'],
-    colorResponsible: ['colaborador1', 'colaborador1_outros_clientes'],
   },
 ])
 
 describe('resolveTeam', () => {
-  it('atribui pelo importador, que e a primeira regra', () => {
-    expect(resolveTeam('IMPORTADORA UM', 'indefinido', map)).toEqual({
+  it('atribui pelo importador, que e a unica regra', () => {
+    expect(resolveTeam('IMPORTADORA UM', map)).toEqual({
       key: 'membro1',
       label: 'Primeiro',
       source: 'importador',
-      conflict: false,
     })
   })
 
   it('tolera sufixo de filial sem exigir as duas grafias no mapa', () => {
     // Medido: tres importadores aparecem tambem com sufixo apos ` - `
     // (docs/uso/RESULTADO.md §3). Filial e o mesmo importador para responsavel.
-    expect(resolveTeam('IMPORTADORA UM - SC', 'indefinido', map).key).toBe('membro1')
+    expect(resolveTeam('IMPORTADORA UM - SC', map).key).toBe('membro1')
   })
 
   it('nao casa importador diferente que apenas comeca igual', () => {
     // `SUR` e `SURLA` sao importadores distintos na planilha real: sem o
     // separador literal, um prefixo engoliria o outro.
-    expect(resolveTeam('IMPORTADORA UMBRAL', 'indefinido', map).source).toBe('nenhum')
+    expect(resolveTeam('IMPORTADORA UMBRAL', map).source).toBe('nenhum')
   })
 
-  it('desempata pela cor quando a lista de importadores nao alcanca', () => {
-    // Os 48 processos que o importador nao cobre e a cor cobre — o achado que
-    // dispensou a escolha arbitraria (docs/uso/RESULTADO.md §3).
-    expect(resolveTeam('IMPORTADORA SEM DONO', 'colaborador1', map)).toEqual({
-      key: 'membro2',
-      label: 'Segundo',
-      source: 'cor',
-      conflict: false,
-    })
-  })
-
-  it('trata a subcategoria de A-18 como a cor principal no desempate', () => {
-    expect(resolveTeam('', 'colaborador1_outros_clientes', map).key).toBe('membro2')
-  })
-
-  it('nao atribui quando nem o importador nem a cor apontam alguem', () => {
-    // Os 42 que ficam sem responsavel, visiveis (regra inviolavel 3).
-    expect(resolveTeam('IMPORTADORA SEM DONO', 'indefinido', map)).toEqual({
+  it('nao atribui quando o importador nao esta em carteira nenhuma', () => {
+    // Os 90 que ficam sem responsavel desde `H-93`, visiveis (regra 3).
+    expect(resolveTeam('IMPORTADORA SEM DONO', map)).toEqual({
       key: '',
       label: '',
       source: 'nenhum',
-      conflict: false,
     })
   })
 
-  it('faz o importador vencer a cor e MARCA a divergencia', () => {
-    // Medido: ZERO ocorrencias em 31/08/2026 — o campo existe para a primeira,
-    // que ninguem veria acontecer.
-    const resolucao = resolveTeam('IMPORTADORA UM', 'colaborador1', map)
-
-    expect(resolucao.key).toBe('membro1')
-    expect(resolucao.conflict).toBe(true)
+  it('nao atribui o importador VAZIO', () => {
+    // 35 linhas na planilha real. Nao sao "o resto" de nada, e varre-las para
+    // alguem esconderia que o campo esta em branco (regra inviolavel 2).
+    expect(resolveTeam('', map).source).toBe('nenhum')
   })
 
-  it('nao marca divergencia quando importador e cor apontam a mesma pessoa', () => {
-    expect(resolveTeam('IMPORTADORA UM', 'colaborador2', map).conflict).toBe(false)
-  })
+  /*
+    **Os dois abaixo sao `H-93`, e provam o INVERSO do que `D-23` fazia.**
 
-  // `D-23`: sem mapa nao ha membro em quem casar, e devolver `UNASSIGNED` nas
-  // 649 linhas esvaziaria o campo justamente na primeira execucao do operador.
-  it('devolve a propria chave de cor quando o mapa esta vazio', () => {
-    expect(resolveTeam('IMPORTADORA UM', 'colaborador1', [])).toEqual({
-      key: 'colaborador1',
-      label: 'Colaborador 1',
-      source: 'cor',
-      conflict: false,
+    Ate aqui, mapa vazio devolvia a propria chave de cor nas 649 linhas, para
+    que o campo Responsavel nao nascesse vazio na primeira execucao do operador.
+    `D-40` reabriu essa decisao: com a tela de `H-91` existindo, ele tem onde
+    declarar a equipe, e um campo preenchido pela cor esconderia que ele ainda
+    nao declarou.
+  */
+  it('sem mapa, NAO devolve a chave de cor — devolve sem responsavel', () => {
+    expect(resolveTeam('IMPORTADORA UM', [])).toEqual({
+      key: '',
+      label: '',
+      source: 'nenhum',
     })
   })
 
-  it('devolve indefinido quando o mapa esta vazio e a cor nao diz responsavel', () => {
-    expect(resolveTeam('QUALQUER', 'indefinido', []).key).toBe('indefinido')
-  })
-})
-
-describe('resolveTeam com fallback', () => {
-  const comFallback = normalizeTeamMap([
-    {
-      key: 'membro1',
-      label: 'Primeiro',
-      importers: ['importadora um'],
-      colorResponsible: ['colaborador2'],
-    },
-    {
-      key: 'membro2',
-      label: 'Segundo',
-      importers: [],
-      colorResponsible: ['colaborador1'],
-      fallback: true,
-    },
-  ] as TeamMember[])
-
-  it('entrega ao fallback o importador que ninguem reivindica', () => {
-    expect(resolveTeam('IMPORTADORA SEM DONO', 'indefinido', comFallback)).toEqual({
-      key: 'membro2',
-      label: 'Segundo',
-      source: 'importador',
-      conflict: false,
-    })
-  })
-
-  it('nao deixa o fallback alcancar o importador VAZIO', () => {
-    // "Todo o resto" fala de importadores que existem. As 35 linhas em branco
-    // nao sao o resto de nada, e varre-las esconderia que o campo esta vazio
-    // (regra inviolavel 2). Sem importador, so a cor decide.
-    expect(resolveTeam('', 'indefinido', comFallback).source).toBe('nenhum')
-    expect(resolveTeam('', 'colaborador1', comFallback).source).toBe('cor')
-  })
-
-  it('faz a lista explicita vencer o fallback', () => {
-    expect(resolveTeam('IMPORTADORA UM', 'indefinido', comFallback).key).toBe('membro1')
+  it('sem mapa, nenhum importador e atribuido, qualquer que seja ele', () => {
+    expect(resolveTeam('QUALQUER', []).key).toBe('')
   })
 })
 
@@ -155,14 +99,11 @@ describe('normalizeTeamMap', () => {
         key: 'membro1',
         label: 'Antônio',
         importers: [' importadora  úm '],
-        colorResponsible: [],
-        fallback: true,
       },
     ]) as [TeamMember]
 
     expect(membro.importers).toEqual(['IMPORTADORA UM'])
     expect(membro.label).toBe('Antônio')
-    expect(membro.fallback).toBe(true)
   })
 })
 
@@ -171,13 +112,11 @@ describe('normalizeTeamMap', () => {
  * zeradas — A-28.
  */
 describe('knownResponsibles', () => {
-  it('sem mapa, o dominio e o das quatro cores (D-23)', () => {
-    expect(knownResponsibles([])).toEqual([
-      { key: 'colaborador1', label: 'Colaborador 1' },
-      { key: 'colaborador2', label: 'Colaborador 2' },
-      { key: 'colaborador1_outros_clientes', label: 'Colaborador 1 — outros clientes' },
-      { key: 'indefinido', label: 'Indefinido' },
-    ])
+  // `H-93`: era o dominio das quatro cores (`D-23`). Oferecer as quatro agora
+  // anunciaria um dominio que `resolveTeam` nao produz mais — quatro opcoes
+  // zeradas e nenhuma util.
+  it('sem mapa, sobra so a chave sem responsavel', () => {
+    expect(knownResponsibles([])).toEqual([{ key: '', label: 'Sem responsável' }])
   })
 
   it('com mapa, sao os membros mais a chave sem responsavel', () => {
@@ -192,7 +131,7 @@ describe('knownResponsibles', () => {
   // processo algum, e o ranking a exibe com zero.
   it('inclui o membro que nenhuma regra alcanca', () => {
     const semRegraAlcancavel = normalizeTeamMap([
-      { key: 'membro9', label: 'Nono', importers: ['importadora nove'], colorResponsible: [] },
+      { key: 'membro9', label: 'Nono', importers: ['importadora nove'] },
     ])
 
     expect(knownResponsibles(semRegraAlcancavel).map((o) => o.key)).toContain('membro9')
@@ -219,8 +158,8 @@ describe('nextMemberKey', () => {
     // Desfazer o membro2 de uma equipe de tres devolve a chave a quem entrar
     // depois, em vez de abrir buraco e crescer para sempre.
     const comBuraco = normalizeTeamMap([
-      { key: 'membro1', label: 'Primeiro', importers: [], colorResponsible: [] },
-      { key: 'membro3', label: 'Terceiro', importers: [], colorResponsible: [] },
+      { key: 'membro1', label: 'Primeiro', importers: [] },
+      { key: 'membro3', label: 'Terceiro', importers: [] },
     ])
 
     expect(nextMemberKey(comBuraco)).toBe('membro2')
@@ -229,17 +168,13 @@ describe('nextMemberKey', () => {
   it('nao colide com chave escrita a mao em outra caixa', () => {
     // A chave nao passa por `normalizeTeamMap` — so os importadores passam —,
     // entao um arquivo editado a mao pode trazer `MEMBRO1`.
-    const aMao = normalizeTeamMap([
-      { key: 'MEMBRO1', label: 'Primeiro', importers: [], colorResponsible: [] },
-    ])
+    const aMao = normalizeTeamMap([{ key: 'MEMBRO1', label: 'Primeiro', importers: [] }])
 
     expect(nextMemberKey(aMao)).toBe('membro2')
   })
 
   it('ignora chave que nao e um ordinal', () => {
-    const livre = normalizeTeamMap([
-      { key: 'coordenacao', label: 'Coordenacao', importers: [], colorResponsible: [] },
-    ])
+    const livre = normalizeTeamMap([{ key: 'coordenacao', label: 'Coordenacao', importers: [] }])
 
     expect(nextMemberKey(livre)).toBe('membro1')
   })
@@ -394,7 +329,7 @@ describe('planTeamMember', () => {
     // A sobreposicao e simetrica: qual grafia foi digitada primeiro nao muda
     // que as duas sao o mesmo importador para efeito de responsavel.
     const comFilial = normalizeTeamMap([
-      { key: 'membro1', label: 'Primeiro', importers: ['acme - sc'], colorResponsible: [] },
+      { key: 'membro1', label: 'Primeiro', importers: ['acme - sc'] },
     ])
 
     expect(planTeamMember('membro2', 'Segundo', ['acme'], comFilial)).toMatchObject({
@@ -412,9 +347,7 @@ describe('planTeamMember', () => {
 
   it('nao confunde importador que apenas comeca igual', () => {
     // `SUR` e `SURLA` sao importadores distintos na planilha real.
-    const comSur = normalizeTeamMap([
-      { key: 'membro1', label: 'Primeiro', importers: ['sur'], colorResponsible: [] },
-    ])
+    const comSur = normalizeTeamMap([{ key: 'membro1', label: 'Primeiro', importers: ['sur'] }])
 
     expect(planTeamMember('membro2', 'Segundo', ['surla'], comSur)).toMatchObject({
       kind: 'membro-criado',

@@ -76,7 +76,11 @@ describe('buildProcesses — aceite e rejeicao', () => {
     expect(p?.clientRaw).toBe('acme log')
     expect(p?.clientKey).toBe('ACME LOG')
     expect(p?.statusCategory).toBe('desembaracado')
-    expect(p?.responsible).toBe('colaborador1')
+    // `H-93`: a linha e AZUL e nao ha mapa de equipe. A cor nao atribui mais
+    // responsavel — e segue legivel no campo dela. As duas asercoes juntas sao
+    // o ponto: o dado nao se perdeu, so deixou de decidir.
+    expect(p?.responsible).toBe('')
+    expect(p?.colorResponsible).toBe('colaborador1')
     expect(p?.sourceRow).toBe(2)
   })
 
@@ -142,7 +146,8 @@ describe('buildProcesses — cor nao mapeada', () => {
     const r = buildProcesses(rows, deps)
 
     expect(r.processes).toHaveLength(1)
-    expect(r.processes[0]?.responsible).toBe('indefinido')
+    // `H-93`: era `indefinido`, a chave de cor que `D-23` punha aqui.
+    expect(r.processes[0]?.responsible).toBe('')
     expect(r.processes[0]?.importerOutsideRj).toBeNull()
     expect(r.quarantine[0]?.reason).toBe('COR_NAO_MAPEADA')
     expect(r.quarantine[0]?.detail).toContain('theme:9|tint:0.3999')
@@ -389,22 +394,20 @@ describe('buildProcesses — grupo de clientes (H-55)', () => {
 })
 
 /**
- * `H-50`. O responsavel deixa de ser a cor e passa a ser a pessoa, com a cor
- * desempatando — e a cor vira campo proprio.
+ * `H-50`. O responsavel deixa de ser a cor e passa a ser a pessoa; a cor vira
+ * campo proprio. **`H-93` tirou o desempate:** o importador e o unico criterio.
  */
-describe('buildProcesses — responsavel pela pessoa (H-50)', () => {
+describe('buildProcesses — responsavel pela pessoa (H-50, H-93)', () => {
   const EQUIPE = normalizeTeamMap([
     {
       key: 'membro1',
       label: 'Primeiro',
       importers: ['importadora um'],
-      colorResponsible: ['colaborador2'],
     },
     {
       key: 'membro2',
       label: 'Segundo',
       importers: ['importadora dois'],
-      colorResponsible: ['colaborador1'],
     },
   ])
   const comEquipe: BuildDeps = { ...deps, teamMap: EQUIPE }
@@ -431,17 +434,21 @@ describe('buildProcesses — responsavel pela pessoa (H-50)', () => {
     expect(process?.responsible).toBe('membro1')
   })
 
-  it('desempata pela cor o importador que nenhuma lista alcanca', () => {
+  // `H-93`: a linha azul apontava `membro2` pelo desempate. Agora nao aponta
+  // ninguem — e sao 48 processos assim na planilha real, todos ativos.
+  it('NAO desempata pela cor o importador que nenhuma lista alcanca', () => {
     const process = buildProcesses(
       [linha(2, { A: 'FT001.26', C: 'IMPORTADORA SEM DONO' }, 'argb:FF5B9BD5')],
       comEquipe,
     ).processes[0]
 
-    expect(process?.responsible).toBe('membro2')
+    expect(process?.responsible).toBe('')
+    // A cor continua dizendo o que dizia — ela so nao decide mais.
+    expect(process?.colorResponsible).toBe('colaborador1')
   })
 
-  // Os 42 que ficam sem responsavel, visiveis (regra inviolavel 3).
-  it('deixa sem responsavel quem nao tem importador na lista nem cor', () => {
+  // Os 90 que ficam sem responsavel desde `H-93`, visiveis (regra inviolavel 3).
+  it('deixa sem responsavel quem nao tem importador na lista', () => {
     const process = buildProcesses([linha(2, { A: 'FT001.26' })], comEquipe).processes[0]
 
     expect(process?.responsible).toBe('')
@@ -449,39 +456,26 @@ describe('buildProcesses — responsavel pela pessoa (H-50)', () => {
     expect(process?.colorResponsible).toBe('indefinido')
   })
 
-  // Medido: ZERO ocorrencias em 31/08/2026. A anomalia existe para a primeira.
-  it('registra anomalia quando o importador e a cor apontam pessoas diferentes', () => {
-    const resultado = buildProcesses(
-      [linha(2, { A: 'FT001.26', C: 'IMPORTADORA UM' }, 'argb:FF5B9BD5')],
-      comEquipe,
-    )
+  /*
+    **Os dois testes da anomalia `RESPONSAVEL_DIVERGENTE` sairam em `H-93`.**
 
-    expect(resultado.processes[0]?.responsible).toBe('membro1')
-    expect(resultado.processes[0]?.anomalies).toContain('RESPONSAVEL_DIVERGENTE')
-    expect(resultado.anomalies[0]?.detail).toBe(
-      'o importador atribui a "membro1"; a cor "colaborador1" aponta outra pessoa',
-    )
-  })
+    Eles mediam o importador e a cor apontando pessoas diferentes — zero
+    ocorrencias em 31/08/2026 e zero em 10/09/2026. Com a cor fora da regra nao
+    ha o que divergir, e a anomalia saiu do `AnomalyCode` sem nunca ter
+    detectado uma.
+  */
 
-  it('nao registra anomalia quando as duas fontes concordam', () => {
-    const resultado = buildProcesses(
-      [linha(2, { A: 'FT001.26', C: 'IMPORTADORA DOIS' }, 'argb:FF5B9BD5')],
-      comEquipe,
-    )
-
-    expect(resultado.processes[0]?.responsible).toBe('membro2')
-    expect(resultado.processes[0]?.anomalies).not.toContain('RESPONSAVEL_DIVERGENTE')
-  })
-
-  // `D-23`: sem mapa o campo mostra o que a cor mostra hoje.
-  it('sem mapa de equipe, o responsavel vale a chave de cor', () => {
+  // `H-93` reabriu `D-23`: sem mapa o campo NAO mostra mais o que a cor mostra.
+  // Sem equipe declarada, as 649 linhas ficam em "Sem responsavel".
+  it('sem mapa de equipe, ninguem tem responsavel', () => {
     const process = buildProcesses(
       [linha(2, { A: 'FT001.26', C: 'IMPORTADORA UM' }, 'argb:FF5B9BD5')],
       deps,
     ).processes[0]
 
-    expect(process?.responsible).toBe('colaborador1')
-    expect(process?.responsibleLabel).toBe('Colaborador 1')
+    expect(process?.responsible).toBe('')
+    expect(process?.responsibleLabel).toBe('')
+    // A cor segue legivel no campo dela.
     expect(process?.colorResponsible).toBe('colaborador1')
   })
 })

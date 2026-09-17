@@ -51,8 +51,11 @@ function process(
     portKey: '',
     goodsKey: '',
     statusCategory,
-    responsible: 'indefinido',
-    responsibleLabel: 'Indefinido',
+    // `H-93`: sem mapa de equipe ninguem tem responsavel. A fixture dizia
+    // `indefinido` — uma das quatro chaves de COR —, que era o que `D-23`
+    // punha aqui. A cor segue no campo dela, logo abaixo.
+    responsible: '',
+    responsibleLabel: '',
     colorResponsible: 'indefinido',
     customsChannel: 'indefinido',
     importerOutsideRj: null,
@@ -170,8 +173,9 @@ describe('GET /api/indicators', () => {
       'importers',
       'responsible',
     ])
-    // As quatro chaves de responsavel aparecem mesmo com os campos em branco.
-    expect(body.rankings.responsible).toHaveLength(4)
+    // `H-93`: sem mapa de equipe sobra UMA chave, a vazia. Eram as quatro de
+    // cor, e esse era o estado de `D-23`, que `D-40` reabriu.
+    expect(body.rankings.responsible.map((group: { key: string }) => group.key)).toEqual([''])
     expect(body.meta.topN).toBe(10)
 
     await app.close()
@@ -183,16 +187,17 @@ describe('GET /api/indicators', () => {
    * Ate `H-19` a rota devolvia `label: 'colaborador1'`, e nenhuma pagina o
    * consumia — o defeito so apareceria na primeira tela a exibi-lo. Traduzir no
    * cliente escreveria a mesma tabela duas vezes (A-28).
+   *
+   * **A chave medida aqui mudou em `H-93`:** era `indefinido`, uma das quatro
+   * de cor; sem mapa de equipe a unica que existe e a vazia.
    */
   it('devolve o rotulo legivel do responsavel, nao a chave', async () => {
     const app = buildServer(config, fakeStore(state()))
 
     const body = (await app.inject({ method: 'GET', url: '/api/indicators' })).json()
-    const indefinido = body.rankings.responsible.find(
-      (group: { key: string }) => group.key === 'indefinido',
-    )
+    const semDono = body.rankings.responsible.find((group: { key: string }) => group.key === '')
 
-    expect(indefinido.label).toBe('Indefinido')
+    expect(semDono.label).toBe('Sem responsável')
 
     await app.close()
   })
@@ -203,8 +208,8 @@ describe('GET /api/indicators', () => {
    */
   describe('IND-20 com o mapa de equipe (H-50)', () => {
     const equipe = normalizeTeamMap([
-      { key: 'membro1', label: 'Primeiro', importers: ['importadora um'], colorResponsible: [] },
-      { key: 'membro2', label: 'Segundo', importers: ['importadora dois'], colorResponsible: [] },
+      { key: 'membro1', label: 'Primeiro', importers: ['importadora um'] },
+      { key: 'membro2', label: 'Segundo', importers: ['importadora dois'] },
     ])
     const comEquipe = (processes: Process[]) =>
       buildServer(

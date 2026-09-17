@@ -100,7 +100,7 @@ Parâmetro com valor fora do domínio → `400 FILTRO_INVALIDO`.
 ```ts
 type StatusCategory = 'desembaracado' | 'em_desembaraco' | 'em_andamento'
                     | 'fechado_aguardando_draft'
-type Responsible    = 'colaborador1' | 'colaborador2' | 'colaborador1_outros_clientes' | 'indefinido'
+type Responsible    = string   // domínio ABERTO: a chave vem de team-map.json; '' é "sem responsável"
 type CustomsChannel = 'verde' | 'vermelho' | 'indefinido'   // `nenhum` saiu em H-51
 
 interface ProcessDto {

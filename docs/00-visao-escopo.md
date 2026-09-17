@@ -27,7 +27,7 @@ ela a interpreta e a edita.
 | Leitura da planilha | Parse do `.xlsx` sincronizado pelo OneDrive, incluindo a cor de preenchimento da linha |
 | Recarga automática | Detecção de alteração externa do arquivo e reprocessamento |
 | Classificação de STATUS | As 4 categorias canônicas (§2.1 e §2.2 da especificação) |
-| Campos derivados de cor | Responsável, Canal e Importador fora do RJ |
+| Campos derivados de cor | Canal e Importador fora do RJ. **Responsável saiu em `H-93`** (`D-40`): a cor deixou de atribuí-lo, e ele passa a vir só do mapa de equipe |
 | Indicadores | 21 dos 22 do catálogo (§4). O 22º está fora de escopo por decisão da própria especificação — ver 3.2 |
 | Alertas | Os 6 do catálogo (§5), incluindo "Processos parados" |
 | Telas | As 6 páginas de §6, a tela de detalhe do processo, e a **Página Configuração** — que não vem da especificação: ela nasceu entre `H-34` e `H-38` para o operador apontar a planilha sem editar JSON (RF-31) |

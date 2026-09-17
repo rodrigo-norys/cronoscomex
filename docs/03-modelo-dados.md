@@ -412,16 +412,19 @@ que é o branco do tema. Nenhuma combinação já alcançável mudou de `fillId`
 **A coluna `responsible` desta tabela mudou de nome em `H-50`, e só de nome.**
 Ela passou a se chamar `colorResponsible` no domínio, porque o campo
 `responsible` do `Process` deixou de sair da cor: ele vem do **importador**,
-resolvido contra `config/team-map.json`, com a cor desempatando o que a lista
-não alcança (`resolveTeam`). O `color-map.json` **não muda** — a chave dele
+resolvido contra `config/team-map.json` (`resolveTeam`). **O desempate pela cor
+existiu de `H-50` até `H-93`, e saiu em `D-40`** — hoje não há desempate: o que
+o importador não alcança fica em "Sem responsável". O `color-map.json` **não muda** — a chave dele
 continua `responsible`, e ali o contexto já é a cor. **Nenhum `fillId` mudou, e
 a escrita de `H-27` grava exatamente o que gravava.**
 
 As quatro linhas com cor de responsável somam **165 de 649** — 120 + 31 + 9 + 5,
 conferido contra a planilha real em 01/09/2026 pela via de `H-50`. É o número
-que o campo Responsável preenchia antes de `H-50`, e o que ele volta a
-preencher se `team-map.json` faltar (`D-23`). Com o mapa: **559** pelo
-importador, **48** pelo desempate da cor, **42** sem responsável.
+que o campo Responsável preenchia antes de `H-50`. **Desde `H-93` ele não volta
+a preenchê-lo se `team-map.json` faltar:** `D-23` mandava devolver a chave de
+cor nesse estado, e `D-40` a reabriu — sem mapa, as 649 linhas ficam em "Sem
+responsável". Com o mapa, medido em 10/09/2026: **559** pelo importador e
+**90** sem responsável, contra 559 + 48 pela cor + 42 antes de `H-93`.
 
 Os dois verdes e os dois roxos são **entradas separadas apontando para o mesmo
 significado** (A-48) — não há limiar de distância, apenas duas linhas no mapa.

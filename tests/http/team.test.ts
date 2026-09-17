@@ -102,13 +102,11 @@ const equipe = (): TeamMember[] =>
       key: 'membro1',
       label: 'Primeiro',
       importers: ['importadora um'],
-      colorResponsible: [],
     },
     {
       key: 'membro2',
       label: 'Segundo',
       importers: ['importadora quatro'],
-      colorResponsible: [],
     },
   ])
 
@@ -406,7 +404,6 @@ describe('DELETE /api/team/:key/importers/:importer', () => {
           key: 'membro1',
           label: 'Primeiro',
           importers: ['importadora um', 'mpa'],
-          colorResponsible: [],
         },
       ]),
     )
@@ -417,7 +414,6 @@ describe('DELETE /api/team/:key/importers/:importer', () => {
           key: 'membro1',
           label: 'Primeiro',
           importers: ['importadora um', 'mpa'],
-          colorResponsible: [],
         },
       ]),
     )

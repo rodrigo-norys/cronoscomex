@@ -30,7 +30,8 @@ import { apiError } from '../errors.ts'
  *
  * `responsible` e o caso do meio, desde `H-50`: o dominio e fechado, mas so em
  * execucao — quem o define e `team-map.json`. Por isso ele passa por
- * `labelledOptions`, e nao por `fixedOptions` nem por `optionsOf`.
+ * `labelledOptions`, e nao por `fixedOptions` nem por `optionsOf`. Sem mapa ele
+ * tem UMA opcao, a chave vazia (`H-93`).
  */
 /**
  * Um grupo de clientes e seus membros (`H-55`), para o filtro exibir um nivel
@@ -65,8 +66,9 @@ export interface FilterOptionsResponse {
    * As pessoas do mapa de equipe (`H-50`), mais a chave vazia — os processos
    * sem responsavel. Pessoa sem processo algum aparece com zero (A-28).
    *
-   * Sem mapa de equipe sao as quatro chaves de cor, e nao ha diferenca visivel
-   * em relacao a `colorResponsible`: e o estado de `D-23`.
+   * **Sem mapa de equipe sobra so a chave vazia**, desde `H-93`. Ate ali eram
+   * as quatro chaves de cor, indistinguiveis de `colorResponsible` — era o
+   * estado de `D-23`, que `D-40` reabriu.
    */
   responsible: FilterOption[]
   /** O que a cor da linha diz (`H-50`). Dominio fechado, quatro chaves. */
