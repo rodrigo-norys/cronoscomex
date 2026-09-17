@@ -27,6 +27,14 @@ interface EditableCellProps {
   value: string
   /** O que a celula mostra quando nao esta em edicao. Padrao: o proprio valor. */
   display?: string
+  /**
+   * A cor de fundo que a planilha da a esta celula (`H-94`), em `#RRGGBB`.
+   *
+   * **`undefined` significa SEM fundo**, e nunca branco: e a determinacao 3 de
+   * `D-41`. Chave de estilo que o mapa nao declara nao recebe a cor mais
+   * proxima — a celula fica com o fundo da tabela, e a ausencia aparece.
+   */
+  fill?: string | undefined
   /** O que a coluna acrescenta ao `<td>` — fonte monoespacada, alinhamento. */
   className?: string
   /** As quatro props da grade: a celula participa da navegacao por setas. */
@@ -43,6 +51,7 @@ export function EditableCell({
   kind,
   value,
   display,
+  fill,
   className = '',
   cell,
   onCommit,
@@ -140,6 +149,9 @@ export function EditableCell({
       <td
         ref={container}
         {...cell}
+        // `undefined` nao vira atributo: a celula fica com o fundo da tabela, e
+        // e assim que "sem cor declarada" se parece (`H-94`).
+        style={{ backgroundColor: fill }}
         className={`max-w-56 truncate px-3 ${className}`}
         /* O `title` carrega o texto VISIVEL, e nao o valor cru: ele existe para
            mostrar inteiro o que a coluna cortou, e na data o cru e `AAAA-MM-DD`
@@ -167,7 +179,9 @@ export function EditableCell({
   }
 
   return (
-    <td ref={container} {...cell} className="px-3">
+    // A cor segue na celula durante a edicao: ela continua sendo a mesma celula
+    // da planilha, e apaga-la faria a linha piscar ao entrar e sair do campo.
+    <td ref={container} {...cell} style={{ backgroundColor: fill }} className="px-3">
       <input
         ref={input}
         type={kind === 'date' ? 'date' : 'text'}

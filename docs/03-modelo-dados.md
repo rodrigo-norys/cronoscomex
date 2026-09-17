@@ -353,7 +353,32 @@ mesma cor é produzida por vários `styleId` — `argb:FF00FF00` vem dos styleId
 **leitura** isso é irrelevante: os três colapsam na mesma chave, que é o
 objetivo. Para a **escrita**, é decisivo — ver TD-05.1 (achado A-49).
 
-`config/color-map.json` traduz chave → campos. **O arquivo real, gerado por
+`config/color-map.json` traduz chave → campos.
+
+**Desde `H-94` a entrada carrega também `display`, a cor de EXIBIÇÃO.** Ela é
+declarada em `#RRGGBB` e nunca resolvida: a chave de estilo é literal, e
+`theme:0|tint:0.0000` não é RGB — resolver tema mais tint exigiria reimplementar
+a modulação de luminância do OOXML, que `src/io/style-extractor.ts` se recusa a
+fazer. **Chave sem `display` não recebe cor inventada:** a célula fica sem fundo,
+e a ausência aparece (determinação 3 de `D-41`). É `display` que unifica tons
+próximos, por construção — duas chaves com o mesmo hex ficam unificadas sem
+estrutura nova (`D-42`), o que confirma a recusa da alternativa A2 do `ADR-0003`.
+
+**E o arquivo ganhou uma segunda lista, `cellFills`.** Ela declara cor de
+exibição para chaves que **não têm significado de negócio**, e a separação é o
+ponto: uma entrada de `entries` traz `fillId`, `responsible`, `customsChannel` e
+`importerOutsideRj` — ela alimenta `resolveColor` e entra em
+`representableTargets`, isto é, vira **alvo de escrita**. Medido em 16/09/2026:
+as células A–P têm **13 cores distintas** contra as 9 de `entries`, e as outras
+quatro pintam **1.237 células**, concentradas em `Coluna 13` e `R$ ENVIADO`.
+Declará-las em `entries` exigiria inventar um `fillId` para elas — contra a regra
+inviolável 3 — ou torná-las graváveis, que `H-94` exclui.
+
+**A cor do PROCESSO não mudou:** ela continua saindo da âncora, a coluna A, e
+`ADR-0003` não é tocado. O que `H-94` acrescenta é pintar cada célula com a cor
+dela, e renderizar não classifica.
+
+**O arquivo real, gerado por
 `H-01`, está em `config/color-map.json`; o exemplo abaixo é ilustrativo da
 estrutura:**
 

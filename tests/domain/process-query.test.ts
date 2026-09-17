@@ -81,6 +81,8 @@ function makeProcess(fields: Fields = {}): Process {
     customsChannel: 'indefinido',
     importerOutsideRj: null,
     styleKey: 'none',
+    cellStyleKeys: {},
+    fills: {},
     anomalies: [],
   }
 }

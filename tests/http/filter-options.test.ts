@@ -79,6 +79,8 @@ function process(fields: Fields = {}): Process {
     customsChannel: fields.customsChannel ?? 'indefinido',
     importerOutsideRj: fields.importerOutsideRj ?? null,
     styleKey: 'none',
+    cellStyleKeys: {},
+    fills: {},
     anomalies: [],
   }
 }

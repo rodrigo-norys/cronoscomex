@@ -106,6 +106,8 @@ function process(overrides: Partial<Process> = {}): Process {
     customsChannel: 'indefinido',
     importerOutsideRj: false,
     styleKey: 'argb:FF00FF00',
+    cellStyleKeys: {},
+    fills: {},
     anomalies: [],
     ...overrides,
   }

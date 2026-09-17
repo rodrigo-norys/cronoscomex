@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import {
+  type CellFill,
   type ColorMapEntry,
   indexColorMap,
+  indexDisplay,
   NO_FILL_KEY,
   representableTargets,
+  resolveCellFills,
   resolveColor,
   resolveColorIndexed,
   resolveFillTarget,
@@ -352,5 +355,77 @@ describe('representableTargets', () => {
 
   it('devolve lista vazia com mapa vazio', () => {
     expect(representableTargets([])).toEqual([])
+  })
+})
+
+/**
+ * `H-94`. A cor de exibicao — das duas listas, e so das chaves que a declaram.
+ */
+describe('indexDisplay', () => {
+  const PINTURAS: CellFill[] = [
+    { styleKey: 'argb:FF00FFFF', display: '#00FFFF', label: 'Ciano' },
+    { styleKey: 'argb:FFB7E1CD', display: '#B7E1CD', label: 'Verde-claro' },
+  ]
+
+  it('junta as entradas com significado e as que so pintam', () => {
+    const index = indexDisplay([{ ...MAPA[0], display: '#00FF00' } as ColorMapEntry], PINTURAS)
+
+    expect(index.get('argb:FF00FF00')).toBe('#00FF00')
+    expect(index.get('argb:FF00FFFF')).toBe('#00FFFF')
+    expect(index.size).toBe(3)
+  })
+
+  it('DEIXA DE FORA a chave sem display — nunca a cor mais proxima', () => {
+    // Determinacao 3 de `D-41`: quem consulta recebe `undefined` e nao pinta.
+    const index = indexDisplay(MAPA)
+
+    expect(index.size).toBe(0)
+    expect(index.get('argb:FF00FF00')).toBeUndefined()
+  })
+
+  it('unifica duas chaves que declaram o mesmo hex, sem estrutura nova (D-42)', () => {
+    const index = indexDisplay([
+      { ...MAPA[0], display: '#00FF00' } as ColorMapEntry,
+      { ...MAPA[1], display: '#00FF00' } as ColorMapEntry,
+    ])
+
+    expect(index.get('argb:FF00FF00')).toBe('#00FF00')
+    expect(index.get('argb:FF00FF0D')).toBe('#00FF00')
+  })
+})
+
+describe('resolveCellFills', () => {
+  const index = indexDisplay(
+    [{ ...MAPA[0], display: '#00FF00' } as ColorMapEntry],
+    [{ styleKey: 'argb:FF00FFFF', display: '#00FFFF', label: 'Ciano' }],
+  )
+
+  it('pinta a coluna cuja chave tem display declarado', () => {
+    const fills = resolveCellFills({ A: 'argb:FF00FF00', N: 'argb:FF00FFFF' }, index)
+
+    expect(fills).toEqual({ A: '#00FF00', N: '#00FFFF' })
+  })
+
+  it('OMITE a coluna cuja chave ninguem declarou', () => {
+    // A celula fica sem fundo, e a ausencia aparece — nunca a cor mais proxima.
+    const fills = resolveCellFills({ A: 'argb:FF00FF00', B: 'argb:FFDEADBE' }, index)
+
+    expect(fills).toEqual({ A: '#00FF00' })
+  })
+
+  it('devolve vazio sem indice, que e o estado de quem nao declarou nada', () => {
+    expect(resolveCellFills({ A: 'argb:FF00FF00' }, undefined)).toEqual({})
+    expect(resolveCellFills({ A: 'argb:FF00FF00' }, new Map())).toEqual({})
+  })
+
+  it('a celula sem preenchimento so pinta se `none` for declarado', () => {
+    // `none` e chave como qualquer outra: o mapa pode declara-la, e ai ela
+    // pinta. Sem declaracao, fica de fora como as demais.
+    expect(resolveCellFills({ A: NO_FILL_KEY }, index)).toEqual({})
+
+    const comNone = indexDisplay([
+      { ...MAPA[0], styleKey: NO_FILL_KEY, display: '#FFFFFF' } as ColorMapEntry,
+    ])
+    expect(resolveCellFills({ A: NO_FILL_KEY }, comNone)).toEqual({ A: '#FFFFFF' })
   })
 })

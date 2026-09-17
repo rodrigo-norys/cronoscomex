@@ -2,7 +2,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { ColorMapError, loadColorMap } from '../../src/app/color-map-loader.ts'
+import { ColorMapError, loadCellFills, loadColorMap } from '../../src/app/color-map-loader.ts'
 import { STYLED_COLUMNS } from '../../src/domain/color-mapper.ts'
 
 let dir: string
@@ -127,5 +127,116 @@ describe('as colunas repintadas por H-27', () => {
     expect(STYLED_COLUMNS).toHaveLength(12)
     expect(STYLED_COLUMNS).not.toContain('M')
     expect(STYLED_COLUMNS).not.toContain('P')
+  })
+})
+
+/**
+ * `H-94`. A cor de EXIBICAO — declarada, nunca resolvida.
+ */
+describe('display', () => {
+  it('carrega o hex declarado nas entradas', () => {
+    const path = escrever({ version: 1, entries: [{ ...entradaValida, display: '#5B9BD5' }] })
+
+    expect(loadColorMap(path)[0]?.display).toBe('#5B9BD5')
+  })
+
+  it('AUSENTE e legitimo: a celula fica sem fundo, e nao com cor inventada', () => {
+    // Determinacao 3 de `D-41`, e a regra inviolavel 3 no caso da cor.
+    const path = escrever({ version: 1, entries: [entradaValida] })
+
+    expect(loadColorMap(path)[0]?.display).toBeUndefined()
+  })
+
+  it('PRESENTE e malformado mata a partida, apontando a forma', () => {
+    // Ausente e "ainda nao declarei"; escrito errado e intencao de cor que
+    // viraria silencio — sao coisas diferentes.
+    const path = escrever({ version: 1, entries: [{ ...entradaValida, display: '5B9BD5' }] })
+
+    expect(() => loadColorMap(path)).toThrow(/display invalido/)
+  })
+
+  it('recusa hex de tres digitos: o campo e #RRGGBB, e nada mais', () => {
+    const path = escrever({ version: 1, entries: [{ ...entradaValida, display: '#ABC' }] })
+
+    expect(() => loadColorMap(path)).toThrow(ColorMapError)
+  })
+
+  it('as 9 entradas do mapa real declaram display', () => {
+    // Sem isto a tabela de `H-94` nao pinta nada — foi exatamente o que a
+    // conferencia contra a planilha real pegou em 16/09/2026.
+    const entries = loadColorMap('config/color-map.json')
+
+    expect(entries.every((entry) => entry.display !== undefined)).toBe(true)
+  })
+})
+
+/**
+ * `H-94`. As cores que so PINTAM — lista separada, e a separacao e o ponto:
+ * elas nao viram alvo de escrita e nao exigem `fillId` inventado.
+ */
+describe('loadCellFills', () => {
+  it('le as quatro chaves medidas no mapa real', () => {
+    const fills = loadCellFills('config/color-map.json')
+
+    expect(fills.map((fill) => fill.styleKey).sort()).toEqual([
+      'argb:FF00FFFF',
+      'argb:FFB7E1CD',
+      'argb:FFF6F8F9',
+      'argb:FFFFFFFF',
+    ])
+  })
+
+  it('unifica as tres brancas pelo mesmo display (D-42)', () => {
+    const fills = loadCellFills('config/color-map.json')
+    const brancas = fills.filter((fill) => fill.display === '#FFFFFF')
+
+    expect(brancas.map((fill) => fill.styleKey).sort()).toEqual(['argb:FFF6F8F9', 'argb:FFFFFFFF'])
+  })
+
+  it('lista ausente devolve vazio, e nao erro', () => {
+    expect(loadCellFills(escrever({ version: 1, entries: [] }))).toEqual([])
+  })
+
+  it('arquivo ausente devolve vazio', () => {
+    expect(loadCellFills(join(dir, 'nao-existe.json'))).toEqual([])
+  })
+
+  it('aqui display e OBRIGATORIO: a entrada existe so para pintar', () => {
+    const path = escrever({
+      version: 1,
+      entries: [],
+      cellFills: [{ styleKey: 'argb:FF00FFFF' }],
+    })
+
+    expect(() => loadCellFills(path)).toThrow(/display e obrigatorio/)
+  })
+
+  it('usa a styleKey como label quando o rotulo falta', () => {
+    const path = escrever({
+      version: 1,
+      entries: [],
+      cellFills: [{ styleKey: 'argb:FF00FFFF', display: '#00FFFF' }],
+    })
+
+    expect(loadCellFills(path)[0]?.label).toBe('argb:FF00FFFF')
+  })
+
+  it('recusa styleKey repetida, nomeando as duas posicoes', () => {
+    const path = escrever({
+      version: 1,
+      entries: [],
+      cellFills: [
+        { styleKey: 'argb:FF00FFFF', display: '#00FFFF' },
+        { styleKey: 'argb:FF00FFFF', display: '#B7E1CD' },
+      ],
+    })
+
+    expect(() => loadCellFills(path)).toThrow(/cellFills\[0\] e cellFills\[1\]/)
+  })
+
+  it('recusa "cellFills" que nao e lista', () => {
+    const path = escrever({ version: 1, entries: [], cellFills: 'ciano' })
+
+    expect(() => loadCellFills(path)).toThrow(/precisa ser uma lista/)
   })
 })

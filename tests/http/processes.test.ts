@@ -57,6 +57,8 @@ function process(sourceRow: number, extra: Partial<Process> = {}): Process {
     customsChannel: 'indefinido',
     importerOutsideRj: null,
     styleKey: 'none',
+    cellStyleKeys: {},
+    fills: {},
     anomalies: [],
     ...extra,
   }
@@ -118,6 +120,7 @@ describe('GET /api/processes — envelope', () => {
       'customsChannel',
       'docsSentDate',
       'eta2',
+      'fills',
       'goods',
       'hasPendingEdits',
       'importer',

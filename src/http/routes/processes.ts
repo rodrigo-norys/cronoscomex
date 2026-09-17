@@ -86,6 +86,22 @@ export interface ProcessDto {
   columnPRaw: string
   anomalies: AnomalyCode[]
   /**
+   * A cor de fundo de cada celula, por letra de coluna (`H-94`).
+   *
+   * **Ja em `#RRGGBB`**, resolvida no servidor contra `config/color-map.json`:
+   * traduzir a chave de estilo na tela poria regra no cliente (regra inviolavel
+   * 6) e obrigaria a interface a carregar uma copia do mapa, que divergiria do
+   * arquivo no primeiro ajuste.
+   *
+   * **Coluna ausente do objeto significa "sem fundo"**, e nunca "branco": e a
+   * determinacao 3 de `D-41`. Chave que o mapa nao declara nao recebe a cor
+   * mais proxima — a celula fica sem pintura, e a ausencia aparece.
+   *
+   * **E a primeira vez que a cor atravessa a API no fluxo normal.** Ate aqui a
+   * `styleKey` so saia pelo relatorio de quarentena.
+   */
+  fills: Record<string, string>
+  /**
    * A fila de edicoes so existe em `H-23`, entao hoje e sempre `false` — como
    * `pendingEditsCount` no health. O campo entra no contrato desde ja para a
    * interface nao precisar mudar depois, e vale `false` porque **nao ha edicao
@@ -170,6 +186,7 @@ function toDto(process: Process, hasPendingEdits = false): ProcessDto {
     paymentRaw: process.paymentRaw,
     columnPRaw: process.columnPRaw,
     anomalies: [...process.anomalies],
+    fills: { ...process.fills },
     hasPendingEdits,
   }
 }

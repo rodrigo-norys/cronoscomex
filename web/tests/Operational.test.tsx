@@ -790,11 +790,20 @@ describe('densidade e número na tabela (H-61)', () => {
   })
 
   /**
-   * `H-64`. A linha e o unico realce sob cursor da pagina, e o papel de
-   * movimento acompanha o `hover:` que ja existia. O que a duracao vale, e que
-   * ela cai sob reducao, e do CSS — `tests/repo/estilo.test.ts` cobra la.
+   * `H-64` pos o realce da linha como FUNDO, e `H-94` o tirou — o que sobra
+   * aqui e a prova de que ele saiu.
+   *
+   * **O fundo deixou de funcionar, e e medido:** `#f0f2f5` mede **1,03** de
+   * contraste contra o novo fundo da tabela, e sob uma celula pintada ele nem
+   * aparece, porque a cor da planilha esta por cima. Com 87,3% das celulas
+   * pintadas, o realce por fundo seria a excecao e nao a regra.
+   *
+   * O realce virou CONTORNO, e ele vive em `table-rules`, no CSS — regra de
+   * `:hover` nao e alcancavel do `jsdom`, entao quem a cobra e
+   * `tests/repo/estilo.test.ts`. O que este teste guarda e que a classe de
+   * fundo nao voltou.
    */
-  it('a linha nomeia o papel de movimento junto do realce', async () => {
+  it('a linha NAO realca por fundo — o realce e contorno, e vive no CSS', async () => {
     renderPage()
 
     const linhas = await screen.findAllByRole('row')
@@ -802,9 +811,55 @@ describe('densidade e número na tabela (H-61)', () => {
 
     expect(corpo.length).toBeGreaterThan(0)
     for (const linha of corpo) {
-      expect(linha.className).toContain('hover:bg-surface-hover')
-      expect(linha.className).toContain('motion-tint')
+      expect(linha.className).not.toContain('hover:bg-surface-hover')
     }
+  })
+
+  /**
+   * `H-94`. A celula mostra a cor que a planilha da a ELA, e nao a da linha.
+   *
+   * Medido em 16/09/2026: 36 das linhas divergem internamente dentro de A-L, o
+   * que refuta `A-44` — por isso a pintura e por celula, e nao por linha.
+   */
+  it('pinta cada celula com a cor que a planilha da a ela', async () => {
+    api.serveProcesses(
+      processesFixture([
+        processFixture({ ref: 'FT501.26', fills: { A: '#00FF00', L: '#FFFF00' } }),
+      ]),
+    )
+    renderPage()
+
+    const linhas = await screen.findAllByRole('row')
+    const linha = linhas.filter((uma) => uma.closest('tbody') !== null)[0] as HTMLElement
+    const celulas = [...linha.querySelectorAll('td')]
+
+    // REF e a coluna A; Categoria e a L.
+    expect(celulas[0]?.style.backgroundColor).toBe('rgb(0, 255, 0)')
+    expect(celulas[8]?.style.backgroundColor).toBe('rgb(255, 255, 0)')
+  })
+
+  /**
+   * A determinacao 3 de `D-41`, e a regra inviolavel 3 no caso da cor: chave
+   * sem `display` declarado NAO recebe a cor mais proxima.
+   */
+  it('deixa sem fundo a coluna que a planilha nao pintou', async () => {
+    api.serveProcesses(
+      processesFixture([processFixture({ ref: 'FT501.26', fills: { A: '#00FF00' } })]),
+    )
+    renderPage()
+
+    const linhas = await screen.findAllByRole('row')
+    const linha = linhas.filter((uma) => uma.closest('tbody') !== null)[0] as HTMLElement
+    const celulas = [...linha.querySelectorAll('td')]
+
+    // A coluna B existe na planilha e nao foi declarada: fica sem fundo.
+    expect(celulas[2]?.style.backgroundColor).toBe('')
+    /*
+      Cliente NUNCA recebe fundo, e por outro motivo: ele e o resultado da
+      consolidacao de `client-map.json`, e nao o conteudo de uma celula. Pintar
+      com a cor de alguma coluna atribuiria a ele uma cor que a planilha nao deu.
+    */
+    expect(celulas[1]?.style.backgroundColor).toBe('')
   })
 })
 

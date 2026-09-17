@@ -74,7 +74,8 @@ const esperar = (ms) => new Promise((ok) => setTimeout(ok, ms))
  * @param {{fixture?: string, porta?: number}} opcoes
  */
 export async function abrirAplicacao({ fixture = 'cores.xlsx', porta = 5199 } = {}) {
-  const { loadColorMap } = await modulo('src/app/color-map-loader.ts')
+  const { loadCellFills, loadColorMap } = await modulo('src/app/color-map-loader.ts')
+  const { indexDisplay } = await modulo('src/domain/color-mapper.ts')
   const { loadStatusAliases } = await modulo('src/app/status-aliases-loader.ts')
   const { initStore, refreshClientMap, refreshTeamMap, reload, store } = await modulo(
     'src/app/process-store.ts',
@@ -139,6 +140,9 @@ export async function abrirAplicacao({ fixture = 'cores.xlsx', porta = 5199 } = 
     config,
     colorMap,
     statusAliases: loadStatusAliases(),
+    // `H-94`: sem isto a medicao veria a tabela SEM pintura, e mediria o
+    // contraste do fundo da casca onde o operador ve a cor da planilha.
+    displayIndex: indexDisplay(colorMap, loadCellFills()),
     quarantinePath: join(area, 'quarantine.json'),
     historyPath: join(area, 'history.jsonl'),
     queuePath: join(area, 'pending-edits.jsonl'),

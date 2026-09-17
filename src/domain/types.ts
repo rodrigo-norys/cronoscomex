@@ -112,6 +112,19 @@ export interface RawRow {
   cells: Record<string, RawCell>
   /** Chave de estilo da celula-ancora (coluna A). Ver TD-05. */
   styleKey: string
+  /**
+   * Chave de estilo de CADA celula, por letra de coluna (`H-94`).
+   *
+   * **Aditivo, e nao substituto de `styleKey`.** A cor do PROCESSO continua
+   * saindo da ancora — `ADR-0003` nao e tocado, e as demais colunas seguem
+   * ignoradas para classificar. Isto existe para PINTAR, e renderizar nao
+   * classifica.
+   *
+   * Medido em 16/09/2026 sobre as linhas reais: 36 delas divergem internamente
+   * dentro de A–L, o que refuta a afirmacao de `A-44` de que K e L acompanham a
+   * cor da linha.
+   */
+  cellStyleKeys: Record<string, string>
 }
 
 /**
@@ -213,6 +226,31 @@ export interface Process {
   /** `null` quando a cor nao foi reconhecida: diferente de "dentro do RJ". */
   readonly importerOutsideRj: boolean | null
   readonly styleKey: string
+  /**
+   * A chave de estilo de cada celula, por letra de coluna (`H-94`).
+   *
+   * **Viaja no `Process` pelo MESMO motivo que `styleKey` ja viajava:** o
+   * round-trip. `toRawRow` reconstroi a linha crua a partir do processo, e
+   * `refreshClientMap` e `refreshTeamMap` re-derivam por ele com o processo no
+   * ar — guardar so a cor ja resolvida faria toda troca de mapa apagar a
+   * pintura da tabela, em silencio.
+   *
+   * Nao sai na API: quem a tela recebe e `fills`, ja resolvida.
+   */
+  readonly cellStyleKeys: Readonly<Record<string, string>>
+  /**
+   * A cor de exibicao de cada celula, por letra de coluna (`H-94`).
+   *
+   * **Ja resolvida em `#RRGGBB`**, e nao a chave de estilo: quem traduz chave em
+   * cor e o mapa, que vive no dominio — deixar a traducao para a tela poria
+   * regra no cliente (regra inviolavel 6) e obrigaria a interface a carregar
+   * uma copia do mapa.
+   *
+   * **Coluna sem cor declarada NAO entra**, e e a determinacao 3 de `D-41`: a
+   * celula fica sem fundo, e a ausencia aparece. Chave que o mapa nao conhece
+   * nunca vira a cor mais proxima.
+   */
+  readonly fills: Readonly<Record<string, string>>
 
   readonly anomalies: readonly AnomalyCode[]
 }

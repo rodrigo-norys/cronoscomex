@@ -670,6 +670,7 @@ describe('initStore — o mapa de clientes chega a composicao', () => {
       B: { value: client, type: 'string' },
     },
     styleKey: 'none',
+    cellStyleKeys: {},
   })
 
   const lerUmaLinha = async (): Promise<ReadResult> => ({
@@ -721,6 +722,7 @@ describe('initStore — o mapa de equipe chega a composicao (H-50)', () => {
       C: { value: importer, type: 'string' },
     },
     styleKey: 'none',
+    cellStyleKeys: {},
   })
 
   const lerUmaLinha = async (): Promise<ReadResult> => ({

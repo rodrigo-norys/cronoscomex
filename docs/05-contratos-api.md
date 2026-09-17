@@ -124,6 +124,8 @@ interface ProcessDto {
   paymentRaw: string             // fora de escopo, apenas exibição
   columnPRaw: string             // não documentada (P-02)
   anomalies: string[]
+  fills: Record<string, string>  // H-94 — cor de fundo por coluna ('A'..'P'), em #RRGGBB.
+                                 // Coluna AUSENTE significa sem fundo, nunca branco
   hasPendingEdits: boolean
 }
 

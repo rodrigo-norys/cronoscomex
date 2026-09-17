@@ -239,9 +239,9 @@ idênticas**, incluindo as abas fora de escopo.
 
 ## Estado
 
-**93 das 96 histórias** de [`docs/06-backlog.md`](docs/06-backlog.md) estão
+**94 das 96 histórias** de [`docs/06-backlog.md`](docs/06-backlog.md) estão
 concluídas — o bloco `✅ CONCLUÍDA` de cada uma é a fonte, e é lá que o número
-se reconfere, com `grep -c '✅ \*\*CONCLUÍDA' docs/06-backlog.md`. As três
+se reconfere, com `grep -c '✅ \*\*CONCLUÍDA' docs/06-backlog.md`. As duas
 abertas são as restantes de `E15`, em que a tabela passa a espelhar a
 planilha.
 

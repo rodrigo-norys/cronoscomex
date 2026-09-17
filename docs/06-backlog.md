@@ -44,8 +44,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E12 — Os achados da revisão de estilo ✅ | **H-73 … H-76, todas concluídas** | 2 | 1 | 1 |
 | E13 — O operacional que edita, ordena e cria ✅ | **H-77 … H-81, todas concluídas.** Épico **retroativo**: o código entrou em 02/09/2026 e as histórias foram escritas em 03/09 | 3 | 0 | 2 |
 | E14 — A casca que se opera, não só se lê ✅ | **H-82 a H-92 ✅ — o épico fechou em 16/09/2026, com `H-91`.** Primeiro épico **prospectivo** desde `E12`: as nove primeiras nascem antes do código (`D-29` a `D-34`), `H-91` entra em 08/09/2026 por `D-35`, e `H-92` em 10/09/2026 por `D-39`. `H-91` passou de M para **G** na fatia de 11/09, quando o contrato dela dobrou | 3 | 6 | 2 |
-| E15 — A tabela é a planilha, e a cor é só cor | **`H-93` ✅; `H-94` a `H-96` abertas.** Nasce de `D-40` a `D-43`, em 10 e 11/09/2026: a cor deixa de apontar responsável e vira aparência, e a tabela passa a espelhar o arquivo — as 16 colunas com o nome do cabeçalho. `H-93` veio de `E14` em 11/09, por estar grande demais. `H-96` nasce de defeito **simulado**, não observado. **As quatro são G**, pela régua do topo | 0 | 0 | 4 |
-| **Total** | **96** — 93 concluídas, 3 abertas | **36** | **50** | **10** |
+| E15 — A tabela é a planilha, e a cor é só cor | **`H-93` e `H-94` ✅; `H-95` e `H-96` abertas.** Nasce de `D-40` a `D-43`, em 10 e 11/09/2026: a cor deixa de apontar responsável e vira aparência, e a tabela passa a espelhar o arquivo — as 16 colunas com o nome do cabeçalho. `H-93` veio de `E14` em 11/09, por estar grande demais. `H-96` nasce de defeito **simulado**, não observado. **As quatro são G**, pela régua do topo | 0 | 0 | 4 |
+| **Total** | **96** — 94 concluídas, 2 abertas | **36** | **50** | **10** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -220,7 +220,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 **[Épico E15 — A tabela é a planilha, e a cor é só cor](#e15)**
 
 - [H-93 — A cor sai da regra de responsável](#h-93) ✅
-- [H-94 — O fundo da célula é a cor da planilha, e a casca recua de tom](#h-94)
+- [H-94 — O fundo da célula é a cor da planilha, e a casca recua de tom](#h-94) ✅
 - [H-95 — As dezesseis colunas, com o nome literal do cabeçalho](#h-95)
 - [H-96 — A coluna se resolve por nome, e não por letra](#h-96)
 
@@ -10898,6 +10898,60 @@ linhas vazias.
 <a id="h-94"></a>
 
 ### H-94 — O fundo da célula é a cor da planilha, e a casca recua de tom
+
+> ✅ **CONCLUÍDA em 16/09/2026.** **25 testes próprios** — a suíte foi de 2110
+> para **2135**, em 86 arquivos —, mais um **reescrito**: o do realce da linha,
+> que fixava o contrato antigo.
+>
+> **As duas cores que faltavam foram MEDIDAS, não escolhidas.** `A-44` e o
+> `ADR-0003` descreviam "ciano fixo" e "cinza fixo" em prosa, e `D-41` contava
+> 13 contra 9 sem enumerar — nenhum documento trazia a chave. A varredura
+> célula a célula deu `argb:FF00FFFF` (ciano, 438 células, **só** na coluna N) e
+> `argb:FFB7E1CD` (verde-claro, 301, em M e N). Inventar o hex delas violaria a
+> regra inviolável 3.
+>
+> **A medição reproduz `D-41` número a número:** 13 cores distintas em A–P
+> contra as 9 do mapa, **1.237** células por chaves que ele ignorava, **9.080**
+> com cor, e **36** linhas divergindo internamente dentro de A–L — 16 com
+> amarelo forte, 1 buraco. **Um número novo saiu daí:** por cor de EXIBIÇÃO as
+> divergentes caem de 36 para **16**, porque `display` unifica os pares tom A /
+> tom B. É `D-42` funcionando, e é o argumento contra o limiar calculado do
+> `ADR-0003` visto por outro ângulo.
+>
+> **A conferência contra a planilha real reprovou, e o portão não viu.**
+> `fills` saía **vazio nos 650 processos**: `tools/carregar-planilha.mjs` tem o
+> seu próprio `initStore` e não recebeu o índice de exibição. **É a terceira vez
+> que este modo de falha aparece** — `H-49` com o mapa de clientes, `H-50` com o
+> de equipe, agora a cor —, e teste nenhum o pega, porque todos injetam o mapa
+> vazio de propósito. Corrigido, são 649 dos 650 com célula pintada (o 650º é a
+> linha sintética de `D-28`) e 9.069 células. **O passo obrigatório de conferir
+> contra o arquivo real é o que separa "compila" de "funciona".**
+>
+> **Quatro divergências da fatia, e a primeira mudou desenho.** As quatro chaves
+> novas **não cabiam em `entries`**: aquela lista declara `fillId`,
+> `responsible`, `customsChannel` e `importerOutsideRj`, alimenta `resolveColor`
+> e entra em `representableTargets` — isto é, vira **alvo de escrita**.
+> Declará-las ali exigiria inventar um `fillId` ou tornar cor de exibição
+> gravável. Nasceu `cellFills`, lista à parte, validada à parte, consumida só
+> para pintar. As outras três: `A-44` é refutado em **dois** pontos e não um —
+> N também não é uniformemente ciano —; `theme:0|tint:0.0000` mede 67 células em
+> A–P e não 56, que é escopo e não defeito; e **a terceira eu errei**: previ que
+> duas guardas de `tests/repo/estilo.test.ts` quebrariam, e elas testam regex
+> contra string de amostra, não varrem a tabela. Registro porque prever quebra
+> que não acontece custa tanto quanto não prever a que acontece.
+>
+> **Dois achados do próprio código.** `toRawRow` reconstrói a linha crua a partir
+> do processo, e `refreshClientMap`/`refreshTeamMap` re-derivam por ele com o
+> processo no ar: guardar só a cor resolvida faria **toda troca de mapa apagar a
+> pintura, em silêncio** — por isso `Process` carrega também `cellStyleKeys`,
+> pelo mesmo motivo que já justificava `styleKey` estar lá. E
+> `exactOptionalPropertyTypes` recusa `string | undefined` numa prop `?: string`:
+> o conserto honesto é alargar a prop, não forçar os pontos de chamada.
+>
+> **Uma omissão declarada:** a herança de `<row customFormat="1">` nas células
+> ausentes do XML **não** é implementada — `buildRow` recebe o interior da linha
+> e não os atributos dela. Medido: com a herança são 87,4% das células com cor,
+> sem ela 87,3%. Uma décima de ponto, ~10 células em 10.400.
 
 > Nasce de `D-41`, em 10/09/2026. **É a primeira vez que a cor atravessa a API
 > no fluxo normal** — até aqui a `styleKey` só saía pelo relatório de

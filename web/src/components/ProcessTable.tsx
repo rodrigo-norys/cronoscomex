@@ -33,6 +33,16 @@ import { EditableCell } from './EditableCell.tsx'
 interface Column {
   readonly key: string
   readonly sortBy: SortField
+  /**
+   * A letra da coluna na planilha, para pintar a celula com a cor dela
+   * (`H-94`).
+   *
+   * **Ausente quando a coluna NAO e uma celula da planilha.** Cliente e o unico
+   * caso hoje: ele e o resultado da consolidacao de `client-map.json`, e nao o
+   * conteudo de uma celula — pintar com a cor de alguma coluna seria atribuir a
+   * ela uma cor que a planilha nao deu.
+   */
+  readonly sheetColumn?: string
 }
 
 /** O rotulo vem de `SORT_LABELS`: a faixa de controles nomeia a MESMA ordem ao
@@ -48,16 +58,26 @@ const labelOf = (column: Column): string => SORT_LABELS[column.sortBy]
  * diferentes (`H-49`), e e por isso que sao duas colunas.
  */
 const COLUMNS: readonly Column[] = [
-  { key: 'ref', sortBy: 'ref' },
+  { key: 'ref', sortBy: 'ref', sheetColumn: 'A' },
+  // Sem `sheetColumn`: consolidado, nao celula. Ver a nota em `Column`.
   { key: 'client', sortBy: 'client' },
-  { key: 'clientProcess', sortBy: 'clientProcess' },
-  { key: 'importer', sortBy: 'importer' },
-  { key: 'vessel', sortBy: 'vessel' },
-  { key: 'eta2', sortBy: 'eta2' },
-  { key: 'billOfLading', sortBy: 'billOfLading' },
-  { key: 'container', sortBy: 'container' },
-  { key: 'status', sortBy: 'status' },
+  { key: 'clientProcess', sortBy: 'clientProcess', sheetColumn: 'B' },
+  { key: 'importer', sortBy: 'importer', sheetColumn: 'C' },
+  { key: 'vessel', sortBy: 'vessel', sheetColumn: 'G' },
+  { key: 'eta2', sortBy: 'eta2', sheetColumn: 'I' },
+  { key: 'billOfLading', sortBy: 'billOfLading', sheetColumn: 'D' },
+  { key: 'container', sortBy: 'container', sheetColumn: 'F' },
+  { key: 'status', sortBy: 'status', sheetColumn: 'L' },
 ]
+
+/**
+ * A cor de fundo daquela coluna, ou `undefined` quando nao ha (`H-94`).
+ *
+ * A tela nao traduz nada: `fills` ja chega em `#RRGGBB`, resolvido contra
+ * `config/color-map.json` no servidor. Aqui so se escolhe qual chave ler.
+ */
+const fillOf = (item: ProcessDto, column: Column): string | undefined =>
+  column.sheetColumn === undefined ? undefined : item.fills[column.sheetColumn]
 
 const CATEGORY_LABELS: Record<ProcessDto['statusCategory'], string> = {
   em_andamento: 'Em andamento',
@@ -101,7 +121,7 @@ export function ProcessTable({ items, sort, order, onSort, onEdited }: ProcessTa
     // O quadro rola nos DOIS eixos, e a pagina em nenhum: `R01` ja exigia o
     // horizontal, e `D-31` trouxe o vertical para ca. A altura mora em
     // `table-viewport`, no CSS, porque e `calc()` com piso.
-    <div className="table-viewport overflow-x-auto overflow-y-auto rounded-container border border-border-subtle bg-surface-raised">
+    <div className="table-viewport overflow-x-auto overflow-y-auto rounded-container border border-border-subtle bg-surface-table">
       <table
         ref={grid.ref}
         // biome-ignore lint/a11y/noNoninteractiveElementToInteractiveRole: em ARIA `grid` e SUBCLASSE de `table`, e a APG constroi a grade assim; a regra existe contra `<div role="button">`
@@ -137,8 +157,12 @@ export function ProcessTable({ items, sort, order, onSort, onEdited }: ProcessTa
               **Sem faixa alternada**, e isso ja era verdade: o realce e o cursor,
               nao a paridade da linha. A assercao existe para nao voltar.
             */
-            <tr key={item.ref} className="motion-tint h-10 hover:bg-surface-hover">
-              <td {...grid.cellProps(index + 1, 0)} className="px-3 font-mono whitespace-nowrap">
+            <tr key={item.ref} className="h-10">
+              <td
+                {...grid.cellProps(index + 1, 0)}
+                style={{ backgroundColor: fillOf(item, COLUMNS[0] as Column) }}
+                className="px-3 font-mono whitespace-nowrap"
+              >
                 <a
                   href={`/processo/${encodeURIComponent(item.ref)}`}
                   // Fora da ordem de tabulacao: quem tabula e a grade.
@@ -177,6 +201,7 @@ export function ProcessTable({ items, sort, order, onSort, onEdited }: ProcessTa
               <EditableCell
                 processRef={item.ref}
                 cell={grid.cellProps(index + 1, 1)}
+                fill={fillOf(item, COLUMNS[1] as Column)}
                 label="Cliente"
                 kind="text"
                 value={item.client}
@@ -187,6 +212,7 @@ export function ProcessTable({ items, sort, order, onSort, onEdited }: ProcessTa
               <EditableCell
                 processRef={item.ref}
                 cell={grid.cellProps(index + 1, 2)}
+                fill={fillOf(item, COLUMNS[2] as Column)}
                 label="Processo do cliente"
                 kind="text"
                 value={item.clientProcess}
@@ -198,6 +224,7 @@ export function ProcessTable({ items, sort, order, onSort, onEdited }: ProcessTa
               <EditableCell
                 processRef={item.ref}
                 cell={grid.cellProps(index + 1, 3)}
+                fill={fillOf(item, COLUMNS[3] as Column)}
                 label="Importador"
                 kind="text"
                 value={item.importer}
@@ -208,6 +235,7 @@ export function ProcessTable({ items, sort, order, onSort, onEdited }: ProcessTa
               <EditableCell
                 processRef={item.ref}
                 cell={grid.cellProps(index + 1, 4)}
+                fill={fillOf(item, COLUMNS[4] as Column)}
                 label="Navio"
                 kind="text"
                 value={item.vessel}
@@ -218,6 +246,7 @@ export function ProcessTable({ items, sort, order, onSort, onEdited }: ProcessTa
               <EditableCell
                 processRef={item.ref}
                 cell={grid.cellProps(index + 1, 5)}
+                fill={fillOf(item, COLUMNS[5] as Column)}
                 label="ETA2"
                 kind="date"
                 value={item.eta2 ?? ''}
@@ -229,6 +258,7 @@ export function ProcessTable({ items, sort, order, onSort, onEdited }: ProcessTa
               <EditableCell
                 processRef={item.ref}
                 cell={grid.cellProps(index + 1, 6)}
+                fill={fillOf(item, COLUMNS[6] as Column)}
                 label="BL"
                 kind="text"
                 value={item.billOfLading}
@@ -240,6 +270,7 @@ export function ProcessTable({ items, sort, order, onSort, onEdited }: ProcessTa
               <EditableCell
                 processRef={item.ref}
                 cell={grid.cellProps(index + 1, 7)}
+                fill={fillOf(item, COLUMNS[7] as Column)}
                 label="CNTR"
                 kind="text"
                 value={item.container}
@@ -248,7 +279,11 @@ export function ProcessTable({ items, sort, order, onSort, onEdited }: ProcessTa
                 className="font-mono"
                 onEdited={onEdited}
               />
-              <td {...grid.cellProps(index + 1, 8)} className="px-3 whitespace-nowrap">
+              <td
+                {...grid.cellProps(index + 1, 8)}
+                style={{ backgroundColor: fillOf(item, COLUMNS[8] as Column) }}
+                className="px-3 whitespace-nowrap"
+              >
                 <span className="whitespace-nowrap">{CATEGORY_LABELS[item.statusCategory]}</span>
                 {/*
                   **A unica excecao aos dois raios, e ela e declarada.** O chip de

@@ -56,7 +56,7 @@ function linha(
 ): RawRow {
   const cells: Record<string, RawCell> = {}
   for (const column of ALL_COLUMNS) cells[column] = cell(valores[column] ?? null)
-  return { sourceRow, cells, styleKey }
+  return { sourceRow, cells, styleKey, cellStyleKeys: {} }
 }
 
 describe('buildProcesses — aceite e rejeicao', () => {
