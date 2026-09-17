@@ -14,6 +14,7 @@ import {
   validateEdit,
 } from '../domain/editable-fields.ts'
 import { normKey } from '../domain/normalizer.ts'
+import { blockingDivergence, describeDivergence } from '../domain/sheet-schema.ts'
 import { REF_COLUMN } from '../domain/status-classifier.ts'
 import type { Process, RawCell, RawRow } from '../domain/types.ts'
 import {
@@ -57,12 +58,25 @@ import {
 } from './process-store.ts'
 
 /**
- * As seis defesas de integridade, na ordem de 04-arquitetura.md secao 3.2:
- * pausar watcher, ESPERAR a releitura em voo, verificar lock, conferir hash,
- * **cirurgia, backup**, gravacao atomica, validacao, arquivar a fila, retomar
- * watcher. A espera nao esta no diagrama: `pause` cancela o agendamento, nao a
- * leitura ja iniciada, e sem ela a leitura canonica competiria com uma
- * releitura em curso.
+ * As defesas de integridade, na ordem de 04-arquitetura.md secao 3.2:
+ * pausar watcher, ESPERAR a releitura em voo, **conferir o cabecalho**,
+ * verificar lock, conferir hash, **cirurgia, backup**, gravacao atomica,
+ * validacao, arquivar a fila, retomar watcher. A espera nao esta no diagrama:
+ * `pause` cancela o agendamento, nao a leitura ja iniciada, e sem ela a leitura
+ * canonica competiria com uma releitura em curso.
+ *
+ * **Sem contagem aqui, de proposito.** A frase dizia "as seis defesas" e
+ * listava dez passos; `H-96` acrescentou a conferencia de cabecalho e fez onze,
+ * sem que o numero acompanhasse em nenhum dos dois momentos. A lista e a fonte.
+ * Achado do revisor-xml.
+ *
+ * **A conferencia de cabecalho entrou em `H-96` (17/09/2026), e vem ANTES do
+ * lock** — invertendo o que seria a ordem natural. A razao esta na mensagem:
+ * ela manda o operador desfazer a mudanca **no Excel**, e recusar antes por
+ * `EXCEL_ABERTO` o mandaria fechar o programa de que ele precisa para consertar.
+ * Ela tambem vem antes de tudo que ABRE o arquivo: e condicao do estado ja
+ * conhecido, e abrir a planilha para descobrir que nao vamos gravar e trabalho
+ * a toa. Achado do revisor-xml.
  *
  * **A cirurgia vem antes do backup desde H-27**, invertendo o diagrama — que
  * traz a emenda de 17/08/2026 registrando a troca. Ela e pura: opera sobre o
@@ -128,6 +142,36 @@ export type WriteRefusal =
    * concluida com seguranca" — que nao diz o que fazer.
    */
   | 'TABELA_CHEIA'
+  /**
+   * Uma coluna mudou de lugar na planilha (`H-96`, 17/09/2026).
+   *
+   * **Codigo proprio, pelo mesmo motivo de `TABELA_CHEIA`:** a instrucao ao
+   * operador e especifica — conserte o cabecalho, ou o esquema declarado —, e
+   * cair em `ESCRITA_INVALIDA` diria "nao pode ser concluida com seguranca",
+   * que nao diz o que fazer.
+   *
+   * **A LEITURA nao recusa; so a escrita.** O painel segue mostrando o dado e o
+   * aviso (decisao do usuario). Mas gravar com as colunas deslocadas escreve na
+   * coluna fisica errada do arquivo da empresa, e la nao ha desfazer — `D-43`
+   * mediu 616 dos 650 processos lendo o dado do vizinho.
+   *
+   * **Renome nao recusa.** Com o cabecalho renomeado a coluna fica onde estava,
+   * e gravar nela acerta — `blockingDivergence` faz essa separacao.
+   */
+  | 'CABECALHO_DESLOCADO'
+  /**
+   * A linha de cabecalho esta em branco (`H-96`, 17/09/2026).
+   *
+   * **Nao e "nao ha deslocamento"; e "nao da para saber".** Sem rotulo nenhum na
+   * linha 1, um deslocamento real fica invisivel a conferencia, e gravar
+   * trataria "nao conferivel" como "conferido e certo" — adivinhar (regra
+   * inviolavel 3). Buraco visivel e melhor que valor errado invisivel.
+   *
+   * **Codigo separado de `CABECALHO_DESLOCADO`, e nao um alias dele**, porque a
+   * mensagem daquele manda desfazer a mudanca e nomeia uma coluna que saiu do
+   * lugar: aqui isso e falso, e o operador iria procurar o que nao existe.
+   */
+  | 'CABECALHO_VAZIO'
   /**
    * Fora dos cinco do backlog, e exigido por 05-contratos-api.md secao 3, que
    * cataloga `503 ARQUIVO_INDISPONIVEL` para `POST /api/edits/apply`. Sem ele o
@@ -225,6 +269,23 @@ export interface WriteResult {
    * resposta nao, e por isso a mensagem ao operador cobre os dois.
    */
   archivedQueuePath: string | null
+  /**
+   * A frase que nomeia a divergencia de cabecalho, nas duas recusas dela.
+   * `null` nas demais e no sucesso.
+   *
+   * **A frase, e nao a divergencia estruturada.** A tela apenas a exibe, e
+   * levar `SchemaDivergence` ate a fronteira HTTP criaria uma SEGUNDA fonte
+   * para o mesmo texto — `describeDivergence` ja e a primeira, e e ela que o
+   * painel de Configuracao usa.
+   *
+   * **Existe porque a instrucao sozinha nao bastava** (`H-96`, 17/09/2026): a
+   * mensagem diz o que fazer, e o painel que nomeia a coluna e montado **so**
+   * na Pagina Configuracao e no arranque a frio. O botao `Aplicar alteracoes`
+   * nao vive nessas telas, entao no instante da recusa o operador tinha a
+   * instrucao e um contador, e precisava navegar para saber QUAL coluna.
+   * Achado do revisor-xml.
+   */
+  schemaDivergence: string | null
 }
 
 /** O que o guard usa do store. `StoreAccess` nao serve: nao tem as transicoes. */
@@ -332,6 +393,9 @@ function refuse(
   return {
     ok: false,
     refusal,
+    // `null` por padrao, e as duas recusas de cabecalho o sobrescrevem pelo
+    // `extra`: recusa que nao conferiu cabecalho nenhum nao tem coluna a nomear.
+    schemaDivergence: null,
     applied: 0,
     cellsWritten: 0,
     rowsRepainted: 0,
@@ -701,6 +765,42 @@ async function guardedWrite(
     // para que `settled` mantenha o estado 'escrevendo' quando ela terminar.
     await store.settle()
 
+    /*
+      **Antes de tudo que abre o arquivo** (`H-96`, 17/09/2026): o deslocamento
+      e condicao do estado JA conhecido, e abrir a planilha para descobrir que
+      nao vamos gravar e trabalho a toa.
+
+      Depois de `NADA_A_APLICAR`, pelo mesmo motivo que aquele vem antes de
+      pausar o observador: fila vazia nao justifica recusa nenhuma.
+
+      **Duas causas, duas mensagens.** Deslocamento e movimento DETECTADO;
+      linha 1 em branco e a impossibilidade de detectar. Um codigo so faria a
+      segunda mandar o operador desfazer uma mudanca que ele nao fez.
+
+      **Renome nao recusa.** Cabecalho renomeado nao move a coluna, e gravar
+      nela continua acertando — `blockingDivergence` faz essa separacao.
+
+      **O retrato pode ser anterior ao conserto, e o custo fica declarado.** A
+      lista vem da ultima leitura, e quem consertar o cabecalho no Excel e
+      aplicar antes de o observador reler recebe a recusa sobre algo que ja
+      desfez. Nada e gravado, a fila sobrevive, e a janela fecha na releitura
+      seguinte. Achado do revisor-xml.
+
+      **A direcao OPOSTA nao e fechada aqui** — cabecalho quebrado depois da
+      ultima leitura boa, ou leitura boa nenhuma. Quem a fecha e a conferencia
+      de hash adiante: arquivo alterado sem releitura cai em `ARQUIVO_MUDOU`, e
+      `knownHash` nulo cai no mesmo codigo.
+    */
+    const blocking = blockingDivergence(store.getState().schemaDivergences)
+    if (blocking !== null) {
+      // `DESLOCADO` e o unico movimento DETECTADO. Os outros dois que bloqueiam
+      // — linha 1 em branco, e rotulo apagado numa coluna — sao a mesma coisa
+      // para o operador: falta o nome com que conferir, e o que se pede e
+      // restaurar, nao desfazer.
+      const code = blocking.kind === 'DESLOCADO' ? 'CABECALHO_DESLOCADO' : 'CABECALHO_VAZIO'
+      return refused(code, { schemaDivergence: describeDivergence(blocking) })
+    }
+
     // O lock primeiro, na ordem de 04-arquitetura.md secao 3.2: com o Excel
     // aberto E a fila inadmissivel, o motivo que o operador precisa ouvir e o
     // que ele consegue resolver.
@@ -891,6 +991,7 @@ async function guardedWrite(
       return {
         ok: true,
         refusal: null,
+        schemaDivergence: null,
         applied: targets.length + fills.length + inserts.length,
         cellsWritten: 0,
         rowsRepainted: 0,
@@ -949,6 +1050,7 @@ async function guardedWrite(
     return {
       ok: true,
       refusal: null,
+      schemaDivergence: null,
       applied: targets.length + fills.length + inserts.length,
       cellsWritten,
       rowsRepainted,

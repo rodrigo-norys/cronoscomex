@@ -411,7 +411,7 @@ export async function enqueueEdit(
 
 /**
  * Enfileira uma linha NOVA. **Nao grava no `.xlsx`** — a escrita e do
- * `Aplicar alteracoes`, com as mesmas seis defesas das demais edicoes.
+ * `Aplicar alteracoes`, com as mesmas defesas das demais edicoes.
  *
  * O numero da linha nao viaja: quem o resolve e o `write-guard`, contra a
  * leitura do momento da escrita.
@@ -504,9 +504,14 @@ export async function discardEdit(id: string): Promise<void> {
  * comum de todos, e nao significa que o arquivo mudou durante a gravacao.
  */
 /**
- * As sete recusas do guard, mais `ERRO_INTERNO`: um 500 do proprio Fastify —
- * corpo malformado, rota que lancou — nao passa por `WriteRefusal`, e fingir
- * que passou faria a tela ramificar sobre um codigo que o servidor nao disse.
+ * Toda `WriteRefusal`, mais `ERRO_INTERNO`: um 500 do proprio Fastify — corpo
+ * malformado, rota que lancou — nao passa por `WriteRefusal`, e fingir que
+ * passou faria a tela ramificar sobre um codigo que o servidor nao disse.
+ *
+ * **Sem contagem aqui, de proposito.** A frase dizia "as sete recusas" quando
+ * esta uniao — a da linha seguinte, e nao `WriteRefusal` — ja tinha onze
+ * membros, dois deles acrescentados por `H-96`. A uniao e a fonte, e o numero
+ * envelheceu duas vezes antes de sair. Achado do revisor-xml.
  */
 export type ApplyRefusalCode = WriteRefusal | 'ERRO_INTERNO'
 
@@ -529,6 +534,8 @@ const REFUSAL_CODES: readonly string[] = [
   'ESCRITA_EM_ANDAMENTO',
   'ESCRITA_INVALIDA',
   'TABELA_CHEIA',
+  'CABECALHO_DESLOCADO',
+  'CABECALHO_VAZIO',
   'ARQUIVO_INDISPONIVEL',
   'ERRO_INTERNO',
 ]
@@ -564,14 +571,22 @@ export interface ApplyRefusal {
    * quando o arquivo deixou de estar intacto.
    */
   fileAtRisk: boolean
+  /**
+   * A frase que nomeia a coluna divergente, nas duas recusas de cabecalho.
+   * `null` nas demais.
+   *
+   * Vem montada do servidor, e nao remontada aqui: a tela nao calcula (regra
+   * inviolavel 6), e `describeDivergence` e a fonte unica do texto.
+   */
+  schemaDivergence: string | null
 }
 
 /**
  * Recusa esperada, com motivo — nao falha de rede.
  *
- * Erro em vez de retorno de uniao porque as sete recusas sao excepcionais por
- * natureza e o caminho feliz e um so: quem chama trata `catch` uma vez, em vez
- * de ramificar em toda chamada.
+ * Erro em vez de retorno de uniao porque toda recusa e excepcional por natureza e
+ * o caminho feliz e um so: quem chama trata `catch` uma vez, em vez de
+ * ramificar em toda chamada.
  */
 export class ApplyRefusedError extends Error {
   readonly refusal: ApplyRefusal
@@ -593,6 +608,7 @@ interface ApplyErrorBody {
       actualHash?: string
       restored?: boolean
       backupPath?: string
+      schemaDivergence?: string
     }
   }
 }
@@ -627,6 +643,7 @@ export async function applyEdits(): Promise<ApplyResponse> {
     restored: detail?.restored === true,
     backupPath: detail?.backupPath ?? null,
     fileAtRisk: detail?.backupPath !== undefined && detail?.restored !== true,
+    schemaDivergence: detail?.schemaDivergence ?? null,
   })
 }
 

@@ -20,6 +20,7 @@ import {
   applyPendingEdits,
   initWriteGuard,
   type WriteGuardStore,
+  type WriteRefusal,
 } from '../../src/app/write-guard.ts'
 import {
   type ColorMapEntry,
@@ -31,7 +32,11 @@ import { consolidated, enqueue } from '../../src/io/edit-queue.ts'
 import { hashFile, type ReadResult, readWorkbook } from '../../src/io/xlsx-reader.ts'
 
 /**
- * As seis defesas. Cada teste opera sobre uma COPIA de `tests/fixtures/`, numa
+ * As defesas de integridade, enumeradas no cabecalho de `src/app/write-guard.ts`
+ * — **e sem contagem aqui**, porque `H-96` acrescentou a conferencia de
+ * cabecalho e a frase seguia dizendo "seis".
+ *
+ * Cada teste opera sobre uma COPIA de `tests/fixtures/`, numa
  * pasta temporaria — nenhum toca a planilha real (RNF-38), e a fixture
  * versionada precisa sobreviver a uma suite que escreve de proposito.
  *
@@ -102,6 +107,7 @@ function emptyState(): StoreState {
     fileHash: null,
     sheetName: '2026',
     headerLabels: {},
+    schemaDivergences: [],
     lastReadAt: new Date('2026-08-13T12:00:00Z'),
     lastReadOk: true,
     degradedReason: null,
@@ -718,6 +724,7 @@ describe('ESCRITA_INVALIDA', () => {
         readAt: new Date(),
         sheetName: '2026',
         headerLabels: {},
+        schemaDivergences: [],
         sheetPath: 'xl/worksheets/sheet1.xml',
       })),
     })
@@ -1190,7 +1197,7 @@ describe('aplicacao que nao muda nada', () => {
 })
 
 /**
- * A linha NOVA (02/09/2026). As mesmas seis defesas, com duas trocas que a
+ * A linha NOVA (02/09/2026). As mesmas defesas, com duas trocas que a
  * natureza da operação impõe:
  *
  * - o alvo **não** é resolvido pela REF, porque ela ainda não está no arquivo —
@@ -1439,4 +1446,237 @@ describe('linha nova — os achados da revisão', () => {
     expect(result.fileState).toBe('intacto')
     expect(consolidated(queuePath)).toHaveLength(1)
   })
+})
+
+/**
+ * `H-96`, 17/09/2026. A coluna mudou de lugar: a LEITURA segue, a escrita nao.
+ *
+ * **A assimetria e a decisao do usuario.** Ler com as colunas deslocadas mostra
+ * dado errado numa tela que avisa; gravar escreve na coluna fisica errada do
+ * arquivo da empresa, e la nao ha desfazer nem `git status` — a arvore na
+ * maquina dele foi baixada, nao clonada.
+ */
+describe('cabecalho deslocado recusa a ESCRITA (H-96)', () => {
+  const deslocado = [
+    {
+      kind: 'DESLOCADO' as const,
+      column: 'D',
+      expectedColumn: 'C',
+      expected: 'IMPORTADOR',
+      found: 'IMPORTADOR',
+      span: 14,
+      duplicateOf: null,
+    },
+  ]
+
+  const renomeado = [
+    {
+      kind: 'AUSENTE' as const,
+      column: 'D',
+      expectedColumn: 'D',
+      expected: 'BL',
+      found: 'BL ORIGINAL',
+      span: 1,
+      duplicateOf: null,
+    },
+  ]
+
+  const vazio = [
+    {
+      kind: 'CABECALHO_VAZIO' as const,
+      column: null,
+      expectedColumn: null,
+      expected: null,
+      found: null,
+      span: 1,
+      duplicateOf: null,
+    },
+  ]
+
+  /**
+   * Rotulo APAGADO numa coluna, e nao a linha 1 inteira — `found` nulo.
+   *
+   * Recusa pela mesma razao de `vazio`: sem nome, aquela coluna nao e
+   * conferivel, e um deslocamento que alcance so colunas sem rotulo fica
+   * invisivel. **Nao e o mesmo que `renomeado`**, que tem `found` preenchido e
+   * segue permitindo a gravacao.
+   */
+  const apagado = [
+    {
+      kind: 'AUSENTE' as const,
+      column: 'D',
+      expectedColumn: 'D',
+      expected: 'BL',
+      found: null,
+      span: 1,
+      duplicateOf: null,
+    },
+  ]
+
+  it('recusa com CABECALHO_DESLOCADO, sem tocar o arquivo nem a fila', async () => {
+    enqueue(
+      {
+        ref: 'FT001.26',
+        sourceRow: 2,
+        field: 'billOfLading',
+        value: 'NOVO-BL',
+        previous: 'BL0001',
+      },
+      queuePath,
+    )
+    await setup()
+    state.schemaDivergences = deslocado
+
+    const result = await applyPendingEdits()
+
+    expect(result.ok).toBe(false)
+    expect(result.refusal).toBe('CABECALHO_DESLOCADO')
+    expect(result.fileState).toBe('intacto')
+    // A fila sobrevive: o operador conserta a planilha e aplica de novo.
+    expect(consolidated(queuePath)).toHaveLength(1)
+  })
+
+  /**
+   * **Linha 1 em branco tambem recusa, e com mensagem PROPRIA.**
+   *
+   * Nao e "nao ha deslocamento": e nao haver como saber. Sem rotulo nenhum, um
+   * deslocamento real fica invisivel a conferencia, e gravar trataria "nao
+   * conferivel" como "conferido e certo" (regra inviolavel 3).
+   *
+   * **A assercao e sobre o CODIGO, e e o ponto do teste.** Reusar
+   * `CABECALHO_DESLOCADO` aqui mandaria o operador desfazer no Excel uma
+   * mudanca que ele nao fez, e procurar uma coluna que nao saiu do lugar.
+   */
+  it('cabecalho VAZIO recusa com codigo proprio, e nao com o do deslocamento', async () => {
+    enqueue(
+      {
+        ref: 'FT001.26',
+        sourceRow: 2,
+        field: 'billOfLading',
+        value: 'NOVO-BL',
+        previous: 'BL0001',
+      },
+      queuePath,
+    )
+    await setup()
+    state.schemaDivergences = vazio
+
+    const result = await applyPendingEdits()
+
+    expect(result.ok).toBe(false)
+    expect(result.refusal).toBe('CABECALHO_VAZIO')
+    expect(result.fileState).toBe('intacto')
+    expect(consolidated(queuePath)).toHaveLength(1)
+  })
+
+  /**
+   * **Renome NAO recusa**, e este teste e o par obrigatorio dos anteriores: sem
+   * ele, uma guarda que recusasse QUALQUER divergencia passaria despercebida.
+   *
+   * `BL` vira `BL ORIGINAL` e continua na coluna `D` — gravar nela acerta. E a
+   * distincao que `blockingDivergence` existe para fazer.
+   */
+  it('cabecalho apenas RENOMEADO nao impede a gravacao', async () => {
+    enqueue(
+      {
+        ref: 'FT001.26',
+        sourceRow: 2,
+        field: 'billOfLading',
+        value: 'NOVO-BL',
+        previous: 'BL0001',
+      },
+      queuePath,
+    )
+    await setup()
+    state.schemaDivergences = renomeado
+
+    const result = await applyPendingEdits()
+
+    /*
+      **`ok` positivo, e nao `not.toBe(CABECALHO_DESLOCADO)`.** A assercao
+      anterior passaria igual com a gravacao recusada por QUALQUER outro motivo,
+      e portanto nao demonstrava o criterio de aceite — "cabecalho renomeado, a
+      gravacao continua permitida". Achado do revisor-xml.
+    */
+    expect(result.ok).toBe(true)
+    expect(result.refusal).toBeNull()
+    expect(result.cellsWritten).toBe(1)
+  })
+
+  /**
+   * A recusa acontece antes de **abrir o arquivo** — e nao antes de pausar o
+   * observador.
+   *
+   * *(Duas versoes anteriores desta assercao estavam erradas. A primeira,
+   * `not.toContain('read')`, passava por VACUIDADE: `events` nunca registra
+   * `'read'`. A segunda, `not.toContain('pause')`, media a coisa errada — a
+   * guarda vive dentro de `guardedWrite`, depois de `markWriting` e `pause`, e
+   * fica ali de proposito: movida para fora do `try`, sairia da protecao do
+   * `finally` que devolve o observador.)*
+   *
+   * O espiao e o proprio leitor: se a recusa nao fosse precoce, `readWorkbookFn`
+   * seria chamado, e a contagem denuncia.
+   *
+   * **Os DOIS codigos, e nao so um.** A cobertura era assimetrica: o
+   * deslocamento provava `leituras === 0` e o `resume`, e o cabecalho vazio nao
+   * provava nenhum dos dois — apesar de os dois sairem do MESMO `return`, e de
+   * ser o `finally` que devolve o observador. Achado do revisor-xml.
+   */
+  // `satisfies` e nao `as`: ele valida o literal contra a uniao E preserva o
+  // literal. Sem ele `codigo` alargava para `string`, e o `toBe` generico do
+  // Vitest aceitava qualquer coisa — o erro de digitacao apareceria no teste
+  // vermelho, e nao no `tsc`. Achado do revisor-xml.
+  const recusasPrecoces = [
+    {
+      caso: 'deslocamento',
+      divergencias: deslocado,
+      codigo: 'CABECALHO_DESLOCADO' satisfies WriteRefusal,
+    },
+    {
+      caso: 'cabecalho vazio',
+      divergencias: vazio,
+      codigo: 'CABECALHO_VAZIO' satisfies WriteRefusal,
+    },
+    {
+      caso: 'rotulo apagado',
+      divergencias: apagado,
+      codigo: 'CABECALHO_VAZIO' satisfies WriteRefusal,
+    },
+  ]
+
+  for (const { caso, divergencias, codigo } of recusasPrecoces) {
+    it(`recusa por ${caso} sem abrir a planilha, e devolve o observador`, async () => {
+      let leituras = 0
+      enqueue(
+        {
+          ref: 'FT001.26',
+          sourceRow: 2,
+          field: 'billOfLading',
+          value: 'NOVO-BL',
+          previous: 'BL0001',
+        },
+        queuePath,
+      )
+      await setup({
+        readWorkbookFn: async () => {
+          leituras++
+          return await readWorkbook(config())
+        },
+      })
+      state.schemaDivergences = divergencias
+
+      const result = await applyPendingEdits()
+
+      // O codigo, e nao so a recusa: sem ele o laco passaria com os dois casos
+      // caindo no MESMO codigo, que e o defeito que a mensagem propria evita.
+      expect(result.refusal).toBe(codigo)
+      // A frase que NOMEIA a coluna viaja no resultado, e nao so o codigo: a
+      // mensagem da rota diz o que fazer, e o painel que nomeia as pontas nao e
+      // montado na tela em que o operador aperta `Aplicar alteracoes`.
+      expect(result.schemaDivergence).not.toBeNull()
+      expect(leituras).toBe(0)
+      // O observador volta: recusa nao pode deixar o painel congelado.
+      expect(events).toContain('resume')
+    })
+  }
 })
