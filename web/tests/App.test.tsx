@@ -305,11 +305,16 @@ describe('casca', () => {
     expect(secao).toBeTruthy()
   })
 
+  /**
+   * A afirmacao era o calendario de chegadas, que **saiu daqui em `H-98`** e foi
+   * para a Pagina Inicial. A grade e o que esta pagina e: `role="grid"` desde
+   * `H-80`, e nenhuma outra tela monta uma.
+   */
   it('hospeda a Pagina Operacional, entregue por H-17', async () => {
     window.history.replaceState(null, '', '/operacional')
     render(<App />)
 
-    expect(await screen.findByRole('region', { name: 'Calendário de chegadas' })).toBeTruthy()
+    expect(await screen.findByRole('grid')).toBeTruthy()
   })
 
   it('hospeda a Pagina Clientes, entregue por H-18', async () => {
@@ -330,6 +335,25 @@ describe('navegacao', () => {
     expect(window.location.pathname).toBe('/historico')
     expect(window.location.search).toBe('?client=ACME')
     expect(await screen.findByRole('region', { name: 'Evolução mensal' })).toBeTruthy()
+  })
+
+  /**
+   * `H-99`. Os parametros da Pagina Operacional nao sobrevivem a saida dela.
+   *
+   * `navigate` preserva a query inteira, e isso e certo para os filtros globais
+   * — mas `limit`, `sort` e `hidden` sao DAQUELA pagina, e o operador os via no
+   * endereco das outras seis telas, onde nao significam nada. **A mesma
+   * navegacao prova as duas metades:** o que e da pagina sai, o que e filtro
+   * fica.
+   */
+  it('descarta os parametros da Operacional ao sair dela, e mantem os filtros', async () => {
+    window.history.replaceState(null, '', '/operacional?client=ACME&limit=500&sort=ref&hidden=M')
+    render(<App />)
+
+    fireEvent.click(within(nav()).getByRole('link', { name: 'Histórico' }))
+
+    await waitFor(() => expect(window.location.pathname).toBe('/historico'))
+    expect(window.location.search).toBe('?client=ACME')
   })
 
   it('responde ao botao voltar do navegador', async () => {

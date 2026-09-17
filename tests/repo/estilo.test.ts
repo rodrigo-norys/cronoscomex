@@ -429,6 +429,30 @@ function bloco(marcador: string): string {
   throw new Error(`bloco ${marcador} nao fecha`)
 }
 
+/**
+ * O token de cor que **não tem par no escuro de propósito** (`H-97`, `D-44`).
+ *
+ * *(Eram dois — tinta escura e clara — até 16/09/2026, quando o usuário pediu
+ * preto em todas as nove cores da planilha. Sem segunda tinta, a lista caiu
+ * para um.)*
+ *
+ * A regra de `D-21` pressupõe que a cor do token é escolha do AUTOR, e por isso
+ * precisa de um valor por esquema. A tinta da célula pintada quebra a premissa:
+ * o fundo dela vem do arquivo do operador, não do tema — verde é verde nos dois
+ * —, e uma tinta que virasse clara no escuro devolveria exatamente o defeito que
+ * `H-97` conserta, que é texto ilegível sobre a cor da planilha.
+ *
+ * **A alternativa era declarar os dois no escuro com valor idêntico**, e ela foi
+ * recusada: esta guarda confere PRESENÇA, não igualdade, então a cópia passaria
+ * a ser dois lugares para um valor só — e escurecer a tinta clara lá quebraria a
+ * legibilidade do roxo sem reprovar nada.
+ *
+ * A isenção é fechada por baixo pela asserção logo abaixo: quem está aqui tem de
+ * estar **ausente** do bloco escuro. Sem ela, "isento" viraria abrigo para o par
+ * que alguém esqueceu.
+ */
+const SEM_PAR_POR_DESENHO: readonly string[] = ['--color-cell-ink']
+
 describe('D-21 — todo token de cor tem par no esquema escuro', () => {
   const claros = tokensDe(bloco('@theme static'))
   const escuros = tokensDe(bloco('@media (prefers-color-scheme: dark)'))
@@ -442,10 +466,23 @@ describe('D-21 — todo token de cor tem par no esquema escuro', () => {
 
   it('nenhum token de cor fica sem valor no escuro', () => {
     const semPar = claros.filter(
-      (token) => token.startsWith('--color-') && !escuros.includes(token),
+      (token) =>
+        token.startsWith('--color-') &&
+        !escuros.includes(token) &&
+        !SEM_PAR_POR_DESENHO.includes(token),
     )
 
     expect(semPar).toEqual([])
+  })
+
+  /**
+   * A isenção acima, fechada por baixo. Um token isento que APAREÇA no escuro é
+   * o sinal de que ele deixou de ser independente do tema — e aí ele não é
+   * isento, é um par mal declarado.
+   */
+  it('o token isento de par está declarado SÓ no claro', () => {
+    expect(SEM_PAR_POR_DESENHO.filter((token) => !claros.includes(token))).toEqual([])
+    expect(SEM_PAR_POR_DESENHO.filter((token) => escuros.includes(token))).toEqual([])
   })
 
   it('nenhum token do escuro deixa de existir no claro', () => {

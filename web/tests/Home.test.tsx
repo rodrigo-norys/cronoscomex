@@ -480,3 +480,67 @@ describe('a urgência dos cartões não é só cor', () => {
     }
   })
 })
+
+/**
+ * O calendario de chegadas, vindo da Pagina Operacional em `H-98`.
+ *
+ * **Os tres testes sao os mesmos, e a mudanca e so de casa** — o componente nao
+ * foi tocado. Ele esta aqui porque `IND-12` precisa de UMA tela: removido sem
+ * realocar, ele ficaria calculado, servido e invisivel, que e o defeito que
+ * `A-65` varreu em `IND-13`, `IND-17` e `IND-20`.
+ */
+describe('calendario de chegadas', () => {
+  it('agrupa por dia e por navio, com o total do dia vindo do servidor', async () => {
+    api.serveIndicators({
+      ...indicatorsFixture(),
+      arrivalCalendar: [
+        {
+          eta2: '2026-08-13',
+          processCount: 7,
+          vessels: [
+            {
+              vesselKey: 'CMA CGM COBALT',
+              vesselLabel: 'CMA CGM COBALT',
+              eta2: '2026-08-13',
+              processCount: 2,
+            },
+            {
+              vesselKey: 'EVER LEADER',
+              vesselLabel: 'EVER LEADER',
+              eta2: '2026-08-13',
+              processCount: 4,
+            },
+            {
+              vesselKey: 'EVER UTILE',
+              vesselLabel: 'EVER UTILE',
+              eta2: '2026-08-13',
+              processCount: 1,
+            },
+          ],
+        },
+      ],
+    })
+    renderHome()
+
+    const calendario = await screen.findByRole('region', { name: 'Calendário de chegadas' })
+    expect(within(calendario).getByText('13/08/2026')).toBeTruthy()
+    // A contagem ganhou `<span>` próprio para o mono (`H-61`).
+    expect(calendario.textContent).toContain('7 processos')
+    expect(within(calendario).getByText('EVER LEADER')).toBeTruthy()
+  })
+
+  it('sem chegada prevista, explica em vez de mostrar caixa vazia', async () => {
+    renderHome()
+
+    const calendario = await screen.findByRole('region', { name: 'Calendário de chegadas' })
+    expect(within(calendario).getByText(/Nenhuma chegada prevista/)).toBeTruthy()
+  })
+
+  /** Ele segue os filtros globais, como antes: o que mudou foi a pagina que o
+      hospeda, e nao de onde ele tira o recorte. */
+  it('recebe os filtros globais', async () => {
+    renderHome('?client=ACME')
+
+    await waitFor(() => expect(api.calls).toContain('GET /api/indicators?client=ACME'))
+  })
+})

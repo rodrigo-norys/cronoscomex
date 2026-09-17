@@ -1,13 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { Operational } from '../src/pages/Operational.tsx'
-import {
-  type ApiStub,
-  indicatorsFixture,
-  processesFixture,
-  processFixture,
-  stubApi,
-} from './support/api-stub.ts'
+import { type ApiStub, processesFixture, processFixture, stubApi } from './support/api-stub.ts'
 import { findLiveRegion, mountLiveRegions, unmountLiveRegions } from './support/live-region.ts'
 
 /**
@@ -30,8 +24,13 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-function renderPage(queryString = '') {
-  return render(<Operational queryString={queryString} dataVersion={0} />)
+/**
+ * **Sem `queryString`, desde `H-98`.** A pagina deixou de receber os filtros
+ * globais em prop: quem os leva a rota e `useProcessQuery`, pela URL — e por
+ * isso os testes de filtro abaixo escrevem no endereco, e nao no argumento.
+ */
+function renderPage() {
+  return render(<Operational dataVersion={0} />)
 }
 
 function lastProcessCall(): string {
@@ -387,7 +386,9 @@ describe('paginacao', () => {
 describe('tamanho de pagina — H-84', () => {
   const seletor = () => screen.getByLabelText('Linhas por página') as HTMLSelectElement
 
-  it('oferece os quatro tamanhos, com 200 marcado por padrao', async () => {
+  /** O quinto entrou em `H-100`, por ordem do usuario: `D-31` fixara que "500 e
+      teto, e nao todas", e a emenda esta registrada em `useProcessQuery`. */
+  it('oferece os cinco tamanhos, com 200 marcado por padrao', async () => {
     renderPage()
     await screen.findByRole('grid')
 
@@ -395,8 +396,23 @@ describe('tamanho de pagina — H-84', () => {
       .getAllByRole('option')
       .map((opcao) => opcao.textContent)
 
-    expect(rotulos).toEqual(['50', '100', '200', '500'])
+    expect(rotulos).toEqual(['50', '100', '200', '500', 'Todas'])
     expect(seletor().value).toBe('200')
+  })
+
+  /**
+   * "Todas" vale `MAX_LIMIT`, e nao um sentinela: acima de 1000 processos o
+   * rodape volta a paginar e diz de quantos, em vez de cortar em silencio
+   * (regra inviolavel 2). Com as 650 de hoje, cabe numa pagina so.
+   */
+  it('"Todas" pede o teto da rota, e nao um valor inventado', async () => {
+    renderPage()
+    await screen.findByRole('grid')
+
+    fireEvent.change(seletor(), { target: { value: '1000' } })
+
+    await waitFor(() => expect(lastProcessCall()).toContain('limit=1000'))
+    expect(seletor().value).toBe('1000')
   })
 
   it('escolher um tamanho grava na URL e envia a rota', async () => {
@@ -495,53 +511,8 @@ describe('esqueleto de carregamento — H-85', () => {
   })
 })
 
-describe('calendario de chegadas', () => {
-  it('agrupa por dia e por navio, com o total do dia vindo do servidor', async () => {
-    api.serveIndicators({
-      ...indicatorsFixture(),
-      arrivalCalendar: [
-        {
-          eta2: '2026-08-13',
-          processCount: 7,
-          vessels: [
-            {
-              vesselKey: 'CMA CGM COBALT',
-              vesselLabel: 'CMA CGM COBALT',
-              eta2: '2026-08-13',
-              processCount: 2,
-            },
-            {
-              vesselKey: 'EVER LEADER',
-              vesselLabel: 'EVER LEADER',
-              eta2: '2026-08-13',
-              processCount: 4,
-            },
-            {
-              vesselKey: 'EVER UTILE',
-              vesselLabel: 'EVER UTILE',
-              eta2: '2026-08-13',
-              processCount: 1,
-            },
-          ],
-        },
-      ],
-    })
-    renderPage()
-
-    const calendario = await screen.findByRole('region', { name: 'Calendário de chegadas' })
-    expect(within(calendario).getByText('13/08/2026')).toBeTruthy()
-    // Idem: a contagem ganhou `<span>` próprio para o mono (`H-61`).
-    expect(calendario.textContent).toContain('7 processos')
-    expect(within(calendario).getByText('EVER LEADER')).toBeTruthy()
-  })
-
-  it('sem chegada prevista, explica em vez de mostrar caixa vazia', async () => {
-    renderPage()
-
-    const calendario = await screen.findByRole('region', { name: 'Calendário de chegadas' })
-    expect(within(calendario).getByText(/Nenhuma chegada prevista/)).toBeTruthy()
-  })
-})
+/* O calendario de chegadas foi para a Pagina Inicial em `H-98`, e os testes
+   dele foram junto — `web/tests/Home.test.tsx`. */
 
 describe('estados que nao sao lista vazia', () => {
   it('sem leitura concluida, explica que vazio nao e zero processos', async () => {
@@ -570,19 +541,13 @@ describe('estados que nao sao lista vazia', () => {
 describe('filtros globais', () => {
   it('a lista carrega os onze filtros junto dos parametros da pagina', async () => {
     window.history.replaceState(null, '', '/operacional?client=ACME&category=em_andamento')
-    renderPage('?client=ACME&category=em_andamento')
+    renderPage()
 
     await waitFor(() => {
       expect(lastProcessCall()).toContain('client=ACME')
       expect(lastProcessCall()).toContain('category=em_andamento')
       expect(lastProcessCall()).toContain('limit=200')
     })
-  })
-
-  it('o calendario recebe os filtros globais, nao os da pagina', async () => {
-    renderPage('?client=ACME')
-
-    await waitFor(() => expect(api.calls).toContain('GET /api/indicators?client=ACME'))
   })
 })
 
@@ -882,6 +847,48 @@ describe('densidade e número na tabela (H-61)', () => {
     // decima segunda, porque as 16 da aba entraram na ordem do arquivo.
     expect(celulas[0]?.style.backgroundColor).toBe('rgb(0, 255, 0)')
     expect(celulas[11]?.style.backgroundColor).toBe('rgb(255, 255, 0)')
+
+    /*
+      `H-97`. O verde e o amarelo sao CLAROS — luminancia 0,7152 e 0,9278 —,
+      entao a tinta e a escura. Sem isto o texto do tema escuro ficava em
+      **1,16** de contraste sobre o verde de 477 linhas; com ela, 15,30 e 19,56.
+      *(Eram 13,20 e 16,87 enquanto a tinta escura era `#14161a`. Ela passou a
+      PRETO PURO a pedido do usuario, em 16/09/2026, depois de ver a tela.)*
+    */
+    expect(celulas[0]?.style.color).toBe('var(--color-cell-ink)')
+    expect(celulas[11]?.style.color).toBe('var(--color-cell-ink)')
+    // O peso viaja com a tinta: preto e o fim da escala de cor, e o traco mais
+    // grosso foi a alavanca que sobrou depois disso (`H-97`).
+    expect(celulas[0]?.style.fontWeight).toBe('var(--weight-cell-ink)')
+  })
+
+  /**
+   * `H-97`. **O roxo recebe a MESMA tinta das outras oito, e reprova a WCAG AA
+   * por escolha do usuario** — 4,05 contra o piso de 4,5.
+   *
+   * Este bloco ja provou o contrario. Ele nasceu mostrando que o roxo recebia a
+   * tinta CLARA e chegava a 5,19, o que refutava a determinacao 2 de `D-41`
+   * — ela media `#14161a` (3,49) e preto (4,05) e nunca medira branco. Em
+   * 16/09/2026, vendo a prova de tinta, o usuario preferiu preto uniforme nas
+   * nove: a excecao de `D-41` voltou a valer, agora por ESCOLHA.
+   *
+   * A assercao fica, invertida, porque o que ela guarda e a uniformidade — se
+   * alguem reintroduzir a tinta clara "para consertar o contraste", isto
+   * reprova e manda ler a decisao antes.
+   */
+  it('o roxo recebe a mesma tinta das outras, e reprova AA por escolha declarada', async () => {
+    api.serveProcesses(
+      processesFixture([processFixture({ ref: 'FT501.26', fills: { A: '#A74F7B' } })]),
+    )
+    renderPage()
+
+    const linhas = await screen.findAllByRole('row')
+    const linha = linhas.filter((uma) => uma.closest('tbody') !== null)[0] as HTMLElement
+    const celulas = [...linha.querySelectorAll('td')]
+
+    expect(celulas[0]?.style.backgroundColor).toBe('rgb(167, 79, 123)')
+    expect(celulas[0]?.style.color).toBe('var(--color-cell-ink)')
+    expect(celulas[0]?.style.fontWeight).toBe('var(--weight-cell-ink)')
   })
 
   /**
@@ -900,6 +907,13 @@ describe('densidade e número na tabela (H-61)', () => {
 
     // A coluna B existe na planilha e nao foi declarada: fica sem fundo.
     expect(celulas[1]?.style.backgroundColor).toBe('')
+    // Sem fundo, sem tinta: a celula herda o texto do TEMA, que e o que "sem
+    // cor declarada" deve parecer. Fixar a tinta aqui pintaria de escuro um
+    // fundo que no tema escuro e escuro (`H-97`).
+    expect(celulas[1]?.style.color).toBe('')
+    // Nem tinta, nem peso: os dois sao um tratamento so, e sem fundo nao ha
+    // tratamento nenhum a aplicar.
+    expect(celulas[1]?.style.fontWeight).toBe('')
     /*
       A Categoria NUNCA recebe fundo, e por outro motivo: ela e derivada de
       `TD-01` e nao tem celula na planilha. Ate `H-95` o mesmo valia para a

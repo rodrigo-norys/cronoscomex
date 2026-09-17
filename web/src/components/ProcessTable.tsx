@@ -174,6 +174,36 @@ export const labelOf = (column: Column, headerLabels: Record<string, string>): s
 const fillOf = (item: ProcessDto, column: Column): string | undefined =>
   column.sheetColumn === undefined ? undefined : item.fills[column.sheetColumn]
 
+/**
+ * A tinta e o peso que o texto usa sobre a celula pintada (`H-97`).
+ *
+ * **Constante, e nao mais calculada.** Ate 16/09/2026 a tinta saia da
+ * luminancia do fundo, entre uma escura e uma clara, e a formula da WCAG vivia
+ * aqui para isso. O usuario pediu PRETO nas nove cores, incluindo o roxo — a
+ * unica que usava a clara: com uma tinta so nao ha escolha a fazer, e manter o
+ * calculo seria um ramo que nunca dispara fingindo ser regra.
+ *
+ * **O que isso custa esta medido e declarado:** o roxo, de 432 celulas, fica em
+ * **4,05** contra o piso de 4,5 da WCAG AA. Era 5,19 com branco. E a excecao de
+ * `D-41`, agora por ESCOLHA e nao por impossibilidade.
+ *
+ * **Cor nova mais escura que o roxo ficaria ilegivel, e nada aqui a impede.** O
+ * anteparo deixou de ser codigo e passou a ser medicao — a conferencia contra a
+ * planilha real, obrigatoria antes de fechar historia.
+ *
+ * `undefined` quando nao ha fundo: a celula herda o texto do tema, que e o que
+ * "sem cor declarada" deve parecer (determinacao 3 de `D-41`).
+ */
+function inkFor(fill: string | undefined): string | undefined {
+  return fill === undefined ? undefined : 'var(--color-cell-ink)'
+}
+
+/** O peso viaja com a tinta, e nao separado: sao um tratamento so, e derivar
+    cada um do seu lado daria duas regras que divergem na primeira mudanca. */
+function inkWeightFor(fill: string | undefined): string | undefined {
+  return fill === undefined ? undefined : 'var(--weight-cell-ink)'
+}
+
 /** O texto exibido, ja formatado. Datas em pt-BR; vazio vira travessao. */
 function displayOf(item: ProcessDto, column: Column): string {
   if (column.field === undefined) return ''
@@ -289,6 +319,8 @@ export function ProcessTable({
               {visible.map((column, columnIndex) => {
                 const cell = grid.cellProps(index + 1, columnIndex)
                 const fill = fillOf(item, column)
+                const ink = inkFor(fill)
+                const inkWeight = inkWeightFor(fill)
 
                 // A REF e link para o detalhe, e a unica celula que nao e texto
                 // nem edicao — por isso ela nao passa por `EditableCell`.
@@ -297,7 +329,7 @@ export function ProcessTable({
                     <td
                       key={column.key}
                       {...cell}
-                      style={{ backgroundColor: fill }}
+                      style={{ backgroundColor: fill, color: ink, fontWeight: inkWeight }}
                       className={`px-3 ${column.className ?? ''}`}
                     >
                       <a
@@ -314,7 +346,9 @@ export function ProcessTable({
                         // acao (`H-75`, `ACHADO 7`). Ele CONTEM o texto visivel
                         // — a REF —, que e o que `SC 2.5.3` exige.
                         aria-label={`Abrir o detalhe de ${item.ref}`}
-                        className="motion-tint text-text-secondary underline hover:text-text-primary"
+                        className={`motion-tint underline ${
+                          ink === undefined ? 'text-text-secondary hover:text-text-primary' : ''
+                        }`}
                       >
                         {item.ref}
                       </a>
@@ -362,6 +396,8 @@ export function ProcessTable({
                       processRef={item.ref}
                       cell={cell}
                       fill={fill}
+                      ink={ink}
+                      inkWeight={inkWeight}
                       label={labelOf(column, headerLabels)}
                       kind={column.kind ?? 'text'}
                       value={rawValueOf(item, column)}
@@ -386,7 +422,7 @@ export function ProcessTable({
                   <td
                     key={column.key}
                     {...cell}
-                    style={{ backgroundColor: fill }}
+                    style={{ backgroundColor: fill, color: ink, fontWeight: inkWeight }}
                     className={`max-w-56 truncate px-3 ${column.className ?? ''}`}
                     {...(texto !== '—' ? { title: texto } : {})}
                   >
