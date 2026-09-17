@@ -251,7 +251,16 @@ export function App() {
 
       {/* A lateral nao aparece na primeira execucao, pelo mesmo motivo de antes:
           nao ha dado a navegar, e o operador precisa apontar a planilha. */}
-      {!firstRun && <AppSidebar route={route} counts={navCounts} inert={overlayOpen} />}
+      {!firstRun && (
+        <AppSidebar
+          route={route}
+          counts={navCounts}
+          // Do health, que a casca ja busca a cada 5 s: zero requisicao nova, e
+          // o numero existe inclusive antes da primeira leitura boa (`H-96`).
+          schemaChanges={health === null ? null : health.schemaDivergences.length}
+          inert={overlayOpen}
+        />
+      )}
 
       {/* `min-w-0` e obrigatorio: sem ele o filho flex assume `min-width: auto`
           e uma tabela larga empurra a coluna para fora, que e o defeito que
@@ -327,7 +336,14 @@ export function App() {
             >
               <Suspense fallback={<PageLoading />}>
                 {firstRun ? (
-                  <WorkbookSetup dataVersion={dataVersion} firstRun onSaved={applyHealth} />
+                  <WorkbookSetup
+                    dataVersion={dataVersion}
+                    firstRun
+                    // **Tambem no `firstRun`**, e nao so na rota: e no arranque
+                    // a frio que o cabecalho divergente mais precisa aparecer.
+                    schemaDivergences={health?.schemaDivergences ?? []}
+                    onSaved={applyHealth}
+                  />
                 ) : (
                   <PageOutlet
                     route={route}
@@ -474,7 +490,14 @@ function PageOutlet({ route, dataVersion, health, queryString, onWorkbookSaved }
   // virada de ano, por exemplo. O desvio automatico da primeira execucao nem
   // chega aqui: ele acontece na casca, antes do outlet.
   if (route.pageId === 'workbookSetup') {
-    return <WorkbookSetup dataVersion={dataVersion} firstRun={false} onSaved={onWorkbookSaved} />
+    return (
+      <WorkbookSetup
+        dataVersion={dataVersion}
+        firstRun={false}
+        schemaDivergences={health?.schemaDivergences ?? []}
+        onSaved={onWorkbookSaved}
+      />
+    )
   }
 
   return <PendingPage key={dataVersion} page={page} processRef={route.ref} />

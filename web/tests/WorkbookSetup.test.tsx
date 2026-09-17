@@ -69,7 +69,9 @@ describe('WorkbookSetup', () => {
       readable: true,
     })
 
-    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
     await campoDoCaminho()
 
     // O campo aparece com a resposta e e preenchido pelo efeito seguinte:
@@ -82,7 +84,9 @@ describe('WorkbookSetup', () => {
   })
 
   it('grava o caminho digitado, e a recusa fica vazia', async () => {
-    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
     const campo = await campoDoCaminho()
 
     await act(async () => {
@@ -98,7 +102,9 @@ describe('WorkbookSetup', () => {
     api.failSaveWorkbookPath(
       'Nao ha nenhum arquivo nesse caminho. Confira se a pasta do OneDrive esta sincronizada.',
     )
-    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
     const campo = await campoDoCaminho()
 
     await act(async () => {
@@ -116,7 +122,9 @@ describe('WorkbookSetup', () => {
    * de tela, porque nao ha mudanca a comparar.
    */
   it('mantem a regiao de alerta no DOM desde a montagem', async () => {
-    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
 
     const regiao = avisoDoCaminho()
     await campoDoCaminho()
@@ -127,7 +135,9 @@ describe('WorkbookSetup', () => {
   it('avisa que o caminho salvo nao aponta para arquivo nenhum', async () => {
     api.serveWorkbookConfig({ workbookPath: 'C:/OneDrive/sumiu', exists: false, readable: false })
 
-    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
 
     expect(await screen.findByText(/não aponta para nenhum arquivo/i)).toBeTruthy()
   })
@@ -139,7 +149,9 @@ describe('WorkbookSetup', () => {
       readable: false,
     })
 
-    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
 
     expect(await screen.findByText(/não consegue lê-lo/i)).toBeTruthy()
   })
@@ -147,7 +159,7 @@ describe('WorkbookSetup', () => {
   it('nao deixa gravar caminho vazio', async () => {
     api.serveWorkbookConfig({ workbookPath: '', exists: false, readable: false })
 
-    render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+    render(<WorkbookSetup dataVersion={1} firstRun schemaDivergences={[]} onSaved={onSaved} />)
     await campoDoCaminho()
 
     const botao = screen.getByRole('button', { name: /carregar esta planilha/i })
@@ -155,7 +167,7 @@ describe('WorkbookSetup', () => {
   })
 
   it('fala em primeira execucao quando nunca houve leitura', async () => {
-    render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+    render(<WorkbookSetup dataVersion={1} firstRun schemaDivergences={[]} onSaved={onSaved} />)
     await campoDoCaminho()
 
     expect(screen.getByRole('heading', { name: /aponte a planilha para começar/i })).toBeTruthy()
@@ -163,7 +175,9 @@ describe('WorkbookSetup', () => {
   })
 
   it('fala em troca de arquivo quando ja houve leitura', async () => {
-    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
     await campoDoCaminho()
 
     expect(screen.getByRole('heading', { name: /caminho da planilha/i })).toBeTruthy()
@@ -189,7 +203,7 @@ describe('WorkbookSetup', () => {
 
     it('confirma a leitura com o numero que o servidor contou', async () => {
       api.serve(healthFixture({ lastReadOk: true, rowsAccepted: 649 }))
-      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+      render(<WorkbookSetup dataVersion={1} firstRun schemaDivergences={[]} onSaved={onSaved} />)
 
       await clicar('D:/planilha.xlsx')
 
@@ -198,7 +212,7 @@ describe('WorkbookSetup', () => {
 
     it('concorda o plural com um processo so', async () => {
       api.serve(healthFixture({ lastReadOk: true, rowsAccepted: 1 }))
-      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+      render(<WorkbookSetup dataVersion={1} firstRun schemaDivergences={[]} onSaved={onSaved} />)
 
       await clicar('D:/planilha.xlsx')
 
@@ -219,7 +233,7 @@ describe('WorkbookSetup', () => {
           degradedReason: 'A aba 2026 nao existe nesse arquivo.',
         }),
       )
-      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+      render(<WorkbookSetup dataVersion={1} firstRun schemaDivergences={[]} onSaved={onSaved} />)
 
       await clicar('D:/sem-a-aba.xlsx')
 
@@ -235,7 +249,7 @@ describe('WorkbookSetup', () => {
      */
     it('entrega a casca o health que o PUT devolveu', async () => {
       api.serve(healthFixture({ workbookPath: 'D:/nova.xlsx', lastReadOk: true }))
-      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+      render(<WorkbookSetup dataVersion={1} firstRun schemaDivergences={[]} onSaved={onSaved} />)
 
       await clicar('D:/nova.xlsx')
 
@@ -245,7 +259,7 @@ describe('WorkbookSetup', () => {
 
     it('nao avisa a casca quando o servidor recusou', async () => {
       api.failSaveWorkbookPath('O arquivo precisa ser uma planilha .xlsx.')
-      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+      render(<WorkbookSetup dataVersion={1} firstRun schemaDivergences={[]} onSaved={onSaved} />)
 
       await clicar('D:/documento.docx')
 
@@ -258,7 +272,9 @@ describe('WorkbookSetup', () => {
      * tabela de oito linhas —, e nascia fora da area visivel.
      */
     it('coloca a resposta antes do inventario, e nao no fim da pagina', async () => {
-      render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+      render(
+        <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+      )
       const inventario = await screen.findByRole('region', { name: /o que está configurado/i })
 
       const posicao = avisoDoCaminho().compareDocumentPosition(inventario)
@@ -267,7 +283,9 @@ describe('WorkbookSetup', () => {
     })
 
     it('troca a confirmacao anterior pela recusa, em vez de exibir as duas', async () => {
-      render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+      render(
+        <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+      )
 
       await clicar('D:/planilha.xlsx')
       await waitFor(() => expect(confirmacaoDoCaminho().textContent).not.toBe(''))
@@ -287,7 +305,7 @@ describe('WorkbookSetup', () => {
      */
     it('nao apaga o que o operador digitou quando a planilha e relida', async () => {
       const { rerender } = render(
-        <WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />,
+        <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
       )
       const campo = await campoDoCaminho()
       // O campo aparece no commit, e o efeito que o preenche roda DEPOIS dele:
@@ -297,7 +315,14 @@ describe('WorkbookSetup', () => {
 
       fireEvent.change(campo, { target: { value: 'D:/ainda-digitando' } })
       await act(async () => {
-        rerender(<WorkbookSetup dataVersion={2} firstRun={false} onSaved={onSaved} />)
+        rerender(
+          <WorkbookSetup
+            dataVersion={2}
+            firstRun={false}
+            schemaDivergences={[]}
+            onSaved={onSaved}
+          />,
+        )
       })
 
       expect((screen.getByLabelText(/caminho completo/i) as HTMLInputElement).value).toBe(
@@ -322,7 +347,7 @@ describe('WorkbookSetup', () => {
 
     it('poe no campo o caminho que o operador escolheu', async () => {
       api.serveBrowse('C:/OneDrive/Comércio Exterior/CONTROLE DOS EMBARQUE.xlsx')
-      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+      render(<WorkbookSetup dataVersion={1} firstRun schemaDivergences={[]} onSaved={onSaved} />)
 
       await escolher()
 
@@ -336,7 +361,7 @@ describe('WorkbookSetup', () => {
     /** Escolher nao e aplicar: o `PUT` continua sendo a unica porta de gravacao. */
     it('nao grava nada ao escolher', async () => {
       api.serveBrowse('C:/OneDrive/nova.xlsx')
-      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+      render(<WorkbookSetup dataVersion={1} firstRun schemaDivergences={[]} onSaved={onSaved} />)
 
       await escolher()
 
@@ -352,7 +377,9 @@ describe('WorkbookSetup', () => {
     it('deixa o campo intacto quando o operador cancela', async () => {
       api.serveWorkbookConfig({ workbookPath: 'C:/OneDrive/atual.xlsx' })
       api.cancelBrowse()
-      render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+      render(
+        <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+      )
       await waitFor(() =>
         expect((screen.getByLabelText(/caminho completo/i) as HTMLInputElement).value).toBe(
           'C:/OneDrive/atual.xlsx',
@@ -378,7 +405,7 @@ describe('WorkbookSetup', () => {
         'SELETOR_INDISPONIVEL',
         'Esta maquina nao abre o seletor de arquivos. Digite o caminho da planilha.',
       )
-      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+      render(<WorkbookSetup dataVersion={1} firstRun schemaDivergences={[]} onSaved={onSaved} />)
 
       await escolher()
 
@@ -391,7 +418,7 @@ describe('WorkbookSetup', () => {
 
     it('limpa a recusa anterior quando a escolha seguinte da certo', async () => {
       api.failBrowse(501, 'SELETOR_INDISPONIVEL', 'Esta maquina nao abre o seletor.')
-      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+      render(<WorkbookSetup dataVersion={1} firstRun schemaDivergences={[]} onSaved={onSaved} />)
       await escolher()
       await waitFor(() => expect(avisoDoCaminho().textContent).not.toBe(''))
 
@@ -414,13 +441,13 @@ describe('WorkbookSetup', () => {
 
     it('mostra a versao real do Node ao lado da etapa dele', async () => {
       api.serveWorkbookConfig({ runtime: { nodeVersion: '22.23.2', webBuilt: true } })
-      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+      render(<WorkbookSetup dataVersion={1} firstRun schemaDivergences={[]} onSaved={onSaved} />)
 
       expect((await checklist()).textContent).toMatch(/Node\.js instalado.*versão 22\.23\.2/)
     })
 
     it('lista as etapas na ordem em que o atalho as percorre', async () => {
-      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+      render(<WorkbookSetup dataVersion={1} firstRun schemaDivergences={[]} onSaved={onSaved} />)
 
       const itens = [...(await checklist()).querySelectorAll('li')].map((item) =>
         item.textContent?.replace(/\s+/g, ' ').trim(),
@@ -440,7 +467,9 @@ describe('WorkbookSetup', () => {
      */
     it('mostra a interface como pendente quando dist/web sumiu', async () => {
       api.serveWorkbookConfig({ runtime: { nodeVersion: '22.23.2', webBuilt: false } })
-      render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+      render(
+        <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+      )
 
       const item = [...(await checklist()).querySelectorAll('li')].find((linha) =>
         /Interface compilada/.test(linha.textContent ?? ''),
@@ -454,7 +483,7 @@ describe('WorkbookSetup', () => {
       api.serveWorkbookConfig({
         configFile: { path: 'config/app.json', present: false, parseable: true },
       })
-      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+      render(<WorkbookSetup dataVersion={1} firstRun schemaDivergences={[]} onSaved={onSaved} />)
 
       const item = [...(await checklist()).querySelectorAll('li')].find((linha) =>
         /Arquivo de configuração/.test(linha.textContent ?? ''),
@@ -473,7 +502,7 @@ describe('WorkbookSetup', () => {
         runtime: { nodeVersion: '22.23.2', webBuilt: false },
         configFile: { path: 'config/app.json', present: false, parseable: true },
       })
-      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+      render(<WorkbookSetup dataVersion={1} firstRun schemaDivergences={[]} onSaved={onSaved} />)
       const regiao = await checklist()
 
       expect(regiao.querySelector('[role="alert"]')).toBeNull()
@@ -488,7 +517,7 @@ describe('WorkbookSetup', () => {
     it('diz cumprida ou pendente em texto, e nao so no simbolo', async () => {
       api.serveWorkbookConfig({ runtime: { nodeVersion: '22.23.2', webBuilt: false } })
 
-      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+      render(<WorkbookSetup dataVersion={1} firstRun schemaDivergences={[]} onSaved={onSaved} />)
       const regiao = await checklist()
 
       expect(regiao.textContent).toMatch(/cumprida/)
@@ -497,7 +526,7 @@ describe('WorkbookSetup', () => {
 
     it('reconfere sem recarregar a pagina nem reexecutar o atalho', async () => {
       api.serveWorkbookConfig({ runtime: { nodeVersion: '22.23.2', webBuilt: false } })
-      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+      render(<WorkbookSetup dataVersion={1} firstRun schemaDivergences={[]} onSaved={onSaved} />)
       await checklist()
 
       api.serveWorkbookConfig({ runtime: { nodeVersion: '22.23.2', webBuilt: true } })
@@ -511,7 +540,9 @@ describe('WorkbookSetup', () => {
     })
 
     it('anuncia que tudo esta pronto quando nada falta', async () => {
-      render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+      render(
+        <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+      )
 
       expect((await checklist()).textContent).toMatch(/Tudo pronto/)
     })
@@ -523,7 +554,9 @@ describe('WorkbookSetup', () => {
    */
   describe('o inventario da configuracao', () => {
     it('lista os oito campos com o valor em uso', async () => {
-      render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+      render(
+        <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+      )
       await campoDoCaminho()
 
       const inventario = await screen.findByRole('region', { name: /o que está configurado/i })
@@ -548,7 +581,9 @@ describe('WorkbookSetup', () => {
           ],
         }),
       )
-      render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+      render(
+        <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+      )
 
       const inventario = await screen.findByRole('region', { name: /o que está configurado/i })
 
@@ -562,7 +597,9 @@ describe('WorkbookSetup', () => {
           fields: [{ key: 'port', value: 5173, source: 'arquivo', restartPending: true }],
         }),
       )
-      render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+      render(
+        <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+      )
 
       expect(await screen.findByText(/passa a valer no próximo início/i)).toBeTruthy()
     })
@@ -581,7 +618,9 @@ describe('WorkbookSetup', () => {
           sheetPresent: null,
         }),
       )
-      render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+      render(
+        <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+      )
 
       const inventario = await screen.findByRole('region', { name: /o que está configurado/i })
 
@@ -605,7 +644,7 @@ describe('WorkbookSetup', () => {
           sheetPresent: null,
         }),
       )
-      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+      render(<WorkbookSetup dataVersion={1} firstRun schemaDivergences={[]} onSaved={onSaved} />)
 
       const inventario = await screen.findByRole('region', { name: /o que está configurado/i })
 
@@ -619,7 +658,7 @@ describe('WorkbookSetup', () => {
           configFile: { path: 'config/app.json', present: false, parseable: true },
         }),
       )
-      render(<WorkbookSetup dataVersion={1} firstRun onSaved={onSaved} />)
+      render(<WorkbookSetup dataVersion={1} firstRun schemaDivergences={[]} onSaved={onSaved} />)
 
       expect(await screen.findByText(/ainda não existe/i)).toBeTruthy()
     })
@@ -631,7 +670,9 @@ describe('WorkbookSetup', () => {
           fields: [{ key: 'port', value: 5173, source: 'desconhecida', restartPending: false }],
         }),
       )
-      render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+      render(
+        <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+      )
 
       expect(await screen.findByText(/não pôde ser lido/i)).toBeTruthy()
       expect(await screen.findByText(/não foi possível ler/i)).toBeTruthy()
@@ -671,7 +712,9 @@ async function abrirPainel(): Promise<HTMLElement> {
 
 describe('responsáveis por importador', () => {
   it('mostra a dívida na faixa, sem o operador abrir o painel', async () => {
-    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
 
     const painel = await painelDaEquipe()
     expect(painel.textContent).toContain('2')
@@ -683,7 +726,9 @@ describe('responsáveis por importador', () => {
     // 35 na planilha real: nenhuma carteira as alcanca por construcao, e
     // some-las seria descarte silencioso (regra inviolavel 2). O conserto e
     // preencher a coluna IMPORTADOR, editavel desde `H-80`.
-    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
 
     const painel = await abrirPainel()
     expect(painel.textContent).toContain('35')
@@ -696,7 +741,9 @@ describe('responsáveis por importador', () => {
 
   it('diz que traço não é zero enquanto NUNCA houve leitura', async () => {
     api.teamWithoutRead()
-    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
 
     const painel = await painelDaEquipe()
     await waitFor(() => {
@@ -706,7 +753,9 @@ describe('responsáveis por importador', () => {
 
   it('anuncia a falha da carga em vez de mostrar equipe vazia', async () => {
     api.failTeam()
-    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
 
     const painel = await painelDaEquipe()
     await waitFor(() => {
@@ -717,7 +766,9 @@ describe('responsáveis por importador', () => {
   it('atribui um importador mandando a carteira INTEIRA', async () => {
     // A rota REDEFINE o membro: mandar so o importador novo apagaria os que ele
     // ja tinha.
-    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
 
     const painel = await abrirPainel()
     fireEvent.change(within(painel).getByLabelText('Importador'), { target: { value: 'MPA' } })
@@ -738,7 +789,9 @@ describe('responsáveis por importador', () => {
       como `H-88` faz com o cliente, ela levaria o nome da pessoa para todos
       esses lugares.
     */
-    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
 
     const painel = await abrirPainel()
     fireEvent.change(within(painel).getByLabelText('Importador'), { target: { value: 'MPA' } })
@@ -761,7 +814,9 @@ describe('responsáveis por importador', () => {
   it('cria com carteira VAZIA quando nenhum importador foi escolhido', async () => {
     // Alguem entra na equipe e recebe importador depois — o caso-limite que
     // `H-91` tornou legitimo, e que ate ali matava a partida.
-    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
 
     const painel = await abrirPainel()
     fireEvent.change(within(painel).getByLabelText('Responsável'), {
@@ -778,7 +833,9 @@ describe('responsáveis por importador', () => {
   })
 
   it('não grava enquanto o operador não escolheu quem recebe', async () => {
-    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
 
     const painel = await abrirPainel()
     fireEvent.change(within(painel).getByLabelText('Importador'), { target: { value: 'MPA' } })
@@ -788,7 +845,9 @@ describe('responsáveis por importador', () => {
   })
 
   it('desfaz o responsável inteiro', async () => {
-    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
 
     const painel = await abrirPainel()
     fireEvent.click(within(painel).getByRole('button', { name: /desfazer membro 1/i }))
@@ -799,7 +858,9 @@ describe('responsáveis por importador', () => {
   })
 
   it('tira um importador sem desfazer a pessoa', async () => {
-    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
 
     const painel = await abrirPainel()
     fireEvent.click(
@@ -814,7 +875,9 @@ describe('responsáveis por importador', () => {
   it('entrega a recusa do servidor ao operador, sem tradução', async () => {
     // Ele nao e tecnico, e e ele quem vai corrigir o que escolheu.
     api.failSaveTeamMember('O importador "MPA" já está na carteira de Membro 2.')
-    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
 
     const painel = await abrirPainel()
     fireEvent.change(within(painel).getByLabelText('Importador'), { target: { value: 'MPA' } })
@@ -832,7 +895,9 @@ describe('responsáveis por importador', () => {
         members: [{ key: 'membro1', label: 'Membro 1', importers: [], count: 0 }],
       }),
     )
-    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
 
     const painel = await abrirPainel()
     expect(painel.textContent).toMatch(/sem importador ainda/i)
@@ -840,9 +905,101 @@ describe('responsáveis por importador', () => {
 
   it('afirma o estado quando todo importador já tem responsável', async () => {
     api.serveTeam(teamFixture({ unassigned: [], blankImporters: 0 }))
-    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
 
     const painel = await abrirPainel()
     expect(painel.textContent).toMatch(/todo importador da planilha (já )?tem responsável/i)
+  })
+})
+
+/**
+ * `H-96`. O painel que diz o que mudou no cabeçalho da planilha.
+ *
+ * **Nada aqui bloqueia nada** — decisão do usuário em 17/09/2026: a leitura
+ * segue, os processos entram, e o painel nunca para. O que esta seção entrega é
+ * o MOTIVO, nomeando as duas pontas (`RF-44`).
+ */
+describe('diferenças no cabeçalho (H-96)', () => {
+  const renomeado = {
+    kind: 'AUSENTE' as const,
+    column: 'D',
+    expectedColumn: 'D',
+    expected: 'BL',
+    found: 'BL ORIGINAL',
+    span: 1,
+    duplicateOf: null,
+  }
+
+  const secao = async (): Promise<HTMLElement> =>
+    await screen.findByRole('region', { name: 'Diferenças no cabeçalho da planilha' })
+
+  it('nomeia as duas pontas do que mudou', async () => {
+    render(
+      <WorkbookSetup
+        dataVersion={1}
+        firstRun={false}
+        schemaDivergences={[renomeado]}
+        onSaved={onSaved}
+      />,
+    )
+
+    expect((await secao()).textContent).toContain(
+      'Coluna D: esperado "BL", encontrado "BL ORIGINAL".',
+    )
+  })
+
+  /** Cabeçalho batendo é o caso normal: não há seção, e não há quadro vazio. */
+  it('sem divergência, a seção não existe', async () => {
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
+    await campoDoCaminho()
+
+    expect(screen.queryByRole('region', { name: 'Diferenças no cabeçalho da planilha' })).toBeNull()
+  })
+
+  /**
+   * **Uma edição na planilha é UMA linha**, e não catorze. Inserir uma coluna
+   * desloca 14, e o operador fez um gesto só — o domínio agrupa o bloco, e a
+   * tela mostra o que ele agrupou.
+   */
+  it('o bloco deslocado sai como uma linha só, com o tamanho dele', async () => {
+    render(
+      <WorkbookSetup
+        dataVersion={1}
+        firstRun={false}
+        schemaDivergences={[
+          {
+            kind: 'DESLOCADO',
+            column: 'D',
+            expectedColumn: 'C',
+            expected: 'IMPORTADOR',
+            found: 'IMPORTADOR',
+            span: 14,
+            duplicateOf: null,
+          },
+        ]}
+        onSaved={onSaved}
+      />,
+    )
+
+    const painel = await secao()
+    expect(painel.textContent).toContain('14 colunas andaram 1 coluna à direita, a partir de C')
+    expect(within(painel).getAllByRole('listitem')).toHaveLength(1)
+  })
+
+  /**
+   * **Aparece no arranque a frio também.** É o caso em que o operador mais
+   * precisa dela: a aplicação sobe, a casca desvia para esta tela, e sem o
+   * painel aqui ele veria só o formulário de caminho, sem explicação.
+   */
+  it('aparece na primeira execução, e não só na rota', async () => {
+    render(
+      <WorkbookSetup dataVersion={1} firstRun schemaDivergences={[renomeado]} onSaved={onSaved} />,
+    )
+
+    expect((await secao()).textContent).toContain('BL ORIGINAL')
   })
 })

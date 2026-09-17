@@ -172,6 +172,48 @@ describe('as recusas', () => {
     expect(screen.queryByRole('table')).toBeNull()
   })
 
+  /**
+   * `H-96`. **A recusa diz QUAL coluna, na tela em que o operador está.**
+   *
+   * A mensagem do servidor diz o que fazer; esta linha diz onde. O painel que
+   * nomeia as duas pontas é montado só na Página Configuração e no arranque a
+   * frio, e o botão `Aplicar alterações` não vive nessas telas — sem isto o
+   * operador tinha a instrução e um contador, e precisava navegar. Achado do
+   * `revisor-xml`.
+   *
+   * O `detail` vai cru para o corpo, então a asserção exercita o caminho
+   * inteiro: JSON → `api-client` → `ApplyRefusal` → `ConflictDialog`.
+   */
+  it('nomeia a coluna divergente no diálogo, em recusa de cabeçalho', async () => {
+    await aplicarERecusar(
+      409,
+      'CABECALHO_DESLOCADO',
+      'Uma coluna mudou de lugar na planilha. Desfaca a mudanca no Excel e aplique de novo.',
+      { schemaDivergence: '"IMPORTADOR" saiu do lugar: era esperada em C, e está em D.' },
+    )
+
+    const dialogo = await screen.findByRole('alertdialog')
+    expect(dialogo.textContent).toContain('Desfaca a mudanca no Excel')
+    expect(dialogo.textContent).toContain('era esperada em C, e está em D')
+  })
+
+  /**
+   * **O par obrigatório do anterior.** Sem ele, um diálogo que renderizasse o
+   * parágrafo sempre — com o texto vazio, ou com a frase de uma recusa anterior
+   * — passaria na asserção de cima sem sintoma nenhum.
+   */
+  it('não mostra frase de coluna em recusa que não conferiu cabeçalho', async () => {
+    await aplicarERecusar(
+      409,
+      'EXCEL_ABERTO',
+      'A planilha esta aberta no Excel. Feche-a e aplique de novo.',
+    )
+
+    const dialogo = await screen.findByRole('alertdialog')
+    expect(dialogo.textContent).not.toContain('saiu do lugar')
+    expect(dialogo.textContent).not.toContain('era esperada em')
+  })
+
   // Criterio: "Dado ARQUIVO_MUDOU, entao a interface exibe o dialogo de conflito
   // com os tres valores por campo, e nada e gravado".
   it('exibe os tres valores por campo em ARQUIVO_MUDOU', async () => {

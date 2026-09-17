@@ -1059,6 +1059,52 @@ describe('a contagem da lateral', () => {
     return api.signals[api.calls.indexOf(call)]
   }
 
+  /**
+   * `H-96`. O número ao lado de Configuração conta COLUNAS que mudaram, e não
+   * processos.
+   *
+   * **Vem do health**, que a casca já busca a cada 5 s: zero requisição nova, e
+   * o número existe inclusive antes da primeira leitura boa — ao contrário das
+   * contagens de Operacional e Alertas, desligadas em `firstRun`.
+   */
+  it('conta as colunas que mudaram ao lado de Configuracao', async () => {
+    api.serve(
+      healthFixture({
+        schemaDivergences: [
+          {
+            kind: 'AUSENTE',
+            column: 'D',
+            expectedColumn: 'D',
+            expected: 'BL',
+            found: 'BL ORIGINAL',
+            span: 1,
+            duplicateOf: null,
+          },
+        ],
+      }),
+    )
+    render(<App />)
+
+    // O nome acessivel e o terceiro ramo de `countedLabel`: sem ele, o padrao
+    // diria "Configuracao, 1 processo" — que e falso.
+    const item = await within(nav()).findByRole('link', {
+      name: 'Configuração, 1 coluna diferente na planilha',
+    })
+    expect(within(item).getByText('1')).toBeTruthy()
+  })
+
+  /**
+   * Cabeçalho batendo é o caso normal, e um `0` permanente ao lado do item
+   * viraria ruído que ninguém lê. Zero **não** aparece — ao contrário de
+   * Operacional, onde zero é afirmação do servidor sobre um recorte.
+   */
+  it('cabecalho que bate nao poe zero ao lado de Configuracao', async () => {
+    render(<App />)
+
+    const item = await within(nav()).findByRole('link', { name: 'Configuração' })
+    expect(within(item).queryByText('0')).toBeNull()
+  })
+
   it('mostra em Operacional o total que o servidor devolveu, e nao um numero recontado', async () => {
     api.serveProcesses(processesFixture([], { total: 650 }))
     render(<App />)

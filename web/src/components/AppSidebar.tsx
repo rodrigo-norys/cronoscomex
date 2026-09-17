@@ -71,6 +71,19 @@ const ITEM_REST =
  */
 const COUNT_TONE: Partial<Record<PageId, string>> = {
   alerts: 'text-state-error-fg',
+  /**
+   * Configuracao usa `state-warning-fg`, e **nao** o `error` de Alertas (`H-96`).
+   *
+   * Os dois contam coisas de naturezas diferentes — um conta processos que
+   * pedem acao, o outro conta defeito estrutural no arquivo —, e dar-lhes a
+   * mesma cor diria que sao a mesma coisa.
+   *
+   * Medido em 16/09/2026 nos DOIS fundos que o item pode ter: 5,92:1 e 5,13:1
+   * no claro, 8,93:1 e 7,65:1 no escuro, contra o piso de 4,5. O fundo do item
+   * corrente e o unico do conjunto que pinta, e foi exatamente ali que
+   * `text-muted` reprovou antes.
+   */
+  workbookSetup: 'text-state-warning-fg',
 }
 
 /**
@@ -87,6 +100,15 @@ function countedLabel(page: PageId, label: string, count: number): string {
   if (page === 'alerts') {
     const fila = count === 1 ? '1 processo pede ação' : `${count} processos pedem ação`
     return `${label}, ${fila}`
+  }
+  /*
+    O terceiro ramo e obrigatorio, e nao enfeite (`H-96`): sem ele o padrao
+    abaixo faria o leitor de tela anunciar "Configuracao, 2 processos" — que e
+    falso, porque aqui nao se contam processos, e sim colunas que mudaram.
+  */
+  if (page === 'workbookSetup') {
+    const quantas = count === 1 ? '1 coluna diferente' : `${count} colunas diferentes`
+    return `${label}, ${quantas} na planilha`
   }
   return `${label}, ${count} ${count === 1 ? 'processo' : 'processos'}`
 }
@@ -137,20 +159,42 @@ function NavItem({
 export function AppSidebar({
   route,
   counts,
+  schemaChanges,
   inert = false,
 }: {
   route: Route
   counts: NavCounts
+  /**
+   * Quantas colunas da planilha estao diferentes do esquema declarado (`H-96`).
+   *
+   * **Prop propria, e nao um campo de `NavCounts`**, e a separacao e o ponto:
+   * `NavCounts` conta RECORTE — o que o filtro seleciona — e e desligada em
+   * `firstRun`; esta conta defeito ESTRUTURAL, e precisa existir justamente no
+   * arranque a frio, que e quando o operador mais precisa dela. Misturadas, ela
+   * herdaria o desligamento e morreria no unico caso que importa.
+   *
+   * `null` e ausencia de contagem, nunca `0`: sem resposta do health ainda, o
+   * que se sabe e nada (regra inviolavel 3).
+   */
+  schemaChanges: number | null
   inert?: boolean
 }) {
   const principais = NAV_PAGES.filter((page) => page.id !== FOOTER_PAGE_ID)
   const rodape = NAV_PAGES.filter((page) => page.id === FOOTER_PAGE_ID)
 
-  // Os outros cinco destinos nao tem numero que signifique recorte: Inicio,
-  // Clientes, Performance, Historico e Configuracao mostram outra coisa.
+  /*
+    Os outros quatro destinos nao tem numero: Inicio, Clientes, Performance e
+    Historico mostram outra coisa.
+
+    **Configuracao entrou em `H-96`, e o numero dela NAO e recorte** — e quantas
+    colunas da planilha deixaram de bater com o esquema. Zero nao aparece: a
+    lista vazia e o caso normal, e um `0` permanente ao lado do item viraria
+    ruido que ninguem le.
+  */
   const countOf = (page: PageId): number | null => {
     if (page === 'operational') return counts.processes
     if (page === 'alerts') return counts.alerts
+    if (page === 'workbookSetup') return schemaChanges === 0 ? null : schemaChanges
     return null
   }
 
@@ -177,8 +221,20 @@ export function AppSidebar({
       {/* `mt-auto` empurra o rodape para baixo na coluna, e nao faz nada na
           faixa horizontal do celular — que e o comportamento certo nos dois. */}
       <div className="mt-auto border-border-subtle pt-2 sm:border-t">
+        {/*
+          `countOf`, e nao `null` fixo (`H-96`). O `null` estava certo enquanto
+          Configuracao nao tinha numero nenhum, e ficou para tras quando ela
+          ganhou um — o rodape e o UNICO item que nao passava pela contagem, e
+          por isso o contador existia em `COUNT_TONE`, `countedLabel` e `countOf`
+          sem nunca chegar a tela. Quem achou foi o teste.
+        */}
         {rodape.map((page) => (
-          <NavItem key={page.id} page={page} current={page.id === route.pageId} count={null} />
+          <NavItem
+            key={page.id}
+            page={page}
+            current={page.id === route.pageId}
+            count={countOf(page.id)}
+          />
         ))}
       </div>
     </nav>
