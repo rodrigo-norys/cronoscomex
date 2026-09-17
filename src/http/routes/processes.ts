@@ -86,6 +86,22 @@ export interface ProcessDto {
   columnPRaw: string
   anomalies: AnomalyCode[]
   /**
+   * A cor de fundo de cada celula, por letra de coluna (`H-94`).
+   *
+   * **Ja em `#RRGGBB`**, resolvida no servidor contra `config/color-map.json`:
+   * traduzir a chave de estilo na tela poria regra no cliente (regra inviolavel
+   * 6) e obrigaria a interface a carregar uma copia do mapa, que divergiria do
+   * arquivo no primeiro ajuste.
+   *
+   * **Coluna ausente do objeto significa "sem fundo"**, e nunca "branco": e a
+   * determinacao 3 de `D-41`. Chave que o mapa nao declara nao recebe a cor
+   * mais proxima — a celula fica sem pintura, e a ausencia aparece.
+   *
+   * **E a primeira vez que a cor atravessa a API no fluxo normal.** Ate aqui a
+   * `styleKey` so saia pelo relatorio de quarentena.
+   */
+  fills: Record<string, string>
+  /**
    * A fila de edicoes so existe em `H-23`, entao hoje e sempre `false` — como
    * `pendingEditsCount` no health. O campo entra no contrato desde ja para a
    * interface nao precisar mudar depois, e vale `false` porque **nao ha edicao
@@ -141,6 +157,21 @@ export interface ProcessesResponse {
   total: number
   limit: number
   offset: number
+  /**
+   * O nome de cada coluna, por letra, como a linha 1 da planilha o escreve
+   * (`H-95`).
+   *
+   * **Viaja na resposta, e nao por item:** e propriedade da ABA, e repeti-lo em
+   * cada processo custaria 16 pares por linha numa pagina de ate 500.
+   *
+   * **Sai LITERAL, e a tabela mostra o que o arquivo diz.** A coluna `H` se
+   * chama `ETA` e guarda porto — `RIO`, `MULTIRIO`, `SC` —, e `M` e `P` se
+   * chamam `Coluna 13` e `Coluna1`, nomes que o Excel gerou sozinho. Corrigir
+   * qualquer um na tela criaria uma segunda verdade (regra inviolavel 1).
+   *
+   * Coluna sem nome nao entra: ausencia de rotulo nao vira rotulo vazio.
+   */
+  headerLabels: Record<string, string>
 }
 
 function toDto(process: Process, hasPendingEdits = false): ProcessDto {
@@ -170,6 +201,7 @@ function toDto(process: Process, hasPendingEdits = false): ProcessDto {
     paymentRaw: process.paymentRaw,
     columnPRaw: process.columnPRaw,
     anomalies: [...process.anomalies],
+    fills: { ...process.fills },
     hasPendingEdits,
   }
 }
@@ -186,7 +218,9 @@ interface ProcessesQuery {
 class QueryError extends Error {}
 
 function parseSort(raw: string | undefined): SortField {
-  if (raw === undefined) return 'eta2'
+  // `sourceRow` desde `H-89`: sem `sort`, a tela abre na ordem em que as linhas
+  // estao na planilha (`D-33`).
+  if (raw === undefined) return 'sourceRow'
   if ((SORT_FIELDS as readonly string[]).includes(raw)) return raw as SortField
   throw new QueryError(`"sort" deve ser um de: ${SORT_FIELDS.join(', ')}.`)
 }
@@ -347,6 +381,7 @@ export function registerProcessesRoute(
       total: matching.length,
       limit,
       offset,
+      headerLabels: state.headerLabels,
     }
     return reply.code(200).send(body)
   })

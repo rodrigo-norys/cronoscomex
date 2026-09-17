@@ -4,7 +4,7 @@ import {
   resolveClient,
   resolveClientGroup,
 } from './client-mapper.ts'
-import { type ColorMapEntry, resolveColorIndexed } from './color-mapper.ts'
+import { type ColorMapEntry, resolveCellFills, resolveColorIndexed } from './color-mapper.ts'
 import { normKey, parseCellDate } from './normalizer.ts'
 import { classify } from './status-classifier.ts'
 import { resolveTeam, type TeamMember } from './team-mapper.ts'
@@ -61,16 +61,27 @@ export interface BuildDeps {
    */
   clientGroups?: ClientGroupIndex
   /**
-   * Mapa de equipe de `H-48`, consumido por `H-50`, ja normalizado na carga.
+   * Mapa de equipe de `H-48`, ja normalizado na carga.
    *
-   * Ausente ou vazio, `responsible` vale a chave de cor da linha e a resolucao
-   * declara `source: 'cor'` (`D-23`) — o comportamento anterior a `H-50`, e o
-   * estado com que o operador recebe a aplicacao.
+   * **Ausente ou vazio, TODO processo fica sem responsavel** — desde `H-93`, e
+   * de proposito (`D-40`). Ate ali a cor preenchia o campo nesse estado
+   * (`D-23`); com a tela de `H-91` existindo, o operador tem onde declarar a
+   * equipe, e um campo preenchido pela cor esconderia que ele ainda nao
+   * declarou.
    *
    * **A projecao de `H-23` precisa dele tanto quanto a ingestao**, pelo mesmo
    * motivo de `clientMap`: ela refaz o processo inteiro por `buildProcesses`.
    */
   teamMap?: readonly TeamMember[]
+  /**
+   * Chave de estilo → cor de exibicao (`H-94`), ja indexada por `indexDisplay`.
+   *
+   * Ausente, `fills` sai vazio e a tabela nao pinta nada — que e o certo em
+   * teste e o estado de quem nao declarou `display` no mapa. **Nao afeta
+   * classificacao nenhuma:** a cor do processo continua saindo da ancora, e
+   * `ADR-0003` nao e tocado.
+   */
+  displayIndex?: ReadonlyMap<string, string>
 }
 
 /** Mapeamento coluna -> campo. Ver docs/03-modelo-dados.md secao 1.2. */
@@ -162,8 +173,7 @@ function buildOne(row: RawRow, deps: BuildDeps): { process: Process; unmappedCol
   const importerKey = normKey(importerRaw)
   const client = resolveClient(clientProcessKey, importerKey, deps.clientMap ?? [])
   const clientGroupKey = resolveClientGroup(client.key, deps.clientGroups ?? new Map())
-  const team = resolveTeam(importerKey, color.responsible, deps.teamMap ?? [])
-  if (team.conflict) anomalies.add('RESPONSAVEL_DIVERGENTE')
+  const team = resolveTeam(importerKey, deps.teamMap ?? [])
   const agentRaw = text(row, COLUMN.agent)
   const vesselRaw = text(row, COLUMN.vessel)
   const portRaw = text(row, COLUMN.port)
@@ -205,6 +215,8 @@ function buildOne(row: RawRow, deps: BuildDeps): { process: Process; unmappedCol
     customsChannel: color.customsChannel,
     importerOutsideRj: color.importerOutsideRj,
     styleKey: row.styleKey,
+    cellStyleKeys: row.cellStyleKeys,
+    fills: resolveCellFills(row.cellStyleKeys, deps.displayIndex),
     anomalies: [],
   }
 
@@ -260,7 +272,15 @@ export function toRawRow(process: Process): RawRow {
   putDate(COLUMN.docsSent, process.docsSentDate)
   put(COLUMN.columnP, process.columnPRaw)
 
-  return { sourceRow: process.sourceRow, cells, styleKey: process.styleKey }
+  // `cellStyleKeys` volta INTACTO: `refreshClientMap` e `refreshTeamMap`
+  // re-derivam por aqui com o processo no ar, e devolver o objeto vazio
+  // apagaria a pintura da tabela a cada troca de mapa, em silencio.
+  return {
+    sourceRow: process.sourceRow,
+    cells,
+    styleKey: process.styleKey,
+    cellStyleKeys: process.cellStyleKeys,
+  }
 }
 
 /**
@@ -364,11 +384,6 @@ export function describeAnomaly(code: AnomalyCode, process: Process): string {
       return `styleKey=${process.styleKey}`
     case 'VARIANTE_STATUS_PROXIMA':
       return `STATUS proximo de uma grafia catalogada: "${process.statusRaw}"`
-    case 'RESPONSAVEL_DIVERGENTE':
-      // Chaves, nunca nomes: `responsible` e impessoal e o nome vive no
-      // `label`, que sai de arquivo nao versionado (regra inviolavel 8). Este
-      // texto vai para o relatorio de anomalias e para a tela de detalhe.
-      return `o importador atribui a "${process.responsible}"; a cor "${process.colorResponsible}" aponta outra pessoa`
   }
 }
 

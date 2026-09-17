@@ -1,5 +1,5 @@
 import { existsSync, readFileSync } from 'node:fs'
-import type { ColorMapEntry } from '../domain/color-mapper.ts'
+import type { CellFill, ColorMapEntry } from '../domain/color-mapper.ts'
 import type { ColorResponsible, CustomsChannel } from '../domain/types.ts'
 
 /**
@@ -27,6 +27,29 @@ export interface ColorMapFile {
   anchorColumn: string
   styledColumns: string[]
   entries: ColorMapEntry[]
+  /** `H-94`. Cores que so pintam — nunca alvo de escrita. */
+  cellFills?: CellFill[]
+}
+
+/** `#RRGGBB`, e nada mais: o campo e declaracao de aparencia, nao expressao. */
+const DISPLAY = /^#[0-9A-Fa-f]{6}$/
+
+/**
+ * Valida a cor de exibicao de `H-94`.
+ *
+ * **Ausente e legitimo** (determinacao 3 de `D-41`): chave sem `display` nao
+ * recebe cor inventada, e a celula fica sem fundo. PRESENTE e malformado e
+ * outra coisa — e engano de quem editou o arquivo, e passa a valer silencio
+ * onde havia intencao de cor.
+ */
+function validateDisplay(raw: unknown, where: string): string | undefined {
+  if (raw === undefined) return undefined
+  if (typeof raw !== 'string' || !DISPLAY.test(raw)) {
+    throw new ColorMapError(
+      `${where}.display invalido: ${String(raw)}. Use "#RRGGBB" — seis digitos hexadecimais.`,
+    )
+  }
+  return raw
 }
 
 function validateEntry(raw: unknown, position: number): ColorMapEntry {
@@ -63,6 +86,8 @@ function validateEntry(raw: unknown, position: number): ColorMapEntry {
     throw new ColorMapError(`${where}.importerOutsideRj deve ser true ou false.`)
   }
 
+  const display = validateDisplay(entry.display, where)
+
   return {
     styleKey,
     fillId,
@@ -70,6 +95,35 @@ function validateEntry(raw: unknown, position: number): ColorMapEntry {
     responsible,
     customsChannel,
     importerOutsideRj: entry.importerOutsideRj,
+    ...(display === undefined ? {} : { display }),
+  }
+}
+
+function validateCellFill(raw: unknown, position: number): CellFill {
+  const where = `cellFills[${position}]`
+  if (!raw || typeof raw !== 'object') {
+    throw new ColorMapError(`${where} deve ser um objeto.`)
+  }
+  const fill = raw as Record<string, unknown>
+
+  const styleKey = fill.styleKey
+  if (typeof styleKey !== 'string' || styleKey.trim() === '') {
+    throw new ColorMapError(`${where}.styleKey e obrigatorio.`)
+  }
+
+  // Aqui `display` e OBRIGATORIO, ao contrario de `entries`: uma entrada de
+  // `cellFills` existe SO para pintar, e sem a cor ela nao tem conteudo nenhum.
+  const display = validateDisplay(fill.display, where)
+  if (display === undefined) {
+    throw new ColorMapError(
+      `${where}.display e obrigatorio: uma entrada de "cellFills" existe so para pintar.`,
+    )
+  }
+
+  return {
+    styleKey,
+    display,
+    label: typeof fill.label === 'string' && fill.label.trim() !== '' ? fill.label : styleKey,
   }
 }
 
@@ -116,4 +170,51 @@ export function loadColorMap(path: string = DEFAULT_COLOR_MAP_PATH): ColorMapEnt
   }
 
   return entries
+}
+
+/**
+ * As cores que so pintam (`H-94`). Lista ausente devolve vazio.
+ *
+ * **Leitura separada, e nao um segundo campo no retorno de `loadColorMap`.**
+ * Aquele devolve `ColorMapEntry[]` e e chamado em nove lugares — store, guard,
+ * servidor, medicao e as fabricas de teste; alargar o retorno alcancaria os
+ * nove para servir uma tela. O arquivo e lido duas vezes na partida, e as duas
+ * leituras nao podem divergir: nada escreve neste arquivo em execucao.
+ *
+ * Um defeito no formato MATA a partida, como em `loadColorMap`: `cellFills`
+ * escrito errado deixaria a tabela sem a pintura que a historia existe para
+ * dar, e falhar cedo com mensagem clara e melhor que uma tabela cinza sem
+ * explicacao.
+ */
+export function loadCellFills(path: string = DEFAULT_COLOR_MAP_PATH): CellFill[] {
+  if (!existsSync(path)) return []
+
+  let parsed: unknown
+  try {
+    parsed = JSON.parse(readFileSync(path, 'utf-8'))
+  } catch (cause) {
+    throw new ColorMapError(`${path} nao e um JSON valido: ${(cause as Error).message}`)
+  }
+
+  const file = parsed as Partial<ColorMapFile>
+  if (file.cellFills === undefined) return []
+  if (!Array.isArray(file.cellFills)) {
+    throw new ColorMapError(`${path}: "cellFills", quando presente, precisa ser uma lista.`)
+  }
+
+  const fills = file.cellFills.map(validateCellFill)
+
+  const seen = new Map<string, number>()
+  for (const [position, fill] of fills.entries()) {
+    const first = seen.get(fill.styleKey)
+    if (first !== undefined) {
+      throw new ColorMapError(
+        `styleKey repetida em "cellFills" de ${path}: "${fill.styleKey}"\n` +
+          `Aparece em cellFills[${first}] e cellFills[${position}].`,
+      )
+    }
+    seen.set(fill.styleKey, position)
+  }
+
+  return fills
 }

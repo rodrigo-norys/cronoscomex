@@ -28,6 +28,36 @@ export interface ColorMapEntry {
   responsible: ColorResponsible
   customsChannel: CustomsChannel
   importerOutsideRj: boolean
+  /**
+   * Cor de exibicao, em `#RRGGBB` (`H-94`). **Declarada, nunca resolvida.**
+   *
+   * A `styleKey` e literal — `theme:0|tint:0.0000` nao e RGB, e resolver tema
+   * mais tint exigiria reimplementar a modulacao de luminancia do OOXML, que
+   * `style-extractor.ts` se recusa a fazer. Este campo e a declaracao de como
+   * aquela chave se PINTA, e nada mais.
+   *
+   * **Opcional de proposito** (determinacao 3 de `D-41`): chave sem `display`
+   * nao recebe cor inventada — a celula fica sem fundo, e a ausencia aparece.
+   */
+  display?: string
+}
+
+/**
+ * Cor de exibicao de uma chave que NAO tem significado de negocio (`H-94`).
+ *
+ * **Lista separada de `entries`, e a separacao e o ponto.** Uma entrada de
+ * `entries` declara `fillId`, `responsible`, `customsChannel` e
+ * `importerOutsideRj`: ela alimenta `resolveColor` e entra em
+ * `representableTargets`, isto e, vira **alvo de escrita**. As quatro chaves
+ * medidas em `Coluna 13` e `R$ ENVIADO` nao sao nada disso — sao pintura das
+ * colunas M e N, que a cor da linha nunca alcancou (`A-44`). Declara-las em
+ * `entries` exigiria inventar um `fillId` para elas, contra a regra inviolavel
+ * 3, ou torna-las cor gravavel, que esta historia exclui.
+ */
+export interface CellFill {
+  styleKey: string
+  display: string
+  label: string
 }
 
 /**
@@ -197,6 +227,53 @@ export const STYLED_COLUMNS: readonly string[] = [
 /** Índice por chave, para leitura em lote sem varrer o mapa a cada linha. */
 export function indexColorMap(map: readonly ColorMapEntry[]): ReadonlyMap<string, ColorMapEntry> {
   return new Map(map.map((entry) => [entry.styleKey, entry]))
+}
+
+/**
+ * Chave de estilo → cor de exibicao, das DUAS listas (`H-94`).
+ *
+ * As duas juntas porque a tela nao distingue: ela pinta o que a celula tem, e
+ * de onde veio a declaracao e assunto do arquivo, nao do fundo. O que a
+ * separacao guarda e outra coisa — `cellFills` nao vira alvo de escrita.
+ *
+ * **Chave sem `display` fica FORA do indice**, e e a determinacao 3 de `D-41`:
+ * quem consulta recebe `undefined` e nao pinta, em vez de receber a cor mais
+ * proxima. Buraco visivel e melhor que valor errado invisivel.
+ */
+export function indexDisplay(
+  map: readonly ColorMapEntry[],
+  cellFills: readonly CellFill[] = [],
+): ReadonlyMap<string, string> {
+  const index = new Map<string, string>()
+  for (const entry of map) {
+    if (entry.display !== undefined) index.set(entry.styleKey, entry.display)
+  }
+  // Depois das entradas: declaracao em `cellFills` vence, porque e a lista
+  // especifica de pintura. Hoje nenhuma chave esta nas duas.
+  for (const fill of cellFills) index.set(fill.styleKey, fill.display)
+  return index
+}
+
+/**
+ * A cor de fundo de cada celula, a partir das chaves de estilo dela (`H-94`).
+ *
+ * **Coluna cuja chave nao tem `display` declarado fica FORA do resultado**, e
+ * nao entra com branco nem com a cor mais proxima: a determinacao 3 de `D-41`
+ * e a regra inviolavel 3 no caso da cor. A tela le a ausencia como "sem
+ * fundo", que e verdade, em vez de ler uma cor que ninguem declarou.
+ */
+export function resolveCellFills(
+  cellStyleKeys: Readonly<Record<string, string>>,
+  display: ReadonlyMap<string, string> | undefined,
+): Record<string, string> {
+  const fills: Record<string, string> = {}
+  if (display === undefined || display.size === 0) return fills
+
+  for (const [column, styleKey] of Object.entries(cellStyleKeys)) {
+    const hex = display.get(styleKey)
+    if (hex !== undefined) fills[column] = hex
+  }
+  return fills
 }
 
 /** Versao indexada de `resolveColor`, para o caminho quente da ingestao. */

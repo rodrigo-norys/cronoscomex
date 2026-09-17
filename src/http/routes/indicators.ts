@@ -156,7 +156,6 @@ export function registerIndicatorsRoute(
    */
   teamMap: readonly TeamMember[] = [],
 ): void {
-  const responsibles = knownResponsibles(teamMap)
   app.get('/api/indicators', (request, reply) => {
     const state = store.getState()
 
@@ -179,6 +178,16 @@ export function registerIndicatorsRoute(
     // civil ancorada em UTC, como as datas vindas da planilha (TD-03).
     const day = currentDay(config.timezone)
     const groupLabels = new Map(clientGroups.map((group) => [group.key, group.label]))
+
+    /*
+      Derivado por REQUISICAO, e nao uma vez no registro (`H-91`).
+
+      O painel de equipe grava em `team-map.json` com o processo no ar, e
+      `refreshTeamMap` reescreve ESTE array no lugar — um `const` resolvido no
+      registro serviria a equipe anterior ate alguem reiniciar a aplicacao, e o
+      operador veria a pessoa que acabou de criar sumir do ranking.
+    */
+    const responsibles = knownResponsibles(teamMap)
 
     // Os filtros recortam o conjunto ANTES de qualquer calculo: todo indicador
     // desta rota responde sobre o conjunto filtrado (RF-18). A janela vem junto

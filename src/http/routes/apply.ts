@@ -36,6 +36,10 @@ const STATUS: Record<WriteRefusal, number> = {
   ESCRITA_EM_ANDAMENTO: 409,
   ESCRITA_INVALIDA: 500,
   TABELA_CHEIA: 409,
+  // `409` como os demais que o operador resolve sozinho: o estado do arquivo
+  // conflita com o que a aplicacao conhece, e ele tem o que fazer.
+  CABECALHO_DESLOCADO: 409,
+  CABECALHO_VAZIO: 409,
   ARQUIVO_INDISPONIVEL: 503,
 }
 
@@ -55,6 +59,16 @@ const MESSAGE: Record<WriteRefusal, string> = {
   ESCRITA_INVALIDA: 'A gravacao nao pode ser concluida com seguranca. Nada foi perdido.',
   TABELA_CHEIA:
     'A Tabela da planilha nao tem mais espaco para linha nova. Amplie a Tabela no Excel e tente de novo; nada foi gravado.',
+  CABECALHO_DESLOCADO:
+    'Uma coluna mudou de lugar na planilha, e gravar agora escreveria na coluna errada. Desfaca a mudanca no Excel e aplique de novo; nada foi gravado, e sua fila esta intacta.',
+  // Nao manda desfazer mudanca nenhuma, de proposito: aqui nao ha deslocamento
+  // detectado, e sim nada com que conferir. Pedir para desfazer o que ele nao
+  // fez mandaria o operador procurar uma coluna que nao saiu do lugar.
+  //
+  // **Nao afirma que a linha INTEIRA esta vazia:** o codigo cobre tambem o
+  // rotulo apagado de UMA coluna, e qual delas vem no `detail`.
+  CABECALHO_VAZIO:
+    'A planilha tem coluna sem nome na linha 1, e sem o nome nao ha como conferir se cada dado vai para a coluna certa. Restaure o cabecalho no Excel e aplique de novo; nada foi gravado, e sua fila esta intacta.',
   ARQUIVO_INDISPONIVEL:
     'A planilha nao pode ser lida agora. Confira se a pasta do OneDrive esta sincronizada.',
 }
@@ -90,6 +104,10 @@ function detailOf(result: WriteResult): Record<string, unknown> | undefined {
   if (result.expectedHash !== null) detail.expectedHash = result.expectedHash
   if (result.actualHash !== null) detail.actualHash = result.actualHash
   if (result.conflicts.length > 0) detail.conflicts = result.conflicts
+  // A frase que nomeia a coluna. Sem ela a mensagem diz o que FAZER e nao onde,
+  // e o painel que nomeia as duas pontas nao e montado na tela em que o
+  // operador aperta `Aplicar alteracoes`. Ver `WriteResult.schemaDivergence`.
+  if (result.schemaDivergence !== null) detail.schemaDivergence = result.schemaDivergence
   // Decide por `fileState`, nunca por `restored`: `restored: false` sai tanto de
   // recusa que nunca gravou quanto de restauracao que FALHOU, e so a segunda
   // precisa do caminho do backup — e e a que mais precisa. Quem sabe o estado

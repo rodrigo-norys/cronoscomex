@@ -1,29 +1,38 @@
 import { useState } from 'react'
-import { ArrivalCalendar } from '../components/ArrivalCalendar.tsx'
 import { NewRowButton } from '../components/NewRowButton.tsx'
 import { PageAlert } from '../components/PageAlert.tsx'
-import { ProcessTable } from '../components/ProcessTable.tsx'
+import { COLUMNS, labelOf, ProcessTable } from '../components/ProcessTable.tsx'
 import { Skeleton } from '../components/Skeleton.tsx'
 import { useFirstLoad } from '../hooks/useFirstLoad.ts'
-import { useIndicators } from '../hooks/useIndicators.ts'
 import { useProcesses } from '../hooks/useProcesses.ts'
-import { PAGE_SIZES, useProcessQuery } from '../hooks/useProcessQuery.ts'
+import {
+  PAGE_SIZES,
+  pageSizeLabel,
+  SORT_LABELS,
+  useProcessQuery,
+} from '../hooks/useProcessQuery.ts'
 
 /**
- * Pagina Operacional (RF-10): tabela de processos, busca sobre os seis campos
- * de texto da planilha (`A-39`, `D-34`), e o calendario de chegadas por navio.
+ * Pagina Operacional (RF-10): tabela de processos e busca sobre os seis campos
+ * de texto da planilha (`A-39`, `D-34`).
  *
- * Duas requisicoes: `GET /api/processes` para a lista, e `GET /api/indicators`
- * para `arrivalCalendar`. A segunda ja e feita pela Pagina Inicial, entao o
- * padrao e conhecido — nenhum numero e derivado aqui.
+ * **Uma requisicao so, e o calendario de chegadas saiu daqui** (`H-98`). Ele foi
+ * para a Pagina Inicial, que ja pedia `GET /api/indicators` — nenhuma requisicao
+ * nova nasce da mudanca, e `IND-12` continua apresentado, que era a condicao.
+ * Com ele foi embora a coluna lateral de 20rem: a tabela de `H-95` tem 17
+ * colunas e mede cerca de 3.000 px, e disputava largura com um painel que nao e
+ * dela.
+ *
+ * **`queryString` saiu junto, e a ausencia dela e o ponto:** os quatorze filtros
+ * globais chegam a rota por `useProcessQuery`, que os le da URL. A pagina nao
+ * precisa deles em prop nenhuma.
  */
 
 interface OperationalProps {
-  queryString: string
   dataVersion: number
 }
 
-export function Operational({ queryString, dataVersion }: OperationalProps) {
+export function Operational({ dataVersion }: OperationalProps) {
   const query = useProcessQuery()
   /**
    * A edicao em linha nao muda `dataVersion` — ele e o relogio da CASCA, e sobe
@@ -33,15 +42,15 @@ export function Operational({ queryString, dataVersion }: OperationalProps) {
    */
   const [editVersion, setEditVersion] = useState(0)
   const processes = useProcesses(query.requestQuery, dataVersion + editVersion)
-  const indicators = useIndicators(queryString, dataVersion)
   const firstLoad = useFirstLoad('operacional', processes.status === 'pronto')
-
-  const calendar =
-    indicators.status === 'pronto' ? indicators.indicators.arrivalCalendar : undefined
 
   return (
     <div className="flex flex-col gap-4">
-      <Controls query={query} onEdited={() => setEditVersion((version) => version + 1)} />
+      <Controls
+        query={query}
+        onEdited={() => setEditVersion((version) => version + 1)}
+        headerLabels={processes.status === 'pronto' ? processes.page.headerLabels : {}}
+      />
 
       {processes.status === 'semLeitura' && (
         <PageAlert
@@ -65,48 +74,49 @@ export function Operational({ queryString, dataVersion }: OperationalProps) {
       )}
 
       {/*
-        `minmax(0,1fr)`, e nao `1fr`: `1fr` e `minmax(auto,1fr)`, e o `auto`
-        minimo e a largura INTRINSECA da tabela — o grid entao recusa encolher e
-        empurra o conteudo para fora da tela (`SC 1.4.10`). Medido em
-        01/09/2026: com `1fr` o documento estourava entre 1024 px, onde `lg:`
-        liga, e ~1240 px; `H-59` estreitou a coluna em 216 px e levou o estouro
-        ate 1440. O `overflow-x-auto` de `R01` esta na tabela e nao alcanca
-        isto: quem se recusa a encolher e a TRILHA do grid, acima dele.
+        **Uma trilha so, desde `H-98`.** Era um grid de duas, com 20rem fixos
+        para o calendario de chegadas; ele foi para a Pagina Inicial e a tabela
+        ficou com a largura inteira.
+
+        O `minmax(0,1fr)` que vivia aqui existia porque `1fr` e
+        `minmax(auto,1fr)`, e o `auto` minimo e a largura INTRINSECA da tabela —
+        o grid entao recusava encolher e empurrava o conteudo para fora da tela
+        (`SC 1.4.10`, medido em 01/09/2026). **Sem a segunda trilha nao ha o que
+        negociar**, e quem contem a rolagem passa a ser o `overflow-x-auto` de
+        `R01`, na propria tabela.
       */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex flex-col gap-3">
-          {processes.status === 'pronto' ? (
-            <>
-              <ProcessTable
-                items={processes.page.items}
-                sort={query.sort}
-                order={query.order}
-                onSort={query.toggleSort}
-                onEdited={() => setEditVersion((version) => version + 1)}
-              />
-              {/* O rodape vem DEPOIS da grade no DOM, e e por isso que a grade
+      <div className="flex flex-col gap-3">
+        {processes.status === 'pronto' ? (
+          <>
+            <ProcessTable
+              items={processes.page.items}
+              sort={query.sort}
+              order={query.order}
+              onSort={query.toggleSort}
+              onEdited={() => setEditVersion((version) => version + 1)}
+              headerLabels={processes.page.headerLabels}
+              hidden={query.hidden}
+            />
+            {/* O rodape vem DEPOIS da grade no DOM, e e por isso que a grade
                   existe: sem ela, chegar aqui pelo teclado custaria uma parada
                   por celula editavel (`H-80`). */}
-              <TableFooter
-                total={processes.page.total}
-                offset={query.offset}
-                limit={query.limit}
-                shown={processes.page.items.length}
-                onOffset={query.setOffset}
-                onLimit={query.setLimit}
-              />
-            </>
+            <TableFooter
+              total={processes.page.total}
+              offset={query.offset}
+              limit={query.limit}
+              shown={processes.page.items.length}
+              onOffset={query.setOffset}
+              onLimit={query.setLimit}
+            />
+          </>
+        ) : (
+          processes.status === 'carregando' &&
+          (firstLoad ? (
+            <Skeleton announcement="Carregando processos." />
           ) : (
-            processes.status === 'carregando' &&
-            (firstLoad ? (
-              <Skeleton announcement="Carregando processos." />
-            ) : (
-              <p className="panel-loading">Carregando processos…</p>
-            ))
-          )}
-        </div>
-
-        {calendar !== undefined && <ArrivalCalendar days={calendar} />}
+            <p className="panel-loading">Carregando processos…</p>
+          ))
+        )}
       </div>
     </div>
   )
@@ -115,9 +125,11 @@ export function Operational({ queryString, dataVersion }: OperationalProps) {
 function Controls({
   query,
   onEdited,
+  headerLabels,
 }: {
   query: ReturnType<typeof useProcessQuery>
   onEdited: () => void
+  headerLabels: Record<string, string>
 }) {
   return (
     <div className="flex flex-wrap items-end gap-4">
@@ -150,6 +162,121 @@ function Controls({
       <div className="pb-0.5">
         <NewRowButton onCreated={onEdited} />
       </div>
+
+      <ColumnPicker query={query} headerLabels={headerLabels} />
+
+      <SortState query={query} />
+    </div>
+  )
+}
+
+/**
+ * Quais colunas a tabela mostra (`H-95`, `RF-43`).
+ *
+ * **As 17 aparecem por padrao, e o que o operador faz e TIRAR** — determinacao 4
+ * de `D-43`. Por isso o controle guarda as ESCONDIDAS: coluna que a planilha
+ * ganhar aparece sozinha, em vez de precisar ser autorizada.
+ *
+ * **Caixa de marcacao, e nao seletor multiplo:** o operador precisa ver de uma
+ * vez o que esta dentro e o que esta fora, e um `<select multiple>` esconde o
+ * estado atras de rolagem. O rotulo e o do ARQUIVO — `CLT`, `ETA`, `Coluna 13`
+ * —, o mesmo que o cabecalho mostra; nomear diferente aqui obrigaria o operador
+ * a traduzir.
+ *
+ * `<details>` nativo: ele nao e modal, nao prende foco e fecha com Escape sem
+ * codigo nenhum. Um painel proprio teria de reimplementar os tres.
+ */
+function ColumnPicker({
+  query,
+  headerLabels,
+}: {
+  query: ReturnType<typeof useProcessQuery>
+  headerLabels: Record<string, string>
+}) {
+  const escondidas = query.hidden.length
+
+  return (
+    <details className="relative pb-1">
+      <summary className="motion-tint cursor-pointer list-none rounded-control border border-border-control bg-surface-raised px-2.5 py-1 text-sm text-text-secondary hover:text-text-primary">
+        Colunas
+        {escondidas > 0 && (
+          <span className="ml-1 font-mono tabular-nums">({escondidas} ocultas)</span>
+        )}
+      </summary>
+
+      {/*
+        `border-border-subtle` e SEM sombra, e os dois sao guarda: `C04` cobra a
+        borda sutil de todo papel de secao que nao seja o painel modal, e `D-22`
+        bane sombra do conjunto inteiro. A elevacao aqui vem da borda e do fundo
+        `raised`, como nos demais paineis.
+      */}
+      <div className="absolute right-0 z-20 mt-1 flex max-h-96 w-64 flex-col gap-1 overflow-y-auto rounded-container border border-border-subtle bg-surface-raised p-3 text-sm">
+        {COLUMNS.map((column) => (
+          <label key={column.key} className="flex items-center gap-2 text-text-secondary">
+            <input
+              type="checkbox"
+              checked={!query.hidden.includes(column.key)}
+              onChange={() => query.toggleColumn(column.key)}
+            />
+            <span className="truncate" title={labelOf(column, headerLabels)}>
+              {labelOf(column, headerLabels)}
+            </span>
+          </label>
+        ))}
+
+        <button
+          type="button"
+          onClick={query.showAllColumns}
+          disabled={escondidas === 0}
+          className="mt-1 rounded-control border border-border-control px-2 py-1 text-xs text-text-secondary hover:bg-surface-base disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
+        >
+          Mostrar todas
+        </button>
+      </div>
+    </details>
+  )
+}
+
+/**
+ * A ordem vigente, nomeada, e o botao que a descarta (`H-89`).
+ *
+ * **Mora na faixa da PAGINA, e nao na barra de filtros**, que e da casca e vale
+ * para seis paginas — `sort` so existe nesta. Aqui ele fica ao lado dos irmaos
+ * dele no mesmo hook, a busca e o recorte, e a 17 px do cabecalho que produziu
+ * a ordenacao, contra ~1474 px do canto direito da faixa de cima em 1920.
+ *
+ * **`ml-auto` nao e enfeite:** ele absorve a entrada e a saida do bloco, entao
+ * aparecer e sumir nao desloca o `Nova linha`.
+ *
+ * **O foco vai para o cabecalho da coluna que estava ordenada** antes de o
+ * bloco se desmontar. Sem isso o foco cai no `<body>` e a tabulacao recomeca do
+ * topo — `SC 2.4.3`, o mesmo defeito que `VN-4` mediu na navegacao.
+ */
+function SortState({ query }: { query: ReturnType<typeof useProcessQuery> }) {
+  if (query.sort === 'sourceRow' && query.order === 'asc') return null
+
+  const direcao = query.order === 'asc' ? 'crescente' : 'decrescente'
+  const nome =
+    query.sort === 'sourceRow'
+      ? 'Ordem da planilha, invertida'
+      : `${SORT_LABELS[query.sort]}, ${direcao}`
+
+  return (
+    <div className="ml-auto flex items-center gap-2.5 pb-1">
+      <p className="text-sm text-text-secondary">
+        Ordenado por <span className="font-medium text-text-primary">{nome}</span>
+      </p>
+      <button
+        type="button"
+        onClick={() => {
+          const cabecalho = document.querySelector<HTMLElement>('th[aria-sort] button')
+          query.clearSort()
+          cabecalho?.focus()
+        }}
+        className="motion-tint shrink-0 rounded-control border border-border-control bg-surface-raised px-2.5 py-1 text-sm text-text-secondary hover:text-text-primary"
+      >
+        Limpar ordenação
+      </button>
     </div>
   )
 }
@@ -203,7 +330,7 @@ function TableFooter({
           >
             {PAGE_SIZES.map((size) => (
               <option key={size} value={size}>
-                {size}
+                {pageSizeLabel(size)}
               </option>
             ))}
           </select>

@@ -11,8 +11,8 @@ import { LiveAnnouncement } from './PageAlert.tsx'
  * servidor, e as celulas dela se editam como as das demais.
  *
  * **Nada aqui grava no `.xlsx`.** A linha entra na fila e vai para a planilha no
- * `Aplicar alteracoes`, atras das seis defesas de `H-25` — mais uma que so ela
- * tem: a REF nao pode ja existir no arquivo no momento da escrita.
+ * `Aplicar alteracoes`, atras das defesas de `H-25` — mais uma que so ela tem:
+ * a REF nao pode ja existir no arquivo no momento da escrita.
  *
  * Quem recusa REF repetida e o servidor, com `409`: conferir aqui criaria uma
  * segunda regra ao lado da dele, e ela divergiria assim que a planilha mudasse

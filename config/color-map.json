@@ -1,5 +1,5 @@
 {
-  "_origem": "Gerado por H-01 (tools/profile_workbook.py) sobre CONTROLE DOS EMBARQUE.xlsx, aba 2026, em 03/08/2026. Os valores de styleKey e fillId sao MEDIDOS, nao ilustrativos. Ver docs/perfilamento/RESULTADO.md secao 5.",
+  "_origem": "Gerado por H-01 (tools/profile_workbook.py) sobre CONTROLE DOS EMBARQUE.xlsx, aba 2026, em 03/08/2026. Os valores de styleKey e fillId sao MEDIDOS, nao ilustrativos. Ver docs/perfilamento/RESULTADO.md secao 5. O campo display entrou em H-94, medido em 16/09/2026.",
 
   "version": 1,
   "sheetName": "2026",
@@ -9,11 +9,16 @@
   "_comentario_anchorColumn": "Celula que carrega a cor da linha. Medido: 649 de 649 linhas com REF tem chave de estilo em A (P-05 confirmada).",
   "_comentario_styledColumns": "Colunas alteradas quando a cor da linha muda (H-27). M a P sao excluidas: tem preenchimento proprio, independente da linha (achado A-44).",
 
+  "_comentario_display": "H-94: como a chave se PINTA na tabela, em #RRGGBB. DECLARADO, nunca resolvido: a styleKey e literal, e theme:0|tint:0.0000 nao e RGB — resolver tema mais tint exigiria reimplementar a modulacao de luminancia do OOXML, que style-extractor.ts se recusa a fazer. Chave sem display NAO recebe cor inventada: a celula fica sem fundo e a ausencia aparece (determinacao 3 de D-41).",
+
+  "_comentario_unificacao": "D-42: tons proximos se unificam pela propria cor de exibicao, sem estrutura nova — duas chaves com o mesmo display ficam unificadas por construcao. Os dois verdes compartilham #00FF00 e os dois roxos #A74F7B; as TRES chaves brancas compartilham #FFFFFF. E a recusa da alternativa A2 do ADR-0003 (unificar por limiar calculado) confirmada: dos 78 pares, 5 ficam abaixo do limiar de percepcao e o sexto salta para 15,88.",
+
   "entries": [
     {
       "styleKey": "argb:FF00FF00",
       "fillId": 2,
       "label": "Verde (tom A)",
+      "display": "#00FF00",
       "rowsAtProfiling": 258,
       "significado": "Processo desembaracado E Canal Verde (H-51). Deriva customsChannel=verde e mais nada: a cor jamais infere status. Comprovado em A-54: ha 66 linhas com STATUS vazio e apenas 1 linha branca.",
       "responsible": "indefinido",
@@ -24,8 +29,9 @@
       "styleKey": "argb:FF00FF0D",
       "fillId": 12,
       "label": "Verde (tom B)",
+      "display": "#00FF00",
       "rowsAtProfiling": 219,
-      "significado": "Mesmo significado do tom A, canal verde incluido. Tons distintos ocupam blocos contiguos (linhas 2-263 e 264-483), padrao de pintura em momentos diferentes. Unificados por decisao do usuario (achado A-48).",
+      "significado": "Mesmo significado do tom A, canal verde incluido. Tons distintos ocupam blocos contiguos (linhas 2-263 e 264-483), padrao de pintura em momentos diferentes. Unificados por decisao do usuario (achado A-48), e o display os unifica tambem na tela.",
       "responsible": "indefinido",
       "customsChannel": "verde",
       "importerOutsideRj": false
@@ -34,6 +40,7 @@
       "styleKey": "argb:FF5B9BD5",
       "fillId": 8,
       "label": "Azul",
+      "display": "#5B9BD5",
       "rowsAtProfiling": 120,
       "significado": "Processos do Colaborador 1.",
       "responsible": "colaborador1",
@@ -44,8 +51,9 @@
       "styleKey": "argb:FFA74F7B",
       "fillId": 27,
       "label": "Roxo (tom A)",
+      "display": "#A74F7B",
       "rowsAtProfiling": 31,
-      "significado": "Processos do Colaborador 2.",
+      "significado": "Processos do Colaborador 2. Reprova a WCAG AA com qualquer cor de texto — 3,49 com #14161a e 4,05 com preto puro —, e a excecao e DECLARADA em D-41: a cor e dado do arquivo do operador, nao escolha do autor.",
       "responsible": "colaborador2",
       "customsChannel": "indefinido",
       "importerOutsideRj": false
@@ -54,8 +62,9 @@
       "styleKey": "argb:FFA64D79",
       "fillId": 11,
       "label": "Roxo (tom B)",
+      "display": "#A74F7B",
       "rowsAtProfiling": 5,
-      "significado": "Mesmo significado do tom A. Unificado por decisao do usuario (achado A-48).",
+      "significado": "Mesmo significado do tom A. Unificado por decisao do usuario (achado A-48). Reprova a WCAG AA como o tom A — 3,41 e 3,96 —, sob a mesma excecao declarada.",
       "responsible": "colaborador2",
       "customsChannel": "indefinido",
       "importerOutsideRj": false
@@ -64,6 +73,7 @@
       "styleKey": "argb:FFFFE599",
       "fillId": 9,
       "label": "Bege",
+      "display": "#FFE599",
       "rowsAtProfiling": 9,
       "significado": "Processos do Colaborador 1 pertencentes a outros clientes. Subcategoria de Colaborador 1 (achado A-18): o filtro Responsavel=Colaborador 1 seleciona colaborador1 E colaborador1_outros_clientes.",
       "responsible": "colaborador1_outros_clientes",
@@ -74,6 +84,7 @@
       "styleKey": "argb:FFFF0000",
       "fillId": 7,
       "label": "Vermelho",
+      "display": "#FF0000",
       "rowsAtProfiling": 5,
       "significado": "Canal Vermelho. Unica fonte do campo customsChannel; texto em STATUS nao classifica (achado A-06).",
       "responsible": "indefinido",
@@ -84,8 +95,9 @@
       "styleKey": "argb:FFFFFF00",
       "fillId": 10,
       "label": "Amarelo forte",
+      "display": "#FFFF00",
       "rowsAtProfiling": 1,
-      "significado": "Importador localizado fora do RJ. Decisao do usuario sobre o achado A-38: a unica linha amarela tem CANAL AMARELO no STATUS por coincidencia, nao por regra.",
+      "significado": "Importador localizado fora do RJ. Decisao do usuario sobre o achado A-38: a unica linha amarela tem CANAL AMARELO no STATUS por coincidencia, nao por regra. Medido em 16/09/2026: aparece em 34 celulas, e 16 delas estao em linhas que divergem internamente dentro de A-L — 11 na coluna STATUS.",
       "responsible": "indefinido",
       "customsChannel": "indefinido",
       "importerOutsideRj": true
@@ -94,11 +106,47 @@
       "styleKey": "theme:0|tint:0.0000",
       "fillId": 13,
       "label": "Branco (do tema)",
+      "display": "#FFFFFF",
       "rowsAtProfiling": 1,
-      "significado": "Processo em desembaracamento, segundo a secao 3 da especificacao. NAO deriva nenhum campo. Medido: apenas 1 linha em 649, contra 66 com STATUS vazio (achado A-54).",
+      "significado": "Processo em desembaracamento, segundo a secao 3 da especificacao. NAO deriva nenhum campo. Medido: apenas 1 linha em 649, contra 66 com STATUS vazio (achado A-54). A linha 485 e branca de A a L.",
       "responsible": "indefinido",
       "customsChannel": "indefinido",
       "importerOutsideRj": false
+    }
+  ],
+
+  "_comentario_cellFills": "H-94. Cores que PINTAM celulas e nao significam nada — lista separada de entries, e a separacao e o ponto. Uma entrada de entries declara fillId, responsible, customsChannel e importerOutsideRj: ela alimenta resolveColor e entra em representableTargets, isto e, vira ALVO DE ESCRITA. Estas quatro sao pintura das colunas M e N, que a cor da linha nunca alcancou (A-44); declara-las em entries exigiria inventar um fillId, contra a regra inviolavel 3, ou torna-las cor gravavel, que H-94 exclui. Contagens medidas em 16/09/2026 sobre as linhas que viram processo: somam 1237 celulas, contra as 9080 com cor.",
+
+  "cellFills": [
+    {
+      "styleKey": "argb:FFFFFFFF",
+      "display": "#FFFFFF",
+      "label": "Branco (explicito)",
+      "cellsAtProfiling": 466,
+      "colunas": "M, N"
+    },
+    {
+      "styleKey": "argb:FF00FFFF",
+      "display": "#00FFFF",
+      "label": "Ciano",
+      "cellsAtProfiling": 438,
+      "colunas": "N",
+      "significado": "E o 'ciano fixo' que A-44 descreve na coluna R$ ENVIADO. Medido: aparece SO em N. O que ele significa continua em aberto — perguntado em 11/09/2026, o usuario respondeu 'deixe assim por enquanto', e D-41 registra a cor como aparencia."
+    },
+    {
+      "styleKey": "argb:FFB7E1CD",
+      "display": "#B7E1CD",
+      "label": "Verde-claro",
+      "cellsAtProfiling": 301,
+      "colunas": "M, N"
+    },
+    {
+      "styleKey": "argb:FFF6F8F9",
+      "display": "#FFFFFF",
+      "label": "Branco (quase)",
+      "cellsAtProfiling": 32,
+      "colunas": "M, N",
+      "significado": "Unificado com as outras duas brancas por escolha do usuario em 11/09/2026 (D-42): o display identico as unifica por construcao."
     }
   ],
 
@@ -115,6 +163,7 @@
     "NAO ha tolerancia nem aproximacao por proximidade de cor. Os tons A e B sao entradas SEPARADAS que apontam para o mesmo significado - nao ha limiar de distancia. Ver ADR-0003.",
     "Cobertura medida em 03/08/2026: as 9 entradas cobrem 649 de 649 linhas com REF preenchido (100%). Taxa de COR_NAO_MAPEADA esperada: 0%.",
     "CANAL (H-51, 31/08/2026): a cor e um canal de informacao unico disputado por tres significados, entao linha azul, roxa, bege, amarela ou branca NAO diz canal - customsChannel e 'indefinido', nunca 'nenhum'. Distribuicao medida: verde 477, vermelho 5, indefinido 167, soma 649. O amarelo MANTEM importerOutsideRj e nao vira canal amarelo (D-02, A-38).",
-    "EFEITO DE H-51 NA ESCRITA: o branco deixou de colapsar com o verde em representableTargets - as duas entradas compartilhavam a tupla 'indefinido|nenhum|false' e agora diferem no canal. Sao 7 alvos gravaveis, contra 6 antes, e o novo grava fillId 13, que e o branco do tema. Nenhum fillId existente mudou."
+    "EFEITO DE H-51 NA ESCRITA: o branco deixou de colapsar com o verde em representableTargets - as duas entradas compartilhavam a tupla 'indefinido|nenhum|false' e agora diferem no canal. Sao 7 alvos gravaveis, contra 6 antes, e o novo grava fillId 13, que e o branco do tema. Nenhum fillId existente mudou.",
+    "H-94: 'cellFills' NAO entra em representableTargets e NAO alimenta resolveColor. A cor do PROCESSO continua saindo da ancora, e ADR-0003 nao e tocado — renderizar nao classifica. Medido em 16/09/2026: 13 cores distintas nas celulas A-P contra as 9 de 'entries', e 36 das linhas divergem internamente dentro de A-L, o que REFUTA a afirmacao de A-44 de que K e L acompanham a cor da linha."
   ]
 }

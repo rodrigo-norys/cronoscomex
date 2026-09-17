@@ -313,6 +313,17 @@ function readCell(
 function buildRow(rowNumber: number, inner: string, options: SheetParseOptions): RawRow {
   const anchorIndex = columnIndex(ANCHOR_COLUMN)
   const values = new Map<number, RawCell>()
+  /**
+   * O estilo de CADA celula (`H-94`), que ate aqui era lido e descartado — ele
+   * so servia para decidir formato numerico e para a ancora.
+   *
+   * **A herança de `<row customFormat="1">` NAO e implementada**, e a omissao e
+   * declarada: `buildRow` recebe o interior da linha, e nao os atributos dela,
+   * e o ganho nao paga a mudanca de assinatura. Medido em 16/09/2026: com a
+   * heranca sao 87,4% das celulas com cor, sem ela 87,3% — uma decima de ponto,
+   * ~10 celulas em 10.400.
+   */
+  const styleIds = new Map<number, number | null>()
   let anchorStyleId: number | null = null
   let lastColumn = 0
   let previousColumn = 0
@@ -328,6 +339,7 @@ function buildRow(rowNumber: number, inner: string, options: SheetParseOptions):
     previousColumn = column
     lastColumn = Math.max(lastColumn, column)
     if (column === anchorIndex) anchorStyleId = styleId
+    styleIds.set(column, styleId)
 
     values.set(column, readCell(attributes, cell[2] ?? '', styleId, options))
   }
@@ -337,14 +349,91 @@ function buildRow(rowNumber: number, inner: string, options: SheetParseOptions):
   // de inexistente pelo tipo. Depois da ultima celula presente nao ha nada —
   // linha que termina em H nao ganha I..P.
   const cells: Record<string, RawCell> = {}
+  const cellStyleKeys: Record<string, string> = {}
   for (let column = 1; column <= lastColumn; column++) {
-    cells[columnLetter(column)] = values.get(column) ?? emptyCell()
+    const letter = columnLetter(column)
+    cells[letter] = values.get(column) ?? emptyCell()
+    // Coluna ausente do XML nao entra: `NO_FILL` explicito e "medi e nao tem
+    // preenchimento", e a ausencia da chave e "nao havia celula". A distincao e
+    // a mesma que `ColorSource` faz desde 02/09/2026.
+    if (styleIds.has(column)) {
+      cellStyleKeys[letter] = options.styles.styleKeyOf(styleIds.get(column) ?? null)
+    }
   }
 
-  return { sourceRow: rowNumber, cells, styleKey: options.styles.styleKeyOf(anchorStyleId) }
+  return {
+    sourceRow: rowNumber,
+    cells,
+    styleKey: options.styles.styleKeyOf(anchorStyleId),
+    cellStyleKeys,
+  }
 }
 
 /** Le o sheetData de UMA aba — a que esta em escopo. Ver regra inviolavel 10. */
+/**
+ * Os rotulos da linha de CABECALHO, por letra de coluna (`H-95`).
+ *
+ * **A linha 1 era lida e jogada fora.** `parseSheetRows` a pula por
+ * `firstDataRow`, e `headerRow` existia na configuracao da aplicacao sem
+ * ninguem ler o conteudo dela. Os textos ja estao em memoria a cada leitura — o
+ * pool de strings compartilhadas e global ao arquivo —, entao descobrir os
+ * nomes nao custa um byte a mais.
+ *
+ * **A funcao e separada, e nao um segundo retorno de `parseSheetRows`:** aquela
+ * assinatura e consumida pelo leitor e por dezenas de testes, e alargar o
+ * retorno para servir uma tela alcancaria todos eles.
+ *
+ * **Celula de cabecalho vazia NAO entra no resultado.** Coluna sem nome e
+ * ausencia de rotulo, e devolver `''` faria a tabela desenhar um cabecalho em
+ * branco como se fosse o nome — quem consome decide o que mostrar no lugar.
+ * Medido em 16/09/2026: as 16 colunas da aba real tem nome, entao o caso e
+ * hipotetico, e e por isso mesmo que ele nao pode adivinhar.
+ *
+ * O texto sai LITERAL, so com `trim`: a coluna `H` se chama `ETA` e guarda
+ * porto, e `M` e `P` se chamam `Coluna 13` e `Coluna1`, que o Excel gerou
+ * sozinho. Corrigir qualquer um deles na leitura criaria uma segunda verdade
+ * (regra inviolavel 1).
+ */
+export function parseHeaderLabels(
+  sheetXml: string,
+  options: SheetParseOptions,
+  headerRow: number,
+): Record<string, string> {
+  const sheetData = SHEET_DATA.exec(sheetXml)?.[1] ?? ''
+  const labels: Record<string, string> = {}
+  let previousRowNumber = 0
+
+  for (const row of sheetData.matchAll(ROW)) {
+    const declared = ATTR_REFERENCE.exec(row[1] ?? '')?.[1]
+    // O `r` e opcional aqui como em `parseSheetRows`: sem ele, a linha e a
+    // seguinte. Contar de outro jeito acharia o cabecalho na linha errada.
+    const rowNumber = declared === undefined ? previousRowNumber + 1 : Number(declared)
+    previousRowNumber = rowNumber
+
+    if (rowNumber !== headerRow) continue
+
+    let previousColumn = 0
+    for (const cell of (row[2] ?? '').matchAll(CELL)) {
+      const attributes = cell[1] ?? ''
+      const reference = ATTR_REFERENCE.exec(attributes)?.[1]
+      const column = reference === undefined ? previousColumn + 1 : columnIndex(reference)
+      previousColumn = column
+
+      const declaredStyle = ATTR_STYLE.exec(attributes)?.[1]
+      const styleId = declaredStyle === undefined ? null : Number(declaredStyle)
+      const value = readCell(attributes, cell[2] ?? '', styleId, options).value
+      if (value === null) continue
+
+      const text = String(value).trim()
+      if (text !== '') labels[columnLetter(column)] = text
+    }
+
+    return labels
+  }
+
+  return labels
+}
+
 export function parseSheetRows(sheetXml: string, options: SheetParseOptions): RawRow[] {
   const sheetData = SHEET_DATA.exec(sheetXml)?.[1] ?? ''
   const rows: RawRow[] = []

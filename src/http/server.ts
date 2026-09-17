@@ -1,7 +1,7 @@
 import { pathToFileURL } from 'node:url'
 import Fastify, { type FastifyInstance } from 'fastify'
 import { type ClientMap, ClientMapError, loadClientMap } from '../app/client-map-loader.ts'
-import { ColorMapError, loadColorMap } from '../app/color-map-loader.ts'
+import { ColorMapError, loadCellFills, loadColorMap } from '../app/color-map-loader.ts'
 import { type AppConfig, ConfigError, loadConfig, WORKBOOK_UNSET } from '../app/config.ts'
 import { createLogger, type Logger } from '../app/logger.ts'
 import {
@@ -9,6 +9,7 @@ import {
   initStore,
   reconfigureWorkbook,
   refreshClientMap,
+  refreshTeamMap,
   reload,
   type StoreAccess,
 } from '../app/process-store.ts'
@@ -16,7 +17,7 @@ import { loadStatusAliases, StatusAliasesError } from '../app/status-aliases-loa
 import { loadTeamMap, TeamMapError } from '../app/team-map-loader.ts'
 import { initWriteGuard, retargetWatcher } from '../app/write-guard.ts'
 import type { ClientGroup, ClientMapEntry } from '../domain/client-mapper.ts'
-import type { ColorMapEntry } from '../domain/color-mapper.ts'
+import { type ColorMapEntry, indexDisplay } from '../domain/color-mapper.ts'
 import type { TeamMember } from '../domain/team-mapper.ts'
 import { createWatcher, DEFAULT_DEBOUNCE_MS, type Watcher } from '../io/watcher.ts'
 import { registerAlertsRoute } from './routes/alerts.ts'
@@ -28,12 +29,12 @@ import { registerFilterOptionsRoute } from './routes/filter-options.ts'
 import { registerHealthRoute } from './routes/health.ts'
 import { registerHistoryRoute } from './routes/history.ts'
 import { registerIndicatorsRoute } from './routes/indicators.ts'
-import { registerProcessClientRoute } from './routes/process-client.ts'
 import { registerProcessColorRoute } from './routes/process-color.ts'
 import { registerProcessesRoute } from './routes/processes.ts'
 import { registerQuarantineRoute } from './routes/quarantine.ts'
 import { registerReloadRoute } from './routes/reload.ts'
 import { registerStaticRoute } from './routes/static.ts'
+import { registerTeamRoutes } from './routes/team.ts'
 
 /**
  * Endereco de escuta. RNF-29: o processo escuta EXCLUSIVAMENTE em loopback.
@@ -100,9 +101,9 @@ export function buildServer(
    */
   teamMap: readonly TeamMember[] = [],
   /**
-   * Mapa de clientes (`H-49`) e o caminho dele, para `PUT
-   * /api/processes/:ref/client` planejar contra a MESMA ordem que resolve a
-   * coluna e gravar onde o operador le.
+   * Mapa de clientes (`H-49`) e o caminho dele, para as rotas de `H-88`
+   * planejarem contra a MESMA ordem que resolve a coluna Cliente e gravarem
+   * onde o operador le.
    *
    * **Os dois juntos, e nao so o caminho.** Passar so o caminho faria a rota
    * recarregar o arquivo a cada requisicao, e planejar contra uma ordem que o
@@ -114,6 +115,15 @@ export function buildServer(
   clientMapPath?: string,
   /** Reprojeta com o mapa novo. Ausente, so grava — o certo em teste. */
   applyClientMap?: (map: ClientMap) => Promise<void>,
+  /**
+   * Caminho do mapa de equipe (`H-91`), o QUARTO caminho de escrita da
+   * aplicacao. Ponto de injecao para teste: `saveTeamMember` recusa o padrao sob
+   * `NODE_ENV=test`, e um default nesta assinatura anularia a guarda em todo
+   * teste que monta o servidor — o modo de falha que `H-28` e `H-34` pagaram.
+   */
+  teamMapPath?: string,
+  /** Reprojeta com a equipe nova. Ausente, so grava — o certo em teste. */
+  applyTeamMap?: (map: readonly TeamMember[]) => Promise<void>,
 ): FastifyInstance {
   // Silencioso sob teste: a saida do Vitest e o relatorio, nao o log do servidor.
   const app = Fastify({
@@ -131,8 +141,8 @@ export function buildServer(
   registerHistoryRoute(app, config, store, historyPath)
   registerEditsRoutes(app, store, queuePath)
   registerProcessColorRoute(app, store, colorMap)
-  registerProcessClientRoute(app, store, clientMap, clientGroups, clientMapPath, applyClientMap)
   registerClientsRoutes(app, store, clientMap, clientGroups, clientMapPath, applyClientMap)
+  registerTeamRoutes(app, store, teamMap, teamMapPath, applyTeamMap)
   registerApplyRoute(app)
 
   // Por ultimo: `GET /*` e o catch-all, e registra-la antes nao mudaria o
@@ -195,6 +205,11 @@ async function main(): Promise<void> {
       clientMap: clientMap.clients,
       clientGroups: clientMap.groups,
       teamMap,
+      // `H-94`. As duas listas do mesmo arquivo: as entradas com significado e
+      // as que so pintam. Lido aqui, na partida, como os demais mapas — um
+      // `display` malformado mata a partida com mensagem, em vez de deixar a
+      // tabela cinza sem explicacao.
+      displayIndex: indexDisplay(colorMap, loadCellFills()),
       logger,
     })
   } catch (error) {
@@ -225,6 +240,8 @@ async function main(): Promise<void> {
     clientEntries,
     undefined,
     (map) => refreshClientMap(map.clients, map.groups),
+    undefined,
+    (members) => refreshTeamMap(members),
   )
 
   try {

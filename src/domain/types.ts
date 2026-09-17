@@ -37,21 +37,22 @@ export type ColorResponsible =
   | 'indefinido'
 
 /**
- * A pessoa que responde pelo processo (`H-50`), atribuida pelo IMPORTADOR com a
- * cor desempatando o que a lista de importadores nao alcanca — `resolveTeam`.
+ * A pessoa que responde pelo processo (`H-50`), atribuida pelo IMPORTADOR — e
+ * so por ele desde `H-93`, quando `D-40` tirou o desempate por cor
+ * (`resolveTeam`).
  *
  * **Dominio ABERTO, e por isso e `string`:** a chave vem de
  * `team-map.json`, que nao e versionado (regra inviolavel 8). Ate `H-50`
  * eram quatro chaves fixas, e fecha-lo agora exigiria escrever no codigo os
  * membros da equipe do operador.
  *
- * Dois valores tem significado proprio:
- *  - `''` — sem responsavel. Medido: 42 dos 649, sem importador na lista e sem
- *    cor de responsavel (docs/uso/RESULTADO.md §3). Chave vazia e valor de
- *    dominio, nunca ausencia de dado.
- *  - uma chave de `ColorResponsible` — apenas enquanto NAO houver mapa de
- *    equipe (`D-23`). Nesse estado o campo mostra o que a cor diz, que e o
- *    comportamento anterior a `H-50`, e a resolucao declara `source: 'cor'`.
+ * `''` e "sem responsavel", e e valor de dominio — nunca ausencia de dado.
+ * Medido em 10/09/2026: **90 dos 649**, contra 42 antes de `H-93`.
+ *
+ * **A chave de cor deixou de habitar este dominio em `H-93`.** Ate ali, sem
+ * mapa de equipe, o campo carregava uma chave de `ColorResponsible` (`D-23`);
+ * `D-40` tirou a cor da regra, e sem equipe declarada o campo fica vazio nas
+ * 649 linhas — que e o que diz a verdade sobre o que o operador declarou.
  */
 export type Responsible = string
 
@@ -77,15 +78,15 @@ export type AnomalyCode =
   | 'DATA_SEM_ANO'
   | 'COR_NAO_MAPEADA'
   | 'VARIANTE_STATUS_PROXIMA'
-  /**
-   * O importador atribui o processo a uma pessoa e a cor da linha aponta outra
-   * (`H-50`). O importador vence, e a divergencia fica visivel.
-   *
-   * Medido: ZERO ocorrencias em 31/08/2026 (docs/uso/RESULTADO.md §3), e e
-   * exatamente por isso que o codigo precisa existir antes da primeira — ela
-   * seria uma atribuicao errada que ninguem veria acontecer.
-   */
-  | 'RESPONSAVEL_DIVERGENTE'
+
+/*
+  `RESPONSAVEL_DIVERGENTE` saiu em `H-93`, e sai **sem nunca ter detectado uma
+  ocorrencia**: zero em 31/08/2026 e zero em 10/09/2026. Ela existia para a
+  primeira divergencia entre o importador e a cor, que ninguem veria acontecer —
+  e deixa de ter sentido quando a cor para de atribuir responsavel (`D-40`).
+  Registrar isto e o ponto: o codigo foi criado deliberadamente com zero
+  medidas, e morreu assim.
+*/
 
 /** Motivos de rejeicao para o relatorio de quarentena. Ver TD-06. */
 export type QuarantineReason = 'REF_AUSENTE' | 'REF_DUPLICADA' | 'COR_NAO_MAPEADA'
@@ -111,6 +112,19 @@ export interface RawRow {
   cells: Record<string, RawCell>
   /** Chave de estilo da celula-ancora (coluna A). Ver TD-05. */
   styleKey: string
+  /**
+   * Chave de estilo de CADA celula, por letra de coluna (`H-94`).
+   *
+   * **Aditivo, e nao substituto de `styleKey`.** A cor do PROCESSO continua
+   * saindo da ancora — `ADR-0003` nao e tocado, e as demais colunas seguem
+   * ignoradas para classificar. Isto existe para PINTAR, e renderizar nao
+   * classifica.
+   *
+   * Medido em 16/09/2026 sobre as linhas reais: 36 delas divergem internamente
+   * dentro de A–L, o que refuta a afirmacao de `A-44` de que K e L acompanham a
+   * cor da linha.
+   */
+  cellStyleKeys: Record<string, string>
 }
 
 /**
@@ -191,9 +205,11 @@ export interface Process {
   /**
    * A pessoa que responde pelo processo (`H-50`). `''` quando ninguem responde.
    *
-   * Ate `H-50` este campo era a cor, e a cor passou a ser `colorResponsible`.
-   * Medido em 31/08/2026: a cor preenchia 157 das 649; o importador preenche
-   * 559, o desempate pela cor mais 48, e 42 ficam sem responsavel.
+   * **Vem do IMPORTADOR, e so dele, desde `H-93`.** Ate `H-50` este campo era a
+   * cor, e a cor virou `colorResponsible`; ate `H-93` ela ainda desempatava.
+   * Medido em 10/09/2026: o importador preenche **559** das 649, e **90** ficam
+   * sem responsavel — os 48 que o desempate cobria migraram, e sao todos
+   * ativos.
    */
   readonly responsible: Responsible
   /**
@@ -210,6 +226,31 @@ export interface Process {
   /** `null` quando a cor nao foi reconhecida: diferente de "dentro do RJ". */
   readonly importerOutsideRj: boolean | null
   readonly styleKey: string
+  /**
+   * A chave de estilo de cada celula, por letra de coluna (`H-94`).
+   *
+   * **Viaja no `Process` pelo MESMO motivo que `styleKey` ja viajava:** o
+   * round-trip. `toRawRow` reconstroi a linha crua a partir do processo, e
+   * `refreshClientMap` e `refreshTeamMap` re-derivam por ele com o processo no
+   * ar — guardar so a cor ja resolvida faria toda troca de mapa apagar a
+   * pintura da tabela, em silencio.
+   *
+   * Nao sai na API: quem a tela recebe e `fills`, ja resolvida.
+   */
+  readonly cellStyleKeys: Readonly<Record<string, string>>
+  /**
+   * A cor de exibicao de cada celula, por letra de coluna (`H-94`).
+   *
+   * **Ja resolvida em `#RRGGBB`**, e nao a chave de estilo: quem traduz chave em
+   * cor e o mapa, que vive no dominio — deixar a traducao para a tela poria
+   * regra no cliente (regra inviolavel 6) e obrigaria a interface a carregar
+   * uma copia do mapa.
+   *
+   * **Coluna sem cor declarada NAO entra**, e e a determinacao 3 de `D-41`: a
+   * celula fica sem fundo, e a ausencia aparece. Chave que o mapa nao conhece
+   * nunca vira a cor mais proxima.
+   */
+  readonly fills: Readonly<Record<string, string>>
 
   readonly anomalies: readonly AnomalyCode[]
 }

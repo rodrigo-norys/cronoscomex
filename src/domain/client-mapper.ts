@@ -561,8 +561,9 @@ export function planClientRule(
   /**
    * **O valor entra NORMALIZADO, e isso nao era verdade ate `H-88`.**
    *
-   * Vindo de `process-client.ts` ele ja era — `clientProcessKey` e normalizado
-   * na carga —, e a rota nova o recebe DIGITADO. Um `yt` escrito a mao ia para o
+   * A rota por REF, que saiu em `H-95`, o entregava ja normalizado —
+   * `clientProcessKey` vem assim da carga —, e a rota por grafia o recebe
+   * DIGITADO. Um `yt` escrito a mao ia para o
    * arquivo em minuscula, e `saveClientRule` compara `normKey(rule.value)` com
    * `plan.value`: a segunda declaracao do mesmo valor nao reconhecia a primeira
    * e acrescentava uma regra duplicada. Medido em 08/09/2026, sobre uma regra

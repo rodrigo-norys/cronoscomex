@@ -71,8 +71,15 @@ export interface FilterSelection {
 export interface Filters {
   readonly selection: FilterSelection
   /** Quantos dos quatorze estao ativos. O periodo conta uma vez, tendo um
-   * extremo ou os dois — e um filtro, ainda que ocupe dois parametros. */
+   * extremo ou os dois — e um filtro, ainda que ocupe dois parametros.
+   *
+   * **Nao e o numero que a barra mostra desde `H-92`** — la o operador conta
+   * fichas, e cada VALOR marcado e uma. Este continua contando FILTROS porque a
+   * Pagina Performance diz "N filtros ativos" ao descrever o escopo. */
   readonly activeCount: number
+  /** Quantos VALORES estao marcados: dois clientes contam dois. E o numero da
+   * barra e o numero de fichas — periodo e fora-do-RJ contam um cada. */
+  readonly activeValueCount: number
   /** O que as paginas de `H-16` a `H-22` anexam as proprias requisicoes. */
   readonly queryString: string
   toggle(key: MultiFilterKey, value: string): void
@@ -108,6 +115,21 @@ function countActive(selection: FilterSelection): number {
   const periodActive = selection.etaFrom !== '' || selection.etaTo !== '' ? 1 : 0
   const outsideRjActive = selection.importerOutsideRj !== '' ? 1 : 0
   return multiActive + periodActive + outsideRjActive
+}
+
+/**
+ * O mesmo recorte contado por VALOR, e nao por filtro (`H-92`).
+ *
+ * Dois clientes marcados sao dois, e nao um: e o numero de fichas que a barra
+ * mostra, e o operador precisa poder conferi-lo contando o que ve. Periodo e
+ * fora-do-RJ contam um cada, pelo mesmo motivo de `countActive` — cada um vira
+ * UMA ficha.
+ */
+function countActiveValues(selection: FilterSelection): number {
+  const marcados = MULTI_FILTERS.reduce((total, key) => total + selection.multi[key].length, 0)
+  const periodActive = selection.etaFrom !== '' || selection.etaTo !== '' ? 1 : 0
+  const outsideRjActive = selection.importerOutsideRj !== '' ? 1 : 0
+  return marcados + periodActive + outsideRjActive
 }
 
 /** Parametro vazio nunca chega a URL: `?client=` seria "clientes cujo nome e a
@@ -194,6 +216,7 @@ export function useFilters(): Filters {
   return {
     selection,
     activeCount: countActive(selection),
+    activeValueCount: countActiveValues(selection),
     queryString: toSearch(query),
     toggle,
     setRange,

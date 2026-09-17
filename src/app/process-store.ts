@@ -12,6 +12,7 @@ import {
   toRawRow,
 } from '../domain/process-builder.ts'
 import { applyEdits, type ProjectedEdit } from '../domain/process-projection.ts'
+import { checkSheetSchema, type SchemaDivergence } from '../domain/sheet-schema.ts'
 import type { TeamMember } from '../domain/team-mapper.ts'
 import type { Process, RawRow } from '../domain/types.ts'
 import {
@@ -47,6 +48,32 @@ export interface StoreState {
   fileHash: string | null
   /** Nome real da aba lida. Difere da config quando ela traz `null`. */
   sheetName: string | null
+  /**
+   * Os rotulos da linha de cabecalho, por letra de coluna (`H-95`).
+   *
+   * **Passam pelo store porque e ele que a rota le.** O plano listava o leitor
+   * e a rota e pulava este elo; sem campo aqui, `GET /api/processes` nao teria
+   * de onde tira-los.
+   *
+   * Uma leitura que falha nao os descarta, como nao descarta os processos: a
+   * tabela continua nomeando as colunas com o que a ultima leitura boa disse.
+   */
+  headerLabels: Record<string, string>
+  /**
+   * O que o cabecalho da planilha tem de diferente do esquema declarado
+   * (`H-96`). Vazio e o caso normal: o arquivo bate.
+   *
+   * **E o retrato da ultima leitura, e nao um acumulado.** Consertado o
+   * cabecalho, a lista volta a vazia sozinha — senao a tela seguiria avisando
+   * de algo que o operador ja resolveu.
+   *
+   * **A divergencia NAO impede a leitura** (decisao do usuario, 17/09/2026): os
+   * processos entram, o painel nunca para, e o que ele ganha e saber o que
+   * mudou. O que isso custa esta medido em `D-43` — com as colunas deslocadas,
+   * 616 dos 650 processos leem o dado do vizinho —, e a diferenca para o estado
+   * anterior a `H-96` e que deixa de ser silencioso.
+   */
+  schemaDivergences: SchemaDivergence[]
   lastReadAt: Date | null
   lastReadOk: boolean
   degradedReason: string | null
@@ -96,8 +123,16 @@ export interface StoreOptions {
    * de cores — a alternativa varreria a lista de grupos por linha lida.
    */
   clientGroups?: readonly ClientGroup[]
-  /** Mapa de equipe de `H-48`. Vazio faz a atribuicao cair na cor (`H-50`). */
+  /**
+   * Mapa de equipe de `H-48`. Vazio deixa TODO processo sem responsavel desde
+   * `H-93` — antes dele a atribuicao caia na cor (`D-23`).
+   */
   teamMap?: readonly TeamMember[]
+  /**
+   * Chave de estilo → cor de exibicao (`H-94`), ja indexada. Ausente, a tabela
+   * nao pinta: e o certo em teste, e o estado de um mapa sem `display`.
+   */
+  displayIndex?: ReadonlyMap<string, string>
   quarantinePath?: string
   /** Ponto de injecao para teste; em producao, `data/history.jsonl`. */
   historyPath?: string
@@ -119,6 +154,8 @@ function emptyState(): StoreState {
     processes: [],
     fileHash: null,
     sheetName: null,
+    headerLabels: {},
+    schemaDivergences: [],
     lastReadAt: null,
     lastReadOk: false,
     degradedReason: null,
@@ -131,6 +168,9 @@ function emptyState(): StoreState {
     pendingEdits: [],
   }
 }
+
+/** Sem `display` declarado a tabela nao pinta — uma instancia so, nao por linha. */
+const NO_DISPLAY: ReadonlyMap<string, string> = new Map()
 
 let options: StoreOptions | null = null
 let colorMapIndex: ReadonlyMap<string, ColorMapEntry> = new Map()
@@ -185,6 +225,7 @@ export function getState(): StoreState {
     clientMap: options.clientMap ?? [],
     clientGroups: clientGroupIndex,
     teamMap: options.teamMap ?? [],
+    displayIndex: options.displayIndex ?? NO_DISPLAY,
   })
 
   return { ...current, processes, pendingEdits: edits }
@@ -330,12 +371,34 @@ async function runReload(deps: StoreOptions): Promise<void> {
       return
     }
 
+    /**
+     * O cabecalho confere? (`H-96`)
+     *
+     * **A divergencia AVISA e nao impede nada** — decisao do usuario em
+     * 17/09/2026. A leitura segue, os processos entram, e o que o operador
+     * ganha e saber o que mudou: a tela nomeia as duas pontas (`RF-44`) e a
+     * lateral conta as mudancas.
+     *
+     * *(Uma versao anterior desta historia RECUSAVA promover as linhas quando o
+     * cabecalho nao batia, e ia a `degradado`. Caiu por escolha dele: o painel
+     * nunca para. Fica registrado o que isso custa — com as colunas deslocadas,
+     * `D-43` mediu **616 dos 650** processos lendo o dado do vizinho e **580
+     * categorias** erradas. A diferenca para o estado anterior a `H-96` e que
+     * agora isso NAO e silencioso.)*
+     *
+     * **`blocksWriting` existe para a ESCRITA decidir separado**, e nao para a
+     * leitura: gravar na coluna errada alcanca o arquivo da empresa, e la nao
+     * ha desfazer.
+     */
+    const schema = checkSheetSchema(read.headerLabels)
+
     const result = buildProcesses(read.rows, {
       colorMap: colorMapIndex,
       statusAliases: deps.statusAliases,
       clientMap: deps.clientMap ?? [],
       clientGroups: clientGroupIndex,
       teamMap: deps.teamMap ?? [],
+      displayIndex: deps.displayIndex ?? NO_DISPLAY,
     })
 
     const durationMs = Math.round(performance.now() - startedAt)
@@ -344,6 +407,10 @@ async function runReload(deps: StoreOptions): Promise<void> {
       processes: result.processes,
       fileHash: read.fileHash,
       sheetName: read.sheetName,
+      headerLabels: read.headerLabels,
+      // O retrato da leitura que ACABOU de acontecer: consertado o cabecalho,
+      // a lista volta a vazia sozinha, e a tela para de avisar.
+      schemaDivergences: schema.divergences,
       lastReadAt: read.readAt,
       lastReadOk: true,
       degradedReason: null,
@@ -457,6 +524,44 @@ export async function refreshClientMap(
   current = { ...current, processes: rebuildProcesses(current.processes.map(toRawRow)) }
 }
 
+/**
+ * Troca o mapa de equipe com o processo no ar, e reprojeta (`H-91`).
+ *
+ * Existe pelo mesmo motivo de `refreshClientMap`: o mapa deixou de ser so
+ * configuracao de partida. Atribuir um importador a alguem grava em
+ * `team-map.json`, e sem este passo o campo Responsavel continuaria mostrando a
+ * atribuicao antiga ate o proximo reinicio.
+ *
+ * **Reescreve o array NO LUGAR, em vez de trocar a referencia** — e a mesma
+ * escolha que `reconfigureWorkbook` faz com o `AppConfig`, e aqui ela e o que
+ * faz a gravacao valer. `registerIndicatorsRoute` e `registerFilterOptionsRoute`
+ * capturaram ESTE array na partida; trocar o objeto as deixaria servindo a
+ * equipe anterior, e o operador veria a pessoa que acabou de criar sumir do
+ * ranking. As duas derivam `knownResponsibles` por requisicao exatamente porque
+ * o conteudo muda sob os pes delas.
+ *
+ * **Re-deriva em memoria, e NAO chama `reload`**, pelo motivo medido em
+ * 02/09/2026 com o mapa de clientes: `runReload` sai antes de recompor quando o
+ * hash do arquivo nao mudou, e aqui quem mudou foi o MAPA — o arquivo esta
+ * igual de proposito.
+ */
+export async function refreshTeamMap(members: readonly TeamMember[]): Promise<void> {
+  const deps = options
+  if (!deps) {
+    throw new StoreNotInitializedError('initStore precisa ser chamado antes de refreshTeamMap.')
+  }
+
+  // Uma leitura em voo terminaria DEPOIS, gravando processos derivados do mapa
+  // antigo por cima destes.
+  await settle()
+
+  const live = deps.teamMap
+  if (Array.isArray(live)) (live as TeamMember[]).splice(0, live.length, ...members)
+  else deps.teamMap = members
+
+  current = { ...current, processes: rebuildProcesses(current.processes.map(toRawRow)) }
+}
+
 let reconfiguring: Promise<void> | null = null
 
 /**
@@ -543,6 +648,7 @@ export function rebuildProcesses(rows: RawRow[]): Process[] {
     clientMap: options.clientMap ?? [],
     clientGroups: clientGroupIndex,
     teamMap: options.teamMap ?? [],
+    displayIndex: options.displayIndex ?? NO_DISPLAY,
   }).processes
 }
 

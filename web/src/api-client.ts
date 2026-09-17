@@ -15,7 +15,6 @@ import type { FilterOptionsResponse } from '../../src/http/routes/filter-options
 import type { HealthResponse } from '../../src/http/routes/health.ts'
 import type { MonthlyHistoryResponse } from '../../src/http/routes/history.ts'
 import type { IndicatorsResponse } from '../../src/http/routes/indicators.ts'
-import type { ClientRuleResponse } from '../../src/http/routes/process-client.ts'
 import type {
   ColorOption,
   ColorOptionsResponse,
@@ -27,6 +26,11 @@ import type {
   ProcessesResponse,
 } from '../../src/http/routes/processes.ts'
 import type { QuarantineResponse } from '../../src/http/routes/quarantine.ts'
+import type {
+  TeamMemberRemovedResponse,
+  TeamMemberSavedResponse,
+  TeamResponse,
+} from '../../src/http/routes/team.ts'
 
 /**
  * O unico ponto da interface que fala HTTP.
@@ -46,7 +50,6 @@ export type {
   ClientMatch,
   ClientName,
   ClientRuleCreatedResponse,
-  ClientRuleResponse,
   ColorOption,
   ColorOptionsResponse,
   ColorTarget,
@@ -64,6 +67,9 @@ export type {
   ProcessesResponse,
   QuarantineResponse,
   RuleReachResponse,
+  TeamMemberRemovedResponse,
+  TeamMemberSavedResponse,
+  TeamResponse,
 }
 
 /**
@@ -195,9 +201,12 @@ export async function getRuleReach(
 /**
  * Declara o cliente de uma grafia ou de um prefixo (`H-88`).
  *
- * **Nao enfileira e nao toca o `.xlsx`**, pelo mesmo motivo de
- * `setProcessClient`: a regra vive em `client-map.json`, e a fila existe para
- * adiar a escrita no arquivo da empresa. O efeito vale na leitura seguinte.
+ * **Nao enfileira e nao toca o `.xlsx`**: a regra vive em `client-map.json`, e
+ * a fila existe para adiar a escrita no arquivo da empresa. O efeito vale na
+ * leitura seguinte.
+ *
+ * **E o unico caminho de declarar cliente desde `H-95`.** Havia outro, a partir
+ * de uma REF, e ele saiu com a coluna Cliente da tabela (`D-43`).
  *
  * A mensagem de recusa chega ao operador sem traducao — ele nao e tecnico, e e
  * ele quem vai corrigir o que digitou.
@@ -242,6 +251,77 @@ export async function removeClientGroup(
   }
 
   return (await response.json()) as ClientGroupRemovedResponse
+}
+
+/**
+ * O mapa de equipe: carteiras, importadores sem dono e a chave do proximo
+ * responsavel (`H-91`).
+ *
+ * **Sem `queryString`**, como `getClientKeys` e pelo mesmo motivo (`D-32`,
+ * determinacao 2): o que a rota serve e estado de configuracao, nao recorte.
+ * Anexar os filtros faria filtrar por um responsavel esconder os importadores
+ * que ainda nao tem dono.
+ */
+export async function getTeamMap(signal?: AbortSignal): Promise<TeamResponse> {
+  const response = await fetch('/api/team', signal ? { signal } : undefined)
+  if (response.status === 503) throw new NoReadYetError('GET /api/team')
+  if (!response.ok) throw new Error(`GET /api/team respondeu ${response.status}`)
+
+  return (await response.json()) as TeamResponse
+}
+
+/**
+ * Cria ou redefine um responsavel (`H-91`).
+ *
+ * **A chave vem do servidor**, e nunca do nome digitado: `nextKey` chega em
+ * `GET /api/team`, e a tela so a devolve. Derivar a chave do nome levaria o
+ * nome da pessoa para o dominio, para o ranking e para a URL do filtro (regra
+ * inviolavel 8).
+ *
+ * `importers` e a carteira INTEIRA, e nao um acrescimo: a rota redefine o
+ * membro. Quem soma o importador novo a lista que ja existia e quem chama.
+ */
+export async function saveTeamMember(
+  key: string,
+  label: string,
+  importers: readonly string[],
+): Promise<TeamMemberSavedResponse> {
+  const response = await fetch(`/api/team/${encodeURIComponent(key)}`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ label, importers }),
+  })
+  if (!response.ok) {
+    const body = (await response.json()) as { error?: { message?: string } }
+    throw new Error(body.error?.message ?? `PUT /api/team/${key} respondeu ${response.status}`)
+  }
+
+  return (await response.json()) as TeamMemberSavedResponse
+}
+
+/**
+ * Desfaz um responsavel, ou tira um importador da carteira dele (`H-91`).
+ *
+ * `importer` nulo desfaz o responsavel INTEIRO; com ele, sai so aquele
+ * importador. Nos dois casos o que sai cai em "Sem responsavel" — nenhum
+ * processo fica sem grupo.
+ */
+export async function removeTeamMember(
+  key: string,
+  importer: string | null,
+): Promise<TeamMemberRemovedResponse> {
+  const path =
+    importer === null
+      ? `/api/team/${encodeURIComponent(key)}`
+      : `/api/team/${encodeURIComponent(key)}/importers/${encodeURIComponent(importer)}`
+
+  const response = await fetch(path, { method: 'DELETE' })
+  if (!response.ok) {
+    const body = (await response.json()) as { error?: { message?: string } }
+    throw new Error(body.error?.message ?? `DELETE ${path} respondeu ${response.status}`)
+  }
+
+  return (await response.json()) as TeamMemberRemovedResponse
 }
 
 export async function getAlerts(
@@ -331,7 +411,7 @@ export async function enqueueEdit(
 
 /**
  * Enfileira uma linha NOVA. **Nao grava no `.xlsx`** — a escrita e do
- * `Aplicar alteracoes`, com as mesmas seis defesas das demais edicoes.
+ * `Aplicar alteracoes`, com as mesmas defesas das demais edicoes.
  *
  * O numero da linha nao viaja: quem o resolve e o `write-guard`, contra a
  * leitura do momento da escrita.
@@ -351,32 +431,6 @@ export async function enqueueRow(
 
   const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null
   throw new Error(body?.error?.message ?? `POST /api/edits/row respondeu ${response.status}`)
-}
-
-/**
- * Declara a que cliente pertence a celula CLT de um processo.
- *
- * **Nao enfileira, e nao toca o `.xlsx`**: grava a regra em
- * `client-map.json`, que e de onde a coluna Cliente ja saia. Por isso o
- * efeito e imediato e nao passa por `Aplicar alteracoes`.
- */
-export async function setProcessClient(
-  ref: string,
-  label: string,
-  signal?: AbortSignal,
-): Promise<ClientRuleResponse> {
-  const response = await fetch(`/api/processes/${encodeURIComponent(ref)}/client`, {
-    method: 'PUT',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ label }),
-    ...(signal ? { signal } : {}),
-  })
-  if (response.ok) return (await response.json()) as ClientRuleResponse
-
-  const body = (await response.json().catch(() => null)) as { error?: { message?: string } } | null
-  throw new Error(
-    body?.error?.message ?? `PUT /api/processes/:ref/client respondeu ${response.status}`,
-  )
 }
 
 /** As combinacoes que a aplicacao sabe gravar. Fonte: `config/color-map.json`. */
@@ -450,9 +504,14 @@ export async function discardEdit(id: string): Promise<void> {
  * comum de todos, e nao significa que o arquivo mudou durante a gravacao.
  */
 /**
- * As sete recusas do guard, mais `ERRO_INTERNO`: um 500 do proprio Fastify —
- * corpo malformado, rota que lancou — nao passa por `WriteRefusal`, e fingir
- * que passou faria a tela ramificar sobre um codigo que o servidor nao disse.
+ * Toda `WriteRefusal`, mais `ERRO_INTERNO`: um 500 do proprio Fastify — corpo
+ * malformado, rota que lancou — nao passa por `WriteRefusal`, e fingir que
+ * passou faria a tela ramificar sobre um codigo que o servidor nao disse.
+ *
+ * **Sem contagem aqui, de proposito.** A frase dizia "as sete recusas" quando
+ * esta uniao — a da linha seguinte, e nao `WriteRefusal` — ja tinha onze
+ * membros, dois deles acrescentados por `H-96`. A uniao e a fonte, e o numero
+ * envelheceu duas vezes antes de sair. Achado do revisor-xml.
  */
 export type ApplyRefusalCode = WriteRefusal | 'ERRO_INTERNO'
 
@@ -475,6 +534,8 @@ const REFUSAL_CODES: readonly string[] = [
   'ESCRITA_EM_ANDAMENTO',
   'ESCRITA_INVALIDA',
   'TABELA_CHEIA',
+  'CABECALHO_DESLOCADO',
+  'CABECALHO_VAZIO',
   'ARQUIVO_INDISPONIVEL',
   'ERRO_INTERNO',
 ]
@@ -510,14 +571,22 @@ export interface ApplyRefusal {
    * quando o arquivo deixou de estar intacto.
    */
   fileAtRisk: boolean
+  /**
+   * A frase que nomeia a coluna divergente, nas duas recusas de cabecalho.
+   * `null` nas demais.
+   *
+   * Vem montada do servidor, e nao remontada aqui: a tela nao calcula (regra
+   * inviolavel 6), e `describeDivergence` e a fonte unica do texto.
+   */
+  schemaDivergence: string | null
 }
 
 /**
  * Recusa esperada, com motivo — nao falha de rede.
  *
- * Erro em vez de retorno de uniao porque as sete recusas sao excepcionais por
- * natureza e o caminho feliz e um so: quem chama trata `catch` uma vez, em vez
- * de ramificar em toda chamada.
+ * Erro em vez de retorno de uniao porque toda recusa e excepcional por natureza e
+ * o caminho feliz e um so: quem chama trata `catch` uma vez, em vez de
+ * ramificar em toda chamada.
  */
 export class ApplyRefusedError extends Error {
   readonly refusal: ApplyRefusal
@@ -539,6 +608,7 @@ interface ApplyErrorBody {
       actualHash?: string
       restored?: boolean
       backupPath?: string
+      schemaDivergence?: string
     }
   }
 }
@@ -573,6 +643,7 @@ export async function applyEdits(): Promise<ApplyResponse> {
     restored: detail?.restored === true,
     backupPath: detail?.backupPath ?? null,
     fileAtRisk: detail?.backupPath !== undefined && detail?.restored !== true,
+    schemaDivergence: detail?.schemaDivergence ?? null,
   })
 }
 

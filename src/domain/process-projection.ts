@@ -124,7 +124,17 @@ export function insertToRawRow(insert: RowInsertEdit): RawRow {
       : { value, type: 'string' }
   }
 
-  return { sourceRow: UNWRITTEN_ROW, cells, styleKey: NO_FILL_KEY }
+  /*
+    `cellStyleKeys` sai VAZIO, e nao com `NO_FILL_KEY` em cada coluna (`H-94`).
+
+    A distincao e a mesma que `buildRow` faz: chave `none` explicita significa
+    "medi a celula e ela nao tem preenchimento"; coluna AUSENTE significa "nao
+    havia celula para medir". Uma linha ainda nao gravada e o segundo caso — ela
+    nao existe no arquivo —, e afirmar o primeiro seria medir o que nao foi
+    lido. Na tabela as duas dao o mesmo resultado, sem fundo; o que muda e a
+    verdade da afirmacao.
+  */
+  return { sourceRow: UNWRITTEN_ROW, cells, styleKey: NO_FILL_KEY, cellStyleKeys: {} }
 }
 
 export function applyEdits(

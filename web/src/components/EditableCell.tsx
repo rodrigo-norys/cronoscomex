@@ -10,12 +10,13 @@ import { LiveAnnouncement } from './PageAlert.tsx'
  * que aparece na celula e a dele. Uma segunda tabela de regras no cliente
  * divergiria da primeira no ajuste seguinte (regra inviolavel 6).
  *
- * **Duas rotas usam esta celula, e por isso ela nao conhece nenhuma das duas.**
- * As seis colunas que sao celula da planilha enfileiram em `POST /api/edits`;
- * Cliente declara a regra de consolidacao em
- * `PUT /api/processes/:ref/client`, que nao enfileira nada. Categoria fica de
- * fora: ela sai de cinco regras das quais so uma le a celula L (`A-22`), e
- * editar o rotulo gravaria numa celula que nao esta a vista.
+ * **Ela nao conhece a rota que a grava**, e isso ficou mais simples em `H-95`:
+ * eram duas portas, e sobrou uma. As seis colunas que sao celula da planilha
+ * enfileiram em `POST /api/edits`; a segunda porta era a coluna Cliente, que
+ * declarava a regra de consolidacao sem enfileirar nada, e ela saiu junto com a
+ * coluna (`D-43`). Categoria continua de fora: ela sai de cinco regras das quais
+ * so uma le a celula L (`A-22`), e editar o rotulo gravaria numa celula que nao
+ * esta a vista.
  */
 
 interface EditableCellProps {
@@ -27,6 +28,24 @@ interface EditableCellProps {
   value: string
   /** O que a celula mostra quando nao esta em edicao. Padrao: o proprio valor. */
   display?: string
+  /**
+   * A cor de fundo que a planilha da a esta celula (`H-94`), em `#RRGGBB`.
+   *
+   * **`undefined` significa SEM fundo**, e nunca branco: e a determinacao 3 de
+   * `D-41`. Chave de estilo que o mapa nao declara nao recebe a cor mais
+   * proxima — a celula fica com o fundo da tabela, e a ausencia aparece.
+   */
+  fill?: string | undefined
+  /**
+   * A tinta que o texto usa sobre `fill` (`H-97`), ja resolvida por quem pinta.
+   *
+   * **Resolvida em `ProcessTable` e recebida pronta**, e nao calculada aqui: a
+   * regra e a mesma para as tres formas de celula — o link da REF, a de leitura
+   * e esta —, e tres copias divergiriam na primeira cor nova.
+   */
+  ink?: string | undefined
+  /** O peso que acompanha a tinta (`H-97`). Viaja junto dela, pelo mesmo motivo. */
+  inkWeight?: string | undefined
   /** O que a coluna acrescenta ao `<td>` — fonte monoespacada, alinhamento. */
   className?: string
   /** As quatro props da grade: a celula participa da navegacao por setas. */
@@ -43,6 +62,9 @@ export function EditableCell({
   kind,
   value,
   display,
+  fill,
+  ink,
+  inkWeight,
   className = '',
   cell,
   onCommit,
@@ -140,6 +162,9 @@ export function EditableCell({
       <td
         ref={container}
         {...cell}
+        // `undefined` nao vira atributo: a celula fica com o fundo da tabela, e
+        // e assim que "sem cor declarada" se parece (`H-94`).
+        style={{ backgroundColor: fill, color: ink, fontWeight: inkWeight }}
         className={`max-w-56 truncate px-3 ${className}`}
         /* O `title` carrega o texto VISIVEL, e nao o valor cru: ele existe para
            mostrar inteiro o que a coluna cortou, e na data o cru e `AAAA-MM-DD`
@@ -158,7 +183,9 @@ export function EditableCell({
           // acionado por Enter sobre a celula.
           tabIndex={-1}
           aria-label={`Editar ${label} de ${processRef}: ${shown}`}
-          className="motion-tint block w-full truncate text-left hover:text-text-primary"
+          className={`motion-tint block w-full truncate text-left ${
+            ink === undefined ? 'hover:text-text-primary' : ''
+          }`}
         >
           {shown}
         </button>
@@ -167,7 +194,14 @@ export function EditableCell({
   }
 
   return (
-    <td ref={container} {...cell} className="px-3">
+    // A cor segue na celula durante a edicao: ela continua sendo a mesma celula
+    // da planilha, e apaga-la faria a linha piscar ao entrar e sair do campo.
+    <td
+      ref={container}
+      {...cell}
+      style={{ backgroundColor: fill, color: ink, fontWeight: inkWeight }}
+      className="px-3"
+    >
       <input
         ref={input}
         type={kind === 'date' ? 'date' : 'text'}
