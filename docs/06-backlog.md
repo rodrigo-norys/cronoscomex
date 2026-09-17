@@ -45,7 +45,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E13 — O operacional que edita, ordena e cria ✅ | **H-77 … H-81, todas concluídas.** Épico **retroativo**: o código entrou em 02/09/2026 e as histórias foram escritas em 03/09 | 3 | 0 | 2 |
 | E14 — A casca que se opera, não só se lê ✅ | **H-82 a H-92 ✅ — o épico fechou em 16/09/2026, com `H-91`.** Primeiro épico **prospectivo** desde `E12`: as nove primeiras nascem antes do código (`D-29` a `D-34`), `H-91` entra em 08/09/2026 por `D-35`, e `H-92` em 10/09/2026 por `D-39`. `H-91` passou de M para **G** na fatia de 11/09, quando o contrato dela dobrou | 3 | 6 | 2 |
 | E15 — A tabela é a planilha, e a cor é só cor | **`H-93` a `H-95` ✅; só `H-96` aberta, e escrita para não ser executada.** Nasce de `D-40` a `D-43`, em 10 e 11/09/2026: a cor deixa de apontar responsável e vira aparência, e a tabela passa a espelhar o arquivo — as 16 colunas com o nome do cabeçalho. `H-93` veio de `E14` em 11/09, por estar grande demais. `H-96` nasce de defeito **simulado**, não observado. **As quatro são G**, pela régua do topo | 0 | 0 | 4 |
-| **Total** | **96** — 95 concluídas, 1 aberta | **36** | **50** | **10** |
+| E16 — A tabela que se lê, e o endereço que não mente | **`H-97` a `H-100` ✅; só `H-101` aberta, e escrita para não ser executada agora.** Nasce de `D-44`, em 16/09/2026, do uso da tela que `E15` entregou: o fundo pintado ficou ilegível no tema escuro, o painel lateral disputava largura com 17 colunas, e os parâmetros da página viajavam para as outras seis telas. **Nenhuma das quatro é regra de negócio** — são apresentação e endereço | 3 | 1 | 1 |
+| **Total** | **101** — 99 concluídas, 2 abertas | **39** | **51** | **11** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -60,7 +61,11 @@ bloco; o índice agora é obrigado a concordar com ele.
 `iniciar.cmd` foi executado na máquina do operador, sobe e carrega a planilha.
 `PD-06` guardava os itens que faltavam, e **fechou em 03/09/2026** — os três últimos foram exercidos por SSH, e o registro está em `docs-windows/2026-09-03-pd06-fechada.md`.
 
-**Dez histórias são G.** `H-50` desde `D-24`, `H-75` em `E12`, `H-79` e
+**Onze histórias são G.** `H-101` entrou em 16/09/2026 por `D-44`, e o G dela é
+diagnóstico: o autoajuste exige `<colgroup>`, `table-layout: fixed` e largura em
+estado, e os três desfazem o `max-w-56 truncate` que segura a linha de 40 px de
+`H-61` — **nove blocos de teste dependem da geometria atual**. As demais:
+`H-50` desde `D-24`, `H-75` em `E12`, `H-79` e
 `H-80` em `E13`, `H-91` desde a fatia de 11/09/2026, as **quatro** de `E15` —
 `H-93` a `H-96`, rotuladas pela régua em 16/09/2026 —, e `H-88`
 desde `D-35` — **a única cujo G é escolha declarada**,
@@ -223,6 +228,14 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-94 — O fundo da célula é a cor da planilha, e a casca recua de tom](#h-94) ✅
 - [H-95 — As dezesseis colunas, com o nome literal do cabeçalho](#h-95) ✅
 - [H-96 — A coluna se resolve por nome, e não por letra](#h-96)
+
+**[Épico E16 — A tabela que se lê, e o endereço que não mente](#e16)**
+
+- [H-97 — A tinta da célula pintada](#h-97) ✅
+- [H-98 — O calendário de chegadas muda de página](#h-98) ✅
+- [H-99 — Os parâmetros da Operacional não sobrevivem à saída dela](#h-99) ✅
+- [H-100 — "Todas as linhas" entra no seletor](#h-100) ✅
+- [H-101 — A coluna se ajusta ao maior conteúdo](#h-101)
 
 
 ---
@@ -11270,14 +11283,376 @@ processos lendo o vizinho.
 
 ---
 
+<a id="e16"></a>
+
+## Épico E16 — A tabela que se lê, e o endereço que não mente
+
+Nasce de `D-44`, em **16/09/2026**, e a origem dele é diferente da dos anteriores:
+**não veio de plano, de auditoria nem de proposta — veio de usar a tela que `E15`
+acabara de entregar.** O usuário abriu a Página Operacional, e os quatro pedidos
+saíram do que ele viu.
+
+**Nenhuma das cinco é regra de negócio.** São apresentação e endereço: a cor que
+vem do arquivo continua intacta, os indicadores continuam vindo prontos do
+servidor, e `src/domain/` não é tocado em nenhuma delas.
+
+**O épico corrige `E15` sem desfazê-lo**, e as duas primeiras são o preço de
+acertar antes. `H-94` pintou a célula com a cor do arquivo e não perguntou o que
+acontece com o TEXTO em cima dela; `H-95` levou a tabela a 17 colunas e deixou ao
+lado um painel de 20rem que nasceu quando ela tinha nove. Nos dois casos o defeito
+só aparece quando alguém abre a tela — e foi o que aconteceu.
+
+**Uma determinação vale para o épico e não se re-litiga:** o que a planilha diz
+continua soberano. A tinta escolhe entre duas, e **jamais altera o fundo**; o
+operador continua vendo a cor que o Excel dele pinta. A regra inviolável 1 não é
+tocada — o que muda é o que se desenha POR CIMA.
+
+**O épico também é o primeiro a refutar uma decisão por medição desde `D-41`.** A
+determinação 2 daquela decisão declarava os dois roxos irreparáveis "com qualquer
+cor de texto", e o registro fica: ela mediu duas tintas e **não mediu a terceira**.
+
+---
+
+<a id="h-97"></a>
+
+### H-97 — A tinta da célula pintada
+
+> ✅ **CONCLUÍDA em 16/09/2026.** Suíte em **2134 testes, 85 arquivos**, portão
+> inteiro verde. **Conferida contra a planilha real**, que é onde o número vale:
+> **9.069 células pintadas** em 650 processos, **9 cores distintas**. Oito
+> passam a WCAG AA com folga; **o roxo reprova, em 4,05 contra o piso de 4,5**,
+> e isso é escolha declarada do usuário — ver abaixo.
+>
+> **A história foi decidida em três rodadas, todas com ele olhando a tela**, e o
+> registro guarda as três porque cada uma desfez parte da anterior:
+>
+> 1. **A tinta nasceu calculada por luminância**, entre uma escura (`#14161a`,
+>    o `text-primary` da paleta) e uma clara. As nove passavam em AA, pior caso
+>    4,53 no vermelho, e isso **refutava a determinação 2 de `D-41`** — ela
+>    declarava os roxos irreparáveis "com qualquer cor de texto" tendo medido só
+>    `#14161a` (3,49) e preto (4,05), **nunca branco**, que dá 5,19.
+> 2. **Ele pediu mais escuro**, e a tinta escura foi a preto puro. Melhorou 8
+>    das 9 — o verde de 5.723 células de 13,20 a **15,30** — sem trocar nenhuma
+>    de lado. O roxo seguia com a tinta clara, em 5,19.
+> 3. **Ele viu a prova de tinta e pediu preto no roxo também, no peso 600.** Com
+>    isso **nenhuma cor usa mais a tinta clara**: a escolha por luminância deixou
+>    de ter dois lados para escolher, `relativeLuminance` virou código morto e
+>    saiu, e a tinta passou de função a **constante**. A exceção de `D-41` voltou
+>    inteira — agora por ESCOLHA, e não por impossibilidade de medição.
+>
+> **O peso 600 é a alavanca que sobrou.** Preto é o fim da escala de cor, e a
+> densidade do traço é a única coisa que ainda responde a "mais escuro". São os
+> três pesos versionados em `web/public/fonts/` (`H-58`); um quarto o navegador
+> sintetizaria.
+>
+> **O vermelho fica declarado como não resolvido.** O usuário apontou que ele
+> segue ruim mesmo no peso 600, e está certo perceptualmente — mas preto já é o
+> **máximo** disponível ali: 5,25 contra 4,00 do branco. Nenhuma tinta lê melhor,
+> e o que incomoda é o fundo `#FF0000` puro, que a regra inviolável 1 protege.
+> São **60 células de 9.069**, 0,7%.
+>
+> **O tamanho do defeito só apareceu na medição:** o verde de `#00FF00` pinta
+> **5.723 células**, e o texto do tema escuro ficava nele a **1,16** de
+> contraste. Ilegível, e foi assim que o usuário o reportou — com um print.
+>
+> **Refuta a determinação 2 de `D-41`.** Ela declarava os dois roxos reprovando
+> "com qualquer cor de texto", medindo `#14161a` (3,49) e preto puro (4,05).
+> **Nunca mediu branco**, que dá **5,19** e passa. A exceção de contraste não
+> sumiu — encolheu, e agora não alcança nenhuma das nove cores.
+>
+> **Dois defeitos meus, achados pelas guardas.** O primeiro: escrevi a consulta
+> de media do esquema escuro por extenso num comentário de `index.css`, e
+> `tests/repo/estilo.test.ts` acha o bloco escuro por `indexOf` do literal —
+> passou a analisar o comentário, e **três asserções reprovaram**. O segundo: as
+> citações de `H-97` cobriam três preocupações distintas, e a guarda de âncora
+> morta as expôs; viraram `H-97`, `H-99` e `H-100`.
+>
+> **E um terceiro achado que NÃO é defeito meu: a premissa de `D-21`.** A guarda
+> exige par no escuro para todo `--color-*`, e a tinta não pode ter — o fundo é
+> do arquivo, não do tema. **A saída recusada foi declarar o par com valor
+> idêntico:** a guarda confere presença, não igualdade, e a cópia viraria dois
+> lugares para um valor só, onde escurecer a tinta clara quebraria a legibilidade
+> do roxo sem reprovar nada. A guarda passou a declarar a exceção, **fechada por
+> baixo** por uma asserção nova: token isento tem de estar ausente do bloco
+> escuro, senão "isento" vira abrigo para par esquecido. *(Renomear para fora de
+> `--color-` foi cogitado e descartado: `--color-chart-grid` e `--color-chart-axis`
+> já são lidos por `var()` cru em `History.tsx` e têm par — a convenção da casa é
+> que cor lida assim continua sendo token de paleta.)*
+
+**Objetivo:** o texto sobre a célula pintada voltar a ser legível, sem mexer na
+cor que veio do arquivo.
+
+**Contrato:** nenhuma rota, nenhum campo novo no DTO. Dois tokens em
+`web/src/index.css` e uma função de apresentação em `ProcessTable`.
+
+**Três determinações de `D-44`:**
+
+1. **A tinta é UMA SÓ, e não escolhida por cor.** Ela chegou a ser calculada por
+   luminância — a alternativa descartada era declará-la cor a cor em
+   `config/color-map.json`, como `D-42` fez, e foi recusada porque ali o que se
+   declarava era **significado**, que não se calcula. **O cálculo caiu na
+   terceira rodada:** com preto nas nove, não há segundo lado a escolher, e um
+   ramo que nunca dispara fingindo ser regra é pior que nenhum. **O que se perde
+   está declarado:** cor nova mais escura que o roxo ficaria ilegível, e nada no
+   código a impede — o anteparo deixou de ser código e passou a ser a
+   conferência contra a planilha real, obrigatória antes de fechar história.
+2. **Os dois tokens NÃO se redefinem no esquema escuro.** O fundo vem do arquivo
+   do operador, não do tema — verde é verde nos dois —, e uma tinta que virasse
+   clara no escuro devolveria exatamente o defeito que ela conserta.
+3. **Célula sem fundo não recebe tinta.** Ela herda o texto do tema, que é o que
+   "sem cor declarada" deve parecer (determinação 3 de `D-41`).
+
+**Arquivos:**
+- `web/src/index.css` — `--color-cell-ink-dark` e `--color-cell-ink-light`
+- `web/src/components/ProcessTable.tsx` — `relativeLuminance` e `inkFor`
+- `web/src/components/EditableCell.tsx` — a prop `ink`, recebida pronta
+- `web/tests/Operational.test.tsx`
+
+**Critérios de aceite:**
+- **Dado** uma célula pintada, **então** o texto usa a tinta preta, no peso 600 —
+  qualquer que seja a cor do fundo.
+- **Dado** uma célula sem cor, **então** nem tinta nem peso são fixados: ela
+  herda o texto do tema.
+- **Dado** o esquema escuro, **então** a tinta não muda — o fundo não mudou.
+
+**Casos-limite:**
+- **O roxo `#A74F7B` é a única das nove que recebe a tinta CLARA** — luminância
+  0,1524, abaixo do limiar de 0,18. Todas as outras oito ficam com a escura.
+- **O limiar de 0,18 concorda com a escolha por maior contraste nas nove cores**,
+  medido em 16/09/2026 — ele não é arbitrário, é a mesma decisão mais barata.
+- **O roxo é o único que reprova, em 4,05**, e é exceção declarada: branco o
+  levava a 5,19 e passava, e o usuário preferiu o preto uniforme nas nove. São
+  432 células, 4,8% das pintadas.
+- **O vermelho é o pior caso entre os que passam, em 5,25**, e não tem alavanca:
+  branco daria 4,00, pior. O usuário o apontou como ainda ruim, e o registro
+  concorda com a percepção dele sem ter o que oferecer — o fundo é que vibra.
+- **A paleta não venceu aqui, e a exceção é declarada.** `#14161a` é o
+  `text-primary` do tema claro, e seria a escolha coerente com o resto do
+  conjunto — mas o fundo destas células não é superfície da aplicação, é a cor
+  do arquivo do operador.
+- **O link da REF e o botão da célula editável declaram cor própria** —
+  `text-text-secondary` e `hover:text-text-primary` —, e sobrescreveriam a tinta
+  herdada. Sobre célula pintada, os dois saem.
+
+**Fora desta história:** mudar qualquer cor de fundo; declarar tinta por cor no
+`config/color-map.json`; e a exceção de contraste de `D-41`, que continua
+registrada para o dia em que uma cor nova não couber em nenhuma das duas tintas.
+
+**Dependências:** `H-94`, que trouxe a cor para a célula.
+**Tamanho:** M (4 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-98"></a>
+
+### H-98 — O calendário de chegadas muda de página
+
+> ✅ **CONCLUÍDA em 16/09/2026.** Suíte em **2134 testes, 85 arquivos**.
+> **Nenhuma requisição nova nasce da mudança**, e era a condição: a Página
+> Inicial já pedia `GET /api/indicators`.
+>
+> **A divergência foi apresentada antes do código e mudou o pedido.** O usuário
+> pediu para "tirar aquela barra lateral"; o calendário era a **única**
+> apresentação de `IND-12`, e removê-lo o deixaria calculado, servido e
+> invisível — o defeito exato que `A-65` varreu em `IND-13`, `IND-17` e
+> `IND-20`. Ele escolheu movê-lo.
+>
+> **Três testes mudaram de arquivo e nenhum mudou de conteúdo**, porque o
+> componente não foi tocado.
+
+**Objetivo:** a tabela de 17 colunas ficar com a largura inteira, sem que
+`IND-12` perca a tela.
+
+**Contrato:** nenhuma rota, nenhum campo. A Operacional perde a prop
+`queryString`, que só existia para alimentar o calendário.
+
+**Arquivos:**
+- `web/src/pages/Operational.tsx` — sai o calendário, o grid de duas trilhas e a prop
+- `web/src/pages/Home.tsx` — entra o calendário
+- `web/src/App.tsx` — a chamada sem `queryString`
+- `web/tests/Operational.test.tsx` · `web/tests/Home.test.tsx` · `web/tests/App.test.tsx`
+
+**Critérios de aceite:**
+- **Dado** a Página Inicial, **então** o calendário aparece nela, com os filtros globais.
+- **Dado** a Página Operacional, **então** a tabela ocupa a largura inteira.
+- **Dado** `IND-12`, **então** ele continua tendo exatamente uma apresentação.
+
+**Casos-limite:**
+- **O `minmax(0,1fr)` do grid sai junto**, e o motivo dele desaparece com a
+  segunda trilha: ele existia para o grid não recusar encolher diante da largura
+  intrínseca da tabela (`SC 1.4.10`, medido em 01/09/2026). Quem contém a
+  rolagem passa a ser o `overflow-x-auto` de `R01`, na própria tabela.
+- **O teste de montagem em `App.test.tsx` afirmava o calendário** para provar que
+  a Operacional monta. Passou a afirmar a grade, que é o que a página é —
+  `role="grid"` desde `H-80`, e nenhuma outra tela monta uma.
+
+**Fora desta história:** mudar o componente do calendário, o recorte de 15 dias,
+ou a definição de `IND-12`.
+
+**Dependências:** `H-95`, que levou a tabela a 17 colunas e criou a disputa.
+**Tamanho:** P (6 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-99"></a>
+
+### H-99 — Os parâmetros da Operacional não sobrevivem à saída dela
+
+> ✅ **CONCLUÍDA em 16/09/2026.** Suíte em **2134 testes, 85 arquivos**.
+>
+> **O cabeçalho de `useProcessQuery` já declarava a separação desde `H-84`** —
+> "são separados dos filtros de propósito" — e **ninguém a cumpria**. O usuário
+> viu `?limit=500` no endereço das outras seis telas e perguntou por quê.
+>
+> **O conserto NÃO foi em `navigate`, e a escolha tem precedente.** Saber a que
+> página um parâmetro pertence é conhecimento de PÁGINA, não de roteamento, e
+> `web/src/router.ts` está em **97 linhas de código** de um limiar de ~100 que
+> `D-16` declara como gatilho de reavaliação do `react-router`. `H-59` recusou
+> pelo mesmo motivo em 01/09/2026. Disparar a reavaliação por um dado que não é
+> de rota seria pagá-la pelo motivo errado.
+
+**Objetivo:** o endereço descrever a tela que está aberta, e não a anterior.
+
+**Contrato:** nenhuma rota. `PAGE_PARAMS` passa a ser exportado por
+`useProcessQuery`, e a casca o consome ao trocar de rota.
+
+**Arquivos:**
+- `web/src/hooks/useProcessQuery.ts` — `PAGE_PARAMS`
+- `web/src/App.tsx` — o efeito de limpeza
+- `web/tests/App.test.tsx`
+
+**Critérios de aceite:**
+- **Dado** `/operacional?client=ACME&limit=500&sort=ref&hidden=M`, **quando** o
+  operador vai para outra página, **então** sobra `?client=ACME`.
+- **Dado** os quatorze filtros globais, **então** eles atravessam a navegação
+  como sempre.
+
+**Casos-limite:**
+- **`useLayoutEffect`, e não `useEffect`:** a correção acontece antes da pintura.
+- **`replaceState`, e não `pushState`:** o operador não apertaria "voltar" para
+  desfazer uma limpeza que não pediu.
+- **Não há laço.** A reescrita emite `popstate`, o efeito roda de novo, e a
+  segunda passada não encontra nenhum dos parâmetros e sai na guarda.
+
+**Fora desta história:** mexer em `navigate`, em `router.ts` ou nos filtros
+globais.
+
+**Dependências:** nenhuma.
+**Tamanho:** P (3 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-100"></a>
+
+### H-100 — "Todas as linhas" entra no seletor
+
+> ✅ **CONCLUÍDA em 16/09/2026.** Suíte em **2134 testes, 85 arquivos**.
+>
+> **Emenda `D-31`, que fixara o oposto** — *"`500` é teto, e não 'todas'"* —,
+> para a paginação nunca desaparecer e o pior caso de renderização ficar
+> previsível. O usuário pediu a opção mesmo assim, depois de ver a tabela.
+
+**Objetivo:** o operador ver a planilha inteira numa página.
+
+**Contrato:** nenhuma rota, e **nenhum valor novo no domínio**: a opção vale
+`MAX_LIMIT`, que já é 1000 em `src/domain/process-query.ts`.
+
+**Arquivos:**
+- `web/src/hooks/useProcessQuery.ts` — `MAX_LIMIT` em `PAGE_SIZES`, e `pageSizeLabel`
+- `web/src/pages/Operational.tsx` — o rótulo no rodapé
+- `web/tests/Operational.test.tsx`
+
+**Critérios de aceite:**
+- **Dado** o seletor, **então** ele oferece cinco tamanhos, o último chamado "Todas".
+- **Dado** "Todas", **então** a rota recebe `limit=1000`.
+
+**Casos-limite:**
+- **"Todas" não mente por construção**, e é por isso que o valor é `MAX_LIMIT` e
+  não um sentinela: passando de 1000 processos, o rodapé volta a paginar e diz
+  de quantos, em vez de cortar em silêncio (regra inviolável 2).
+- **`limit=1001` continua caindo no padrão**, porque segue acima do teto da rota.
+- **Medido em `H-84`:** 500 linhas montam em 213 ms; as 650 de hoje cabem numa
+  página só.
+
+**Fora desta história:** mudar `MAX_LIMIT`, ou remover a paginação.
+
+**Dependências:** nenhuma.
+**Tamanho:** P (3 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-101"></a>
+
+### H-101 — A coluna se ajusta ao maior conteúdo
+
+> Nasce de `D-44`, em 16/09/2026, do pedido de reproduzir o gesto do Excel:
+> clicar na divisão do cabeçalho e a coluna se ajustar à maior frase dela.
+>
+> **Escrita e NÃO executada agora, por escolha do usuário**, que a preferiu como
+> história própria depois de ver o custo. Reabrir exige ordem dele.
+
+**Objetivo:** o operador ajustar a largura de uma coluna sem sair da tela.
+
+**Contrato:** nenhuma rota. A largura por coluna vira estado, e o candidato
+natural é o endereço, como `hidden` já é (`RF-43`).
+
+**Duas determinações de `D-44`:**
+
+1. **O custo está na geometria de hoje, e é ele que faz a história ser G.** Não
+   há `<colgroup>`, não há largura declarada, e `table-layout` é `auto`. O
+   autoajuste exige os três — e os três desfazem o `max-w-56 truncate`, que não
+   é enfeite: é o `white-space: nowrap` dele que segura a linha de **40 px** de
+   `H-61`, e é o `title` ao lado que impede corte silencioso.
+2. **Nove blocos de teste dependem da geometria atual**, medido em `H-95`: cinco
+   deles contam paradas de tabulação ou navegam por `Ctrl+End`, e nenhum cita
+   largura — quebrariam sem dizer por quê.
+
+**Arquivos previstos:**
+- `web/src/components/ProcessTable.tsx` — `<colgroup>`, a alça e a medição
+- `web/src/hooks/useProcessQuery.ts` — a largura em estado de URL
+- `web/src/index.css` · `web/tests/Operational.test.tsx` · `web/tests/useGridNavigation.test.tsx`
+
+**Critérios de aceite:**
+- **Dado** a divisão entre dois cabeçalhos, **quando** o operador dá duplo
+  clique, **então** a coluna passa a caber o maior conteúdo visível dela.
+- **Dado** uma largura ajustada, **então** ela sobrevive à navegação e à releitura.
+
+**Casos-limite:**
+- **`MERCADORIA` é texto livre**, e o maior valor dela estoura qualquer
+  orçamento de largura — o autoajuste precisa de teto, ou a tabela vira uma
+  coluna só.
+- **A medição é do conteúdo RENDERIZADO**, e numa página de 500 linhas isso é
+  leitura de layout linha a linha: o custo precisa ser medido antes de escolher
+  a abordagem.
+- **Coluna escondida não tem largura**, e voltar a exibi-la não pode herdar a de
+  outra.
+
+**Fora desta história:** arrastar a divisão para redimensionar à mão, se a fatia
+mostrar que ela dobra o tamanho; e persistir largura fora do endereço.
+
+**Dependências:** `H-95`, pelas 17 colunas, e `H-97`, pelo mesmo arquivo.
+**Tamanho:** G (5 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
 ### Varredura de verbos de decisão em aberto
 
 Os textos das 34 histórias **do plano original** foram varridos em busca de
 "escolher", "avaliar", "definir", "decidir" e "ver qual". As ocorrências
 encontradas foram eliminadas:
 
-> **A varredura nunca foi refeita.** O backlog tem 96 histórias hoje, e as **64**
-> posteriores — `H-33` em diante, o que já inclui os épicos `E9` a `E15` — não
+> **A varredura nunca foi refeita.** O backlog tem 101 histórias hoje, e as **69**
+> posteriores — `H-33` em diante, o que já inclui os épicos `E9` a `E16` — não
 > passaram por ela. *(A redação anterior dizia "`H-33` em diante, mais os épicos
 > `E9` a `E14`", e o "mais" contava o mesmo conjunto duas vezes — foi por isso
 > que o 56 nunca bateu com nada.)* As cinco de `E13` não poderiam passar: foram escritas **depois** do

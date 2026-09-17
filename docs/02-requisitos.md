@@ -62,8 +62,8 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 
 | ID | Requisito | Histórias |
 |---|---|---|
-| RF-09 | Página Inicial com cartões-resumo das 4 categorias, total, Canal Vermelho, chegadas hoje/semana/15 dias, atrasados e documentos pendentes | H-16 |
-| RF-10 | Página Operacional: tabela de processos com busca sobre os seis campos de texto da planilha (`D-34`) e calendário de chegadas por navio. **Abre com todos os processos, na ordem da planilha**; o operador reduz aos ativos por um controle próprio (`D-33`) | H-17, H-84, H-89, H-90 |
+| RF-09 | Página Inicial com cartões-resumo das 4 categorias, total, Canal Vermelho, chegadas hoje/semana/15 dias, atrasados e documentos pendentes, **e o calendário de chegadas por navio** (`H-98`) | H-16, H-98 |
+| RF-10 | Página Operacional: tabela de processos com busca sobre os seis campos de texto da planilha (`D-34`). **Abre com todos os processos, na ordem da planilha**; o operador reduz aos ativos por um controle próprio (`D-33`). *(Dizia "e calendário de chegadas por navio" até `D-44`: ele foi para a Página Inicial em `H-98`, para a tabela de 17 colunas ficar com a largura inteira.)* | H-17, H-84, H-89, H-90, H-98, H-100 |
 | RF-11 | Página Clientes: ranking e distribuição por CLT e IMPORTADOR | H-18 |
 | RF-12 | Página Performance: tempo médio de envio documental por cliente, agente, navio e responsável, com denominador visível | H-19 |
 | RF-13 | Página Alertas: lista dos 6 alertas ordenada por severidade fixa | H-20 |
@@ -77,7 +77,9 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 | RF-38 | Escolher quantas linhas a tabela mostra por vez — 50, 100, 200 ou 500, com 200 como padrão — e manter o cabeçalho visível durante a rolagem | H-84 |
 | RF-41 | Exibir, como fundo de cada célula da tabela, a cor de preenchimento que ela tem na planilha — e **nunca** inferir dado a partir dela | H-94 |
 | RF-42 | Exibir todas as colunas da aba em escopo, com o texto literal da linha de cabeçalho por rótulo | H-95 |
-| RF-43 | Escolher quais colunas a tabela mostra, com a escolha no endereço — como os demais parâmetros da Página Operacional (`useProcessQuery`) —, sobrevivendo à navegação e à releitura | H-95 |
+| RF-43 | Escolher quais colunas a tabela mostra, com a escolha no endereço — como os demais parâmetros da Página Operacional (`useProcessQuery`) —, sobrevivendo à navegação e à releitura. **Os parâmetros da página não sobrevivem à SAÍDA dela** (`H-99`): os filtros globais atravessam a navegação, estes não | H-95, H-99 |
+| RF-45 | Manter legível o texto sobre a célula pintada — sem alterar a cor que veio do arquivo. *(Dizia "escolhendo a tinta pela luminância do fundo" até `D-44`: a escolha caiu quando o usuário pediu preto nas nove cores, e a tinta virou constante.)* | H-97 |
+| RF-46 | Ajustar a largura de uma coluna ao maior conteúdo dela, pela divisão do cabeçalho | H-101 |
 
 > **Os RF acima de RF-30 nasceram depois do plano**, e a numeração é
 > cronológica, não posicional: eles ficam na seção do tema a que pertencem, e o
