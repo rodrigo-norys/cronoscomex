@@ -12,6 +12,7 @@ import {
   toRawRow,
 } from '../domain/process-builder.ts'
 import { applyEdits, type ProjectedEdit } from '../domain/process-projection.ts'
+import { checkSheetSchema, type SchemaDivergence } from '../domain/sheet-schema.ts'
 import type { TeamMember } from '../domain/team-mapper.ts'
 import type { Process, RawRow } from '../domain/types.ts'
 import {
@@ -58,6 +59,21 @@ export interface StoreState {
    * tabela continua nomeando as colunas com o que a ultima leitura boa disse.
    */
   headerLabels: Record<string, string>
+  /**
+   * O que o cabecalho da planilha tem de diferente do esquema declarado
+   * (`H-96`). Vazio e o caso normal: o arquivo bate.
+   *
+   * **E o retrato da ultima leitura, e nao um acumulado.** Consertado o
+   * cabecalho, a lista volta a vazia sozinha — senao a tela seguiria avisando
+   * de algo que o operador ja resolveu.
+   *
+   * **A divergencia NAO impede a leitura** (decisao do usuario, 17/09/2026): os
+   * processos entram, o painel nunca para, e o que ele ganha e saber o que
+   * mudou. O que isso custa esta medido em `D-43` — com as colunas deslocadas,
+   * 616 dos 650 processos leem o dado do vizinho —, e a diferenca para o estado
+   * anterior a `H-96` e que deixa de ser silencioso.
+   */
+  schemaDivergences: SchemaDivergence[]
   lastReadAt: Date | null
   lastReadOk: boolean
   degradedReason: string | null
@@ -139,6 +155,7 @@ function emptyState(): StoreState {
     fileHash: null,
     sheetName: null,
     headerLabels: {},
+    schemaDivergences: [],
     lastReadAt: null,
     lastReadOk: false,
     degradedReason: null,
@@ -354,6 +371,27 @@ async function runReload(deps: StoreOptions): Promise<void> {
       return
     }
 
+    /**
+     * O cabecalho confere? (`H-96`)
+     *
+     * **A divergencia AVISA e nao impede nada** — decisao do usuario em
+     * 17/09/2026. A leitura segue, os processos entram, e o que o operador
+     * ganha e saber o que mudou: a tela nomeia as duas pontas (`RF-44`) e a
+     * lateral conta as mudancas.
+     *
+     * *(Uma versao anterior desta historia RECUSAVA promover as linhas quando o
+     * cabecalho nao batia, e ia a `degradado`. Caiu por escolha dele: o painel
+     * nunca para. Fica registrado o que isso custa — com as colunas deslocadas,
+     * `D-43` mediu **616 dos 650** processos lendo o dado do vizinho e **580
+     * categorias** erradas. A diferenca para o estado anterior a `H-96` e que
+     * agora isso NAO e silencioso.)*
+     *
+     * **`blocksWriting` existe para a ESCRITA decidir separado**, e nao para a
+     * leitura: gravar na coluna errada alcanca o arquivo da empresa, e la nao
+     * ha desfazer.
+     */
+    const schema = checkSheetSchema(read.headerLabels)
+
     const result = buildProcesses(read.rows, {
       colorMap: colorMapIndex,
       statusAliases: deps.statusAliases,
@@ -370,6 +408,9 @@ async function runReload(deps: StoreOptions): Promise<void> {
       fileHash: read.fileHash,
       sheetName: read.sheetName,
       headerLabels: read.headerLabels,
+      // O retrato da leitura que ACABOU de acontecer: consertado o cabecalho,
+      // a lista volta a vazia sozinha, e a tela para de avisar.
+      schemaDivergences: schema.divergences,
       lastReadAt: read.readAt,
       lastReadOk: true,
       degradedReason: null,

@@ -5,6 +5,7 @@ import { loadColorMap } from '../../src/app/color-map-loader.ts'
 import type { AppConfig } from '../../src/app/config.ts'
 import { indexColorMap } from '../../src/domain/color-mapper.ts'
 import { buildProcesses } from '../../src/domain/process-builder.ts'
+import { checkSheetSchema, describeDivergence } from '../../src/domain/sheet-schema.ts'
 import { NO_FILL } from '../../src/io/style-extractor.ts'
 import { readWorkbook, WorkbookReadError } from '../../src/io/xlsx-reader.ts'
 
@@ -124,6 +125,39 @@ describe('readWorkbook', () => {
 
     expect(result.rows).toHaveLength(0)
     expect(result.sheetName).toBe('2026')
+  })
+})
+
+/**
+ * **O esquema declarado contra os arquivos versionados** (`H-96`).
+ *
+ * `DECLARED_HEADERS` e uma copia, por letra, do que `docs/03-modelo-dados.md`
+ * secao 1.2 mantem — e nada ligava as duas pontas: divergencia entre a tabela
+ * declarada e o arquivo real NAO reprovava a suite. O custo de errar nao e um
+ * teste vermelho, e sim a aplicacao recusando a gravacao na planilha do
+ * operador, por um cabecalho que esta correto. Achado do revisor-xml.
+ *
+ * O caso-limite de `H-96` promete "as nove fixtures passam com zero
+ * divergencia, **medido**" — e medicao nao e anteparo: ela vale no dia em que
+ * alguem a faz.
+ *
+ * **Sem lista fixa e sem contagem**, como as demais guardas do repositorio:
+ * fixture nova entra sozinha, e o numero nao envelhece.
+ */
+describe('checkSheetSchema contra as fixtures versionadas', () => {
+  const fixtures = readdirSync('tests/fixtures')
+    .filter((nome) => nome.endsWith('.xlsx') && !nome.startsWith('~$'))
+    .sort()
+
+  it.each(fixtures)('%s casa o esquema declarado', async (fixture) => {
+    const result = await readWorkbook(config(fixture))
+    const check = checkSheetSchema(result.headerLabels)
+
+    // Mapeado para a frase, e nao contado: reprovando, a saida diz QUAL coluna
+    // divergiu, em vez de "esperava [Array(3)]".
+    expect(check.divergences.map(describeDivergence)).toEqual([])
+    expect(check.ok).toBe(true)
+    expect(check.blocksWriting).toBe(false)
   })
 })
 

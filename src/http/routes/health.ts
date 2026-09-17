@@ -2,6 +2,7 @@ import type { FastifyInstance } from 'fastify'
 import type { AppConfig } from '../../app/config.ts'
 import { type AppState, store as defaultStore, type StoreAccess } from '../../app/process-store.ts'
 import { today as currentDay, toIsoDay } from '../../domain/date-window.ts'
+import type { SchemaDivergence } from '../../domain/sheet-schema.ts'
 
 export type { AppState }
 
@@ -19,6 +20,20 @@ export interface HealthResponse {
   rowsQuarantined: number
   pendingEditsCount: number
   degradedReason: string | null
+  /**
+   * O que o cabecalho da planilha tem de diferente do esquema declarado
+   * (`H-96`). Vazio e o caso normal.
+   *
+   * **Viaja no health, e nao em rota propria**, por dois motivos. A casca ja
+   * faz *poll* deste corpo a cada 5 s, entao o aviso e o contador da lateral
+   * nao custam requisicao nenhuma. E ele existe justamente quando NAO ha
+   * leitura boa — `firstRun` desliga `useNavCounts`, e uma rota propria
+   * chegaria muda no unico momento em que o operador precisa dela.
+   *
+   * `degradedReason` diz a frase; isto diz QUAIS colunas, para a tela nomear as
+   * duas pontas (`RF-44`).
+   */
+  schemaDivergences: SchemaDivergence[]
   /** `H-32`. Alguem tem a planilha aberta no Excel. Sinal, nunca acao (A-58). */
   externalLock: boolean
   /** `H-32`. Arquivos de conflito do OneDrive, so o nome. */
@@ -63,6 +78,7 @@ export function buildHealthResponse(config: AppConfig, store: StoreAccess): Heal
     // Fila de edicoes chega em H-23.
     pendingEditsCount: state.pendingEdits.length,
     degradedReason: state.degradedReason,
+    schemaDivergences: state.schemaDivergences,
     externalLock: state.externalLock,
     conflictFiles: state.conflictFiles,
     today: toIsoDay(currentDay(config.timezone)),
