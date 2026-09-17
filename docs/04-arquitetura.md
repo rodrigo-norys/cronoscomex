@@ -219,6 +219,13 @@ sequenceDiagram
     API->>G: aplicar edições consolidadas
     G->>W: pausar
     G->>G: aguardar releitura em voo
+    alt uma coluna mudou de lugar no cabeçalho
+        G->>W: retomar
+        G-->>U: 409 CABECALHO_DESLOCADO
+    else linha de cabeçalho em branco
+        G->>W: retomar
+        G-->>U: 409 CABECALHO_VAZIO
+    end
     G->>F: existe ~$planilha.xlsx?
     alt Excel está com o arquivo aberto
         F-->>G: lock presente
