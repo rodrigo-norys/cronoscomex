@@ -270,11 +270,44 @@ export function processFixture(overrides: Partial<ProcessDto> = {}): ProcessDto 
   }
 }
 
+/**
+ * Os 16 rotulos da aba real, medidos em 16/09/2026 (`H-95`).
+ *
+ * Literais de proposito: `H` se chama `ETA` e guarda PORTO, e `M` e `P` tem
+ * nomes que o Excel gerou sozinho. A tabela mostra o que o arquivo diz, e uma
+ * fixture "arrumada" esconderia justamente o caso que a historia trata.
+ */
+export const HEADER_LABELS: Readonly<Record<string, string>> = {
+  A: 'REF',
+  B: 'CLT',
+  C: 'IMPORTADOR',
+  D: 'BL',
+  E: 'AGENTE',
+  F: 'CNTR',
+  G: 'NAVIO',
+  H: 'ETA',
+  I: 'ETA2',
+  J: 'MERCADORIA',
+  K: 'RG',
+  L: 'STATUS',
+  M: 'Coluna 13',
+  N: 'R$ ENVIADO',
+  O: 'DOCS ENVIADOS',
+  P: 'Coluna1',
+}
+
 export function processesFixture(
   items: ProcessDto[] = [processFixture()],
   overrides: Partial<ProcessesResponse> = {},
 ): ProcessesResponse {
-  return { items, total: items.length, limit: 200, offset: 0, ...overrides }
+  return {
+    items,
+    total: items.length,
+    limit: 200,
+    offset: 0,
+    headerLabels: { ...HEADER_LABELS },
+    ...overrides,
+  }
 }
 
 /**
@@ -454,8 +487,8 @@ export interface ApiStub {
   failRemoveGroup(message: string): void
   /** Os `DELETE` de agrupamento, na ordem — a URL diz o que foi pedido. */
   readonly removals: string[]
-  /** `POST /api/clients/rules` passa a recusar com esta mensagem. Distinto de
-      `failClientRule`, que e a rota por REF de `H-79`. */
+  /** `POST /api/clients/rules` passa a recusar com esta mensagem. Era preciso
+      distingui-la da rota por REF ate `H-95`, que removeu aquela. */
   failCreateClientRule(message: string): void
   /** Os corpos enviados a `POST /api/clients/rules`, na ordem. */
   readonly ruleBodies: { match: string; value: string; label: string }[]
@@ -486,8 +519,6 @@ export interface ApiStub {
   failColorOptions(): void
   /** `PATCH /api/processes/:ref/color` passa a recusar com esta mensagem. */
   failEnqueueColor(message: string): void
-  /** `PUT /api/processes/:ref/client` passa a recusar com esta mensagem. */
-  failClientRule(message: string): void
   /** `POST /api/edits/apply` passa a responder 200 com este corpo. */
   serveWorkbookConfig(config: Partial<WorkbookConfigResponse>): void
   failSaveWorkbookPath(message: string): void
@@ -550,7 +581,6 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
   let detail = processDetailFixture()
   let detailStatus = 200
   let enqueueFailure: string | null = null
-  let clientRuleFailure: string | null = null
   let colorOptions: ColorOption[] = [
     {
       label: 'Verde (tom A)',
@@ -818,29 +848,6 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
         } as Response)
       }
 
-      // Pelo mesmo motivo do `/color` acima: antes do `startsWith` do detalhe.
-      if (path.endsWith('/client') && init?.method === 'PUT') {
-        if (clientRuleFailure !== null) {
-          const message = clientRuleFailure
-          return Promise.resolve({
-            ok: false,
-            status: 400,
-            json: () => Promise.resolve({ error: { code: 'CORPO_INVALIDO', message } }),
-          } as Response)
-        }
-        return Promise.resolve({
-          ok: true,
-          status: 200,
-          json: () =>
-            Promise.resolve({
-              outcome: 'entrada-nova',
-              key: 'ACME',
-              label: 'Acme',
-              value: 'ACME-12',
-            }),
-        } as Response)
-      }
-
       if (path.startsWith('/api/processes/')) {
         return Promise.resolve({
           ok: detailStatus === 200,
@@ -1060,9 +1067,6 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
     },
     failEnqueueEdit: (message) => {
       enqueueFailure = message
-    },
-    failClientRule: (message) => {
-      clientRuleFailure = message
     },
     serveColorOptions: (next) => {
       colorOptions = next

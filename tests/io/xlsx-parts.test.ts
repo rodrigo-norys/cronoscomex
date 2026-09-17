@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  parseHeaderLabels,
   parseSharedStrings,
   parseSheetRows,
   parseStyles,
@@ -320,5 +321,64 @@ describe('parseSheetRows — a chave de estilo de cada celula', () => {
     )
 
     expect(linha?.cellStyleKeys).toEqual({ A: 'none' })
+  })
+})
+
+/**
+ * `H-95`. A linha de cabecalho, que era lida e jogada fora.
+ *
+ * `parseSheetRows` a pula por `firstDataRow`, e `headerRow` existia em
+ * `config/app.json` sem ninguem ler o conteudo dela.
+ */
+describe('parseHeaderLabels', () => {
+  it('le os rotulos da linha de cabecalho, por letra de coluna', () => {
+    const labels = parseHeaderLabels(
+      sheet('<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>2</v></c></row>'),
+      options(),
+      1,
+    )
+
+    expect(labels).toEqual({ A: 'REF-A', B: 'ACME LOG' })
+  })
+
+  it('OMITE a celula de cabecalho vazia — ausencia de rotulo nao vira rotulo', () => {
+    const labels = parseHeaderLabels(
+      sheet('<row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1"/></row>'),
+      options(),
+      1,
+    )
+
+    expect(labels).toEqual({ A: 'REF-A' })
+  })
+
+  it('devolve vazio quando a linha de cabecalho nao existe', () => {
+    const labels = parseHeaderLabels(
+      sheet('<row r="2"><c r="A2" t="s"><v>0</v></c></row>'),
+      options(),
+      1,
+    )
+
+    expect(labels).toEqual({})
+  })
+
+  it('conta a linha implicita, como parseSheetRows: sem `r`, e a seguinte', () => {
+    // Sem isto o cabecalho seria procurado na linha errada num arquivo que
+    // omite o atributo — o mesmo cuidado que a leitura de dados ja tem.
+    const labels = parseHeaderLabels(sheet('<row><c r="A1" t="s"><v>0</v></c></row>'), options(), 1)
+
+    expect(labels).toEqual({ A: 'REF-A' })
+  })
+
+  it('le o rotulo LITERAL, sem corrigir o que o arquivo diz', () => {
+    // Medido em 16/09/2026: a coluna `H` se chama `ETA` e guarda PORTO, e `M` e
+    // `P` se chamam `Coluna 13` e `Coluna1`. Corrigir aqui criaria uma segunda
+    // verdade (regra inviolavel 1).
+    const labels = parseHeaderLabels(
+      sheet('<row r="1"><c r="H1" t="inlineStr"><is><t>ETA</t></is></c></row>'),
+      options(),
+      1,
+    )
+
+    expect(labels.H).toBe('ETA')
   })
 })

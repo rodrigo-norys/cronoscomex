@@ -70,6 +70,7 @@ function state(overrides: Partial<StoreState> = {}): StoreState {
     processes: [],
     fileHash: 'sha256:abc',
     sheetName: '2026',
+    headerLabels: {},
     lastReadAt: new Date('2026-08-07T14:22:31.004Z'),
     lastReadOk: true,
     degradedReason: null,
@@ -99,7 +100,9 @@ describe('GET /api/processes — envelope', () => {
   it('devolve o contrato completo', async () => {
     const body = (await get('/api/processes')).json()
 
-    expect(Object.keys(body).sort()).toEqual(['items', 'limit', 'offset', 'total'])
+    // `H-95`: `headerLabels` entra no ENVELOPE, e nao em cada item — e
+    // propriedade da aba, e repeti-la por processo custaria 16 pares por linha.
+    expect(Object.keys(body).sort()).toEqual(['headerLabels', 'items', 'limit', 'offset', 'total'])
     expect(body.limit).toBe(200)
     expect(body.offset).toBe(0)
   })

@@ -44,8 +44,8 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E12 — Os achados da revisão de estilo ✅ | **H-73 … H-76, todas concluídas** | 2 | 1 | 1 |
 | E13 — O operacional que edita, ordena e cria ✅ | **H-77 … H-81, todas concluídas.** Épico **retroativo**: o código entrou em 02/09/2026 e as histórias foram escritas em 03/09 | 3 | 0 | 2 |
 | E14 — A casca que se opera, não só se lê ✅ | **H-82 a H-92 ✅ — o épico fechou em 16/09/2026, com `H-91`.** Primeiro épico **prospectivo** desde `E12`: as nove primeiras nascem antes do código (`D-29` a `D-34`), `H-91` entra em 08/09/2026 por `D-35`, e `H-92` em 10/09/2026 por `D-39`. `H-91` passou de M para **G** na fatia de 11/09, quando o contrato dela dobrou | 3 | 6 | 2 |
-| E15 — A tabela é a planilha, e a cor é só cor | **`H-93` e `H-94` ✅; `H-95` e `H-96` abertas.** Nasce de `D-40` a `D-43`, em 10 e 11/09/2026: a cor deixa de apontar responsável e vira aparência, e a tabela passa a espelhar o arquivo — as 16 colunas com o nome do cabeçalho. `H-93` veio de `E14` em 11/09, por estar grande demais. `H-96` nasce de defeito **simulado**, não observado. **As quatro são G**, pela régua do topo | 0 | 0 | 4 |
-| **Total** | **96** — 94 concluídas, 2 abertas | **36** | **50** | **10** |
+| E15 — A tabela é a planilha, e a cor é só cor | **`H-93` a `H-95` ✅; só `H-96` aberta, e escrita para não ser executada.** Nasce de `D-40` a `D-43`, em 10 e 11/09/2026: a cor deixa de apontar responsável e vira aparência, e a tabela passa a espelhar o arquivo — as 16 colunas com o nome do cabeçalho. `H-93` veio de `E14` em 11/09, por estar grande demais. `H-96` nasce de defeito **simulado**, não observado. **As quatro são G**, pela régua do topo | 0 | 0 | 4 |
+| **Total** | **96** — 95 concluídas, 1 aberta | **36** | **50** | **10** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -221,7 +221,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 
 - [H-93 — A cor sai da regra de responsável](#h-93) ✅
 - [H-94 — O fundo da célula é a cor da planilha, e a casca recua de tom](#h-94) ✅
-- [H-95 — As dezesseis colunas, com o nome literal do cabeçalho](#h-95)
+- [H-95 — As dezesseis colunas, com o nome literal do cabeçalho](#h-95) ✅
 - [H-96 — A coluna se resolve por nome, e não por letra](#h-96)
 
 
@@ -11060,6 +11060,49 @@ pinta a linha, não a célula.
 <a id="h-95"></a>
 
 ### H-95 — As dezesseis colunas, com o nome literal do cabeçalho
+
+> ✅ **CONCLUÍDA em 16/09/2026.** A suíte foi de 2135 para **2131 testes, em 85
+> arquivos** — um a menos, porque `tests/http/process-client.test.ts` saiu junto
+> com a rota. **Entraram sete testes novos:** cinco da leitura de cabeçalho e
+> dois da tabela, mais quatro reescritos pela geometria nova.
+>
+> **Os 16 rótulos foram MEDIDOS do arquivo, e confirmam os dois casos-limite:**
+> `A REF` · `B CLT` · `C IMPORTADOR` · `D BL` · `E AGENTE` · `F CNTR` ·
+> `G NAVIO` · **`H ETA`** · `I ETA2` · `J MERCADORIA` · `K RG` · `L STATUS` ·
+> `M Coluna 13` · `N R$ ENVIADO` · `O DOCS ENVIADOS` · `P Coluna1`. A coluna `H`
+> se chama `ETA` e guarda **porto** — os valores distintos dela são `MULTI`,
+> `MULTIRIO`, `RIO`, `RO` e `SC` —, e `M` e `P` carregam nomes que o Excel gerou
+> sozinho. A tabela mostra o que o arquivo diz: corrigir na tela criaria uma
+> segunda verdade (regra inviolável 1).
+>
+> **Quatro divergências, e duas mudaram desenho.** A primeira: o plano listava o
+> leitor e a rota e **pulava o elo do meio** — `StoreState` é quem a rota lê, e
+> sem campo lá os rótulos não teriam de onde sair. A segunda: `headerLabels`
+> viaja no **envelope** e não em cada item, porque é propriedade da aba —
+> repeti-la por processo custaria 16 pares por linha numa página de até 500. As
+> outras duas: `web/tests/support/api-stub.ts` estava fora da lista, e teria
+> virado código morto que o `typecheck` não pega; e `RF-32`/`RF-33` **já
+> traziam** a emenda de `D-43`, escritos assim quando a história nasceu — a
+> divergência que eu previa não existia.
+>
+> **Duas fontes de rótulo, e elas divergiam.** `SORT_LABELS` dizia "Processo do
+> cliente" onde o arquivo diz `CLT`. O cabeçalho passou a vir do arquivo, e
+> `SORT_LABELS` ficou nomeando só a **ordem** — onde "Ordem da planilha" não tem
+> coluna nenhuma. Sem isso a mesma coluna teria dois nomes na mesma tela.
+>
+> **A rota saiu inteira, e o rastro dela era maior que o arquivo:** além de
+> `src/http/routes/process-client.ts` e do teste, ela vivia no registro do
+> servidor, em `api-client.ts`, no stub da interface, em **quatro comentários**
+> que a citavam como âncora — e a guarda só vê os de `src/` e `web/src/`, então
+> o quinto, no stub, teria sobrevivido falso.
+>
+> **Uma previsão minha estava errada, e vale registrar:** eu disse na fatia que
+> duas guardas de `tests/repo/estilo.test.ts` quebrariam por causa do realce de
+> linha, e elas testam regex contra string de amostra — não varrem a tabela. As
+> que de fato quebraram foram outras duas, e por causa do seletor de colunas:
+> `C04` cobra `border-border-subtle` no papel de seção, e `D-22` bane sombra do
+> conjunto. Prever quebra que não acontece custa tanto quanto não prever a que
+> acontece.
 
 > Nasce de `D-43`, em 10/09/2026. **A tabela existe desde `H-17` e mostra 9
 > colunas desde `H-49`**, e

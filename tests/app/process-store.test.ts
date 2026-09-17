@@ -273,6 +273,7 @@ describe('process-store — concorrencia', () => {
         fileHash: `sha256:${'a'.repeat(64)}`,
         readAt: new Date('2026-08-03T12:00:00Z'),
         sheetName: '2026',
+        headerLabels: {},
         sheetPath: 'xl/worksheets/sheet1.xml',
       }
     }
@@ -299,6 +300,7 @@ describe('process-store — concorrencia', () => {
         fileHash: `sha256:${String(reads).repeat(64).slice(0, 64)}`,
         readAt: new Date('2026-08-03T12:00:00Z'),
         sheetName: '2026',
+        headerLabels: {},
         sheetPath: 'xl/worksheets/sheet1.xml',
       }
     }
@@ -396,6 +398,7 @@ describe('process-store — eventos de log (H-31)', () => {
         fileHash: `sha256:${'b'.repeat(64)}`,
         readAt: new Date('2026-08-04T12:00:00Z'),
         sheetName: '2026',
+        headerLabels: {},
         sheetPath: 'xl/worksheets/sheet1.xml',
       }),
     })
@@ -486,6 +489,7 @@ describe('settle', () => {
           fileHash: `sha256:${'c'.repeat(64)}`,
           readAt: new Date('2026-08-14T12:00:00Z'),
           sheetName: '2026',
+          headerLabels: {},
           sheetPath: 'xl/worksheets/sheet1.xml',
         }
       },
@@ -520,6 +524,7 @@ describe('settle', () => {
           fileHash: `sha256:${'d'.repeat(64)}`,
           readAt: new Date('2026-08-14T12:00:00Z'),
           sheetName: '2026',
+          headerLabels: {},
           sheetPath: 'xl/worksheets/sheet1.xml',
         }
       },
@@ -600,6 +605,7 @@ describe('process-store — reconfiguracao do caminho (H-34)', () => {
           fileHash: 'sha256:x',
           readAt: new Date(),
           sheetName: '2026',
+          headerLabels: {},
           sheetPath: 'xl/worksheets/sheet1.xml',
         }
       },
@@ -638,6 +644,7 @@ describe('process-store — reconfiguracao do caminho (H-34)', () => {
           fileHash: 'sha256:x',
           readAt: new Date(),
           sheetName: '2026',
+          headerLabels: {},
           sheetPath: 'xl/worksheets/sheet1.xml',
         }
       },
@@ -678,6 +685,7 @@ describe('initStore — o mapa de clientes chega a composicao', () => {
     fileHash: `sha256:${'c'.repeat(64)}`,
     readAt: new Date('2026-08-31T12:00:00Z'),
     sheetName: '2026',
+    headerLabels: {},
     sheetPath: 'xl/worksheets/sheet1.xml',
   })
 
@@ -730,6 +738,7 @@ describe('initStore — o mapa de equipe chega a composicao (H-50)', () => {
     fileHash: `sha256:${'d'.repeat(64)}`,
     readAt: new Date('2026-09-01T12:00:00Z'),
     sheetName: '2026',
+    headerLabels: {},
     sheetPath: 'xl/worksheets/sheet1.xml',
   })
 

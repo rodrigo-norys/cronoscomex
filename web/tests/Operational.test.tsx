@@ -51,7 +51,9 @@ describe('tabela', () => {
     // `H-75`, `ACHADO 7`: o nome acessível é o mesmo de `AlertRow` para a
     // mesma ação, e CONTÉM o texto visível — a REF —, como `SC 2.5.3` exige.
     expect(await screen.findByRole('link', { name: 'Abrir o detalhe de FT501.26' })).toBeTruthy()
-    expect(screen.getByText('BETA')).toBeTruthy()
+    // `H-95`: a coluna Cliente saiu, e com ela o valor consolidado. A REF da
+    // segunda linha e o que prova que as duas foram desenhadas.
+    expect(screen.getByRole('link', { name: 'Abrir o detalhe de FT502.26' })).toBeTruthy()
   })
 
   it('exibe traco para campo vazio e para eta2 nulo', async () => {
@@ -588,8 +590,15 @@ describe('filtros globais', () => {
  * `H-49`. A coluna Cliente responde "quem e o cliente"; a do lado guarda o
  * valor da celula CLT, que continua sendo como se acha um processo aqui.
  */
-describe('cliente consolidado e processo do cliente', () => {
-  it('exibe as duas colunas, com o valor de cada uma', async () => {
+/**
+ * `H-95`. A coluna derivada Cliente SAIU, e a consolidacao ficou inteira.
+ *
+ * O bloco media as duas colunas lado a lado. Agora prova o inverso para a
+ * primeira: ela nao esta mais la, e o que a tabela mostra e a celula, com o
+ * nome que o arquivo lhe da.
+ */
+describe('a coluna derivada Cliente saiu (H-95)', () => {
+  it('mostra a celula CLT com o nome do arquivo, e nao o cliente consolidado', async () => {
     api.serveProcesses(
       processesFixture([
         processFixture({ ref: 'FT501.26', client: 'Acme Comércio', clientProcess: 'ACM-29' }),
@@ -600,10 +609,45 @@ describe('cliente consolidado e processo do cliente', () => {
     await screen.findByRole('grid')
     const colunas = screen.getAllByRole('columnheader').map((th) => th.textContent)
 
-    expect(colunas.some((texto) => texto?.includes('Cliente'))).toBe(true)
-    expect(colunas.some((texto) => texto?.includes('Processo do cliente'))).toBe(true)
-    expect(screen.getByText('Acme Comércio')).toBeTruthy()
+    expect(colunas.some((texto) => texto?.includes('CLT'))).toBe(true)
+    expect(colunas.some((texto) => texto?.includes('Cliente'))).toBe(false)
     expect(screen.getByText('ACM-29')).toBeTruthy()
+    expect(screen.queryByText('Acme Comércio')).toBeNull()
+  })
+
+  /**
+   * As 16 da aba mais a Categoria, com o texto LITERAL da linha 1 — inclusive o
+   * que MENTE: `H` se chama `ETA` e guarda porto, e `M` e `P` tem nomes que o
+   * Excel gerou sozinho. Corrigir na tela criaria uma segunda verdade.
+   */
+  it('nomeia as 17 colunas com o texto literal do cabecalho', async () => {
+    api.serveProcesses(processesFixture())
+    renderPage()
+
+    await screen.findByRole('grid')
+    const colunas = screen.getAllByRole('columnheader').map((th) => th.textContent ?? '')
+
+    expect(colunas).toHaveLength(17)
+    expect(colunas.some((texto) => texto.includes('Coluna 13'))).toBe(true)
+    expect(colunas.some((texto) => texto.includes('R$ ENVIADO'))).toBe(true)
+    expect(colunas.some((texto) => texto.includes('Coluna1'))).toBe(true)
+  })
+
+  /** `RF-43`: esconder e a escolha do operador, e ela vive no endereco. */
+  it('esconde a coluna que o operador desmarca, e a devolve com Mostrar todas', async () => {
+    api.serveProcesses(processesFixture())
+    renderPage()
+    await screen.findByRole('grid')
+
+    fireEvent.click(screen.getByRole('checkbox', { name: 'Coluna 13' }))
+
+    await waitFor(() => expect(screen.getAllByRole('columnheader')).toHaveLength(16))
+    expect(window.location.search).toContain('hidden=M')
+
+    fireEvent.click(screen.getByRole('button', { name: 'Mostrar todas' }))
+
+    await waitFor(() => expect(screen.getAllByRole('columnheader')).toHaveLength(17))
+    expect(window.location.search).not.toContain('hidden')
   })
 })
 
@@ -691,7 +735,8 @@ describe('densidade e número na tabela (H-61)', () => {
       /\btext-(xs|sm|base|lg|xl|\[)/.test(celula.className),
     )
 
-    expect(celulas.length).toBe(9)
+    // `H-95`: eram nove — sete da planilha e duas derivadas.
+    expect(celulas.length).toBe(17)
     expect(comTamanho.map((celula) => celula.className)).toEqual([])
   })
 
@@ -833,9 +878,10 @@ describe('densidade e número na tabela (H-61)', () => {
     const linha = linhas.filter((uma) => uma.closest('tbody') !== null)[0] as HTMLElement
     const celulas = [...linha.querySelectorAll('td')]
 
-    // REF e a coluna A; Categoria e a L.
+    // `H-95` moveu os indices: A continua em 0, e L — `STATUS` — virou a
+    // decima segunda, porque as 16 da aba entraram na ordem do arquivo.
     expect(celulas[0]?.style.backgroundColor).toBe('rgb(0, 255, 0)')
-    expect(celulas[8]?.style.backgroundColor).toBe('rgb(255, 255, 0)')
+    expect(celulas[11]?.style.backgroundColor).toBe('rgb(255, 255, 0)')
   })
 
   /**
@@ -853,13 +899,13 @@ describe('densidade e número na tabela (H-61)', () => {
     const celulas = [...linha.querySelectorAll('td')]
 
     // A coluna B existe na planilha e nao foi declarada: fica sem fundo.
-    expect(celulas[2]?.style.backgroundColor).toBe('')
-    /*
-      Cliente NUNCA recebe fundo, e por outro motivo: ele e o resultado da
-      consolidacao de `client-map.json`, e nao o conteudo de uma celula. Pintar
-      com a cor de alguma coluna atribuiria a ele uma cor que a planilha nao deu.
-    */
     expect(celulas[1]?.style.backgroundColor).toBe('')
+    /*
+      A Categoria NUNCA recebe fundo, e por outro motivo: ela e derivada de
+      `TD-01` e nao tem celula na planilha. Ate `H-95` o mesmo valia para a
+      coluna Cliente, que saiu.
+    */
+    expect(celulas[16]?.style.backgroundColor).toBe('')
   })
 })
 
@@ -891,8 +937,8 @@ describe('edição na célula', () => {
     renderPage()
     await screen.findByRole('grid')
 
-    fireEvent.click(celula(/^Editar Navio de FT501\.26/))
-    const campo = screen.getByRole('textbox', { name: 'Navio de FT501.26' })
+    fireEvent.click(celula(/^Editar NAVIO de FT501\.26/))
+    const campo = screen.getByRole('textbox', { name: 'NAVIO de FT501.26' })
     fireEvent.change(campo, { target: { value: 'KOTA ELOK' } })
     fireEvent.keyDown(campo, { key: 'Enter' })
 
@@ -906,14 +952,14 @@ describe('edição na célula', () => {
     renderPage()
     await screen.findByRole('grid')
 
-    fireEvent.click(celula(/^Editar Importador de FT501\.26/))
-    const campo = screen.getByRole('textbox', { name: 'Importador de FT501.26' })
+    fireEvent.click(celula(/^Editar IMPORTADOR de FT501\.26/))
+    const campo = screen.getByRole('textbox', { name: 'IMPORTADOR de FT501.26' })
     fireEvent.change(campo, { target: { value: 'OUTRO' } })
     fireEvent.keyDown(campo, { key: 'Escape' })
     fireEvent.blur(campo)
 
     expect(api.editBodies).toEqual([])
-    expect(screen.getByRole('button', { name: /^Editar Importador de FT501\.26/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /^Editar IMPORTADOR de FT501\.26/ })).toBeTruthy()
   })
 
   it('não enfileira quando o valor não mudou', async () => {
@@ -974,25 +1020,6 @@ describe('edição na célula', () => {
     // E o valor derivado continua na tela, só que sem porta de edição.
     expect(screen.getByText('Em andamento')).toBeTruthy()
   })
-
-  /**
-   * Cliente **é** editável, e por outra porta: ela não é célula da planilha, e
-   * sim a regra de consolidação de `client-map.json` — a mesma de onde a coluna
-   * já lia (`H-49`). Enfileirar seria gravar na célula B, que é o que a coluna
-   * ao lado faz.
-   */
-  it('Cliente vai para a rota do client-map, e não para a fila', async () => {
-    renderPage()
-    await screen.findByRole('grid')
-
-    fireEvent.click(celula(/^Editar Cliente de FT501\.26/))
-    const campo = screen.getByRole('textbox', { name: 'Cliente de FT501.26' })
-    fireEvent.change(campo, { target: { value: 'Acme Comércio' } })
-    fireEvent.keyDown(campo, { key: 'Enter' })
-
-    await waitFor(() => expect(api.calls).toContain('PUT /api/processes/FT501.26/client'))
-    expect(api.editBodies).toEqual([])
-  })
 })
 
 /**
@@ -1025,8 +1052,8 @@ describe('navegação por grade', () => {
 
     const tabulaveis = celulas().filter((no) => no.getAttribute('tabindex') === '0')
     expect(tabulaveis).toHaveLength(1)
-    // 2 linhas × 9 colunas + o cabeçalho: 27 células, 26 fora da ordem.
-    expect(celulas().filter((no) => no.getAttribute('tabindex') === '-1')).toHaveLength(26)
+    // 2 linhas × 17 colunas + o cabeçalho: 51 células, 50 fora da ordem.
+    expect(celulas().filter((no) => no.getAttribute('tabindex') === '-1')).toHaveLength(50)
   })
 
   /** Os controles DENTRO das células saem da ordem: quem tabula é a grade. */
@@ -1065,9 +1092,9 @@ describe('navegação por grade', () => {
     await screen.findByRole('grid')
 
     fireEvent.keyDown(celulaEm(0, 0), { key: 'End', ctrlKey: true })
-    expect(celulaEm(2, 8).getAttribute('tabindex')).toBe('0')
+    expect(celulaEm(2, 16).getAttribute('tabindex')).toBe('0')
 
-    fireEvent.keyDown(celulaEm(2, 8), { key: 'Home', ctrlKey: true })
+    fireEvent.keyDown(celulaEm(2, 16), { key: 'Home', ctrlKey: true })
     expect(celulaEm(0, 0).getAttribute('tabindex')).toBe('0')
   })
 
@@ -1085,7 +1112,7 @@ describe('navegação por grade', () => {
     renderPage()
     await screen.findByRole('grid')
 
-    fireEvent.keyDown(celulaEm(1, 6), { key: 'Enter' })
+    fireEvent.keyDown(celulaEm(1, 3), { key: 'Enter' })
 
     expect(screen.getByRole('textbox', { name: 'BL de FT501.26' })).toBeTruthy()
   })
@@ -1099,10 +1126,10 @@ describe('navegação por grade', () => {
     renderPage()
     await screen.findByRole('grid')
 
-    fireEvent.keyDown(celulaEm(1, 6), { key: 'Enter' })
+    fireEvent.keyDown(celulaEm(1, 3), { key: 'Enter' })
     fireEvent.keyDown(screen.getByRole('textbox', { name: 'BL de FT501.26' }), { key: 'Escape' })
 
-    await waitFor(() => expect(document.activeElement).toBe(celulaEm(1, 6)))
+    await waitFor(() => expect(document.activeElement).toBe(celulaEm(1, 3)))
   })
 
   /** Dentro do campo as setas pertencem ao TEXTO, não à grade. */
@@ -1112,12 +1139,12 @@ describe('navegação por grade', () => {
 
     // O foco é o que torna a célula a corrente — no navegador ele chega pelo
     // clique ou pela seta; `fireEvent.keyDown` sozinho não foca nada.
-    celulaEm(1, 6).focus()
-    fireEvent.keyDown(celulaEm(1, 6), { key: 'Enter' })
+    celulaEm(1, 3).focus()
+    fireEvent.keyDown(celulaEm(1, 3), { key: 'Enter' })
     fireEvent.keyDown(screen.getByRole('textbox', { name: 'BL de FT501.26' }), {
       key: 'ArrowRight',
     })
 
-    expect(celulaEm(1, 6).getAttribute('tabindex')).toBe('0')
+    expect(celulaEm(1, 3).getAttribute('tabindex')).toBe('0')
   })
 })

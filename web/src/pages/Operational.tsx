@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { ArrivalCalendar } from '../components/ArrivalCalendar.tsx'
 import { NewRowButton } from '../components/NewRowButton.tsx'
 import { PageAlert } from '../components/PageAlert.tsx'
-import { ProcessTable } from '../components/ProcessTable.tsx'
+import { COLUMNS, labelOf, ProcessTable } from '../components/ProcessTable.tsx'
 import { Skeleton } from '../components/Skeleton.tsx'
 import { useFirstLoad } from '../hooks/useFirstLoad.ts'
 import { useIndicators } from '../hooks/useIndicators.ts'
@@ -41,7 +41,11 @@ export function Operational({ queryString, dataVersion }: OperationalProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <Controls query={query} onEdited={() => setEditVersion((version) => version + 1)} />
+      <Controls
+        query={query}
+        onEdited={() => setEditVersion((version) => version + 1)}
+        headerLabels={processes.status === 'pronto' ? processes.page.headerLabels : {}}
+      />
 
       {processes.status === 'semLeitura' && (
         <PageAlert
@@ -83,6 +87,8 @@ export function Operational({ queryString, dataVersion }: OperationalProps) {
                 order={query.order}
                 onSort={query.toggleSort}
                 onEdited={() => setEditVersion((version) => version + 1)}
+                headerLabels={processes.page.headerLabels}
+                hidden={query.hidden}
               />
               {/* O rodape vem DEPOIS da grade no DOM, e e por isso que a grade
                   existe: sem ela, chegar aqui pelo teclado custaria uma parada
@@ -115,9 +121,11 @@ export function Operational({ queryString, dataVersion }: OperationalProps) {
 function Controls({
   query,
   onEdited,
+  headerLabels,
 }: {
   query: ReturnType<typeof useProcessQuery>
   onEdited: () => void
+  headerLabels: Record<string, string>
 }) {
   return (
     <div className="flex flex-wrap items-end gap-4">
@@ -151,8 +159,77 @@ function Controls({
         <NewRowButton onCreated={onEdited} />
       </div>
 
+      <ColumnPicker query={query} headerLabels={headerLabels} />
+
       <SortState query={query} />
     </div>
+  )
+}
+
+/**
+ * Quais colunas a tabela mostra (`H-95`, `RF-43`).
+ *
+ * **As 17 aparecem por padrao, e o que o operador faz e TIRAR** — determinacao 4
+ * de `D-43`. Por isso o controle guarda as ESCONDIDAS: coluna que a planilha
+ * ganhar aparece sozinha, em vez de precisar ser autorizada.
+ *
+ * **Caixa de marcacao, e nao seletor multiplo:** o operador precisa ver de uma
+ * vez o que esta dentro e o que esta fora, e um `<select multiple>` esconde o
+ * estado atras de rolagem. O rotulo e o do ARQUIVO — `CLT`, `ETA`, `Coluna 13`
+ * —, o mesmo que o cabecalho mostra; nomear diferente aqui obrigaria o operador
+ * a traduzir.
+ *
+ * `<details>` nativo: ele nao e modal, nao prende foco e fecha com Escape sem
+ * codigo nenhum. Um painel proprio teria de reimplementar os tres.
+ */
+function ColumnPicker({
+  query,
+  headerLabels,
+}: {
+  query: ReturnType<typeof useProcessQuery>
+  headerLabels: Record<string, string>
+}) {
+  const escondidas = query.hidden.length
+
+  return (
+    <details className="relative pb-1">
+      <summary className="motion-tint cursor-pointer list-none rounded-control border border-border-control bg-surface-raised px-2.5 py-1 text-sm text-text-secondary hover:text-text-primary">
+        Colunas
+        {escondidas > 0 && (
+          <span className="ml-1 font-mono tabular-nums">({escondidas} ocultas)</span>
+        )}
+      </summary>
+
+      {/*
+        `border-border-subtle` e SEM sombra, e os dois sao guarda: `C04` cobra a
+        borda sutil de todo papel de secao que nao seja o painel modal, e `D-22`
+        bane sombra do conjunto inteiro. A elevacao aqui vem da borda e do fundo
+        `raised`, como nos demais paineis.
+      */}
+      <div className="absolute right-0 z-20 mt-1 flex max-h-96 w-64 flex-col gap-1 overflow-y-auto rounded-container border border-border-subtle bg-surface-raised p-3 text-sm">
+        {COLUMNS.map((column) => (
+          <label key={column.key} className="flex items-center gap-2 text-text-secondary">
+            <input
+              type="checkbox"
+              checked={!query.hidden.includes(column.key)}
+              onChange={() => query.toggleColumn(column.key)}
+            />
+            <span className="truncate" title={labelOf(column, headerLabels)}>
+              {labelOf(column, headerLabels)}
+            </span>
+          </label>
+        ))}
+
+        <button
+          type="button"
+          onClick={query.showAllColumns}
+          disabled={escondidas === 0}
+          className="mt-1 rounded-control border border-border-control px-2 py-1 text-xs text-text-secondary hover:bg-surface-base disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
+        >
+          Mostrar todas
+        </button>
+      </div>
+    </details>
   )
 }
 

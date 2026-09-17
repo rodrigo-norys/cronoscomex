@@ -101,6 +101,7 @@ function emptyState(): StoreState {
     processes: [],
     fileHash: null,
     sheetName: '2026',
+    headerLabels: {},
     lastReadAt: new Date('2026-08-13T12:00:00Z'),
     lastReadOk: true,
     degradedReason: null,
@@ -716,6 +717,7 @@ describe('ESCRITA_INVALIDA', () => {
         fileHash: HASH_FALSO,
         readAt: new Date(),
         sheetName: '2026',
+        headerLabels: {},
         sheetPath: 'xl/worksheets/sheet1.xml',
       })),
     })

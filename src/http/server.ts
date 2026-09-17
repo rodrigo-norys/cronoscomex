@@ -29,7 +29,6 @@ import { registerFilterOptionsRoute } from './routes/filter-options.ts'
 import { registerHealthRoute } from './routes/health.ts'
 import { registerHistoryRoute } from './routes/history.ts'
 import { registerIndicatorsRoute } from './routes/indicators.ts'
-import { registerProcessClientRoute } from './routes/process-client.ts'
 import { registerProcessColorRoute } from './routes/process-color.ts'
 import { registerProcessesRoute } from './routes/processes.ts'
 import { registerQuarantineRoute } from './routes/quarantine.ts'
@@ -102,9 +101,9 @@ export function buildServer(
    */
   teamMap: readonly TeamMember[] = [],
   /**
-   * Mapa de clientes (`H-49`) e o caminho dele, para `PUT
-   * /api/processes/:ref/client` planejar contra a MESMA ordem que resolve a
-   * coluna e gravar onde o operador le.
+   * Mapa de clientes (`H-49`) e o caminho dele, para as rotas de `H-88`
+   * planejarem contra a MESMA ordem que resolve a coluna Cliente e gravarem
+   * onde o operador le.
    *
    * **Os dois juntos, e nao so o caminho.** Passar so o caminho faria a rota
    * recarregar o arquivo a cada requisicao, e planejar contra uma ordem que o
@@ -142,7 +141,6 @@ export function buildServer(
   registerHistoryRoute(app, config, store, historyPath)
   registerEditsRoutes(app, store, queuePath)
   registerProcessColorRoute(app, store, colorMap)
-  registerProcessClientRoute(app, store, clientMap, clientGroups, clientMapPath, applyClientMap)
   registerClientsRoutes(app, store, clientMap, clientGroups, clientMapPath, applyClientMap)
   registerTeamRoutes(app, store, teamMap, teamMapPath, applyTeamMap)
   registerApplyRoute(app)

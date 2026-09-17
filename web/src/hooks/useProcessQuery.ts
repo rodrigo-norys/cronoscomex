@@ -75,6 +75,29 @@ const SORT_FIELDS: readonly SortField[] = [
 export const PAGE_SIZES = [50, 100, 200, 500] as const
 export const DEFAULT_PAGE_SIZE = 200
 
+/**
+ * As colunas que o operador ESCONDEU, por chave (`H-95`).
+ *
+ * **O padrao e mostrar todas**, e a determinacao 4 de `D-43` e explicita: o que
+ * a escolha do operador faz e TIRAR. Guardar as escondidas, e nao as visiveis,
+ * e o que faz a coluna nova da planilha aparecer sozinha em vez de precisar ser
+ * autorizada — e o que mantem a URL curta no caso comum, que e nenhuma.
+ *
+ * Token invalido e IGNORADO, nao recusado: mesma tolerancia de `readSort` e do
+ * `offset`. A tabela descarta o que nao reconhece.
+ */
+const COLUNA = /^[A-Z0-9]{1,12}$/
+
+function readHidden(raw: string | null): readonly string[] {
+  if (raw === null) return []
+  const vistas = new Set<string>()
+  for (const parte of raw.split(',')) {
+    const chave = parte.trim().toUpperCase()
+    if (COLUNA.test(chave)) vistas.add(chave)
+  }
+  return [...vistas]
+}
+
 export interface ProcessQuery {
   readonly search: string
   /**
@@ -88,6 +111,13 @@ export interface ProcessQuery {
   readonly order: SortOrder
   readonly limit: number
   readonly offset: number
+  /**
+   * As colunas escondidas (`H-95`). Vazio significa que a tabela mostra todas.
+   *
+   * **Nao vai para a requisicao:** esconder coluna e apresentacao, e o servidor
+   * ja serve as 16 no DTO. Anexa-la faria a tela pedir de novo a cada clique.
+   */
+  readonly hidden: readonly string[]
   /** O que a pagina anexa a requisicao: os quatorze filtros **mais** estes. */
   readonly requestQuery: string
   setSearch(value: string): void
@@ -98,6 +128,10 @@ export interface ProcessQuery {
   clearSort(): void
   setLimit(value: number): void
   setOffset(value: number): void
+  /** Esconde a coluna, ou a traz de volta se ja estiver escondida. */
+  toggleColumn(key: string): void
+  /** Devolve a tabela ao padrao: todas as colunas a vista. */
+  showAllColumns(): void
 }
 
 function readSort(raw: string | null): SortField {
@@ -127,9 +161,13 @@ export function useProcessQuery(): ProcessQuery {
   const limit = readLimit(query.get('limit'))
   const offsetRaw = Number(query.get('offset') ?? '0')
   const offset = Number.isInteger(offsetRaw) && offsetRaw >= 0 ? offsetRaw : 0
+  const hidden = readHidden(query.get('hidden'))
 
   const requestQuery = useMemo(() => {
     const params = new URLSearchParams(query)
+    // Apresentacao nao viaja: o servidor serve as 16 colunas de qualquer jeito,
+    // e mandar `hidden` faria a tela refazer a busca a cada coluna escondida.
+    params.delete('hidden')
     // Explicito porque a URL guarda so o que difere do padrao: sem escrever o
     // valor, `limit` e `activeOnly` chegariam a rota com o padrao DELA.
     params.set('activeOnly', String(activeOnly))
@@ -227,6 +265,29 @@ export function useProcessQuery(): ProcessQuery {
     [write],
   )
 
+  /**
+   * Esconder coluna NAO volta para a primeira pagina, ao contrario dos demais
+   * controles: o conjunto nao muda, so o que dele se ve. Zerar o `offset` aqui
+   * tiraria o operador da pagina em que ele estava por um gesto de layout.
+   */
+  const toggleColumn = useCallback(
+    (key: string): void => {
+      write((draft) => {
+        const chave = key.toUpperCase()
+        const proximas = hidden.includes(chave)
+          ? hidden.filter((uma) => uma !== chave)
+          : [...hidden, chave]
+        if (proximas.length === 0) draft.delete('hidden')
+        else draft.set('hidden', proximas.join(','))
+      })
+    },
+    [write, hidden],
+  )
+
+  const showAllColumns = useCallback((): void => {
+    write((draft) => draft.delete('hidden'))
+  }, [write])
+
   return {
     search,
     activeOnly,
@@ -234,6 +295,7 @@ export function useProcessQuery(): ProcessQuery {
     order,
     limit,
     offset,
+    hidden,
     requestQuery,
     setSearch,
     setActiveOnly,
@@ -241,5 +303,7 @@ export function useProcessQuery(): ProcessQuery {
     clearSort,
     setLimit,
     setOffset,
+    toggleColumn,
+    showAllColumns,
   }
 }
