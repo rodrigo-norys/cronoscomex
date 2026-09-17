@@ -27,6 +27,11 @@ import type {
   ProcessesResponse,
 } from '../../src/http/routes/processes.ts'
 import type { QuarantineResponse } from '../../src/http/routes/quarantine.ts'
+import type {
+  TeamMemberRemovedResponse,
+  TeamMemberSavedResponse,
+  TeamResponse,
+} from '../../src/http/routes/team.ts'
 
 /**
  * O unico ponto da interface que fala HTTP.
@@ -64,6 +69,9 @@ export type {
   ProcessesResponse,
   QuarantineResponse,
   RuleReachResponse,
+  TeamMemberRemovedResponse,
+  TeamMemberSavedResponse,
+  TeamResponse,
 }
 
 /**
@@ -242,6 +250,77 @@ export async function removeClientGroup(
   }
 
   return (await response.json()) as ClientGroupRemovedResponse
+}
+
+/**
+ * O mapa de equipe: carteiras, importadores sem dono e a chave do proximo
+ * responsavel (`H-91`).
+ *
+ * **Sem `queryString`**, como `getClientKeys` e pelo mesmo motivo (`D-32`,
+ * determinacao 2): o que a rota serve e estado de configuracao, nao recorte.
+ * Anexar os filtros faria filtrar por um responsavel esconder os importadores
+ * que ainda nao tem dono.
+ */
+export async function getTeamMap(signal?: AbortSignal): Promise<TeamResponse> {
+  const response = await fetch('/api/team', signal ? { signal } : undefined)
+  if (response.status === 503) throw new NoReadYetError('GET /api/team')
+  if (!response.ok) throw new Error(`GET /api/team respondeu ${response.status}`)
+
+  return (await response.json()) as TeamResponse
+}
+
+/**
+ * Cria ou redefine um responsavel (`H-91`).
+ *
+ * **A chave vem do servidor**, e nunca do nome digitado: `nextKey` chega em
+ * `GET /api/team`, e a tela so a devolve. Derivar a chave do nome levaria o
+ * nome da pessoa para o dominio, para o ranking e para a URL do filtro (regra
+ * inviolavel 8).
+ *
+ * `importers` e a carteira INTEIRA, e nao um acrescimo: a rota redefine o
+ * membro. Quem soma o importador novo a lista que ja existia e quem chama.
+ */
+export async function saveTeamMember(
+  key: string,
+  label: string,
+  importers: readonly string[],
+): Promise<TeamMemberSavedResponse> {
+  const response = await fetch(`/api/team/${encodeURIComponent(key)}`, {
+    method: 'PUT',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ label, importers }),
+  })
+  if (!response.ok) {
+    const body = (await response.json()) as { error?: { message?: string } }
+    throw new Error(body.error?.message ?? `PUT /api/team/${key} respondeu ${response.status}`)
+  }
+
+  return (await response.json()) as TeamMemberSavedResponse
+}
+
+/**
+ * Desfaz um responsavel, ou tira um importador da carteira dele (`H-91`).
+ *
+ * `importer` nulo desfaz o responsavel INTEIRO; com ele, sai so aquele
+ * importador. Nos dois casos o que sai cai em "Sem responsavel" — nenhum
+ * processo fica sem grupo.
+ */
+export async function removeTeamMember(
+  key: string,
+  importer: string | null,
+): Promise<TeamMemberRemovedResponse> {
+  const path =
+    importer === null
+      ? `/api/team/${encodeURIComponent(key)}`
+      : `/api/team/${encodeURIComponent(key)}/importers/${encodeURIComponent(importer)}`
+
+  const response = await fetch(path, { method: 'DELETE' })
+  if (!response.ok) {
+    const body = (await response.json()) as { error?: { message?: string } }
+    throw new Error(body.error?.message ?? `DELETE ${path} respondeu ${response.status}`)
+  }
+
+  return (await response.json()) as TeamMemberRemovedResponse
 }
 
 export async function getAlerts(

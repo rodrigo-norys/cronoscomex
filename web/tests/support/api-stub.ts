@@ -18,6 +18,7 @@ import type {
   ProcessesResponse,
 } from '../../../src/http/routes/processes.ts'
 import type { QuarantineResponse } from '../../../src/http/routes/quarantine.ts'
+import type { TeamResponse } from '../../../src/http/routes/team.ts'
 
 /**
  * Os valores medidos na planilha real em 07/08/2026, e nao numeros inventados:
@@ -403,6 +404,26 @@ export function filterOptionsFixture(
   }
 }
 
+/**
+ * O mapa de equipe como a rota o serve (`H-91`). Os numeros sao os medidos na
+ * planilha real: duas pessoas cobrindo **202** e **357** das 649 linhas pelas
+ * carteiras declaradas em 10/09/2026, `MPA` como o **unico** importador que
+ * nenhuma carteira alcanca — 55 processos —, e **35** linhas com o campo
+ * IMPORTADOR em branco, que nenhum mapa alcanca por construcao.
+ */
+export function teamFixture(overrides: Partial<TeamResponse> = {}): TeamResponse {
+  return {
+    members: [
+      { key: 'membro1', label: 'Membro 1', importers: ['IMPORTADORA UM'], count: 202 },
+      { key: 'membro2', label: 'Membro 2', importers: ['IMPORTADORA QUATRO'], count: 357 },
+    ],
+    unassigned: [{ key: 'MPA', count: 55 }],
+    nextKey: 'membro3',
+    blankImporters: 35,
+    ...overrides,
+  }
+}
+
 export interface ApiStub {
   /** `METODO /caminho`, na ordem em que foram chamados. Prova a ordem de A-62. */
   readonly calls: string[]
@@ -437,6 +458,16 @@ export interface ApiStub {
   readonly ruleBodies: { match: string; value: string; label: string }[]
   clientKeysWithoutRead(): void
   failClientKeys(): void
+  serveTeam(team: TeamResponse): void
+  teamWithoutRead(): void
+  failTeam(): void
+  /** `PUT /api/team/:key` passa a recusar com esta mensagem. */
+  failSaveTeamMember(message: string): void
+  /** Os corpos enviados a `PUT /api/team/:key`, com a URL — a tela precisa
+      provar que manda a carteira INTEIRA, e na chave impessoal. */
+  readonly teamBodies: { url: string; label: string; importers: string[] }[]
+  /** Os `DELETE` de equipe, na ordem — a URL diz o que foi pedido. */
+  readonly teamRemovals: string[]
   alertsWithoutRead(): void
   failAlerts(): void
   serveHistory(history: MonthlyHistoryResponse): void
@@ -498,6 +529,11 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
   let alertsStatus = 200
   let clientKeys = clientKeysFixture()
   let clientKeysStatus = 200
+  let team = teamFixture()
+  let teamStatus = 200
+  let teamSaveFailure: string | null = null
+  const teamBodies: { url: string; label: string; importers: string[] }[] = []
+  const teamRemovals: string[] = []
   let ruleReach = ruleReachFixture()
   let removeFailure: string | null = null
   const removals: string[] = []
@@ -631,6 +667,63 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
           ok: clientKeysStatus === 200,
           status: clientKeysStatus,
           json: () => Promise.resolve(clientKeys),
+        } as Response)
+      }
+
+      // As rotas de equipe (`H-91`). O stub nao mantem mapa: cada teste serve o
+      // estado que quer ver, e o que se verifica aqui e a chamada.
+      if (path.startsWith('/api/team/') && init?.method === 'DELETE') {
+        teamRemovals.push(path)
+        const comImportador = path.includes('/importers/')
+        const importador = comImportador
+          ? decodeURIComponent(path.split('/importers/')[1] ?? '')
+          : null
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          json: () =>
+            Promise.resolve({
+              outcome: comImportador ? 'importador-removido' : 'membro-desfeito',
+              key: decodeURIComponent(path.split('/').slice(3, 4)[0] ?? ''),
+              importer: importador,
+              released: importador === null ? ['IMPORTADORA UM'] : [importador],
+            }),
+        } as Response)
+      }
+
+      if (path.startsWith('/api/team/') && init?.method === 'PUT') {
+        const enviado = JSON.parse(String(init.body ?? '{}'))
+        teamBodies.push({
+          url: path,
+          label: String(enviado.label ?? ''),
+          importers: (enviado.importers ?? []) as string[],
+        })
+        if (teamSaveFailure !== null) {
+          const message = teamSaveFailure
+          return Promise.resolve({
+            ok: false,
+            status: 400,
+            json: () => Promise.resolve({ error: { code: 'CORPO_INVALIDO', message } }),
+          } as Response)
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 201,
+          json: () =>
+            Promise.resolve({
+              outcome: 'membro-criado',
+              key: decodeURIComponent(path.slice('/api/team/'.length)),
+              label: enviado.label,
+              importers: enviado.importers ?? [],
+            }),
+        } as Response)
+      }
+
+      if (path === '/api/team') {
+        return Promise.resolve({
+          ok: teamStatus === 200,
+          status: teamStatus,
+          json: () => Promise.resolve(team),
         } as Response)
       }
 
@@ -917,6 +1010,20 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
     failClientKeys: () => {
       clientKeysStatus = 500
     },
+    serveTeam: (next) => {
+      team = next
+    },
+    teamWithoutRead: () => {
+      teamStatus = 503
+    },
+    failTeam: () => {
+      teamStatus = 500
+    },
+    failSaveTeamMember: (message) => {
+      teamSaveFailure = message
+    },
+    teamBodies,
+    teamRemovals,
     alertsWithoutRead: () => {
       alertsStatus = 503
     },

@@ -13,6 +13,8 @@ export type ApiErrorCode =
   /** `H-88`: o agrupamento, ou o cliente dentro dele, nao existe mais. */
   | 'GRUPO_INEXISTENTE'
   | 'MEMBRO_INEXISTENTE'
+  /** `H-91`: o importador nao esta na carteira daquele responsavel. */
+  | 'IMPORTADOR_INEXISTENTE'
   | 'EXCEL_ABERTO'
   | 'ARQUIVO_MUDOU'
   | 'EDICAO_OBSOLETA'

@@ -4,6 +4,7 @@ import type { WorkbookConfigResponse } from '../../../src/http/routes/config.ts'
 import type { HealthResponse } from '../api-client.ts'
 import { LiveAnnouncement } from '../components/PageAlert.tsx'
 import { SeverityIcon, severityBand } from '../components/SeverityMark.tsx'
+import { TeamMap } from '../components/TeamMap.tsx'
 import { useWorkbookConfig } from '../hooks/useWorkbookConfig.ts'
 
 /**
@@ -243,6 +244,21 @@ export function WorkbookSetup({
           <ConfigInventory config={state.config} />
         </>
       )}
+
+      {/*
+        **FORA do condicional de `pronto`, e depois das regioes vivas do
+        caminho.**
+
+        Fora porque o painel de equipe nao depende da configuracao do caminho:
+        escondido quando a carga da configuracao falha, o operador perderia a
+        ferramenta por um erro que nao tem relacao com ela — a mesma licao que
+        `D-36` registra ao montar o painel de clientes fora do estado dos
+        rankings.
+
+        Depois porque `WorkbookSetup.test.tsx` identifica a regiao viva do
+        CAMINHO como a PRIMEIRA do DOM, e este painel traz a segunda.
+      */}
+      <TeamMap dataVersion={dataVersion} />
     </section>
   )
 }

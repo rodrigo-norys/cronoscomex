@@ -1,8 +1,14 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, type Mock, vi } from 'vitest'
 import type { HealthResponse } from '../src/api-client.ts'
 import { WorkbookSetup } from '../src/pages/WorkbookSetup.tsx'
-import { type ApiStub, healthFixture, stubApi, workbookConfigFixture } from './support/api-stub.ts'
+import {
+  type ApiStub,
+  healthFixture,
+  stubApi,
+  teamFixture,
+  workbookConfigFixture,
+} from './support/api-stub.ts'
 
 /**
  * A tela de configuracao do caminho (`H-34`), a saida de `PD-01`.
@@ -640,3 +646,203 @@ describe('WorkbookSetup', () => {
  * cliente declarado, **140 processos**, e **83 delas valendo um processo cada** —
  * e e isso que faz o teto e a ordem estavel importarem.
  */
+
+/**
+ * O painel de equipe (`H-91`), hospedado nesta pagina.
+ *
+ * **Ele e componente, e nao secao da pagina** (`D-36`): o painel de clientes
+ * nasceu escrito dentro desta tela e precisou mudar de casa depois do uso.
+ * Testa-lo aqui e testar a pagina que o HOSPEDA — se ele mudar de casa, estes
+ * blocos migram junto, como os cinco de `H-88` migraram para `Clients.test.tsx`.
+ *
+ * **Ele traz a SEGUNDA regiao viva da tela**, e e por isso que `avisoDoCaminho`
+ * pega a primeira: o painel e montado depois do formulario do caminho.
+ */
+async function painelDaEquipe(): Promise<HTMLElement> {
+  return screen.findByRole('region', { name: /responsáveis por importador/i })
+}
+
+/** Abre o painel: o conteudo nasce recolhido (`D-37`), e `hidden` o esconde. */
+async function abrirPainel(): Promise<HTMLElement> {
+  const painel = await painelDaEquipe()
+  fireEvent.click(within(painel).getByRole('button', { name: /definir responsáveis/i }))
+  return painel
+}
+
+describe('responsáveis por importador', () => {
+  it('mostra a dívida na faixa, sem o operador abrir o painel', async () => {
+    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+
+    const painel = await painelDaEquipe()
+    expect(painel.textContent).toContain('2')
+    expect(painel.textContent).toMatch(/responsáveis definidos/i)
+    expect(painel.textContent).toMatch(/importador ainda não tem/i)
+  })
+
+  it('conta as linhas SEM importador e não as oferece', async () => {
+    // 35 na planilha real: nenhuma carteira as alcanca por construcao, e
+    // some-las seria descarte silencioso (regra inviolavel 2). O conserto e
+    // preencher a coluna IMPORTADOR, editavel desde `H-80`.
+    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+
+    const painel = await abrirPainel()
+    expect(painel.textContent).toContain('35')
+    expect(painel.textContent).toMatch(/sem importador preenchido/i)
+
+    const seletor = within(painel).getByLabelText('Importador') as HTMLSelectElement
+    const valores = [...seletor.options].map((opcao) => opcao.value)
+    expect(valores).toEqual(['', 'MPA'])
+  })
+
+  it('diz que traço não é zero enquanto NUNCA houve leitura', async () => {
+    api.teamWithoutRead()
+    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+
+    const painel = await painelDaEquipe()
+    await waitFor(() => {
+      expect(painel.textContent).toMatch(/vazio aqui não significa que está tudo atribuído/i)
+    })
+  })
+
+  it('anuncia a falha da carga em vez de mostrar equipe vazia', async () => {
+    api.failTeam()
+    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+
+    const painel = await painelDaEquipe()
+    await waitFor(() => {
+      expect(painel.textContent).toMatch(/não foi possível carregar a equipe/i)
+    })
+  })
+
+  it('atribui um importador mandando a carteira INTEIRA', async () => {
+    // A rota REDEFINE o membro: mandar so o importador novo apagaria os que ele
+    // ja tinha.
+    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+
+    const painel = await abrirPainel()
+    fireEvent.change(within(painel).getByLabelText('Importador'), { target: { value: 'MPA' } })
+    fireEvent.change(within(painel).getByLabelText('Responsável'), { target: { value: 'membro1' } })
+    fireEvent.click(within(painel).getByRole('button', { name: /^atribuir$/i }))
+
+    await waitFor(() => {
+      expect(api.teamBodies).toEqual([
+        { url: '/api/team/membro1', label: 'Membro 1', importers: ['IMPORTADORA UM', 'MPA'] },
+      ])
+    })
+  })
+
+  it('cria o responsável novo na chave IMPESSOAL do servidor, nunca no nome', async () => {
+    /*
+      Regra inviolavel 8. A chave viaja pelo dominio, entra no ranking de IND-20
+      e vira parametro de URL no filtro Responsavel — derivada do nome digitado,
+      como `H-88` faz com o cliente, ela levaria o nome da pessoa para todos
+      esses lugares.
+    */
+    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+
+    const painel = await abrirPainel()
+    fireEvent.change(within(painel).getByLabelText('Importador'), { target: { value: 'MPA' } })
+    fireEvent.change(within(painel).getByLabelText('Responsável'), {
+      target: { value: 'criar-novo' },
+    })
+    fireEvent.change(within(painel).getByLabelText(/nome do responsável/i), {
+      target: { value: 'Maria Silva' },
+    })
+    fireEvent.click(within(painel).getByRole('button', { name: /^criar$/i }))
+
+    await waitFor(() => {
+      expect(api.teamBodies).toEqual([
+        { url: '/api/team/membro3', label: 'Maria Silva', importers: ['MPA'] },
+      ])
+    })
+    expect(api.teamBodies[0]?.url).not.toMatch(/maria/i)
+  })
+
+  it('cria com carteira VAZIA quando nenhum importador foi escolhido', async () => {
+    // Alguem entra na equipe e recebe importador depois — o caso-limite que
+    // `H-91` tornou legitimo, e que ate ali matava a partida.
+    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+
+    const painel = await abrirPainel()
+    fireEvent.change(within(painel).getByLabelText('Responsável'), {
+      target: { value: 'criar-novo' },
+    })
+    fireEvent.change(within(painel).getByLabelText(/nome do responsável/i), {
+      target: { value: 'Maria Silva' },
+    })
+    fireEvent.click(within(painel).getByRole('button', { name: /^criar$/i }))
+
+    await waitFor(() => {
+      expect(api.teamBodies[0]?.importers).toEqual([])
+    })
+  })
+
+  it('não grava enquanto o operador não escolheu quem recebe', async () => {
+    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+
+    const painel = await abrirPainel()
+    fireEvent.change(within(painel).getByLabelText('Importador'), { target: { value: 'MPA' } })
+
+    const botao = within(painel).getByRole('button', { name: /^atribuir$/i }) as HTMLButtonElement
+    expect(botao.disabled).toBe(true)
+  })
+
+  it('desfaz o responsável inteiro', async () => {
+    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+
+    const painel = await abrirPainel()
+    fireEvent.click(within(painel).getByRole('button', { name: /desfazer membro 1/i }))
+
+    await waitFor(() => {
+      expect(api.teamRemovals).toEqual(['/api/team/membro1'])
+    })
+  })
+
+  it('tira um importador sem desfazer a pessoa', async () => {
+    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+
+    const painel = await abrirPainel()
+    fireEvent.click(
+      within(painel).getByRole('button', { name: /tirar importadora um de membro 1/i }),
+    )
+
+    await waitFor(() => {
+      expect(api.teamRemovals).toEqual(['/api/team/membro1/importers/IMPORTADORA%20UM'])
+    })
+  })
+
+  it('entrega a recusa do servidor ao operador, sem tradução', async () => {
+    // Ele nao e tecnico, e e ele quem vai corrigir o que escolheu.
+    api.failSaveTeamMember('O importador "MPA" já está na carteira de Membro 2.')
+    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+
+    const painel = await abrirPainel()
+    fireEvent.change(within(painel).getByLabelText('Importador'), { target: { value: 'MPA' } })
+    fireEvent.change(within(painel).getByLabelText('Responsável'), { target: { value: 'membro1' } })
+    fireEvent.click(within(painel).getByRole('button', { name: /^atribuir$/i }))
+
+    await waitFor(() => {
+      expect(painel.textContent).toContain('já está na carteira de Membro 2')
+    })
+  })
+
+  it('diz que a carteira vazia é legítima, em vez de deixar a linha muda', async () => {
+    api.serveTeam(
+      teamFixture({
+        members: [{ key: 'membro1', label: 'Membro 1', importers: [], count: 0 }],
+      }),
+    )
+    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+
+    const painel = await abrirPainel()
+    expect(painel.textContent).toMatch(/sem importador ainda/i)
+  })
+
+  it('afirma o estado quando todo importador já tem responsável', async () => {
+    api.serveTeam(teamFixture({ unassigned: [], blankImporters: 0 }))
+    render(<WorkbookSetup dataVersion={1} firstRun={false} onSaved={onSaved} />)
+
+    const painel = await abrirPainel()
+    expect(painel.textContent).toMatch(/todo importador da planilha (já )?tem responsável/i)
+  })
+})

@@ -43,9 +43,9 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E11 — A casca redesenhada ✅ | **H-57 … H-65, todas concluídas** | 3 | 6 | 0 |
 | E12 — Os achados da revisão de estilo ✅ | **H-73 … H-76, todas concluídas** | 2 | 1 | 1 |
 | E13 — O operacional que edita, ordena e cria ✅ | **H-77 … H-81, todas concluídas.** Épico **retroativo**: o código entrou em 02/09/2026 e as histórias foram escritas em 03/09 | 3 | 0 | 2 |
-| E14 — A casca que se opera, não só se lê | **H-82 a H-90 e H-92 ✅; só `H-91` aberta.** Primeiro épico **prospectivo** desde `E12`: as nove primeiras nascem antes do código (`D-29` a `D-34`), `H-91` entra em 08/09/2026 por `D-35`, e `H-92` em 10/09/2026 por `D-39`. `H-91` passou de M para **G** na fatia de 11/09, quando o contrato dela dobrou | 3 | 6 | 2 |
+| E14 — A casca que se opera, não só se lê ✅ | **H-82 a H-92 ✅ — o épico fechou em 16/09/2026, com `H-91`.** Primeiro épico **prospectivo** desde `E12`: as nove primeiras nascem antes do código (`D-29` a `D-34`), `H-91` entra em 08/09/2026 por `D-35`, e `H-92` em 10/09/2026 por `D-39`. `H-91` passou de M para **G** na fatia de 11/09, quando o contrato dela dobrou | 3 | 6 | 2 |
 | E15 — A tabela é a planilha, e a cor é só cor | **`H-93` a `H-96`, todas abertas.** Nasce de `D-40` a `D-43`, em 10 e 11/09/2026: a cor deixa de apontar responsável e vira aparência, e a tabela passa a espelhar o arquivo — as 16 colunas com o nome do cabeçalho. `H-93` veio de `E14` em 11/09, por estar grande demais. `H-96` nasce de defeito **simulado**, não observado. **As quatro são G**, pela régua do topo | 0 | 0 | 4 |
-| **Total** | **96** — 91 concluídas, 5 abertas | **36** | **50** | **10** |
+| **Total** | **96** — 92 concluídas, 4 abertas | **36** | **50** | **10** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -214,7 +214,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-88 — O mapa de clientes, operável na tela](#h-88) ✅
 - [H-89 — A ordem em que a planilha está](#h-89) ✅
 - [H-90 — A busca sobre os seis campos de texto](#h-90) ✅
-- [H-91 — O mapa de equipe, editável na tela](#h-91)
+- [H-91 — O mapa de equipe, editável na tela](#h-91) ✅
 - [H-92 — O recorte em fichas, cada uma descartável](#h-92) ✅
 
 **[Épico E15 — A tabela é a planilha, e a cor é só cor](#e15)**
@@ -10482,6 +10482,48 @@ buscar em Cliente, ETA2 ou Categoria, que `D-34` recusou com motivo.
 <a id="h-91"></a>
 
 ### H-91 — O mapa de equipe, editável na tela
+
+> ✅ **CONCLUÍDA em 16/09/2026.** **68 testes próprios** — 27 no domínio, 9 na
+> carga, 19 nas rotas e 13 na tela —, mais **um invertido**: o que recusava
+> membro sem critério agora o aceita. Suíte em **2121 testes, 86 arquivos**, com
+> o portão inteiro verde.
+>
+> **A fatia de 16/09 achou quatro divergências, e a bloqueante era do contrato.**
+> `PUT /api/team/:key` fixava a chave sem dizer de onde ela vem, e derivá-la do
+> nome digitado — que é o que `H-88` faz com o cliente — levaria o **nome da
+> pessoa** para o domínio, para o ranking de `IND-20` e para o parâmetro de URL
+> do filtro Responsável, contra a regra inviolável 8. A chave passou a vir do
+> servidor, em `nextKey`: o primeiro ordinal `membro<N>` **livre**, e não o
+> seguinte — desfazer o segundo de uma equipe de três o devolve a quem entrar
+> depois. As outras três: o painel é **componente** e não seção de página, pelo
+> precedente de `D-36`; os códigos de recusa não estavam nomeados, e são `400
+> CORPO_INVALIDO`, `404 MEMBRO_INEXISTENTE` e `404 IMPORTADOR_INEXISTENTE`; e o
+> `.exemplo` documentava a validação que esta história afrouxa.
+>
+> **Medido na planilha real em 16/09/2026**, com a 650ª linha sintética de
+> `D-28` dentro dos números: `membro1` com 202 processos e 10 importadores,
+> `membro2` com **405** e 13, 43 sem responsável, `MPA` como o único importador
+> que nenhuma carteira alcança — 55 processos — e 36 linhas sem IMPORTADOR.
+> **O 405 não é o 357 do plano, e a diferença são os 48 da cor:** `resolveTeam`
+> ainda desempata por ela, e é exatamente esse bloco que `H-93` move. A soma por
+> responsável fecha com o total, 650 contra 650.
+>
+> **A sobreposição é simétrica, e isso não estava no plano.** O caso-limite dizia
+> que `ACME` num membro e `ACME - SC` noutro é a mesma sobreposição; implementá-lo
+> só na direção de `ownsImporter` deixaria passar a ordem inversa — declarar a
+> matriz quando outro já tem a filial. As duas direções são recusadas, e há teste
+> para cada uma.
+>
+> **Dois defeitos preexistentes apareceram no caminho, e os dois eram de
+> documento.** A tabela de códigos de erro de `docs/05-contratos-api.md` afirmava
+> "vinte códigos, e é a lista inteira" enquanto `src/http/errors.ts` já tinha
+> vinte e dois — `H-88` levou `GRUPO_INEXISTENTE` e `MEMBRO_INEXISTENTE` ao
+> código sem passar pela tabela —, e a frase que dizia haver guarda conferindo
+> isso **não tinha lastro**: `tests/repo/contratos.test.ts` não cita
+> `ApiErrorCode` em asserção nenhuma. Os dois estão corrigidos, e a ausência de
+> guarda ficou **declarada** em vez de afirmada ao contrário. É a família de
+> defeito que o `revisor-docs` existe para pegar, achada por acidente ao
+> acrescentar o vigésimo terceiro código.
 
 > Nasce de `D-35`, em 08/09/2026, e é a última das **duas**: o `team-map.json` é o
 > **único** dos dois mapas de negócio que a aplicação nunca escreveu —

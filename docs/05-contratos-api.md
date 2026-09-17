@@ -57,6 +57,9 @@ Parâmetro com valor fora do domínio → `400 FILTRO_INVALIDO`.
 | `CAMPO_NAO_EDITAVEL` | 400 | Tentativa de editar campo derivado ou fora da lista editável |
 | `PROCESSO_NAO_ENCONTRADO` | 404 | REF inexistente na leitura corrente |
 | `EDICAO_NAO_ENCONTRADA` | 404 | `id` de edição inexistente na fila |
+| `GRUPO_INEXISTENTE` | 404 | Não há agrupamento de clientes com essa chave (`H-88`) |
+| `MEMBRO_INEXISTENTE` | 404 | O cliente não está nesse agrupamento (`H-88`), ou não há responsável com essa chave (`H-91`) |
+| `IMPORTADOR_INEXISTENTE` | 404 | O importador não está na carteira desse responsável (`H-91`) |
 | `EXCEL_ABERTO` | 409 | Existe `~$<arquivo>.xlsx` |
 | `ARQUIVO_MUDOU` | 409 | Hash difere do da última leitura |
 | `EDICAO_OBSOLETA` | 409 | Hash **confere**, mas o que a edição sobrescreveria mudou — o valor, ou a própria linha, que pode ter sumido |
@@ -73,8 +76,19 @@ Parâmetro com valor fora do domínio → `400 FILTRO_INVALIDO`.
 | `SELETOR_INDISPONIVEL` | 503 | O sistema não oferece diálogo de arquivo (`H-37`) |
 | `SELETOR_FALHOU` | 500 | O diálogo abriu e falhou |
 
-> **Vinte códigos, e é a lista inteira** — `src/http/errors.ts` é a fonte, e
-> `tests/repo/contratos.test.ts` confere que a tela conhece todos.
+> **Vinte e três códigos, e é a lista inteira** — `src/http/errors.ts` é a
+> fonte, e **nenhuma guarda confere esta tabela contra ela**: a afirmação de que
+> `tests/repo/contratos.test.ts` o fazia esteve aqui até 16/09/2026 e não tinha
+> lastro — o arquivo não cita `ApiErrorCode` em asserção nenhuma. Foi por isso
+> que a divergência abaixo sobreviveu duas histórias.
+
+> **A tabela esteve errada de `H-88` até `H-91`**, e o número de cima com ela:
+> ela dizia vinte e listava vinte, enquanto a união já tinha vinte e dois —
+> `GRUPO_INEXISTENTE` e `MEMBRO_INEXISTENTE` entraram no código sem entrar aqui.
+> Achado em 16/09/2026, ao acrescentar o vigésimo terceiro. **A afirmação "é a
+> lista inteira" é o que torna isso um defeito e não uma omissão:** ela convida
+> a ler a tabela no lugar da fonte, e quem o fizesse entre as duas histórias
+> receberia uma resposta errada sem nenhum sinal.
 
 > `EDICAO_OBSOLETA` e o alcance maior de `ARQUIVO_INDISPONIVEL` entraram em
 > `H-25`, cujo contrato no backlog declarava cinco recusas. As duas estão
@@ -1087,6 +1101,142 @@ consequência.
 
 ---
 
+### `GET /api/team`
+
+As carteiras, os importadores que ninguém reivindica, e a chave do próximo
+responsável — a base do painel que `H-91` põe na Página Configuração.
+
+**Não é marcada [F]**, pela mesma razão de `GET /api/clients` (`D-32`,
+determinação 2): o que ela serve é estado de **configuração**, não recorte.
+Seguindo os filtros globais, filtrar por um responsável esconderia os
+importadores sem dono, e o operador concluiria que atribuiu tudo.
+
+`members` sai na **ordem do arquivo**, e não por contagem: é a equipe do
+operador, e uma lista que se reordena a cada leitura faz o botão de desfazer
+mudar de lugar entre uma conferida e outra. `count` é quantos processos estão
+atribuídos àquela pessoa — o mesmo número que `IND-20` mostra. `importers` é a
+carteira já normalizada por `TD-04`.
+
+`unassigned` sai por `count` decrescente, desempatado pela `key` crescente, e
+traz só importadores **que existem nos processos** e que nenhuma carteira
+alcança. Medido em 10/09/2026: `MPA` é o único assim — 55 processos, 13 ativos.
+
+**`nextKey` é a chave impessoal do próximo responsável, e o servidor é quem a
+gera.** É a regra inviolável 8 aplicada ao próprio mapa: a chave viaja pelo
+domínio inteiro, entra no ranking de `IND-20` e vira parâmetro de URL no filtro
+Responsável. Derivada do nome digitado — como `POST /api/clients/rules` faz com
+o cliente — ela levaria o nome da pessoa para todos esses lugares. É o primeiro
+ordinal `membroN` **livre**, e não o seguinte: desfazer o `membro2` de uma
+equipe de três o devolve a quem entrar depois.
+
+**`blankImporters` conta as linhas com IMPORTADOR em branco** — 35 na planilha
+real. Elas aparecem contadas e **nunca são oferecidas**: nenhuma carteira as
+alcança por construção, e omiti-las seria descarte silencioso (regra inviolável
+2). O conserto delas é preencher a coluna C, editável desde `H-80`.
+
+```jsonc
+{
+  "members": [
+    { "key": "membro1", "label": "Primeiro Nome",
+      "importers": ["IMPORTADORA UM"], "count": 202 }
+  ],
+  "unassigned": [ { "key": "MPA", "count": 55 } ],
+  "nextKey": "membro3",
+  "blankImporters": 35
+}
+```
+
+| Código | Quando |
+|---|---|
+| `200` | Sempre que houve leitura, inclusive com `members` vazio |
+| `503 ARQUIVO_INDISPONIVEL` | Nunca houve leitura. Carteira vazia afirmaria que ninguém precisa de dono |
+
+---
+
+### `PUT /api/team/:key`
+
+Cria ou redefine um responsável (`H-91`).
+
+**Não enfileira e não toca no `.xlsx`**, pelo mesmo motivo de
+`POST /api/clients/rules`: a atribuição vive em `team-map.json`, que é de onde o
+campo Responsável lê desde `H-50`. O efeito vale na leitura seguinte, e o
+`refreshTeamMap` o aplica sem reiniciar.
+
+**`importers` é a carteira INTEIRA, e não um acréscimo.** A rota redefine o
+membro; quem soma o importador novo à lista existente é quem chama. Ausente, ela
+vale como **carteira vazia**, que é legítima: alguém entrou na equipe e ainda
+não recebeu importador, e a pessoa aparece no painel com zero.
+
+**Um importador pertence a um responsável só, e a segunda tentativa é recusada.**
+`IND-20` conta por pessoa, e a soma deixaria de fechar com o total; escolher um
+dos dois por ordem de arquivo produziria um número plausível e errado (regra
+inviolável 3). A comparação é por sobreposição e **simétrica**: `ACME` numa
+carteira e `ACME - SC` noutra é o mesmo importador, porque o sufixo de filial
+casa, e qual grafia foi digitada primeiro não muda isso. A recusa nomeia o outro
+dono — é ele que o operador precisa abrir para corrigir.
+
+**Os campos que esta rota não conhece sobrevivem na entrada**: `colorResponsible`
+e `fallback` continuam onde estavam. Eles saem em `H-93`, e apagá-los aqui
+anteciparia a remoção sem a história que a explica.
+
+```jsonc
+// corpo
+{ "label": "Primeiro Nome", "importers": ["IMPORTADORA UM", "MPA"] }
+
+// resposta
+{ "outcome": "membro-redefinido", "key": "membro1", "label": "Primeiro Nome",
+  "importers": ["IMPORTADORA UM", "MPA"] }
+```
+
+| Código | Quando |
+|---|---|
+| `201` | `membro-criado`: a chave não existia |
+| `200` | `membro-redefinido`: a carteira foi substituída |
+| `400 CORPO_INVALIDO` | `label` ausente ou vazio, chave vazia, importador em branco na lista, ou importador que já está na carteira de outro |
+| `409 ESCRITA_EM_ANDAMENTO` | Aplicação em curso |
+| `503 ARQUIVO_INDISPONIVEL` | Nunca houve leitura |
+
+---
+
+### `DELETE /api/team/:key/importers/:importer` · `DELETE /api/team/:key`
+
+Desfaz a atribuição (`H-91`). A primeira tira **um** importador da carteira; a
+segunda desfaz o responsável inteiro.
+
+**Nenhum processo fica sem grupo.** O que sai é o vínculo importador → pessoa, e
+os processos caem em **"Sem responsável"** — que já existe em
+`knownResponsibles`, já aparece no filtro e já é contado por `IND-20`. Esta
+história o alimenta; não o cria.
+
+**Desfazer o responsável apaga a entrada dele, e aqui o mapa de equipe diverge
+do de clientes.** Lá o cliente sobrevive à saída do grupo, porque a regra dele
+continua valendo sozinha; aqui a entrada **é** a regra, e uma pessoa sem carteira
+que permanecesse no arquivo voltaria ao painel como membro ativo com zero —
+indistinguível de quem acabou de entrar na equipe.
+
+`released` diz o que voltou a não ter dono. Desfazer sem dizer quantos
+importadores mudaram de mão esconderia o efeito real do clique.
+
+```jsonc
+// DELETE /api/team/membro1/importers/MPA
+{ "outcome": "importador-removido", "key": "membro1", "importer": "MPA",
+  "released": ["MPA"] }
+
+// DELETE /api/team/membro1
+{ "outcome": "membro-desfeito", "key": "membro1", "importer": null,
+  "released": ["IMPORTADORA UM", "MPA"] }
+```
+
+| Código | Quando |
+|---|---|
+| `200` | Desfeito |
+| `404 MEMBRO_INEXISTENTE` | Não há responsável com essa chave |
+| `404 IMPORTADOR_INEXISTENTE` | O importador não está na carteira desse responsável |
+| `409 ESCRITA_EM_ANDAMENTO` | Aplicação em curso |
+| `503 ARQUIVO_INDISPONIVEL` | Nunca houve leitura |
+
+---
+
 ### `POST /api/edits`
 
 Enfileira uma edição. **Não toca no `.xlsx`.**
@@ -1515,6 +1665,8 @@ requisição, então rodar o `build` com o servidor no ar dispensa reiniciá-lo.
 | `POST /api/edits/row` | H-78, H-79, H-80 — histórias escritas retroativamente em 03/09/2026 (`D-26`) |
 | `PATCH /api/processes/:ref/color` | H-27 |
 | `PUT /api/processes/:ref/client` | H-79, H-80 — idem, `D-26` |
+| `GET /api/clients`, `GET /api/clients/preview`, `POST /api/clients/rules`, `DELETE /api/clients/groups/:key` | H-88 |
+| `GET /api/team`, `PUT /api/team/:key`, `DELETE /api/team/:key`, `DELETE /api/team/:key/importers/:importer` | H-91 |
 | `GET /api/config/workbook` | H-34, H-35, H-36 |
 | `PUT /api/config/workbook` | H-34, H-35, H-36 |
 | `POST /api/config/workbook/browse` | H-37 |
