@@ -88,7 +88,7 @@ Não re-derive isto; está medido.
 |---|---|
 | Node | **22.23.2** LTS — fixado em `.nvmrc` e `engines` |
 | TypeScript | 7.0.2 (fallback declarado: 5.9.3, se a build falhar) |
-| Fastify | 5.11.2 |
+| Fastify | 5.12.1 |
 | fflate | 0.8.3 — leitura e escrita cirúrgica no zip |
 | chokidar | 5.0.0 |
 | React · Vite | 19.2.8 · 8.2.0 |
