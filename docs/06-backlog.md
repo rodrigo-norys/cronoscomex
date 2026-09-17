@@ -44,9 +44,9 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E12 — Os achados da revisão de estilo ✅ | **H-73 … H-76, todas concluídas** | 2 | 1 | 1 |
 | E13 — O operacional que edita, ordena e cria ✅ | **H-77 … H-81, todas concluídas.** Épico **retroativo**: o código entrou em 02/09/2026 e as histórias foram escritas em 03/09 | 3 | 0 | 2 |
 | E14 — A casca que se opera, não só se lê ✅ | **H-82 a H-92 ✅ — o épico fechou em 16/09/2026, com `H-91`.** Primeiro épico **prospectivo** desde `E12`: as nove primeiras nascem antes do código (`D-29` a `D-34`), `H-91` entra em 08/09/2026 por `D-35`, e `H-92` em 10/09/2026 por `D-39`. `H-91` passou de M para **G** na fatia de 11/09, quando o contrato dela dobrou | 3 | 6 | 2 |
-| E15 — A tabela é a planilha, e a cor é só cor | **`H-93` a `H-95` ✅; só `H-96` aberta, e escrita para não ser executada.** Nasce de `D-40` a `D-43`, em 10 e 11/09/2026: a cor deixa de apontar responsável e vira aparência, e a tabela passa a espelhar o arquivo — as 16 colunas com o nome do cabeçalho. `H-93` veio de `E14` em 11/09, por estar grande demais. `H-96` nasce de defeito **simulado**, não observado. **As quatro são G**, pela régua do topo | 0 | 0 | 4 |
+| E15 — A tabela é a planilha, e a cor é só cor ✅ | **`H-93` a `H-96`, todas concluídas** — o épico fechou em 17/09/2026. Nasce de `D-40` a `D-43`, em 10 e 11/09/2026: a cor deixa de apontar responsável e vira aparência, e a tabela passa a espelhar o arquivo — as 16 colunas com o nome do cabeçalho. `H-93` veio de `E14` em 11/09, por estar grande demais. **`H-96` nasce de defeito simulado, não observado**, ficou seis dias fora da fila por escolha do usuário, e foi reaberta por ordem dele em 17/09 — a única do backlog com esse percurso. **As quatro são G**, pela régua do topo | 0 | 0 | 4 |
 | E16 — A tabela que se lê, e o endereço que não mente | **`H-97` a `H-100` ✅; só `H-101` aberta, e escrita para não ser executada agora.** Nasce de `D-44`, em 16/09/2026, do uso da tela que `E15` entregou: o fundo pintado ficou ilegível no tema escuro, o painel lateral disputava largura com 17 colunas, e os parâmetros da página viajavam para as outras seis telas. **Nenhuma das quatro é regra de negócio** — são apresentação e endereço | 3 | 1 | 1 |
-| **Total** | **101** — 99 concluídas, 2 abertas | **39** | **51** | **11** |
+| **Total** | **101** — 100 concluídas, 1 aberta | **39** | **51** | **11** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -227,7 +227,7 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-93 — A cor sai da regra de responsável](#h-93) ✅
 - [H-94 — O fundo da célula é a cor da planilha, e a casca recua de tom](#h-94) ✅
 - [H-95 — As dezesseis colunas, com o nome literal do cabeçalho](#h-95) ✅
-- [H-96 — A coluna se resolve por nome, e não por letra](#h-96)
+- [H-96 — O cabeçalho é conferido, e a divergência aparece](#h-96) ✅
 
 **[Épico E16 — A tabela que se lê, e o endereço que não mente](#e16)**
 
@@ -11207,22 +11207,79 @@ já são editáveis no domínio, e expor cada uma é decisão à parte.
 
 <a id="h-96"></a>
 
-### H-96 — A coluna se resolve por nome, e não por letra
+### H-96 — O cabeçalho é conferido, e a divergência aparece
 
-> Nasce de `D-43`, em 10/09/2026, e é a **única história do backlog que nasce de
-> um defeito simulado, e não observado**. Nada quebra hoje.
+> ✅ **CONCLUÍDA em 17/09/2026.** A suíte foi de **2135 para 2184 testes** e de
+> **85 para 86 arquivos** — 49 testes novos, em `tests/domain/`, `tests/io/`,
+> `tests/app/`, `tests/http/` e `web/tests/`.
 >
-> **Escrita e NÃO executada, por escolha do usuário em 11/09/2026** (`D-43`):
-> fica documentada como anteparo conhecido e não entra na fila. Reabrir exige
-> ordem dele.
+> *(Este número errou **quatro vezes** antes de fechar, e o padrão é a lição:
+> três delas porque a correção de uma divergência do `revisor-xml` acrescentava
+> teste e invalidava o número corrigido na outra. Ele é o **último** campo a se
+> escrever, depois do portão final. E guarda nenhuma o alcança:
+> `tests/repo/documentacao.test.ts` cobra o total de histórias afirmado em
+> prosa, não a contagem da suíte.)* **Reaberta por ordem do
+> usuário**, depois de seis dias fora da fila: é a única história do backlog com
+> esse percurso.
+>
+> **O título mudou, e a mudança é o resumo da história.** Ela se chamava *"A
+> coluna se resolve por nome, e não por letra"*, e esse desenho foi **desenhado
+> e recusado na fatia**: resolver por nome exigiria duas coordenadas de coluna
+> convivendo — uma na leitura, outra na escrita —, e o modo de falha disso é
+> pior que o defeito original, porque erra em direções diferentes e alcança o
+> arquivo da empresa. **O vínculo continua por letra.** O que a história
+> acrescenta é a CONFERÊNCIA contra a linha 1.
+>
+> **Nove divergências na fatia, e quatro tocavam a escrita.** A lista do plano
+> citava uma tabela de letras; existem **quatro** — `COLUMN` em
+> `process-builder`, `REF_COLUMN`/`ALL_COLUMNS` em `status-classifier`,
+> `EDITABLE_FIELDS`, e a linha em branco de `process-projection` —, mais uma
+> quinta implícita, o `ANCHOR_COLUMN` de `xlsx-parts`. Trocar só as duas citadas
+> deixaria a aplicação **lendo por nome e escrevendo por letra**.
+>
+> **`toRawRow` era o buraco mais caro**, e o plano não o mencionava: o cabeçalho
+> dele declara a invariante que a história quebraria — *"o mapa `COLUMN` mora
+> aqui, então ida e volta não se separam"* —, e ele é o caminho de volta que
+> `refreshClientMap` usa. Sem o mesmo esquema, atualizar o mapa de clientes
+> reescreveria todas as células nas letras declaradas. Mesma família de `H-94`.
+>
+> **Medido nas nove fixtures em 17/09/2026:** as 16 letras trazem os 16
+> cabeçalhos, idênticos entre si e idênticos aos da planilha real de `H-95`.
+> `docs/03-modelo-dados.md` §1.2 já tinha a coluna "Cabeçalho" com esses nomes —
+> a tabela declarada não foi inventada aqui, foi adotada de onde já estava.
+>
+> **Casamento por `normKey`, e o medo de `D-43` não se realiza:** `STATUS ` com
+> espaço a mais, caixa trocada ou acento **não** recusam nada.
+>
+> **Uma edição na planilha é UM aviso.** Inserir uma coluna desloca 14, e o
+> operador fez um gesto só: o bloco contíguo de mesmo deslocamento sai agrupado,
+> com o tamanho dele. Duas versões do módulo erravam isso — cabeçalho repetido
+> produzia duas linhas para a mesma coluna, e a coluna empurrada para além de
+> `P` saía fora do bloco **mais** um `EXTRA` falso, porque `indexOfLetter`
+> devolvia `-1` ali.
+>
+> **`D-45` mudou o desenho duas vezes, em pleno percurso.** A recusa de leitura
+> foi construída, testada, e **desfeita** por decisão do usuário — o painel nunca
+> para; e a recusa de **escrita** foi acrescentada depois, quando ficou claro que
+> gravar com as colunas deslocadas escreve na coluna física errada do arquivo da
+> empresa. O ramo degradado do store e seus três testes nasceram e saíram no
+> mesmo dia.
+>
+> **Dois defeitos meus, achados por teste e não por revisão.** O painel derrubava
+> a **página inteira** — `divergences.length` sobre `undefined` —, com 19 testes
+> reprovando, vários sem relação com ele; um aviso que derruba a tela é o oposto
+> do que a história entrega. E o contador não chegava à tela: `COUNT_TONE`,
+> `countedLabel` e `countOf` estavam certos, mas o rodapé da lateral, único item
+> que não passa pelo caminho dos demais, passava `count={null}` fixo.
 
 **Objetivo:** inserir ou mover uma coluna na planilha deixar de trocar os dados
 de lugar em silêncio.
 
-**Contrato:** nenhuma rota nova. O vínculo coluna→campo passa de posição para
-nome, e a divergência vira relatório.
+**Contrato:** nenhuma rota nova. `GET /api/health` ganha `schemaDivergences`, e
+`POST /api/edits/apply` ganha as recusas `CABECALHO_DESLOCADO` e
+`CABECALHO_VAZIO`.
 
-**Duas determinações de `D-43`:**
+**Três determinações, de `D-43` e `D-45`:**
 
 1. **O modo de falha de hoje é MUDO, e está medido.** Deslocar uma coluna faz
    **616 dos 650 processos** lerem o dado do vizinho e **580 categorias** de
@@ -11230,54 +11287,98 @@ nome, e a divergência vira relatório.
    quarentena zero, nenhuma anomalia. É o mesmo perfil de `H-34`, que
    sobrescreveu a configuração do operador porque a gravação preservava os
    demais campos.
-2. **Cabeçalho divergente AVISA, e nunca recusa.** Falhar fechado aqui é pior
-   que o defeito: a máquina do operador não é um repositório git — a árvore foi
-   baixada, não clonada —, e uma diferença de caixa no cabeçalho derrubaria o
-   painel lá sem nada para comparar. O campo fica vazio, nomeadamente, e a
-   divergência aparece na tela: `Coluna D: esperado "BL", encontrado "NOVA"`.
+2. **A LEITURA avisa, e nunca recusa** — confirma `D-43`. O painel segue
+   mostrando os processos, e o que muda é o operador saber o que mudou. *(O
+   argumento original de `D-43` era que falhar fechado derrubaria o painel na
+   máquina do operador, que não é repositório git; o cenário que ele citava —
+   diferença de caixa no cabeçalho — deixou de ser possível com `normKey`.)*
+3. **A ESCRITA recusa quando pode escrever na coluna errada** — emenda `D-43`,
+   por `D-45`. Ler com as colunas deslocadas mostra dado errado numa tela que
+   avisa; gravar escreve na coluna física errada do arquivo da empresa, e lá não
+   há desfazer. **São três casos, e só o primeiro é movimento:** o deslocamento
+   *detectado*; a linha 1 **em branco**; e o rótulo **apagado** de uma coluna
+   declarada. Nos dois últimos não há deslocamento detectado, e sim
+   impossibilidade de detectar — um deslocamento que alcance só colunas sem
+   rótulo passa invisível, e gravar trataria "não conferível" como "conferido e
+   certo" (regra 3).
+   **Renome não recusa, e é o contraste que define a regra:** `AUSENTE` cobre os
+   dois sentidos opostos, e é o `found` que os separa — rótulo trocado por outro
+   nome deixa a coluna onde estava e segue permitindo a gravação; rótulo apagado
+   recusa.
+   **A recusa nomeia a coluna**, pelo `detail` do `409`: a mensagem diz o que
+   fazer, e a frase de `describeDivergence` diz onde. Sem ela o operador tinha a
+   instrução e um contador, e precisava sair da tela em que apertou `Aplicar
+   alterações` para descobrir qual coluna.
 
 **Arquivos:**
-- `src/domain/process-builder.ts` — `COLUMN` liga por nome
-- `src/domain/status-classifier.ts` — `onlyRefFilled` percorre as colunas
-  presentes na linha, e não uma lista fixa
-- `src/domain/types.ts` — o esquema resolvido
-- `src/io/xlsx-parts.ts` · `src/io/xlsx-reader.ts`
-- `src/http/routes/health.ts` — a divergência no painel de saúde
-- `docs/03-modelo-dados.md` — `§1.2` deixa de mapear por letra
-- `docs/05-contratos-api.md`
-- `web/src/components/StatusBanner.tsx` — o aviso
-- `tests/domain/` · `tests/io/` · `tests/repo/contratos.test.ts`
+- `src/domain/sheet-schema.ts` — a tabela declarada, a conferência e
+  `blockingDivergence`
+- `src/app/process-store.ts` — a divergência no estado
+- `src/http/routes/health.ts` · `src/http/routes/apply.ts` · `src/http/errors.ts`
+- `src/app/write-guard.ts` — a recusa de escrita
+- `web/src/components/SchemaDivergences.tsx` — o painel
+- `web/src/components/AppSidebar.tsx` — o contador
+- `web/src/pages/WorkbookSetup.tsx` · `web/src/App.tsx` · `web/src/api-client.ts`
+- `docs/05-contratos-api.md` · `docs/04-arquitetura.md` — `§3.2` ganha a guarda
+  nova no diagrama, **e ela não estava na lista**: achado do `revisor-xml`, que
+  notou o cabeçalho do módulo apontando para esse documento como fonte da ordem
+- `tests/domain/` · `tests/app/` · `tests/http/` · `web/tests/`
 
 **Critérios de aceite:**
-- **Dado** uma coluna inserida antes de `IMPORTADOR`, **então** todos os campos
-  continuam lendo a coluna certa.
-- **Dado** um cabeçalho renomeado, **então** o campo correspondente fica vazio e
-  a tela nomeia as duas pontas — nunca o dado do vizinho.
-- **Dado** qualquer divergência, **então** a aplicação sobe e serve a planilha:
-  a recusa é proibida nesta história.
+- **Dado** uma coluna inserida antes de `IMPORTADOR`, **então** a divergência
+  aparece nomeando as duas pontas, e a leitura segue.
+- **Dado** um cabeçalho renomeado, **então** a tela nomeia as duas pontas e a
+  gravação continua permitida.
+- **Dado** um deslocamento, **então** a gravação é recusada com o motivo, sem
+  tocar o arquivo nem a fila.
+- **Dado** a linha 1 em branco, **então** a gravação é recusada com mensagem
+  **própria**, que não manda desfazer mudança nenhuma.
+- **Dado** o rótulo apagado de uma coluna declarada, **então** a gravação é
+  recusada — e **dado** o rótulo trocado por outro nome, **então** ela continua
+  permitida.
+- **Dado** qualquer recusa de cabeçalho, **então** a resposta nomeia a coluna, e
+  a tela a mostra onde o operador está.
+- **Dado** qualquer divergência, **então** a aplicação sobe e serve a planilha.
 
 **Casos-limite:**
-- **O teste que a história obriga:** deslocar as colunas em memória e exigir
-  **zero divergência** em todos os campos das 649 linhas. Sem ele a história não
-  fecha, e ele roda sobre as nove fixtures, que já trazem os 16 cabeçalhos na
-  linha 1.
-- **`onlyRefFilled` classifica 34 linhas hoje**, e a mudança é comportamentalmente
-  idêntica: percorrer as colunas presentes dá **34** também, medido.
-- **A Tabela do Excel é a segunda testemunha e NÃO é dependência:** a aba tem
-  `xl/tables/table1.xml` com os 16 nomes idênticos à linha 1, e **nenhuma das
-  nove fixtures o tem**. A linha 1 é a fonte primária e testável.
-- **A escrita cirúrgica não muda.** `put` e `putDate` já recebem a letra, e o
-  esquema resolvido a entrega — `src/io/xlsx-surgeon.ts` fica fora, e com ele o
-  `revisor-xml` deixa de ser dependência de nascimento.
+- **As nove fixtures passam com zero divergência**, medido — e são elas que
+  provam que a conferência não recusa o arquivo real.
+- **Caixa, espaço e acento não recusam:** `normKey` é a mesma normalização que o
+  projeto usa para agrupar.
+- **Cabeçalho repetido é uma linha só**, e diz de quem é o nome; **uma
+  divergência por letra, no máximo**.
+- **Cada código de recusa percorreu cinco elos** — a união `WriteRefusal`,
+  `ApiErrorCode`, os dois `Record` exaustivos da rota, `REFUSAL_CODES` e uma
+  âncora de contagem —, e cada um só apareceu depois de o anterior ser
+  resolvido. Mesmo percurso de `TABELA_CHEIA` em 02/09/2026.
+- **Cabeçalho em branco recusa a escrita, e o predicado mudou de nome junto.**
+  Ele se chamava `movesData` e deixava o caso de fora — corretamente, pelo nome:
+  a linha em branco não **move** dado. Achado do `revisor-xml`; o nome passou a
+  dizer o que o predicado decide, `blocksWriting`, porque mantê-lo recriaria a
+  mesma confusão na próxima leitura.
+- **O conjunto de bloqueio é predicado, e não `Set<kind>`** — porque `AUSENTE`
+  cobre dois casos de sentidos opostos, discriminados por `found`. Medido: com
+  rótulo só em `A`, são **14 divergências** e a gravação **seguia**; o
+  deslocamento que alcançasse apenas colunas sem rótulo era indetectável. Exige
+  dois gestos no Excel, e nenhum gesto único escapa — mover dado preserva o
+  rótulo e vira `DESLOCADO`. Achado do `revisor-xml`.
+- **A frase que nomeia a coluna percorre quatro elos** — `WriteResult`, o
+  `detail` da rota, `ApplyRefusal` e o `ConflictDialog` —, e vem montada do
+  servidor: `describeDivergence` é a fonte única, e remontá-la no cliente criaria
+  segunda fonte para o mesmo texto. **A assimetria que ela corrige é de tela**, e
+  foi medida: o painel das duas pontas é montado só na Página Configuração e no
+  arranque a frio, e o `Aplicar alterações` não vive lá.
+- **O `revisor-xml` É dependência**, ao contrário do que o plano afirmava:
+  `src/io/xlsx-surgeon.ts` fica fora, mas `src/app/write-guard.ts` **não**, e a
+  rule de escrita cirúrgica é categórica.
 
 **Fora desta história:** a coluna descoberta aparecer na tabela, que `D-43`
-descartou; e promover coluna nova a filtro, ordem ou edição.
+descartou; promover coluna nova a filtro, ordem ou edição; e resolver o vínculo
+coluna→campo por nome, que a fatia desenhou e recusou.
 
-**Dependências:** `H-95`, e a ordem é o anteparo: `H-95` põe o cabeçalho lido na
-tela **antes** de ele virar chave. Se a leitura estiver errada, o operador vê o
-nome errado no cabeçalho da tabela, ao custo de uma conversa — e não com 616
-processos lendo o vizinho.
-**Tamanho:** G (12 arquivos, 0 contrato novo)
+**Dependências:** `H-95`, e a ordem foi o anteparo: ela pôs o cabeçalho lido na
+tela **antes** de ele ser conferido.
+**Tamanho:** G (14 arquivos, 2 contratos alterados)
 
 [↑ Índice](#indice)
 
