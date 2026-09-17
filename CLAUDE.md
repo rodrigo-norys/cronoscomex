@@ -109,9 +109,11 @@ src/io/        leitura e escrita de .xlsx, watcher, histórico, fila de ediçõe
 src/app/       process-store, write-guard, config
 src/http/      rotas Fastify (só serializam; não calculam)
 web/           SPA React (só apresenta; não calcula)
-tools/         perfilador (virada de ano), verificador de strip-types,
-               carregar-planilha.mjs para conferência contra o arquivo real, e
-               medir-navegador.mjs para medição de tela num Chrome real
+tools/         apoio — perfilador da planilha (virada de ano), verificador
+               de strip-types, gerador de fixtures, conferência de portas do
+               portão, carga da planilha real e medição de tela num Chrome.
+               Sem lista fechada: o cabeçalho de cada arquivo diz o que faz,
+               e esta linha já esteve incompleta
 config/        app.json, color-map.json, status-aliases.json, e os dois mapas
                de negocio de H-48 — client-map.json e team-map.json, nao
                versionados, com `.exemplo` versionado ao lado
@@ -403,10 +405,11 @@ instrução que entra em contexto — quando, **por que** (`load_reason`) e qual
 em `data/instrucoes-carregadas.log`, que é gitignored. Não imprime nada: o log é
 para leitura agregada, não para a sessão. **Falha aberto, e aqui isso é mais
 grave que nos outros:** neste evento `exit 2` **bloqueia o arquivo de instrução
-de carregar**, e uma sessão rodaria sem as regras invioláveis em silêncio. `test-guard.sh` é a regressão do guard e roda
-**primeiro** no `npm run verify` — exige `bash` e `jq`.
+de carregar**, e uma sessão rodaria sem as regras invioláveis em silêncio.
+`test-guard.sh` é a regressão do guard, roda no `npm run verify` e exige `bash`
+e `jq`.
 
-**`verifica-dados-sensiveis.sh` roda logo depois dele, desde 02/09/2026**, e
+**`verifica-dados-sensiveis.sh` entrou no portão local em 02/09/2026**, e
 até então só existia no CI: o portão local passava e o workflow reprovava, que
 é a ordem errada de descobrir. Foi assim que a guarda das fixtures chegou ao
 `dados-sensiveis.yml` com a âncora reprovando o check de caminho absoluto.
@@ -553,13 +556,19 @@ processo e são abandonados. Os gatilhos abaixo são objetivos.
 
 ```bash
 nvm use             # Node 22.23.2, conforme .nvmrc
-npm run verify      # guard + dados-sensiveis + strip-types + lint + typecheck + test + build
+npm run verify      # portas + guard + dados-sensiveis + strip-types + lint + typecheck + test + build
 npm test            # Vitest
 npm run dev         # servidor (5173) + interface (5174), no mesmo terminal
 npm run dev:server  # só a API, em 5173
 npm run dev:web     # só a interface, em 5174
 python3 tools/profile_workbook.py "<caminho.xlsx>" /tmp/saida.json   # reperfilar
 ```
+
+> **A ORDEM dos passos do portão vive em `scripts.verify`, no `package.json`,
+> e só lá.** Este arquivo já a afirmou em três lugares, e acrescentar um passo
+> em 17/09/2026 tornou dois deles falsos de uma vez — achados por raciocínio, e
+> não por teste: a guarda de documentação cobra o total de histórias em prosa,
+> não a composição do portão.
 
 > `node: bad option` **não é erro de código**: o shell herdou um Node abaixo de
 > `engines`. Prefixe `nvm use &&` — o `nvm use` não persiste entre chamadas.
