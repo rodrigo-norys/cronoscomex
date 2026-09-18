@@ -319,25 +319,34 @@ ingestão: REF repetida vai para quarentena e não chega ao estado.
 
 ### `GET /api/indicators` **[F]**
 
-Os 21 indicadores em escopo, sobre o conjunto filtrado. IND-21 não aparece:
-está fora de escopo por lacuna de dado (§4 da especificação).
+Os indicadores em escopo, sobre o conjunto filtrado. IND-21 não aparece: está
+fora de escopo por lacuna de dado (§4 da especificação).
+
+**`D-49` (18/09/2026) refez o bloco `counts`.** Ele passou a ser exatamente os
+nove cartões da Página Início: saíram IND-08, IND-14 e IND-16 — cujos cartões o
+usuário mandou remover — e a contagem por data de registro de `H-52`; três
+cartões mudaram de regra, e os indicadores antigos foram aposentados em favor de
+IND-23, IND-24 e IND-25. `IND-14` e `IND-15` seguem calculados no domínio, para
+ALE-02, ALE-01 e o `overdueCount` de IND-17 — o que saiu foi o cartão, não a
+regra.
 
 ```jsonc
 {
   "counts": {
     "total": 0,                    // IND-01
-    "emAndamento": 0,              // IND-02
-    "emDesembaraco": 0,            // IND-03
+    "emAndamento": 0,              // IND-02 — rótulo "Processos ativos"
+    "emDesembaraco": 0,            // IND-23 — cor OU DUIMP; NÃO é a categoria
     "desembaracados": 0,           // IND-04
-    "fechadoAguardandoDraft": 0,   // IND-05
+    "fechadoAguardandoDraft": 0,   // IND-05 — rótulo "Aguardando draft"
     "canalVermelho": 0,            // IND-06
-    "chegandoHoje": 0,             // IND-07
-    "chegandoSemana": 0,           // IND-08
+    "chegandoHoje": 0,             // IND-24 — linha branca E eta2 de hoje
     "chegando15Dias": 0,           // IND-09
-    "documentosPendentes": 0,      // IND-14
-    "atrasados": 0,                // IND-15
-    "desembaracadosHoje": 0,       // IND-16
-    "desembaracadosNoPeriodo": 0   // H-52 — por RG, adicional a desembaracados
+    "atrasados": 0                 // IND-25 — eta2 ate hoje+10, sem DUIMP
+  },
+  "categoryCheck": {               // D-49 — a conferência de A-12, no servidor
+    "sum": 0,
+    "total": 0,
+    "matches": true
   },
   "channelDistribution": {         // H-51 — acompanha IND-06, não o redefine
     "verde": 0,
@@ -379,11 +388,7 @@ está fora de escopo por lacuna de dado (§4 da especificação).
     "timezone": "America/Sao_Paulo",
     "weekEnd": "2026-08-09",
     "bazarShare": null,
-    "period": { "from": null, "to": null },          // H-52 — a janela aplicada
-    "dataRange": {                                   // H-52 — a faixa real
-      "eta2":         { "from": "2025-12-30", "to": "2026-09-09", "missing": 64 },
-      "registration": { "from": "2026-01-05", "to": "2026-07-31", "missing": 166 }
-    }
+    "period": { "from": null, "to": null }           // H-52 — a janela aplicada
   }
 }
 ```
@@ -400,22 +405,23 @@ de conjunto vazio não é zero, e apresentá-la como zero seria mentir sobre o
 dado (A-42). `bazarShare` acompanha IND-13 para tornar visível a distorção
 declarada em A-34.
 
-`counts.desembaracadosNoPeriodo` (`H-52`) é **adicional** a `desembaracados`,
-nunca substituto: aquele conta a categoria sobre o recorte de `ETA2`, este conta
-a data de **registro** dentro da janela — duas datas, duas perguntas. A soma das
-quatro categorias continua fechando com o total, e a linha de conferência de A-12
-segue válida. Como todo indicador desta rota, ele responde sobre o conjunto
-**filtrado** (RF-18): a janela incide sobre o recorte ativo, não sobre a base.
+`counts.emDesembaraco` é **IND-23, e não a categoria** `em_desembaraco` de
+TD-01: conta a união entre a cor de desembaraço — bege, azul e roxo, resolvidas
+pela cor de **exibição**, o que unifica os dois tons de roxo (`D-42`) — e o texto
+`DUIMP` em STATUS. Por ser união, ele **não é exclusivo** com os demais campos:
+medido em 18/09/2026, 165 dos 167 têm STATUS preenchido e já aparecem em outro
+cartão. A categoria continua saindo do STATUS, e é ela que o filtro e a coluna
+Categoria da Página Operacional mostram.
 
-`meta.period` ecoa a janela que o servidor de fato aplicou, e `meta.dataRange`
-traz a faixa real das duas datas **no conjunto filtrado**, com quantos processos
-não têm cada uma. Os dois existem para o cartão distinguir zero por recorte de
-zero por ausência de dado: derivar a faixa no cliente seria cálculo na tela, e
-`missing` está lá porque data ausente não está dentro nem fora de janela nenhuma
-(A-20) — some de qualquer recorte por período, e sumir sem contagem seria
-descarte silencioso. `from` e `to` são `null` quando nenhum processo do conjunto
-tem a data; a tela diz "sem data", nunca uma faixa inventada. Medido em
-31/08/2026 sobre a planilha real: 64 dos 649 sem `ETA2`, 166 sem `RG`.
+`categoryCheck` (`D-49`) é a conferência de A-12, e existe porque a soma deixou
+de ser derivável dos cartões. Ela continua incidindo sobre as **quatro
+categorias** de TD-01, que seguem mutuamente exclusivas; a Página Início só a
+exibe quando `matches` é falso. Somar no cliente diria "não conferem" todo dia,
+porque `counts.emDesembaraco` não é mais uma delas.
+
+`meta.period` ecoa a janela que o servidor de fato aplicou. **`meta.dataRange`
+saiu em `D-49`**, junto com a linha que cada cartão exibia desde `H-52`: só a
+Página Início o consumia, e sem aquela linha ele ficaria servido e sem tela.
 
 `channelDistribution` (`H-51`) é bloco próprio, e não um campo em `counts`:
 `counts.canalVermelho` é IND-06 e continua com o mesmo valor. `known` é

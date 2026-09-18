@@ -158,6 +158,14 @@ demais não são avaliadas. A verificação de §2.2 **precede** a de §2.1 (A-2
 | `FT600.26` | apenas `clientRaw = "   "` | *(vazio)* | `fechado_aguardando_draft` | 2 — espaços contam como vazio |
 | *(vazio)* | preenchidas | `DESEMBARAÇADA` | *linha ignorada* | 1 |
 
+> **`D-49` (18/09/2026) NÃO tocou esta tabela**, e o registro existe porque a
+> mudança parece tocá-la. O cartão "Em desembaraço" da Página Início deixou de
+> exibir a categoria `em_desembaraco` e passou a contar IND-23 — cor de
+> desembaraço **ou** `DUIMP` no STATUS. A categoria continua saindo daqui, pela
+> regra 4, e é ela que o filtro Categoria, a coluna da Página Operacional e a
+> conferência de A-12 usam. As duas leituras convivem, e divergem de propósito:
+> medido no dia, 33 pela regra 4 contra 167 por IND-23.
+
 ### TD-02 — Reconhecimento de "Desembaraçada"
 
 `norm(s)` = `s.trim().toUpperCase()` → remoção de diacríticos (NFD, descarte de

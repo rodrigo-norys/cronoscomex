@@ -3,8 +3,7 @@ import {
   ARRIVAL_HORIZON_DAYS,
   arrivalCalendar,
   arrivingIn15Days,
-  arrivingThisWeek,
-  arrivingToday,
+  arrivingTodayWhite,
   expectedVessels,
 } from '../../src/domain/indicators.ts'
 import type { Process, StatusCategory } from '../../src/domain/types.ts'
@@ -19,11 +18,21 @@ interface Fields {
   eta2?: string | null
   vessel?: string
   statusCategory?: StatusCategory
+  styleKey?: string
 }
+
+/** A chave branca do arquivo real — `<fgColor theme="0"/>`, sem tint (TD-05). */
+const BRANCO = 'theme:0|tint:0.0000'
+const BRANCAS: ReadonlySet<string> = new Set([BRANCO])
 
 let nextRow = 2
 
-function process({ eta2 = null, vessel = '', statusCategory = 'em_andamento' }: Fields): Process {
+function process({
+  eta2 = null,
+  vessel = '',
+  statusCategory = 'em_andamento',
+  styleKey = BRANCO,
+}: Fields): Process {
   const row = nextRow++
   return {
     sourceRow: row,
@@ -58,35 +67,42 @@ function process({ eta2 = null, vessel = '', statusCategory = 'em_andamento' }: 
     colorResponsible: 'indefinido',
     customsChannel: 'indefinido',
     importerOutsideRj: null,
-    styleKey: 'none',
+    styleKey,
     cellStyleKeys: {},
     fills: {},
     anomalies: [],
   }
 }
 
-describe('indicadores de calendario — os tres cartoes', () => {
-  it('eta2 igual a hoje conta nos tres', () => {
+describe('indicadores de calendario — os dois cartoes', () => {
+  it('eta2 igual a hoje conta nos dois, com a linha branca', () => {
     const processes = [process({ eta2: '2026-08-03' })]
 
-    expect(arrivingToday(processes, HOJE)).toBe(1)
-    expect(arrivingThisWeek(processes, HOJE)).toBe(1)
+    expect(arrivingTodayWhite(processes, HOJE, BRANCAS)).toBe(1)
     expect(arrivingIn15Days(processes, HOJE)).toBe(1)
   })
 
-  it('domingo da mesma semana conta em chegandoSemana', () => {
-    const processes = [process({ eta2: '2026-08-09' })]
+  // `D-49`: a cor entrou no cartao, e e a da celula-ancora.
+  it('linha NAO branca nao conta em chegandoHoje, mesmo com eta2 de hoje', () => {
+    const processes = [process({ eta2: '2026-08-03', styleKey: 'argb:FF00FF00' })]
 
-    expect(arrivingThisWeek(processes, HOJE)).toBe(1)
-    expect(arrivingToday(processes, HOJE)).toBe(0)
+    expect(arrivingTodayWhite(processes, HOJE, BRANCAS)).toBe(0)
+    expect(arrivingIn15Days(processes, HOJE)).toBe(1)
   })
 
-  it('segunda seguinte NAO conta em chegandoSemana', () => {
-    const processes = [process({ eta2: '2026-08-10' })]
+  // Regra inviolavel 3: ausencia de cor declarada nao e branco.
+  it('linha sem preenchimento nao conta como branca', () => {
+    expect(
+      arrivingTodayWhite([process({ eta2: '2026-08-03', styleKey: 'none' })], HOJE, BRANCAS),
+    ).toBe(0)
+  })
 
-    expect(arrivingThisWeek(processes, HOJE)).toBe(0)
-    // Continua dentro da janela de 15 dias.
-    expect(arrivingIn15Days(processes, HOJE)).toBe(1)
+  it('conjunto de chaves brancas vazio zera o cartao', () => {
+    expect(arrivingTodayWhite([process({ eta2: '2026-08-03' })], HOJE, new Set())).toBe(0)
+  })
+
+  it('branca com eta2 de outro dia nao conta', () => {
+    expect(arrivingTodayWhite([process({ eta2: '2026-08-04' })], HOJE, BRANCAS)).toBe(0)
   })
 
   it('hoje + 15 conta em chegando15Dias — extremo inclusivo (A-35)', () => {
@@ -98,48 +114,35 @@ describe('indicadores de calendario — os tres cartoes', () => {
   })
 
   // A-20: data ausente nunca satisfaz condicao de calendario.
-  it('eta2 nulo nao conta em nenhum dos tres', () => {
+  it('eta2 nulo nao conta em nenhum dos dois', () => {
     const processes = [process({ eta2: null })]
 
-    expect(arrivingToday(processes, HOJE)).toBe(0)
-    expect(arrivingThisWeek(processes, HOJE)).toBe(0)
+    expect(arrivingTodayWhite(processes, HOJE, BRANCAS)).toBe(0)
     expect(arrivingIn15Days(processes, HOJE)).toBe(0)
   })
 
-  it('eta2 no passado nao conta em nenhum dos tres', () => {
+  it('eta2 no passado nao conta em nenhum dos dois', () => {
     const processes = [process({ eta2: '2026-08-02' })]
 
-    expect(arrivingToday(processes, HOJE)).toBe(0)
-    expect(arrivingThisWeek(processes, HOJE)).toBe(0)
+    expect(arrivingTodayWhite(processes, HOJE, BRANCAS)).toBe(0)
     expect(arrivingIn15Days(processes, HOJE)).toBe(0)
   })
 
   it('conta varios processos na mesma janela', () => {
     const processes = [
       process({ eta2: '2026-08-03' }),
+      process({ eta2: '2026-08-03', styleKey: 'argb:FF00FF00' }),
       process({ eta2: '2026-08-05' }),
-      process({ eta2: '2026-08-09' }),
       process({ eta2: '2026-08-10' }),
     ]
 
-    expect(arrivingToday(processes, HOJE)).toBe(1)
-    expect(arrivingThisWeek(processes, HOJE)).toBe(3)
+    expect(arrivingTodayWhite(processes, HOJE, BRANCAS)).toBe(1)
     expect(arrivingIn15Days(processes, HOJE)).toBe(4)
   })
 
   it('devolve zero para conjunto vazio', () => {
-    expect(arrivingToday([], HOJE)).toBe(0)
-    expect(arrivingThisWeek([], HOJE)).toBe(0)
+    expect(arrivingTodayWhite([], HOJE, BRANCAS)).toBe(0)
     expect(arrivingIn15Days([], HOJE)).toBe(0)
-  })
-
-  // No domingo a janela da semana ja encolheu ate o proprio dia.
-  it('no domingo, chegandoSemana equivale a chegandoHoje', () => {
-    const domingo = civil('2026-08-09')
-    const processes = [process({ eta2: '2026-08-09' }), process({ eta2: '2026-08-10' })]
-
-    expect(arrivingThisWeek(processes, domingo)).toBe(1)
-    expect(arrivingToday(processes, domingo)).toBe(1)
   })
 
   it('a categoria de status nao influencia os indicadores de calendario', () => {
@@ -148,7 +151,7 @@ describe('indicadores de calendario — os tres cartoes', () => {
       process({ eta2: '2026-08-03', statusCategory: 'fechado_aguardando_draft' }),
     ]
 
-    expect(arrivingToday(processes, HOJE)).toBe(2)
+    expect(arrivingTodayWhite(processes, HOJE, BRANCAS)).toBe(2)
   })
 })
 

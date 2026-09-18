@@ -30,6 +30,7 @@ export function indicatorsFixture(
   countsOverrides: Partial<IndicatorsResponse['counts']> = {},
   channelOverrides: Partial<IndicatorsResponse['channelDistribution']> = {},
   metaOverrides: Partial<IndicatorsResponse['meta']> = {},
+  checkOverrides: Partial<IndicatorsResponse['categoryCheck']> = {},
 ): IndicatorsResponse {
   return {
     counts: {
@@ -39,20 +40,20 @@ export function indicatorsFixture(
       desembaracados: 480,
       fechadoAguardandoDraft: 34,
       canalVermelho: 5,
+      // IND-24. Zero MEDIDO, nao ausencia: a planilha tem UMA linha branca, e
+      // o `ETA2` dela nao e hoje (`D-49`).
       chegandoHoje: 0,
-      chegandoSemana: 2,
       chegando15Dias: 60,
       atrasados: 17,
-      documentosPendentes: 14,
-      // IND-16. Zero MEDIDO, nao ausencia: o RG mais recente da planilha e
-      // 31/07, e passando esse dia a funcao devolve 3.
-      desembaracadosHoje: 0,
-      // `H-52`. Sem janela ativa, conta todo desembaracado com RG preenchido —
-      // 480 na categoria, 483 com RG, e os 3 de diferenca sao os que tem RG sem
-      // estar na categoria (A-29).
-      desembaracadosNoPeriodo: 480,
       ...countsOverrides,
     },
+    /*
+      `D-49`. As quatro categorias de TD-01, que deixaram de ser os cartoes: o
+      cartao `emDesembaraco` acima e IND-23, e nao entra nesta soma. Ela fecha
+      por construcao, como antes — um teste que a quebre o faz por escolha
+      explicita.
+    */
+    categoryCheck: { sum: 649, total: 649, matches: true, ...checkOverrides },
     // `H-51`. Medido em 31/08/2026 sobre a planilha real: 477 verdes, 5
     // vermelhas e 167 sem canal, somando as 649. O denominador do percentual e
     // 482, e as 167 ficam fora dele — contadas, nunca diluidas.
@@ -90,15 +91,8 @@ export function indicatorsFixture(
       timezone: 'America/Sao_Paulo',
       weekEnd: '2026-08-09',
       bazarShare: 0.3547,
-      // `H-52`. Sem recorte por padrao — o estado do criterio de aceite que
-      // manda cada cartao declarar a faixa REAL dos dados.
+      // Sem recorte por padrao.
       period: { from: null, to: null },
-      // As faixas medidas na planilha real em 31/08/2026
-      // (`docs/uso/RESULTADO.md` secao 5): 64 dos 649 sem `ETA2`, 166 sem `RG`.
-      dataRange: {
-        eta2: { from: '2025-12-30', to: '2026-09-09', missing: 64 },
-        registration: { from: '2026-01-05', to: '2026-07-31', missing: 166 },
-      },
       ...metaOverrides,
     },
   }

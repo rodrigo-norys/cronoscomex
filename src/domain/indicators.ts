@@ -1,4 +1,5 @@
-import { addDays, diffDays, isoWeekEnd, isWithin, toIsoDay } from './date-window.ts'
+import { addDays, diffDays, isWithin, toIsoDay } from './date-window.ts'
+import { normKey } from './normalizer.ts'
 import type { Process } from './types.ts'
 
 /**
@@ -6,7 +7,15 @@ import type { Process } from './types.ts'
  * arquivo, nao consultam relogio e nao conhecem HTTP.
  */
 
-/** Bloco `counts` de GET /api/indicators — IND-01 a IND-05. */
+/**
+ * As quatro categorias de TD-01, mutuamente exclusivas.
+ *
+ * **Deixou de ser o bloco `counts` da rota em `D-49`:** o cartao "Em
+ * desembaraco" passou a ser IND-23, que nao e categoria, e IND-03 foi
+ * aposentado. A contagem por categoria continua — ela alimenta `categoryCheck`,
+ * o filtro e a coluna Categoria da Pagina Operacional —, so nao e mais um
+ * indicador servido inteiro.
+ */
 export interface CategoryCounts {
   /** IND-01. Inclui `fechado_aguardando_draft`, por exigencia explicita. */
   total: number
@@ -53,21 +62,27 @@ export function countByCategory(processes: readonly Process[]): CategoryCounts {
   return counts
 }
 
-/** IND-07. `eta2` exatamente hoje. */
-export function arrivingToday(processes: readonly Process[], today: Date): number {
-  return processes.filter((p) => isWithin(p.eta2, today, today)).length
-}
-
 /**
- * IND-08. De hoje ate o domingo que encerra a semana ISO, extremos inclusivos.
+ * IND-24. `eta2` exatamente hoje, **e** a linha pintada de branco (`D-49`).
  *
- * Comeca em HOJE, nao na segunda: um container que chegou terca nao esta
- * "chegando" na quinta. A janela encolhe conforme a semana avanca, e no domingo
- * equivale a IND-07.
+ * Substitui IND-07, que contava so a data. A cor entra porque o operador pinta
+ * a linha conforme ela anda, e o cartao passa a responder "o que chega hoje e
+ * ainda nao andou" em vez de "o que chega hoje".
+ *
+ * A cor e a da CELULA-ANCORA, que e a cor do processo em todo o resto do
+ * sistema (ADR-0003). Exigir as doze colunas A-L brancas contaria tambem a
+ * linha cujas colunas nao tem cor DECLARADA, e ausencia de declaracao nao e
+ * branco (regra inviolavel 3).
+ *
+ * `whiteKeys` chega resolvido de fora, como todo mapa que o dominio consome
+ * (ADR-0006).
  */
-export function arrivingThisWeek(processes: readonly Process[], today: Date): number {
-  const weekEnd = isoWeekEnd(today)
-  return processes.filter((p) => isWithin(p.eta2, today, weekEnd)).length
+export function arrivingTodayWhite(
+  processes: readonly Process[],
+  today: Date,
+  whiteKeys: ReadonlySet<string>,
+): number {
+  return processes.filter((p) => whiteKeys.has(p.styleKey) && isWithin(p.eta2, today, today)).length
 }
 
 /** IND-09. De hoje ate hoje+15, extremos inclusivos (A-35). */
@@ -179,9 +194,11 @@ export function arrivalCalendar(
 }
 
 /**
- * Predicado de atraso — IND-15 e ALE-01, a mesma regra em duas apresentacoes
- * (A-19). Vive aqui, e nao em `overdueCount` (H-12), porque o ranking de
- * agentes ja precisa dele: duas implementacoes da mesma regra divergiriam.
+ * Predicado de atraso — ALE-01 e o `overdueCount` de IND-17 (A-19).
+ *
+ * **Sobreviveu a `D-49`, que aposentou IND-15.** O cartao de atrasados passou a
+ * ser IND-25, com outra regra; o alerta e o ranking de agentes continuam com
+ * esta, e e por isso que ela nunca morou dentro de um contador.
  *
  * `eta2 = null` NUNCA satisfaz (A-20). Data ausente nao e data vencida.
  */
@@ -249,9 +266,11 @@ export function channelDistribution(processes: readonly Process[]): ChannelDistr
 export const PENDING_DOCS_HORIZON_DAYS = 10
 
 /**
- * Predicado de documentacao pendente — IND-14 e ALE-02, a mesma regra em duas
- * apresentacoes (A-08). Vive aqui pelo mesmo motivo de `isOverdue`: duas
- * implementacoes da mesma condicao divergem no primeiro ajuste.
+ * Predicado de documentacao pendente — ALE-02 (A-08).
+ *
+ * **Sobreviveu a `D-49` pelo mesmo motivo de `isOverdue`:** o cartao que o
+ * apresentava era IND-14 e saiu da Pagina Inicial, e o alerta ficou. O
+ * horizonte que ele fixa passou a servir tambem a IND-25.
  *
  * A janela tem TETO e nao tem PISO: `eta2 <= hoje+10`, nunca
  * `hoje <= eta2 <= hoje+10`. Um intervalo fechado — o reflexo natural, ja que
@@ -265,14 +284,104 @@ export function hasPendingDocs(process: Process, today: Date): boolean {
   return process.eta2.getTime() <= horizon && process.statusCategory !== 'desembaracado'
 }
 
-/** IND-14. Apresentacao de `hasPendingDocs` — a regra vive la, nunca aqui. */
-export function pendingDocsCount(processes: readonly Process[], today: Date): number {
-  return processes.filter((process) => hasPendingDocs(process, today)).length
+/**
+ * A palavra que diz, no texto de STATUS, que a declaracao ja foi feita.
+ *
+ * Comparada por CONTINENCIA sobre o texto normalizado, por determinacao do
+ * usuario em 18/09/2026 (`D-49`). A consequencia foi medida e aceita: as 8
+ * linhas com `DOCS APROVADOS - AG CONFECCAO DE DUIMP` contam como tendo DUIMP,
+ * embora a declaracao ainda esteja por fazer.
+ */
+export const DUIMP_MARK = 'DUIMP'
+
+/** O texto de STATUS menciona DUIMP. Nao classifica categoria (TD-01 segue intacta). */
+export function mentionsDuimp(process: Process): boolean {
+  return normKey(process.statusRaw).includes(DUIMP_MARK)
 }
 
-/** IND-15. Apresentacao de `isOverdue` — a regra vive la, nunca aqui. */
-export function overdueCount(processes: readonly Process[], today: Date): number {
-  return processes.filter((process) => isOverdue(process, today)).length
+/**
+ * As cores de exibicao que dizem "em desembaraco" — bege, azul e roxo, nomeadas
+ * pelo usuario em 18/09/2026 (`D-49`).
+ *
+ * Sao cores de EXIBICAO, nao chaves de estilo: os dois tons de roxo do arquivo
+ * real ja compartilham `#A74F7B` por `D-42`, e e assim que "ou similar" se
+ * resolve sem limiar (ADR-0003). Quem traduz cor em chave e
+ * `styleKeysByDisplay`, na fronteira.
+ */
+export const CLEARANCE_DISPLAYS: readonly string[] = ['#FFE599', '#5B9BD5', '#A74F7B']
+
+/** A cor de exibicao de linha branca, para IND-24 (`D-49`). */
+export const WHITE_DISPLAYS: readonly string[] = ['#FFFFFF']
+
+/**
+ * IND-23. O cartao "Em desembaraco" da Pagina Inicial, desde `D-49`.
+ *
+ * **Uniao, nao intersecao:** a cor de desembaraco OU a mencao a DUIMP. Substitui
+ * IND-03, que contava a categoria `em_desembaraco` de TD-01 — e **nao a
+ * substitui no dominio**: a categoria continua saindo do STATUS, e e ela que o
+ * filtro e a coluna Categoria da Pagina Operacional mostram.
+ *
+ * Por isso este numero NAO e exclusivo com os outros cartoes: medido em
+ * 18/09/2026, 165 dos 167 tem STATUS preenchido e ja aparecem noutro cartao. A
+ * conferencia de A-12 deixou de somar cartoes por causa disso (`categoryCheck`).
+ */
+export function inClearanceCount(
+  processes: readonly Process[],
+  clearanceKeys: ReadonlySet<string>,
+): number {
+  return processes.filter(
+    (process) => clearanceKeys.has(process.styleKey) || mentionsDuimp(process),
+  ).length
+}
+
+/**
+ * IND-25. O cartao "Atrasados", desde `D-49`. Substitui IND-15.
+ *
+ * Troca a data vencida pelo horizonte de `PENDING_DOCS_HORIZON_DAYS` e o
+ * documento enviado pela mencao a DUIMP: o que importa ao operador e a
+ * declaracao, e `DOCS ENVIADOS` so esta preenchida em 20,7% das linhas.
+ *
+ * **Teto sem piso**, como em `hasPendingDocs` e pelo mesmo motivo (A-08): o
+ * processo cuja carga ja chegou e segue sem DUIMP e o mais grave, e um
+ * intervalo fechado o excluiria. Processo desembaracado fica de fora — STATUS
+ * `DESEMBARACADA` nao contem DUIMP, e sem esta condicao o cartao mediria 542
+ * das 650 linhas em vez de 62 (medido em 18/09/2026).
+ */
+export function overdueWithoutDuimpCount(processes: readonly Process[], today: Date): number {
+  const horizon = addDays(today, PENDING_DOCS_HORIZON_DAYS).getTime()
+
+  return processes.filter(
+    (process) =>
+      process.eta2 !== null &&
+      process.eta2.getTime() <= horizon &&
+      process.statusCategory !== 'desembaracado' &&
+      !mentionsDuimp(process),
+  ).length
+}
+
+/**
+ * A conferencia de A-12, calculada onde a regra vive.
+ *
+ * Ate `D-49` a Pagina Inicial somava os quatro cartoes de categoria; com IND-23
+ * no lugar de IND-03, os cartoes deixaram de ser as quatro categorias e a soma
+ * passou a nao fechar por desenho. A invariante continua valendo — `countByCategory`
+ * a garante —, entao quem confere passou a ser o servidor, e a tela so exibe
+ * quando `matches` e falso.
+ */
+export interface CategoryCheck {
+  readonly sum: number
+  readonly total: number
+  readonly matches: boolean
+}
+
+export function categoryCheck(counts: CategoryCounts): CategoryCheck {
+  const sum =
+    counts.emAndamento +
+    counts.emDesembaraco +
+    counts.desembaracados +
+    counts.fechadoAguardandoDraft
+
+  return { sum, total: counts.total, matches: sum === counts.total }
 }
 
 /** Uma linha de ranking. Formato de `05-contratos-api.md §1.3`. */
@@ -481,106 +590,6 @@ export function bazarShare(processes: readonly Process[]): number | null {
 
   const bazar = withGoods.filter((process) => process.goodsKey === BAZAR_KEY).length
   return Number((bazar / withGoods.length).toFixed(4))
-}
-
-/**
- * IND-16. Desembaracados **hoje**, cruzando data de registro E categoria.
- *
- * O cruzamento nao esta na especificacao: foi acrescentado por A-29, depois que
- * A-05 mostrou uma linha com RG preenchido e STATUS de canal amarelo — categoria
- * `em_andamento`. Sem a segunda condicao, o indicador contaria como concluido um
- * processo que nao concluiu.
- */
-export function clearedTodayCount(processes: readonly Process[], today: Date): number {
-  return processes.filter(
-    (process) =>
-      process.statusCategory === 'desembaracado' &&
-      isWithin(process.registrationDate, today, today),
-  ).length
-}
-
-/**
- * `H-52`. Desembaracados dentro da janela, contados pela data de REGISTRO.
- *
- * Mesma regra de IND-16 — categoria E data de registro (A-29) —, com a janela
- * no lugar do dia. Existe porque `desembaracados` responde "quantos dos que
- * chegaram na janela ja concluiram" e e lido como "quantos concluimos na
- * janela": duas perguntas, duas datas (`docs/uso/RESULTADO.md` secao 5).
- *
- * **A janela incide sobre o conjunto ja filtrado, e nao sobre a base.** RF-18
- * manda todo indicador desta rota responder sobre o recorte ativo, e um cartao
- * que ignorasse o filtro de periodo visivel na barra afirmaria um numero que a
- * tela nao explica. Sem filtro de periodo — o caso do criterio de aceite — os
- * dois conjuntos coincidem.
- *
- * Janela aberta dos dois lados conta todo processo desembaracado com RG: e o
- * mesmo `desembaracados` menos os que nao tem data de registro.
- */
-export function clearedInPeriodCount(
-  processes: readonly Process[],
-  from: Date | null,
-  to: Date | null,
-): number {
-  return processes.filter((process) => {
-    if (process.statusCategory !== 'desembaracado') return false
-    if (process.registrationDate === null) return false
-
-    const time = process.registrationDate.getTime()
-    if (from !== null && time < from.getTime()) return false
-    if (to !== null && time > to.getTime()) return false
-    return true
-  }).length
-}
-
-/**
- * `H-52`. A faixa real de uma data no conjunto, para o cartao distinguir zero
- * por recorte de zero por ausencia de dado.
- *
- * `missing` nao e detalhe: data ausente nao esta dentro nem fora de janela
- * nenhuma (A-20), entao esses processos somem de qualquer recorte por periodo —
- * e sumir sem contagem seria descarte silencioso (regra inviolavel 2). Medido
- * em 31/08/2026: 64 dos 649 processos nao tem `ETA2` e 166 nao tem `RG`
- * (`docs/uso/RESULTADO.md` secao 5).
- */
-export interface DateFieldRange {
-  /** `AAAA-MM-DD`, ou `null` quando nenhum processo do conjunto tem a data. */
-  readonly from: string | null
-  readonly to: string | null
-  readonly missing: number
-}
-
-export interface DataRanges {
-  readonly eta2: DateFieldRange
-  readonly registration: DateFieldRange
-}
-
-function rangeOf(processes: readonly Process[], pick: (p: Process) => Date | null): DateFieldRange {
-  let earliest: Date | null = null
-  let latest: Date | null = null
-  let missing = 0
-
-  for (const process of processes) {
-    const date = pick(process)
-    if (date === null) {
-      missing += 1
-      continue
-    }
-    if (earliest === null || date.getTime() < earliest.getTime()) earliest = date
-    if (latest === null || date.getTime() > latest.getTime()) latest = date
-  }
-
-  return {
-    from: earliest === null ? null : toIsoDay(earliest),
-    to: latest === null ? null : toIsoDay(latest),
-    missing,
-  }
-}
-
-export function dataRanges(processes: readonly Process[]): DataRanges {
-  return {
-    eta2: rangeOf(processes, (process) => process.eta2),
-    registration: rangeOf(processes, (process) => process.registrationDate),
-  }
 }
 
 /** IND-22. Bloco `documentaryLeadTime` de GET /api/indicators. */

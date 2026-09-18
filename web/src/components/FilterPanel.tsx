@@ -7,6 +7,7 @@ import {
   type OutsideRjSelection,
 } from '../hooks/useFilters.ts'
 import { useModalFocus } from '../hooks/useModalFocus.ts'
+import { DateField } from './DateField.tsx'
 import { type FilterOption, MultiSelect } from './MultiSelect.tsx'
 
 /**
@@ -189,25 +190,17 @@ export function FilterPanel({ filters, options, optionsError, onClose }: FilterP
           <section aria-label="Período (ETA2)">
             <h3 className="mb-1 text-xs font-medium text-text-secondary">Período (ETA2)</h3>
             <div className="flex flex-col gap-2">
-              <label className="flex flex-col gap-1 text-xs text-text-secondary">
-                ETA2 de
-                <input
-                  type="date"
-                  value={selection.etaFrom}
-                  onChange={(event) => filters.setRange('etaFrom', event.target.value)}
-                  className="rounded-control border border-border-control bg-surface-raised px-2 py-1 text-sm text-text-primary"
-                />
-              </label>
+              <DateField
+                label="ETA2 de"
+                value={selection.etaFrom}
+                onValue={(iso) => filters.setRange('etaFrom', iso)}
+              />
 
-              <label className="flex flex-col gap-1 text-xs text-text-secondary">
-                ETA2 até
-                <input
-                  type="date"
-                  value={selection.etaTo}
-                  onChange={(event) => filters.setRange('etaTo', event.target.value)}
-                  className="rounded-control border border-border-control bg-surface-raised px-2 py-1 text-sm text-text-primary"
-                />
-              </label>
+              <DateField
+                label="ETA2 até"
+                value={selection.etaTo}
+                onValue={(iso) => filters.setRange('etaTo', iso)}
+              />
             </div>
           </section>
 
