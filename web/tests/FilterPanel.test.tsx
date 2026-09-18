@@ -180,7 +180,7 @@ describe('o fechamento', () => {
     const { onClose } = renderPanel(filtersStub({ setRange }))
 
     fireEvent.change(within(dialogo()).getByLabelText('ETA2 de'), {
-      target: { value: '2026-09-01' },
+      target: { value: '01/09/2026' },
     })
 
     expect(setRange).toHaveBeenCalledWith('etaFrom', '2026-09-01')

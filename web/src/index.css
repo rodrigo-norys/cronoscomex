@@ -322,9 +322,10 @@
 
 /*
  * Sem isto, as barras de rolagem e os controles nativos de formulario — os
- * quatro `input type="date"` e os tres `select` do conjunto — nao recebem o
- * esquema que o restante da interface declara. **`light dark` desde `H-57`**:
- * com `light` sozinho, o campo de data continuaria branco numa tela escura.
+ * quatro calendarios nativos de `DateField` e os tres `select` do conjunto —
+ * nao recebem o esquema que o restante da interface declara. **`light dark`
+ * desde `H-57`**: com `light` sozinho, o campo de data continuaria branco numa
+ * tela escura.
  */
 :root {
   color-scheme: light dark;
