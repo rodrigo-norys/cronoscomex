@@ -54,3 +54,42 @@ coisa**. Isso é semântica, e nenhuma asserção a alcança.
 - **não é reprodutível**: três execuções sobre o mesmo diff concordaram em 23%,
   e metade dos achados apareceu uma vez só. Uma execução limpa **não** é prova
   de que não há defeito.
+
+## Record não fica em `docs/`
+
+**Documento datado que descreve um evento passado** — relatório de sessão,
+auditoria executada, medição — nunca fica obsoleto por construção, então nenhum
+critério de obsolescência o alcança e ele acumula para sempre. O histórico do
+git é o arquivo dele. Remova, e deixe uma linha no log da §5 de
+`docs/10-governanca.md` com o comando que recupera — `D-46` é o exemplo.
+
+**Fica o que é referência ou explicação do estado atual**, com consumidor.
+
+**`docs/06-backlog.md` é o sumidouro, e não é candidato a limpeza.** É lá que o
+conteúdo dos outros sobrevive: foi o bloco `✅ CONCLUÍDA` que tornou os números
+da revisão de estilo de 01/09/2026 (`D-48`) redundantes. Esvaziá-lo destrói o destino
+das extrações.
+
+**Extraia antes de remover**, e o destino depende do tipo:
+
+| O que é | Vai para |
+|---|---|
+| decisão tomada, e decisão **recusada** | `docs/10-governanca.md` §5, ou um ADR |
+| medição de que o código depende | o cabeçalho do módulo em `src/` |
+| fato de configuração do repositório | `CLAUDE.md` |
+| achado ainda aberto | `docs/06-backlog.md` |
+
+**Medido em 18/09/2026**, para a próxima passada comparar. Saíram **5.713
+linhas** em dois lotes, e a densidade decidiu a forma de cada um:
+
+- os quatro relatórios de `docs/sessao-autonoma/` — 1.786 linhas, **3,4%** de
+  fato inédito — viraram **três linhas** espalhadas onde são consultadas
+  (`D-46`);
+- as três auditorias de configuração — 3.927 linhas, **14,2%** — precisaram de
+  **um documento**, e viraram `ADR-0007` (`D-47`).
+
+**Densidade baixa extrai para linhas; densidade alta pede documento.** E o
+destino de um consolidado é `adr/`, não a raiz de `docs/`: os três removidos
+nasceram justamente como documento de configuração fora da numeração, sem
+consumidor mecânico, e foi por isso que ninguém os revisitou em seis semanas.
+A ferramenta que mede é a skill global `desinchar-docs`.

@@ -104,8 +104,10 @@ export function ConflictDialog({ refusal, onClose }: ConflictDialogProps) {
         /*
           `H-62`. **A ultima sombra do conjunto sai aqui**, e este era o caso em
           que ela parecia indispensavel: o que separava o painel do veu era o
-          desfoque. Passa a ser a BORDA — `border-border-strong` mede 5,06:1
-          sobre `surface-raised` no claro e 5,04:1 no escuro (`H-57`) — mais o
+          desfoque. Passa a ser a BORDA — `border-border-modal`, que existe por
+          causa deste caso: `border-strong` mede 1,91:1 contra o veu composto,
+          contra um piso de 3:1, porque um cinza medio fica ENTRE o painel
+          branco e o veu. A conta esta em `web/src/index.css` — mais o
           `overlay-scrim`, que tem alfa proprio por esquema desde `H-57`, porque
           o mesmo preto a 40% sobre fundo escuro nao escurece nada.
 

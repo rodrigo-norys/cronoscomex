@@ -175,8 +175,8 @@ nenhuma das nove produz.
 > anteparo.
 
 Os dois documentos que geraram trabalho depois do plano estão exauridos:
-`docs/redesign/VERIFICACAO.md` — os seis procedimentos de navegador nos dois
-esquemas, com três limitações declaradas — e `docs/redesign/REVISAO-ESTILO.md`,
+a verificação no navegador de 01/09/2026 (`D-48`) — os seis procedimentos de navegador nos dois
+esquemas, com três limitações declaradas — e a revisão de estilo de 01/09/2026 (`D-48`),
 cujos 14 achados foram todos resolvidos ou declarados não normativos.
 
 **A medição no navegador é `tools/medir-navegador.mjs`**, versionada em
@@ -233,7 +233,7 @@ Não bloqueiam a implementação. Fechar antes da entrega ao operador.
 
 | # | Pendência | Quando fechar |
 |---|---|---|
-| **PD-07** | **O resto de `VN-5` (forced colors), e sobrou pouco.** A pendência nasceu supondo que o procedimento exigia Windows, e **isso foi medido como falso em 31/08/2026**: o Chrome emula `forced-colors: active` no Linux, e o que o procedimento pergunta não é que cor o tema pinta, e sim se o desenho sobrevive quando as cores do autor são descartadas. **`H-65` fechou o item 4 por medição**: sob o modo forçado os dois esquemas são paletas de sistema **realmente distintas** — branco com `rgb(0, 0, 159)` e preto com `rgb(255, 255, 0)` —, e a lateral distingue o item corrente nas duas. **E o item 3(e) tinha o diagnóstico errado**, corrigido em `H-64`: `:hover` **casa** no headless, e o que faltava era o apontador **declarado** — o Tailwind v4 envolve todo `hover:` em `@media (hover: hover)`, e o headless responde `hover: none`. Resolvido pela flag `--blink-settings`, exposta como `apontadorFino`. **Sobram dois:** (1) a paleta **nominal** do Windows — Aquático e as demais —, que é confirmação de segunda ordem; (2) o `ConflictDialog` do item 3(d), que só abre com a planilha alterada durante a sessão | **O item (1) na próxima visita à máquina.** A instalação de 04/09/2026 fechou `PD-01` e não o exerceu — ele é confirmação de segunda ordem, e ficou para trás sem custo. O item (2) **não exige Windows** — exige uma fixture que produza o conflito, e nenhuma das nove produz; fecha junto da gestão de foco do diálogo, que está no mesmo bloqueio |
+| **PD-07** | **O resto de `VN-5` (forced colors), e sobrou pouco.** A pendência nasceu supondo que o procedimento exigia Windows, e **isso foi medido como falso em 31/08/2026**: o Chrome emula `forced-colors: active` no Linux, e o que o procedimento pergunta não é que cor o tema pinta, e sim se o desenho sobrevive quando as cores do autor são descartadas. **`H-65` fechou o item 4 por medição**: sob o modo forçado os dois esquemas são paletas de sistema **realmente distintas** — branco com `rgb(0, 0, 159)` e preto com `rgb(255, 255, 0)` —, e a lateral distingue o item corrente nas duas. **E o item 3(e) tinha o diagnóstico errado**, corrigido em `H-64`: `:hover` **casa** no headless, e o que faltava era o apontador **declarado** — o Tailwind v4 envolve todo `hover:` em `@media (hover: hover)`, e o headless responde `hover: none`. Resolvido pela flag `--blink-settings`, exposta como `apontadorFino`. **Sobra um:** a paleta **nominal** do Windows — Aquático e as demais —, que é confirmação de segunda ordem. **O item 3(d) fechou em 17/09/2026:** o ensaio produziu o conflito num navegador real, e a gestão de foco do `ConflictDialog` saiu junto, por `useModalFocus` | **O item (1) na próxima visita à máquina.** A instalação de 04/09/2026 fechou `PD-01` e não o exerceu — ele é confirmação de segunda ordem, e ficou para trás sem custo. O que restava do item (2) deixou de depender de fixture: o ensaio produziu o conflito na planilha real |
 | **PD-08** | **Os dois mapas de negócio de `H-48` viajam à parte, e o `README.md` da distribuição ainda nega isso.** Eles estão no `.gitignore` e a árvore leva só os `.exemplo`. **A cópia manual foi feita em 04/09/2026 e funcionou** — `client-map.json` `d4b8b5dd…` e `team-map.json` `2054fe7b…` conferidos byte a byte nas duas pontas, e o campo Cliente passou a mostrar o nome consolidado. **A parte documental fechou em 04/09/2026**, e esta linha a descrevia como aberta até 17/09: conferido na branch, o `README.md` dela não diz mais "você não precisa editar arquivo nenhum", a tabela de pastas cita "os dois mapas de negócio", e o bloco "Como refazer esta branch" **não lista arquivo nenhum** — manda calcular pelo script. **O que sobra não é documental: é `H-88`**, que tira o mapa da cópia manual (`D-32`). Os detalhes estão em `.claude/rules/distribuicao.md`, que já registrava isso | **Quando `H-88` entregar a edição pela tela.** A branch está sincronizada com a `main` — conferido em 17/09/2026: dos 138 arquivos, 136 são idênticos, e os dois que diferem são os exclusivos dela por desenho. **A JANELA de 03/09 fechou:** a instalação do operador agora tem `E13` e grava no mapa, então **as duas pontas escrevem** e a cópia cega deixou de ser segura — daqui em diante, reconciliar antes de copiar. **Repita a cópia toda vez que a regra de consolidação ou a equipe mudar**: nenhum aviso existe para lembrar |
 | **PD-09** | **A premissa `P-15` ficou sem dono, e há uma frase da tela apoiada nela.** `P-15` — o OneDrive sincroniza o arquivo de lock `~$<nome>.xlsx` entre máquinas — está "não afirmada" desde o plano, e `docs/00-visao-escopo.md` e `A-58` mandavam medi-la em `H-30`, que **fechou em 18/08/2026 sem medir**. Mesmo padrão de `PD-05` entre 14 e 17/08/2026. A medição direta pede **duas máquinas com a mesma pasta sincronizada**, e nada indica que exista uma segunda conta com acesso à pasta da organização; o **proxy de uma máquina só** — abrir a planilha no Excel e observar se o `~$` sobe, pelo ícone do OneDrive ou pela visão web do SharePoint — responde a mesma pergunta. O que não pode ficar como está: `web/src/components/StatusBanner.tsx` afirma "Alguém está com a planilha aberta no Excel", que é a leitura **forte** da premissa. Ou ela é medida e a frase se justifica, ou a frase recua para o que é sabidamente verdadeiro — o arquivo está aberto **nesta** máquina — com o motivo no cabeçalho do componente | **Medido em 03/09/2026, e o proxy não é executável nesta instalação:** a planilha real do operador está em `Downloads`, **fora do OneDrive** — a pasta sincronizada existe e não a contém. `P-15` supõe o `~$` viajando entre máquinas por pasta compartilhada; sem isso, não há o que observar. **A leitura forte da frase é falsa por construção aqui**, e não por falta de medição: o `~$` só pode ser de quem abriu o arquivo NESTA máquina. Resta decidir entre recuar a frase de `StatusBanner.tsx` — o caminho que os fatos apoiam — ou medir `P-15` num cenário que o operador não usa |
 
@@ -262,8 +262,8 @@ do uso. Nada aqui repete o que está lá — abra quando a linha disser.
 - **Decisões do usuário, já tomadas e não re-litigáveis:**
   `docs/10-governanca.md` §5.
 - **De onde veio cada épico posterior ao plano** — `E9` de
-  `docs/estilizacao/RESULTADO.md`, `E10` de `docs/uso/RESULTADO.md`, `E11` de
-  `docs/redesign/PROPOSTA.md`. A ordem entre eles vive no cabeçalho de cada
+  a revisão de estilo de 18/08/2026 (`D-48`), `E10` de `docs/uso/RESULTADO.md`, `E11` de
+  a proposta do mockup Cronos Console, 31/08/2026 (`D-48`). A ordem entre eles vive no cabeçalho de cada
   épico, e **não** em `docs/07-plano-entrega.md`, que só alcança o plano
   original.
 
@@ -277,6 +277,12 @@ pt-br, sem o tipo `test`.
 
 **O merge acontece no GitHub, não localmente.** `branch → commits → push da
 branch → PR → merge por lá`. Mesclar na `main` antes do push **mata o PR**.
+
+**`delete_branch_on_merge` está ligado**, e com ele uma cascata de PRs
+encadeados se corrige sozinha: mesclado o de baixo, o GitHub reaponta o
+seguinte para a `main`. **Desligado, não acontece** — medido em 01/09/2026,
+numa pilha de seis: dois PRs ficaram apontando para a branch de baixo em vez
+da `main` e precisaram ser reabertos depois de ligar a opção.
 
 **A branch `distribuicao` é a árvore que vai para a máquina do operador.**
 **Sem contagem aqui**, pela mesma razão que `.claude/rules/distribuicao.md` já
@@ -506,8 +512,10 @@ arquivo.
 > 11/09/2026 — as quatro histórias de `E15` listadas sob o cabeçalho de `E14`.
 > Na mesma execução ele reprovou **dois números vivos** que a revisão
 > adversarial não pegara, e um deles estava na skill que conduz a história.
-> **`docs/sessao-autonoma/` é isento**, e a isenção é estrutural: são relatórios
-> datados, e reprovar neles ensinaria a reescrever registro histórico.
+> **`docs/sessao-autonoma/` era isento**, e a isenção é estrutural: são relatórios
+> datados, e reprovar neles ensinaria a reescrever registro histórico. **O
+> diretório saiu em 18/09/2026 (`D-46`)** e a isenção fica, como precedente para
+> o próximo record datado que entrar.
 
 **`npm run test:strip`** importa os módulos de `src/` sob
 `--experimental-strip-types`, que é como a aplicação roda de verdade. **Nada de

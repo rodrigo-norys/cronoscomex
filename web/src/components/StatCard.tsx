@@ -36,6 +36,14 @@ const VALUE_STYLE: Record<StatVariant, string> = {
   urgencia: 'text-state-warning-fg',
 }
 
+/*
+  **Divergencia conhecida, e fora do predicado de `C04`** — que so alcanca
+  `rounded`/`border`/`shadow`. O cartao de contagem daqui usa `font-mono
+  text-3xl`; o de `Alerts.tsx` usa `text-2xl`, sem mono. Levantado pela revisao
+  de estilo de 01/09/2026 e nao executado: unificar e decisao de desenho, nao
+  correcao. Registrado aqui em 18/09/2026 (`D-48`), ao remover o documento que
+  o guardava.
+*/
 export function StatCard({ label, value, variant = 'volume', hint, period }: StatCardProps) {
   const loading = value === null
 

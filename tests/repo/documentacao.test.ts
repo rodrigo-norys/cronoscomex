@@ -290,6 +290,10 @@ function arquivosMarkdown(diretorio: string): string[] {
  * commit. `RELATORIO-01-09-2026-2.md` afirma "66 das 72 histórias", e estava
  * certo em 01/09/2026. Reprovar ali ensinaria a reescrever registro histórico,
  * que é o oposto do que o repositório quer.
+ *
+ * **O diretório saiu do repositório em 18/09/2026 (`D-46`)**, e o filtro fica:
+ * ele é no-op sobre um palheiro que já não contém esses caminhos, e volta a
+ * valer no próximo relatório datado que entrar. Apagá-lo apagaria a razão.
  */
 const PALHEIRO = [
   ...arquivosMarkdown('docs'),

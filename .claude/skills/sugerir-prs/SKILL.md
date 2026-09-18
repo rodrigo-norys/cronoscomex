@@ -181,7 +181,7 @@ commitado localmente viaja em todo push futuro, e continua alcançável pelo has
 de removido do topo. Por isso a varredura acontece **antes** de commitar (`/sugerir-commits`) e
 de novo aqui, sobre `git diff <base>...HEAD`.
 
-O princípio que rege a decisão **D-2** de `docs/governance-tooling-claude.md`: o que hoje é
+O princípio que rege `ADR-0007` (§Decisão): o que hoje é
 local e inofensivo, no push vira público e permanente. `docs/perfilamento/*.json` está no
 `.gitignore` por isso; o restante de `docs/` não está, e por isso é conferido a cada PR.
 

@@ -58,18 +58,7 @@ Leia nesta ordem. Cada documento pressupõe o anterior.
 | [0004](adr/0004-escrita-cirurgica-xlsx.md) | Escrita cirúrgica no XML, nunca reserialização |
 | [0005](adr/0005-historico-jsonl-append-only.md) | Histórico em JSONL append-only |
 | [0006](adr/0006-indicadores-em-memoria.md) | Indicadores como funções puras em memória |
-
-### Sobre a configuração do agente
-
-Não descrevem o produto, e por isso ficam fora da ordem de leitura. São
-**diagnósticos datados de 04/08/2026**, escritos sem aplicar nada: nenhum deles
-alterou arquivo de configuração.
-
-| Documento | O que traz |
-|---|---|
-| [auditoria-configuracao-claude.md](auditoria-configuracao-claude.md) | Auditoria de `.claude/` e do `CLAUDE.md`, sob a ótica de **segurança** |
-| [delegacao-configuracao-claude.md](delegacao-configuracao-claude.md) | O mesmo objeto, sob a ótica do **custo de supervisão** |
-| [governance-tooling-claude.md](governance-tooling-claude.md) | O blueprint de governance e tooling que os dois anteriores propõem |
+| [0007](adr/0007-governanca-da-configuracao-do-agente.md) | Governança da configuração do agente — **o que foi recusado, o que foi revertido e o que nunca foi verificado** |
 
 ### De onde vieram os épicos nascidos depois do plano
 
@@ -80,11 +69,7 @@ Cada um tem um documento de origem, e o cabeçalho do épico em
 | Origem | Épico | O que traz |
 |---|---|---|
 | [estilizacao/corpus-estilo.md](estilizacao/corpus-estilo.md) | — | **40 regras de estilização verificáveis**, com identificador de norma, sinal sintático e contraexemplo. É o corpus que o subagente `revisor-estilo` usa |
-| [estilizacao/RESULTADO.md](estilizacao/RESULTADO.md) | `E9` | A auditoria de 18/08/2026 contra o corpus: 21 achados sobre 25 arquivos, em 7 ondas |
 | [uso/RESULTADO.md](uso/RESULTADO.md) | `E10` | O que apareceu na tela em 31/08/2026, com o operador usando o painel para trabalhar — 12 observações, 8 viraram história |
-| [redesign/PROPOSTA.md](redesign/PROPOSTA.md) | `E11` | A transcrição versionada do mockup *Cronos Console*, com a paleta dos dois esquemas, as seis reprovações de contraste medidas e as seis divergências contra o repositório |
-| [redesign/REVISAO-ESTILO.md](redesign/REVISAO-ESTILO.md) | `E12` | Os 14 achados da revisão de estilo de 01/09/2026, todos resolvidos ou declarados não normativos |
-| [redesign/VERIFICACAO.md](redesign/VERIFICACAO.md) | `E11` | Os seis procedimentos de navegador nos dois esquemas, com três limitações declaradas |
 
 ### Regras de processo
 
@@ -141,7 +126,7 @@ largura de coluna, fica escrita e não executada**, por escolha do usuário.
 
 Três dos épicos posteriores ao
 plano nasceram de documentos de auditoria que estão em `docs/estilizacao/`,
-`docs/uso/` e `docs/redesign/PROPOSTA.md` sem nunca terem virado história.
+`docs/uso/` e a proposta do mockup Cronos Console, 31/08/2026 (`D-48`) sem nunca terem virado história.
 
 **`E13` é retroativo**, e é o único: a criação de linha, a edição na tabela, a
 ordenação e a gravação do mapa de clientes entraram em 02/09/2026 **sem história
