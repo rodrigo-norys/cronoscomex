@@ -134,13 +134,25 @@ export function buildServer(
   registerConfigRoutes(app, config, store, applyWorkbookPath, configPath, openDialog, webRoot)
   registerQuarantineRoute(app)
   registerReloadRoute(app, store)
-  registerIndicatorsRoute(app, config, store, clientGroups, teamMap)
+  registerIndicatorsRoute(app, config, store, clientGroups, teamMap, colorMap)
   registerAlertsRoute(app, config, store, historyPath)
   registerFilterOptionsRoute(app, store, clientGroups, teamMap)
   registerProcessesRoute(app, config, store, historyPath)
   registerHistoryRoute(app, config, store, historyPath)
   registerEditsRoutes(app, store, queuePath)
-  registerProcessColorRoute(app, store, colorMap)
+  /*
+    `queuePath` tambem aqui, e nao so em `registerEditsRoutes`: a rota de cor
+    escreve na MESMA fila, e a assinatura dela sempre aceitou o caminho — era
+    esta chamada que nao o repassava. Medido em 17/09/2026, pelo ensaio: com uma
+    fila injetada, o `PATCH` gravava em `data/pending-edits.jsonl` enquanto o
+    `apply` lia a fila injetada e respondia `NADA_A_APLICAR`. As duas pontas do
+    mesmo gesto apontando para arquivos diferentes.
+
+    E o mesmo modo de falha que a nota de `queuePath` acima descreve ter custado
+    quatro edicoes na fila do operador em 01/09/2026 — num sexto caminho de
+    escrita, que passou despercebido porque em producao ambos caem no padrao.
+  */
+  registerProcessColorRoute(app, store, colorMap, queuePath)
   registerClientsRoutes(app, store, clientMap, clientGroups, clientMapPath, applyClientMap)
   registerTeamRoutes(app, store, teamMap, teamMapPath, applyTeamMap)
   registerApplyRoute(app)

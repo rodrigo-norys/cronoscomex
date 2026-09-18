@@ -7,6 +7,7 @@ import {
   type OutsideRjSelection,
 } from '../hooks/useFilters.ts'
 import { useModalFocus } from '../hooks/useModalFocus.ts'
+import { DateField } from './DateField.tsx'
 import { type FilterOption, MultiSelect } from './MultiSelect.tsx'
 
 /**
@@ -22,9 +23,11 @@ import { type FilterOption, MultiSelect } from './MultiSelect.tsx'
  *
  * **Modal de verdade, e nao um popover grande** — a quarta determinacao de
  * `D-30`. Foco preso, `Esc` fecha, o resto da tela e inerte, e o foco volta para
- * o gatilho. **Este e o primeiro modal do conjunto com teste**: o
- * `ConflictDialog` so abre com a planilha alterada durante a sessao, e por isso
- * a gestao de foco dele segue parada em `PD-07`.
+ * o gatilho. **Este foi o primeiro modal do conjunto com teste**, e ate
+ * 17/09/2026 o unico: o `ConflictDialog` so abre com a planilha alterada durante
+ * a sessao, e a gestao de foco dele estava parada em `PD-07`. O ensaio produziu
+ * o conflito num navegador real, mediu o dialogo abrindo com o foco no `<body>`,
+ * e os dois passaram a usar `useModalFocus`.
  *
  * **O comportamento de foco saiu daqui em `H-83`**, para `useModalFocus`: a
  * busca por atalho precisava do mesmo, e duas copias divergem. A inercia do
@@ -187,25 +190,17 @@ export function FilterPanel({ filters, options, optionsError, onClose }: FilterP
           <section aria-label="Período (ETA2)">
             <h3 className="mb-1 text-xs font-medium text-text-secondary">Período (ETA2)</h3>
             <div className="flex flex-col gap-2">
-              <label className="flex flex-col gap-1 text-xs text-text-secondary">
-                ETA2 de
-                <input
-                  type="date"
-                  value={selection.etaFrom}
-                  onChange={(event) => filters.setRange('etaFrom', event.target.value)}
-                  className="rounded-control border border-border-control bg-surface-raised px-2 py-1 text-sm text-text-primary"
-                />
-              </label>
+              <DateField
+                label="ETA2 de"
+                value={selection.etaFrom}
+                onValue={(iso) => filters.setRange('etaFrom', iso)}
+              />
 
-              <label className="flex flex-col gap-1 text-xs text-text-secondary">
-                ETA2 até
-                <input
-                  type="date"
-                  value={selection.etaTo}
-                  onChange={(event) => filters.setRange('etaTo', event.target.value)}
-                  className="rounded-control border border-border-control bg-surface-raised px-2 py-1 text-sm text-text-primary"
-                />
-              </label>
+              <DateField
+                label="ETA2 até"
+                value={selection.etaTo}
+                onValue={(iso) => filters.setRange('etaTo', iso)}
+              />
             </div>
           </section>
 

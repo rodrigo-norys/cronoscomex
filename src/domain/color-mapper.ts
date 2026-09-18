@@ -255,6 +255,31 @@ export function indexDisplay(
 }
 
 /**
+ * As chaves de estilo que se pintam com uma das cores de exibicao dadas.
+ *
+ * **E o que "ou similar" significa neste projeto**, e nao um limiar de
+ * distancia: dois tons que o operador enxerga como a mesma cor ja compartilham
+ * o `display`, por `D-42` — os dois roxos sao `#A74F7B`. Um limiar calculado e
+ * exatamente a alternativa A2 que o ADR-0003 recusa.
+ *
+ * Le so `entries`, nunca `cellFills`: a cor do PROCESSO sai da celula-ancora, e
+ * `cellFills` e pintura de celula que nao classifica nada (`H-94`). Chave sem
+ * `display` fica de fora, como no indice — cor que ninguem declarou nao vira
+ * cor proxima.
+ */
+export function styleKeysByDisplay(
+  map: readonly ColorMapEntry[],
+  displays: readonly string[],
+): ReadonlySet<string> {
+  const wanted = new Set(displays)
+  const keys = new Set<string>()
+  for (const entry of map) {
+    if (entry.display !== undefined && wanted.has(entry.display)) keys.add(entry.styleKey)
+  }
+  return keys
+}
+
+/**
  * A cor de fundo de cada celula, a partir das chaves de estilo dela (`H-94`).
  *
  * **Coluna cuja chave nao tem `display` declarado fica FORA do resultado**, e

@@ -5,6 +5,14 @@
  * que existe, **urgencia** conta o que exige acao. A especificacao original
  * omitia Atrasados e Documentos pendentes da tela de entrada — a tela nao
  * mostrava o que pede trabalho.
+ *
+ * **Rotulo e numero, e nada mais** (`D-49`). O cartao tinha duas linhas abaixo
+ * do contador: a janela contada, de `H-52`, e o `hint` "Pede acao", de `H-45`.
+ * As duas sairam por ordem do usuario, para despoluir a tela.
+ *
+ * **O que isso custa esta medido e foi aceito:** o `hint` era o que distinguia
+ * a variante de urgencia em TEXTO (`ACHADO 18`, `SC 1.4.1`), e sem ele a
+ * distincao volta a ser so o par de cores — a situacao anterior a `H-45`.
  */
 
 export type StatVariant = 'volume' | 'urgencia'
@@ -14,16 +22,6 @@ interface StatCardProps {
   /** `null` enquanto nao ha leitura. Nunca renderizado como `0`. */
   value: number | null
   variant?: StatVariant
-  hint?: string
-  /**
-   * `H-52`. A janela que este numero esta contando, ja escrita pela pagina.
-   *
-   * Sem ela, cartao zerado por recorte e cartao zerado por ausencia de dado sao
-   * o mesmo `0` na tela — e o periodo vivia so na barra de filtros, noutra
-   * regiao. O cartao nao a deriva: recebe pronta, porque quem recortou foi o
-   * servidor.
-   */
-  period?: string
 }
 
 const VARIANT_STYLE: Record<StatVariant, string> = {
@@ -36,7 +34,15 @@ const VALUE_STYLE: Record<StatVariant, string> = {
   urgencia: 'text-state-warning-fg',
 }
 
-export function StatCard({ label, value, variant = 'volume', hint, period }: StatCardProps) {
+/*
+  **Divergencia conhecida, e fora do predicado de `C04`** — que so alcanca
+  `rounded`/`border`/`shadow`. O cartao de contagem daqui usa `font-mono
+  text-3xl`; o de `Alerts.tsx` usa `text-2xl`, sem mono. Levantado pela revisao
+  de estilo de 01/09/2026 e nao executado: unificar e decisao de desenho, nao
+  correcao. Registrado aqui em 18/09/2026 (`D-48`), ao remover o documento que
+  o guardava.
+*/
+export function StatCard({ label, value, variant = 'volume' }: StatCardProps) {
   const loading = value === null
 
   return (
@@ -58,12 +64,6 @@ export function StatCard({ label, value, variant = 'volume', hint, period }: Sta
           {value.toLocaleString('pt-BR')}
         </p>
       )}
-      {period && (
-        <p className="mt-1 text-xs text-text-secondary" data-period="">
-          {period}
-        </p>
-      )}
-      {hint && <p className="mt-1 text-xs text-text-muted">{hint}</p>}
     </article>
   )
 }

@@ -1,6 +1,7 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import type { CellFill, ColorMapEntry } from '../domain/color-mapper.ts'
 import type { ColorResponsible, CustomsChannel } from '../domain/types.ts'
+import { readJsonConfig } from './json-config.ts'
 
 /**
  * Carrega e valida config/color-map.json. O I/O vive aqui, e nao em
@@ -145,7 +146,7 @@ export function loadColorMap(path: string = DEFAULT_COLOR_MAP_PATH): ColorMapEnt
 
   let parsed: unknown
   try {
-    parsed = JSON.parse(readFileSync(path, 'utf-8'))
+    parsed = readJsonConfig(path)
   } catch (cause) {
     throw new ColorMapError(`${path} nao e um JSON valido: ${(cause as Error).message}`)
   }
@@ -191,7 +192,7 @@ export function loadCellFills(path: string = DEFAULT_COLOR_MAP_PATH): CellFill[]
 
   let parsed: unknown
   try {
-    parsed = JSON.parse(readFileSync(path, 'utf-8'))
+    parsed = readJsonConfig(path)
   } catch (cause) {
     throw new ColorMapError(`${path} nao e um JSON valido: ${(cause as Error).message}`)
   }

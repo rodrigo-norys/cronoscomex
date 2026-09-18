@@ -380,6 +380,8 @@ export function describeAnomaly(code: AnomalyCode, process: Process): string {
       return 'STATUS menciona canal de fiscalizacao; a cor continua sendo a fonte'
     case 'DATA_SEM_ANO':
       return 'celula de data sem ano; o ano NAO foi inferido'
+    case 'DATA_FORA_DA_FAIXA':
+      return 'celula de data fora de 1900-2200; o valor NAO foi usado'
     case 'COR_NAO_MAPEADA':
       return `styleKey=${process.styleKey}`
     case 'VARIANTE_STATUS_PROXIMA':

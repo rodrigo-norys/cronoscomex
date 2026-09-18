@@ -12,7 +12,9 @@
  * **Sem dependencia npm.** Os `.woff2` sao versionados em `web/public/fonts/` e
  * o `@font-face` e escrito a mao; `@fontsource` resolveria o mesmo com uma
  * dependencia que o plano nao preve. `LICENSE.txt` acompanha os arquivos —
- * IBM Plex e OFL 1.1, e o repositorio vai a publico.
+ * IBM Plex e OFL 1.1, e o repositorio vai a publico. **Para refazer a pasta:**
+ * os `.woff2` vem de `github.com/IBM/plex`, subconjunto latino, nos tres pesos
+ * abaixo — de Sans e de Mono.
  *
  * **Tres pesos, e nao quatro.** 400, 500 e 600. O teto e decisao da proposta, e
  * hoje ja e verdade: medido em 01/09/2026, o conjunto tem **zero** `font-bold`
@@ -74,8 +76,9 @@
  * seguintes carregue a correcao junto em vez de virar uma segunda passada pelos
  * mesmos arquivos. Foi assim em `H-39`, com tres, e em `H-57`, com seis.
  *
- * As contas de `E9` estao em `docs/estilizacao/RESULTADO.md`; as de `E11`, em
- * `docs/redesign/PROPOSTA.md` §2.2. As razoes citadas abaixo foram **medidas no
+ * As contas de `E9` e `E11` estavam em dois relatorios removidos em `D-48`; o
+ * que elas produziram sao os valores deste bloco. As razoes citadas abaixo
+ * substituem aquelas, e nao as repetem: foram **medidas no
  * navegador** por `tools/medir-navegador.mjs`, nos dois esquemas, ao fechar
  * `H-57` — e nao calculadas a mao: quem resolve `oklch()` e compoe alfa e o
  * compositor, nao a formula.
@@ -319,9 +322,10 @@
 
 /*
  * Sem isto, as barras de rolagem e os controles nativos de formulario — os
- * quatro `input type="date"` e os tres `select` do conjunto — nao recebem o
- * esquema que o restante da interface declara. **`light dark` desde `H-57`**:
- * com `light` sozinho, o campo de data continuaria branco numa tela escura.
+ * quatro calendarios nativos de `DateField` e os tres `select` do conjunto —
+ * nao recebem o esquema que o restante da interface declara. **`light dark`
+ * desde `H-57`**: com `light` sozinho, o campo de data continuaria branco numa
+ * tela escura.
  */
 :root {
   color-scheme: light dark;
