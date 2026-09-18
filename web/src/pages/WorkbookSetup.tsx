@@ -3,6 +3,7 @@ import type { ConfigFieldReport, ConfigFieldSource } from '../../../src/app/conf
 import type { SchemaDivergence } from '../../../src/domain/sheet-schema.ts'
 import type { WorkbookConfigResponse } from '../../../src/http/routes/config.ts'
 import type { HealthResponse } from '../api-client.ts'
+import { ClientDeclaration } from '../components/ClientDeclaration.tsx'
 import { LiveAnnouncement } from '../components/PageAlert.tsx'
 import { SchemaDivergences } from '../components/SchemaDivergences.tsx'
 import { SeverityIcon, severityBand } from '../components/SeverityMark.tsx'
@@ -119,34 +120,62 @@ export function WorkbookSetup({
   }
 
   return (
-    <section aria-label="Configuração da planilha" className="max-w-3xl">
-      <h2 className="text-lg font-semibold text-text-primary">
-        {firstRun ? 'Aponte a planilha para começar' : 'Caminho da planilha'}
-      </h2>
+    <section aria-label="Configuração da planilha" className="flex flex-col gap-8">
+      {/*
+        **Os dois paineis de declaracao abrem a tela, lado a lado** (`D-50`).
 
-      {firstRun ? (
-        <p className="mt-2 text-sm text-text-secondary">
-          O painel ainda não leu nenhuma planilha. Informe onde ela está na sua pasta do OneDrive —
-          isso é pedido <strong>uma vez</strong>, e fica salvo para as próximas aberturas.
-        </p>
-      ) : (
-        <p className="mt-2 text-sm text-text-secondary">
-          Trocar o arquivo faz o painel reler imediatamente, sem reiniciar.
-        </p>
-      )}
+        Eles estavam no fim — `TeamMap` daqui, `ClientDeclaration` da Pagina
+        Clientes —, e a ordem os punha depois de um inventario de oito linhas que
+        o operador so le quando algo falhou. A decisao e do usuario, depois de
+        ver os dois arranjos desenhados.
 
-      {/* Montado condicionalmente, o `role` nascia ja populado — mesmo
-          `ACHADO 11`. O bloco visivel fica, e quem anuncia e a regiao viva. */}
-      {state.status === 'carregando' && (
-        <>
-          <p aria-hidden="true" className="mt-4 text-sm text-text-muted">
-            Carregando a configuração atual…
-          </p>
-          <LiveAnnouncement text="Carregando a configuração atual." tone="status" />
-        </>
-      )}
+        **Lado a lado tem um custo medido, e ele foi aceito:** os breakpoints do
+        Tailwind olham a JANELA, nao o contentor, entao o grid interno de cada
+        painel aberto continua em duas colunas dentro de uma coluna de ~600 px.
+        `items-start` impede que o painel fechado estique junto com o aberto.
+
+        **Fora do `max-w-3xl`, que desceu para o bloco do caminho**: com a
+        largura de leitura de 768 px, duas colunas dariam 370 px cada.
+      */}
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+        <ClientDeclaration dataVersion={dataVersion} />
+        <TeamMap dataVersion={dataVersion} />
+      </div>
 
       {/*
+        `aria-labelledby`, e nao `aria-label`: o titulo muda com `firstRun`, e um
+        rotulo escrito a mao divergiria dele na primeira execucao. O teste
+        encontra as regioes vivas do caminho DENTRO desta secao — ate `D-50` ele
+        as pegava pela ordem do DOM, que os paineis acima inverteram.
+      */}
+      <section aria-labelledby="titulo-caminho" className="max-w-3xl">
+        <h2 id="titulo-caminho" className="text-lg font-semibold text-text-primary">
+          {firstRun ? 'Aponte a planilha para começar' : 'Caminho da planilha'}
+        </h2>
+
+        {firstRun ? (
+          <p className="mt-2 text-sm text-text-secondary">
+            O painel ainda não leu nenhuma planilha. Informe onde ela está na sua pasta do OneDrive
+            — isso é pedido <strong>uma vez</strong>, e fica salvo para as próximas aberturas.
+          </p>
+        ) : (
+          <p className="mt-2 text-sm text-text-secondary">
+            Trocar o arquivo faz o painel reler imediatamente, sem reiniciar.
+          </p>
+        )}
+
+        {/* Montado condicionalmente, o `role` nascia ja populado — mesmo
+          `ACHADO 11`. O bloco visivel fica, e quem anuncia e a regiao viva. */}
+        {state.status === 'carregando' && (
+          <>
+            <p aria-hidden="true" className="mt-4 text-sm text-text-muted">
+              Carregando a configuração atual…
+            </p>
+            <LiveAnnouncement text="Carregando a configuração atual." tone="status" />
+          </>
+        )}
+
+        {/*
         A carga da configuracao falhou. `H-44`: o bloco e renderizado
         condicionalmente e nao carrega `role` — anuncia-lo por aqui criaria a
         regiao ja populada de `ACHADO 11`. Quem anuncia e a regiao viva da casca.
@@ -155,34 +184,39 @@ export function WorkbookSetup({
         elas existem fora do condicional e so o texto muda. Sao padrao a
         preservar, nunca a "corrigir".
       */}
-      {state.status === 'erro' && (
-        <>
-          <p
-            aria-hidden="true"
-            className={`mt-4 flex items-start gap-2 rounded-container border border-state-error-border bg-state-error-bg p-3 text-sm text-state-error-fg ${severityBand('error')}`}
-          >
-            <SeverityIcon tone="error" />
-            <span>Não foi possível ler a configuração atual: {state.message}</span>
-          </p>
-          <LiveAnnouncement text={`Não foi possível ler a configuração atual: ${state.message}`} />
-        </>
-      )}
-
-      {state.status === 'pronto' && (
-        <form className="mt-4" onSubmit={onSubmit}>
-          <label className="block text-sm font-medium text-text-secondary" htmlFor="workbook-path">
-            Caminho completo do arquivo da planilha
-          </label>
-          <div className="mt-1 flex flex-wrap items-center gap-2">
-            <input
-              id="workbook-path"
-              name="workbookPath"
-              type="text"
-              className="min-w-64 flex-1 rounded-control border border-border-control px-3 py-2 font-mono text-sm"
-              value={path}
-              onChange={(event) => setPath(event.target.value)}
+        {state.status === 'erro' && (
+          <>
+            <p
+              aria-hidden="true"
+              className={`mt-4 flex items-start gap-2 rounded-container border border-state-error-border bg-state-error-bg p-3 text-sm text-state-error-fg ${severityBand('error')}`}
+            >
+              <SeverityIcon tone="error" />
+              <span>Não foi possível ler a configuração atual: {state.message}</span>
+            </p>
+            <LiveAnnouncement
+              text={`Não foi possível ler a configuração atual: ${state.message}`}
             />
-            {/*
+          </>
+        )}
+
+        {state.status === 'pronto' && (
+          <form className="mt-4" onSubmit={onSubmit}>
+            <label
+              className="block text-sm font-medium text-text-secondary"
+              htmlFor="workbook-path"
+            >
+              Caminho completo do arquivo da planilha
+            </label>
+            <div className="mt-1 flex flex-wrap items-center gap-2">
+              <input
+                id="workbook-path"
+                name="workbookPath"
+                type="text"
+                className="min-w-64 flex-1 rounded-control border border-border-control px-3 py-2 font-mono text-sm"
+                value={path}
+                onChange={(event) => setPath(event.target.value)}
+              />
+              {/*
               A forma do `RefreshButton`: mesmo papel de UI — acao secundaria com
               estado ocupado — tem a mesma forma nas sete telas (`SC 3.2.4`,
               determinacao `Z1` do epico E9).
@@ -191,45 +225,45 @@ export function WorkbookSetup({
               dialogo — Linux, ou Windows sem PowerShell — ele e a unica via, e
               esconde-lo trocaria um caminho a menos por caminho nenhum.
             */}
-            <button
-              type="button"
-              onClick={() => void onBrowse()}
-              disabled={browsing}
-              className="rounded-control border border-border-control px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-surface-base disabled:cursor-progress disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
-            >
-              {browsing ? 'Escolhendo…' : 'Escolher arquivo…'}
-            </button>
-          </div>
+              <button
+                type="button"
+                onClick={() => void onBrowse()}
+                disabled={browsing}
+                className="rounded-control border border-border-control px-3 py-1.5 text-sm font-medium text-text-secondary hover:bg-surface-base disabled:cursor-progress disabled:border-control-disabled-bg disabled:bg-control-disabled-bg disabled:text-control-disabled-fg"
+              >
+                {browsing ? 'Escolhendo…' : 'Escolher arquivo…'}
+              </button>
+            </div>
 
-          {state.config.workbookPath !== '' && !state.config.exists && (
-            <p className="mt-2 text-sm text-state-warning-fg">
-              O caminho salvo não aponta para nenhum arquivo. Confira se a pasta do OneDrive está
-              sincronizada.
-            </p>
-          )}
-          {state.config.exists && !state.config.readable && (
-            <p className="mt-2 text-sm text-state-warning-fg">
-              O arquivo existe, mas o painel não consegue lê-lo.
-            </p>
-          )}
+            {state.config.workbookPath !== '' && !state.config.exists && (
+              <p className="mt-2 text-sm text-state-warning-fg">
+                O caminho salvo não aponta para nenhum arquivo. Confira se a pasta do OneDrive está
+                sincronizada.
+              </p>
+            )}
+            {state.config.exists && !state.config.readable && (
+              <p className="mt-2 text-sm text-state-warning-fg">
+                O arquivo existe, mas o painel não consegue lê-lo.
+              </p>
+            )}
 
-          {/*
+            {/*
             A mesma forma dos demais botoes de submissao de superficie de
             edicao — `EditProcessForm` e `ColorFieldsForm`. O mesmo papel de UI
             tem a mesma forma nas sete telas, e elas sao um conjunto com
             roteamento por URI (`SC 3.2.4`, determinacao `Z1` do epico E9).
           */}
-          <button
-            type="submit"
-            disabled={saving || path.trim() === ''}
-            className="button-primary mt-4 px-3 py-1.5"
-          >
-            {saving ? 'Carregando a planilha…' : 'Carregar esta planilha'}
-          </button>
-        </form>
-      )}
+            <button
+              type="submit"
+              disabled={saving || path.trim() === ''}
+              className="button-primary mt-4 px-3 py-1.5"
+            >
+              {saving ? 'Carregando a planilha…' : 'Carregar esta planilha'}
+            </button>
+          </form>
+        )}
 
-      {/*
+        {/*
         As duas regioes existem desde a montagem — fora do condicional de
         proposito: um no com `role="alert"` que nasce ja populado nao e
         anunciado pelo leitor de tela, porque nao houve mudanca a comparar.
@@ -240,49 +274,31 @@ export function WorkbookSetup({
         tela nao mudava nada onde ele estava olhando. Medido na primeira
         instalacao em Windows (H-35, PD-06).
       */}
-      <p role="alert" className={refusal === '' ? 'sr-only' : 'mt-3 text-sm text-state-error-fg'}>
-        {refusal}
-      </p>
-      <p
-        role="status"
-        className={confirmation === '' ? 'sr-only' : 'mt-3 text-sm text-state-success-fg'}
-      >
-        {confirmation}
-      </p>
+        <p role="alert" className={refusal === '' ? 'sr-only' : 'mt-3 text-sm text-state-error-fg'}>
+          {refusal}
+        </p>
+        <p
+          role="status"
+          className={confirmation === '' ? 'sr-only' : 'mt-3 text-sm text-state-success-fg'}
+        >
+          {confirmation}
+        </p>
 
-      {state.status === 'pronto' && (
-        <>
-          <StartupChecklist config={state.config} onRecheck={reload} />
-          <ConfigInventory config={state.config} />
-        </>
-      )}
+        {state.status === 'pronto' && (
+          <>
+            <StartupChecklist config={state.config} onRecheck={reload} />
+            <ConfigInventory config={state.config} />
+          </>
+        )}
+      </section>
 
       {/*
-        **FORA do condicional de `pronto`, e depois das regioes vivas do
-        caminho.**
-
-        Fora porque o painel de equipe nao depende da configuracao do caminho:
-        escondido quando a carga da configuracao falha, o operador perderia a
-        ferramenta por um erro que nao tem relacao com ela — a mesma licao que
-        `D-36` registra ao montar o painel de clientes fora do estado dos
-        rankings.
-
-        Depois porque `WorkbookSetup.test.tsx` identifica a regiao viva do
-        CAMINHO como a PRIMEIRA do DOM, e este painel traz a segunda.
-      */}
-      {/*
-        O painel de divergencia vem ANTES de `TeamMap`, e tambem FORA do
-        condicional de `pronto` (`H-96`) — pelo mesmo motivo que ele: o
-        cabecalho divergente nao depende de a configuracao do caminho ter
-        carregado, e escondê-lo atras dela tiraria o aviso do operador
-        justamente quando outra coisa falhou.
-
-        Antes de `TeamMap` para nao deslocar a segunda regiao viva do DOM, que o
-        teste identifica por ordem.
+        FORA do condicional de `pronto` (`H-96`), como os dois paineis do topo e
+        pelo mesmo motivo: o cabecalho divergente nao depende de a configuracao
+        do caminho ter carregado, e escondê-lo atras dela tiraria o aviso do
+        operador justamente quando outra coisa falhou.
       */}
       <SchemaDivergences divergences={schemaDivergences} />
-
-      <TeamMap dataVersion={dataVersion} />
     </section>
   )
 }

@@ -1,4 +1,3 @@
-import { ClientDeclaration } from '../components/ClientDeclaration.tsx'
 import { PageAlert } from '../components/PageAlert.tsx'
 import { RankingBar } from '../components/RankingBar.tsx'
 import { Skeleton } from '../components/Skeleton.tsx'
@@ -57,13 +56,16 @@ export function Clients({ queryString, dataVersion }: ClientsProps) {
   return (
     <div className="flex flex-col gap-6">
       {/*
-        **O painel vem ANTES dos rankings, e FORA do estado deles** (`D-36`).
-        Ele e a ferramenta que conserta o que os rankings mostram: escondido
-        quando o indicador falha, o operador perderia justamente a saida. Os
-        rankings tem `return` antecipado nos quatro estados, e por isso moram num
-        componente proprio abaixo.
+        **O painel "Clientes por declarar" saiu daqui em `D-50`**, para o topo da
+        Pagina Configuracao, ao lado do de responsaveis. `D-36` o havia montado
+        aqui FORA do estado dos rankings — a ferramenta que conserta o que eles
+        mostram nao podia sumir quando o indicador falhasse —, e esse argumento
+        continua valendo onde ele foi parar: la ele tambem nao depende do estado
+        de nada.
+
+        O que se perde e a vizinhanca: quem ve o ranking com a grafia da celula
+        deixa de ter a saida na mesma tela. Decisao do usuario, 18/09/2026.
       */}
-      <ClientDeclaration dataVersion={dataVersion} />
       <Rankings queryString={queryString} dataVersion={dataVersion} />
     </div>
   )

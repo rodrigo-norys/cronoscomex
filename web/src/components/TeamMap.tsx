@@ -140,7 +140,7 @@ export function TeamMap({ dataVersion }: { dataVersion: number }) {
 
   if (state.status === 'erro') {
     return (
-      <section aria-label="Responsáveis por importador" className="mt-8">
+      <section aria-label="Responsáveis por importador">
         <h2 className="text-sm font-semibold text-text-primary">Responsáveis por importador</h2>
         <p role="alert" className="mt-2 text-sm text-state-error-fg">
           Não foi possível carregar a equipe. {state.message}
@@ -152,7 +152,7 @@ export function TeamMap({ dataVersion }: { dataVersion: number }) {
   return (
     <section
       aria-label="Responsáveis por importador"
-      className="mt-8 rounded-container border border-border-subtle bg-surface-raised p-4"
+      className="rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       {/* A faixa: uma linha, com a dívida e o gesto de abrir — mesma forma de
           `ClientDeclaration`, que `D-37` fixou. */}
