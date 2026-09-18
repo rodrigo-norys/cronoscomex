@@ -1,5 +1,6 @@
-import { existsSync, readFileSync } from 'node:fs'
+import { existsSync } from 'node:fs'
 import { normKey } from '../domain/normalizer.ts'
+import { readJsonConfig } from './json-config.ts'
 
 /**
  * Carrega config/status-aliases.json — o dicionario de grafias que significam
@@ -30,7 +31,7 @@ export function loadStatusAliases(path: string = DEFAULT_STATUS_ALIASES_PATH): s
 
   let parsed: unknown
   try {
-    parsed = JSON.parse(readFileSync(path, 'utf-8'))
+    parsed = readJsonConfig(path)
   } catch (cause) {
     throw new StatusAliasesError(`${path} nao e um JSON valido: ${(cause as Error).message}`)
   }

@@ -1,11 +1,13 @@
-import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
+import { existsSync, renameSync, writeFileSync } from 'node:fs'
 import { normKey } from '../domain/normalizer.ts'
 import {
   normalizeTeamMap,
+  overlaps,
   type TeamMember,
   type TeamMemberSave,
   type TeamRemoval,
 } from '../domain/team-mapper.ts'
+import { readJsonConfig } from './json-config.ts'
 
 /**
  * Carrega e valida `team-map.json`. O I/O vive aqui (ADR-0006).
@@ -98,7 +100,7 @@ export function loadTeamMap(path: string = DEFAULT_TEAM_MAP_PATH): TeamMember[] 
 
   let parsed: unknown
   try {
-    parsed = JSON.parse(readFileSync(path, 'utf-8'))
+    parsed = readJsonConfig(path)
   } catch (cause) {
     throw new TeamMapError(`${path} nao e um JSON valido: ${(cause as Error).message}`)
   }
@@ -125,7 +127,42 @@ export function loadTeamMap(path: string = DEFAULT_TEAM_MAP_PATH): TeamMember[] 
     seen.set(member.key, position)
   }
 
-  return normalizeTeamMap(members)
+  const normalized = normalizeTeamMap(members)
+
+  /*
+    **Um importador pertence a UM responsavel so**, e a carga passa a cobrar
+    isso como a tela ja cobrava.
+
+    `IND-20` conta por pessoa: com o mesmo importador em dois membros, o mesmo
+    processo entra nas duas carteiras e a soma deixa de fechar com o total. A
+    tela recusa desde `H-91`, por `planTeamMember`; o arquivo editado a mao
+    passava — medido pelo ensaio em 17/09/2026.
+
+    A comparacao usa `overlaps`, e nao igualdade: listar "ACME" ja casa
+    "ACME - SC", entao dois membros com essas duas grafias disputam os mesmos
+    processos sem que nenhuma string se repita.
+  */
+  const owners = new Map<string, { key: string; position: number }>()
+  for (const [position, member] of normalized.entries()) {
+    for (const importer of member.importers) {
+      for (const [taken, owner] of owners) {
+        // O mesmo importador repetido DENTRO de um membro nao e conflito: a
+        // carteira e dele nas duas vezes, e recusar isso mataria a partida por
+        // uma linha duplicada que nao muda nada. O conflito e entre PESSOAS.
+        if (owner.position === position) continue
+        if (!overlaps(importer, taken)) continue
+        throw new TeamMapError(
+          `Importador em mais de um responsavel em ${path}: "${importer}"\n` +
+            `Ja esta com "${owner.key}" em members[${owner.position}], e reaparece em ` +
+            `members[${position}] ("${member.key}").\n` +
+            'Um importador pertence a um responsavel so — IND-20 conta por pessoa.',
+        )
+      }
+      owners.set(importer, { key: member.key, position })
+    }
+  }
+
+  return normalized
 }
 
 /**
@@ -182,7 +219,7 @@ function readRawTeamMap(target: string): Record<string, unknown> {
   if (!existsSync(target)) return { version: 1, members: [] }
 
   try {
-    return JSON.parse(readFileSync(target, 'utf-8')) as Record<string, unknown>
+    return readJsonConfig(target) as Record<string, unknown>
   } catch (cause) {
     throw new TeamMapError(`${target} nao e um JSON valido: ${(cause as Error).message}`)
   }

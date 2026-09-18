@@ -46,7 +46,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
  *     const { copiarPlanilha, compararZip } = await import(…)
  *     const { copia, config, bytesOriginais } = await copiarPlanilha(area)
  *     // … initWriteGuard sobre `config`, applyPendingEdits() …
- *     const { identicas, mudadas } = await compararZip(referencia, copia)
+ *     const { identicas, mudadas, detalhes } = await compararZip(referencia, copia)
  *
  * A copia e obrigatoria: **nenhuma conferencia abre o arquivo real para
  * escrita**. Em `H-25` e `H-26` este preambulo foi reescrito em onze scripts.
@@ -203,7 +203,12 @@ export async function fflate() {
  * `styles.xml`). O "27 de 28" de `H-26` veio do caminho fim a fim sobre
  * fixture, que tem 28 entradas — nao do arquivo real.
  *
- * @returns {Promise<{total: number, identicas: number, mudadas: string[]}>}
+ * @returns {Promise<{
+ *   total: number,
+ *   identicas: number,
+ *   mudadas: string[],
+ *   detalhes: Array<{nome: string, antes: number|'ausente', depois: number|'ausente', delta: number|null}>,
+ * }>}
  */
 export async function compararZip(caminhoA, caminhoB) {
   const { readFileSync } = await import('node:fs')
@@ -224,7 +229,30 @@ export async function compararZip(caminhoA, caminhoB) {
       Buffer.compare(antes[nome] ?? Buffer.alloc(0), depois[nome] ?? Buffer.alloc(0)) !== 0,
   )
 
-  return { total: nomes.length, identicas: nomes.length - mudadas.length, mudadas }
+  /*
+    `detalhes` traz o TAMANHO de cada entrada mudada, e nao so o nome.
+
+    "Estritamente aditivo" (TD-05.1, passo 5b) e uma afirmacao sobre tamanho:
+    `xl/styles.xml` pode crescer e nunca encolher. Sem o numero, conferi-la exige
+    reabrir os dois zips a mao — foi o que levou o ensaio de 17/09/2026 a
+    escrever uma segunda funcao de comparacao, que agora vive aqui. Duas
+    respostas para a mesma pergunta divergem na primeira correcao.
+
+    `ausente` distingue a entrada que sumiu da que ficou vazia, que sao coisas
+    diferentes num `.xlsx`.
+  */
+  const detalhes = mudadas.map((nome) => {
+    const a = antes[nome]
+    const b = depois[nome]
+    return {
+      nome,
+      antes: a ? a.length : 'ausente',
+      depois: b ? b.length : 'ausente',
+      delta: a && b ? b.length - a.length : null,
+    }
+  })
+
+  return { total: nomes.length, identicas: nomes.length - mudadas.length, mudadas, detalhes }
 }
 
 /** Atalho para imprimir um resultado de medicao sem repetir o JSON.stringify. */

@@ -47,7 +47,34 @@ export function levenshtein(a: string, b: string): number {
 
 export interface DateParse {
   date: Date | null
-  anomaly: 'DATA_SEM_ANO' | null
+  anomaly: 'DATA_SEM_ANO' | 'DATA_FORA_DA_FAIXA' | null
+}
+
+/**
+ * A faixa em que uma data de despacho aduaneiro e plausivel.
+ *
+ * **O serial do Excel nao tem teto**, e o leitor o converte sem conferir: medido
+ * em 17/09/2026, o serial `99999999` virava uma data do ano **275690** e `-500`
+ * virava **1898**, ambos aceitos, sem quarentena e sem anomalia. Uma data
+ * impossivel atravessava o dominio inteiro e chegava a tela como fato.
+ *
+ * `1900` e o piso do proprio formato — o serial 1 e 01/01/1900, e nada antes
+ * dele existe em OOXML. `2200` e folga deliberada: o que se quer pegar e o
+ * digito a mais, nao o planejamento de longo prazo.
+ *
+ * **Zero linhas da planilha real caem fora desta faixa** (medido em 17/09/2026),
+ * entao a mudanca nao mexe em nenhum numero de hoje — ela existe para o dia em
+ * que alguem digitar errado.
+ */
+const ANO_MINIMO = 1900
+const ANO_MAXIMO = 2200
+
+const FORA_DA_FAIXA: DateParse = { date: null, anomaly: 'DATA_FORA_DA_FAIXA' }
+
+/** `null` quando a data cai fora da faixa plausivel. */
+function dentroDaFaixa(date: Date): boolean {
+  const ano = date.getUTCFullYear()
+  return ano >= ANO_MINIMO && ano <= ANO_MAXIMO
 }
 
 const COM_ANO_4 = /^(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})$/
@@ -109,6 +136,7 @@ export function parseCellDate(raw: RawCell): DateParse {
   // 1. Date vinda do leitor: ancorada em UTC, apenas truncamos a hora.
   if (value instanceof Date) {
     if (Number.isNaN(value.getTime())) return SEM_ANO
+    if (!dentroDaFaixa(value)) return FORA_DA_FAIXA
     const civil = civilDate(value.getUTCFullYear(), value.getUTCMonth() + 1, value.getUTCDate())
     return civil ? { date: civil, anomaly: null } : SEM_ANO
   }
@@ -116,7 +144,8 @@ export function parseCellDate(raw: RawCell): DateParse {
   // 2. Serial numerico.
   if (typeof value === 'number') {
     const date = serialToDate(value)
-    return date ? { date, anomaly: null } : SEM_ANO
+    if (date === null) return SEM_ANO
+    return dentroDaFaixa(date) ? { date, anomaly: null } : FORA_DA_FAIXA
   }
 
   const texto = value.trim()

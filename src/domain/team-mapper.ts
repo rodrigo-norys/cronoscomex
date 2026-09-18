@@ -197,7 +197,16 @@ const MEMBER_KEY_PREFIX = 'membro'
  * `ACME - SC` noutra e a mesma sobreposicao, porque o sufixo de filial casa —
  * e qual das duas grafias foi digitada primeiro nao muda isso.
  */
-function overlaps(one: string, other: string): boolean {
+/**
+ * Exportada para que `loadTeamMap` recuse o mesmo importador em dois membros
+ * pelo MESMO criterio que a tela usa (17/09/2026).
+ *
+ * Ate aqui a recusa existia so em `planTeamMember`, e o ensaio mediu a
+ * assimetria: um `team-map.json` editado a mao com o importador repetido
+ * passava na carga, e `IND-20` contava o processo duas vezes. Duas regras que
+ * deveriam ser a mesma, em duas portas — e a segunda nao tinha guarda.
+ */
+export function overlaps(one: string, other: string): boolean {
   return one === other || one.startsWith(`${other} - `) || other.startsWith(`${one} - `)
 }
 

@@ -589,6 +589,71 @@ describe('buildServer repassa o caminho da fila', () => {
   })
 
   /**
+   * **A rota de COR escreve na mesma fila, e por isso entra na mesma guarda.**
+   *
+   * Medido em 17/09/2026, pelo ensaio sobre a planilha real: `buildServer`
+   * repassava `queuePath` a `registerEditsRoutes` e **nao** a
+   * `registerProcessColorRoute`, embora a assinatura desta sempre o aceitasse.
+   * O efeito era as duas pontas do mesmo gesto em arquivos diferentes — o
+   * `PATCH` gravava no default da raiz e o `apply` lia a fila injetada,
+   * respondendo `NADA_A_APLICAR` sobre uma cor que acabara de ser enfileirada.
+   *
+   * O teste da propria rota nao o pegava, e a razao esta escrita la: ele
+   * registra o registrador direto, justamente para poder passar a fila. O
+   * buraco era de quem monta o servidor inteiro.
+   */
+  it('escreve a COR no arquivo injetado, e nao no default da raiz', async () => {
+    const app = buildServer(
+      {
+        workbookPath: join(directory, 'nao-existe.xlsx'),
+        sheetName: '2026',
+        headerRow: 1,
+        firstDataRow: 2,
+        port: 0,
+        stalledDaysThreshold: 15,
+        topN: 10,
+        timezone: 'America/Sao_Paulo',
+      },
+      { getState: () => state(), reload: async () => undefined },
+      [
+        {
+          styleKey: 'argb:FF5B9BD5',
+          fillId: 3,
+          label: 'Azul',
+          responsible: 'colaborador1',
+          customsChannel: 'indefinido',
+          importerOutsideRj: false,
+        },
+      ],
+      join(directory, 'history.jsonl'),
+      undefined,
+      join(directory, 'app.json'),
+      undefined,
+      join(directory, 'sem-interface'),
+      [],
+      queuePath,
+    )
+
+    const resposta = await app.inject({
+      method: 'PATCH',
+      url: '/api/processes/FT533.26/color',
+      payload: {
+        responsible: 'colaborador1',
+        customsChannel: 'indefinido',
+        importerOutsideRj: false,
+      },
+    })
+
+    expect(resposta.statusCode).toBe(201)
+    // A afirmacao e sobre o arquivo INJETADO, como no teste vizinho, e nao
+    // sobre a ausencia do default: `data/pending-edits.jsonl` pode existir na
+    // maquina de quem roda a suite, e reprovar por isso seria o teste medindo o
+    // estado da maquina em vez do codigo (regra inviolavel 7).
+    expect(readFileSync(queuePath, 'utf-8')).toContain('colaborador1')
+    await app.close()
+  })
+
+  /**
    * A leitura tem de enxergar o mesmo arquivo que a escrita. Repassar o caminho
    * a uma rota e nao as outras deixaria a tela mostrando fila vazia enquanto o
    * arquivo enche — que foi exatamente o sintoma no harness, antes do conserto.
