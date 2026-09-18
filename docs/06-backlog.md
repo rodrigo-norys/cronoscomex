@@ -4500,7 +4500,7 @@ E9 — o item novo herda a forma dos seis existentes.
 
 ## Épico E9 — Estilização
 
-Nasce da revisão de a revisão de estilo de 18/08/2026 (`D-48`) (18/08/2026), que percorreu
+Nasce da revisão da revisão de estilo de 18/08/2026 (`D-48`), que percorreu
 a casca e as sete páginas contra o corpus verificável de
 `docs/estilizacao/corpus-estilo.md` e registrou **21 achados** sobre **25
 arquivos** de `web/src/`. As nove histórias abaixo são as ondas daquele plano
@@ -4584,7 +4584,7 @@ funcionalidade nova, fora deste épico e fora do plano.
 >
 > **Duas razões da auditoria não reproduziram**, ambas envolvendo `slate-600`:
 > `ACHADO 5` afirmava 6.92:1 e `ACHADO 7`, 4.53:1 — são 7.56:1 e 6.90:1.
-> Corrigidas em a revisão de estilo de 18/08/2026 (`D-48`), junto da reconferência das
+> Corrigidas na revisão de estilo de 18/08/2026 (`D-48`), junto da reconferência das
 > outras seis, que reproduzem. Nenhuma decisão muda: os pares passavam e
 > passam.
 
@@ -4650,7 +4650,7 @@ corrigidos para contraste, e a casca inteira consumindo só ele.
 de tema já vive no CSS, e nenhuma outra fatia do épico toca o HTML.
 
 > **`ACHADO 22` — o estado desabilitado, medido em 19/08/2026.** Não veio da
-> auditoria de a revisão de estilo de 18/08/2026 (`D-48`): apareceu na primeira instalação
+> auditoria da revisão de estilo de 18/08/2026 (`D-48`): apareceu na primeira instalação
 > em Windows, quando o botão *Carregar esta planilha* — o único chamado à ação da
 > tela de primeira execução — **desapareceu** numa sessão de acesso remoto. O
 > canal com perda de cor foi o revelador, não a causa; a causa é o contraste
@@ -5489,7 +5489,7 @@ breakpoints e sistema de grid como requisito.
 > ✅ **CONCLUÍDA em 31/08/2026.** **Zero testes próprios** — a história produz
 > registro, não código, e a suíte fica em **1586**, a mesma de `H-46`. Cinco dos
 > seis procedimentos percorridos em Chrome 151 por CDP, com desfecho escrito em
-> cada bloco de a revisão de estilo de 18/08/2026 (`D-48`). **Cinco achados novos**, um por
+> cada bloco da revisão de estilo de 18/08/2026 (`D-48`). **Cinco achados novos**, um por
 > história: `H-67` a `H-71`. Quatro divergências no protocolo, todas resolvidas.
 >
 > **Duas correções anteriores confirmadas em campo, e é isso que a história
@@ -5733,7 +5733,7 @@ E qualquer correção de código: os cinco procedimentos produzem registro.
 
 > **Medido por `VN-1` em 31/08/2026.** É a pior das duas rolagens: `scrollWidth`
 > **572** contra 320 — o controle rompe a borda do próprio cartão, e a prova
-> visual está no desfecho de `VN-1` em a revisão de estilo de 18/08/2026 (`D-48`).
+> visual está no desfecho de `VN-1` na revisão de estilo de 18/08/2026 (`D-48`).
 >
 > **A causa não é uma classe errada, é a largura que o navegador impõe.** O
 > `<select>` é dimensionado pela maior `<option>` — "Verde (tom A) — sem
@@ -7318,7 +7318,7 @@ começa antes dela.
 
 ## Épico E11 — A casca redesenhada
 
-Nasce de a proposta do mockup Cronos Console, 31/08/2026 (`D-48`) (31/08/2026), transcrição versionada do
+Nasce da proposta do mockup Cronos Console, 31/08/2026 (`D-48`), transcrição versionada do
 mockup *Cronos Console*. **Não é auditoria:** `E9` mediu conformidade contra um
 corpus e `E10` registrou o que apareceu na tela em uso; este épico executa uma
 proposta de desenho, aceita pelo operador em 31/08/2026 e registrada em `D-21` e
@@ -7874,7 +7874,7 @@ linha de 40 px, o mono onde há número e o alinhamento à direita.
 
 > **O corte é por arquivo, não por propriedade.** Raio, elevação, densidade e
 > largura de fonte aplicados em passadas separadas abririam cada arquivo quatro
-> vezes — é a razão que a onda 5 de a revisão de estilo de 18/08/2026 (`D-48`) deu para juntar o
+> vezes — é a razão que a onda 5 da revisão de estilo de 18/08/2026 (`D-48`) deu para juntar o
 > `ACHADO 21` com os outros dois.
 >
 > **São os mesmos seis arquivos de `H-40`**, deliberadamente: o agrupamento já
@@ -8260,7 +8260,7 @@ qualquer movimento que não responda a uma ação do operador.
 
 > ✅ **CONCLUÍDA em 01/09/2026, e com ela `E11` e o backlog inteiro.**
 > **4 asserções próprias**, suíte de **1706 para 1708**. O registro datado está
-> em a verificação no navegador de 01/09/2026 (`D-48`); aqui fica só o que ele não é o lugar de
+> na verificação no navegador de 01/09/2026 (`D-48`); aqui fica só o que ele não é o lugar de
 > guardar.
 >
 > **Os seis procedimentos, duas vezes cada — e quatro achados, todos
@@ -8336,7 +8336,7 @@ qualquer movimento que não responda a uma ação do operador.
 superfície dobrada pelo segundo esquema.
 
 > **`H-47` é a linha de base, e esta história é a segunda passada.** Metade dos
-> procedimentos de a revisão de estilo de 18/08/2026 (`D-48`) mede cor **resolvida**, e cor
+> procedimentos da revisão de estilo de 18/08/2026 (`D-48`) mede cor **resolvida**, e cor
 > resolvida depende do esquema: rodá-los só no claro deixaria o escuro sem
 > verificação nenhuma.
 >
@@ -8380,7 +8380,7 @@ superfície dobrada pelo segundo esquema.
 
 ## Épico E12 — Os achados da revisão de estilo
 
-Nasce de a revisão de estilo de 01/09/2026 (`D-48`) (01/09/2026), segunda invocação do
+Nasce da revisão de estilo de 01/09/2026 (`D-48`), segunda invocação do
 subagente `revisor-estilo` contra o corpus de 40 regras. **A primeira produziu
 a revisão de estilo de 18/08/2026 (`D-48`), de onde nasceu `E9`** — este épico é o mesmo
 mecanismo, uma passada depois.
@@ -8851,7 +8851,7 @@ canônica, e não coincidência:
 | 5 | `H-81` | `9f9be19`, `06d9091` | `web` | Dois achados visuais da própria sessão, em arquivos que o épico já estava tocando |
 
 > **`H-81` não pertence a `E12`**, e a distinção importa: `E12` nasceu do corpus
-> de a revisão de estilo de 01/09/2026 (`D-48`) e fechou em 01/09/2026 com `H-76`. Os dois
+> da revisão de estilo de 01/09/2026 (`D-48`) e fechou em 01/09/2026 com `H-76`. Os dois
 > achados de `H-81` foram encontrados na sessão de 02/09, olhando a tela — não
 > vêm do revisor, e reabrir um épico fechado para acomodá-los diria que o corpus
 > os previu.
@@ -9215,7 +9215,7 @@ que existe para o leitor de tela.
 - Região viva vazia não pode deixar caixa na tela — o mesmo cuidado que
   `StatusBanner` recebeu em `H-43`.
 
-**Fora desta história:** os achados de a revisão de estilo de 01/09/2026 (`D-48`), que
+**Fora desta história:** os achados da revisão de estilo de 01/09/2026 (`D-48`), que
 são `E12` e fecharam em 01/09/2026.
 
 **Dependências:** `H-43`, `H-44`, `H-54`.
@@ -9233,7 +9233,7 @@ Nasce da revisão de interação de **03/09/2026** — `D-29` e `D-30` —, e o 
 foi o mockup: o usuário apontou a lateral do redesenho e pediu opções que
 melhorassem a interação, e depois disse que a barra de treze chips estava "muito
 padrão". **Quatro das cinco já estavam especificadas e ficaram de fora** — ícone,
-contagem e busca aparecem no mockup de a proposta do mockup Cronos Console, 31/08/2026 (`D-48`), e nenhum
+contagem e busca aparecem no mockup da proposta do mockup Cronos Console, 31/08/2026 (`D-48`), e nenhum
 virou história em `E11`.
 
 **O primeiro épico prospectivo depois de `E12`**, e a distinção importa: `E13`

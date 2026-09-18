@@ -67,7 +67,7 @@ git é o arquivo dele. Remova, e deixe uma linha no log da §5 de
 
 **`docs/06-backlog.md` é o sumidouro, e não é candidato a limpeza.** É lá que o
 conteúdo dos outros sobrevive: foi o bloco `✅ CONCLUÍDA` que tornou os números
-de a revisão de estilo de 01/09/2026 (`D-48`) redundantes. Esvaziá-lo destrói o destino
+da revisão de estilo de 01/09/2026 (`D-48`) redundantes. Esvaziá-lo destrói o destino
 das extrações.
 
 **Extraia antes de remover**, e o destino depende do tipo:
