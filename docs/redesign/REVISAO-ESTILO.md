@@ -23,7 +23,7 @@ o comportamento correto.
 > **Três fecharam em `H-65`**, por caírem em arquivo que a história estava
 > tocando — `ACHADO 3` (faixa do alerta sob `forced-colors`), `ACHADO 8` (glifo
 > do chip, 4,38:1) e `ACHADO 13` (o popover a 320 px, que virou o procedimento
-> `VN-1/POPOVER`). O registro está em `docs/redesign/VERIFICACAO.md`.
+> `VN-1/POPOVER`). O registro está em a verificação no navegador de 01/09/2026 (`D-48`).
 >
 > **Dez viraram `E12`**, executado em 01/09/2026 nas quatro ondas que o plano
 > abaixo desenha — `H-73` a `H-76`. **`ACHADO 14` não virou história**: o

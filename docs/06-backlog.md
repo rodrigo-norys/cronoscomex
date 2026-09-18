@@ -8260,7 +8260,7 @@ qualquer movimento que não responda a uma ação do operador.
 
 > ✅ **CONCLUÍDA em 01/09/2026, e com ela `E11` e o backlog inteiro.**
 > **4 asserções próprias**, suíte de **1706 para 1708**. O registro datado está
-> em `docs/redesign/VERIFICACAO.md`; aqui fica só o que ele não é o lugar de
+> em a verificação no navegador de 01/09/2026 (`D-48`); aqui fica só o que ele não é o lugar de
 > guardar.
 >
 > **Os seis procedimentos, duas vezes cada — e quatro achados, todos
@@ -8345,7 +8345,7 @@ superfície dobrada pelo segundo esquema.
 > 320 px com a lateral nova. Os três são de execução, não de código.
 
 **Arquivos:**
-- `docs/redesign/VERIFICACAO.md` (novo) — o registro datado de cada
+- a verificação no navegador de 01/09/2026 (`D-48`) (novo) — o registro datado de cada
   procedimento, nos dois esquemas, com o que foi observado
 
 **Critérios de aceite:**

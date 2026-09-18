@@ -73,7 +73,6 @@ Cada um tem um documento de origem, e o cabeçalho do épico em
 | [uso/RESULTADO.md](uso/RESULTADO.md) | `E10` | O que apareceu na tela em 31/08/2026, com o operador usando o painel para trabalhar — 12 observações, 8 viraram história |
 | [redesign/PROPOSTA.md](redesign/PROPOSTA.md) | `E11` | A transcrição versionada do mockup *Cronos Console*, com a paleta dos dois esquemas, as seis reprovações de contraste medidas e as seis divergências contra o repositório |
 | [redesign/REVISAO-ESTILO.md](redesign/REVISAO-ESTILO.md) | `E12` | Os 14 achados da revisão de estilo de 01/09/2026, todos resolvidos ou declarados não normativos |
-| [redesign/VERIFICACAO.md](redesign/VERIFICACAO.md) | `E11` | Os seis procedimentos de navegador nos dois esquemas, com três limitações declaradas |
 
 ### Regras de processo
 

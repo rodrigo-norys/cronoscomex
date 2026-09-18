@@ -175,7 +175,7 @@ nenhuma das nove produz.
 > anteparo.
 
 Os dois documentos que geraram trabalho depois do plano estão exauridos:
-`docs/redesign/VERIFICACAO.md` — os seis procedimentos de navegador nos dois
+a verificação no navegador de 01/09/2026 (`D-48`) — os seis procedimentos de navegador nos dois
 esquemas, com três limitações declaradas — e `docs/redesign/REVISAO-ESTILO.md`,
 cujos 14 achados foram todos resolvidos ou declarados não normativos.
 
