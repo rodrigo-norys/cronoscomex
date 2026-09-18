@@ -1,13 +1,6 @@
-import {
-  accessSync,
-  constants,
-  existsSync,
-  readFileSync,
-  renameSync,
-  statSync,
-  writeFileSync,
-} from 'node:fs'
+import { accessSync, constants, existsSync, renameSync, statSync, writeFileSync } from 'node:fs'
 import { extname, resolve } from 'node:path'
+import { readJsonConfig } from './json-config.ts'
 
 /** Configuracao da aplicacao. Ver docs/03-modelo-dados.md secao 3.5. */
 export interface AppConfig {
@@ -91,7 +84,7 @@ export function loadConfig(path: string = DEFAULT_CONFIG_PATH): AppConfig {
   let raw: Record<string, unknown> = {}
   if (existsSync(path)) {
     try {
-      raw = JSON.parse(readFileSync(path, 'utf-8')) as Record<string, unknown>
+      raw = readJsonConfig(path) as Record<string, unknown>
     } catch (cause) {
       throw new ConfigError(`${path} nao e um JSON valido: ${(cause as Error).message}`)
     }
@@ -221,7 +214,7 @@ export function describeConfig(config: AppConfig, path?: string): ConfigReport {
   let raw: Record<string, unknown> | null = {}
   if (present) {
     try {
-      raw = JSON.parse(readFileSync(target, 'utf-8')) as Record<string, unknown>
+      raw = readJsonConfig(target) as Record<string, unknown>
     } catch {
       // Corrompido DEPOIS da partida: a aplicacao segue rodando com o que leu, e
       // a origem de cada campo deixa de ser conhecivel. Ver `desconhecida`.
@@ -385,7 +378,7 @@ export function saveWorkbookPath(resolvedPath: string, path?: string): void {
   let raw: Record<string, unknown> = {}
   if (existsSync(target)) {
     try {
-      raw = JSON.parse(readFileSync(target, 'utf-8')) as Record<string, unknown>
+      raw = readJsonConfig(target) as Record<string, unknown>
     } catch (cause) {
       throw new ConfigWriteError(`${target} nao e um JSON valido: ${(cause as Error).message}`)
     }

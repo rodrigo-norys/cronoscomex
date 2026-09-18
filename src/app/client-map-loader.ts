@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, renameSync, writeFileSync } from 'node:fs'
+import { existsSync, renameSync, writeFileSync } from 'node:fs'
 import {
   type ClientGroup,
   type ClientGroupMember,
@@ -11,6 +11,7 @@ import {
   normalizeClientMap,
 } from '../domain/client-mapper.ts'
 import { normKey } from '../domain/normalizer.ts'
+import { readJsonConfig } from './json-config.ts'
 
 /**
  * Carrega e valida `client-map.json`. O I/O vive aqui, e nao em src/domain/,
@@ -129,7 +130,7 @@ export function loadClientMap(path: string = DEFAULT_CLIENT_MAP_PATH): ClientMap
 
   let parsed: unknown
   try {
-    parsed = JSON.parse(readFileSync(path, 'utf-8'))
+    parsed = readJsonConfig(path)
   } catch (cause) {
     throw new ClientMapError(`${path} nao e um JSON valido: ${(cause as Error).message}`)
   }
@@ -308,7 +309,7 @@ export function saveClientRule(plan: ClientRulePlan, path?: string): void {
   let raw: Record<string, unknown> = { version: 1, clients: [] }
   if (existsSync(target)) {
     try {
-      raw = JSON.parse(readFileSync(target, 'utf-8')) as Record<string, unknown>
+      raw = readJsonConfig(target) as Record<string, unknown>
     } catch (cause) {
       throw new ClientMapError(`${target} nao e um JSON valido: ${(cause as Error).message}`)
     }
@@ -401,7 +402,7 @@ export function removeClientGroup(removal: ClientGroupRemoval, path?: string): v
 
   let raw: Record<string, unknown>
   try {
-    raw = JSON.parse(readFileSync(target, 'utf-8')) as Record<string, unknown>
+    raw = readJsonConfig(target) as Record<string, unknown>
   } catch (cause) {
     throw new ClientMapError(`${target} nao e um JSON valido: ${(cause as Error).message}`)
   }

@@ -100,6 +100,47 @@ describe('loadConfig', () => {
  * O caminho do `app.json` e SEMPRE injetado: sob `NODE_ENV=test` o padrao e
  * recusado, e o ultimo teste deste bloco e quem prova a recusa.
  */
+/**
+ * O BOM que os editores do Windows gravam sem avisar.
+ *
+ * **O alvo e Windows (RNF-26)**, e o Bloco de Notas grava UTF-8 **com** BOM:
+ * `JSON.parse` recusa o `\uFEFF` inicial com `Unexpected token`, que nao diz ao
+ * operador o que houve — ele ve a aplicacao morrer na partida por um caractere
+ * invisivel que nao digitou.
+ *
+ * Medido em 17/09/2026, por acidente: o ensaio gravou um `app.json` com
+ * `[System.Text.Encoding]::UTF8` do .NET, que inclui BOM, e a partida morreu.
+ *
+ * `app.json` e o unico que o operador edita a mao com alguma frequencia, mas a
+ * tolerancia esta em `readJsonConfig` e vale para os quatro loaders — uma
+ * fonte, e nao uma copia por arquivo.
+ */
+describe('loadConfig — arquivo com BOM', () => {
+  it('le o app.json gravado com BOM', () => {
+    const path = join(dir, 'com-bom.json')
+    writeFileSync(path, `\uFEFF${JSON.stringify({ workbookPath: workbook })}`)
+
+    expect(loadConfig(path).workbookPath).toBe(workbook)
+  })
+
+  /** A ancora: sem BOM continua funcionando, e o BOM nao e exigido. */
+  it('le o app.json gravado sem BOM', () => {
+    expect(loadConfig(writeConfig({ workbookPath: workbook })).workbookPath).toBe(workbook)
+  })
+
+  /**
+   * O BOM some so do INICIO. No meio do arquivo ele e um caractere como outro
+   * qualquer, e apaga-lo ali mudaria o conteudo — o que a regra inviolavel 3
+   * proibe.
+   */
+  it('nao mexe num \uFEFF que esteja dentro de um valor', () => {
+    const path = join(dir, 'bom-no-meio.json')
+    writeFileSync(path, JSON.stringify({ workbookPath: workbook, sheetName: 'a\uFEFFb' }))
+
+    expect(loadConfig(path).sheetName).toBe('a\uFEFFb')
+  })
+})
+
 describe('describeConfig', () => {
   function effective(overrides: Partial<AppConfig> = {}): AppConfig {
     return {
