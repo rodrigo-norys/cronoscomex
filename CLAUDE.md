@@ -512,8 +512,10 @@ arquivo.
 > 11/09/2026 — as quatro histórias de `E15` listadas sob o cabeçalho de `E14`.
 > Na mesma execução ele reprovou **dois números vivos** que a revisão
 > adversarial não pegara, e um deles estava na skill que conduz a história.
-> **`docs/sessao-autonoma/` é isento**, e a isenção é estrutural: são relatórios
-> datados, e reprovar neles ensinaria a reescrever registro histórico.
+> **`docs/sessao-autonoma/` era isento**, e a isenção é estrutural: são relatórios
+> datados, e reprovar neles ensinaria a reescrever registro histórico. **O
+> diretório saiu em 18/09/2026 (`D-46`)** e a isenção fica, como precedente para
+> o próximo record datado que entrar.
 
 **`npm run test:strip`** importa os módulos de `src/` sob
 `--experimental-strip-types`, que é como a aplicação roda de verdade. **Nada de
