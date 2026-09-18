@@ -8380,7 +8380,7 @@ superfície dobrada pelo segundo esquema.
 
 ## Épico E12 — Os achados da revisão de estilo
 
-Nasce de `docs/redesign/REVISAO-ESTILO.md` (01/09/2026), segunda invocação do
+Nasce de a revisão de estilo de 01/09/2026 (`D-48`) (01/09/2026), segunda invocação do
 subagente `revisor-estilo` contra o corpus de 40 regras. **A primeira produziu
 a revisão de estilo de 18/08/2026 (`D-48`), de onde nasceu `E9`** — este épico é o mesmo
 mecanismo, uma passada depois.
@@ -8851,7 +8851,7 @@ canônica, e não coincidência:
 | 5 | `H-81` | `9f9be19`, `06d9091` | `web` | Dois achados visuais da própria sessão, em arquivos que o épico já estava tocando |
 
 > **`H-81` não pertence a `E12`**, e a distinção importa: `E12` nasceu do corpus
-> de `docs/redesign/REVISAO-ESTILO.md` e fechou em 01/09/2026 com `H-76`. Os dois
+> de a revisão de estilo de 01/09/2026 (`D-48`) e fechou em 01/09/2026 com `H-76`. Os dois
 > achados de `H-81` foram encontrados na sessão de 02/09, olhando a tela — não
 > vêm do revisor, e reabrir um épico fechado para acomodá-los diria que o corpus
 > os previu.
@@ -9215,7 +9215,7 @@ que existe para o leitor de tela.
 - Região viva vazia não pode deixar caixa na tela — o mesmo cuidado que
   `StatusBanner` recebeu em `H-43`.
 
-**Fora desta história:** os achados de `docs/redesign/REVISAO-ESTILO.md`, que
+**Fora desta história:** os achados de a revisão de estilo de 01/09/2026 (`D-48`), que
 são `E12` e fecharam em 01/09/2026.
 
 **Dependências:** `H-43`, `H-44`, `H-54`.
