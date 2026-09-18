@@ -172,3 +172,67 @@ describe('parseCellDate — TD-03', () => {
     expect(civil('2026-07-29').getTime()).toBe(a?.getTime())
   })
 })
+
+/**
+ * **A faixa plausivel de datas** (17/09/2026).
+ *
+ * O serial do Excel nao tem teto, e o leitor o convertia sem conferir: o ensaio
+ * mediu `99999999` virando uma data do ano **275690** e `-500` virando **1898**,
+ * ambos aceitos, sem quarentena e sem anomalia. A regra inviolavel 3 e explicita
+ * — buraco visivel e melhor que valor errado invisivel.
+ *
+ * Medido no mesmo dia: **zero** das 650 linhas reais caem fora de 1900-2200,
+ * entao nenhum numero de hoje muda. A faixa existe para o digito a mais.
+ */
+describe('parseCellDate — a faixa plausivel', () => {
+  it('recusa o serial absurdo, com anomalia propria', () => {
+    const parse = parseCellDate({ value: 99999999, type: 'number' })
+
+    expect(parse.date).toBeNull()
+    expect(parse.anomaly).toBe('DATA_FORA_DA_FAIXA')
+  })
+
+  /**
+   * O serial NEGATIVO ja era recusado por `serialToDate`, antes desta faixa — e
+   * cai em `DATA_SEM_ANO`. Fica registrado porque o ensaio o viu virar
+   * 16/08/1898: aquele era o outro caminho, pelo leitor, que converte o serial
+   * em `Date` sem conferir e entrega a data pronta ao dominio.
+   */
+  it('o serial negativo continua caindo em DATA_SEM_ANO, como antes', () => {
+    const parse = parseCellDate({ value: -500, type: 'number' })
+
+    expect(parse.date).toBeNull()
+    expect(parse.anomaly).toBe('DATA_SEM_ANO')
+  })
+
+  /**
+   * **Este e o caminho que o ensaio mediu**: `src/io/xlsx-parts.ts` converte o
+   * serial em `Date` sem conferir faixa, e o dominio recebia 1898 como fato.
+   */
+  it('recusa a Date que o leitor produz a partir de um serial negativo', () => {
+    const parse = parseCellDate({ value: new Date(Date.UTC(1898, 7, 16)), type: 'date' })
+
+    expect(parse.date).toBeNull()
+    expect(parse.anomaly).toBe('DATA_FORA_DA_FAIXA')
+  })
+
+  /**
+   * As ancoras. Sem elas, uma faixa mal escrita — invertida, ou estreita demais
+   * — passaria nos tres testes acima e recusaria a planilha inteira.
+   */
+  it('aceita as bordas da faixa', () => {
+    expect(
+      parseCellDate({ value: new Date(Date.UTC(1900, 0, 1)), type: 'date' }).anomaly,
+    ).toBeNull()
+    expect(
+      parseCellDate({ value: new Date(Date.UTC(2200, 11, 31)), type: 'date' }).anomaly,
+    ).toBeNull()
+  })
+
+  it('aceita uma data de hoje, vinda como serial', () => {
+    const parse = parseCellDate({ value: 46282, type: 'number' })
+
+    expect(parse.anomaly).toBeNull()
+    expect(parse.date?.getUTCFullYear()).toBe(2026)
+  })
+})
