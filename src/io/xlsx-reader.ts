@@ -37,6 +37,25 @@ export class WorkbookReadError extends Error {
   override readonly name = 'WorkbookReadError'
 }
 
+/**
+ * A assinatura de um container OLE2 — `D0 CF 11 E0 A1 B1 1A E1`.
+ *
+ * E o que o Excel grava quando a pasta e protegida por SENHA: o `.xlsx` deixa
+ * de ser um zip e passa a ser um container cifrado, com a mesma extensao. Sem
+ * esta conferencia o `fflate` falha em `invalid zip data`, que nao diz ao
+ * operador o que houve nem o que fazer — medido em 17/09/2026, sobre um arquivo
+ * cifrado pelo Excel de verdade.
+ *
+ * `P-12` afirma que o arquivo real NAO e protegido, e o perfilamento a
+ * confirmou. Isto e a mensagem para o dia em que alguem proteger.
+ */
+const OLE2_SIGNATURE = new Uint8Array([0xd0, 0xcf, 0x11, 0xe0, 0xa1, 0xb1, 0x1a, 0xe1])
+
+function isEncryptedWorkbook(buffer: Uint8Array): boolean {
+  if (buffer.length < OLE2_SIGNATURE.length) return false
+  return OLE2_SIGNATURE.every((byte, index) => buffer[index] === byte)
+}
+
 const WORKBOOK_PATH = 'xl/workbook.xml'
 const WORKBOOK_RELS_PATH = 'xl/_rels/workbook.xml.rels'
 const SHARED_STRINGS_PATH = 'xl/sharedStrings.xml'
@@ -140,6 +159,17 @@ export function hashBytes(bytes: Uint8Array): string {
  */
 export async function readWorkbook(config: AppConfig): Promise<ReadResult> {
   const buffer = await readFile(config.workbookPath)
+
+  // Antes de qualquer descompactacao: o erro do `fflate` nomeia o formato, e o
+  // operador precisa do motivo.
+  if (isEncryptedWorkbook(buffer)) {
+    throw new WorkbookReadError(
+      'A planilha esta protegida por senha e nao pode ser lida (P-12).\n' +
+        'Abra-a no Excel, remova a protecao em Arquivo > Informacoes > Proteger ' +
+        'Pasta de Trabalho > Criptografar com Senha, salve, e tente de novo.',
+    )
+  }
+
   const { sheetName, sheetPath, date1904 } = resolveWorkbook(buffer, config.sheetName)
 
   const parts = unzipSync(buffer, {

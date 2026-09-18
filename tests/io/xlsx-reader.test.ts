@@ -1,5 +1,6 @@
-import { readdirSync, readFileSync } from 'node:fs'
+import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { loadColorMap } from '../../src/app/color-map-loader.ts'
 import type { AppConfig } from '../../src/app/config.ts'
@@ -144,6 +145,55 @@ describe('readWorkbook', () => {
  * **Sem lista fixa e sem contagem**, como as demais guardas do repositorio:
  * fixture nova entra sozinha, e o numero nao envelhece.
  */
+/**
+ * Protegido por senha, o `.xlsx` deixa de ser um zip: o Excel grava um container
+ * OLE2 com a mesma extensao.
+ *
+ * Medido em 17/09/2026, sobre um arquivo cifrado pelo Excel de verdade na
+ * maquina do operador — nenhuma das nove fixtures tem essa forma, e produzi-la
+ * exige o Excel. O que a aplicacao respondia era `invalid zip data`, do
+ * `fflate`: nao nomeia a causa, nao cita `P-12`, e nao diz ao operador o que
+ * fazer. E o unico caminho de `§1.4` em que a mensagem nao orientava.
+ *
+ * A fixture aqui e so a assinatura: o que se conferre e que a deteccao vem ANTES
+ * da descompactacao, e oito bytes bastam para isso.
+ */
+describe('readWorkbook — planilha protegida por senha', () => {
+  function arquivoCifrado(): string {
+    const diretorio = mkdtempSync(join(tmpdir(), 'cronos-cifrado-'))
+    const caminho = join(diretorio, 'com-senha.xlsx')
+    writeFileSync(caminho, Buffer.from('d0cf11e0a1b11ae1', 'hex'))
+    return caminho
+  }
+
+  it('recusa nomeando a senha, e nao o formato do zip', async () => {
+    await expect(
+      readWorkbook(config('irrelevante.xlsx', { workbookPath: arquivoCifrado() })),
+    ).rejects.toThrow(WorkbookReadError)
+  })
+
+  it('a mensagem cita P-12 e diz o que fazer', async () => {
+    let mensagem = '(nao lancou)'
+    try {
+      await readWorkbook(config('irrelevante.xlsx', { workbookPath: arquivoCifrado() }))
+    } catch (causa) {
+      mensagem = (causa as Error).message
+    }
+
+    expect(mensagem).toContain('protegida por senha')
+    expect(mensagem).toContain('P-12')
+    expect(mensagem).toContain('Excel')
+    expect(mensagem).not.toContain('invalid zip data')
+  })
+
+  /** A ancora: um zip de verdade continua passando pela deteccao. */
+  it('nao confunde um .xlsx normal com um cifrado', async () => {
+    const resultado = await readWorkbook(config('basico.xlsx'))
+
+    expect(resultado.rows.length).toBeGreaterThan(0)
+  })
+})
+
 describe('checkSheetSchema contra as fixtures versionadas', () => {
   const fixtures = readdirSync('tests/fixtures')
     .filter((nome) => nome.endsWith('.xlsx') && !nome.startsWith('~$'))
