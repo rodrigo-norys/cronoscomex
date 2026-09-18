@@ -79,8 +79,17 @@ das extrações.
 | fato de configuração do repositório | `CLAUDE.md` |
 | achado ainda aberto | `docs/06-backlog.md` |
 
-**Medido em 18/09/2026**, para a próxima passada comparar: os quatro relatórios
-de `docs/sessao-autonoma/` somavam 1.786 linhas com **61 de fato inédito —
-3,4%**, e saíram. Os três `*-claude.md` medem 11,9%, 16,0% e 15,4% e **ficam**:
-densidade alta é sinal de que a extração não cabe numa linha. A ferramenta que
-mede é a skill global `desinchar-docs`.
+**Medido em 18/09/2026**, para a próxima passada comparar. Saíram **5.713
+linhas** em dois lotes, e a densidade decidiu a forma de cada um:
+
+- os quatro relatórios de `docs/sessao-autonoma/` — 1.786 linhas, **3,4%** de
+  fato inédito — viraram **três linhas** espalhadas onde são consultadas
+  (`D-46`);
+- as três auditorias de configuração — 3.927 linhas, **14,2%** — precisaram de
+  **um documento**, e viraram `ADR-0007` (`D-47`).
+
+**Densidade baixa extrai para linhas; densidade alta pede documento.** E o
+destino de um consolidado é `adr/`, não a raiz de `docs/`: os três removidos
+nasceram justamente como documento de configuração fora da numeração, sem
+consumidor mecânico, e foi por isso que ninguém os revisitou em seis semanas.
+A ferramenta que mede é a skill global `desinchar-docs`.

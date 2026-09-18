@@ -4,7 +4,7 @@
 
 > **Consolida três relatórios de 04/08/2026** — a auditoria de segurança, o
 > diagnóstico de custo de supervisão e o blueprint de governance — que somavam
-> **3.927 linhas** e foram removidos em `D-46`. Medido antes de remover: **558
+> **3.927 linhas** e foram removidos em `D-47`. Medido antes de remover: **558
 > linhas com fato inédito (14,2%)**, e a maior parte delas já superada pelo
 > próprio tempo. O que restou está aqui. Os originais seguem em
 > `git log --diff-filter=D -- docs/auditoria-configuracao-claude.md`.
