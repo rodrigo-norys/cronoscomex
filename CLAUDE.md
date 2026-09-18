@@ -263,7 +263,7 @@ do uso. Nada aqui repete o que está lá — abra quando a linha disser.
   `docs/10-governanca.md` §5.
 - **De onde veio cada épico posterior ao plano** — `E9` de
   a revisão de estilo de 18/08/2026 (`D-48`), `E10` de `docs/uso/RESULTADO.md`, `E11` de
-  `docs/redesign/PROPOSTA.md`. A ordem entre eles vive no cabeçalho de cada
+  a proposta do mockup Cronos Console, 31/08/2026 (`D-48`). A ordem entre eles vive no cabeçalho de cada
   épico, e **não** em `docs/07-plano-entrega.md`, que só alcança o plano
   original.
 

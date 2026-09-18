@@ -7318,7 +7318,7 @@ começa antes dela.
 
 ## Épico E11 — A casca redesenhada
 
-Nasce de `docs/redesign/PROPOSTA.md` (31/08/2026), transcrição versionada do
+Nasce de a proposta do mockup Cronos Console, 31/08/2026 (`D-48`) (31/08/2026), transcrição versionada do
 mockup *Cronos Console*. **Não é auditoria:** `E9` mediu conformidade contra um
 corpus e `E10` registrou o que apareceu na tela em uso; este épico executa uma
 proposta de desenho, aceita pelo operador em 31/08/2026 e registrada em `D-21` e
@@ -7359,7 +7359,7 @@ superfície a verificar. E `E10` ainda muda o que três telas **dizem** (`H-52`,
 **A medição já reprovou seis pares da paleta proposta**, e três deles são
 exatamente os defeitos que `H-39` e `H-40` removeram — `text-muted` volta a
 3,35:1 e `border-control` a 1,59:1. Os valores corrigidos estão calculados em
-`docs/redesign/PROPOSTA.md §2.2`, e `H-57` nasce com eles, pelo mesmo motivo que
+`a proposta do mockup Cronos Console, 31/08/2026 (`D-48`) §2.2`, e `H-57` nasce com eles, pelo mesmo motivo que
 `H-39` nasceu com as três correções dela: substituição que carrega o defeito
 junto vira segunda passada pelos mesmos arquivos.
 
@@ -7440,7 +7440,7 @@ escolhendo qual vale, sem que nenhum componente mude de linha.
 > vocabulário e valor. As oito seguintes são substituição mecânica, e só são
 > baratas porque esta as antecede.
 >
-> **Os seis pares reprovados nascem corrigidos.** `docs/redesign/PROPOSTA.md
+> **Os seis pares reprovados nascem corrigidos.** `a proposta do mockup Cronos Console, 31/08/2026 (`D-48`)
 > §2.2` traz a conta e o candidato de cada um. Adotar o hexadecimal do mockup e
 > corrigir depois repetiria o erro que `H-39` evitou.
 >
@@ -9233,7 +9233,7 @@ Nasce da revisão de interação de **03/09/2026** — `D-29` e `D-30` —, e o 
 foi o mockup: o usuário apontou a lateral do redesenho e pediu opções que
 melhorassem a interação, e depois disse que a barra de treze chips estava "muito
 padrão". **Quatro das cinco já estavam especificadas e ficaram de fora** — ícone,
-contagem e busca aparecem no mockup de `docs/redesign/PROPOSTA.md`, e nenhum
+contagem e busca aparecem no mockup de a proposta do mockup Cronos Console, 31/08/2026 (`D-48`), e nenhum
 virou história em `E11`.
 
 **O primeiro épico prospectivo depois de `E12`**, e a distinção importa: `E13`

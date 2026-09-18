@@ -397,7 +397,7 @@ materializando.
 | **Probabilidade** | 4 — **já ocorreu**, antes de qualquer código: seis pares da paleta proposta reprovam, e três deles são exatamente os tokens que `H-39` e `H-40` corrigiram (`text-muted` volta de 4,77:1 para 3,35:1; `border-control`, de 4,77:1 para 1,59:1) |
 | **Impacto** | 3 — regressão de acessibilidade sem sintoma visível, num projeto cuja guarda automática não a alcança |
 | **Gatilho observável** | Valor de token alterado em `web/src/index.css` sem a conta de contraste ao lado. `tests/repo/estilo.test.ts` proíbe **passo bruto de paleta**, e não valor de token com contraste insuficiente — o defeito passa verde |
-| **Mitigação preventiva** | `H-57` nasce com os seis valores corrigidos já calculados (`redesign/PROPOSTA.md §2.2`), pelo mesmo desenho de `H-39`; e acrescenta a asserção de par completo por esquema, provada por mutação |
+| **Mitigação preventiva** | `H-57` nasce com os seis valores corrigidos já calculados (`a proposta do mockup Cronos Console, 31/08/2026 (`D-48`) §2.2`), pelo mesmo desenho de `H-39`; e acrescenta a asserção de par completo por esquema, provada por mutação |
 | **Contingência** | `H-65` reexecuta os seis procedimentos de navegador **nos dois esquemas** — é lá que aparece o que a estática não vê, como cor resolvida sobre o véu do diálogo |
 
 ### Mapa de riscos

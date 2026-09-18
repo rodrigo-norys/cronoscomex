@@ -70,7 +70,6 @@ Cada um tem um documento de origem, e o cabeçalho do épico em
 |---|---|---|
 | [estilizacao/corpus-estilo.md](estilizacao/corpus-estilo.md) | — | **40 regras de estilização verificáveis**, com identificador de norma, sinal sintático e contraexemplo. É o corpus que o subagente `revisor-estilo` usa |
 | [uso/RESULTADO.md](uso/RESULTADO.md) | `E10` | O que apareceu na tela em 31/08/2026, com o operador usando o painel para trabalhar — 12 observações, 8 viraram história |
-| [redesign/PROPOSTA.md](redesign/PROPOSTA.md) | `E11` | A transcrição versionada do mockup *Cronos Console*, com a paleta dos dois esquemas, as seis reprovações de contraste medidas e as seis divergências contra o repositório |
 
 ### Regras de processo
 
@@ -127,7 +126,7 @@ largura de coluna, fica escrita e não executada**, por escolha do usuário.
 
 Três dos épicos posteriores ao
 plano nasceram de documentos de auditoria que estão em `docs/estilizacao/`,
-`docs/uso/` e `docs/redesign/PROPOSTA.md` sem nunca terem virado história.
+`docs/uso/` e a proposta do mockup Cronos Console, 31/08/2026 (`D-48`) sem nunca terem virado história.
 
 **`E13` é retroativo**, e é o único: a criação de linha, a edição na tabela, a
 ordenação e a gravação do mapa de clientes entraram em 02/09/2026 **sem história
