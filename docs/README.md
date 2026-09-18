@@ -58,18 +58,7 @@ Leia nesta ordem. Cada documento pressupõe o anterior.
 | [0004](adr/0004-escrita-cirurgica-xlsx.md) | Escrita cirúrgica no XML, nunca reserialização |
 | [0005](adr/0005-historico-jsonl-append-only.md) | Histórico em JSONL append-only |
 | [0006](adr/0006-indicadores-em-memoria.md) | Indicadores como funções puras em memória |
-
-### Sobre a configuração do agente
-
-Não descrevem o produto, e por isso ficam fora da ordem de leitura. São
-**diagnósticos datados de 04/08/2026**, escritos sem aplicar nada: nenhum deles
-alterou arquivo de configuração.
-
-| Documento | O que traz |
-|---|---|
-| [auditoria-configuracao-claude.md](auditoria-configuracao-claude.md) | Auditoria de `.claude/` e do `CLAUDE.md`, sob a ótica de **segurança** |
-| [delegacao-configuracao-claude.md](delegacao-configuracao-claude.md) | O mesmo objeto, sob a ótica do **custo de supervisão** |
-| [governance-tooling-claude.md](governance-tooling-claude.md) | O blueprint de governance e tooling que os dois anteriores propõem |
+| [0007](adr/0007-governanca-da-configuracao-do-agente.md) | Governança da configuração do agente — **o que foi recusado, o que foi revertido e o que nunca foi verificado** |
 
 ### De onde vieram os épicos nascidos depois do plano
 

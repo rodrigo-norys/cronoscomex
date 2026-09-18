@@ -15,8 +15,8 @@
 `vitest.config.ts` declara `coverage.thresholds` como
 `{ lines: 0, functions: 0, branches: 0, statements: 0 }` nos dois projetos, e
 `npm test` é `vitest run` **sem** `--coverage` — então nem o percentual é medido,
-nem limiar nenhum reprova. Isto está registrado desde `PR-10` em
-`docs/governance-tooling-claude.md`, e a decisão de 03/09/2026 foi **corrigir a
+nem limiar nenhum reprova. Isto foi notado na auditoria de tooling de
+04/08/2026, e a decisão de 03/09/2026 foi **corrigir a
 afirmação e não ligar a cobertura**: percentual de linha não verifica o que a
 lacuna de fato pede — que os 44 casos-limite obrigatórios de §1.3 tenham virado
 teste — e ligar limiar por camada é mudança de código, com o backlog fechado.
