@@ -134,6 +134,7 @@ describe('GET /api/indicators', () => {
       // `channelDistribution` entrou em `H-51`: bloco proprio, e nao um campo
       // em `counts` — aquele e a lista dos indicadores do catalogo, e
       // `counts.canalVermelho` (IND-06) continua la com o mesmo valor.
+      'categoryCheck',
       'channelDistribution',
       'counts',
       'documentaryLeadTime',
@@ -145,17 +146,13 @@ describe('GET /api/indicators', () => {
       'meta',
       'rankings',
     ])
+    // Os NOVE cartoes da Pagina Inicial, e nada alem deles (`D-49`).
     expect(Object.keys(body.counts).sort()).toEqual([
       'atrasados',
       'canalVermelho',
       'chegando15Dias',
       'chegandoHoje',
-      'chegandoSemana',
       'desembaracados',
-      'desembaracadosHoje',
-      // `H-52`. Adicional a `desembaracados`, contado pela data de registro.
-      'desembaracadosNoPeriodo',
-      'documentosPendentes',
       'emAndamento',
       'emDesembaraco',
       'fechadoAguardandoDraft',
@@ -390,11 +387,11 @@ describe('GET /api/indicators — indicadores de risco (H-12)', () => {
   const PASSADO = new Date('2020-01-01T00:00:00Z')
   const FUTURO_DISTANTE = new Date('2099-01-01T00:00:00Z')
 
-  it('devolve canalVermelho, documentosPendentes e atrasados', async () => {
+  it('devolve canalVermelho e atrasados', async () => {
     const processes = [
       process(2, 'em_andamento', { customsChannel: 'vermelho', eta2: PASSADO }),
       process(3, 'em_desembaraco', { eta2: PASSADO }),
-      process(4, 'desembaracado', { eta2: PASSADO }),
+      process(4, 'desembaracado', { eta2: PASSADO, statusRaw: 'DESEMBARAÇADA' }),
       process(5, 'em_andamento', { eta2: FUTURO_DISTANTE }),
     ]
     const app = buildServer(config, fakeStore(state({ processes })))
@@ -402,21 +399,74 @@ describe('GET /api/indicators — indicadores de risco (H-12)', () => {
     const counts = (await app.inject({ method: 'GET', url: '/api/indicators' })).json().counts
 
     expect(counts.canalVermelho).toBe(1)
-    // Os dois do passado nao concluidos; o desembaracado e o futuro ficam fora.
+    // IND-25: os dois do passado sem DUIMP; o desembaracado e o futuro ficam fora.
     expect(counts.atrasados).toBe(2)
-    expect(counts.documentosPendentes).toBe(2)
 
     await app.close()
   })
 
-  it('devolve os tres zerados quando nao ha processo de risco', async () => {
+  // IND-23 nao depende so de cor: o texto do STATUS tambem o alimenta (`D-49`).
+  it('conta emDesembaraco pelo DUIMP no STATUS, sem mapa de cor', async () => {
+    const processes = [
+      process(2, 'em_andamento', { statusRaw: 'DUIMP: 26BR0001 - CONFERIDO' }),
+      process(3, 'em_andamento', { statusRaw: 'AG BL ORIGINAL' }),
+    ]
+    const app = buildServer(config, fakeStore(state({ processes })))
+
+    const counts = (await app.inject({ method: 'GET', url: '/api/indicators' })).json().counts
+
+    expect(counts.emDesembaraco).toBe(1)
+
+    await app.close()
+  })
+
+  // IND-23 pela COR, com o mapa passado a `buildServer` como em producao.
+  it('conta emDesembaraco pela cor de exibicao, unificando tons', async () => {
+    const processes = [
+      process(2, 'em_andamento', { styleKey: 'argb:FFA74F7B' }),
+      process(3, 'em_andamento', { styleKey: 'argb:FFA64D79' }),
+      process(4, 'em_andamento', { styleKey: 'argb:FF00FF00' }),
+    ]
+    const app = buildServer(
+      config,
+      fakeStore(state({ processes })),
+      [
+        { styleKey: 'argb:FFA74F7B', fillId: 27, label: 'Roxo A', display: '#A74F7B' },
+        { styleKey: 'argb:FFA64D79', fillId: 11, label: 'Roxo B', display: '#A74F7B' },
+        { styleKey: 'argb:FF00FF00', fillId: 2, label: 'Verde', display: '#00FF00' },
+      ].map((entry) => ({
+        ...entry,
+        responsible: 'indefinido' as const,
+        customsChannel: 'indefinido' as const,
+        importerOutsideRj: false,
+      })),
+    )
+
+    const counts = (await app.inject({ method: 'GET', url: '/api/indicators' })).json().counts
+
+    expect(counts.emDesembaraco).toBe(2)
+
+    await app.close()
+  })
+
+  it('devolve os dois zerados quando nao ha processo de risco', async () => {
     const app = buildServer(config, fakeStore(state()))
 
     const counts = (await app.inject({ method: 'GET', url: '/api/indicators' })).json().counts
 
     expect(counts.canalVermelho).toBe(0)
     expect(counts.atrasados).toBe(0)
-    expect(counts.documentosPendentes).toBe(0)
+
+    await app.close()
+  })
+
+  /** A conferencia de A-12 viaja em bloco proprio desde `D-49`. */
+  it('devolve categoryCheck fechando sobre as quatro categorias', async () => {
+    const app = buildServer(config, fakeStore(state()))
+
+    const body = (await app.inject({ method: 'GET', url: '/api/indicators' })).json()
+
+    expect(body.categoryCheck).toEqual({ sum: 4, total: 4, matches: true })
 
     await app.close()
   })
@@ -424,25 +474,36 @@ describe('GET /api/indicators — indicadores de risco (H-12)', () => {
 
 describe('GET /api/indicators — indicadores de tempo (H-13)', () => {
   /**
-   * IND-16 pergunta "RG = hoje", entao o fixture precisa do MESMO dia que a
+   * IND-24 pergunta "`ETA2` = hoje", entao o fixture precisa do MESMO dia que a
    * rota resolve. Nao ha como usar data inequivoca aqui, como faz o bloco de
    * risco: `today` e a unica fonte desse dia, e a rota chama exatamente ela.
    */
   const HOJE = today(config.timezone)
 
-  it('devolve desembaracadosHoje cruzando RG com a categoria (A-29)', async () => {
+  it('devolve chegandoHoje cruzando ETA2 com a cor da linha (`D-49`)', async () => {
+    const branco = { styleKey: 'theme:0|tint:0.0000' }
     const processes = [
-      process(2, 'desembaracado', { registrationDate: HOJE }),
-      process(3, 'desembaracado', { registrationDate: HOJE }),
-      // A linha amarela de A-05: RG de hoje em processo que nao concluiu.
-      process(4, 'em_andamento', { registrationDate: HOJE }),
-      process(5, 'desembaracado', { registrationDate: new Date('2020-01-01T00:00:00Z') }),
+      process(2, 'em_andamento', { eta2: HOJE, ...branco }),
+      process(3, 'em_andamento', { eta2: HOJE, ...branco }),
+      // Mesma data, cor diferente: fica de fora.
+      process(4, 'em_andamento', { eta2: HOJE, styleKey: 'argb:FF00FF00' }),
+      process(5, 'em_andamento', { eta2: new Date('2020-01-01T00:00:00Z'), ...branco }),
     ]
-    const app = buildServer(config, fakeStore(state({ processes })))
+    const app = buildServer(config, fakeStore(state({ processes })), [
+      {
+        styleKey: 'theme:0|tint:0.0000',
+        fillId: 13,
+        label: 'Branco (do tema)',
+        display: '#FFFFFF',
+        responsible: 'indefinido' as const,
+        customsChannel: 'indefinido' as const,
+        importerOutsideRj: false,
+      },
+    ])
 
     const counts = (await app.inject({ method: 'GET', url: '/api/indicators' })).json().counts
 
-    expect(counts.desembaracadosHoje).toBe(2)
+    expect(counts.chegandoHoje).toBe(2)
 
     await app.close()
   })
@@ -482,7 +543,7 @@ describe('GET /api/indicators — indicadores de tempo (H-13)', () => {
     expect(body.documentaryLeadTime.averageDays).toBeNull()
     expect(body.documentaryLeadTime.sampleSize).toBe(0)
     expect(body.documentaryLeadTime.excludedIncomplete).toBe(4)
-    expect(body.counts.desembaracadosHoje).toBe(0)
+    expect(body.counts.chegandoHoje).toBe(0)
 
     await app.close()
   })
@@ -780,6 +841,13 @@ describe('GET /api/indicators — distribuicao de canal (H-51)', () => {
  * `H-52`. A rota nao calcula — serializa. O que se verifica e a fiacao dos tres
  * campos novos e o eco da janela que ela de fato aplicou.
  */
+/**
+ * A janela ecoada, depois de `D-49`.
+ *
+ * `meta.dataRange` saiu junto com a linha que cada cartao exibia: so a Pagina
+ * Inicial o consumia. O que sobra e o eco de `meta.period`, que a barra de
+ * filtros continua precisando.
+ */
 describe('GET /api/indicators — periodo declarado (H-52)', () => {
   const comDatas = () => [
     process(2, 'desembaracado', {
@@ -793,23 +861,8 @@ describe('GET /api/indicators — periodo declarado (H-52)', () => {
     process(4, 'em_andamento', { eta2: new Date('2026-03-01T00:00:00Z') }),
   ]
 
-  it('serializa a faixa real das duas datas, com os ausentes contados', async () => {
-    const app = buildServer(config, fakeStore(state({ processes: comDatas() })))
-
-    const meta = (await app.inject({ method: 'GET', url: '/api/indicators' })).json().meta
-
-    expect(meta.dataRange.eta2).toEqual({ from: '2026-02-10', to: '2026-05-20', missing: 0 })
-    expect(meta.dataRange.registration).toEqual({
-      from: '2026-02-15',
-      to: '2026-06-01',
-      missing: 1,
-    })
-
-    await app.close()
-  })
-
-  // Sem filtro de periodo a janela e nula, e e nesse estado que o criterio de
-  // aceite manda o cartao declarar a faixa REAL dos dados.
+  // Sem filtro de periodo a janela e nula, e e nesse estado que o seletor da
+  // pagina escreve "Todo o período".
   it('devolve janela nula quando nao ha filtro de periodo', async () => {
     const app = buildServer(config, fakeStore(state({ processes: comDatas() })))
 
@@ -820,53 +873,36 @@ describe('GET /api/indicators — periodo declarado (H-52)', () => {
     await app.close()
   })
 
-  it('ecoa a janela que aplicou, e recorta a faixa junto', async () => {
+  it('ecoa a janela que aplicou, e recorta o conjunto junto', async () => {
     const app = buildServer(config, fakeStore(state({ processes: comDatas() })))
 
-    const meta = (
+    const body = (
       await app.inject({
         method: 'GET',
         url: '/api/indicators?etaFrom=2026-01-01&etaTo=2026-03-31',
       })
-    ).json().meta
+    ).json()
 
-    expect(meta.period).toEqual({ from: '2026-01-01', to: '2026-03-31' })
-    // A faixa acompanha o recorte: o de maio saiu, e com ele o `to` de ETA2.
-    expect(meta.dataRange.eta2.to).toBe('2026-03-01')
+    expect(body.meta.period).toEqual({ from: '2026-01-01', to: '2026-03-31' })
+    // O de maio saiu pelo recorte de ETA2.
+    expect(body.counts.total).toBe(2)
 
     await app.close()
   })
 
-  it('conta desembaracadosNoPeriodo pela data de registro dentro da janela', async () => {
+  // A-12 continua valendo sobre as quatro categorias, e quem a confere e o
+  // servidor: `counts.emDesembaraco` e IND-23 e NAO entra nesta soma.
+  it('devolve categoryCheck fechando, com o recorte ativo', async () => {
     const app = buildServer(config, fakeStore(state({ processes: comDatas() })))
 
-    const counts = (
+    const body = (
       await app.inject({
         method: 'GET',
         url: '/api/indicators?etaFrom=2026-01-01&etaTo=2026-03-31',
       })
-    ).json().counts
+    ).json()
 
-    // Sobra o de fevereiro: o de maio saiu pelo recorte de ETA2, e o terceiro
-    // nao esta desembaracado.
-    expect(counts.desembaracadosNoPeriodo).toBe(1)
-
-    await app.close()
-  })
-
-  // A-12: o cartao novo e adicional, nunca substituto. A soma das quatro
-  // categorias tem de continuar fechando com o total.
-  it('nao altera a soma das quatro categorias', async () => {
-    const app = buildServer(config, fakeStore(state({ processes: comDatas() })))
-
-    const counts = (await app.inject({ method: 'GET', url: '/api/indicators' })).json().counts
-    const soma =
-      counts.emAndamento +
-      counts.emDesembaraco +
-      counts.desembaracados +
-      counts.fechadoAguardandoDraft
-
-    expect(soma).toBe(counts.total)
+    expect(body.categoryCheck).toEqual({ sum: 2, total: 2, matches: true })
 
     await app.close()
   })
@@ -884,9 +920,8 @@ describe('GET /api/indicators — periodo declarado (H-52)', () => {
     ).json()
 
     expect(body.counts.total).toBe(0)
-    expect(body.counts.desembaracadosNoPeriodo).toBe(0)
+    expect(body.categoryCheck).toEqual({ sum: 0, total: 0, matches: true })
     expect(body.meta.period).toEqual({ from: '2026-06-01', to: '2026-01-01' })
-    expect(body.meta.dataRange.eta2).toEqual({ from: null, to: null, missing: 0 })
 
     await app.close()
   })

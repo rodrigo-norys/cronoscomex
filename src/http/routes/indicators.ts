@@ -2,36 +2,35 @@ import type { FastifyInstance } from 'fastify'
 import type { AppConfig } from '../../app/config.ts'
 import { store as defaultStore, type StoreAccess } from '../../app/process-store.ts'
 import type { ClientGroup } from '../../domain/client-mapper.ts'
+import { type ColorMapEntry, styleKeysByDisplay } from '../../domain/color-mapper.ts'
 import { today as currentDay, isoWeekEnd, toIsoDay } from '../../domain/date-window.ts'
 import {
   type ArrivalDay,
   agentRanking,
   arrivalCalendar,
   arrivingIn15Days,
-  arrivingThisWeek,
-  arrivingToday,
+  arrivingTodayWhite,
   bazarShare,
-  type CategoryCounts,
+  type CategoryCheck,
   type ChannelDistribution,
+  CLEARANCE_DISPLAYS,
+  categoryCheck,
   channelDistribution,
-  clearedInPeriodCount,
-  clearedTodayCount,
   countByCategory,
-  type DataRanges,
-  dataRanges,
   documentaryLeadTime,
   type ExpectedVessel,
   expectedVessels,
   type GroupCount,
   groupCount,
   groupCountWithGroups,
+  inClearanceCount,
   type LeadTime,
   type LeadTimeGroup,
   leadTimeByGroup,
-  overdueCount,
-  pendingDocsCount,
+  overdueWithoutDuimpCount,
   redChannelCount,
   responsibleRanking,
+  WHITE_DISPLAYS,
 } from '../../domain/indicators.ts'
 import { knownResponsibles, type TeamMember } from '../../domain/team-mapper.ts'
 import { apiError } from '../errors.ts'
@@ -44,22 +43,37 @@ import { filteredWithPeriod } from '../filter-request.ts'
  * acrescentou os seus blocos, e nenhuma preencheu com zero o que ainda nao
  * calculava — zero em campo nao implementado seria indistinguivel de zero
  * medido. Com H-13 o contrato esta **completo**: os 21 indicadores em escopo.
+ *
+ * **`D-49` reduziu `counts` aos nove cartoes que a Pagina Inicial exibe.**
+ * Sairam IND-08, IND-14, IND-16 e a contagem por data de registro de `H-52`: a
+ * ordem do usuario foi tirar os cartoes, e indicador servido sem tela e o
+ * defeito que A-65 varreu.
  */
-export interface IndicatorsCounts extends CategoryCounts {
-  chegandoHoje: number
-  chegandoSemana: number
-  chegando15Dias: number
-  canalVermelho: number
-  documentosPendentes: number
-  atrasados: number
-  desembaracadosHoje: number
+export interface IndicatorsCounts {
+  /** IND-01. Inclui `fechado_aguardando_draft`, por exigencia explicita. */
+  total: number
+  /** IND-02, sob o rotulo "Processos ativos" desde `D-49`. */
+  emAndamento: number
   /**
-   * `H-52`. Adicional a `desembaracados`, nunca substituto: aquele conta
-   * categoria sobre o recorte de `ETA2`, este conta a data de REGISTRO dentro da
-   * janela. A soma das quatro categorias continua fechando com o total (A-12), e
-   * a linha de conferencia da Pagina Inicial segue valida.
+   * IND-23, e **nao mais a categoria** `em_desembaraco` (IND-03, aposentado):
+   * cor de desembaraco OU DUIMP no STATUS.
+   *
+   * Nao e exclusivo com os outros campos, e por isso a conferencia de A-12
+   * deixou de somar cartoes — ela vive em `categoryCheck`.
    */
-  desembaracadosNoPeriodo: number
+  emDesembaraco: number
+  /** IND-04. */
+  desembaracados: number
+  /** IND-05, sob o rotulo "Aguardando draft" desde `D-49`. */
+  fechadoAguardandoDraft: number
+  /** IND-24: linha branca E `eta2` de hoje. Substitui IND-07. */
+  chegandoHoje: number
+  /** IND-09. */
+  chegando15Dias: number
+  /** IND-06. */
+  canalVermelho: number
+  /** IND-25: `eta2` ate hoje+10, sem DUIMP e nao desembaracado. Substitui IND-15. */
+  atrasados: number
 }
 
 export interface IndicatorsRankings {
@@ -105,17 +119,20 @@ export interface IndicatorsMeta {
    * que exibe.
    */
   period: { from: string | null; to: string | null }
-  /**
-   * `H-52`. A faixa real das duas datas no conjunto FILTRADO, com quantos
-   * processos nao tem cada uma. Sem ela, cartao zerado por recorte e cartao
-   * zerado por ausencia de dado sao indistinguiveis, e derivar a faixa no
-   * cliente seria calculo na tela (regra inviolavel 6).
-   */
-  dataRange: DataRanges
 }
 
 export interface IndicatorsResponse {
   counts: IndicatorsCounts
+  /**
+   * `D-49`. A conferencia de A-12, calculada no servidor.
+   *
+   * Ate aqui a Pagina Inicial somava os quatro cartoes de categoria. Com IND-23
+   * no lugar de IND-03 os cartoes deixaram de ser as quatro categorias, e a
+   * soma passou a nao fechar por desenho — somar no cliente diria "nao
+   * conferem" todo dia. A invariante continua valendo por dentro, e quem a
+   * confere e quem a calcula.
+   */
+  categoryCheck: CategoryCheck
   /**
    * `H-51`. Bloco proprio, e nao mais um campo em `counts`: aquele e a lista
    * dos indicadores do catalogo, e `counts.canalVermelho` — IND-06 — continua
@@ -155,7 +172,22 @@ export function registerIndicatorsRoute(
    * (`H-50`). Padrao vazio pelo mesmo motivo de `clientGroups`.
    */
   teamMap: readonly TeamMember[] = [],
+  /**
+   * Mapa de cor, para IND-23 e IND-24 (`D-49`). Padrao vazio pelo mesmo motivo
+   * dos dois acima — e, vazio, os dois cartoes contam so o que nao depende de
+   * cor, que e o certo: chave sem `display` nao vira cor proxima (`D-41`).
+   */
+  colorMap: readonly ColorMapEntry[] = [],
 ): void {
+  /*
+    Resolvidos UMA vez, no registro: o mapa de cor nao muda em execucao — quem
+    muda e o de equipe, e `knownResponsibles` e derivado por requisicao por
+    causa disso (`H-91`). Resolver por requisicao varreria as nove entradas em
+    toda chamada para produzir o mesmo par de conjuntos.
+  */
+  const clearanceKeys = styleKeysByDisplay(colorMap, CLEARANCE_DISPLAYS)
+  const whiteKeys = styleKeysByDisplay(colorMap, WHITE_DISPLAYS)
+
   app.get('/api/indicators', (request, reply) => {
     const state = store.getState()
 
@@ -222,20 +254,23 @@ export function registerIndicatorsRoute(
       ),
     }
 
+    // As categorias de TD-01 continuam sendo contadas, mesmo com IND-03
+    // aposentado: tres cartoes saem daqui, e `categoryCheck` guarda A-12.
+    const categories = countByCategory(processes)
+
     const body: IndicatorsResponse = {
       counts: {
-        ...countByCategory(processes),
-        chegandoHoje: arrivingToday(processes, day),
-        chegandoSemana: arrivingThisWeek(processes, day),
+        total: categories.total,
+        emAndamento: categories.emAndamento,
+        emDesembaraco: inClearanceCount(processes, clearanceKeys),
+        desembaracados: categories.desembaracados,
+        fechadoAguardandoDraft: categories.fechadoAguardandoDraft,
+        chegandoHoje: arrivingTodayWhite(processes, day, whiteKeys),
         chegando15Dias: arrivingIn15Days(processes, day),
         canalVermelho: redChannelCount(processes),
-        documentosPendentes: pendingDocsCount(processes, day),
-        atrasados: overdueCount(processes, day),
-        desembaracadosHoje: clearedTodayCount(processes, day),
-        // `H-52`. Adicional, nunca substituto: os quatro de categoria seguem
-        // intactos, e a soma deles continua fechando com o total (A-12).
-        desembaracadosNoPeriodo: clearedInPeriodCount(processes, recorte.from, recorte.to),
+        atrasados: overdueWithoutDuimpCount(processes, day),
       },
+      categoryCheck: categoryCheck(categories),
       channelDistribution: channelDistribution(processes),
       rankings: {
         // `H-56`: o grupo entra NO LUGAR dos membros, com a composicao em
@@ -289,7 +324,6 @@ export function registerIndicatorsRoute(
           from: recorte.from === null ? null : toIsoDay(recorte.from),
           to: recorte.to === null ? null : toIsoDay(recorte.to),
         },
-        dataRange: dataRanges(processes),
       },
     }
     return reply.code(200).send(body)

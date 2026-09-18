@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import {
   channelDistribution,
-  overdueCount,
+  hasPendingDocs,
+  isOverdue,
+  overdueWithoutDuimpCount,
   PENDING_DOCS_HORIZON_DAYS,
-  pendingDocsCount,
   redChannelCount,
 } from '../../src/domain/indicators.ts'
 import type { CustomsChannel, Process, StatusCategory } from '../../src/domain/types.ts'
@@ -128,47 +129,59 @@ describe('redChannelCount — IND-06', () => {
   })
 })
 
-describe('pendingDocsCount — IND-14', () => {
+describe('overdueWithoutDuimpCount — IND-25', () => {
   it('fixa o horizonte em 10 dias (A-08)', () => {
     expect(PENDING_DOCS_HORIZON_DAYS).toBe(10)
   })
 
   it('conta no limite exato: eta2 = hoje + 10', () => {
-    expect(pendingDocsCount([process({ eta2: '2026-08-13' })], HOJE)).toBe(1)
+    expect(overdueWithoutDuimpCount([process({ eta2: '2026-08-13' })], HOJE)).toBe(1)
   })
 
   it('nao conta um dia alem do limite: eta2 = hoje + 11', () => {
-    expect(pendingDocsCount([process({ eta2: '2026-08-14' })], HOJE)).toBe(0)
+    expect(overdueWithoutDuimpCount([process({ eta2: '2026-08-14' })], HOJE)).toBe(0)
   })
 
-  // A-08: processo concluido nao tem documentacao pendente.
-  it('nao conta processo desembaracado, mesmo sem DOCS ENVIADOS', () => {
-    const concluido = process({ eta2: '2026-08-13', statusCategory: 'desembaracado' })
+  // `D-49`: sem esta condicao o cartao mediria 542 das 650 linhas reais.
+  it('nao conta processo desembaracado, cujo STATUS tambem nao tem DUIMP', () => {
+    const concluido = process({
+      eta2: '2026-08-13',
+      statusCategory: 'desembaracado',
+      statusRaw: 'DESEMBARAÇADA',
+    })
 
-    expect(pendingDocsCount([concluido], HOJE)).toBe(0)
+    expect(overdueWithoutDuimpCount([concluido], HOJE)).toBe(0)
   })
 
-  it('nao conta quando DOCS ENVIADOS esta preenchido', () => {
-    const comDocumento = process({ eta2: '2026-08-13', docsSent: '2026-08-01' })
+  it('nao conta quando o STATUS menciona DUIMP', () => {
+    const comDuimp = process({ eta2: '2026-08-13', statusRaw: 'DUIMP: 26BR0001 - CONFERIDO' })
 
-    expect(pendingDocsCount([comDocumento], HOJE)).toBe(0)
+    expect(overdueWithoutDuimpCount([comDuimp], HOJE)).toBe(0)
   })
 
   // A-20: data ausente nunca satisfaz condicao de calendario.
   it('nao conta eta2 nulo', () => {
-    expect(pendingDocsCount([process({ eta2: null })], HOJE)).toBe(0)
+    expect(overdueWithoutDuimpCount([process({ eta2: null })], HOJE)).toBe(0)
   })
 
   /**
-   * A janela tem TETO e nao tem PISO. Um intervalo fechado excluiria a carga
-   * que ja chegou sem documento — exatamente o caso mais grave.
+   * A janela tem TETO e nao tem PISO, decidido em `D-49` e herdado de A-08: um
+   * intervalo fechado excluiria a carga que ja chegou sem declaracao, que e
+   * exatamente o caso mais grave.
    */
   it('conta eta2 muito no passado', () => {
-    expect(pendingDocsCount([process({ eta2: '2025-01-01' })], HOJE)).toBe(1)
+    expect(overdueWithoutDuimpCount([process({ eta2: '2025-01-01' })], HOJE)).toBe(1)
   })
 
   it('conta eta2 igual a hoje', () => {
-    expect(pendingDocsCount([process({ eta2: '2026-08-03' })], HOJE)).toBe(1)
+    expect(overdueWithoutDuimpCount([process({ eta2: '2026-08-03' })], HOJE)).toBe(1)
+  })
+
+  // DOCS ENVIADOS deixou de ser criterio em `D-49`: quem responde e o STATUS.
+  it('conta mesmo com DOCS ENVIADOS preenchido', () => {
+    expect(
+      overdueWithoutDuimpCount([process({ eta2: '2026-08-05', docsSent: '2026-08-01' })], HOJE),
+    ).toBe(1)
   })
 
   it('conta as demais categorias nao concluidas', () => {
@@ -178,78 +191,55 @@ describe('pendingDocsCount — IND-14', () => {
       process({ eta2: '2026-08-05', statusCategory: 'fechado_aguardando_draft' }),
     ]
 
-    expect(pendingDocsCount(conjunto, HOJE)).toBe(3)
+    expect(overdueWithoutDuimpCount(conjunto, HOJE)).toBe(3)
   })
 
   it('devolve zero para conjunto vazio', () => {
-    expect(pendingDocsCount([], HOJE)).toBe(0)
+    expect(overdueWithoutDuimpCount([], HOJE)).toBe(0)
   })
 })
 
-describe('overdueCount — IND-15', () => {
-  it('conta eta2 no passado com categoria nao concluida', () => {
-    const atrasado = process({ eta2: '2026-08-02', statusCategory: 'em_desembaraco' })
-
-    expect(overdueCount([atrasado], HOJE)).toBe(1)
+/**
+ * Os dois predicados que `D-49` NAO tocou.
+ *
+ * Eles perderam os cartoes — IND-14 e IND-15 sairam da Pagina Inicial — e
+ * seguem servindo ALE-02, ALE-01 e o `overdueCount` do ranking de agentes. Sem
+ * este bloco, a regra dos dois alertas ficaria sem teste de unidade.
+ */
+describe('hasPendingDocs e isOverdue — os alertas', () => {
+  it('hasPendingDocs exige DOCS ENVIADOS vazio, e nao o STATUS', () => {
+    expect(hasPendingDocs(process({ eta2: '2026-08-13' }), HOJE)).toBe(true)
+    expect(hasPendingDocs(process({ eta2: '2026-08-13', docsSent: '2026-08-01' }), HOJE)).toBe(
+      false,
+    )
   })
 
-  it('nao conta eta2 igual a hoje — hoje ainda nao venceu', () => {
-    expect(overdueCount([process({ eta2: '2026-08-03' })], HOJE)).toBe(0)
+  it('hasPendingDocs ignora processo desembaracado e eta2 nulo', () => {
+    expect(
+      hasPendingDocs(process({ eta2: '2026-08-13', statusCategory: 'desembaracado' }), HOJE),
+    ).toBe(false)
+    expect(hasPendingDocs(process({ eta2: null }), HOJE)).toBe(false)
   })
 
-  it('nao conta eta2 no futuro', () => {
-    expect(overdueCount([process({ eta2: '2026-08-04' })], HOJE)).toBe(0)
+  it('isOverdue exige eta2 ESTRITAMENTE no passado — hoje ainda nao venceu', () => {
+    expect(isOverdue(process({ eta2: '2026-08-02' }), HOJE)).toBe(true)
+    expect(isOverdue(process({ eta2: '2026-08-03' }), HOJE)).toBe(false)
+    expect(isOverdue(process({ eta2: '2026-08-04' }), HOJE)).toBe(false)
   })
 
-  it('nao conta processo desembaracado, mesmo com eta2 vencida', () => {
-    const concluido = process({ eta2: '2026-08-02', statusCategory: 'desembaracado' })
-
-    expect(overdueCount([concluido], HOJE)).toBe(0)
+  it('isOverdue ignora processo desembaracado e eta2 nulo (A-20)', () => {
+    expect(isOverdue(process({ eta2: '2026-08-02', statusCategory: 'desembaracado' }), HOJE)).toBe(
+      false,
+    )
+    expect(isOverdue(process({ eta2: null }), HOJE)).toBe(false)
   })
 
-  // A-20: data ausente nao e data vencida.
-  it('nao conta eta2 nulo', () => {
-    expect(overdueCount([process({ eta2: null })], HOJE)).toBe(0)
-  })
+  // A pergunta de cada um e diferente, e `D-49` nao as aproximou.
+  it('a carga que chegou sem documento satisfaz os dois', () => {
+    const parado = process({ eta2: '2025-01-01', statusCategory: 'em_andamento' })
 
-  it('devolve zero para conjunto vazio', () => {
-    expect(overdueCount([], HOJE)).toBe(0)
-  })
-})
-
-describe('IND-14 e IND-15 — sobreposicao intencional', () => {
-  /**
-   * Os dois indicadores respondem perguntas diferentes sobre a mesma linha:
-   * "a carga chegou e nao foi liberada" e "o documento nao foi enviado".
-   * Uma carga parada ha meses sem documento e as duas coisas.
-   */
-  it('a mesma linha conta nos dois quando ja chegou e nao tem documento', () => {
-    const conjunto = [process({ eta2: '2025-01-01', statusCategory: 'em_andamento' })]
-
-    expect(overdueCount(conjunto, HOJE)).toBe(1)
-    expect(pendingDocsCount(conjunto, HOJE)).toBe(1)
-  })
-
-  it('conta so em IND-14 quando a chegada ainda esta por vir', () => {
-    const conjunto = [process({ eta2: '2026-08-10' })]
-
-    expect(pendingDocsCount(conjunto, HOJE)).toBe(1)
-    expect(overdueCount(conjunto, HOJE)).toBe(0)
-  })
-
-  it('conta so em IND-15 quando o documento ja foi enviado', () => {
-    const conjunto = [process({ eta2: '2026-08-02', docsSent: '2026-07-20' })]
-
-    expect(overdueCount(conjunto, HOJE)).toBe(1)
-    expect(pendingDocsCount(conjunto, HOJE)).toBe(0)
-  })
-
-  // `fechado_aguardando_draft` tem REF e nada mais, logo eta2 e null.
-  it('processo fechado aguardando draft fica ausente dos dois', () => {
-    const conjunto = [process({ eta2: null, statusCategory: 'fechado_aguardando_draft' })]
-
-    expect(overdueCount(conjunto, HOJE)).toBe(0)
-    expect(pendingDocsCount(conjunto, HOJE)).toBe(0)
+    expect(isOverdue(parado, HOJE)).toBe(true)
+    expect(hasPendingDocs(parado, HOJE)).toBe(true)
   })
 })
 

@@ -1,5 +1,6 @@
 import type { HealthResponse, IndicatorsResponse } from '../api-client.ts'
 import { ArrivalCalendar } from '../components/ArrivalCalendar.tsx'
+import { DateField } from '../components/DateField.tsx'
 import { IngestionHealth } from '../components/IngestionHealth.tsx'
 import { LiveAnnouncement, PageAlert } from '../components/PageAlert.tsx'
 import { StatCard, type StatVariant } from '../components/StatCard.tsx'
@@ -9,123 +10,44 @@ import { useIndicators, useQuarantine } from '../hooks/useIndicators.ts'
 /**
  * Pagina Inicial (RF-09).
  *
- * Doze cartoes, **nesta ordem**, e nenhum numero calculado aqui: todos vem de
+ * Nove cartoes, **nesta ordem**, e nenhum numero calculado aqui: todos vem de
  * `GET /api/indicators`, ja recortado pelos filtros globais no servidor (regra
  * inviolavel 6).
  *
- * Tres deles existem por achado, nao pela especificacao original: "Em
- * desembaraco" por A-12 — sem ele a soma das categorias nao fecha com o total
- * —, os dois de urgencia por A-40, e "Desembaracados hoje" por A-64. O
- * decimo-terceiro veio de `H-52`, do uso: `desembaracados` era lido como
- * "quantos concluimos na janela" e responde "quantos dos que chegaram na janela
- * ja concluiram".
+ * **`D-49` levou os treze cartoes a nove**, por ordem do usuario depois de usar
+ * a tela: sairam os de IND-08, IND-14 e IND-16 e o de periodo por registro, e
+ * tres mudaram de regra — "Em desembaraco" passou a IND-23, "Chegando hoje" a
+ * IND-24 e "Atrasados" a IND-25.
  *
- * **Cada cartao declara a janela que esta contando** (`H-52`), e o campo de data
- * que ela recorta: sao dois, e sao perguntas diferentes. A janela vem do
- * servidor, formatada aqui — formatar nao e calcular.
+ * **Nada mais aparece abaixo do contador**, e isso tambem e `D-49`: a janela
+ * que cada cartao declarava desde `H-52` saiu junto com a faixa do seletor, para
+ * despoluir a tela. O que ela resolvia — cartao zerado por recorte contra
+ * cartao zerado por ausencia de dado — passou a ser respondido pelo proprio
+ * seletor de periodo, logo acima dos cartoes.
  */
-
-/** Qual data o cartao conta. Decide a janela que ele exibe, e so isso. */
-type CardDate = 'eta2' | 'registration' | 'nenhuma'
 
 interface CardDefinition {
   readonly key: keyof IndicatorsResponse['counts']
   readonly label: string
   readonly variant?: StatVariant
-  readonly date: CardDate
-  /**
-   * O que distingue o cartao de urgencia, em TEXTO (`ACHADO 18`, `SC 1.4.1`).
-   *
-   * Ate `H-45` a distincao era so o par de cores da variante: quem nao enxerga
-   * a diferenca cromatica via doze cartoes iguais. O `hint` ja existia em
-   * `StatCard`, e nenhum cartao o usava.
-   */
-  readonly hint?: string
 }
 
 const CARDS: readonly CardDefinition[] = [
-  { key: 'total', label: 'Total', date: 'eta2' },
-  { key: 'desembaracados', label: 'Desembaraçados', date: 'eta2' },
-  { key: 'emAndamento', label: 'Em andamento', date: 'eta2' },
-  { key: 'emDesembaraco', label: 'Em desembaraço', date: 'eta2' },
-  { key: 'fechadoAguardandoDraft', label: 'Fechado — aguardando draft', date: 'eta2' },
-  // `H-52`. Ao lado do de categoria, e nao no lugar dele: a soma das quatro
-  // continua fechando com o total (A-12), e este responde a outra pergunta.
-  {
-    key: 'desembaracadosNoPeriodo',
-    label: 'Desembaraçados no período (por registro)',
-    date: 'registration',
-  },
-  { key: 'canalVermelho', label: 'Canal Vermelho', date: 'eta2' },
-  { key: 'chegandoHoje', label: 'Chegando hoje', date: 'nenhuma' },
-  { key: 'chegandoSemana', label: 'Chegando esta semana', date: 'nenhuma' },
-  { key: 'chegando15Dias', label: 'Chegando em 15 dias', date: 'nenhuma' },
-  // A-64. Fecha o bloco temporal: os anteriores dizem o que o dia trouxe ou
-  // trara, este diz o que ele concluiu.
-  { key: 'desembaracadosHoje', label: 'Desembaraçados hoje', date: 'nenhuma' },
-  {
-    key: 'atrasados',
-    label: 'Atrasados',
-    variant: 'urgencia',
-    date: 'eta2',
-    hint: 'Pede ação',
-  },
-  {
-    key: 'documentosPendentes',
-    label: 'Documentos pendentes',
-    variant: 'urgencia',
-    date: 'eta2',
-    hint: 'Pede ação',
-  },
+  { key: 'total', label: 'Total' },
+  { key: 'desembaracados', label: 'Desembaraçados' },
+  { key: 'emAndamento', label: 'Processos ativos' },
+  { key: 'emDesembaraco', label: 'Em desembaraço' },
+  { key: 'fechadoAguardandoDraft', label: 'Aguardando draft' },
+  { key: 'canalVermelho', label: 'Canal Vermelho' },
+  { key: 'chegandoHoje', label: 'Chegando hoje' },
+  { key: 'chegando15Dias', label: 'Chegando em 15 dias' },
+  { key: 'atrasados', label: 'Atrasados', variant: 'urgencia' },
 ]
-
-/** As quatro categorias canonicas, cuja soma tem de igualar o total. */
-const CATEGORY_KEYS = [
-  'emAndamento',
-  'emDesembaraco',
-  'desembaracados',
-  'fechadoAguardandoDraft',
-] as const
 
 interface HomeProps {
   health: HealthResponse | null
   queryString: string
   dataVersion: number
-}
-
-/** `AAAA-MM-DD` como o operador le. Formatacao, nunca calculo. */
-function formatDay(iso: string): string {
-  const [year, month, day] = iso.split('-')
-  return `${day}/${month}/${year}`
-}
-
-const DATE_LABEL: Readonly<Record<Exclude<CardDate, 'nenhuma'>, string>> = {
-  eta2: 'ETA2',
-  registration: 'registro',
-}
-
-/**
- * A frase que cada cartao exibe abaixo do numero.
- *
- * Tres estados, e a distincao e o motivo da historia: janela ativa diz o
- * recorte; sem janela, diz a faixa REAL dos dados, que veio do servidor; e base
- * sem nenhuma data diz "sem data", nunca uma faixa inventada (regra inviolavel
- * 3). Cartao que nao conta data alguma nao recebe frase.
- */
-function periodOf(card: CardDefinition, meta: IndicatorsResponse['meta']): string | undefined {
-  if (card.date === 'nenhuma') return undefined
-
-  const campo = DATE_LABEL[card.date]
-  const { from, to } = meta.period
-  if (from !== null || to !== null) {
-    const inicio = from === null ? 'início' : formatDay(from)
-    const fim = to === null ? 'hoje em diante' : formatDay(to)
-    return `${campo} · ${inicio} a ${fim}`
-  }
-
-  const faixa = meta.dataRange[card.date]
-  if (faixa.from === null || faixa.to === null) return `${campo} · sem data`
-  return `${campo} · todo o período — ${formatDay(faixa.from)} a ${formatDay(faixa.to)}`
 }
 
 export function Home({ health, queryString, dataVersion }: HomeProps) {
@@ -161,29 +83,20 @@ export function Home({ health, queryString, dataVersion }: HomeProps) {
         </PageAlert>
       )}
 
-      <PeriodPicker
-        selection={filters.selection}
-        setPeriod={filters.setPeriod}
-        {...(indicators ? { meta: indicators.meta } : {})}
-      />
+      <PeriodPicker selection={filters.selection} setPeriod={filters.setPeriod} />
 
       <section aria-label="Cartões-resumo" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {CARDS.map((card) => {
-          const period = indicators ? periodOf(card, indicators.meta) : undefined
-          return (
-            <StatCard
-              key={card.key}
-              label={card.label}
-              value={counts?.[card.key] ?? null}
-              {...(card.variant ? { variant: card.variant } : {})}
-              {...(card.hint ? { hint: card.hint } : {})}
-              {...(period ? { period } : {})}
-            />
-          )
-        })}
+        {CARDS.map((card) => (
+          <StatCard
+            key={card.key}
+            label={card.label}
+            value={counts?.[card.key] ?? null}
+            {...(card.variant ? { variant: card.variant } : {})}
+          />
+        ))}
       </section>
 
-      {counts && <CategorySum counts={counts} />}
+      {indicators && <CategorySum check={indicators.categoryCheck} />}
 
       {state.status === 'pronto' && (
         <ChannelPanel distribution={state.indicators.channelDistribution} />
@@ -219,38 +132,27 @@ export function Home({ health, queryString, dataVersion }: HomeProps) {
 function PeriodPicker({
   selection,
   setPeriod,
-  meta,
 }: {
   selection: FilterSelection
   setPeriod: (from: string, to: string) => void
-  meta?: IndicatorsResponse['meta']
 }) {
   const ativo = selection.etaFrom !== '' || selection.etaTo !== ''
-  const faixa = meta?.dataRange.eta2
 
   return (
     <section
       aria-label="Período"
       className="flex flex-wrap items-end gap-3 rounded-container border border-border-subtle bg-surface-raised px-4 py-3"
     >
-      <label className="flex flex-col gap-1 text-xs text-text-secondary">
-        Período (ETA2) — de
-        <input
-          type="date"
-          value={selection.etaFrom}
-          onChange={(event) => setPeriod(event.target.value, selection.etaTo)}
-          className="rounded-control border border-border-control px-2 py-1 text-sm text-text-primary"
-        />
-      </label>
-      <label className="flex flex-col gap-1 text-xs text-text-secondary">
-        até
-        <input
-          type="date"
-          value={selection.etaTo}
-          onChange={(event) => setPeriod(selection.etaFrom, event.target.value)}
-          className="rounded-control border border-border-control px-2 py-1 text-sm text-text-primary"
-        />
-      </label>
+      <DateField
+        label="Período (ETA2) — de"
+        value={selection.etaFrom}
+        onValue={(iso) => setPeriod(iso, selection.etaTo)}
+      />
+      <DateField
+        label="até"
+        value={selection.etaTo}
+        onValue={(iso) => setPeriod(selection.etaFrom, iso)}
+      />
 
       {ativo && (
         <button
@@ -263,11 +165,7 @@ function PeriodPicker({
       )}
 
       <p className="text-xs text-text-muted">
-        {ativo
-          ? 'O mesmo filtro da barra acima — mudar aqui muda lá.'
-          : faixa && faixa.from !== null && faixa.to !== null
-            ? `Sem recorte: os cartões contam de ${formatDay(faixa.from)} a ${formatDay(faixa.to)}.`
-            : 'Sem recorte.'}
+        {ativo ? 'O mesmo filtro da barra acima — mudar aqui muda lá.' : 'Todo o período'}
       </p>
     </section>
   )
@@ -340,46 +238,38 @@ function ChannelPanel({
 }
 
 /**
- * A conferencia de A-12, exibida em vez de presumida.
+ * A conferencia de A-12, e so quando ela quebra (`D-49`).
  *
- * Somar quatro numeros ja calculados nao deriva indicador novo nem classifica
- * nada — evidencia uma invariante que o dominio garante. Quando ela quebra, o
- * defeito e do servidor, e esta linha e o unico lugar onde isso fica visivel
- * antes de alguem conferir na mao.
+ * **A soma saiu do cliente.** Ate aqui os quatro cartoes de categoria estavam
+ * na tela e soma-los nao derivava indicador novo; com IND-23 no lugar de
+ * IND-03 eles deixaram de ser as quatro categorias, e a conta passou a vir
+ * pronta em `categoryCheck`.
+ *
+ * **Silencio quando confere** — o outro lado da ordem de despoluir a tela. A
+ * invariante vale em toda leitura boa, entao uma linha permanente dizendo
+ * "conferem" ocupa espaco para nunca informar nada; quando ela quebra, o
+ * defeito e do servidor, e este continua sendo o unico lugar onde isso fica
+ * visivel antes de alguem conferir na mao.
  */
-function CategorySum({ counts }: { counts: IndicatorsResponse['counts'] }) {
-  const sum = CATEGORY_KEYS.reduce((accumulated, key) => accumulated + counts[key], 0)
-  const matches = sum === counts.total
+function CategorySum({ check }: { check: IndicatorsResponse['categoryCheck'] }) {
+  if (check.matches) return null
 
   return (
     <>
-      {/* Este `<p>` existe SEMPRE e so muda de tom; acrescentar `role="alert"`
-          a ele quando a soma quebra criaria uma regiao ja populada — o mesmo
-          `ACHADO 11` por outro caminho, e era o que a linha de `:114` fazia por
-          spread condicional. Quem anuncia e a regiao viva da casca. */}
-      <p
-        className={`rounded-control border px-4 py-2 text-sm ${
-          matches
-            ? 'border-border-subtle bg-surface-raised text-text-secondary'
-            : 'border-state-error-border bg-state-error-bg'
-        }`}
-      >
+      {/* Sem `role="alert"`: o `<p>` nasce ja populado, e anunciar daqui seria
+          o `ACHADO 11` por outro caminho. Quem anuncia e a regiao viva da
+          casca, logo abaixo. */}
+      <p className="rounded-control border border-state-error-border bg-state-error-bg px-4 py-2 text-sm">
         Soma das 4 categorias:{' '}
-        <strong className="tabular-nums">{sum.toLocaleString('pt-BR')}</strong> · Total:{' '}
-        <strong className="tabular-nums">{counts.total.toLocaleString('pt-BR')}</strong>
-        {matches ? (
-          <span className="ml-2 text-text-muted">conferem</span>
-        ) : (
-          <span className="ml-2 font-semibold text-state-error-fg">
-            NÃO conferem — há processo fora das quatro categorias
-          </span>
-        )}
+        <strong className="tabular-nums">{check.sum.toLocaleString('pt-BR')}</strong> · Total:{' '}
+        <strong className="tabular-nums">{check.total.toLocaleString('pt-BR')}</strong>
+        <span className="ml-2 font-semibold text-state-error-fg">
+          NÃO conferem — há processo fora das quatro categorias
+        </span>
       </p>
-      {!matches && (
-        <LiveAnnouncement
-          text={`A soma das 4 categorias é ${sum}, e o total é ${counts.total}. Elas NÃO conferem — há processo fora das quatro categorias.`}
-        />
-      )}
+      <LiveAnnouncement
+        text={`A soma das 4 categorias é ${check.sum}, e o total é ${check.total}. Elas NÃO conferem — há processo fora das quatro categorias.`}
+      />
     </>
   )
 }

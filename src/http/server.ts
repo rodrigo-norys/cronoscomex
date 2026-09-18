@@ -134,7 +134,7 @@ export function buildServer(
   registerConfigRoutes(app, config, store, applyWorkbookPath, configPath, openDialog, webRoot)
   registerQuarantineRoute(app)
   registerReloadRoute(app, store)
-  registerIndicatorsRoute(app, config, store, clientGroups, teamMap)
+  registerIndicatorsRoute(app, config, store, clientGroups, teamMap, colorMap)
   registerAlertsRoute(app, config, store, historyPath)
   registerFilterOptionsRoute(app, store, clientGroups, teamMap)
   registerProcessesRoute(app, config, store, historyPath)
