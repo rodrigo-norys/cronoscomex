@@ -76,8 +76,9 @@
  * seguintes carregue a correcao junto em vez de virar uma segunda passada pelos
  * mesmos arquivos. Foi assim em `H-39`, com tres, e em `H-57`, com seis.
  *
- * As contas de `E9` estao em `docs/estilizacao/RESULTADO.md`; as de `E11`, em
- * `docs/redesign/PROPOSTA.md` §2.2. As razoes citadas abaixo foram **medidas no
+ * As contas de `E9` e `E11` estavam em dois relatorios removidos em `D-48`; o
+ * que elas produziram sao os valores deste bloco. As razoes citadas abaixo
+ * substituem aquelas, e nao as repetem: foram **medidas no
  * navegador** por `tools/medir-navegador.mjs`, nos dois esquemas, ao fechar
  * `H-57` — e nao calculadas a mao: quem resolve `oklch()` e compoe alfa e o
  * compositor, nao a formula.
