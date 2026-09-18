@@ -272,3 +272,67 @@ describe('removeTeamMember', () => {
     ).not.toThrow()
   })
 })
+
+/**
+ * **Um importador pertence a um responsavel so, e agora a carga tambem cobra.**
+ *
+ * A tela recusa desde `H-91`, por `planTeamMember`. O arquivo editado a mao
+ * passava — medido pelo ensaio em 17/09/2026, que carregou um mapa com o mesmo
+ * importador em dois membros sem um erro sequer. `IND-20` conta por pessoa: o
+ * processo entraria nas duas carteiras e a soma deixaria de fechar com o total.
+ */
+describe('loadTeamMap — importador em mais de um responsavel', () => {
+  it('recusa, nomeando o importador e os dois membros', () => {
+    const path = escrever({
+      version: 1,
+      members: [
+        { key: 'membro1', label: 'Um', importers: ['ACME'] },
+        { key: 'membro2', label: 'Dois', importers: ['ACME'] },
+      ],
+    })
+
+    expect(() => loadTeamMap(path)).toThrow(TeamMapError)
+    expect(() => loadTeamMap(path)).toThrow(/membro1/)
+    expect(() => loadTeamMap(path)).toThrow(/membro2/)
+  })
+
+  /**
+   * A comparacao e a mesma da tela — `overlaps`, e nao igualdade. Listar "ACME"
+   * ja casa "ACME - SC", entao estes dois disputam os mesmos processos sem que
+   * nenhuma string se repita.
+   */
+  it('recusa tambem quando um e sufixo de filial do outro', () => {
+    const path = escrever({
+      version: 1,
+      members: [
+        { key: 'membro1', label: 'Um', importers: ['ACME'] },
+        { key: 'membro2', label: 'Dois', importers: ['ACME - SC'] },
+      ],
+    })
+
+    expect(() => loadTeamMap(path)).toThrow(/mais de um responsavel/)
+  })
+
+  /** A ancora: importadores distintos entre membros continuam valendo. */
+  it('aceita importadores diferentes em membros diferentes', () => {
+    const path = escrever({
+      version: 1,
+      members: [
+        { key: 'membro1', label: 'Um', importers: ['ACME'] },
+        { key: 'membro2', label: 'Dois', importers: ['OUTRA'] },
+      ],
+    })
+
+    expect(loadTeamMap(path)).toHaveLength(2)
+  })
+
+  /** Repetir o mesmo importador DENTRO de um membro nao e conflito. */
+  it('aceita o mesmo importador repetido no mesmo membro', () => {
+    const path = escrever({
+      version: 1,
+      members: [{ key: 'membro1', label: 'Um', importers: ['ACME', 'ACME'] }],
+    })
+
+    expect(loadTeamMap(path)).toHaveLength(1)
+  })
+})
