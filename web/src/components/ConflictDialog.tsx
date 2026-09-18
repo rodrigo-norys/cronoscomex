@@ -1,4 +1,6 @@
+import { useRef } from 'react'
 import type { ApplyRefusal } from '../api-client.ts'
+import { useModalFocus } from '../hooks/useModalFocus.ts'
 import { SeverityIcon, severityBand } from './SeverityMark.tsx'
 
 /**
@@ -54,6 +56,26 @@ interface ConflictDialogProps {
  * significa que o arquivo mudou durante a gravacao.
  */
 export function ConflictDialog({ refusal, onClose }: ConflictDialogProps) {
+  const caixa = useRef<HTMLDivElement>(null)
+  const titulo = useRef<HTMLHeadingElement>(null)
+
+  /*
+    **O mesmo mecanismo dos outros dois modais, e nao uma segunda
+    implementacao** — e o criterio de aceite de `H-83`, que tirou este
+    comportamento de dentro do `FilterPanel` justamente para nao haver copias
+    que divergem.
+
+    Ele estava faltando aqui, e o cabecalho do `FilterPanel` dizia por que: "o
+    `ConflictDialog` so abre com a planilha alterada durante a sessao, e por
+    isso a gestao de foco dele segue parada em `PD-07`". Medido em 17/09/2026,
+    produzindo o conflito num navegador real: o dialogo abria com
+    `document.activeElement` ainda no `<body>`.
+
+    O hook vem ANTES do `refusal === null`: chamada condicional de hook e
+    proibida, e o early return ficava acima dele.
+  */
+  useModalFocus({ container: caixa, initialFocus: titulo, onClose })
+
   if (refusal === null) return null
 
   const temConflitos = refusal.conflicts.length > 0
@@ -64,7 +86,7 @@ export function ConflictDialog({ refusal, onClose }: ConflictDialogProps) {
    * gravado" justamente nos dois desfechos em que isso e falso ou desconhecido.
    * Achado do revisor-xml.
    */
-  const titulo = refusal.fileAtRisk
+  const rotulo = refusal.fileAtRisk
     ? 'A planilha pode estar inválida'
     : refusal.code === 'ERRO_INTERNO'
       ? 'Não foi possível concluir'
@@ -75,6 +97,7 @@ export function ConflictDialog({ refusal, onClose }: ConflictDialogProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-overlay-scrim px-4">
       <div
+        ref={caixa}
         role="alertdialog"
         aria-modal="true"
         aria-labelledby="conflito-titulo"
@@ -90,8 +113,16 @@ export function ConflictDialog({ refusal, onClose }: ConflictDialogProps) {
         */
         className="max-h-[80vh] w-full max-w-3xl overflow-auto rounded-container border border-border-modal bg-surface-raised p-6"
       >
-        <h2 id="conflito-titulo" className="text-lg font-semibold text-text-primary">
-          {titulo}
+        {/* `tabIndex={-1}` para poder receber o foco de entrada sem entrar na
+            ordem de tabulacao — o `FOCUSABLE` do hook exclui `[tabindex="-1"]`
+            de proposito, para que a primeira `Tab` avance em vez de voltar. */}
+        <h2
+          id="conflito-titulo"
+          ref={titulo}
+          tabIndex={-1}
+          className="text-lg font-semibold text-text-primary"
+        >
+          {rotulo}
         </h2>
 
         <p className="mt-2 text-sm text-text-secondary">{refusal.message}</p>
