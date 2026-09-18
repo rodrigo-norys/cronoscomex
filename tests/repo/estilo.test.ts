@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest'
  * `text-slate-600`: o Tailwind gera a classe, o build passa, e a divergência só
  * apareceria numa auditoria seguinte — foi assim que o conjunto chegou a 40
  * classes de cor distintas e zero tokens, medido em
- * `docs/estilizacao/RESULTADO.md`.
+ * a revisão de estilo de 18/08/2026 (`D-48`).
  *
  * **Ela entra em `H-42`, e não em `H-39`, porque só aqui pode passar.**
  * Declarada antes, reprovaria enquanto `H-40` e `H-41` não tivessem migrado — e
@@ -615,7 +615,7 @@ describe('RNF-34 — nenhuma origem externa na interface', () => {
  * paleta de voltar, e a mecânica é a mesma: sem guarda, o próximo arquivo nasce
  * com `rounded-md` e `shadow-sm` porque era o que estava à mão — foi assim que
  * o conjunto chegou a **81 ocorrências de raio, 77 delas no mesmo valor**, e a
- * duas sombras, medido em `docs/estilizacao/RESULTADO.md`.
+ * duas sombras, medido em a revisão de estilo de 18/08/2026 (`D-48`).
  *
  * **Ela entra aqui, e não em `H-61`, porque só aqui pode passar.** Escrita
  * naquela fatia, nascia vermelha: sobravam 47 `rounded`, 2 `rounded-sm` e 1

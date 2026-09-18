@@ -2,7 +2,7 @@
 
 Segunda invocação do subagente `revisor-estilo`, contra o corpus verificável de
 `docs/estilizacao/corpus-estilo.md`. A primeira produziu
-`docs/estilizacao/RESULTADO.md`, de onde nasceu `E9`.
+a revisão de estilo de 18/08/2026 (`D-48`), de onde nasceu `E9`.
 
 **Executada antes de `H-64`**, e a ordem tinha razão: achado de forma encontrado
 depois do movimento custaria animar o que ia mudar. Conferido item a item —

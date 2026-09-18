@@ -4500,7 +4500,7 @@ E9 — o item novo herda a forma dos seis existentes.
 
 ## Épico E9 — Estilização
 
-Nasce da revisão de `docs/estilizacao/RESULTADO.md` (18/08/2026), que percorreu
+Nasce da revisão de a revisão de estilo de 18/08/2026 (`D-48`) (18/08/2026), que percorreu
 a casca e as sete páginas contra o corpus verificável de
 `docs/estilizacao/corpus-estilo.md` e registrou **21 achados** sobre **25
 arquivos** de `web/src/`. As nove histórias abaixo são as ondas daquele plano
@@ -4584,7 +4584,7 @@ funcionalidade nova, fora deste épico e fora do plano.
 >
 > **Duas razões da auditoria não reproduziram**, ambas envolvendo `slate-600`:
 > `ACHADO 5` afirmava 6.92:1 e `ACHADO 7`, 4.53:1 — são 7.56:1 e 6.90:1.
-> Corrigidas em `docs/estilizacao/RESULTADO.md`, junto da reconferência das
+> Corrigidas em a revisão de estilo de 18/08/2026 (`D-48`), junto da reconferência das
 > outras seis, que reproduzem. Nenhuma decisão muda: os pares passavam e
 > passam.
 
@@ -4650,7 +4650,7 @@ corrigidos para contraste, e a casca inteira consumindo só ele.
 de tema já vive no CSS, e nenhuma outra fatia do épico toca o HTML.
 
 > **`ACHADO 22` — o estado desabilitado, medido em 19/08/2026.** Não veio da
-> auditoria de `docs/estilizacao/RESULTADO.md`: apareceu na primeira instalação
+> auditoria de a revisão de estilo de 18/08/2026 (`D-48`): apareceu na primeira instalação
 > em Windows, quando o botão *Carregar esta planilha* — o único chamado à ação da
 > tela de primeira execução — **desapareceu** numa sessão de acesso remoto. O
 > canal com perda de cor foi o revelador, não a causa; a causa é o contraste
@@ -5489,7 +5489,7 @@ breakpoints e sistema de grid como requisito.
 > ✅ **CONCLUÍDA em 31/08/2026.** **Zero testes próprios** — a história produz
 > registro, não código, e a suíte fica em **1586**, a mesma de `H-46`. Cinco dos
 > seis procedimentos percorridos em Chrome 151 por CDP, com desfecho escrito em
-> cada bloco de `docs/estilizacao/RESULTADO.md`. **Cinco achados novos**, um por
+> cada bloco de a revisão de estilo de 18/08/2026 (`D-48`). **Cinco achados novos**, um por
 > história: `H-67` a `H-71`. Quatro divergências no protocolo, todas resolvidas.
 >
 > **Duas correções anteriores confirmadas em campo, e é isso que a história
@@ -5558,7 +5558,7 @@ registrar o resultado de cada procedimento ao lado do achado que o gerou.
 > Os outros cinco rodam em qualquer navegador e ficam nesta fatia.
 
 **Arquivos:**
-- `docs/estilizacao/RESULTADO.md` — o desfecho de cada procedimento, ao lado do
+- a revisão de estilo de 18/08/2026 (`D-48`) — o desfecho de cada procedimento, ao lado do
   bloco que o emitiu
 
 **Critérios de aceite:**
@@ -5733,7 +5733,7 @@ E qualquer correção de código: os cinco procedimentos produzem registro.
 
 > **Medido por `VN-1` em 31/08/2026.** É a pior das duas rolagens: `scrollWidth`
 > **572** contra 320 — o controle rompe a borda do próprio cartão, e a prova
-> visual está no desfecho de `VN-1` em `docs/estilizacao/RESULTADO.md`.
+> visual está no desfecho de `VN-1` em a revisão de estilo de 18/08/2026 (`D-48`).
 >
 > **A causa não é uma classe errada, é a largura que o navegador impõe.** O
 > `<select>` é dimensionado pela maior `<option>` — "Verde (tom A) — sem
@@ -7874,7 +7874,7 @@ linha de 40 px, o mono onde há número e o alinhamento à direita.
 
 > **O corte é por arquivo, não por propriedade.** Raio, elevação, densidade e
 > largura de fonte aplicados em passadas separadas abririam cada arquivo quatro
-> vezes — é a razão que a onda 5 de `estilizacao/RESULTADO.md` deu para juntar o
+> vezes — é a razão que a onda 5 de a revisão de estilo de 18/08/2026 (`D-48`) deu para juntar o
 > `ACHADO 21` com os outros dois.
 >
 > **São os mesmos seis arquivos de `H-40`**, deliberadamente: o agrupamento já
@@ -8040,7 +8040,7 @@ dois raios, a elevação por borda e o mono onde há número.
 > **Os dois raios, medidos no navegador e não no código.** Percorridas as sete
 > rotas em Chrome 151, `getComputedStyle` sobre todo elemento de `main`, `nav` e
 > `header`: **os raios distintos do conjunto inteiro são `6px` e `12px`** —
-> contra as 81 ocorrências que `docs/estilizacao/RESULTADO.md` mediu, 77 delas
+> contra as 81 ocorrências que a revisão de estilo de 18/08/2026 (`D-48`) mediu, 77 delas
 > no mesmo valor de 4 px. **Zero sombras e zero estouros** nas mesmas sete.
 >
 > **A guarda entra aqui porque só aqui pode passar.** Ela foi escrita em `H-61`
@@ -8336,7 +8336,7 @@ qualquer movimento que não responda a uma ação do operador.
 superfície dobrada pelo segundo esquema.
 
 > **`H-47` é a linha de base, e esta história é a segunda passada.** Metade dos
-> procedimentos de `estilizacao/RESULTADO.md` mede cor **resolvida**, e cor
+> procedimentos de a revisão de estilo de 18/08/2026 (`D-48`) mede cor **resolvida**, e cor
 > resolvida depende do esquema: rodá-los só no claro deixaria o escuro sem
 > verificação nenhuma.
 >
@@ -8382,7 +8382,7 @@ superfície dobrada pelo segundo esquema.
 
 Nasce de `docs/redesign/REVISAO-ESTILO.md` (01/09/2026), segunda invocação do
 subagente `revisor-estilo` contra o corpus de 40 regras. **A primeira produziu
-`docs/estilizacao/RESULTADO.md`, de onde nasceu `E9`** — este épico é o mesmo
+a revisão de estilo de 18/08/2026 (`D-48`), de onde nasceu `E9`** — este épico é o mesmo
 mecanismo, uma passada depois.
 
 **Catorze achados. Três já fecharam em `H-65`**, por caírem em arquivo que a

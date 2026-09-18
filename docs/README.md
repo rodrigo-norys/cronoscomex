@@ -69,7 +69,6 @@ Cada um tem um documento de origem, e o cabeçalho do épico em
 | Origem | Épico | O que traz |
 |---|---|---|
 | [estilizacao/corpus-estilo.md](estilizacao/corpus-estilo.md) | — | **40 regras de estilização verificáveis**, com identificador de norma, sinal sintático e contraexemplo. É o corpus que o subagente `revisor-estilo` usa |
-| [estilizacao/RESULTADO.md](estilizacao/RESULTADO.md) | `E9` | A auditoria de 18/08/2026 contra o corpus: 21 achados sobre 25 arquivos, em 7 ondas |
 | [uso/RESULTADO.md](uso/RESULTADO.md) | `E10` | O que apareceu na tela em 31/08/2026, com o operador usando o painel para trabalhar — 12 observações, 8 viraram história |
 | [redesign/PROPOSTA.md](redesign/PROPOSTA.md) | `E11` | A transcrição versionada do mockup *Cronos Console*, com a paleta dos dois esquemas, as seis reprovações de contraste medidas e as seis divergências contra o repositório |
 | [redesign/REVISAO-ESTILO.md](redesign/REVISAO-ESTILO.md) | `E12` | Os 14 achados da revisão de estilo de 01/09/2026, todos resolvidos ou declarados não normativos |

@@ -6,7 +6,7 @@
 mudar sem aviso, e o épico `E11` de `../06-backlog.md` cita esta página, não
 aquela URI.
 
-**Não é auditoria.** `../estilizacao/RESULTADO.md` mediu conformidade contra um
+**Não é auditoria.** `../a revisão de estilo de 18/08/2026 (`D-48`)` mediu conformidade contra um
 corpus normativo e `../uso/RESULTADO.md` registrou o que apareceu na tela em uso;
 os dois descrevem o que **está errado**. Este descreve o que se decidiu que a
 interface **passa a ser** — proposta de desenho, aceita pelo operador em
