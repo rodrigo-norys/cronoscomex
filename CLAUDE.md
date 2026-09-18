@@ -102,7 +102,7 @@ Não re-derive isto; está medido.
 | React · Vite | 19.2.8 · 8.2.0 |
 | Tailwind | 4.3.3 |
 | Recharts | 3.10.1 |
-| Vitest | 4.1.10 |
+| Vitest | 4.1.11 — patch de segurança, `D-52` |
 | Testing Library · jsdom | 16.3.2 · 30.0.1 — **só teste**, ver D-17 |
 | Biome (lint + format) | 2.5.6 |
 
@@ -589,6 +589,17 @@ python3 tools/profile_workbook.py "<caminho.xlsx>" /tmp/saida.json   # reperfila
 > em 17/09/2026 tornou dois deles falsos de uma vez — achados por raciocínio, e
 > não por teste: a guarda de documentação cobra o total de histórias em prosa,
 > não a composição do portão.
+
+> **`npm install` reprova com `Cannot read properties of null (reading 'edgesOut')`,
+> e não é o `package.json`.** É o **npm 10.9.8**, o que vem com o Node de
+> `.nvmrc`, resolvendo o conjunto de pares de `vitest` neste grafo — `vite@8`
+> traz `@vitejs/devtools-vitest`, que declara `vitest` como par, e o ciclo o
+> derruba. **Medido em 18/09/2026, e independe da versão do Vitest:** falha
+> igual com 4.1.10 e 4.1.11, e só quando o par precisa ser resolvido do zero —
+> por isso o erro aparece ao TROCAR uma versão, e não no dia a dia. Use
+> `npx --yes npm@11 install`, que resolve sem contorno nenhum. **`--legacy-peer-deps`
+> também passa e NÃO deve ser usado**: ele monta outra árvore. O CI não é
+> afetado, porque `npm ci` instala o que o lock diz sem resolver par nenhum.
 
 > `node: bad option` **não é erro de código**: o shell herdou um Node abaixo de
 > `engines`. Prefixe `nvm use &&` — o `nvm use` não persiste entre chamadas.
