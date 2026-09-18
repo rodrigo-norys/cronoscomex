@@ -12,7 +12,9 @@
  * **Sem dependencia npm.** Os `.woff2` sao versionados em `web/public/fonts/` e
  * o `@font-face` e escrito a mao; `@fontsource` resolveria o mesmo com uma
  * dependencia que o plano nao preve. `LICENSE.txt` acompanha os arquivos —
- * IBM Plex e OFL 1.1, e o repositorio vai a publico.
+ * IBM Plex e OFL 1.1, e o repositorio vai a publico. **Para refazer a pasta:**
+ * os `.woff2` vem de `github.com/IBM/plex`, subconjunto latino, nos tres pesos
+ * abaixo — de Sans e de Mono.
  *
  * **Tres pesos, e nao quatro.** 400, 500 e 600. O teto e decisao da proposta, e
  * hoje ja e verdade: medido em 01/09/2026, o conjunto tem **zero** `font-bold`

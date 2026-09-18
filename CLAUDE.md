@@ -278,6 +278,12 @@ pt-br, sem o tipo `test`.
 **O merge acontece no GitHub, não localmente.** `branch → commits → push da
 branch → PR → merge por lá`. Mesclar na `main` antes do push **mata o PR**.
 
+**`delete_branch_on_merge` está ligado**, e com ele uma cascata de PRs
+encadeados se corrige sozinha: mesclado o de baixo, o GitHub reaponta o
+seguinte para a `main`. **Desligado, não acontece** — medido em 01/09/2026,
+numa pilha de seis: dois PRs ficaram apontando para a branch de baixo em vez
+da `main` e precisaram ser reabertos depois de ligar a opção.
+
 **A branch `distribuicao` é a árvore que vai para a máquina do operador.**
 **Sem contagem aqui**, pela mesma razão que `.claude/rules/distribuicao.md` já
 declara: o número envelhece a cada história que acrescenta arquivo, e já esteve
