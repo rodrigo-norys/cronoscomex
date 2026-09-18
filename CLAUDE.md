@@ -19,8 +19,13 @@ antes de decidir.
 3. **Nada é adivinhado.** Cor não reconhecida não vira a cor mais próxima; data
    sem ano não recebe ano inventado. Buraco visível é melhor que valor errado
    invisível.
-4. **A cor nunca infere o status.** São campos independentes. Medido: 66 linhas
-   com STATUS vazio, 1 linha branca.
+4. **A cor nunca infere a CATEGORIA.** São campos independentes em TD-01, e o
+   classificador não lê cor. Medido: 66 linhas com STATUS vazio, 1 linha branca.
+   **`D-49` emendou a redação — que era "nunca infere o status" — e o alcance:**
+   dois cartões da Página Início contam por cor (IND-23 e IND-24), por ordem do
+   usuário. O que não mudou é o que a regra sempre protegeu: o filtro Categoria,
+   a coluna da Página Operacional e a conferência de A-12 continuam vindo do
+   STATUS, e as duas leituras divergem de propósito — 33 contra 167.
 5. **`src/domain/` não importa `src/io/`, `src/app/`, `src/http/` nem `web/`.**
    O lint verifica e quebra a build.
 6. **Nenhuma regra de negócio no cliente ou nas rotas.** Só em `src/domain/`.
