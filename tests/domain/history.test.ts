@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   aggregateMonthly,
+  countRegistrationsMonthly,
   daysInCategory,
   diffEvents,
   type LastSeen,
@@ -450,5 +451,127 @@ describe('reconstructMonthly — H-54', () => {
     ]
 
     expect(reconstructMonthly(conjunto, HOJE, SP).points[0]?.desembaracados).toBe(1)
+  })
+})
+
+/**
+ * `D-56`. A serie de REGISTROS do mes, que nao acumula.
+ *
+ * O que estes testes protegem: que a medida do mes nunca vire estoque — trocar
+ * `registered` por um acumulado devolve numeros plausiveis e responde a outra
+ * pergunta —, e que o eixo alcance o mes corrente mesmo sem RG nenhum nele.
+ */
+describe('countRegistrationsMonthly — D-56', () => {
+  const HOJE = new Date('2026-09-21T00:00:00Z')
+
+  const civil = (iso: string): Date => new Date(`${iso}T00:00:00Z`)
+
+  function registrado(
+    row: number,
+    registration: string | null,
+    statusCategory: StatusCategory = 'desembaracado',
+  ): Process {
+    return {
+      ...process(row, statusCategory),
+      registrationDate: registration === null ? null : civil(registration),
+    }
+  }
+
+  it('conta o mes, e nao o acumulado ate ele', () => {
+    const conjunto = [
+      registrado(2, '2026-01-10'),
+      registrado(3, '2026-01-28'),
+      registrado(4, '2026-02-05'),
+    ]
+
+    const { points } = countRegistrationsMonthly(conjunto, HOJE, SP)
+
+    expect(points.slice(0, 2).map((p) => [p.month, p.registered])).toEqual([
+      ['2026-01', 2],
+      ['2026-02', 1],
+    ])
+  })
+
+  // A-05: RG preenchido em linha que a categoria nao da por concluida. Medido na
+  // planilha real em 21/09/2026: 3 linhas em 483.
+  it('conta em `registered` o RG de linha nao desembaracada, e nao em `cleared`', () => {
+    const conjunto = [
+      registrado(2, '2026-01-10'),
+      registrado(3, '2026-01-12', 'em_andamento'),
+      registrado(4, '2026-01-15', 'fechado_aguardando_draft'),
+    ]
+
+    const ponto = countRegistrationsMonthly(conjunto, HOJE, SP).points[0]
+
+    expect(ponto?.registered).toBe(3)
+    expect(ponto?.cleared).toBe(1)
+  })
+
+  it('nao deixa buraco entre o primeiro e o ultimo mes', () => {
+    const conjunto = [registrado(2, '2026-01-10'), registrado(3, '2026-04-10')]
+
+    const { points } = countRegistrationsMonthly(conjunto, HOJE, SP)
+
+    expect(points.map((p) => [p.month, p.registered]).slice(0, 4)).toEqual([
+      ['2026-01', 1],
+      ['2026-02', 0],
+      ['2026-03', 0],
+      ['2026-04', 1],
+    ])
+  })
+
+  // O caso medido em 21/09/2026: o RG mais recente da planilha e 31/07/2026, e a
+  // tela abre em setembro. Parar em julho leria como "ainda nao chegou".
+  it('estende a serie ate o mes corrente quando o ultimo RG e anterior', () => {
+    const { points } = countRegistrationsMonthly([registrado(2, '2026-07-31')], HOJE, SP)
+
+    expect(points.map((p) => [p.month, p.registered])).toEqual([
+      ['2026-07', 1],
+      ['2026-08', 0],
+      ['2026-09', 0],
+    ])
+  })
+
+  it('nao corta o RG posterior ao mes corrente', () => {
+    const conjunto = [registrado(2, '2026-09-10'), registrado(3, '2026-11-20')]
+
+    const { points } = countRegistrationsMonthly(conjunto, HOJE, SP)
+
+    expect(points.map((p) => p.month)).toEqual(['2026-09', '2026-10', '2026-11'])
+  })
+
+  it('atravessa a virada de ano', () => {
+    const conjunto = [registrado(2, '2025-12-30'), registrado(3, '2026-02-01')]
+
+    const { points } = countRegistrationsMonthly(conjunto, HOJE, SP)
+
+    expect(points.map((p) => p.month).slice(0, 3)).toEqual(['2025-12', '2026-01', '2026-02'])
+  })
+
+  // Regra inviolavel 2: quem nao tem RG nao pertence a mes nenhum (A-20), e sumir
+  // sem contagem seria descarte silencioso.
+  it('conta separadamente quem nao tem RG', () => {
+    const conjunto = [registrado(2, '2026-01-10'), registrado(3, null), registrado(4, null)]
+
+    const resultado = countRegistrationsMonthly(conjunto, HOJE, SP)
+
+    expect(resultado.missingRegistration).toBe(2)
+    expect(resultado.points[0]?.registered).toBe(1)
+  })
+
+  // Regra inviolavel 3: sem RG nenhum nao ha serie, e nao uma serie de zeros que
+  // pareceria medida.
+  it('devolve serie vazia quando ninguem tem RG, com os ausentes contados', () => {
+    const resultado = countRegistrationsMonthly([registrado(2, null)], HOJE, SP)
+
+    expect(resultado.points).toEqual([])
+    expect(resultado.missingRegistration).toBe(1)
+  })
+
+  it('devolve tudo vazio para conjunto vazio', () => {
+    expect(countRegistrationsMonthly([], HOJE, SP)).toEqual({
+      points: [],
+      missingRegistration: 0,
+    })
   })
 })

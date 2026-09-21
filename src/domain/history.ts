@@ -301,6 +301,86 @@ export function reconstructMonthly(
   return { points, missingEta2, missingRegistration }
 }
 
+/** Um mes da serie de registros (`D-56`). Contrato em 05-contratos-api.md. */
+export interface RegistrationPoint {
+  /** `AAAA-MM`. */
+  month: string
+  /** Linhas com RG lancado no mes, qualquer que seja o STATUS de hoje. */
+  registered: number
+  /** SUBCONJUNTO de `registered`: as que tambem estao na categoria Desembaracado. */
+  cleared: number
+}
+
+export interface RegistrationSeries {
+  points: RegistrationPoint[]
+  /** Sem RG: fora de TODOS os meses (regra inviolavel 2). */
+  missingRegistration: number
+}
+
+/**
+ * Quantos registros a coluna RG marca em cada mes (`D-56`).
+ *
+ * **Nao acumula**, e e essa a diferenca para `reconstructMonthly`, que mede
+ * estoque. As duas saem da mesma coluna K e respondem a perguntas diferentes:
+ * "quantos ja foram registrados ate aqui" contra "quantos registrei NESTE mes",
+ * que e a medida de producao do despachante.
+ *
+ * **`cleared` nunca excede `registered`**, e as duas leituras divergem so onde
+ * A-05 ocorre — RG lancado em linha que a categoria ainda nao da por concluida.
+ * Medido na planilha real em 21/09/2026: 3 linhas em 483, e os 480 processos da
+ * categoria Desembaracado tem todos RG.
+ *
+ * **O intervalo vai do primeiro RG ate o mes CORRENTE**, e nao ate o ultimo RG
+ * como em `reconstructMonthly`. Parar no ultimo faria a serie terminar em
+ * jul/2026 numa tela aberta em setembro, e mes ausente do eixo se le como "ainda
+ * nao chegou" em vez de "nao houve registro" — medido em 21/09/2026: o RG mais
+ * recente da planilha e 31/07/2026. Zero medido e dado; coluna que nao existe
+ * nao e (regra inviolavel 3).
+ */
+export function countRegistrationsMonthly(
+  processes: readonly Process[],
+  today: Date,
+  timezone: string,
+): RegistrationSeries {
+  const registered: string[] = []
+  const cleared: string[] = []
+  let missingRegistration = 0
+
+  for (const process of processes) {
+    if (process.registrationDate === null) {
+      missingRegistration += 1
+      continue
+    }
+
+    const month = monthOfCivil(process.registrationDate)
+    registered.push(month)
+    if (process.statusCategory === 'desembaracado') cleared.push(month)
+  }
+
+  const sorted = [...registered].sort()
+  const first = sorted[0]
+  const lastRegistered = sorted[sorted.length - 1]
+  if (first === undefined || lastRegistered === undefined) {
+    return { points: [], missingRegistration }
+  }
+
+  const registeredByMonth = countByMonth(registered)
+  const clearedByMonth = countByMonth(cleared)
+  const currentMonth = monthOf(today, timezone)
+  const last = lastRegistered > currentMonth ? lastRegistered : currentMonth
+
+  const points: RegistrationPoint[] = []
+  for (let month = first; month <= last; month = addMonth(month)) {
+    points.push({
+      month,
+      registered: registeredByMonth.get(month) ?? 0,
+      cleared: clearedByMonth.get(month) ?? 0,
+    })
+  }
+
+  return { points, missingRegistration }
+}
+
 function countByMonth(months: readonly string[]): Map<string, number> {
   const counts = new Map<string, number>()
   for (const month of months) counts.set(month, (counts.get(month) ?? 0) + 1)
