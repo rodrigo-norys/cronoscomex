@@ -83,11 +83,13 @@ describe('os tres rankings', () => {
     renderPage()
 
     const itens = await within(await ranking('Clientes')).findAllByRole('listitem')
-    expect(itens.map((item) => item.textContent?.replace(/\d+$/, ''))).toEqual([
-      'Alfa',
-      'Beta',
-      'Charlie',
-    ])
+    /*
+      O texto inteiro, com a POSICAO na frente (21/09/2026): antes o teste
+      apagava os digitos do fim para comparar so o rotulo, e com o ordinal a
+      esquerda a assercao passou a fixar as duas coisas de uma vez — a ordem
+      recebida e o numero que acompanha cada linha.
+    */
+    expect(itens.map((item) => item.textContent)).toEqual(['1ºAlfa7', '2ºBeta7', '3ºCharlie7'])
   })
 
   it('anuncia quantos maiores exibe, conforme meta.topN', async () => {
@@ -382,5 +384,85 @@ describe('grupo de clientes no ranking', () => {
 
     expect(clientes.getByTitle('Grupo Um').textContent).toBe('Grupo Um')
     expect(clientes.getByTitle('Beta').textContent).toBe('Beta')
+  })
+})
+
+/**
+ * A posicao e o quadro rolavel (21/09/2026).
+ *
+ * Os dois vieram do mesmo pedido: o ranking ganhou um ordinal a esquerda, e o
+ * contentor passou a ter teto para que "Todos" — 180 clientes medidos — nao
+ * faca os tres cards crescerem em alturas diferentes.
+ */
+describe('a posição e o quadro rolável', () => {
+  it('numera as linhas de topo em ordinal, na ordem recebida', async () => {
+    serveRankings({
+      clients: [
+        { key: 'ALFA', label: 'Alfa', count: 9 },
+        { key: 'BETA', label: 'Beta', count: 4 },
+      ],
+    })
+    renderPage()
+
+    const itens = await within(await ranking('Clientes')).findAllByRole('listitem')
+
+    expect(itens[0]?.textContent).toContain('1º')
+    expect(itens[1]?.textContent).toContain('2º')
+  })
+
+  /**
+   * O membro de um grupo NAO disputa lugar: o grupo inteiro ocupa uma posicao
+   * (`H-56`), e numerar os membros faria a lista parecer maior que o corte.
+   */
+  it('nao numera os membros de um grupo', async () => {
+    serveRankings({
+      clients: [
+        {
+          key: 'GRUPO',
+          label: 'Grupo',
+          count: 9,
+          segments: [
+            { key: 'UM', label: 'Um', count: 6 },
+            { key: 'DOIS', label: 'Dois', count: 3 },
+          ],
+        },
+        { key: 'BETA', label: 'Beta', count: 4 },
+      ],
+    })
+    renderPage()
+
+    const lista = await ranking('Clientes')
+    const topo = within(lista).getAllByRole('listitem')
+
+    // O segundo item de TOPO e `Beta`, e ele e o segundo do ranking — os dois
+    // membros do grupo nao consumiram as posicoes 2 e 3.
+    expect(topo.find((item) => item.textContent?.includes('Beta'))?.textContent).toContain('2º')
+    expect(within(lista).queryByText('3º')).toBeNull()
+  })
+
+  /**
+   * `SC 2.1.1`: quem navega do teclado precisa alcancar a regiao para rola-la.
+   * Sem `tabIndex`, a cauda da lista fica inacessivel sem apontador.
+   */
+  it('o quadro e uma parada de tabulacao nomeada', async () => {
+    serveRankings({ clients: [{ key: 'ALFA', label: 'Alfa', count: 9 }] })
+    renderPage()
+
+    const lista = within(await ranking('Clientes')).getByRole('list')
+
+    expect(lista.getAttribute('tabindex')).toBe('0')
+    expect(lista.getAttribute('aria-label')).toContain('Clientes')
+  })
+
+  it('o quadro tem teto de altura e rola por dentro', async () => {
+    serveRankings({ clients: [{ key: 'ALFA', label: 'Alfa', count: 9 }] })
+    renderPage()
+
+    const lista = within(await ranking('Clientes')).getByRole('list')
+
+    expect(lista.className).toContain('ranking-viewport')
+    expect(lista.className).toContain('overflow-y-auto')
+    // Sem isto a rolagem vaza para a pagina ao chegar ao fim da lista.
+    expect(lista.className).toContain('overscroll-contain')
   })
 })

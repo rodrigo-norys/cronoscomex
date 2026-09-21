@@ -491,6 +491,23 @@
 }
 
 /*
+ * A altura do quadro de um ranking (21/09/2026).
+ *
+ * **300 px e o teto que o Carbon Design System usa** para o mesmo caso — a
+ * tabela de cabecalho grudado, cujo `stickyHeader` limita a altura para forcar
+ * a rolagem (consultado em 21/09/2026). Com "Todos" selecionado o ranking de
+ * clientes chega a 180 itens, e sem teto os tres cards da pagina teriam
+ * alturas diferentes e a pagina cresceria com o mapa do operador.
+ *
+ * **Aqui, e nao no JSX**, pelo mesmo motivo de `pending-viewport`: `max-h-[` no
+ * componente e o sinal que `tests/repo/estilo.test.ts` usa para reconhecer o
+ * painel modal (`C04`).
+ */
+@utility ranking-viewport {
+  max-height: 18.75rem;
+}
+
+/*
  * As reguas horizontais do corpo da tabela, e o desvio do cabecalho grudado.
  *
  * **Elas estavam na `<tr>`, e nao podiam ficar la.** O cabecalho grudado exige
