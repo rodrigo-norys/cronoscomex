@@ -438,3 +438,126 @@ describe('groupCountWithGroups — o grupo colapsa os membros', () => {
     )
   })
 })
+
+/**
+ * O ramo que repete o tronco (18/09/2026).
+ *
+ * Com toda declaracao virando grupo (`D-53`), o cliente cujo nome e a propria
+ * grafia da coluna CLT passou a aparecer no ranking como uma barra `DENNIS` de
+ * 47 com um galho `DENNIS` de 47 embaixo. O usuario mandou tirar o galho.
+ *
+ * **O criterio e o NOME, e nao a contagem de filhos** — o mesmo de
+ * `ClientDeclaration`, para haver uma regra so no produto.
+ */
+describe('o grupo que repete o proprio nome nao ramifica', () => {
+  const ROTULOS = new Map([
+    ['DENNIS', 'DENNIS'],
+    ['FAN', 'FAN'],
+  ])
+
+  const ranking = (processes: Process[]) =>
+    groupCountWithGroups(
+      processes,
+      (p) => p.clientKey,
+      (p) => p.clientRaw,
+      (p) => p.clientGroupKey,
+      ROTULOS,
+      10,
+    )
+
+  it('nao devolve segments quando o unico membro tem o nome do grupo', () => {
+    const [entrada] = ranking([
+      process({ client: 'DENNIS', clientGroup: 'DENNIS' }),
+      process({ client: 'DENNIS', clientGroup: 'DENNIS' }),
+    ])
+
+    expect(entrada?.count).toBe(2)
+    expect(entrada?.segments).toBeUndefined()
+  })
+
+  /**
+   * O nome DIFERENTE continua ramificando: ali o ramo diz qual grafia o nome
+   * consolida, e o tronco nao diz.
+   */
+  it('mantem segments quando o unico membro tem outro nome', () => {
+    const [entrada] = ranking([process({ client: 'D2529', clientGroup: 'FAN' })])
+
+    expect(entrada?.segments).toHaveLength(1)
+    expect(entrada?.segments?.[0]?.label).toBe('D2529')
+  })
+
+  it('mantem segments quando o grupo tem dois membros', () => {
+    const [entrada] = ranking([
+      process({ client: 'DENNIS', clientGroup: 'DENNIS' }),
+      process({ client: 'D2529', clientGroup: 'DENNIS' }),
+    ])
+
+    expect(entrada?.segments).toHaveLength(2)
+  })
+
+  // Caixa diferente e a mesma palavra para quem le a tela.
+  it('compara sem caixa', () => {
+    const [entrada] = ranking([process({ client: 'dennis', clientGroup: 'DENNIS' })])
+
+    expect(entrada?.segments).toBeUndefined()
+  })
+})
+
+/**
+ * O grupo ocupa UMA posicao no corte de `topN` (21/09/2026).
+ *
+ * Determinacao do usuario ao tornar o tamanho configuravel: pedindo 10 itens,
+ * `Vivi` com `av` e `kelly` gasta **uma** das dez, e nao tres. O comportamento
+ * ja era esse — o corte acontece DEPOIS do colapso —, e o teste existe para
+ * que continue sendo: sem ele, mover o `slice` para antes do agrupamento
+ * passaria despercebido, e a soma das barras deixaria de bater com o total
+ * (`H-56`).
+ */
+describe('cada grupo conta como um item no corte', () => {
+  const ROTULOS = new Map([
+    ['VIVI', 'Vivi'],
+    ['OUTRO', 'Outro'],
+  ])
+
+  const ranking = (processes: Process[], topN: number) =>
+    groupCountWithGroups(
+      processes,
+      (p) => p.clientKey,
+      (p) => p.clientRaw,
+      (p) => p.clientGroupKey,
+      ROTULOS,
+      topN,
+    )
+
+  /** Um grupo de tres membros mais dois clientes soltos: quatro itens, nao seis. */
+  const conjunto = (): Process[] => [
+    process({ client: 'AV', clientGroup: 'VIVI' }),
+    process({ client: 'KELLY', clientGroup: 'VIVI' }),
+    process({ client: 'CHUN', clientGroup: 'VIVI' }),
+    process({ client: 'KLAOS' }),
+    process({ client: 'CHEN' }),
+  ]
+
+  it('o grupo de tres membros gasta uma posicao', () => {
+    const lista = ranking(conjunto(), 10)
+
+    expect(lista).toHaveLength(3)
+    expect(lista.filter((item) => item.segments !== undefined)).toHaveLength(1)
+  })
+
+  it('pedindo dois, o grupo e um dos dois', () => {
+    const lista = ranking(conjunto(), 2)
+
+    expect(lista).toHaveLength(2)
+    expect(lista[0]?.label).toBe('Vivi')
+    expect(lista[0]?.count).toBe(3)
+  })
+
+  // O corte e sobre as entradas ja colapsadas: os membros nao disputam vaga.
+  it('pedindo um, sobra so o grupo, com os tres membros dentro', () => {
+    const lista = ranking(conjunto(), 1)
+
+    expect(lista).toHaveLength(1)
+    expect(lista[0]?.segments).toHaveLength(3)
+  })
+})

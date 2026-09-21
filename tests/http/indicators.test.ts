@@ -67,6 +67,25 @@ function process(
   }
 }
 
+/**
+ * As chaves de cor do arquivo real que os cartoes de `D-54` usam.
+ *
+ * Os DOIS tons de verde compartilham `display`, e e o que faz "ou similar"
+ * funcionar sem limiar (`D-42`, ADR-0003).
+ */
+const CORES = [
+  { styleKey: 'argb:FF00FF00', fillId: 2, label: 'Verde (tom A)', display: '#00FF00' },
+  { styleKey: 'argb:FF00FF0D', fillId: 12, label: 'Verde (tom B)', display: '#00FF00' },
+  { styleKey: 'argb:FFFF0000', fillId: 7, label: 'Vermelho', display: '#FF0000' },
+  { styleKey: 'theme:0|tint:0.0000', fillId: 13, label: 'Branco', display: '#FFFFFF' },
+  { styleKey: 'argb:FF5B9BD5', fillId: 8, label: 'Azul', display: '#5B9BD5' },
+].map((entry) => ({
+  ...entry,
+  responsible: 'indefinido' as const,
+  customsChannel: 'indefinido' as const,
+  importerOutsideRj: false,
+}))
+
 function state(overrides: Partial<StoreState> = {}): StoreState {
   return {
     state: 'pronto',
@@ -105,9 +124,14 @@ describe('GET /api/indicators', () => {
     const response = await app.inject({ method: 'GET', url: '/api/indicators' })
 
     expect(response.statusCode).toBe(200)
+    /*
+      `desembaracados` e `emDesembaraco` saem da COR desde `D-54`, e o fabricador
+      nao pinta nada: sem mapa de cor passado a `buildServer`, os dois sao zero.
+      Os outros tres continuam vindo de TD-01.
+    */
     expect(response.json().counts).toMatchObject({
       total: 4,
-      desembaracados: 2,
+      desembaracados: 0,
       emAndamento: 1,
       emDesembaraco: 0,
       fechadoAguardandoDraft: 1,
@@ -405,46 +429,42 @@ describe('GET /api/indicators — indicadores de risco (H-12)', () => {
     await app.close()
   })
 
-  // IND-23 nao depende so de cor: o texto do STATUS tambem o alimenta (`D-49`).
-  it('conta emDesembaraco pelo DUIMP no STATUS, sem mapa de cor', async () => {
+  /**
+   * IND-26 e IND-27, os dois cartoes de COR (`D-54`), com o mapa passado a
+   * `buildServer` como em producao.
+   *
+   * O verde tem DUAS chaves que compartilham o `display`, e e o que prova que a
+   * fronteira resolve "ou similar" pela cor de exibicao, e nao por chave.
+   */
+  it('conta desembaracados pela cor verde ou vermelha, unificando os tons', async () => {
     const processes = [
-      process(2, 'em_andamento', { statusRaw: 'DUIMP: 26BR0001 - CONFERIDO' }),
-      process(3, 'em_andamento', { statusRaw: 'AG BL ORIGINAL' }),
+      process(2, 'em_andamento', { styleKey: 'argb:FF00FF00' }),
+      process(3, 'em_andamento', { styleKey: 'argb:FF00FF0D' }),
+      process(4, 'em_andamento', { styleKey: 'argb:FFFF0000' }),
+      // Azul nao e nem verde nem vermelha, e a categoria nao participa.
+      process(5, 'desembaracado', { styleKey: 'argb:FF5B9BD5', statusRaw: 'DESEMBARAÇADA' }),
     ]
-    const app = buildServer(config, fakeStore(state({ processes })))
+    const app = buildServer(config, fakeStore(state({ processes })), CORES)
 
     const counts = (await app.inject({ method: 'GET', url: '/api/indicators' })).json().counts
 
-    expect(counts.emDesembaraco).toBe(1)
+    expect(counts.desembaracados).toBe(3)
 
     await app.close()
   })
 
-  // IND-23 pela COR, com o mapa passado a `buildServer` como em producao.
-  it('conta emDesembaraco pela cor de exibicao, unificando tons', async () => {
+  it('conta emDesembaraco pela cor branca, e so por ela', async () => {
     const processes = [
-      process(2, 'em_andamento', { styleKey: 'argb:FFA74F7B' }),
-      process(3, 'em_andamento', { styleKey: 'argb:FFA64D79' }),
-      process(4, 'em_andamento', { styleKey: 'argb:FF00FF00' }),
+      process(2, 'em_andamento', { styleKey: 'theme:0|tint:0.0000' }),
+      process(3, 'em_andamento', { styleKey: 'argb:FF00FF00' }),
+      // O STATUS deixou de participar: DUIMP nao entra mais neste cartao.
+      process(4, 'em_andamento', { styleKey: 'argb:FF00FF00', statusRaw: 'DUIMP: 26BR0001' }),
     ]
-    const app = buildServer(
-      config,
-      fakeStore(state({ processes })),
-      [
-        { styleKey: 'argb:FFA74F7B', fillId: 27, label: 'Roxo A', display: '#A74F7B' },
-        { styleKey: 'argb:FFA64D79', fillId: 11, label: 'Roxo B', display: '#A74F7B' },
-        { styleKey: 'argb:FF00FF00', fillId: 2, label: 'Verde', display: '#00FF00' },
-      ].map((entry) => ({
-        ...entry,
-        responsible: 'indefinido' as const,
-        customsChannel: 'indefinido' as const,
-        importerOutsideRj: false,
-      })),
-    )
+    const app = buildServer(config, fakeStore(state({ processes })), CORES)
 
     const counts = (await app.inject({ method: 'GET', url: '/api/indicators' })).json().counts
 
-    expect(counts.emDesembaraco).toBe(2)
+    expect(counts.emDesembaraco).toBe(1)
 
     await app.close()
   })
@@ -924,5 +944,61 @@ describe('GET /api/indicators — periodo declarado (H-52)', () => {
     expect(body.meta.period).toEqual({ from: '2026-06-01', to: '2026-01-01' })
 
     await app.close()
+  })
+})
+
+/**
+ * O `topN` escolhido pelo operador (21/09/2026).
+ *
+ * Ate aqui o numero vinha so de `config/app.json`. Ele passou a ser o PADRAO: a
+ * query manda, e o que a rota aplicou volta em `meta.topN` — a tela escreve a
+ * frase com o eco, e nao com o que pediu.
+ */
+describe('GET /api/indicators — o topN da query', () => {
+  const muitos = () =>
+    Array.from({ length: 12 }, (_, indice) =>
+      process(indice + 2, 'em_andamento', {
+        importerKey: `IMP${String(indice).padStart(2, '0')}`,
+        importerRaw: `IMP${String(indice).padStart(2, '0')}`,
+      }),
+    )
+
+  const rankings = async (url: string) => {
+    const app = buildServer(config, fakeStore(state({ processes: muitos() })))
+    const body = (await app.inject({ method: 'GET', url })).json()
+    await app.close()
+    return body
+  }
+
+  it('corta cada ranking no valor pedido, e ecoa em meta', async () => {
+    const body = await rankings('/api/indicators?topN=3')
+
+    expect(body.rankings.importers).toHaveLength(3)
+    expect(body.meta.topN).toBe(3)
+  })
+
+  it('sem o parametro, vale o padrao de app.json', async () => {
+    const body = await rankings('/api/indicators')
+
+    expect(body.meta.topN).toBe(config.topN)
+  })
+
+  /**
+   * Recusar seria desproporcional: o parametro diz quantos itens uma barra
+   * mostra, e um `topN=abc` na URL nao pode derrubar o painel inteiro.
+   */
+  it.each(['abc', '0', '-5', '2.5', '99999'])('cai no padrao com topN=%s', async (valor) => {
+    const body = await rankings(`/api/indicators?topN=${valor}`)
+
+    expect(body.meta.topN).toBe(config.topN)
+  })
+
+  // `groupTotals` continua dizendo quantos existem antes do corte: pedir menos
+  // nao esconde que ha mais (regra inviolavel 2).
+  it('nao esconde o total de grupos ao cortar', async () => {
+    const body = await rankings('/api/indicators?topN=2')
+
+    expect(body.rankings.importers).toHaveLength(2)
+    expect(body.leadTimeByGroup.groupTotals.agents).toBeGreaterThanOrEqual(1)
   })
 })

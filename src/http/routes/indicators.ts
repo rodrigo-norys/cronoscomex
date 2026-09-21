@@ -13,9 +13,10 @@ import {
   bazarShare,
   type CategoryCheck,
   type ChannelDistribution,
-  CLEARANCE_DISPLAYS,
+  CLEARED_DISPLAYS,
   categoryCheck,
   channelDistribution,
+  colorCount,
   countByCategory,
   documentaryLeadTime,
   type ExpectedVessel,
@@ -23,7 +24,6 @@ import {
   type GroupCount,
   groupCount,
   groupCountWithGroups,
-  inClearanceCount,
   type LeadTime,
   type LeadTimeGroup,
   leadTimeByGroup,
@@ -32,6 +32,7 @@ import {
   responsibleRanking,
   WHITE_DISPLAYS,
 } from '../../domain/indicators.ts'
+import { MAX_LIMIT } from '../../domain/process-query.ts'
 import { knownResponsibles, type TeamMember } from '../../domain/team-mapper.ts'
 import { apiError } from '../errors.ts'
 import { filteredWithPeriod } from '../filter-request.ts'
@@ -55,14 +56,13 @@ export interface IndicatorsCounts {
   /** IND-02, sob o rotulo "Processos ativos" desde `D-49`. */
   emAndamento: number
   /**
-   * IND-23, e **nao mais a categoria** `em_desembaraco` (IND-03, aposentado):
-   * cor de desembaraco OU DUIMP no STATUS.
+   * IND-27: a linha BRANCA. Substitui IND-23, que vivera menos de um dia.
    *
-   * Nao e exclusivo com os outros campos, e por isso a conferencia de A-12
-   * deixou de somar cartoes — ela vive em `categoryCheck`.
+   * **E parente de `chegandoHoje`, e nao igual a ele:** aquele exige a mesma cor
+   * MAIS o `eta2` de hoje, e por isso e subconjunto deste (`D-54`).
    */
   emDesembaraco: number
-  /** IND-04. */
+  /** IND-26: a linha VERDE ou VERMELHA. Substitui IND-04, que contava a categoria. */
   desembaracados: number
   /** IND-05, sob o rotulo "Aguardando draft" desde `D-49`. */
   fechadoAguardandoDraft: number
@@ -158,6 +158,23 @@ export interface IndicatorsResponse {
   meta: IndicatorsMeta
 }
 
+/**
+ * O `topN` da query, ou o padrao de `config/app.json` (21/09/2026).
+ *
+ * **Recusar nao serve aqui.** O parametro e de apresentacao, e um `topN=abc`
+ * digitado na URL derrubaria o painel inteiro por um detalhe de quantos itens
+ * uma barra mostra. Valor fora da faixa volta ao padrao, e a tela continua
+ * dizendo quantos grupos existem antes do corte (`groupTotals`) — o operador ve
+ * que ha mais, em vez de receber menos em silencio (regra inviolavel 2).
+ */
+function parseTopN(raw: unknown, padrao: number): number {
+  if (typeof raw !== 'string' || raw.trim() === '') return padrao
+
+  const valor = Number(raw)
+  if (!Number.isInteger(valor) || valor < 1 || valor > MAX_LIMIT) return padrao
+  return valor
+}
+
 export function registerIndicatorsRoute(
   app: FastifyInstance,
   config: AppConfig,
@@ -185,7 +202,7 @@ export function registerIndicatorsRoute(
     causa disso (`H-91`). Resolver por requisicao varreria as nove entradas em
     toda chamada para produzir o mesmo par de conjuntos.
   */
-  const clearanceKeys = styleKeysByDisplay(colorMap, CLEARANCE_DISPLAYS)
+  const clearedKeys = styleKeysByDisplay(colorMap, CLEARED_DISPLAYS)
   const whiteKeys = styleKeysByDisplay(colorMap, WHITE_DISPLAYS)
 
   app.get('/api/indicators', (request, reply) => {
@@ -209,6 +226,19 @@ export function registerIndicatorsRoute(
     // O fuso e resolvido AQUI, uma unica vez. Daqui para baixo tudo e data
     // civil ancorada em UTC, como as datas vindas da planilha (TD-03).
     const day = currentDay(config.timezone)
+
+    /*
+      Quantos itens cada ranking mostra, escolhido pelo OPERADOR na tela
+      (21/09/2026). `config.topN` deixa de ser o unico valor e passa a ser o
+      PADRAO: quem nao manda `topN` na query recebe o que o `app.json` diz, e
+      nada muda para as telas que nao oferecem o controle.
+
+      Valor invalido cai no padrao em vez de recusar a requisicao: o parametro e
+      de apresentacao, e derrubar o painel inteiro por um `topN=abc` na URL
+      seria desproporcional. O teto e o mesmo `MAX_LIMIT` da paginacao, para o
+      pior caso de renderizacao continuar previsto em um lugar so.
+    */
+    const topN = parseTopN((request.query as { topN?: unknown }).topN, config.topN)
     const groupLabels = new Map(clientGroups.map((group) => [group.key, group.label]))
 
     /*
@@ -262,8 +292,8 @@ export function registerIndicatorsRoute(
       counts: {
         total: categories.total,
         emAndamento: categories.emAndamento,
-        emDesembaraco: inClearanceCount(processes, clearanceKeys),
-        desembaracados: categories.desembaracados,
+        emDesembaraco: colorCount(processes, whiteKeys),
+        desembaracados: colorCount(processes, clearedKeys),
         fechadoAguardandoDraft: categories.fechadoAguardandoDraft,
         chegandoHoje: arrivingTodayWhite(processes, day, whiteKeys),
         chegando15Dias: arrivingIn15Days(processes, day),
@@ -282,20 +312,20 @@ export function registerIndicatorsRoute(
           (p) => p.clientLabel,
           (p) => p.clientGroupKey,
           groupLabels,
-          config.topN,
+          topN,
         ),
         importers: groupCount(
           processes,
           (p) => p.importerKey,
           (p) => p.importerRaw,
-          config.topN,
+          topN,
         ),
-        agents: agentRanking(processes, day, config.topN),
+        agents: agentRanking(processes, day, topN),
         goods: groupCount(
           processes,
           (p) => p.goodsKey,
           (p) => p.goodsRaw,
-          config.topN,
+          topN,
         ),
         responsible: responsibleRanking(processes, responsibles),
       },
@@ -303,9 +333,9 @@ export function registerIndicatorsRoute(
       arrivalCalendar: arrivalCalendar(processes, day),
       documentaryLeadTime: documentaryLeadTime(processes),
       leadTimeByGroup: {
-        clients: leadTime.clients.slice(0, config.topN),
-        agents: leadTime.agents.slice(0, config.topN),
-        vessels: leadTime.vessels.slice(0, config.topN),
+        clients: leadTime.clients.slice(0, topN),
+        agents: leadTime.agents.slice(0, topN),
+        vessels: leadTime.vessels.slice(0, topN),
         responsible: leadTime.responsible,
         groupTotals: {
           clients: leadTime.clients.length,
@@ -318,7 +348,7 @@ export function registerIndicatorsRoute(
         today: toIsoDay(day),
         timezone: config.timezone,
         weekEnd: toIsoDay(isoWeekEnd(day)),
-        topN: config.topN,
+        topN,
         bazarShare: bazarShare(processes),
         period: {
           from: recorte.from === null ? null : toIsoDay(recorte.from),
