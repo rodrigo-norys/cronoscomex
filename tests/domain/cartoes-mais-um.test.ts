@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest'
 import {
   arrivingIn15Days,
   arrivingTodayWhite,
+  colorCount,
   countByCategory,
-  inClearanceCount,
   overdueWithoutDuimpCount,
   redChannelCount,
 } from '../../src/domain/indicators.ts'
@@ -33,14 +33,16 @@ const civil = (iso: string): Date => new Date(`${iso}T00:00:00Z`)
 const HOJE = civil('2026-09-18')
 
 /** As chaves do arquivo real, como a rota as resolve pela cor de exibicao. */
-const DESEMBARACO: ReadonlySet<string> = new Set([
-  'argb:FFFFE599',
-  'argb:FF5B9BD5',
-  'argb:FFA74F7B',
-  'argb:FFA64D79',
+const VERDE_E_VERMELHA: ReadonlySet<string> = new Set([
+  'argb:FF00FF00',
+  'argb:FF00FF0D',
+  'argb:FFFF0000',
 ])
 const BRANCAS: ReadonlySet<string> = new Set(['theme:0|tint:0.0000'])
 const VERDE = 'argb:FF00FF00'
+const BRANCO = 'theme:0|tint:0.0000'
+/** Uma cor que nao entra em cartao de cor nenhum — serve de contra-testemunha. */
+const AZUL = 'argb:FF5B9BD5'
 
 let nextRow = 2
 
@@ -100,7 +102,12 @@ function process({
   }
 }
 
-/** A base: uma linha de cada categoria, nenhuma satisfazendo os cartoes de data. */
+/**
+ * A base: uma linha de cada categoria, nenhuma satisfazendo os cartoes de data.
+ *
+ * **Todas em VERDE, que e o padrao do fabricador** — e por isso a contagem de
+ * IND-26 na base nao e zero. O que o criterio mede e a DIFERENCA, nao o valor.
+ */
 const BASE: readonly Process[] = [
   process({ statusCategory: 'desembaracado', statusRaw: 'DESEMBARAÇADA', eta2: '2020-01-01' }),
   process({ statusCategory: 'em_andamento', eta2: '2099-01-01' }),
@@ -131,11 +138,12 @@ const CARTOES: readonly CardCase[] = [
   },
   {
     cartao: 'Desembaraçados',
-    indicador: 'IND-04',
-    contar: (p) => countByCategory(p).desembaracados,
-    testemunha: () => process({ statusCategory: 'desembaracado', statusRaw: 'DESEMBARAÇADA' }),
-    contraTestemunha: () => process({ statusCategory: 'em_andamento' }),
-    oQueMuda: 'a categoria de STATUS',
+    indicador: 'IND-26',
+    contar: (p) => colorCount(p, VERDE_E_VERMELHA),
+    testemunha: () => process({ styleKey: VERDE }),
+    // Azul nao e nem verde nem vermelha, e a categoria de STATUS nao participa.
+    contraTestemunha: () => process({ styleKey: AZUL, statusCategory: 'desembaracado' }),
+    oQueMuda: 'a cor da célula-âncora',
   },
   {
     cartao: 'Processos ativos',
@@ -146,20 +154,12 @@ const CARTOES: readonly CardCase[] = [
     oQueMuda: 'a categoria de STATUS',
   },
   {
-    cartao: 'Em desembaraço · pela cor',
-    indicador: 'IND-23',
-    contar: (p) => inClearanceCount(p, DESEMBARACO),
-    testemunha: () => process({ styleKey: 'argb:FF5B9BD5' }),
+    cartao: 'Em desembaraço',
+    indicador: 'IND-27',
+    contar: (p) => colorCount(p, BRANCAS),
+    testemunha: () => process({ styleKey: BRANCO }),
     contraTestemunha: () => process({ styleKey: VERDE }),
     oQueMuda: 'a cor da célula-âncora',
-  },
-  {
-    cartao: 'Em desembaraço · pelo DUIMP',
-    indicador: 'IND-23',
-    contar: (p) => inClearanceCount(p, DESEMBARACO),
-    testemunha: () => process({ styleKey: VERDE, statusRaw: 'DUIMP: 26BR0001 - CONFERIDO' }),
-    contraTestemunha: () => process({ styleKey: VERDE, statusRaw: 'AG BL ORIGINAL' }),
-    oQueMuda: 'a palavra DUIMP no STATUS',
   },
   {
     cartao: 'Aguardando draft',
@@ -181,7 +181,7 @@ const CARTOES: readonly CardCase[] = [
     cartao: 'Chegando hoje',
     indicador: 'IND-24',
     contar: (p) => arrivingTodayWhite(p, HOJE, BRANCAS),
-    testemunha: () => process({ styleKey: 'theme:0|tint:0.0000', eta2: '2026-09-18' }),
+    testemunha: () => process({ styleKey: BRANCO, eta2: '2026-09-18' }),
     // Mesma data, cor diferente: e a metade da regra que `D-49` acrescentou.
     contraTestemunha: () => process({ styleKey: VERDE, eta2: '2026-09-18' }),
     oQueMuda: 'a cor da linha, com o ETA2 igual',

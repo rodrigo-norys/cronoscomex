@@ -4,6 +4,7 @@ import { Skeleton } from '../components/Skeleton.tsx'
 import { type MultiFilterKey, useFilters } from '../hooks/useFilters.ts'
 import { useFirstLoad } from '../hooks/useFirstLoad.ts'
 import { useIndicators } from '../hooks/useIndicators.ts'
+import { TOP_N_SIZES, topNLabel, useTopN } from '../hooks/useTopN.ts'
 import { navigate } from '../router.ts'
 
 /**
@@ -75,6 +76,7 @@ function Rankings({ queryString, dataVersion }: ClientsProps) {
   const state = useIndicators(queryString, dataVersion)
   const firstLoad = useFirstLoad('clientes', state.status === 'pronto')
   const filters = useFilters()
+  const { escolhido, setTopN } = useTopN()
 
   /**
    * Aplicar, e nao alternar: quem clica num item pede aquele recorte. `toggle`
@@ -127,10 +129,39 @@ function Rankings({ queryString, dataVersion }: ClientsProps) {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-text-secondary">
-        Os {meta.topN} maiores de cada dimensão, no recorte atual. Clique em um item para filtrar
-        por ele e abrir a Página Operacional.
-      </p>
+      {/*
+        **O tamanho e escolhido aqui, e o numero da frase vem do SERVIDOR**
+        (21/09/2026). `meta.topN` ecoa o que a rota de fato aplicou: com a URL
+        pedindo um valor fora da faixa, ela volta ao padrao de `app.json`, e a
+        frase diria outro numero se fosse lida do seletor.
+
+        **Um grupo conta como UM**, e por isso o rotulo fala em "clientes" e nao
+        em grafias: `Vivi` com `av` e `kelly` ocupa uma das posicoes, nunca tres
+        — o corte de `topN` acontece DEPOIS do colapso, em
+        `groupCountWithGroups`, e e o que faz a soma das barras continuar
+        batendo com o total (`H-56`).
+      */}
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-2">
+        <p className="text-sm text-text-secondary">
+          Os {meta.topN} maiores de cada dimensão, no recorte atual. Clique em um item para filtrar
+          por ele e abrir a Página Operacional.
+        </p>
+
+        <label className="flex items-center gap-2 text-xs text-text-secondary">
+          Itens por dimensão
+          <select
+            value={escolhido ?? meta.topN}
+            onChange={(event) => setTopN(Number(event.target.value))}
+            className="rounded-control border border-border-control bg-surface-raised px-2 py-1 text-xs text-text-primary"
+          >
+            {TOP_N_SIZES.map((size) => (
+              <option key={size} value={size}>
+                {topNLabel(size)}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
 
       {/*
         **Pares, e nao tres colunas** (`D-37`, emendada em 09/09/2026). A primeira

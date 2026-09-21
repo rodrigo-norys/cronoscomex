@@ -315,8 +315,9 @@ describe('POST /api/clients/rules', () => {
     })
 
     expect(resposta.statusCode).toBe(201)
+    // `grupo-criado` desde 18/09/2026: a PRIMEIRA declaracao ja forma o pai.
     expect(resposta.json()).toEqual({
-      outcome: 'entrada-nova',
+      outcome: 'grupo-criado',
       key: 'CLIENTE D',
       label: 'Cliente D',
       value: 'D',
@@ -325,6 +326,11 @@ describe('POST /api/clients/rules', () => {
 
     const gravado = JSON.parse(readFileSync(mapPath, 'utf-8'))
     expect(gravado.clients[0].rules).toEqual([{ match: 'prefix', value: 'D' }])
+    // O filho e nomeado pelo valor da regra, e o pai pelo nome digitado.
+    expect(gravado.clients[0].key).toBe('D')
+    expect(gravado.groups).toEqual([
+      { key: 'CLIENTE D', label: 'Cliente D', members: [{ client: 'D' }] },
+    ])
   })
 
   /**
@@ -398,13 +404,15 @@ describe('POST /api/clients/rules', () => {
   })
 
   /**
-   * **O SEGUNDO conjunto no mesmo nome faz nascer o pai** (determinacao 8).
+   * **O pai nasce no PRIMEIRO conjunto desde 18/09/2026**, e o segundo apenas
+   * entra nele.
    *
-   * Ate 08/09/2026 isto somava a regra ao cliente. O usuario descreveu outro
-   * comportamento ao usar a tela, e este teste e o que o fixa: o cliente que
-   * existia vira filho com o nome do valor dele, e o novo entra como irmao.
+   * A determinacao 8 de `H-88` fazia o pai nascer no segundo, e este teste a
+   * fixava. O usuario mudou a regra ao usar a tela: o campo "Nome do cliente"
+   * declara sempre um grupo. O arquivo gravado ao fim e o MESMO — o que muda e
+   * que nao ha um estado intermediario em que `Vivi` seja um cliente solto.
    */
-  it('o segundo conjunto no mesmo nome cria o pai, com os dois por filhos', async () => {
+  it('o segundo conjunto entra no pai que a primeira declaracao criou', async () => {
     const app = buildApp(state({ processes: frota() }))
 
     await app.inject({
@@ -418,7 +426,7 @@ describe('POST /api/clients/rules', () => {
       payload: { match: 'exact', value: 'Y2602', label: 'Vivi' },
     })
 
-    expect(segunda.json().outcome).toBe('grupo-criado')
+    expect(segunda.json().outcome).toBe('membro-acrescentado')
 
     const gravado = JSON.parse(readFileSync(mapPath, 'utf-8'))
     expect(gravado.clients).toEqual([

@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
+import type { ClientFields } from '../../src/domain/client-mapper.ts'
 import {
   type ClientGroup,
   type ClientMapEntry,
+  clientKeys,
   indexClientGroups,
   normalizeClientGroups,
   normalizeClientMap,
@@ -31,19 +33,29 @@ const map = normalizeClientMap([
   { key: 'eps', label: 'Épsilon', rules: [{ match: 'exact', value: 'eps' }] },
 ])
 
+/**
+ * Os tres campos que uma regra pode procurar (21/09/2026).
+ *
+ * Os testes deste arquivo exercem a coluna CLT e o qualificador por importador,
+ * que existiam antes; `ref` entra vazia porque nenhuma regra deles a procura.
+ */
+function campos(clt: string, importer = '', ref = ''): ClientFields {
+  return { clt, ref, importer }
+}
+
 describe('resolveClient', () => {
   it('consolida o sufixo crescente num cliente so — o defeito que a historia existe para fechar', () => {
     // Medido: 649 processos produzem 509 valores em CLT porque a celula guarda
     // o processo daquele cliente, nao o cliente (docs/uso/RESULTADO.md §2).
     const chaves = ['ALFA-29', 'ALFA-30', 'ALFA-42'].map(
-      (celula) => resolveClient(celula, 'QUALQUER', map).key,
+      (celula) => resolveClient(campos(celula, 'QUALQUER'), map).key,
     )
 
     expect(new Set(chaves)).toEqual(new Set(['ALFA']))
   })
 
   it('casa por texto contido, nao so por prefixo', () => {
-    expect(resolveClient('XYZ101 - BETA', '', map)).toEqual({
+    expect(resolveClient(campos('XYZ101 - BETA', ''), map)).toEqual({
       key: 'BETA',
       label: 'Beta',
       mapped: true,
@@ -51,27 +63,27 @@ describe('resolveClient', () => {
   })
 
   it('casa por igualdade exata sem alcancar o que apenas comeca igual', () => {
-    expect(resolveClient('EPS', '', map).mapped).toBe(true)
-    expect(resolveClient('EPS2601', '', map).mapped).toBe(false)
+    expect(resolveClient(campos('EPS', ''), map).mapped).toBe(true)
+    expect(resolveClient(campos('EPS2601', ''), map).mapped).toBe(false)
   })
 
   it('qualifica pelo importador quando um prefixo cobre mais de um cliente', () => {
     // O caso do prefixo de 62 processos que cobre TRES clientes, distinguiveis
     // so pelo importador (docs/uso/RESULTADO.md §2).
-    expect(resolveClient('G2530', 'IMPORTADORA UM', map).key).toBe('GAMA')
-    expect(resolveClient('G2530', 'IMPORTADORA DOIS', map).key).toBe('DELTA')
+    expect(resolveClient(campos('G2530', 'IMPORTADORA UM'), map).key).toBe('GAMA')
+    expect(resolveClient(campos('G2530', 'IMPORTADORA DOIS'), map).key).toBe('DELTA')
   })
 
   it('faz a PRIMEIRA regra que casa vencer, e nao exige correspondencia unica', () => {
     // `G2530` com importador UM casa as duas entradas; a ordem do arquivo e a
     // ferramenta de desempate do operador.
-    expect(resolveClient('G2530', 'IMPORTADORA UM', map).key).toBe('GAMA')
+    expect(resolveClient(campos('G2530', 'IMPORTADORA UM'), map).key).toBe('GAMA')
   })
 
   it('devolve a chave da celula quando nenhuma regra casa, sem marcar mapeado', () => {
     // Nao consolidar e resultado legitimo: sao os 121 processos cujo cliente
     // ainda nao foi declarado (regra inviolavel 3).
-    expect(resolveClient('ZZ-901', '', map)).toEqual({
+    expect(resolveClient(campos('ZZ-901', ''), map)).toEqual({
       key: 'ZZ-901',
       label: 'ZZ-901',
       mapped: false,
@@ -80,7 +92,7 @@ describe('resolveClient', () => {
 
   it('deixa a chave vazia vazia, sem casar regra alguma', () => {
     // Chave vazia e valor legitimo (TD-04) e continua filtravel.
-    expect(resolveClient('', 'IMPORTADORA UM', map)).toEqual({
+    expect(resolveClient(campos('', 'IMPORTADORA UM'), map)).toEqual({
       key: '',
       label: '',
       mapped: false,
@@ -88,7 +100,7 @@ describe('resolveClient', () => {
   })
 
   it('nao consolida nada com mapa vazio', () => {
-    expect(resolveClient('ALFA-29', '', []).key).toBe('ALFA-29')
+    expect(resolveClient(campos('ALFA-29'), []).key).toBe('ALFA-29')
   })
 })
 
@@ -177,6 +189,8 @@ describe('planClientRule', () => {
     expect(planClientRule('ALF-1', '', 'Alfa', map)).toEqual({
       kind: 'sem-efeito',
       match: 'exact',
+
+      field: 'clt',
       key: 'ALFA',
       label: 'Alfa',
       value: 'ALF-1',
@@ -184,15 +198,24 @@ describe('planClientRule', () => {
     })
   })
 
-  /** A celula nao casa regra nenhuma: a entrada nova pode ir para o fim. */
-  it('cria a entrada no fim quando nada casava a celula', () => {
+  /**
+   * A celula nao casa regra nenhuma: a entrada nova pode ir para o fim.
+   *
+   * **`grupo-criado`, e nao `entrada-nova`** (18/09/2026): a primeira
+   * declaracao ja forma o pai, porque cliente solto deixou de ser estado
+   * possivel. Sem `demoted` — nao ha cliente anterior a rebaixar.
+   */
+  it('cria o grupo no fim quando nada casava a celula', () => {
     expect(planClientRule('ZZZ-9', '', 'Zeta', map)).toEqual({
-      kind: 'entrada-nova',
+      kind: 'grupo-criado',
       match: 'exact',
+
+      field: 'clt',
       key: 'ZETA',
       label: 'Zeta',
       value: 'ZZZ-9',
       beforeKey: null,
+      child: { key: 'ZZZ-9', label: 'ZZZ-9' },
     })
   })
 
@@ -203,12 +226,15 @@ describe('planClientRule', () => {
    */
   it('poe a entrada nova ANTES da que casa hoje', () => {
     expect(planClientRule('ALF-1', '', 'Zeta', map)).toEqual({
-      kind: 'entrada-nova',
+      kind: 'grupo-criado',
       match: 'exact',
+
+      field: 'clt',
       key: 'ZETA',
       label: 'Zeta',
       value: 'ALF-1',
       beforeKey: 'ALFA',
+      child: { key: 'ALF-1', label: 'ALF-1' },
     })
   })
 
@@ -225,6 +251,8 @@ describe('planClientRule', () => {
     expect(planClientRule('ALF-1', '', 'Gama Trading', map)).toEqual({
       kind: 'grupo-criado',
       match: 'exact',
+
+      field: 'clt',
       key: 'GAMA',
       label: 'Gama Trading',
       value: 'ALF-1',
@@ -254,6 +282,8 @@ describe('planClientRule', () => {
     expect(planClientRule('YT', '', 'Vivi', map, 'contains', grupos)).toEqual({
       kind: 'membro-acrescentado',
       match: 'contains',
+
+      field: 'clt',
       key: 'VIVI-GRUPO',
       label: 'Vivi',
       value: 'YT',
@@ -290,5 +320,176 @@ describe('planClientRule', () => {
     expect(planClientRule('  yt  ', '', 'Novo', map, 'contains')).toMatchObject({
       value: 'YT',
     })
+  })
+})
+
+/**
+ * As tres colunas que uma regra pode procurar (21/09/2026).
+ *
+ * O pedido veio de procedimentos internos do operador: declarar cliente a
+ * partir de REF ou de IMPORTADOR, e nao so da CLT. A regra de precedencia nao
+ * mudou — a PRIMEIRA que casa vence —, e e ela que faz a linha ja tomada ficar
+ * invisivel para as regras de baixo.
+ */
+describe('resolveClient com as tres colunas', () => {
+  const porRef: ClientMapEntry[] = [
+    { key: 'NORTE', label: 'Norte', rules: [{ match: 'prefix', value: 'FT05', field: 'ref' }] },
+  ]
+  const porImportador: ClientMapEntry[] = [
+    {
+      key: 'ALFA',
+      label: 'Alfa',
+      rules: [{ match: 'exact', value: 'ALFA SA', field: 'importer' }],
+    },
+  ]
+
+  it('casa pela REF quando a regra declara o campo', () => {
+    const r = resolveClient({ clt: 'QUALQUER', ref: 'FT051.26', importer: '' }, porRef)
+
+    expect(r).toEqual({ key: 'NORTE', label: 'Norte', mapped: true })
+  })
+
+  it('casa pelo IMPORTADOR quando a regra declara o campo', () => {
+    const r = resolveClient({ clt: '', ref: 'FT900.26', importer: 'ALFA SA' }, porImportador)
+
+    expect(r).toEqual({ key: 'ALFA', label: 'Alfa', mapped: true })
+  })
+
+  /**
+   * **CLT vazia deixou de significar "sem cliente"**, e esta e a mudanca de
+   * comportamento que as tres colunas trazem: ate aqui `resolveClient` devolvia
+   * "sem dono" antes de olhar o mapa, e um processo sem CLT nao podia ter
+   * cliente nenhum.
+   */
+  it('um processo de CLT vazia tem dono quando outra coluna casa', () => {
+    const r = resolveClient({ clt: '', ref: '', importer: 'ALFA SA' }, porImportador)
+
+    expect(r.mapped).toBe(true)
+  })
+
+  it('a regra sem campo continua procurando na CLT', () => {
+    const antiga: ClientMapEntry[] = [
+      { key: 'BETA', label: 'Beta', rules: [{ match: 'prefix', value: 'BT' }] },
+    ]
+
+    expect(resolveClient(campos('BT-1', '', 'FT051.26'), antiga).mapped).toBe(true)
+    // O mesmo texto na REF nao casa: a regra procura na CLT.
+    expect(resolveClient(campos('OUTRO', '', 'BT-1'), antiga).mapped).toBe(false)
+  })
+
+  it('coluna vazia nunca casa, nem por prefixo', () => {
+    const r = resolveClient({ clt: 'ALGO', ref: '', importer: '' }, porRef)
+
+    expect(r.mapped).toBe(false)
+  })
+
+  /**
+   * A regra de precedencia que o usuario pediu: a linha tomada pela primeira
+   * regra nao e vista pela segunda, mesmo que a segunda case outra coluna.
+   */
+  it('a primeira regra que casa vence, mesmo entre colunas diferentes', () => {
+    const map: ClientMapEntry[] = [
+      {
+        key: 'PRIMEIRO',
+        label: 'Primeiro',
+        rules: [{ match: 'prefix', value: 'FT05', field: 'ref' }],
+      },
+      {
+        key: 'SEGUNDO',
+        label: 'Segundo',
+        rules: [{ match: 'exact', value: 'ALFA SA', field: 'importer' }],
+      },
+    ]
+    const linha = { clt: '', ref: 'FT051.26', importer: 'ALFA SA' }
+
+    expect(resolveClient(linha, map).key).toBe('PRIMEIRO')
+
+    // Invertida a ordem do arquivo, o dono muda — e e o unico jeito de mudar.
+    expect(resolveClient(linha, [...map].reverse()).key).toBe('SEGUNDO')
+  })
+
+  /**
+   * O qualificador `importer` e a coluna `field: 'importer'` coexistem, por
+   * decisao do usuario: o primeiro RESTRINGE uma regra de outra coluna, o
+   * segundo faz do importador a coluna procurada.
+   */
+  it('o qualificador por importador continua restringindo, e nao vira coluna', () => {
+    const map: ClientMapEntry[] = [
+      {
+        key: 'GAMA',
+        label: 'Gama',
+        rules: [{ match: 'prefix', value: 'G', importer: 'ALFA SA' }],
+      },
+    ]
+
+    expect(resolveClient(campos('G2530', 'ALFA SA'), map).key).toBe('GAMA')
+    // Mesmo prefixo, outro importador: a regra nao casa.
+    expect(resolveClient(campos('G2530', 'OUTRA SA'), map).mapped).toBe(false)
+    // E o texto do importador na CLT nao casa — a coluna procurada e a CLT.
+    expect(resolveClient(campos('ALFA SA', 'ALFA SA'), map).mapped).toBe(false)
+  })
+})
+
+/**
+ * A lista "Por declarar" segue a COLUNA da aba (21/09/2026).
+ *
+ * Pedido do usuario: declarar por REF olhando uma lista de grafias de CLT
+ * obrigaria a procurar na planilha o valor que se vai digitar.
+ */
+describe('clientKeys pela coluna escolhida', () => {
+  const linhas = [
+    { ref: 'FT001.26', clientProcessKey: 'ALFA-1', clientRaw: 'Alfa-1', importerKey: 'ACME' },
+    { ref: 'FT002.26', clientProcessKey: 'ALFA-2', clientRaw: 'Alfa-2', importerKey: 'ACME' },
+    { ref: 'FT003.26', clientProcessKey: '', clientRaw: '', importerKey: 'BETA SA' },
+  ]
+
+  it('agrupa por CLT quando a coluna e a padrao', () => {
+    const lista = clientKeys(linhas, [])
+
+    // A linha de CLT vazia nao entra: nao ha valor a declarar naquela coluna.
+    expect(lista.map((item) => item.key)).toEqual(['ALFA-1', 'ALFA-2'])
+  })
+
+  it('agrupa por REF quando a coluna e REF', () => {
+    const lista = clientKeys(linhas, [], [], 'ref')
+
+    expect(lista.map((item) => item.key)).toEqual(['FT001.26', 'FT002.26', 'FT003.26'])
+  })
+
+  /** O importador junta as duas linhas da ACME numa entrada de contagem 2. */
+  it('agrupa por IMPORTADOR quando a coluna e IMPORTADOR', () => {
+    const lista = clientKeys(linhas, [], [], 'importer')
+
+    expect(lista.map((item) => [item.key, item.count])).toEqual([
+      ['ACME', 2],
+      ['BETA SA', 1],
+    ])
+  })
+
+  /**
+   * A linha de CLT vazia SOME da lista de CLT e aparece na de importador — e o
+   * que faz a lista por coluna valer a pena: ela mostra o que ha para declarar
+   * naquela coluna, e nao o que falta em outra.
+   */
+  it('a linha sem CLT aparece nas outras colunas', () => {
+    expect(clientKeys(linhas, []).some((i) => i.count === 1 && i.key === '')).toBe(false)
+    expect(clientKeys(linhas, [], [], 'importer').map((i) => i.key)).toContain('BETA SA')
+  })
+
+  // Em REF e IMPORTADOR a chave normalizada ja e o que a celula diz.
+  it('o rotulo e a propria chave fora da CLT', () => {
+    const porRef = clientKeys(linhas, [], [], 'ref')
+
+    expect(porRef[0]?.label).toBe('FT001.26')
+  })
+
+  /** O dono continua saindo de `resolveClient`, que olha as tres colunas. */
+  it('marca como declarado o que uma regra de outra coluna ja tomou', () => {
+    const map: ClientMapEntry[] = [
+      { key: 'DONO', label: 'Dono', rules: [{ match: 'exact', value: 'ACME', field: 'importer' }] },
+    ]
+    const lista = clientKeys(linhas, map)
+
+    expect(lista.every((item) => item.client?.key === 'DONO')).toBe(true)
   })
 })

@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   categoryCheck,
+  colorCount,
   countByCategory,
-  inClearanceCount,
   mentionsDuimp,
 } from '../../src/domain/indicators.ts'
 import type { Process, StatusCategory } from '../../src/domain/types.ts'
@@ -170,74 +170,80 @@ describe('countByCategory — casos-limite', () => {
 })
 
 /**
- * IND-23 — o cartao "Em desembaraco" desde `D-49`.
+ * IND-26 e IND-27 — os dois cartoes de COR, desde `D-54`.
  *
- * As chaves aqui sao as do arquivo real (`config/color-map.json`): o azul e o
- * bege tem uma chave cada, e o roxo tem DUAS que compartilham o mesmo
- * `display`. E por isso que a fronteira traduz cor em chaves antes de chamar —
- * "ou similar" e a cor de exibicao, nunca um limiar (ADR-0003).
+ * O usuario trocou os dois criterios na mesma tarde: "Desembaracados" deixou de
+ * contar a categoria de TD-01 e passou a contar a linha VERDE ou VERMELHA, e
+ * "Em desembaraco" deixou de ser cor-ou-DUIMP e passou a ser a linha BRANCA.
+ *
+ * As chaves sao as do arquivo real: o verde tem DUAS que compartilham o
+ * `display`, e e por isso que a fronteira traduz cor em chaves antes de chamar.
  */
-const CHAVES_DESEMBARACO: ReadonlySet<string> = new Set([
-  'argb:FFFFE599',
-  'argb:FF5B9BD5',
-  'argb:FFA74F7B',
-  'argb:FFA64D79',
+const VERDE_E_VERMELHA: ReadonlySet<string> = new Set([
+  'argb:FF00FF00',
+  'argb:FF00FF0D',
+  'argb:FFFF0000',
 ])
+const BRANCAS: ReadonlySet<string> = new Set(['theme:0|tint:0.0000'])
 
-describe('inClearanceCount — IND-23', () => {
-  it('conta pela cor, sem olhar o STATUS', () => {
+describe('colorCount — IND-26 e IND-27', () => {
+  it('conta as duas cores de desembaracado, unificando os tons de verde', () => {
     const processes = [
-      process(2, 'desembaracado', { styleKey: 'argb:FF5B9BD5' }),
-      process(3, 'em_andamento', { styleKey: 'argb:FFFFE599' }),
+      process(2, 'em_andamento', { styleKey: 'argb:FF00FF00' }),
+      process(3, 'em_andamento', { styleKey: 'argb:FF00FF0D' }),
+      process(4, 'em_andamento', { styleKey: 'argb:FFFF0000' }),
     ]
 
-    expect(inClearanceCount(processes, CHAVES_DESEMBARACO)).toBe(2)
+    expect(colorCount(processes, VERDE_E_VERMELHA)).toBe(3)
   })
 
-  // `D-42`: os dois tons de roxo sao a mesma cor para o operador.
-  it('conta os dois tons de roxo', () => {
+  // A categoria de STATUS deixou de participar: quem responde e a cor.
+  it('nao olha a categoria de status', () => {
     const processes = [
-      process(2, 'em_andamento', { styleKey: 'argb:FFA74F7B' }),
-      process(3, 'em_andamento', { styleKey: 'argb:FFA64D79' }),
+      process(2, 'desembaracado', { styleKey: 'argb:FF5B9BD5', statusRaw: 'DESEMBARAÇADA' }),
+      process(3, 'em_andamento', { styleKey: 'argb:FF00FF00' }),
     ]
 
-    expect(inClearanceCount(processes, CHAVES_DESEMBARACO)).toBe(2)
+    expect(colorCount(processes, VERDE_E_VERMELHA)).toBe(1)
   })
 
-  it('conta pelo DUIMP no STATUS, sem olhar a cor', () => {
+  it('conta a linha branca, e so ela', () => {
     const processes = [
-      process(2, 'em_andamento', { styleKey: 'argb:FF00FF00', statusRaw: 'DUIMP: 26BR0001 - OK' }),
+      process(2, 'em_andamento', { styleKey: 'theme:0|tint:0.0000' }),
+      process(3, 'em_andamento', { styleKey: 'argb:FF00FF00' }),
+      process(4, 'em_andamento', { styleKey: 'argb:FF5B9BD5' }),
     ]
 
-    expect(inClearanceCount(processes, CHAVES_DESEMBARACO)).toBe(1)
+    expect(colorCount(processes, BRANCAS)).toBe(1)
   })
 
-  // UNIAO, nao intersecao: a linha que tem as duas coisas conta UMA vez.
-  it('nao conta em dobro a linha que tem cor e DUIMP', () => {
-    const processes = [
-      process(2, 'em_andamento', { styleKey: 'argb:FF5B9BD5', statusRaw: 'DUIMP 1' }),
-    ]
+  /**
+   * As duas cores nao se cruzam: uma linha nao e verde e branca ao mesmo tempo,
+   * entao os dois cartoes nunca contam a mesma linha.
+   */
+  it('os dois conjuntos sao disjuntos sobre o mesmo processo', () => {
+    const branca = [process(2, 'em_andamento', { styleKey: 'theme:0|tint:0.0000' })]
 
-    expect(inClearanceCount(processes, CHAVES_DESEMBARACO)).toBe(1)
+    expect(colorCount(branca, BRANCAS)).toBe(1)
+    expect(colorCount(branca, VERDE_E_VERMELHA)).toBe(0)
   })
 
-  it('nao conta cor fora do conjunto e sem DUIMP', () => {
-    const processes = [process(2, 'em_desembaraco', { styleKey: 'argb:FF00FF00' })]
+  // Regra inviolavel 3: cor que o mapa nao declara nao vira cor proxima.
+  it('linha sem preenchimento nao conta em nenhum dos dois', () => {
+    const sem = [process(2, 'em_andamento', { styleKey: 'none' })]
 
-    expect(inClearanceCount(processes, CHAVES_DESEMBARACO)).toBe(0)
+    expect(colorCount(sem, VERDE_E_VERMELHA)).toBe(0)
+    expect(colorCount(sem, BRANCAS)).toBe(0)
   })
 
-  it('conjunto de chaves vazio deixa so o criterio de texto', () => {
-    const processes = [
-      process(2, 'em_andamento', { styleKey: 'argb:FF5B9BD5' }),
-      process(3, 'em_andamento', { statusRaw: 'DUIMP 1' }),
-    ]
-
-    expect(inClearanceCount(processes, new Set())).toBe(1)
+  it('conjunto de chaves vazio zera a contagem', () => {
+    expect(colorCount([process(2, 'em_andamento', { styleKey: 'argb:FF00FF00' })], new Set())).toBe(
+      0,
+    )
   })
 
   it('devolve zero para conjunto vazio', () => {
-    expect(inClearanceCount([], CHAVES_DESEMBARACO)).toBe(0)
+    expect(colorCount([], VERDE_E_VERMELHA)).toBe(0)
   })
 })
 

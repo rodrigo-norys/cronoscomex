@@ -2,7 +2,12 @@ import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'no
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { ClientMapError, loadClientMap, saveClientRule } from '../../src/app/client-map-loader.ts'
+import {
+  ClientMapError,
+  loadClientMap,
+  removeClientGroup,
+  saveClientRule,
+} from '../../src/app/client-map-loader.ts'
 
 /**
  * H-48. A carga do mapa de clientes.
@@ -54,7 +59,11 @@ describe('loadClientMap', () => {
     expect(map.clients).toEqual([
       { key: 'ALFA', label: 'Alfa', rules: [{ match: 'prefix', value: 'ALF' }] },
     ])
-    expect(map.groups).toEqual([])
+    // O grupo IMPLICITO de 18/09/2026: cliente sem grupo declarado e lido como
+    // grupo de um membro, porque cliente solto deixou de existir.
+    expect(map.groups).toEqual([
+      { key: 'ALFA', label: 'Alfa', members: [{ client: 'ALFA', label: 'Alfa' }] },
+    ])
   })
 
   it('usa a chave como rotulo quando "label" falta ou e vazio', () => {
@@ -165,9 +174,20 @@ describe('loadClientMap — a secao "groups"', () => {
     ])
   })
 
-  // Sem a secao, o filtro e o de `H-49` — nenhum nivel de arvore.
-  it('trata "groups" ausente como nenhum grupo', () => {
-    expect(loadClientMap(escrever({ version: 1, clients: doisClientes })).groups).toEqual([])
+  /**
+   * Sem a secao, cada cliente vira um grupo de um membro (18/09/2026).
+   *
+   * **A derivacao nao reescreve o arquivo**: ela acontece na leitura, e o mapa
+   * do operador continua como ele o deixou.
+   */
+  it('deriva um grupo por cliente quando "groups" esta ausente', () => {
+    const groups = loadClientMap(escrever({ version: 1, clients: doisClientes })).groups
+
+    expect(groups).toHaveLength(doisClientes.length)
+    expect(groups.every((group) => group.members.length === 1)).toBe(true)
+    expect(groups.map((group) => group.key)).toEqual(
+      doisClientes.map((client) => client.key.toUpperCase()),
+    )
   })
 
   /**
@@ -234,6 +254,7 @@ describe('saveClientRule', () => {
       {
         kind: 'entrada-nova',
         match: 'exact',
+        field: 'clt',
         key: 'ALFA',
         label: 'Alfa',
         value: 'ALF-1',
@@ -261,6 +282,7 @@ describe('saveClientRule', () => {
       {
         kind: 'entrada-nova',
         match: 'exact',
+        field: 'clt',
         key: 'ZETA',
         label: 'Zeta',
         value: 'ZZZ',
@@ -284,6 +306,7 @@ describe('saveClientRule', () => {
       {
         kind: 'entrada-nova',
         match: 'exact',
+        field: 'clt',
         key: 'ZETA',
         label: 'Zeta',
         value: 'ALF-1',
@@ -308,6 +331,7 @@ describe('saveClientRule', () => {
       {
         kind: 'regra-acrescentada',
         match: 'exact',
+        field: 'clt',
         key: 'ZETA',
         label: 'Zeta',
         value: 'ALF-1',
@@ -334,6 +358,7 @@ describe('saveClientRule', () => {
       {
         kind: 'regra-acrescentada',
         match: 'exact',
+        field: 'clt',
         key: 'ALFA',
         label: 'Alfa',
         value: 'ALF-1',
@@ -352,6 +377,7 @@ describe('saveClientRule', () => {
       {
         kind: 'sem-efeito',
         match: 'exact',
+        field: 'clt',
         key: 'ALFA',
         label: 'Alfa',
         value: 'ALF-1',
@@ -373,6 +399,7 @@ describe('saveClientRule', () => {
       saveClientRule({
         kind: 'entrada-nova',
         match: 'exact',
+        field: 'clt',
         key: 'ALFA',
         label: 'Alfa',
         value: 'ALF-1',
@@ -400,6 +427,7 @@ describe('saveClientRule com pai', () => {
         kind: 'grupo-criado',
         key: 'VIVI',
         match: 'contains',
+        field: 'clt',
         label: 'Vivi',
         value: 'YT',
         beforeKey: null,
@@ -432,6 +460,7 @@ describe('saveClientRule com pai', () => {
         kind: 'membro-acrescentado',
         key: 'VIVI-GRUPO',
         match: 'contains',
+        field: 'clt',
         label: 'Vivi',
         value: 'YT',
         beforeKey: null,
@@ -457,6 +486,7 @@ describe('saveClientRule com pai', () => {
         kind: 'membro-acrescentado',
         key: 'VIVI-GRUPO',
         match: 'contains',
+        field: 'clt',
         label: 'Vivi',
         value: 'YT',
         beforeKey: null,
@@ -484,6 +514,7 @@ describe('saveClientRule com pai', () => {
         kind: 'grupo-criado',
         key: 'VIVI',
         match: 'contains',
+        field: 'clt',
         label: 'Vivi',
         value: 'YT',
         beforeKey: null,
@@ -496,5 +527,58 @@ describe('saveClientRule com pai', () => {
     const gravado = JSON.parse(readFileSync(path, 'utf-8'))
     expect(gravado._origem).toBe('ditado pelo operador')
     expect(gravado._comentario_ordem).toBe('a primeira que casa vence')
+  })
+})
+
+/**
+ * O grupo IMPLICITO e a remocao dele (18/09/2026).
+ *
+ * Cliente declarado antes de cliente solto deixar de existir nao tem entrada em
+ * `groups[]` no arquivo. A carga o le como grupo de um membro, e a remocao
+ * precisa alcanca-lo — ate aqui ela saia por um `return` antecipado, e o
+ * operador clicava em "Desfazer" sem efeito nenhum.
+ */
+describe('o grupo implicito', () => {
+  const solto = {
+    version: 1,
+    clients: [
+      { key: 'DENNIS', label: 'Dennis', rules: [{ match: 'contains', value: 'DENNIS' }] },
+      { key: 'XD', label: 'XD', rules: [{ match: 'exact', value: 'XD' }] },
+    ],
+  }
+
+  it('nao reescreve o arquivo do operador para derivar o grupo', () => {
+    const caminho = escrever(solto)
+    const antes = readFileSync(caminho, 'utf-8')
+
+    loadClientMap(caminho)
+
+    expect(readFileSync(caminho, 'utf-8')).toBe(antes)
+  })
+
+  it('desfazer o grupo implicito apaga a entrada do cliente', () => {
+    const caminho = escrever(solto)
+
+    removeClientGroup(
+      { kind: 'grupo-desfeito', key: 'DENNIS', dissolves: true, removes: ['DENNIS'] },
+      caminho,
+    )
+
+    const gravado = JSON.parse(readFileSync(caminho, 'utf-8'))
+    expect(gravado.clients.map((entry: { key: string }) => entry.key)).toEqual(['XD'])
+  })
+
+  // O que sobra continua declarado, e continua sendo lido como grupo proprio.
+  it('o cliente que nao foi pedido permanece', () => {
+    const caminho = escrever(solto)
+
+    removeClientGroup(
+      { kind: 'grupo-desfeito', key: 'DENNIS', dissolves: true, removes: ['DENNIS'] },
+      caminho,
+    )
+
+    const { clients, groups } = loadClientMap(caminho)
+    expect(clients).toHaveLength(1)
+    expect(groups).toEqual([{ key: 'XD', label: 'XD', members: [{ client: 'XD', label: 'XD' }] }])
   })
 })

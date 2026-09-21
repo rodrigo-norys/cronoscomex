@@ -335,8 +335,8 @@ regra.
   "counts": {
     "total": 0,                    // IND-01
     "emAndamento": 0,              // IND-02 — rótulo "Processos ativos"
-    "emDesembaraco": 0,            // IND-23 — cor OU DUIMP; NÃO é a categoria
-    "desembaracados": 0,           // IND-04
+    "emDesembaraco": 0,            // IND-27 — a linha BRANCA
+    "desembaracados": 0,           // IND-26 — a linha VERDE ou VERMELHA
     "fechadoAguardandoDraft": 0,   // IND-05 — rótulo "Aguardando draft"
     "canalVermelho": 0,            // IND-06
     "chegandoHoje": 0,             // IND-24 — linha branca E eta2 de hoje
@@ -405,13 +405,15 @@ de conjunto vazio não é zero, e apresentá-la como zero seria mentir sobre o
 dado (A-42). `bazarShare` acompanha IND-13 para tornar visível a distorção
 declarada em A-34.
 
-`counts.emDesembaraco` é **IND-23, e não a categoria** `em_desembaraco` de
-TD-01: conta a união entre a cor de desembaraço — bege, azul e roxo, resolvidas
-pela cor de **exibição**, o que unifica os dois tons de roxo (`D-42`) — e o texto
-`DUIMP` em STATUS. Por ser união, ele **não é exclusivo** com os demais campos:
-medido em 18/09/2026, 165 dos 167 têm STATUS preenchido e já aparecem em outro
-cartão. A categoria continua saindo do STATUS, e é ela que o filtro e a coluna
-Categoria da Página Operacional mostram.
+**`counts.desembaracados` e `counts.emDesembaraco` contam COR desde `D-54`**, e
+nenhum dos dois olha o STATUS: o primeiro é a linha **verde ou vermelha**
+(IND-26), o segundo é a linha **branca** (IND-27). A cor é a da célula-âncora,
+resolvida pela cor de **exibição** — o que unifica os dois tons de verde (`D-42`)
+sem limiar de proximidade (`ADR-0003`). A categoria `desembaracado` de TD-01
+continua existindo no domínio e é ela que o filtro, a coluna Categoria da Página
+Operacional e `categoryCheck` usam; medido em 18/09/2026, ela dá 480 e a cor dá
+482. **`emDesembaraco` não é igual a `chegandoHoje`**: aquele exige a mesma cor
+MAIS o `eta2` de hoje, e por isso é subconjunto deste.
 
 `categoryCheck` (`D-49`) é a conferência de A-12, e existe porque a soma deixou
 de ser derivável dos cartões. Ela continua incidindo sobre as **quatro

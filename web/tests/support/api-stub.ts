@@ -152,7 +152,18 @@ export function clientKeysFixture(overrides: Partial<ClientKeysResponse> = {}): 
         keys: 304,
         count: 304,
       },
-      { key: 'DENNIS', label: 'Dennis', parent: null, keys: 24, count: 47 },
+      /*
+        O grupo IMPLICITO de 18/09/2026: `Dennis` foi declarado quando cliente
+        solto ainda existia, e a carga o le como grupo de um membro. Pai e filho
+        dizem a mesma palavra — e o caso que a opcao (a) trata.
+      */
+      {
+        key: 'DENNIS',
+        label: 'Dennis',
+        parent: { key: 'DENNIS', label: 'Dennis' },
+        keys: 24,
+        count: 47,
+      },
     ],
     names: [
       { key: 'VIVI-GRUPO', label: 'Vivi', isParent: true, children: 4 },

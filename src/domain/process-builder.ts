@@ -171,7 +171,16 @@ function buildOne(row: RawRow, deps: BuildDeps): { process: Process; unmappedCol
   const importerRaw = text(row, COLUMN.importer)
   const clientProcessKey = normKey(clientRaw)
   const importerKey = normKey(importerRaw)
-  const client = resolveClient(clientProcessKey, importerKey, deps.clientMap ?? [])
+  /*
+    As tres colunas que uma regra de cliente pode procurar (21/09/2026). A REF
+    entra aqui porque `ref` ja foi lida acima, e resolver o cliente passou a
+    depender dela: uma regra pode agrupar por prefixo de REF ou por importador,
+    e nao so pela CLT.
+  */
+  const client = resolveClient(
+    { clt: clientProcessKey, ref: normKey(text(row, COLUMN.ref)), importer: importerKey },
+    deps.clientMap ?? [],
+  )
   const clientGroupKey = resolveClientGroup(client.key, deps.clientGroups ?? new Map())
   const team = resolveTeam(importerKey, deps.teamMap ?? [])
   const agentRaw = text(row, COLUMN.agent)

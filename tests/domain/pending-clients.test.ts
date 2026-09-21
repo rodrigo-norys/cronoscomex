@@ -245,7 +245,7 @@ describe('planClientRule com match', () => {
   it('grava o match escolhido no plano', () => {
     const plano = planClientRule('D', '', 'Cliente', [], 'prefix')
 
-    expect(plano).toMatchObject({ kind: 'entrada-nova', match: 'prefix', value: 'D' })
+    expect(plano).toMatchObject({ kind: 'grupo-criado', match: 'prefix', value: 'D' })
   })
 
   it('exact continua sendo `exact` sem o parametro', () => {
@@ -260,7 +260,7 @@ describe('planClientRule com match', () => {
   it('exact disputa lugar com a entrada que ja casa', () => {
     const plano = planClientRule('YT-769', '', 'Gama', PREFIXO_DECLARADO, 'exact')
 
-    expect(plano).toMatchObject({ kind: 'entrada-nova', beforeKey: 'BETA' })
+    expect(plano).toMatchObject({ kind: 'grupo-criado', beforeKey: 'BETA' })
   })
 
   /**
@@ -270,7 +270,7 @@ describe('planClientRule com match', () => {
   it('prefix NAO disputa lugar, e nao rouba o que ja tem dono', () => {
     const plano = planClientRule('Y', '', 'Gama', PREFIXO_DECLARADO, 'prefix')
 
-    expect(plano).toMatchObject({ kind: 'entrada-nova', match: 'prefix', beforeKey: null })
+    expect(plano).toMatchObject({ kind: 'grupo-criado', match: 'prefix', beforeKey: null })
   })
 
   /**
