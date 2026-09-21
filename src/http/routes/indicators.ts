@@ -159,7 +159,7 @@ export interface IndicatorsResponse {
 }
 
 /**
- * O `topN` da query, ou o padrao de `config/app.json` (21/09/2026).
+ * O `topN` da query, ou o padrao de `app.json` (21/09/2026).
  *
  * **Recusar nao serve aqui.** O parametro e de apresentacao, e um `topN=abc`
  * digitado na URL derrubaria o painel inteiro por um detalhe de quantos itens

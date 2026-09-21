@@ -4,7 +4,7 @@ import { replaceQuery, useQuery } from '../router.ts'
 /**
  * Quantos itens cada ranking mostra, escolhido pelo operador (21/09/2026).
  *
- * **Ate aqui o numero vivia so em `config/app.json`**, e mudar de 10 para 20
+ * **Ate aqui o numero vivia so em `app.json`**, e mudar de 10 para 20
  * exigia editar JSON e reiniciar — o mesmo gesto que `H-34` tirou do caminho da
  * planilha e `H-88` do mapa de clientes.
  *
