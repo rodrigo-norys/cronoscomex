@@ -3,8 +3,10 @@ import type { AppConfig } from '../../app/config.ts'
 import { store as defaultStore, type StoreAccess } from '../../app/process-store.ts'
 import { today as currentDay } from '../../domain/date-window.ts'
 import {
+  countRegistrationsMonthly,
   type MonthlyPoint,
   type ReconstructedSeries,
+  type RegistrationSeries,
   reconstructMonthly,
 } from '../../domain/history.ts'
 import { historyStartedAt, monthlySeries } from '../../io/history-store.ts'
@@ -46,6 +48,15 @@ export interface MonthlyHistoryResponse {
    * que nao existe — que e exatamente o que A-43 proibe.
    */
   reconstructed: ReconstructedSeries
+  /**
+   * `D-56`. Quantos registros a coluna RG marca em CADA mes, sem acumular.
+   *
+   * Bloco proprio, e nao um campo a mais em `reconstructed`: as duas saem da
+   * mesma coluna K e medem grandezas diferentes — estoque ao fim do mes contra
+   * producao do mes —, e juntas num objeto so o consumidor somaria o que nao
+   * soma.
+   */
+  registrations: RegistrationSeries
   /**
    * Instante do primeiro evento gravado. `null` enquanto nao houver historico —
    * e `null` e o que faz a Pagina Historico dizer que nao ha dado anterior,
@@ -106,6 +117,13 @@ export function registerHistoryRoute(
       // Recortada pelos MESMOS filtros da observada, que incidem sobre a leitura
       // de hoje — o mesmo limite que a ressalva da rota ja declara.
       reconstructed: reconstructMonthly(
+        selection.selected,
+        currentDay(config.timezone),
+        config.timezone,
+      ),
+      // Mesmo recorte da reconstruida, e da mesma leitura: a serie sai da
+      // planilha, nao do arquivo de historico.
+      registrations: countRegistrationsMonthly(
         selection.selected,
         currentDay(config.timezone),
         config.timezone,

@@ -1,8 +1,10 @@
+import type { ReactNode } from 'react'
 import { useState } from 'react'
 import type { TooltipContentProps } from 'recharts'
 import {
+  Bar,
+  BarChart,
   CartesianGrid,
-  Legend,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -25,113 +27,110 @@ import { useHistory } from '../hooks/useHistory.ts'
  * de processos. Quem repete e o dominio (`aggregateMonthly`); aqui nao se
  * calcula nada, nem se preenche buraco.
  *
- * **Nao ha retroatividade** (A-43): a serie OBSERVADA comeca quando o historico
- * passou a ser gravado, e a tela diz isso em vez de deixar o operador supor que
- * o grafico cobre a planilha inteira. Serie vazia e um terceiro estado, distinto
- * de `semLeitura` — ver `useHistory`.
+ * **A serie OBSERVADA deixou de ser desenhada** (`D-58`), por ordem do usuario:
+ * ela sai de `data/history.jsonl` e so cobre o que a aplicacao presenciou — duas
+ * pontas de linha contra os dez meses que a planilha data —, e o par custava
+ * cinco entradas de legenda, seis colunas de tabela e cinco linhas de tooltip
+ * para exibir dois pontos. **A rota continua servindo, e o historico continua
+ * sendo gravado:** o que saiu foi o desenho, nao o dado.
  *
- * **Duas series, nunca emendadas** (`H-54`). A observada sai dos eventos que a
- * aplicacao viu; a reconstruida sai das datas que a planilha carrega. Elas
- * aparecem no mesmo eixo, com tracado e nome distintos, e a legenda diz qual e
- * qual — juntar as duas numa linha so afirmaria continuidade que nao existe, que
- * e exatamente o que A-43 proibe. Divergirem no mesmo mes e informacao sobre a
- * planilha, e por isso as duas ficam a vista.
+ * **A-43 nao foi revogada, e passou a ser cumprida por outro caminho.** O que
+ * ele proibe e apresentar reconstrucao COMO historico observado; com uma serie
+ * so, nomeada pelo que ela e — "pelas datas da planilha" —, nao ha o que
+ * confundir. O preco esta declarado: a reconstruida projeta o estado de HOJE nas
+ * datas, entao ela se reescreve a cada leitura, e a observada, que nao se
+ * reescrevia, e a que saiu da vista.
  *
  * O grafico e `aria-hidden` e a tabela ao lado carrega os mesmos numeros: o SVG
  * do Recharts nao e legivel por leitor de tela, e o operador nao e tecnico.
  */
 
-const WINDOWS = [12, 24, 60] as const
-type WindowMonths = (typeof WINDOWS)[number]
+/**
+ * A janela pedida a rota. **Deixou de ser escolhivel na tela** (`D-58`): ela
+ * recorta apenas a serie OBSERVADA, e sem ela desenhada o seletor nao mudava
+ * nada do que se ve. Controle mudo e defeito, nao economia.
+ */
+const DEFAULT_WINDOW = 12
 
-const DEFAULT_WINDOW: WindowMonths = 12
-
-interface ReconstructedDefinition {
-  readonly key: 'r_chegados' | 'r_desembaracados'
-  readonly label: string
-}
-
+/**
+ * As duas medidas do acumulado (`D-58`).
+ *
+ * **Sao as reconstruidas, e o adjetivo saiu junto com o par.** A serie observada
+ * deixou de ser desenhada, entao nao ha o que distinguir: `Volume` e
+ * `Desembaracados` bastam, e o que elas sao esta dito uma vez, no subtitulo do
+ * painel. Nao ha Canal Vermelho aqui — a cor e o estado de hoje e nao carrega
+ * data, e so a serie observada o registrava.
+ *
+ * Le o token de `web/src/index.css`, e nao um literal: dois dos tres valores de
+ * eixo e grade que viviam aqui ja eram passo da v3 do Tailwind, divergindo da
+ * paleta que o resto do conjunto usa (`H-42`).
+ */
 interface MeasureDefinition {
-  readonly key: 'total' | 'desembaracados' | 'canalVermelho'
+  readonly key: 'chegados' | 'desembaracados'
   readonly label: string
-  /**
-   * Le o token de `web/src/index.css`, e nao um literal: dois dos tres valores
-   * de eixo e grade que viviam aqui ja eram passo da v3 do Tailwind, divergindo
-   * da paleta que o resto do conjunto usa (`H-42`).
-   *
-   * Validado contra fundo claro: pior par adjacente com ΔE 13,1 em deuteranopia.
-   */
   readonly color: string
-  /**
-   * A medida reconstruida IRMA, quando existe (`H-54`). Declarar o par aqui, e
-   * nao numa segunda lista paralela, e o que garante que as duas linhas nasçam
-   * com a MESMA cor: separadas, elas divergem no primeiro ajuste de paleta, e a
-   * cor deixaria de significar "mesma medida".
-   *
-   * Nao ha Canal Vermelho reconstruido: a cor e o estado de hoje e nao carrega
-   * data, entao projeta-la para tras afirmaria o que ninguem observou (regra
-   * inviolavel 3).
-   */
-  readonly reconstructed: ReconstructedDefinition | null
 }
 
 const MEASURES: readonly MeasureDefinition[] = [
-  {
-    key: 'total',
-    label: 'Volume (observado)',
-    color: 'var(--color-chart-series-1)',
-    reconstructed: { key: 'r_chegados', label: 'Volume (reconstruído)' },
-  },
-  {
-    key: 'desembaracados',
-    label: 'Desembaraçados (observado)',
-    color: 'var(--color-chart-series-2)',
-    reconstructed: { key: 'r_desembaracados', label: 'Desembaraçados (reconstruído)' },
-  },
-  {
-    key: 'canalVermelho',
-    label: 'Canal Vermelho (observado)',
-    color: 'var(--color-chart-series-3)',
-    reconstructed: null,
-  },
+  { key: 'chegados', label: 'Volume', color: 'var(--color-chart-series-1)' },
+  { key: 'desembaracados', label: 'Desembaraçados', color: 'var(--color-chart-series-2)' },
 ]
 
-/** As colunas reconstruidas da tabela, na ordem em que a pagina sempre as teve. */
-const RECONSTRUCTED_MEASURES: readonly (ReconstructedDefinition & { color: string })[] =
-  MEASURES.flatMap((measure) =>
-    measure.reconstructed === null ? [] : [{ ...measure.reconstructed, color: measure.color }],
-  )
-
-/** O tracejado da serie reconstruida. Um valor so: a linha, a legenda e o
-    tooltip precisam desenhar EXATAMENTE o mesmo traco para o par ser lido como
-    par. */
-const RECONSTRUCTED_DASH = '6 3'
-
-interface ChartSeries {
-  readonly key: MeasureDefinition['key'] | ReconstructedDefinition['key']
+interface RegistrationMeasure {
+  readonly key: 'registered' | 'cleared'
   readonly label: string
+  readonly noun: string
   readonly color: string
-  readonly dashed: boolean
+  readonly caveat: string
+}
+
+/** Liga a ressalva ao checkbox que ela descreve — ha um painel destes por pagina. */
+const CAVEAT_ID = 'registros-recorte'
+
+const REGISTRATION_ALL: RegistrationMeasure = {
+  key: 'registered',
+  label: 'Registros no mês',
+  noun: 'registros',
+  color: 'var(--color-chart-series-1)',
+  caveat: 'Conta toda linha com data em RG, seja qual for o STATUS dela',
+}
+
+const REGISTRATION_CLEARED: RegistrationMeasure = {
+  key: 'cleared',
+  label: 'Desembaraçados no mês',
+  noun: 'desembaraçados',
+  color: 'var(--color-chart-series-2)',
+  caveat: 'Deixa de fora quem tem data em RG mas ainda não está como desembaraçado',
 }
 
 /**
- * As cinco linhas do grafico, com a reconstruida logo depois da observada da
- * MESMA medida. A ordem importa em tres lugares — o `<Line>`, a legenda e o
- * tooltip —, e por isso ela e uma lista so.
+ * A tabela recolhida (`D-57`).
+ *
+ * **Ela existe para o par ter a mesma altura.** E a tabela que varia entre os
+ * dois paineis — nove linhas contra doze, duas colunas contra seis —, e tirando-a
+ * do fluxo a altura passa a ser a do grafico, que e fixa nos dois.
+ *
+ * **O custo e declarado, nao esquecido:** a tabela e a alternativa textual do
+ * grafico, porque o SVG do Recharts nao e legivel por leitor de tela. Fechada,
+ * ela continua no DOM e alcancavel por teclado, mas sai da arvore de
+ * acessibilidade ate a primeira abertura. O `<details>` nativo e o mesmo que
+ * `Operational` ja usa, e o `summary` veste o estilo de la.
  */
-const CHART_SERIES: readonly ChartSeries[] = MEASURES.flatMap((measure) => [
-  { key: measure.key, label: measure.label, color: measure.color, dashed: false },
-  ...(measure.reconstructed === null
-    ? []
-    : [
-        {
-          key: measure.reconstructed.key,
-          label: measure.reconstructed.label,
-          color: measure.color,
-          dashed: true,
-        },
-      ]),
-])
+function NumbersDisclosure({ children }: { children: ReactNode }) {
+  return (
+    <details className="group mt-4 border-t border-border-subtle pt-3">
+      {/* Aberto, ele veste o mesmo azul das fichas de filtro ativas — borda
+          `action-bg` sobre `action-soft` —, que e como a casca ja marca "isto
+          esta ligado". `forced-colors:border-2` porque sob cores forcadas o
+          agente de usuario troca a COR e nao a espessura, e sem o canal
+          nao-cromatico aberto e fechado ficariam identicos (`ACHADO 13`). */}
+      <summary className="motion-tint inline-block cursor-pointer list-none rounded-control border border-border-control px-2.5 py-1 text-sm text-text-secondary hover:text-text-primary group-open:border-action-bg group-open:bg-action-soft group-open:text-text-primary group-open:forced-colors:border-2">
+        Ver os números
+      </summary>
+      {children}
+    </details>
+  )
+}
 
 interface HistoryProps {
   queryString: string
@@ -139,8 +138,7 @@ interface HistoryProps {
 }
 
 export function History({ queryString, dataVersion }: HistoryProps) {
-  const [months, setMonths] = useState<WindowMonths>(DEFAULT_WINDOW)
-  const state = useHistory(queryString, months, dataVersion)
+  const state = useHistory(queryString, DEFAULT_WINDOW, dataVersion)
   const firstLoad = useFirstLoad('historico', state.status === 'pronto')
 
   if (state.status === 'erro') {
@@ -176,44 +174,213 @@ export function History({ queryString, dataVersion }: HistoryProps) {
     )
   }
 
-  const { series, reconstructed, historyStartedAt, truncated } = state.history
+  const { reconstructed, registrations } = state.history
 
   return (
     <div className="flex flex-col gap-4">
-      {/* `H-54`: o estado vazio de `H-21` nao e substituido, e acompanhado — a
-          reconstruida aparece sozinha, e a tela segue dizendo que nao ha
-          observacao. */}
-      {series.length === 0 && <EmptyHistory alone={reconstructed.points.length === 0} />}
+      {reconstructed.points.length === 0 && <EmptyHistory />}
 
-      {(series.length > 0 || reconstructed.points.length > 0) && (
+      {reconstructed.points.length > 0 && (
         <>
-          {series.length > 0 && <WindowPicker months={months} onChange={setMonths} />}
-          <MonthlySeries series={series} reconstructed={reconstructed} />
-          <ReconstructionNote reconstructed={reconstructed} />
-          {series.length > 0 && (
-            <>
-              <StartNote startedAt={historyStartedAt} />
-              <VolumeNote />
-              {truncated && <TruncatedNote months={months} pointCount={series.length} />}
-            </>
+          {/* Par lado a lado, e **sem `items-start`**: a ausencia dela e o que faz
+              os dois esticarem juntos — medido na Pagina Clientes, num Chrome
+              real a 1920, 478/478 sem a classe contra 478/382 com ela. Abaixo de
+              `lg` (1024px de janela) o grid empilha sozinho.
+
+              Sem registros nao ha par, e a evolucao ocupa a largura inteira em
+              vez de metade com um vao ao lado. */}
+          {registrations.points.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <MonthlyRegistrations registrations={registrations} />
+              <MonthlySeries reconstructed={reconstructed} />
+            </div>
+          ) : (
+            <MonthlySeries reconstructed={reconstructed} />
           )}
         </>
       )}
-
-      {queryString !== '' && <FilterCaveat />}
     </div>
   )
 }
 
 /**
- * O que a reconstrucao NAO cobre, dito com o numero (`H-54`).
+ * `D-56`. Quantos registros a coluna RG marca em cada mes.
  *
- * Processo sem `ETA2` nao entra no volume reconstruido, e sem data de registro
- * nao entra nos desembaracados: data ausente nao pertence a mes nenhum (A-20), e
- * sumir sem contagem seria descarte silencioso (regra inviolavel 2). Medido em
- * 31/08/2026: 64 dos 649 sem `ETA2` e 166 sem `RG`.
+ * **Barra, e nao linha**, porque a medida e contagem discreta de um periodo
+ * fechado; linha afirmaria continuidade entre dois meses que nao se tocam. E
+ * **uma medida por vez**: o checkbox TROCA o que a barra conta, em vez de somar
+ * camada. Medido na planilha real em 21/09/2026, `cleared` e 480 contra 483 de
+ * `registered` — sobrepor as duas prometeria uma comparacao de 3 linhas em 483,
+ * que nenhum desenho entrega a 2 px de diferenca.
+ *
+ * A janela de `WindowPicker` nao a recorta, pelo mesmo motivo da reconstruida: a
+ * serie sai das datas da planilha, e nao do arquivo de historico.
  */
-function ReconstructionNote({
+function MonthlyRegistrations({
+  registrations,
+}: {
+  registrations: MonthlyHistoryResponse['registrations']
+}) {
+  const [clearedOnly, setClearedOnly] = useState(false)
+  const measure = clearedOnly ? REGISTRATION_CLEARED : REGISTRATION_ALL
+  const total = registrations.points.reduce((sum, point) => sum + point[measure.key], 0)
+
+  return (
+    <section
+      aria-label="Registros por mês"
+      className="flex flex-col rounded-container border border-border-subtle bg-surface-raised p-4"
+    >
+      {/* Titulo sozinho na linha, e o apoio ABAIXO: e a forma dos outros paineis
+          — `ProcessDetail`, `Performance`, `Home` —, e ao lado a frase nao tem
+          a que se ancorar. So o numero acompanha o titulo, porque numero nao
+          disputa leitura com texto. */}
+      <div className="flex items-baseline gap-x-3">
+        <h2 className="text-sm font-semibold text-text-secondary">Registros por mês</h2>
+        <p className="ml-auto shrink-0 text-sm tabular-nums text-text-primary">
+          {total.toLocaleString('pt-BR')} {measure.noun}
+        </p>
+      </div>
+      <p className="mt-1 text-xs text-text-muted">
+        Pela data da coluna RG · cada barra conta só o próprio mês
+      </p>
+
+      {/* O rotulo envolve o controle, entao o clique no texto alcanca a caixa e a
+          area de toque passa dos 24px que a WCAG 2.2 pede em `SC 2.5.8`.
+
+          A ressalva e a DESCRICAO do controle, e nao um texto vizinho: `pl-6`
+          alinha com o rotulo — `size-4` mais `gap-2` —, e `aria-describedby` diz
+          a mesma coisa a quem nao ve o alinhamento. */}
+      <div className="mt-3 border-y border-border-subtle py-2">
+        <label className="flex min-h-11 cursor-pointer items-center gap-2 text-sm text-text-secondary">
+          <input
+            type="checkbox"
+            checked={clearedOnly}
+            onChange={(changeEvent) => setClearedOnly(changeEvent.target.checked)}
+            aria-describedby={CAVEAT_ID}
+            className="size-4 cursor-pointer accent-action-bg"
+          />
+          Somente categoria Desembaraçado
+        </label>
+        <p id={CAVEAT_ID} className="pl-6 text-xs text-text-muted">
+          {measure.caveat}
+        </p>
+      </div>
+
+      <div className="mt-3 h-64 w-full">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart
+            aria-label="Gráfico dos registros por mês"
+            data={registrations.points}
+            margin={{ top: 8, right: 8, bottom: 0, left: 0 }}
+          >
+            <CartesianGrid
+              stroke="var(--color-chart-grid)"
+              strokeDasharray="3 3"
+              vertical={false}
+            />
+            <XAxis
+              dataKey="month"
+              tickFormatter={formatMonth}
+              tick={{ fill: 'var(--color-chart-axis)', fontSize: '0.75rem' }}
+              stroke="var(--color-chart-axis)"
+            />
+            <YAxis
+              allowDecimals={false}
+              width={48}
+              tick={{ fill: 'var(--color-chart-axis)', fontSize: '0.75rem' }}
+              stroke="var(--color-chart-axis)"
+            />
+            <Tooltip
+              cursor={{ fill: 'var(--color-chart-grid)' }}
+              content={(props) => <RegistrationTooltip {...props} measure={measure} />}
+            />
+            <Bar dataKey={measure.key} name={measure.label} fill={measure.color} maxBarSize={56} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
+      <NumbersDisclosure>
+        <div className="overflow-x-auto">
+          <table className="mt-3 w-full text-sm">
+            <caption className="sr-only">Quantos {measure.noun} em cada mês</caption>
+            <thead>
+              <tr className="border-b border-border-subtle text-left text-xs text-text-muted">
+                <th className="pb-1 font-medium">mês</th>
+                <th className="pb-1 text-right font-medium">{measure.label}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {registrations.points.map((point) => (
+                <tr key={point.month} className="h-10 border-b border-border-subtle last:border-0">
+                  <td className="py-1">
+                    <time dateTime={point.month}>{formatMonth(point.month)}</time>
+                  </td>
+                  <td className="py-1 text-right tabular-nums">
+                    {point[measure.key].toLocaleString('pt-BR')}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </NumbersDisclosure>
+
+      <p className="mt-3 text-xs text-text-secondary">
+        <strong className="font-semibold">
+          {registrations.missingRegistration.toLocaleString('pt-BR')}
+        </strong>{' '}
+        processos não têm data de registro e ficam fora de todos os meses — somar as barras não dá o
+        total da planilha. Barra em zero é mês medido sem registro, e não mês sem dado.
+      </p>
+    </section>
+  )
+}
+
+/**
+ * O tooltip da barra. O padrao do Recharts pinta o valor com a cor da serie sobre
+ * caixa branca fixa, que no esquema escuro quase some — o mesmo defeito que
+ * `MonthlyTooltip` ja corrige para as linhas.
+ */
+function RegistrationTooltip({
+  active,
+  label,
+  payload,
+  measure,
+}: TooltipContentProps & { measure: RegistrationMeasure }) {
+  if (active !== true) return null
+
+  const value = payload?.[0]?.value
+  if (typeof value !== 'number') return null
+
+  return (
+    <div className="rounded-container border border-border-modal bg-surface-raised px-3 py-2 text-xs">
+      <p className="font-semibold text-text-primary">
+        {typeof label === 'string' ? formatMonth(label) : label}
+      </p>
+      <p className="mt-1 flex items-center gap-3 text-text-secondary">
+        {measure.label}
+        <span className="ml-auto font-semibold tabular-nums text-text-primary">
+          {value.toLocaleString('pt-BR')}
+        </span>
+      </p>
+    </div>
+  )
+}
+
+/**
+ * O que a serie NAO cobre, dito com o numero (`H-54`).
+ *
+ * Processo sem `ETA2` nao entra no volume, e sem data de registro nao entra nos
+ * desembaracados: data ausente nao pertence a mes nenhum (A-20), e sumir sem
+ * contagem seria descarte silencioso (regra inviolavel 2). Medido em 21/09/2026:
+ * 65 dos 650 sem `ETA2` e 167 sem `RG`.
+ *
+ * **Vive DENTRO do painel desde `D-58`, e o nome deixou de citar a reconstrucao.**
+ * Solta abaixo do par, ela falava so da coluna da direita enquanto ocupava a
+ * largura das duas, repetia o numero de `RG` que o painel irmao ja diz, e abria
+ * declarando uma distincao que a tela nao faz mais.
+ */
+function SeriesCoverageNote({
   reconstructed,
 }: {
   reconstructed: MonthlyHistoryResponse['reconstructed']
@@ -221,21 +388,19 @@ function ReconstructionNote({
   const previsao = reconstructed.points.filter((point) => point.forecast)
 
   return (
-    <p className="rounded-container border border-border-subtle bg-surface-sunken px-4 py-3 text-xs text-text-secondary">
-      A série <strong className="font-semibold">reconstruída</strong> é derivada das datas que a
-      planilha carrega, e não do que a aplicação observou — as duas aparecem separadas de propósito,
-      e divergirem num mês é informação sobre a planilha, não erro.{' '}
+    <p className="mt-3 text-xs text-text-secondary">
       <strong className="font-semibold">{reconstructed.missingEta2.toLocaleString('pt-BR')}</strong>{' '}
-      processos não têm ETA2 e ficam fora do volume reconstruído;{' '}
+      processos não têm data de chegada (ETA2) e ficam fora do Volume;{' '}
       <strong className="font-semibold">
         {reconstructed.missingRegistration.toLocaleString('pt-BR')}
       </strong>{' '}
-      não têm data de registro e ficam fora dos desembaraçados.
+      não têm data em RG e ficam fora dos Desembaraçados. Quem não tem a data não entra em mês
+      nenhum — é por isso que nenhuma das duas curvas alcança o total da planilha.
       {previsao.length > 0 && (
         <>
           {' '}
-          Os {previsao.length === 1 ? 'último mês' : `últimos ${previsao.length} meses`} da série —
-          a partir de {formatMonth(previsao[0]?.month ?? '')} — são{' '}
+          Os {previsao.length === 1 ? 'último mês' : `últimos ${previsao.length} meses`} — a partir
+          de {formatMonth(previsao[0]?.month ?? '')} — são{' '}
           <strong className="font-semibold">previsão</strong>: a data já está na planilha, o mês
           ainda não aconteceu.
         </>
@@ -245,150 +410,55 @@ function ReconstructionNote({
 }
 
 /**
- * Serie vazia com `historyStartedAt` nulo: a planilha foi lida, e o arquivo de
- * historico esta vazio ou foi apagado. Nao e erro, e nao e zero processo — e
- * ausencia de passado registrado, que so a proxima leitura resolve.
+ * A planilha foi lida e nenhum processo tem `ETA2` nem data em RG (`D-58`).
  *
- * Sem `role="status"`: ele substituiria o papel de regiao, e a secao da serie
- * precisa ser a mesma marca nos dois estados, cheio e vazio.
- *
- * **`alone` decide o rotulo da regiao** (`H-54`). Sozinha, ela E a secao da
- * serie e mantem o nome que `H-21` fixou. Acompanhada da reconstruida, o nome
- * pertence ao grafico, e duas landmarks homonimas na mesma pagina deixariam o
- * leitor de tela sem como distingui-las.
+ * **Nao e zero processo, e nao e falha.** Serie sem ponto nenhum e ausencia de
+ * DATA, e um grafico zerado aqui afirmaria que a planilha esta vazia (regra
+ * inviolavel 3). Distinto de `semLeitura`, que a casca trata antes — ver
+ * `useHistory`.
  */
-function EmptyHistory({ alone }: { alone: boolean }) {
+function EmptyHistory() {
   return (
     <section
-      aria-label={alone ? 'Evolução mensal' : 'Histórico observado'}
+      aria-label="Evolução mensal"
       className="rounded-container border border-border-subtle bg-surface-raised p-6 text-sm"
     >
       <h2 className="text-base font-semibold text-text-secondary">
-        Ainda não há histórico registrado.
+        Nenhum processo tem data para montar a série.
       </h2>
       <p className="mt-2 text-text-secondary">
-        A série é montada a partir das mudanças que a aplicação observa a cada leitura da planilha,
-        e o primeiro ponto aparece na próxima. Um gráfico zerado aqui afirmaria que não há
-        processos, o que é diferente de não haver passado gravado.
-      </p>
-      <p className="mt-2 text-text-secondary">
-        <strong className="font-semibold">Não há retroatividade</strong> (A-43): a aplicação não
-        reconstrói o histórico anterior à sua primeira execução, porque a planilha guarda o estado
-        de hoje e não o de cada mês.
+        A evolução é derivada das datas que a planilha carrega — a de chegada para o volume, e a da
+        coluna RG para os desembaraçados. Sem nenhuma das duas preenchida não há mês a desenhar, e
+        um gráfico zerado afirmaria que não há processos, o que é diferente.
       </p>
     </section>
   )
 }
 
-function WindowPicker({
-  months,
-  onChange,
-}: {
-  months: WindowMonths
-  onChange: (next: WindowMonths) => void
-}) {
-  return (
-    <fieldset className="flex flex-wrap items-center gap-2 rounded-container border border-border-subtle bg-surface-raised px-4 py-3">
-      <legend className="sr-only">Janela da série</legend>
-      <span className="text-sm text-text-secondary">Janela:</span>
-      {WINDOWS.map((option) => (
-        <button
-          key={option}
-          type="button"
-          aria-pressed={option === months}
-          onClick={() => onChange(option)}
-          /*
-            `ACHADO 13`. A ESPESSURA da borda e o canal nao-cromatico: sob
-            `forced-colors: active` o agente de usuario substitui a cor, e o
-            selecionado ficaria indistinguivel dos outros dois. O `aria-pressed`
-            acima ja resolve o eixo programatico; isto resolve o visual.
-          */
-          className={`rounded-control px-3 py-1 text-sm font-medium ${
-            option === months
-              ? 'border-2 border-action-bg bg-action-bg text-action-fg'
-              : 'border border-border-control text-text-secondary hover:border-border-strong'
-          }`}
-        >
-          {option} meses
-        </button>
-      ))}
-    </fieldset>
-  )
-}
-
 /**
- * A uniao dos meses das duas series, cada uma nas suas chaves (`H-54`).
+ * A amostra da cor, do tamanho em que ela se le.
  *
- * Mes presente numa e ausente na outra fica `undefined` ali, e o Recharts abre
- * um buraco em vez de ligar os pontos: a observada nao existe antes da primeira
- * execucao, e desenha-la ali afirmaria observacao que nao houve (A-43).
+ * O padrao do Recharts desenha um icone de 14px, que e pouco para a linha ser
+ * reconhecida ao lado do nome; 28px bastam. **O parametro `dashed` saiu com a
+ * serie observada** (`D-58`): ele existia para separar o par que dividia a cor,
+ * e sem par nao ha o que separar.
  */
-interface ChartPoint {
-  month: string
-  total?: number
-  desembaracados?: number
-  canalVermelho?: number
-  r_chegados?: number
-  r_desembaracados?: number
-}
-
-function mergePoints(
-  series: MonthlyHistoryResponse['series'],
-  reconstructed: MonthlyHistoryResponse['reconstructed'],
-): ChartPoint[] {
-  const byMonth = new Map<string, ChartPoint>()
-
-  for (const point of reconstructed.points) {
-    byMonth.set(point.month, {
-      month: point.month,
-      r_chegados: point.chegados,
-      r_desembaracados: point.desembaracados,
-    })
-  }
-  for (const point of series) {
-    const existing = byMonth.get(point.month) ?? { month: point.month }
-    byMonth.set(point.month, {
-      ...existing,
-      total: point.total,
-      desembaracados: point.desembaracados,
-      canalVermelho: point.canalVermelho,
-    })
-  }
-
-  return Array.from(byMonth.values()).sort((a, b) => a.month.localeCompare(b.month))
-}
-
-/**
- * O traco da serie, do tamanho em que ele se le.
- *
- * O par observado/reconstruido divide a cor de proposito (`H-54`), entao o
- * tracejado e o UNICO canal grafico que os separa — e nenhum dos dois padroes do
- * Recharts o carregava: o icone da legenda tem 14px, onde `6 3` vira uma linha
- * cheia, e o tooltip nao desenha traco nenhum. Os dois nomes do par so diferem
- * na ultima palavra, entao o leitor ficava com cor identica e texto quase
- * identico. 28px cabem tres tracos, e a diferenca aparece sem ler.
- */
-function SeriesStroke({ color, dashed }: { color: string; dashed: boolean }) {
+function SeriesStroke({ color }: { color: string }) {
   return (
     <svg width="28" height="8" viewBox="0 0 28 8" aria-hidden="true" className="shrink-0">
-      <line
-        x1="0"
-        y1="4"
-        x2="28"
-        y2="4"
-        stroke={color}
-        strokeWidth="2"
-        strokeDasharray={dashed ? RECONSTRUCTED_DASH : undefined}
-      />
+      <line x1="0" y1="4" x2="28" y2="4" stroke={color} strokeWidth="2" />
     </svg>
   )
 }
 
 /**
- * A legenda sai de `CHART_SERIES`, e nao do `payload` do Recharts: as cinco
- * linhas existem sempre, e a lista propria e o que poe a reconstruida ao lado da
- * observada da mesma medida — o padrao ordenava por nome, e o par ficava a
- * depender do alfabeto.
+ * A chave do grafico, na faixa do cabecalho — o lugar que no painel irmao e do
+ * checkbox, e e o que alinha os dois graficos do par (`D-57`).
+ *
+ * **Tres entradas, e nao cinco.** Cor diz a MEDIDA e traco diz a ORIGEM, entao
+ * listar `Volume (observado)` e `Volume (reconstruido)` separados gastava duas
+ * linhas da faixa para repetir a mesma cor. A regra do tracejado e dita uma vez,
+ * abaixo, com a amostra ao lado.
  *
  * **O nome veste tinta de texto, e nao a cor da serie.** Quem carrega a
  * identidade e o traco ao lado; texto colorido gasta contraste para repetir o
@@ -396,14 +466,19 @@ function SeriesStroke({ color, dashed }: { color: string; dashed: boolean }) {
  */
 function MonthlyLegend() {
   return (
-    <ul className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 pt-2 text-xs text-text-secondary">
-      {CHART_SERIES.map((line) => (
-        <li key={line.key} className="flex items-center gap-2">
-          <SeriesStroke color={line.color} dashed={line.dashed} />
-          {line.label}
-        </li>
-      ))}
-    </ul>
+    <>
+      <ul className="flex min-h-11 flex-wrap items-center gap-x-4 gap-y-1 text-sm text-text-secondary">
+        {MEASURES.map((measure) => (
+          <li key={measure.key} className="flex items-center gap-2">
+            <SeriesStroke color={measure.color} />
+            {measure.label}
+          </li>
+        ))}
+      </ul>
+      <p className="text-xs text-text-muted">
+        Um processo entra no volume pela data de chegada, e nos desembaraçados pela data em RG
+      </p>
+    </>
   )
 }
 
@@ -424,8 +499,8 @@ function MonthlyTooltip({ active, label, payload }: TooltipContentProps) {
   if (active !== true) return null
 
   const valueByKey = new Map((payload ?? []).map((entry) => [entry.dataKey, entry.value]))
-  const rows = CHART_SERIES.map((line) => ({ line, value: valueByKey.get(line.key) })).filter(
-    (row): row is { line: ChartSeries; value: number } => typeof row.value === 'number',
+  const rows = MEASURES.map((line) => ({ line, value: valueByKey.get(line.key) })).filter(
+    (row): row is { line: MeasureDefinition; value: number } => typeof row.value === 'number',
   )
   if (rows.length === 0) return null
 
@@ -437,7 +512,7 @@ function MonthlyTooltip({ active, label, payload }: TooltipContentProps) {
       <ul className="mt-1 space-y-1">
         {rows.map(({ line, value }) => (
           <li key={line.key} className="flex items-center gap-2">
-            <SeriesStroke color={line.color} dashed={line.dashed} />
+            <SeriesStroke color={line.color} />
             <span className="text-text-secondary">{line.label}</span>
             <span className="ml-auto pl-3 font-semibold tabular-nums text-text-primary">
               {value.toLocaleString('pt-BR')}
@@ -455,19 +530,24 @@ function MonthlyTooltip({ active, label, payload }: TooltipContentProps) {
  * planilha real — parecer da mesma ordem que o volume.
  */
 function MonthlySeries({
-  series,
   reconstructed,
 }: {
-  series: MonthlyHistoryResponse['series']
   reconstructed: MonthlyHistoryResponse['reconstructed']
 }) {
-  const points = mergePoints(series, reconstructed)
+  const points = reconstructed.points
   return (
     <section
       aria-label="Evolução mensal"
-      className="rounded-container border border-border-subtle bg-surface-raised p-4"
+      className="flex flex-col rounded-container border border-border-subtle bg-surface-raised p-4"
     >
       <h2 className="text-sm font-semibold text-text-secondary">Evolução mensal</h2>
+      <p className="mt-1 text-xs text-text-muted">
+        Pelas datas da planilha · cada ponto é o total acumulado até o fim do mês
+      </p>
+
+      <div className="mt-3 border-y border-border-subtle py-2">
+        <MonthlyLegend />
+      </div>
 
       {/*
         **O grafico deixou de ser `aria-hidden`** (`H-74`, `ACHADO 11`).
@@ -486,7 +566,7 @@ function MonthlySeries({
         A tabela irma continua carregando os mesmos numeros — a alternativa
         textual nunca esteve em jogo.
       */}
-      <div className="mt-3 h-72 w-full">
+      <div className="mt-3 h-64 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             aria-label="Gráfico da evolução mensal"
@@ -511,8 +591,7 @@ function MonthlySeries({
               stroke="var(--color-chart-axis)"
             />
             <Tooltip content={(props) => <MonthlyTooltip {...props} />} />
-            <Legend content={() => <MonthlyLegend />} />
-            {CHART_SERIES.map((line) => (
+            {MEASURES.map((line) => (
               <Line
                 key={line.key}
                 type="monotone"
@@ -520,10 +599,7 @@ function MonthlySeries({
                 name={line.label}
                 stroke={line.color}
                 strokeWidth={2}
-                /* `exactOptionalPropertyTypes`: a prop nao aceita `undefined`
-                   explicito, entao a linha cheia e a AUSENCIA dela. */
-                {...(line.dashed ? { strokeDasharray: RECONSTRUCTED_DASH } : {})}
-                dot={!line.dashed && series.length === 1}
+                dot={points.length === 1}
                 activeDot={{ r: 4 }}
                 connectNulls={false}
               />
@@ -532,134 +608,49 @@ function MonthlySeries({
         </ResponsiveContainer>
       </div>
 
-      {/* A alternativa textual do grafico, com as DUAS series: o SVG do Recharts
-          nao e legivel por leitor de tela, e omitir a reconstruida aqui deixaria
-          metade da informacao so no desenho. Traco onde a serie nao tem o mes —
-          ausencia de ponto nao e zero. */}
-      {/* `ACHADO 19`. A exceção bidimensional de `SC 1.4.10` cobre a TABELA,
-          e não a página: sem o invólucro, ela arrasta as notas irmãs e a
-          barra de filtros para a rolagem horizontal. Mesmo padrão que
-          `ProcessTable` já usa. */}
-      <div className="overflow-x-auto">
-        <table className="mt-4 w-full text-sm">
-          <caption className="sr-only">
-            Volume, desembaraçados e Canal Vermelho ao fim de cada mês, observados e reconstruídos
-          </caption>
-          <thead>
-            <tr className="border-b border-border-subtle text-left text-xs text-text-muted">
-              <th className="pb-1 font-medium">mês</th>
-              {MEASURES.map((measure) => (
-                <th key={measure.key} className="pb-1 text-right font-medium">
-                  {measure.label}
-                </th>
-              ))}
-              {RECONSTRUCTED_MEASURES.map((measure) => (
-                <th key={measure.key} className="pb-1 text-right font-medium">
-                  {measure.label}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {/* `h-10` — a densidade de `H-61`, em unidade relativa. */}
-            {points.map((point) => (
-              <tr key={point.month} className="h-10 border-b border-border-subtle last:border-0">
-                <td className="py-1">
-                  <time dateTime={point.month}>{formatMonth(point.month)}</time>
-                </td>
-                {[...MEASURES, ...RECONSTRUCTED_MEASURES].map((measure) => {
-                  const value = point[measure.key]
-                  return (
-                    <td key={measure.key} className="py-1 text-right tabular-nums">
-                      {value === undefined ? '—' : value.toLocaleString('pt-BR')}
-                    </td>
-                  )
-                })}
+      <NumbersDisclosure>
+        {/* A alternativa textual do grafico: o SVG do Recharts nao e legivel por
+            leitor de tela. */}
+        {/* `ACHADO 19`. A exceção bidimensional de `SC 1.4.10` cobre a TABELA,
+            e não a página: sem o invólucro, ela arrasta as notas irmãs e a
+            barra de filtros para a rolagem horizontal. Mesmo padrão que
+            `ProcessTable` já usa. */}
+        <div className="overflow-x-auto">
+          <table className="mt-3 w-full text-sm">
+            <caption className="sr-only">
+              Volume e desembaraçados acumulados ao fim de cada mês
+            </caption>
+            <thead>
+              <tr className="border-b border-border-subtle text-left text-xs text-text-muted">
+                <th className="pb-1 font-medium">mês</th>
+                {MEASURES.map((measure) => (
+                  <th key={measure.key} className="pb-1 text-right font-medium">
+                    {measure.label}
+                  </th>
+                ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {/* `h-10` — a densidade de `H-61`, em unidade relativa. */}
+              {points.map((point) => (
+                <tr key={point.month} className="h-10 border-b border-border-subtle last:border-0">
+                  <td className="py-1">
+                    <time dateTime={point.month}>{formatMonth(point.month)}</time>
+                  </td>
+                  {MEASURES.map((measure) => (
+                    <td key={measure.key} className="py-1 text-right tabular-nums">
+                      {point[measure.key].toLocaleString('pt-BR')}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </NumbersDisclosure>
+
+      <SeriesCoverageNote reconstructed={reconstructed} />
     </section>
-  )
-}
-
-/** A-43: o que a serie NAO cobre precisa estar dito, e com a data à vista. */
-function StartNote({ startedAt }: { startedAt: string | null }) {
-  if (startedAt === null) return null
-
-  return (
-    <p className="rounded-container border border-border-subtle bg-surface-sunken px-4 py-3 text-xs text-text-secondary">
-      O histórico começou em <strong className="font-semibold">{formatInstant(startedAt)}</strong>,
-      quando a aplicação passou a registrar as mudanças.{' '}
-      <strong>Não há dado anterior a essa data</strong> — a planilha guarda o estado de hoje, e
-      reconstruir os meses passados a partir dela produziria uma série plausível e errada.
-    </p>
-  )
-}
-
-/**
- * Por que o ultimo ponto pode nao bater com o cartao da Pagina Inicial.
- *
- * `aggregateMonthly` acumula os REF observados e nunca remove: REF que some da
- * planilha nao gera evento (ADR-0005), entao o volume do historico e "quantos
- * ja se viu", nao "quantos ha hoje". **Medido em 17/08/2026 contra a planilha
- * real: 650 no historico, 649 na planilha** — uma REF ja saiu, e a diferenca
- * cresce com o tempo. Dois numeros certos medindo coisas diferentes viram
- * desconfianca no numero certo se a tela nao disser qual e qual.
- */
-function VolumeNote() {
-  return (
-    <p className="rounded-container border border-border-subtle bg-surface-sunken px-4 py-3 text-xs text-text-secondary">
-      <strong className="font-semibold">
-        Volume conta os processos que a aplicação já observou
-      </strong>{' '}
-      desde o início do histórico, e não os que estão na planilha hoje: uma REF removida da planilha
-      permanece na série, porque desaparecer não é uma mudança de estado que se possa registrar. Por
-      isso o último ponto pode ficar acima do total da Página Inicial — os dois números medem coisas
-      diferentes.
-    </p>
-  )
-}
-
-/**
- * Recorte que nao se anuncia e descarte silencioso (regra inviolavel 2).
- *
- * O bloco e montado condicionalmente, entao o `role` que ele carregava nascia ja
- * populado — o mesmo `ACHADO 11` das outras seis paginas, num ponto que a lista
- * de `H-44` nao nomeava. Quem anuncia agora e a regiao viva da casca.
- */
-function TruncatedNote({ months, pointCount }: { months: number; pointCount: number }) {
-  return (
-    <PageAlert
-      tone="status"
-      className="rounded-container border border-state-warning-border bg-state-warning-bg px-4 py-3 text-xs text-state-warning-fg"
-      announcement={`A janela pedida — ${months} meses — é maior que o histórico existente. A série mostra os ${pointCount} ${pointCount === 1 ? 'mês' : 'meses'} que há.`}
-    >
-      A janela pedida — <strong className="font-semibold">{months} meses</strong> — é maior que o
-      histórico existente. A série mostra os{' '}
-      <strong className="font-semibold">
-        {pointCount} {pointCount === 1 ? 'mês' : 'meses'}
-      </strong>{' '}
-      que há, e começa onde o histórico começou.
-    </PageAlert>
-  )
-}
-
-/**
- * O limite do recorte por filtro, do contrato de `GET /api/history/monthly`. O
- * evento gravado carrega apenas `ref`: cliente, navio e agente vivem na
- * planilha, entao o filtro resolve os REF contra a leitura de HOJE.
- */
-function FilterCaveat() {
-  return (
-    <p className="rounded-container border border-border-subtle bg-surface-sunken px-4 py-3 text-xs text-text-secondary">
-      Há filtro ativo, e o histórico guarda apenas a REF de cada processo. Os filtros são resolvidos
-      contra a leitura atual da planilha: a série descreve o passado dos processos que casam{' '}
-      <strong className="font-semibold">hoje</strong>. Um processo cujo navio mudou aparece sob o
-      navio de agora, e um que saiu da planilha não aparece sob filtro algum. Sem filtro, a série
-      sai inteira do arquivo.
-    </p>
   )
 }
 
@@ -694,12 +685,4 @@ function formatMonth(month: string): string {
 
   const name = MONTH_NAMES[Number(index) - 1]
   return name === undefined ? month : `${name}/${year}`
-}
-
-/** Instante ISO no dia civil do navegador, que na maquina do operador e o fuso da aplicacao. */
-function formatInstant(instant: string): string {
-  const parsed = new Date(instant)
-  if (Number.isNaN(parsed.getTime())) return '—'
-
-  return parsed.toLocaleDateString('pt-BR')
 }

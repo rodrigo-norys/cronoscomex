@@ -517,6 +517,15 @@ por processo na exibição** (A-60).
 Série mensal da Página Histórico, derivada de `data/history.jsonl`. Servida
 desde `H-28`; a tela que a consome é `H-21`.
 
+> **`series`, `historyStartedAt` e `truncated` continuam servidos e NÃO são mais
+> desenhados** (`D-58`, 21/09/2026). A Página Histórico passou a mostrar apenas
+> `reconstructed` e `registrations`, por ordem do usuário: com o histórico
+> começando em 17/08/2026, a série observada tinha 2 pontos contra os 10 que a
+> planilha data. O contrato não mudou de propósito — o arquivo continua sendo
+> gravado, e a série volta à tela sem nada ter sido perdido. O parâmetro `months`
+> continua aceito e recorta apenas `series`, então **hoje ele não altera nada do
+> que a tela mostra**.
+
 | Parâmetro | Tipo | Padrão |
 |---|---|---|
 | `months` | `number` | `12`. De 1 a 60. Fora da faixa devolve `400 FILTRO_INVALIDO` |
@@ -532,6 +541,12 @@ desde `H-28`; a tela que a consome é `H-21`.
     ],
     "missingEta2": 64,
     "missingRegistration": 166
+  },
+  "registrations": {                          // D-56 — contagem do mês, não acumulada
+    "points": [
+      { "month": "2026-07", "registered": 75, "cleared": 74 }
+    ],
+    "missingRegistration": 167
   },
   "historyStartedAt": "2026-08-03T14:22:31.004Z",
   "truncated": true
@@ -563,9 +578,27 @@ aconteceu; medido em 31/08/2026, 18 processos têm `ETA2` em set/2026.
 ausente não pertence a mês nenhum (A-20), e sumir sem contagem seria descarte
 silencioso. Medido: 64 dos 649 sem `ETA2` e 166 sem `RG`.
 
-**`months` não recorta `reconstructed`.** A janela é da série observada; a
-reconstruída cobre o intervalo das datas, porque cortá-la pela janela esconderia
-justamente o passado que ela existe para mostrar.
+`registrations` (`D-56`) sai da **mesma coluna K** de `reconstructed`, e mede a
+grandeza oposta: **quantos registros cada mês recebeu**, sem acumular. É por isso
+que é bloco próprio e não um campo a mais ali — juntos num objeto só, o consumidor
+somaria estoque com fluxo. `registered` conta toda linha com RG no mês, qualquer
+que seja o STATUS de hoje; `cleared` é **subconjunto** dele, recortado pela
+categoria `desembaracado`. As duas divergem só onde A-05 ocorre — RG lançado em
+linha que a categoria ainda não dá por concluída —, e a divergência é pequena:
+medido na planilha real em 21/09/2026, **3 linhas em 483**, com todos os 480
+processos da categoria Desembaraçado tendo RG.
+
+`registrations.points` cobre do primeiro RG até o **mês corrente**, e não até o
+último RG. A diferença para `reconstructed` é deliberada: medido em 21/09/2026, o
+RG mais recente da planilha é **31/07/2026**, e parar ali faria a série terminar
+em julho numa tela aberta em setembro — mês ausente do eixo se lê como "ainda não
+chegou" em vez de "não houve registro". RG posterior ao mês corrente não é
+cortado, e não há `forecast` aqui: a contagem de um mês futuro é o que a planilha
+já datou, e não previsão de volume.
+
+**`months` não recorta `reconstructed` nem `registrations`.** A janela é da série
+observada; as duas derivadas cobrem o intervalo das datas, porque cortá-las pela
+janela esconderia justamente o passado que elas existem para mostrar.
 
 `truncated: true` indica que a janela pedida excede o histórico existente — a
 série começa quando a aplicação começou, não antes. Sem histórico algum,
