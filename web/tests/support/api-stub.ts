@@ -685,7 +685,9 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
           status: 201,
           json: () =>
             Promise.resolve({
-              outcome: 'entrada-nova',
+              // `grupo-criado` desde `D-53`: a PRIMEIRA declaracao ja forma o
+              // pai, e `entrada-nova` saiu do contrato em 21/09/2026.
+              outcome: 'grupo-criado',
               key: String(enviado.label ?? '').toUpperCase(),
               label: enviado.label,
               value: enviado.value,

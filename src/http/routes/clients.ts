@@ -66,13 +66,14 @@ export interface ClientKeysResponse {
 export type RuleReachResponse = RuleReach
 
 export interface ClientRuleCreatedResponse {
-  /** `grupo-criado` e `membro-acrescentado` sao os dois kinds de pai (`H-88`). */
-  outcome:
-    | 'entrada-nova'
-    | 'regra-acrescentada'
-    | 'sem-efeito'
-    | 'grupo-criado'
-    | 'membro-acrescentado'
+  /**
+   * `grupo-criado` e `membro-acrescentado` sao os dois kinds de pai (`H-88`).
+   *
+   * **`entrada-nova` saiu do contrato em 21/09/2026**, sem produtor desde
+   * `D-53`: nenhuma resposta o carregava, e mante-lo prometia ao cliente um
+   * desfecho que a rota nao tem como devolver.
+   */
+  outcome: 'regra-acrescentada' | 'sem-efeito' | 'grupo-criado' | 'membro-acrescentado'
   key: string
   label: string
   value: string

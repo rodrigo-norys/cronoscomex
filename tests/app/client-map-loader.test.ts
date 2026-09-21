@@ -243,6 +243,11 @@ describe('loadClientMap — a secao "groups"', () => {
  * O que estes casos protegem e o arquivo do OPERADOR. Ele carrega `_origem`,
  * `_comentario_*` e `_nota`, que sao a documentacao do formato, e a grafia dos
  * valores e dele — serializar o mapa em memoria por cima apagaria os dois.
+ *
+ * **Quatro deles diziam `entrada-nova` e passaram a `regra-acrescentada` em
+ * 21/09/2026**, sem mudar de assunto: o kind antigo saiu do contrato por nao
+ * ter produtor desde `D-53`, e o CAMINHO que eles exercem — o que escreve
+ * direto em `clients`, fora do de pai — continua vivo servindo o novo.
  */
 describe('saveClientRule', () => {
   it('cria o arquivo quando ele nao existe', () => {
@@ -252,7 +257,7 @@ describe('saveClientRule', () => {
 
     saveClientRule(
       {
-        kind: 'entrada-nova',
+        kind: 'regra-acrescentada',
         match: 'exact',
         field: 'clt',
         key: 'ALFA',
@@ -280,7 +285,7 @@ describe('saveClientRule', () => {
 
     saveClientRule(
       {
-        kind: 'entrada-nova',
+        kind: 'regra-acrescentada',
         match: 'exact',
         field: 'clt',
         key: 'ZETA',
@@ -304,7 +309,7 @@ describe('saveClientRule', () => {
 
     saveClientRule(
       {
-        kind: 'entrada-nova',
+        kind: 'regra-acrescentada',
         match: 'exact',
         field: 'clt',
         key: 'ZETA',
@@ -397,7 +402,7 @@ describe('saveClientRule', () => {
   it('RECUSA o caminho padrao sob NODE_ENV=test', () => {
     expect(() =>
       saveClientRule({
-        kind: 'entrada-nova',
+        kind: 'regra-acrescentada',
         match: 'exact',
         field: 'clt',
         key: 'ALFA',
