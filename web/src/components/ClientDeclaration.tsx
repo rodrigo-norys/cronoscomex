@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import {
+  type ClientField,
   type ClientMatch,
   type ClientName,
   createClientRule,
@@ -41,6 +42,25 @@ import { type RuleReachState, useClientKeys, useRuleReach } from '../hooks/usePe
 const PENDING_VIEWPORT = 'pending-viewport overflow-y-auto'
 
 /**
+ * As tres colunas onde uma regra pode procurar (21/09/2026).
+ *
+ * **A aba diz a coluna, e o rotulo do campo repete a palavra** de proposito: o
+ * operador digita num campo, nao numa aba, e o rotulo e o que ele le no instante
+ * de digitar.
+ */
+const CAMPOS: readonly { id: ClientField; aba: string; valor: string }[] = [
+  { id: 'clt', aba: 'Por CLT', valor: 'Valor na coluna CLT' },
+  { id: 'ref', aba: 'Por REF', valor: 'Valor na coluna REF' },
+  { id: 'importer', aba: 'Por IMPORTADOR', valor: 'Valor na coluna IMPORTADOR' },
+]
+
+const nomeDaColuna = (field: ClientField): string =>
+  field === 'ref' ? 'REF' : field === 'importer' ? 'IMPORTADOR' : 'CLT'
+
+const rotuloDoValor = (field: ClientField): string =>
+  CAMPOS.find((campo) => campo.id === field)?.valor ?? 'Valor na coluna CLT'
+
+/**
  * A divida de declaracao do mapa de clientes (`H-88`).
  *
  * **Ela vive aqui, e nao na Pagina Clientes** (`D-32`): e manutencao de
@@ -58,14 +78,20 @@ export function ClientDeclaration({ dataVersion }: { dataVersion: number }) {
    * Pagina Operacional usa para a edicao em linha (`editVersion`).
    */
   const [version, setVersion] = useState(0)
-  const state = useClientKeys(dataVersion + version)
+  const [field, setField] = useState<ClientField>('clt')
+  /*
+    **A lista acompanha a aba** (21/09/2026): trocar para "Por REF" recarrega a
+    lista com as REFs, e nao com as grafias de CLT. Declarar numa coluna olhando
+    a lista de outra obrigaria a procurar na planilha o valor que se vai digitar.
+  */
+  const state = useClientKeys(dataVersion + version, field)
   const [match, setMatch] = useState<ClientMatch>('exact')
   const [value, setValue] = useState('')
   const [label, setLabel] = useState('')
   const [refusal, setRefusal] = useState('')
   const [done, setDone] = useState('')
   const [saving, setSaving] = useState(false)
-  const reach = useRuleReach(match, value, dataVersion + version)
+  const reach = useRuleReach(match, value, dataVersion + version, field)
 
   /**
    * Quantas grafias ainda nao tem dono.
@@ -120,7 +146,7 @@ export function ClientDeclaration({ dataVersion }: { dataVersion: number }) {
     setRefusal('')
     setDone('')
     try {
-      const answer = await createClientRule(match, value, label)
+      const answer = await createClientRule(match, value, label, field)
       setDone(
         answer.outcome === 'sem-efeito'
           ? `"${answer.value}" já pertencia a ${answer.label}. Nada mudou.`
@@ -181,16 +207,18 @@ export function ClientDeclaration({ dataVersion }: { dataVersion: number }) {
       */}
       {state.status === 'pronto' && state.keys.total > 0 && (
         <p className="mt-2 text-sm text-text-secondary">
-          A coluna CLT tem{' '}
-          <strong className="font-mono tabular-nums text-text-primary">{state.keys.total}</strong>{' '}
-          valores diferentes.{' '}
+          Aqui você dá nome aos seus clientes. O painel agrupa os processos pelo que está escrito em{' '}
+          <strong className="text-text-primary">CLT</strong>,{' '}
+          <strong className="text-text-primary">REF</strong> ou{' '}
+          <strong className="text-text-primary">IMPORTADOR</strong> — e enquanto um cliente não for
+          declarado, os gráficos mostram o que a célula diz, em vez do nome dele.{' '}
           {semDono === 0 ? (
-            'Todos já têm cliente declarado.'
+            'No momento, não há nada esperando declaração.'
           ) : (
             <>
-              Em <strong className="font-mono tabular-nums text-text-primary">{semDono}</strong>{' '}
-              deles o cliente ainda não foi declarado, e nesses o painel mostra o que está escrito
-              na célula em vez do nome do cliente.
+              Hoje há{' '}
+              <strong className="font-mono tabular-nums text-text-primary">{semDono}</strong>{' '}
+              {semDono === 1 ? 'valor esperando' : 'valores esperando'}.
             </>
           )}
         </p>
@@ -220,9 +248,14 @@ export function ClientDeclaration({ dataVersion }: { dataVersion: number }) {
           */}
           <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-2">
             <div>
-              <h3 className="text-xs font-medium text-text-secondary">Por declarar</h3>
+              {/* O titulo diz QUAL coluna esta na lista: trocada a aba, ela
+                  recarrega, e sem o nome da coluna o operador nao teria como
+                  saber o que esta vendo. */}
+              <h3 className="text-xs font-medium text-text-secondary">
+                Por declarar <span className="text-text-muted">· {nomeDaColuna(field)}</span>
+              </h3>
               <ul
-                aria-label="Grafias sem cliente declarado"
+                aria-label={`Valores de ${nomeDaColuna(field)} sem cliente declarado`}
                 // biome-ignore lint/a11y/noNoninteractiveTabindex: regiao rolavel precisa receber foco para ser percorrida do teclado (`SC 2.1.1`)
                 tabIndex={0}
                 className={`mt-2 flex flex-col gap-1 rounded-container ${PENDING_VIEWPORT}`}
@@ -277,6 +310,8 @@ export function ClientDeclaration({ dataVersion }: { dataVersion: number }) {
 
           <DeclareRule
             match={match}
+            field={field}
+            onField={setField}
             value={value}
             label={label}
             names={state.keys.names}
@@ -308,6 +343,8 @@ export function ClientDeclaration({ dataVersion }: { dataVersion: number }) {
  */
 function DeclareRule({
   match,
+  field,
+  onField,
   value,
   label,
   names,
@@ -321,6 +358,8 @@ function DeclareRule({
   onSubmit,
 }: {
   match: ClientMatch
+  field: ClientField
+  onField: (field: ClientField) => void
   value: string
   label: string
   names: ClientName[]
@@ -359,6 +398,31 @@ function DeclareRule({
     >
       <h3 className="text-sm font-medium text-text-secondary">Declarar um cliente</h3>
 
+      {/*
+        **Uma aba por coluna** (opcao B, escolhida pelo usuario em 21/09/2026).
+        A coluna escolhida fica visivel o tempo todo, sem abrir um seletor, e o
+        rotulo do campo de valor a acompanha — ate aqui ele dizia "na coluna
+        CLT" e seria falso nas outras duas.
+      */}
+      <div className="mt-2 flex flex-wrap gap-1" role="tablist" aria-label="Coluna onde buscar">
+        {CAMPOS.map((campo) => (
+          <button
+            key={campo.id}
+            type="button"
+            role="tab"
+            aria-selected={field === campo.id}
+            onClick={() => onField(campo.id)}
+            className={`motion-tint rounded-control px-3 py-1 text-sm ${
+              field === campo.id
+                ? 'bg-action-soft font-medium text-text-primary'
+                : 'text-text-secondary hover:bg-surface-hover'
+            }`}
+          >
+            {campo.aba}
+          </button>
+        ))}
+      </div>
+
       <div className="mt-2 flex flex-wrap items-end gap-2">
         <label className="flex flex-col text-xs text-text-secondary">
           Como comparar
@@ -377,7 +441,7 @@ function DeclareRule({
         </label>
 
         <label className="flex flex-col text-xs text-text-secondary">
-          Valor na coluna CLT
+          {rotuloDoValor(field)}
           <input
             type="text"
             value={value}
@@ -509,6 +573,19 @@ function DeclareRule({
  * "Apagar AV" sem perguntar — a alternativa foi oferecida e recusada.
 
  */
+/**
+ * O grupo e o filho dizem a mesma palavra — o caso do cliente cujo nome e o
+ * proprio valor da regra, e o unico que a opcao (a) precisa distinguir.
+ *
+ * Compara SEM caixa: a chave do grupo vem normalizada da carga e o rotulo do
+ * filho preserva a grafia digitada, entao `Dennis` e `DENNIS` sao a mesma
+ * palavra para quem le a tela.
+ */
+function mesmoNome(item: DeclaredClient): boolean {
+  if (item.parent === null) return false
+  return item.parent.label.trim().toUpperCase() === item.label.trim().toUpperCase()
+}
+
 function Declared({
   items,
   onRemove,
@@ -539,12 +616,20 @@ function Declared({
               key={item.key}
               className="flex flex-wrap items-baseline gap-x-3 rounded-control border border-border-subtle bg-surface-raised px-3 py-2 text-sm"
             >
+              {/*
+                **O nivel some quando pai e filho dizem a mesma palavra** —
+                opcao (a), escolhida pelo usuario em 18/09/2026. Com toda
+                declaracao virando grupo, o cliente cujo nome e o proprio valor
+                da regra apareceria como "DENNIS › DENNIS", que e exatamente o
+                que `D-35` recusou ao decidir que o filho nao herda o rotulo do
+                pai. O grupo existe por dentro; a tela nao repete.
+              */}
               <span className="font-mono font-medium text-text-primary">
-                {item.parent === null ? (
+                {mesmoNome(item) ? (
                   item.label
                 ) : (
                   <>
-                    <span className="text-text-secondary">{item.parent.label}</span>{' '}
+                    <span className="text-text-secondary">{item.parent?.label}</span>{' '}
                     <span className="text-text-muted">›</span> {item.label}
                   </>
                 )}
@@ -556,18 +641,28 @@ function Declared({
                 {item.keys} {item.keys === 1 ? 'grafia' : 'grafias'}
               </span>
 
-              {/* Só quem tem pai pode ser tirado dele: cliente solto não está
-                  em agrupamento nenhum, e apagar regra ficou fora desta fatia. */}
+              {/*
+                Todo declarado tem pai desde 18/09/2026, entao os botoes valem
+                para todos — era o que faltava para desfazer pela tela o cliente
+                que fora declarado solto.
+
+                **Um botao so quando o grupo diz a mesma palavra que o filho:**
+                ali "Tirar de" e "Desfazer" fazem a mesma coisa — `dissolves` e
+                verdadeiro com um membro —, e oferecer os dois seria pedir ao
+                operador que escolhesse entre caminhos identicos.
+              */}
               {item.parent !== null && (
                 <span className="ml-auto flex gap-2">
-                  <button
-                    type="button"
-                    disabled={removing !== ''}
-                    onClick={() => onRemove(item.parent?.key ?? '', item.key)}
-                    className="rounded-control border border-border-control px-2 py-0.5 text-xs text-text-secondary hover:bg-surface-base disabled:text-control-disabled-fg"
-                  >
-                    Tirar de {item.parent.label}
-                  </button>
+                  {!mesmoNome(item) && (
+                    <button
+                      type="button"
+                      disabled={removing !== ''}
+                      onClick={() => onRemove(item.parent?.key ?? '', item.key)}
+                      className="rounded-control border border-border-control px-2 py-0.5 text-xs text-text-secondary hover:bg-surface-base disabled:text-control-disabled-fg"
+                    >
+                      Tirar de {item.parent.label}
+                    </button>
+                  )}
                   <button
                     type="button"
                     disabled={removing !== ''}

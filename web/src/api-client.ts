@@ -1,5 +1,10 @@
 import type { Conflict, WriteRefusal } from '../../src/app/write-guard.ts'
-import type { ClientMatch, ClientName, DeclaredClient } from '../../src/domain/client-mapper.ts'
+import type {
+  ClientField,
+  ClientMatch,
+  ClientName,
+  DeclaredClient,
+} from '../../src/domain/client-mapper.ts'
 import type { ColorTarget } from '../../src/domain/color-mapper.ts'
 import type { AlertsResponse } from '../../src/http/routes/alerts.ts'
 import type { ApplyResponse } from '../../src/http/routes/apply.ts'
@@ -45,6 +50,7 @@ import type {
 export type {
   AlertsResponse,
   ApplyResponse,
+  ClientField,
   ClientGroupRemovedResponse,
   ClientKeysResponse,
   ClientMatch,
@@ -171,8 +177,12 @@ export async function getProcesses(
  * Mesmo `503` de `getIndicators`: lista vazia enquanto nao houve leitura
  * afirmaria que nao falta declarar nada.
  */
-export async function getClientKeys(signal?: AbortSignal): Promise<ClientKeysResponse> {
-  const response = await fetch('/api/clients', signal ? { signal } : undefined)
+export async function getClientKeys(
+  signal?: AbortSignal,
+  /** A coluna que a lista mostra (21/09/2026). Omitida, o servidor usa `clt`. */
+  field: ClientField = 'clt',
+): Promise<ClientKeysResponse> {
+  const response = await fetch(`/api/clients?field=${field}`, signal ? { signal } : undefined)
   if (response.status === 503) throw new NoReadYetError('GET /api/clients')
   if (!response.ok) throw new Error(`GET /api/clients respondeu ${response.status}`)
 
@@ -189,8 +199,10 @@ export async function getRuleReach(
   match: ClientMatch,
   value: string,
   signal?: AbortSignal,
+  /** A coluna onde a regra procura (21/09/2026). Omitida, o servidor usa `clt`. */
+  field: ClientField = 'clt',
 ): Promise<RuleReachResponse> {
-  const query = `?match=${match}&value=${encodeURIComponent(value)}`
+  const query = `?match=${match}&value=${encodeURIComponent(value)}&field=${field}`
   const response = await fetch(`/api/clients/preview${query}`, signal ? { signal } : undefined)
   if (response.status === 503) throw new NoReadYetError('GET /api/clients/preview')
   if (!response.ok) throw new Error(`GET /api/clients/preview respondeu ${response.status}`)
@@ -215,11 +227,13 @@ export async function createClientRule(
   match: ClientMatch,
   value: string,
   label: string,
+  /** A coluna onde a regra procura (21/09/2026). Omitido, o servidor usa `clt`. */
+  field: ClientField = 'clt',
 ): Promise<ClientRuleCreatedResponse> {
   const response = await fetch('/api/clients/rules', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ match, value, label }),
+    body: JSON.stringify({ match, value, label, field }),
   })
   if (!response.ok) {
     const body = (await response.json()) as { error?: { message?: string } }

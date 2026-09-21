@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import {
+  type ClientField,
   type ClientKeysResponse,
   type ClientMatch,
   getClientKeys,
@@ -25,7 +26,7 @@ export type ClientKeysState =
   | { status: 'semLeitura' }
   | { status: 'erro'; message: string }
 
-export function useClientKeys(dataVersion: number): ClientKeysState {
+export function useClientKeys(dataVersion: number, field: ClientField = 'clt'): ClientKeysState {
   const [state, setState] = useState<ClientKeysState>({ status: 'carregando' })
 
   // `dataVersion` e gatilho, nao valor lido — mesmo caso de `useIndicators`. Sem
@@ -35,7 +36,7 @@ export function useClientKeys(dataVersion: number): ClientKeysState {
   useEffect(() => {
     const controller = new AbortController()
 
-    getClientKeys(controller.signal)
+    getClientKeys(controller.signal, field)
       .then((keys) => setState({ status: 'pronto', keys }))
       .catch((cause: Error) => {
         if (cause.name === 'AbortError') return
@@ -47,7 +48,7 @@ export function useClientKeys(dataVersion: number): ClientKeysState {
       })
 
     return () => controller.abort()
-  }, [dataVersion])
+  }, [dataVersion, field])
 
   return state
 }
@@ -76,6 +77,8 @@ export function useRuleReach(
   match: ClientMatch,
   value: string,
   dataVersion: number,
+  /** A coluna onde a regra procura (21/09/2026). Padrao `clt`, como antes. */
+  field: ClientField = 'clt',
 ): RuleReachState {
   const [state, setState] = useState<RuleReachState>({ status: 'ocioso' })
 
@@ -94,7 +97,7 @@ export function useRuleReach(
     // `useCommandSearch`.
     const agendado = setTimeout(() => {
       setState({ status: 'carregando' })
-      getRuleReach(match, limpo, controller.signal)
+      getRuleReach(match, limpo, controller.signal, field)
         .then((reach) => setState({ status: 'pronto', reach }))
         .catch((cause: Error) => {
           if (cause.name === 'AbortError') return
@@ -106,7 +109,7 @@ export function useRuleReach(
       clearTimeout(agendado)
       controller.abort()
     }
-  }, [match, value, dataVersion])
+  }, [match, value, dataVersion, field])
 
   return state
 }

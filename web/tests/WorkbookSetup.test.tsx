@@ -1036,7 +1036,8 @@ async function abrirPainelDeClientes(): Promise<HTMLElement> {
 async function itens(): Promise<HTMLElement[]> {
   const painel = await abrirPainelDeClientes()
   const lista = await within(painel).findByRole('list', {
-    name: 'Grafias sem cliente declarado',
+    // O rotulo nomeia a COLUNA desde 21/09/2026: a lista acompanha a aba.
+    name: 'Valores de CLT sem cliente declarado',
   })
   return within(lista).findAllByRole('listitem')
 }
@@ -1095,7 +1096,7 @@ describe('clientes por declarar', () => {
 
     const botao = await within(painel).findByRole('button', { name: 'Declarar clientes' })
     expect(botao.getAttribute('aria-expanded')).toBe('false')
-    expect(within(painel).queryByRole('list', { name: 'Grafias sem cliente declarado' })).toBeNull()
+    expect(within(painel).queryByRole('list', { name: /sem cliente declarado/ })).toBeNull()
   })
 
   it('abre e recolhe no lugar, sem trocar de pagina', async () => {
@@ -1108,7 +1109,7 @@ describe('clientes por declarar', () => {
     expect(botao.getAttribute('aria-expanded')).toBe('true')
 
     fireEvent.click(botao)
-    expect(within(painel).queryByRole('list', { name: 'Grafias sem cliente declarado' })).toBeNull()
+    expect(within(painel).queryByRole('list', { name: /sem cliente declarado/ })).toBeNull()
   })
 
   /** O resumo vive FORA do contentor recolhivel: e o unico lugar onde a divida
@@ -1122,10 +1123,17 @@ describe('clientes por declarar', () => {
     const painel = await secao()
     await within(painel).findByRole('button', { name: 'Declarar clientes' })
 
-    expect(painel.textContent).toContain('A coluna CLT tem')
-    expect(painel.textContent).toContain('509')
+    /*
+      A descricao ficou GENERICA em 21/09/2026, e cita as tres colunas: com a
+      declaracao podendo vir de CLT, REF ou IMPORTADOR, a frase anterior —
+      "A coluna CLT tem 509 valores diferentes" — prometia uma contagem de uma
+      coluna so, e passaria a mentir quando um processo ganhasse dono por outra.
+    */
+    expect(painel.textContent).toContain('CLT')
+    expect(painel.textContent).toContain('REF')
+    expect(painel.textContent).toContain('IMPORTADOR')
     // A fixture traz uma livre e uma declarada dentro de um pai.
-    expect(painel.textContent).toMatch(/Em\s*1\s*deles o cliente ainda não foi declarado/)
+    expect(painel.textContent).toMatch(/Hoje há\s*1\s*valor esperando/)
   })
 
   /**
@@ -1175,7 +1183,7 @@ describe('clientes por declarar', () => {
     )
     await itens()
 
-    const lista = await screen.findByRole('list', { name: 'Grafias sem cliente declarado' })
+    const lista = await screen.findByRole('list', { name: /sem cliente declarado/ })
 
     expect(lista.getAttribute('tabindex')).toBe('0')
     expect(lista.className).toContain('overflow-y-auto')
@@ -1223,8 +1231,18 @@ describe('clientes por declarar', () => {
     )
     await itens()
 
-    expect(api.calls).toContain('GET /api/clients')
-    expect(api.calls.some((call) => call.startsWith('GET /api/clients?'))).toBe(false)
+    /*
+      A coluna passou a viajar na query em 21/09/2026, e o que este teste guarda
+      continua sendo o mesmo: a divida de configuracao NAO segue o recorte da
+      tela (`D-32`, determinacao 2). Por isso a assercao passou de "sem query
+      nenhuma" para "so `field`" — filtro global aqui faria a divida sumir, e o
+      operador concluiria que declarou tudo.
+    */
+    const chamadas = api.calls.filter((call) => call.startsWith('GET /api/clients'))
+    expect(chamadas.length).toBeGreaterThan(0)
+    for (const call of chamadas) {
+      expect(call).toMatch(/^GET \/api\/clients\?field=(clt|ref|importer)$/)
+    }
   })
 })
 
@@ -1331,7 +1349,8 @@ describe('declarar um cliente', () => {
     fireEvent.click(botao)
 
     await waitFor(() => expect(api.ruleBodies).toHaveLength(1))
-    expect(api.ruleBodies[0]).toEqual({ match: 'prefix', value: 'Y', label: 'Vivi' })
+    // `field` viaja desde 21/09/2026, e `clt` e a aba em que o formulario abre.
+    expect(api.ruleBodies[0]).toEqual({ match: 'prefix', value: 'Y', label: 'Vivi', field: 'clt' })
   })
 
   /** Clicar na grafia poupa digitar o que a lista ja mostra. */
@@ -1366,7 +1385,7 @@ describe('declarar um cliente', () => {
       <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
     )
     const botao = await formulario()
-    const antes = api.calls.filter((call) => call === 'GET /api/clients').length
+    const antes = api.calls.filter((call) => call.startsWith('GET /api/clients?')).length
 
     preencher('Y', 'Vivi')
     await screen.findByText(/passa a consolidar/i)
@@ -1375,7 +1394,9 @@ describe('declarar um cliente', () => {
     expect(await screen.findByText(/Declarado: Vivi\./)).toBeTruthy()
     expect((screen.getByLabelText(/valor na coluna clt/i) as HTMLInputElement).value).toBe('')
     await waitFor(() =>
-      expect(api.calls.filter((call) => call === 'GET /api/clients').length).toBeGreaterThan(antes),
+      expect(
+        api.calls.filter((call) => call.startsWith('GET /api/clients?')).length,
+      ).toBeGreaterThan(antes),
     )
   })
 })
@@ -1481,20 +1502,52 @@ describe('escolher o nome do cliente', () => {
  * ranking com a contagem que sempre teve.
  */
 describe('desfazer o agrupamento', () => {
-  it('oferece tirar do pai e desfazer o pai, so em quem tem pai', async () => {
+  it('oferece os dois botoes quando o pai tem nome proprio', async () => {
     render(
       <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
     )
     const lista = await declarados()
 
-    // `AV` esta dentro de Vivi; `Dennis` esta solto.
+    // `AV` esta dentro de Vivi: dois caminhos diferentes, dois botoes.
     expect(
       within(lista[0] as HTMLElement).getByRole('button', { name: /tirar de vivi/i }),
     ).toBeTruthy()
     expect(
       within(lista[0] as HTMLElement).getByRole('button', { name: /desfazer vivi/i }),
     ).toBeTruthy()
-    expect(within(lista[1] as HTMLElement).queryAllByRole('button')).toEqual([])
+  })
+
+  /**
+   * A opcao (a), escolhida pelo usuario em 18/09/2026.
+   *
+   * `Dennis` foi declarado quando cliente solto existia, e a carga o le como
+   * grupo de um membro. Pai e filho dizem a mesma palavra: a tela nao a repete,
+   * e nao pede ao operador que escolha entre dois caminhos identicos.
+   */
+  it('o declarado cujo nome e o proprio valor nao repete a palavra nem duplica o botao', async () => {
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
+    const lista = await declarados()
+    const dennis = lista[1] as HTMLElement
+
+    expect(dennis.textContent).not.toMatch(/›/)
+    expect(within(dennis).queryByRole('button', { name: /tirar de/i })).toBeNull()
+    expect(within(dennis).getByRole('button', { name: /desfazer dennis/i })).toBeTruthy()
+  })
+
+  /**
+   * O que a mudanca de 18/09/2026 conserta: ate ela, `Dennis` nao tinha botao
+   * nenhum — cliente solto nao estava em agrupamento, e apagar regra ficara
+   * fora de `H-88`. Desfazer uma declaracao exigia editar o JSON a mao.
+   */
+  it('o declarado herdado passa a ter como ser desfeito pela tela', async () => {
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
+    const lista = await declarados()
+
+    expect(within(lista[1] as HTMLElement).queryAllByRole('button')).toHaveLength(1)
   })
 
   it('tirar do pai chama a rota do membro, e apaga a declaracao', async () => {
@@ -1528,12 +1581,14 @@ describe('desfazer o agrupamento', () => {
       <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
     )
     const lista = await declarados()
-    const antes = api.calls.filter((call) => call === 'GET /api/clients').length
+    const antes = api.calls.filter((call) => call.startsWith('GET /api/clients?')).length
 
     fireEvent.click(within(lista[0] as HTMLElement).getByRole('button', { name: /tirar de vivi/i }))
 
     await waitFor(() =>
-      expect(api.calls.filter((call) => call === 'GET /api/clients').length).toBeGreaterThan(antes),
+      expect(
+        api.calls.filter((call) => call.startsWith('GET /api/clients?')).length,
+      ).toBeGreaterThan(antes),
     )
   })
 
@@ -1547,5 +1602,83 @@ describe('desfazer o agrupamento', () => {
     fireEvent.click(within(lista[0] as HTMLElement).getByRole('button', { name: /tirar de vivi/i }))
 
     expect(await screen.findByText('Esse agrupamento nao existe mais.')).toBeTruthy()
+  })
+})
+
+/**
+ * As abas de coluna no formulario de declaracao (21/09/2026).
+ *
+ * Opcao B do artefato, escolhida pelo usuario: a coluna escolhida fica visivel
+ * o tempo todo, e o rotulo do campo de valor a acompanha — ate aqui ele dizia
+ * "na coluna CLT" e seria falso nas outras duas.
+ */
+describe('declarar por CLT, REF ou IMPORTADOR', () => {
+  const abas = async (): Promise<HTMLElement> => {
+    await abrirPainelDeClientes()
+    return screen.getByRole('tablist', { name: /coluna onde buscar/i })
+  }
+
+  it('oferece as tres colunas, abrindo em CLT', async () => {
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
+    const lista = await abas()
+    const botoes = within(lista).getAllByRole('tab')
+
+    expect(botoes.map((b) => b.textContent)).toEqual(['Por CLT', 'Por REF', 'Por IMPORTADOR'])
+    expect(botoes[0]?.getAttribute('aria-selected')).toBe('true')
+  })
+
+  it('o rotulo do campo de valor acompanha a aba', async () => {
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
+    const lista = await abas()
+
+    expect(screen.getByLabelText('Valor na coluna CLT')).toBeTruthy()
+
+    fireEvent.click(within(lista).getByRole('tab', { name: 'Por REF' }))
+    expect(screen.getByLabelText('Valor na coluna REF')).toBeTruthy()
+
+    fireEvent.click(within(lista).getByRole('tab', { name: 'Por IMPORTADOR' }))
+    expect(screen.getByLabelText('Valor na coluna IMPORTADOR')).toBeTruthy()
+  })
+
+  it('envia a coluna escolhida junto da regra', async () => {
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
+    await abrirPainelDeClientes()
+    const botao = await screen.findByRole('button', { name: /^declarar$/i })
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Por IMPORTADOR' }))
+    fireEvent.change(screen.getByLabelText(/valor na coluna importador/i), {
+      target: { value: 'ALFA' },
+    })
+    fireEvent.change(screen.getByLabelText(/nome do cliente/i), {
+      target: { value: 'Cliente Alfa' },
+    })
+    await screen.findByText(/passa a consolidar/i)
+    fireEvent.click(botao)
+
+    await waitFor(() => expect(api.ruleBodies).toHaveLength(1))
+    expect(api.ruleBodies[0]).toMatchObject({ field: 'importer', value: 'ALFA' })
+  })
+
+  /**
+   * A descricao deixou de prometer a contagem de UMA coluna: com tres, dizer
+   * "a coluna CLT tem 509 valores" passaria a mentir assim que um processo
+   * ganhasse dono por REF.
+   */
+  it('a descricao cita as tres colunas, sem prometer contagem de uma so', async () => {
+    render(
+      <WorkbookSetup dataVersion={1} firstRun={false} schemaDivergences={[]} onSaved={onSaved} />,
+    )
+    const painel = await secao()
+
+    expect(painel.textContent).not.toContain('A coluna CLT tem')
+    expect(painel.textContent).toMatch(/CLT/)
+    expect(painel.textContent).toMatch(/REF/)
+    expect(painel.textContent).toMatch(/IMPORTADOR/)
   })
 })
