@@ -125,7 +125,7 @@ afterEach(() => {
 })
 
 describe('GET /api/history/monthly', () => {
-  it('devolve as quatro chaves do contrato', async () => {
+  it('devolve as cinco chaves do contrato', async () => {
     writeEvents(event('A', '2026-08-01T12:00:00.000Z', 'em_andamento'))
 
     const resposta = await server().inject({ method: 'GET', url: '/api/history/monthly' })
@@ -136,6 +136,7 @@ describe('GET /api/history/monthly', () => {
     expect(Object.keys(resposta.json()).sort()).toEqual([
       'historyStartedAt',
       'reconstructed',
+      'registrations',
       'series',
       'truncated',
     ])
@@ -375,5 +376,84 @@ describe('GET /api/history/monthly — serie reconstruida (H-54)', () => {
 
     expect(body.series).toHaveLength(1)
     expect(body.reconstructed.points).toHaveLength(3)
+  })
+})
+
+/**
+ * `D-56`. A rota so serializa: a contagem vive em `src/domain/history.ts`.
+ *
+ * O comprimento da serie depende do mes CORRENTE — ela vai do primeiro RG ate
+ * ele —, e por isso nada aqui assere quantos pontos ha: o intervalo e exercido
+ * no dominio, com `HOJE` fixo. Aqui se verifica a fiacao e o recorte.
+ */
+describe('GET /api/history/monthly — registros do mes (D-56)', () => {
+  const civil = (iso: string): Date => new Date(`${iso}T00:00:00Z`)
+
+  const comRegistros = () =>
+    state({
+      processes: [
+        process('A', 'desembaracado', {
+          clientKey: 'ACME',
+          eta2: civil('2026-01-10'),
+          registrationDate: civil('2026-02-05'),
+        }),
+        process('B', 'em_andamento', {
+          clientKey: 'ACME',
+          eta2: civil('2026-01-12'),
+          registrationDate: civil('2026-02-20'),
+        }),
+        process('C', 'em_andamento', {
+          clientKey: 'OUTRO',
+          eta2: civil('2026-03-20'),
+          registrationDate: null,
+        }),
+      ],
+    })
+
+  interface RegistrationBody {
+    registrations: { points: { month: string; registered: number; cleared: number }[] }
+  }
+
+  const ponto = (body: RegistrationBody, month: string) =>
+    body.registrations.points.find((p) => p.month === month)
+
+  // O recorte por categoria: B tem RG e nao esta desembaracado, que e A-05.
+  it('conta todo RG em `registered` e so o desembaracado em `cleared`', async () => {
+    const body = (
+      await server(comRegistros()).inject({ method: 'GET', url: '/api/history/monthly' })
+    ).json()
+
+    expect(ponto(body, '2026-02')).toEqual({ month: '2026-02', registered: 2, cleared: 1 })
+    expect(body.registrations.missingRegistration).toBe(1)
+  })
+
+  // Nao acumula: janeiro nao tem RG nenhum, e o mes de fevereiro nao soma o dele.
+  it('conta o mes, e nao o acumulado ate ele', async () => {
+    const body = (
+      await server(comRegistros()).inject({ method: 'GET', url: '/api/history/monthly' })
+    ).json()
+
+    expect(ponto(body, '2026-02')?.registered).toBe(2)
+    expect(ponto(body, '2026-03')?.registered).toBe(0)
+  })
+
+  it('recorta os registros pelos mesmos filtros globais', async () => {
+    const body = (
+      await server(comRegistros()).inject({
+        method: 'GET',
+        url: '/api/history/monthly?client=OUTRO',
+      })
+    ).json()
+
+    expect(body.registrations).toEqual({ points: [], missingRegistration: 1 })
+  })
+
+  // Mesmo precedente da reconstruida: a janela e da serie OBSERVADA.
+  it('nao aplica a janela `months` aos registros', async () => {
+    const body = (
+      await server(comRegistros()).inject({ method: 'GET', url: '/api/history/monthly?months=1' })
+    ).json()
+
+    expect(ponto(body, '2026-02')?.registered).toBe(2)
   })
 })

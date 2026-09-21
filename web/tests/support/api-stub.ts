@@ -234,6 +234,17 @@ export function monthlyHistoryFixture(
       missingEta2: 64,
       missingRegistration: 166,
     },
+    // `D-56`. A serie de registros do mes, que nao acumula. Os tres pontos sao
+    // a forma medida em 21/09/2026: o RG mais recente e 31/07, e o eixo alcanca
+    // o mes corrente com zero medido.
+    registrations: {
+      points: [
+        { month: '2026-07', registered: 75, cleared: 74 },
+        { month: '2026-08', registered: 0, cleared: 0 },
+        { month: '2026-09', registered: 0, cleared: 0 },
+      ],
+      missingRegistration: 167,
+    },
     historyStartedAt: '2026-08-03T14:22:31.004Z',
     truncated: true,
     ...overrides,
