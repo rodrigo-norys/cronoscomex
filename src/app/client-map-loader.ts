@@ -1,5 +1,6 @@
 import { existsSync, renameSync, writeFileSync } from 'node:fs'
 import {
+  type ClientField,
   type ClientGroup,
   type ClientGroupMember,
   type ClientGroupRemoval,
@@ -40,6 +41,7 @@ export class ClientMapError extends Error {
   override readonly name = 'ClientMapError'
 }
 
+const FIELDS: readonly ClientField[] = ['clt', 'ref', 'importer']
 const MATCHES: readonly ClientMatch[] = ['prefix', 'contains', 'exact']
 
 export interface ClientMapFile {
@@ -83,9 +85,26 @@ function validateRule(raw: unknown, where: string): ClientRule {
     )
   }
 
+  /*
+    A coluna onde a regra procura (21/09/2026).
+
+    **Ausente vale `clt`, e a tolerancia e deliberada:** o mapa do operador tem
+    regras escritas antes desta data, e recusa-las na carga o deixaria sem
+    consolidacao nenhuma por um campo que ele nao sabia existir — o mesmo
+    tratamento que `team-map.json` da aos campos obsoletos de `H-93`.
+  */
+  const field = rule.field
+  if (field !== undefined && !FIELDS.includes(field as ClientField)) {
+    throw new ClientMapError(
+      `${where}.field invalido: ${String(field)}. Valores: ${FIELDS.join(', ')}.\n` +
+        'Omita o campo para a regra procurar na coluna CLT.',
+    )
+  }
+
   return {
     match,
     value,
+    ...(field === undefined || field === 'clt' ? {} : { field: field as ClientField }),
     ...(importer === undefined ? {} : { importer: importer as string }),
   }
 }
@@ -158,10 +177,46 @@ export function loadClientMap(path: string = DEFAULT_CLIENT_MAP_PATH): ClientMap
     seen.set(entry.key, position)
   }
 
+  const clients = normalizeClientMap(entries)
   return {
-    clients: normalizeClientMap(entries),
-    groups: validateGroups(file.groups, entries, path),
+    clients,
+    groups: withImplicitGroups(clients, validateGroups(file.groups, entries, path)),
   }
+}
+
+/**
+ * Todo cliente vive dentro de um grupo, inclusive os declarados ANTES de
+ * 18/09/2026 (determinacao do usuario: cliente solto deixou de existir).
+ *
+ * **A derivacao acontece na LEITURA, e o arquivo do operador nao e reescrito.**
+ * Migrar por gravacao automatica mexeria em `config/` na partida, sem ninguem
+ * pedir, e o mapa e dele. Lido assim, o cliente herdado ganha o par de botoes
+ * que so quem tinha pai recebia, e `planGroupRemoval` passa a alcanca-lo — era
+ * o que faltava para desfazer uma declaracao solta pela tela, em vez de pelo
+ * JSON.
+ *
+ * O grupo implicito tem a chave e o rotulo do proprio cliente. A tela nao
+ * repete a palavra: `ClientDeclaration` esconde o nivel quando pai e filho
+ * coincidem.
+ */
+function withImplicitGroups(
+  clients: readonly ClientMapEntry[],
+  groups: readonly ClientGroup[],
+): ClientGroup[] {
+  const agrupados = new Set<string>()
+  for (const group of groups) {
+    for (const member of group.members) agrupados.add(normKey(member.client))
+  }
+
+  const derivados = clients
+    .filter((entry) => !agrupados.has(normKey(entry.key)))
+    .map((entry) => ({
+      key: entry.key,
+      label: entry.label,
+      members: [{ client: entry.key, label: entry.label }],
+    }))
+
+  return [...groups, ...derivados]
 }
 
 /**
@@ -345,9 +400,21 @@ export function saveClientRule(plan: ClientRulePlan, path?: string): void {
     (rule) =>
       rule.match === plan.match &&
       normKey(rule.value) === plan.value &&
+      // A COLUNA entra na comparacao desde 21/09/2026: `ALFA` em CLT e `ALFA`
+      // em IMPORTADOR sao regras diferentes, e tratá-las como a mesma faria a
+      // segunda declaracao virar um no-op silencioso.
+      (rule.field ?? 'clt') === plan.field &&
       rule.importer === undefined,
   )
-  if (!already) rules.push({ match: plan.match, value: plan.value })
+  // `clt` fica IMPLICITO no arquivo: e o padrao da carga, e escreve-lo em toda
+  // regra engrossaria o mapa do operador sem dizer nada novo.
+  if (!already) {
+    rules.push({
+      match: plan.match,
+      value: plan.value,
+      ...(plan.field === 'clt' ? {} : { field: plan.field }),
+    })
+  }
   entry.rules = rules
 
   if (at !== -1) clients.splice(at, 1)
@@ -411,7 +478,19 @@ export function removeClientGroup(removal: ClientGroupRemoval, path?: string): v
   const at = groups.findIndex(
     (group) => typeof group.key === 'string' && normKey(group.key) === normKey(removal.key),
   )
-  if (at === -1) return
+  /**
+   * **Grupo ausente do arquivo nao aborta a remocao**, desde 18/09/2026.
+   *
+   * O grupo pode ser IMPLICITO — derivado na leitura para o cliente declarado
+   * antes de cliente solto deixar de existir —, e nesse caso nao ha o que tirar
+   * de `groups`, so a entrada de `clients` a apagar. Ate aqui o `return`
+   * antecipado engolia o pedido: o operador clicava em "Desfazer", a tela
+   * recarregava, e o cliente continuava la.
+   */
+  if (at === -1) {
+    removeDeclaredClients(raw, removal, target)
+    return
+  }
 
   if (removal.kind === 'grupo-desfeito' || removal.dissolves) {
     groups.splice(at, 1)
@@ -423,11 +502,23 @@ export function removeClientGroup(removal: ClientGroupRemoval, path?: string): v
     )
   }
 
-  /**
-   * **As entradas saem junto** (08/09/2026): desagrupar e desdeclarar viraram
-   * uma operacao so, por escolha do usuario. O filho que SOBRA quando o pai se
-   * dissolve nao e apagado — ele nao foi pedido.
-   */
+  removeDeclaredClients(raw, removal, target, groups)
+}
+
+/**
+ * **As entradas saem junto** (08/09/2026): desagrupar e desdeclarar viraram uma
+ * operacao so, por escolha do usuario. O filho que SOBRA quando o pai se
+ * dissolve nao e apagado — ele nao foi pedido.
+ *
+ * `groups` omitido e o caminho do grupo implicito: nada muda em `groups`, e so
+ * as entradas de `clients` saem.
+ */
+function removeDeclaredClients(
+  raw: Record<string, unknown>,
+  removal: ClientGroupRemoval,
+  target: string,
+  groups?: RawGroup[],
+): void {
   if (removal.removes.length > 0) {
     const apagar = new Set(removal.removes.map((key) => normKey(key)))
     const clients = Array.isArray(raw.clients) ? (raw.clients as RawEntry[]) : []
@@ -436,7 +527,7 @@ export function removeClientGroup(removal: ClientGroupRemoval, path?: string): v
     )
   }
 
-  raw.groups = groups
+  if (groups !== undefined) raw.groups = groups
   writeRawMap(raw, target)
 }
 
@@ -474,14 +565,38 @@ function saveClientParent(
     }
   }
 
-  // O filho novo entra no FIM: regra que disputa lugar e so a `exact` sobre uma
-  // grafia, e aqui o operador esta declarando um conjunto.
+  /**
+   * O filho entra onde `beforeKey` mandar, e no FIM quando nao ha disputa.
+   *
+   * **`beforeKey` passou a chegar aqui em 18/09/2026**, com a primeira
+   * declaracao virando grupo: ate entao este caminho so recebia conjunto —
+   * `prefix` e `contains`, que nunca disputam lugar — e empurrar para o fim
+   * bastava. Agora ele recebe tambem a `exact` de uma grafia, e essa PRECISA
+   * vencer o prefixo que ja a captura: no fim da lista, a regra nova nunca seria
+   * alcancada e a declaracao viraria no-op silencioso (regra inviolavel 2).
+   */
   if (!clients.some((entry) => typeof entry.key === 'string' && normKey(entry.key) === child.key)) {
-    clients.push({
+    const entry: RawEntry = {
       key: child.key,
       label: child.label,
-      rules: [{ match: plan.match, value: plan.value }],
-    })
+      rules: [
+        {
+          match: plan.match,
+          value: plan.value,
+          ...(plan.field === 'clt' ? {} : { field: plan.field }),
+        },
+      ],
+    }
+    const before =
+      plan.beforeKey === null
+        ? -1
+        : clients.findIndex(
+            (candidate) =>
+              typeof candidate.key === 'string' && normKey(candidate.key) === plan.beforeKey,
+          )
+
+    if (before === -1) clients.push(entry)
+    else clients.splice(before, 0, entry)
   }
 
   const groups = Array.isArray(raw.groups) ? [...(raw.groups as RawGroup[])] : []

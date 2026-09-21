@@ -17,6 +17,31 @@ import { useFilterOptions } from './hooks/useFilterOptions.ts'
 import { useFilters } from './hooks/useFilters.ts'
 import { useNavCounts } from './hooks/useNavCounts.ts'
 import { PAGE_PARAMS } from './hooks/useProcessQuery.ts'
+import { TOP_N_PARAM } from './hooks/useTopN.ts'
+
+/**
+ * Que parametros pertencem a cada pagina — e, por consequencia, quais somem ao
+ * sair dela.
+ *
+ * **`topN` entrou em 21/09/2026, emendando `D-55`.** Aquela decisao o declarou
+ * GLOBAL, porque Clientes e Performance consomem os mesmos rankings e quem pede
+ * 20 numa quereria 20 na outra; o usuario decidiu o contrario depois de ver
+ * `?topN=50` sobreviver a troca de pagina. O custo e declarado: a Performance
+ * volta ao padrao de `app.json`, porque o valor escolhido nao viaja mais ate
+ * la.
+ *
+ * A tabela substituiu o teste literal `route.pageId === 'operational'`: com
+ * duas paginas tendo parametros proprios, a condicao passaria a enumerar
+ * excecoes, e a terceira as multiplicaria.
+ */
+const PARAMS_POR_PAGINA: Readonly<Record<string, readonly string[]>> = {
+  operational: PAGE_PARAMS,
+  clients: [TOP_N_PARAM],
+}
+
+/** Todos os parametros de pagina, de qualquer pagina. */
+const TODOS_OS_PARAMS: readonly string[] = Object.values(PARAMS_POR_PAGINA).flat()
+
 import { Alerts } from './pages/Alerts.tsx'
 import { Clients } from './pages/Clients.tsx'
 import { Home } from './pages/Home.tsx'
@@ -127,12 +152,13 @@ export function App() {
    * passada nao encontra nenhum dos parametros e sai na guarda.
    */
   useLayoutEffect(() => {
-    if (route.pageId === 'operational') return
+    const daqui: readonly string[] = PARAMS_POR_PAGINA[route.pageId] ?? []
+    const estranhos = TODOS_OS_PARAMS.filter((key) => !daqui.includes(key))
 
     const draft = new URLSearchParams(window.location.search)
-    if (!PAGE_PARAMS.some((key) => draft.has(key))) return
+    if (!estranhos.some((key) => draft.has(key))) return
 
-    for (const key of PAGE_PARAMS) draft.delete(key)
+    for (const key of estranhos) draft.delete(key)
     const text = draft.toString()
     replaceQuery(text === '' ? '' : `?${text}`)
   }, [route])

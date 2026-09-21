@@ -52,12 +52,30 @@ export function RankingBar({
       {entries.length === 0 ? (
         <p className="mt-3 text-sm text-text-secondary">{emptyMessage}</p>
       ) : (
-        <ol className="mt-3 flex flex-col gap-1">
-          {entries.map((entry) => (
+        /*
+          **A rolagem e do QUADRO, e nao da pagina** (21/09/2026), pelo mesmo
+          motivo de `ClientDeclaration` e da tabela da Operacional: com "Todos"
+          selecionado o ranking de clientes chega a 180 itens, e sem teto os
+          tres cards teriam alturas diferentes e a pagina cresceria com o mapa
+          do operador. O teto de 300 px e o que o Carbon usa no mesmo caso, e
+          vive em `ranking-viewport`, no `index.css`.
+
+          `overscroll-contain` impede que a rolagem vaze para a pagina ao chegar
+          ao fim da lista, e `tabIndex` nao e decoracao: regiao rolavel precisa
+          receber foco para ser percorrida do teclado (`SC 2.1.1`).
+        */
+        <ol
+          aria-label={`${title}, ${entries.length} itens`}
+          // biome-ignore lint/a11y/noNoninteractiveTabindex: regiao rolavel precisa receber foco para ser percorrida do teclado (`SC 2.1.1`)
+          tabIndex={0}
+          className="ranking-viewport mt-3 flex flex-col gap-1 overflow-y-auto overscroll-contain"
+        >
+          {entries.map((entry, index) => (
             <li key={entry.key}>
               <RankingRow
                 entry={entry}
                 largest={largest}
+                position={index + 1}
                 {...(onSelect ? { onSelect } : {})}
                 {...(secondary ? { secondary } : {})}
               />
@@ -98,12 +116,19 @@ function displayLabel(entry: RankingEntry): string {
 function RankingRow({
   entry,
   largest,
+  position,
   onSelect,
   secondary,
   nested = false,
 }: {
   entry: RankingEntry
   largest: number
+  /**
+   * A posicao no ranking, de 1 em diante. Ausente no membro de grupo, que nao
+   * disputa lugar: o grupo inteiro ocupa UMA posicao (`H-56`), e numerar os
+   * membros faria a lista parecer ter mais itens do que o corte pediu.
+   */
+  position?: number
   onSelect?: (key: string, isGroup: boolean) => void
   secondary?: (entry: RankingEntry) => ReactNode
   /** Membro de um grupo (`H-56`): recuado, mais baixo, e nunca um grupo. */
@@ -115,6 +140,26 @@ function RankingRow({
 
   const content = (
     <>
+      {/*
+        A posicao, em ordinal (21/09/2026).
+
+        **`aria-hidden`, e a escolha e deliberada:** a lista ja e um `<ol>`, e o
+        leitor de tela anuncia "item 3 de 10" por conta propria — repetir "3o"
+        no texto do botao diria a mesma coisa duas vezes. O numero visivel existe
+        para quem enxerga a lista rolada, onde o inicio saiu de vista.
+
+        A largura acomoda TRES digitos porque "Todos" leva o ranking de clientes
+        a 180 itens, e `tabular-nums` mantem a coluna alinhada quando o numero
+        passa de 9 para 10 e de 99 para 100.
+      */}
+      <span
+        aria-hidden="true"
+        className={`w-9 shrink-0 text-right font-mono tabular-nums ${
+          nested ? 'text-xs text-transparent' : 'text-xs text-text-muted'
+        }`}
+      >
+        {position === undefined ? '' : `${position}º`}
+      </span>
       {/* Com `secondary` a linha tem QUATRO slots de largura fixa, e a 320 px
           eles somam 348 antes da barra — `VN-1/A` mediu a pagina rolando ate
           385 (`H-67`). Abaixo de 640 o rotulo passa a ocupar a linha inteira e

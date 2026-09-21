@@ -308,30 +308,40 @@ export function mentionsDuimp(process: Process): boolean {
  * resolve sem limiar (ADR-0003). Quem traduz cor em chave e
  * `styleKeysByDisplay`, na fronteira.
  */
-export const CLEARANCE_DISPLAYS: readonly string[] = ['#FFE599', '#5B9BD5', '#A74F7B']
+/**
+ * As cores de exibicao que dizem DESEMBARACADO — verde e vermelho, nomeadas
+ * pelo usuario em 18/09/2026 (`D-54`).
+ *
+ * Sao as duas unicas cores que o arquivo usa para dizer canal, e por isso o
+ * numero coincide hoje com o `known` de `channelDistribution`. **A coincidencia
+ * e do mapa, nao da regra:** o cartao conta COR, e uma cor nova declarada com
+ * canal mudaria um sem mudar o outro.
+ */
+export const CLEARED_DISPLAYS: readonly string[] = ['#00FF00', '#FF0000']
 
-/** A cor de exibicao de linha branca, para IND-24 (`D-49`). */
+/**
+ * A cor de exibicao de linha branca.
+ *
+ * **Serve a DOIS cartoes, e eles nao sao o mesmo** (`D-54`): "Em desembaraco"
+ * conta toda linha branca, e "Chegando hoje" conta a branca cujo `eta2` e hoje.
+ * O segundo e subconjunto do primeiro, por escolha do usuario.
+ */
 export const WHITE_DISPLAYS: readonly string[] = ['#FFFFFF']
 
 /**
- * IND-23. O cartao "Em desembaraco" da Pagina Inicial, desde `D-49`.
+ * Conta as linhas pintadas com uma das cores dadas — IND-26 e IND-27 (`D-54`).
  *
- * **Uniao, nao intersecao:** a cor de desembaraco OU a mencao a DUIMP. Substitui
- * IND-03, que contava a categoria `em_desembaraco` de TD-01 — e **nao a
- * substitui no dominio**: a categoria continua saindo do STATUS, e e ela que o
- * filtro e a coluna Categoria da Pagina Operacional mostram.
+ * A cor e a da CELULA-ANCORA, que e a cor do processo em todo o resto do
+ * sistema (ADR-0003); `keys` chega resolvida de fora, como todo mapa que o
+ * dominio consome (ADR-0006). Chave que o mapa nao declara nao entra em conjunto
+ * nenhum, e a linha nao e contada — cor desconhecida nao vira cor proxima.
  *
- * Por isso este numero NAO e exclusivo com os outros cartoes: medido em
- * 18/09/2026, 165 dos 167 tem STATUS preenchido e ja aparecem noutro cartao. A
- * conferencia de A-12 deixou de somar cartoes por causa disso (`categoryCheck`).
+ * **Substitui o contador de IND-23, que viveu menos de um dia:** ele somava a
+ * cor de desembaraco OU o DUIMP no STATUS, e o usuario trocou os dois cartoes
+ * por criterio de cor puro na mesma tarde (`D-54`).
  */
-export function inClearanceCount(
-  processes: readonly Process[],
-  clearanceKeys: ReadonlySet<string>,
-): number {
-  return processes.filter(
-    (process) => clearanceKeys.has(process.styleKey) || mentionsDuimp(process),
-  ).length
+export function colorCount(processes: readonly Process[], keys: ReadonlySet<string>): number {
+  return processes.filter((process) => keys.has(process.styleKey)).length
 }
 
 /**
@@ -500,9 +510,35 @@ export function groupCountWithGroups(
 
   for (const group of grouped.values()) {
     if (group.segments) group.segments = sortRanking(group.segments)
+    // `delete`, e nao `= undefined`: `exactOptionalPropertyTypes` distingue a
+    // chave ausente da chave presente com `undefined`, e o contrato declara
+    // `segments?`, nao `segments: … | undefined`.
+    if (repeteONome(group)) delete group.segments
   }
 
   return sortRanking([...loose, ...grouped.values()]).slice(0, topN)
+}
+
+/**
+ * O grupo de um membro so, cujo nome e a propria grafia da coluna CLT.
+ *
+ * **Sem `segments`, a tela nao desenha ramo nenhum** — determinacao do usuario
+ * em 18/09/2026, ao ver `DENNIS` com um galho `DENNIS` de 47 embaixo de uma
+ * barra `DENNIS` de 47. Arvore que repete o rotulo e o numero do proprio tronco
+ * nao diz o que o tronco ja disse.
+ *
+ * **O critério é o NOME, e não a contagem de filhos** — o mesmo de
+ * `ClientDeclaration`, e de propósito: uma regra só no produto. Um grupo de um
+ * filho com nome DIFERENTE — `FAN` sobre a grafia `D2529` — mantém o ramo,
+ * porque ali ele informa qual grafia o nome consolida.
+ *
+ * Compara sem caixa: a chave do grupo vem normalizada e o rotulo do membro
+ * preserva a grafia da celula.
+ */
+function repeteONome(group: GroupCount): boolean {
+  const [único] = group.segments ?? []
+  if (único === undefined || group.segments?.length !== 1) return false
+  return único.label.trim().toUpperCase() === group.label.trim().toUpperCase()
 }
 
 function sortRanking(entries: GroupCount[]): GroupCount[] {

@@ -29,16 +29,31 @@ import { normKey } from './normalizer.ts'
 /** Como o valor da celula e comparado com `value`. Ambos ja normalizados. */
 export type ClientMatch = 'prefix' | 'contains' | 'exact'
 
+/**
+ * Em qual coluna a regra procura o valor (21/09/2026).
+ *
+ * **Ausente vale `clt`**, e a compatibilidade nao e detalhe: o mapa do operador
+ * tem regras escritas antes desta data, e recusa-las na carga o deixaria sem
+ * consolidacao nenhuma por um campo que ele nao sabia existir.
+ */
+export type ClientField = 'clt' | 'ref' | 'importer'
+
 export interface ClientRule {
   match: ClientMatch
   /** Ja normalizado por `normKey` na carga, para nao normalizar por linha. */
   value: string
+  /** A coluna onde `value` e procurado. Ausente, `clt` (21/09/2026). */
+  field?: ClientField
   /**
    * Qualifica a regra pelo importador, tambem normalizado. Ausente, a regra
    * vale para qualquer importador.
    *
    * Existe pelo prefixo de 62 processos que cobre tres clientes: sem qualificar,
    * ou a regra casa demais, ou o grupo inteiro fica sem consolidacao.
+   *
+   * **Nao se confunde com `field: 'importer'`, e os dois coexistem** por decisao
+   * do usuario em 21/09/2026: este RESTRINGE uma regra de outra coluna — CLT
+   * *e* importador X —, e aquele faz do importador a coluna procurada.
    */
   importer?: string
 }
@@ -58,16 +73,36 @@ export interface ClientResolution {
   mapped: boolean
 }
 
-function matches(rule: ClientRule, clientKey: string, importerKey: string): boolean {
-  if (rule.importer !== undefined && rule.importer !== importerKey) return false
+/**
+ * As tres colunas que uma regra pode procurar, ja normalizadas (`TD-04`).
+ *
+ * Objeto, e nao mais dois parametros posicionais: com a terceira coluna a lista
+ * de argumentos passaria a depender de ordem para distinguir valores do mesmo
+ * tipo, e uma quarta coluna repetiria a troca.
+ */
+export interface ClientFields {
+  readonly clt: string
+  readonly ref: string
+  readonly importer: string
+}
+
+function matches(rule: ClientRule, fields: ClientFields): boolean {
+  if (rule.importer !== undefined && rule.importer !== fields.importer) return false
+
+  const alvo =
+    rule.field === 'ref' ? fields.ref : rule.field === 'importer' ? fields.importer : fields.clt
+
+  // Celula vazia nunca casa: `''` como prefixo casaria tudo, e a coluna em
+  // branco e ausencia de dado, nao um valor a agrupar (regra inviolavel 3).
+  if (alvo === '') return false
 
   switch (rule.match) {
     case 'prefix':
-      return clientKey.startsWith(rule.value)
+      return alvo.startsWith(rule.value)
     case 'contains':
-      return clientKey.includes(rule.value)
+      return alvo.includes(rule.value)
     case 'exact':
-      return clientKey === rule.value
+      return alvo === rule.value
   }
 }
 
@@ -81,24 +116,23 @@ function matches(rule: ClientRule, clientKey: string, importerKey: string): bool
  * ferramenta de desempate do operador, e por isso ela e documentada no proprio
  * JSON em vez de ser um detalhe de implementacao.
  *
- * Celula vazia nunca casa regra alguma: `''` como prefixo casaria tudo, e a
- * carga ja recusa valor vazio — mas a guarda aqui e barata e local.
+ * Celula vazia nunca casa regra alguma — a guarda vive em `matches`, por
+ * coluna. **Ate 21/09/2026 ela vivia AQUI, sobre a CLT**, e devolvia "sem
+ * cliente" antes de olhar o mapa; com tres colunas isso passou a estar errado,
+ * porque um processo de CLT vazia pode ter dono por REF ou por importador.
  */
 export function resolveClient(
-  clientKey: string,
-  importerKey: string,
+  fields: ClientFields,
   map: readonly ClientMapEntry[],
 ): ClientResolution {
-  if (clientKey === '') return { key: '', label: '', mapped: false }
-
   for (const entry of map) {
     for (const rule of entry.rules) {
-      if (matches(rule, clientKey, importerKey)) {
+      if (matches(rule, fields)) {
         return { key: entry.key, label: entry.label, mapped: true }
       }
     }
   }
-  return { key: clientKey, label: clientKey, mapped: false }
+  return { key: fields.clt, label: fields.clt, mapped: false }
 }
 
 /**
@@ -114,6 +148,11 @@ export interface PendingClientSource {
   /** A grafia da celula, que a tela exibe. Pode diferir da chave (`TD-04`). */
   readonly clientRaw: string
   readonly importerKey: string
+}
+
+/** Os tres campos de um processo, na forma que `resolveClient` consome. */
+function camposDe(process: PendingClientSource): ClientFields {
+  return { clt: process.clientProcessKey, ref: process.ref, importer: process.importerKey }
 }
 
 export interface ClientKeyOwner {
@@ -181,13 +220,22 @@ export function clientKeys(
   processes: readonly PendingClientSource[],
   map: readonly ClientMapEntry[],
   groups: readonly ClientGroup[] = [],
+  /**
+   * A coluna que a lista mostra (21/09/2026).
+   *
+   * **Ela acompanha a aba do formulario**, por pedido do usuario: declarar por
+   * REF olhando uma lista de grafias de CLT obrigaria a procurar na planilha o
+   * valor que se vai digitar. Padrao `clt`, que e como a lista sempre foi.
+   */
+  field: ClientField = 'clt',
 ): ClientKeyEntry[] {
   const index = indexClientGroups(groups)
   const byGroupKey = new Map(groups.map((group) => [group.key, group]))
   const keys = new Map<string, ClientKeyEntry>()
 
   for (const process of processes) {
-    const key = process.clientProcessKey
+    const campos = camposDe(process)
+    const key = field === 'ref' ? campos.ref : field === 'importer' ? campos.importer : campos.clt
     if (key === '') continue
 
     const current = keys.get(key)
@@ -197,13 +245,18 @@ export function clientKeys(
       continue
     }
 
-    const owner = resolveClient(key, process.importerKey, map)
+    const owner = resolveClient(campos, map)
     const parentKey = owner.mapped ? resolveClientGroup(owner.key, index) : ''
     const parent = parentKey === '' ? undefined : byGroupKey.get(parentKey)
 
     keys.set(key, {
       key,
-      label: process.clientRaw,
+      /*
+        A grafia como o operador a ve na coluna MOSTRADA. Em CLT ela pode
+        diferir da chave (`TD-04`); em REF e IMPORTADOR a chave normalizada ja e
+        o que a celula diz, e inventar outra grafia seria adivinhar.
+      */
+      label: field === 'clt' ? process.clientRaw : key,
       count: 1,
       samples: [process.ref],
       client: owner.mapped ? { key: owner.key, label: owner.label } : null,
@@ -332,7 +385,7 @@ export function declaredClients(
     const key = process.clientProcessKey
     if (key === '') continue
 
-    const owner = resolveClient(key, process.importerKey, map)
+    const owner = resolveClient(camposDe(process), map)
     if (!owner.mapped) continue
 
     const target = declared.get(owner.key)
@@ -436,6 +489,8 @@ export function ruleReach(
   map: readonly ClientMapEntry[],
   match: ClientMatch,
   rawValue: string,
+  /** A coluna que a regra procura (21/09/2026). Padrao `clt`, como antes. */
+  field: ClientField = 'clt',
 ): RuleReach {
   const value = normKey(rawValue)
   const reach: RuleReach = {
@@ -451,16 +506,24 @@ export function ruleReach(
   // ate haver o que contar.
   if (value === '') return reach
 
-  const candidate: ClientRule = { match, value }
+  const candidate: ClientRule = { match, value, ...(field === 'clt' ? {} : { field }) }
   const free = new Map<string, number>()
   const taken = new Map<string, ReachedKey>()
 
   for (const process of processes) {
-    const key = process.clientProcessKey
-    if (key === '') continue
-    if (!matches(candidate, key, process.importerKey)) continue
+    const campos = camposDe(process)
+    /*
+      **A chave de agrupamento e a da COLUNA da regra** (21/09/2026), e nao mais
+      a grafia de CLT: uma regra por importador alcanca linhas cuja CLT esta
+      vazia, e agrupa-las sob `''` diria que a regra alcanca uma grafia so.
 
-    const owner = resolveClient(key, process.importerKey, map)
+      A guarda de celula vazia saiu daqui pelo mesmo motivo — ela vive em
+      `matches`, sobre a coluna certa.
+    */
+    const key = field === 'ref' ? campos.ref : field === 'importer' ? campos.importer : campos.clt
+    if (!matches(candidate, campos)) continue
+
+    const owner = resolveClient(campos, map)
     if (owner.mapped) {
       const current = taken.get(key)
       if (current === undefined) taken.set(key, { key, label: owner.label, count: 1 })
@@ -488,21 +551,23 @@ export function ruleReach(
  */
 export interface ClientRulePlan {
   /**
-   * **Os dois ultimos nasceram em 08/09/2026**, quando o usuario descreveu o
+   * **Os dois de PAI nasceram em 08/09/2026**, quando o usuario descreveu o
    * comportamento que quer: para ele nao ha dois conceitos — ha um nome que
-   * recebe conjuntos da coluna CLT, e o PAI e o que acontece quando o segundo
-   * conjunto chega ao mesmo nome.
+   * recebe conjuntos, e o pai e o que acontece quando um nome os recebe.
+   *
+   * **`entrada-nova` saiu em 21/09/2026**, e estava morto desde `D-53`: com
+   * toda declaracao virando grupo, a primeira passou a devolver `grupo-criado`,
+   * e nenhum caminho de `planClientRule` produzia mais o kind antigo. O
+   * tratamento em `saveClientRule` continua existindo e serve `regra-acrescentada`
+   * — o que saiu foi o rotulo sem produtor, nao o codigo que grava.
    */
-  kind:
-    | 'entrada-nova'
-    | 'regra-acrescentada'
-    | 'sem-efeito'
-    | 'grupo-criado'
-    | 'membro-acrescentado'
+  kind: 'regra-acrescentada' | 'sem-efeito' | 'grupo-criado' | 'membro-acrescentado'
   /** Chave normalizada da entrada alvo — o cliente, ou o PAI nos dois ultimos. */
   key: string
   /** Como a regra compara — `exact` sobre uma grafia, `prefix` sobre um grupo. */
   match: ClientMatch
+  /** Em que coluna ela procura (21/09/2026). `clt` reproduz o comportamento antigo. */
+  field: ClientField
   /** O rotulo como o operador escreveu — so a entrada nova o usa. */
   label: string
   /** A regra `exact` a acrescentar, com o valor da celula ja normalizado. */
@@ -554,6 +619,8 @@ export function planClientRule(
   map: readonly ClientMapEntry[],
   match: ClientMatch = 'exact',
   groups: readonly ClientGroup[] = [],
+  /** A coluna onde a regra procura (21/09/2026). Padrao `clt`, como antes. */
+  field: ClientField = 'clt',
 ): ClientRulePlan | ClientRuleRejection {
   const key = normKey(label)
   if (key === '') return 'ROTULO_VAZIO'
@@ -606,6 +673,7 @@ export function planClientRule(
       kind: already ? 'sem-efeito' : 'membro-acrescentado',
       key: parent.key,
       match,
+      field,
       label,
       value,
       beforeKey: null,
@@ -629,7 +697,16 @@ export function planClientRule(
   )
   if (isChild) return 'NOME_E_FILHO'
 
-  const current = resolveClient(value, importerKey, map)
+  /*
+    O valor digitado, posto NA COLUNA escolhida (21/09/2026): a disputa de lugar
+    de uma regra `exact` so faz sentido contra quem ja casa aquela mesma coluna.
+  */
+  const candidato: ClientFields = {
+    clt: field === 'clt' ? value : '',
+    ref: field === 'ref' ? value : '',
+    importer: field === 'importer' ? value : importerKey,
+  }
+  const current = resolveClient(candidato, map)
   const matchIndex =
     disputesPlace && current.mapped ? map.findIndex((entry) => entry.key === current.key) : -1
   const beforeKey = matchIndex === -1 ? null : (map[matchIndex]?.key ?? null)
@@ -644,11 +721,23 @@ export function planClientRule(
   const target = targetIndex === -1 ? null : map[targetIndex]
 
   if (disputesPlace && current.mapped && targetIndex !== -1 && current.key === target?.key) {
-    return { kind: 'sem-efeito', key: current.key, match, label, value, beforeKey: null }
+    return { kind: 'sem-efeito', key: current.key, match, field, label, value, beforeKey: null }
   }
 
+  /**
+   * **O nome e novo, e ja nasce PAI** — determinacao do usuario em 18/09/2026.
+   *
+   * Ate aqui a primeira declaracao criava um cliente solto, e o pai so nascia
+   * quando o SEGUNDO conjunto chegava ao mesmo nome (`D-35`). O usuario decidiu
+   * que o campo "Nome do cliente" declara sempre um grupo: cliente solto deixa
+   * de ser estado possivel, e com isso todo declarado passa a ter o par de
+   * botoes que so quem tinha pai recebia.
+   *
+   * Sem `demoted`: nao ha cliente anterior a rebaixar. `saveClientParent` ja
+   * tolera a ausencia — o grupo nasce com UM membro, e `members` deduplica.
+   */
   if (target === undefined || target === null) {
-    return { kind: 'entrada-nova', key, match, label, value, beforeKey }
+    return { kind: 'grupo-criado', key, match, field, label, value, beforeKey, child }
   }
 
   /**
@@ -665,6 +754,7 @@ export function planClientRule(
       kind: 'grupo-criado',
       key: target.key,
       match,
+      field,
       label,
       value,
       beforeKey: null,
@@ -679,6 +769,7 @@ export function planClientRule(
     kind: 'regra-acrescentada',
     key: target.key,
     match,
+    field,
     label,
     value,
     beforeKey: matchIndex !== -1 && targetIndex > matchIndex ? beforeKey : null,
@@ -750,6 +841,9 @@ export function normalizeClientMap(entries: readonly ClientMapEntry[]): ClientMa
     rules: entry.rules.map((rule) => ({
       match: rule.match,
       value: normKey(rule.value),
+      // `field` NAO passa por `normKey`: e um token do contrato, nao texto da
+      // planilha — a carga ja o recusou se nao for um dos tres.
+      ...(rule.field === undefined ? {} : { field: rule.field }),
       ...(rule.importer === undefined ? {} : { importer: normKey(rule.importer) }),
     })),
   }))

@@ -8,6 +8,7 @@ import {
 } from '../../app/client-map-loader.ts'
 import { store as defaultStore, type StoreAccess } from '../../app/process-store.ts'
 import {
+  type ClientField,
   type ClientGroup,
   type ClientKeyEntry,
   type ClientMapEntry,
@@ -65,13 +66,14 @@ export interface ClientKeysResponse {
 export type RuleReachResponse = RuleReach
 
 export interface ClientRuleCreatedResponse {
-  /** `grupo-criado` e `membro-acrescentado` sao os dois kinds de pai (`H-88`). */
-  outcome:
-    | 'entrada-nova'
-    | 'regra-acrescentada'
-    | 'sem-efeito'
-    | 'grupo-criado'
-    | 'membro-acrescentado'
+  /**
+   * `grupo-criado` e `membro-acrescentado` sao os dois kinds de pai (`H-88`).
+   *
+   * **`entrada-nova` saiu do contrato em 21/09/2026**, sem produtor desde
+   * `D-53`: nenhuma resposta o carregava, e mante-lo prometia ao cliente um
+   * desfecho que a rota nao tem como devolver.
+   */
+  outcome: 'regra-acrescentada' | 'sem-efeito' | 'grupo-criado' | 'membro-acrescentado'
   key: string
   label: string
   value: string
@@ -98,6 +100,22 @@ export interface ClientGroupRemovedResponse {
 }
 
 const MATCHES: readonly ClientMatch[] = ['prefix', 'contains', 'exact']
+
+/**
+ * As colunas onde uma regra pode procurar (21/09/2026).
+ *
+ * **Ausente vale `clt`, e nao e erro:** quem chamava a rota antes desta data
+ * nao mandava o campo, e recusar por isso quebraria a tela anterior contra o
+ * servidor novo — o modo de falha que a instalacao de 04/09/2026 registrou.
+ */
+const FIELDS: readonly ClientField[] = ['clt', 'ref', 'importer']
+
+function parseField(raw: unknown): ClientField | null {
+  if (raw === undefined || raw === null || raw === '') return 'clt'
+  return typeof raw === 'string' && (FIELDS as readonly string[]).includes(raw)
+    ? (raw as ClientField)
+    : null
+}
 
 const REMOVAL_REJECTIONS: Record<string, string> = {
   GRUPO_INEXISTENTE: 'Esse agrupamento nao existe mais.',
@@ -154,11 +172,18 @@ export function registerClientsRoutes(
     return true
   }
 
-  app.get('/api/clients', (_request, reply) => {
+  app.get('/api/clients', (request, reply) => {
     if (semLeitura(reply)) return reply
 
+    /*
+      A lista segue a COLUNA pedida (21/09/2026), e valor invalido cai em `clt`
+      em vez de recusar: o parametro escolhe o que a lista mostra, e derrubar o
+      painel por um `field=xyz` na URL seria desproporcional.
+    */
+    const field = parseField((request.query as { field?: unknown }).field) ?? 'clt'
+
     const state = store.getState()
-    const items = clientKeys(state.processes, map, groups)
+    const items = clientKeys(state.processes, map, groups, field)
     const body: ClientKeysResponse = {
       items,
       declared: declaredClients(state.processes, map, groups),
@@ -182,7 +207,20 @@ export function registerClientsRoutes(
       return reply.code(400).send(apiError('FILTRO_INVALIDO', 'Informe "value" como texto.'))
     }
 
-    const body: RuleReachResponse = ruleReach(store.getState().processes, map, match, query.value)
+    const field = parseField((query as { field?: unknown }).field)
+    if (field === null) {
+      return reply
+        .code(400)
+        .send(apiError('FILTRO_INVALIDO', `"field" deve ser um de: ${FIELDS.join(', ')}.`))
+    }
+
+    const body: RuleReachResponse = ruleReach(
+      store.getState().processes,
+      map,
+      match,
+      query.value,
+      field,
+    )
     return reply.send(body)
   })
 
@@ -210,7 +248,14 @@ export function registerClientsRoutes(
      * declaracao de um grupo cujas linhas tem importadores diferentes — que e o
      * caso normal do prefixo.
      */
-    const plan = planClientRule(body.value, '', body.label, map, match, groups)
+    const field = parseField((body as { field?: unknown }).field)
+    if (field === null) {
+      return reply
+        .code(400)
+        .send(apiError('CORPO_INVALIDO', `"field" deve ser um de: ${FIELDS.join(', ')}.`))
+    }
+
+    const plan = planClientRule(body.value, '', body.label, map, match, groups, field)
     if (typeof plan === 'string') {
       return reply.code(400).send(apiError('CORPO_INVALIDO', REJECTIONS[plan] ?? plan))
     }
