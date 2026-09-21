@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { existsSync, readdirSync, readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 import type { AppConfig } from '../../src/app/config.ts'
@@ -472,6 +473,33 @@ function declaredTokens(): Set<string> {
 
 const CITATIONS = citationsInComments()
 const DEFINED = definedIds()
+const TRACKED = trackedPaths()
+
+/**
+ * Os caminhos que o git rastreia — arquivos e os diretorios que os contem.
+ *
+ * **Os diretorios entram derivados, e nao listados:** `git ls-files` devolve
+ * arquivos, e um comentario que cita `src/domain/` estaria citando algo que a
+ * lista nao tem. Cada prefixo de cada arquivo rastreado vira uma entrada, com e
+ * sem a barra final, porque as duas grafias aparecem em comentario.
+ */
+function trackedPaths(): ReadonlySet<string> {
+  const saida = execFileSync('git', ['ls-files', '-z'], { encoding: 'utf-8' })
+  const paths = new Set<string>()
+
+  for (const arquivo of saida.split('\0')) {
+    if (arquivo === '') continue
+    paths.add(arquivo)
+
+    const partes = arquivo.split('/')
+    for (let corte = 1; corte < partes.length; corte += 1) {
+      const pasta = partes.slice(0, corte).join('/')
+      paths.add(pasta)
+      paths.add(`${pasta}/`)
+    }
+  }
+  return paths
+}
 
 describe('toda âncora citada em comentário ainda existe', () => {
   it('encontra citações — âncora contra guarda verde por vacuidade', () => {
@@ -495,8 +523,23 @@ describe('toda âncora citada em comentário ainda existe', () => {
     ).toEqual([])
   })
 
-  it('todo caminho de arquivo citado existe em disco', () => {
-    const dead = CITATIONS.paths.filter((citation) => !existsSync(citation.token))
+  /**
+   * **O que o git RASTREIA, e nao o que existe em disco.**
+   *
+   * A versao anterior usava `existsSync`, e com ela o portao local e o CI
+   * divergiam: `config/app.json` esta no `.gitignore` e existe na maquina do
+   * dono, entao citar `config/app.json` num comentario passava aqui e reprovava
+   * la, num checkout limpo. **Custou o PR #131 e reprovou de novo em
+   * 21/09/2026**, nos dois gates — `verify` e `verify-windows` — pelo mesmo
+   * comentario.
+   *
+   * Consultar o git torna as duas execucoes iguais por construcao: o CI tem
+   * exatamente o que o `git ls-files` lista. A convencao que o repositorio ja
+   * usava — citar `app.json` sem o prefixo `config/`, fixada em `H-34` —
+   * continua valendo, e agora e cobrada no lugar certo.
+   */
+  it('todo caminho de arquivo citado e rastreado pelo git', () => {
+    const dead = CITATIONS.paths.filter((citation) => !TRACKED.has(citation.token))
 
     expect(
       dead.map((citation) => `${citation.file}:${citation.line} cita ${citation.token}`),

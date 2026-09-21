@@ -1047,14 +1047,19 @@ a primeira e acrescenta uma regra duplicada.
 
 **O que a rota faz depende do nome**, e é o comportamento que o operador
 descreveu em 08/09/2026 — para ele não há dois conceitos, há um nome que recebe
-conjuntos da coluna CLT:
+conjuntos:
 
 | `label` | `outcome` | O que acontece |
 |---|---|---|
-| não existe | `entrada-nova` | Vira um cliente comum |
+| não existe | `grupo-criado` | Nasce um **pai** com um filho, nomeado pelo valor da regra |
 | já é um cliente | `grupo-criado` | Ele vira **pai**: o conjunto que tinha passa a filho, nomeado pelo **valor da primeira regra dele**, e o novo entra como irmão |
 | já é um pai | `membro-acrescentado` | O conjunto entra como mais um filho |
 | já resolvia assim | `sem-efeito` | Nada é gravado |
+
+> **`entrada-nova` saiu do contrato em 21/09/2026.** Ele nomeava a primeira
+> linha desta tabela, e ficou sem produtor em `D-53`, quando toda declaração
+> passou a formar grupo: a rota não tinha mais como devolvê-lo, e mantê-lo
+> prometia ao cliente um desfecho que não existe.
 
 O filho leva o **valor** por nome, e não o rótulo do pai: "Vivi > Vivi" não diz
 nada, "Vivi > AV" diz — e o valor é o que a própria coluna CLT explica.
@@ -1068,7 +1073,7 @@ recebe o conjunto é o pai.
 { "match": "prefix", "value": "D", "label": "Cliente D" }
 
 // resposta
-{ "outcome": "entrada-nova", "key": "CLIENTE D", "label": "Cliente D",
+{ "outcome": "grupo-criado", "key": "CLIENTE D", "label": "Cliente D",
   "value": "D", "match": "prefix" }
 ```
 

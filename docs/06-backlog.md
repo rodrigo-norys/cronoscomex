@@ -10104,6 +10104,12 @@ desfazer o que agrupou.
 > `tests/repo/contratos.test.ts`, e isso já custou `git reset HEAD~2` em `H-26` e
 > `HEAD~1` em 02/09/2026.
 
+> **O `outcome` acima envelheceu em dois pontos, e fica como foi entregue.**
+> `entrada-nova` deixou de ser desfecho possível em `D-53`, quando toda
+> declaração passou a formar grupo, e **saiu do contrato em 21/09/2026**, já sem
+> produtor; e as rotas alcançam três colunas desde 21/09/2026, não só a `CLT`.
+> A redação vigente é a de `docs/05-contratos-api.md`.
+
 **Nove determinações — quatro de `D-32`, três de `D-35`, duas da emenda de
 08/09/2026 — não re-litigáveis:**
 

@@ -551,17 +551,17 @@ export function ruleReach(
  */
 export interface ClientRulePlan {
   /**
-   * **Os dois ultimos nasceram em 08/09/2026**, quando o usuario descreveu o
+   * **Os dois de PAI nasceram em 08/09/2026**, quando o usuario descreveu o
    * comportamento que quer: para ele nao ha dois conceitos — ha um nome que
-   * recebe conjuntos da coluna CLT, e o PAI e o que acontece quando o segundo
-   * conjunto chega ao mesmo nome.
+   * recebe conjuntos, e o pai e o que acontece quando um nome os recebe.
+   *
+   * **`entrada-nova` saiu em 21/09/2026**, e estava morto desde `D-53`: com
+   * toda declaracao virando grupo, a primeira passou a devolver `grupo-criado`,
+   * e nenhum caminho de `planClientRule` produzia mais o kind antigo. O
+   * tratamento em `saveClientRule` continua existindo e serve `regra-acrescentada`
+   * — o que saiu foi o rotulo sem produtor, nao o codigo que grava.
    */
-  kind:
-    | 'entrada-nova'
-    | 'regra-acrescentada'
-    | 'sem-efeito'
-    | 'grupo-criado'
-    | 'membro-acrescentado'
+  kind: 'regra-acrescentada' | 'sem-efeito' | 'grupo-criado' | 'membro-acrescentado'
   /** Chave normalizada da entrada alvo — o cliente, ou o PAI nos dois ultimos. */
   key: string
   /** Como a regra compara — `exact` sobre uma grafia, `prefix` sobre um grupo. */
