@@ -93,6 +93,8 @@ const CORPO = grupoPorHistoria(BACKLOG, /^## Épico (E\d+)/, /^### (H-\d+)/)
  * destino, em `tests/repo/contratos.test.ts`. Não era conferido em ONDE: as
  * quatro histórias de `E15` entraram sob o cabeçalho de `E14` em 11/09/2026,
  * com as cinco asserções de índice verdes, e quem achou foi o olho do usuário.
+ * Na mesma execução esta guarda reprovou **dois números vivos** que a revisão
+ * adversarial não pegara, e um deles estava na skill que conduz a história.
  */
 describe('o índice do backlog agrupa cada história sob o épico do corpo', () => {
   it('encontra os dois agrupamentos — âncora contra guarda verde por vacuidade', () => {
