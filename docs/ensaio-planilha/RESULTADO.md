@@ -753,7 +753,6 @@ divergência vire achado, e a correção veio depois, por decisão do dono.
 | 11 | O `ConflictDialog` usa `useModalFocus`, como os outros dois modais — o mesmo mecanismo que `H-83` exige, e não uma segunda implementação | `web/tests/ConflictDialog.test.tsx` · **RESOLVIDO** |
 | 12 | A assinatura OLE2 é detectada antes da descompactação, e a mensagem cita `P-12` e diz o que fazer. **Validado contra o arquivo cifrado pelo Excel real** | `tests/io/xlsx-reader.test.ts` · **RESOLVIDO** |
 | 13 | `loadTeamMap` recusa o mesmo importador em dois membros, pelo mesmo critério da tela (`overlaps`, que trata sufixo de filial) | `tests/app/team-map-loader.test.ts` · **RESOLVIDO** |
-| 15 | `parseCellDate` recusa data fora de **1900–2200**, com a anomalia `DATA_FORA_DA_FAIXA`. **Zero linhas reais afetadas** — medido depois da mudança | `tests/domain/normalizer.test.ts` · **RESOLVIDO** |
 | 2, 7, 14, 16 | As quatro linhas do corpus reescritas, cada uma citando o gesto que a mediu | `tests/repo/documentacao.test.ts` |
 | 10 | O `CLAUDE.md` passa a dizer que o passo 5b de TD-05.1 **não ocorre no arquivo real**, e por quê | idem · **RESOLVIDO** |
 | — | A linha de `PD-08` no `CLAUDE.md` descrevia como aberta uma parte documental fechada em 04/09/2026. Conferido na branch e corrigido | idem |
@@ -776,27 +775,19 @@ divergência vire achado, e a correção veio depois, por decisão do dono.
 
 ## Achados em aberto
 
+**Um segue aberto, de dezesseis.** Os outros foram resolvidos no código,
+emendados nos documentos ou movidos para os cabeçalhos — conferido item a item
+contra o código em 22/09/2026, e o destino de cada um está em `D-60`. Cada
+achado que saiu desta tabela conserva sua seção `E-NN` acima.
+
 | # | Achado | Natureza |
 |---|---|---|
-| 1 | A instalação do operador está um épico atrás da `main` — sem `H-94`, `H-95` e `H-96` | operacional; é `PD-08` maior do que a pendência descreve |
-| 2 | A relação metamórfica do §5 acusa defeito onde não há: `cellStyleKeys` e `fills` crescem com a coluna nova, por construção — medido em `E-02` (7 processos) e `E-18` (138) | redação do corpus |
-| 3 | `D-43` dizia "nenhuma anomalia"; a medição real mostra anomalia no primeiro processo, e o total fica em aberto | número a reconferir |
-| 4 | A fila de edições aceita a edição sobre planilha deslocada, e grava um `previous` lido da coluna vizinha; só `apply` recusa | comportamento a decidir |
-| 5 | `app.json` com BOM mata a partida | sem comportamento declarado |
-| 6 | **Três garantias existem e o gesto do operador não as alcança.** O Excel renomeia cabeçalho vazio para `Column1` e repetido para `IMPORTADOR2` enquanto a `Tabela1` cobrir a coluna (`E-13`, `E-14`); e a recusa de `appendRow` por `values` vazio não é alcançável pela rota, porque o guard injeta a REF (`E-29`). Alcançados pelo XML, os ramos reagem **como declarado** (`E-34`, `E-35`, `E-36`) | escopo de garantia |
-| 9 | **`buildServer` não repassa o `queuePath` para a rota de cor.** `registerProcessColorRoute(app, store, colorMap)` deixa o 4º parâmetro no padrão, embora a rota o aceite: o `PATCH` grava em `data/pending-edits.jsonl` enquanto o `apply` lê a fila injetada, e responde `NADA_A_APLICAR` (`E-27`). É o mesmo defeito que o comentário do próprio `buildServer` diz ter corrigido para `registerEditsRoutes` em 01/09/2026, num sexto caminho de escrita | **defeito de código** |
-| 10 | **O passo 5b de TD-05.1 é inalcançável no arquivo real.** Gravar data em célula ausente **não** altera `styles.xml`: o surgeon reusa o `xf` que a coluna já tem (`E-24`). A afirmação do `CLAUDE.md` é condicional, e a condição não ocorre enquanto a coluna tiver ao menos uma data | afirmação a qualificar |
-| 11 | **O `ConflictDialog` abre e não recebe o foco** (`E-58`). Um `alertdialog` modal que deixa `activeElement` no `body` fica fora do alcance de quem navega por teclado ou leitor de tela | **defeito de acessibilidade** |
-| 12 | **Arquivo protegido por senha responde `invalid zip data`** (`E-59`), sem citar `P-12` nem dizer ao operador o que houve | mensagem a escrever |
-| 13 | **A recusa do importador duplicado está só na tela** (`E-50`). Um `team-map.json` editado à mão com o mesmo importador em dois membros passa na carga, e `IND-20` conta duas vezes | assimetria a decidir |
-| 14 | **O §1.5 atribui à rota o comportamento do cliente** no `limit=1001` (`E-51`): a rota recusa com `400`, a tela cai no padrão. O backlog de `H-100` repete a frase sem dizer onde | redação a qualificar · **RESOLVIDO** |
-| 15 | **Serial de data absurdo não vai para a quarentena** (`E-55`): `99999999` vira uma data do ano 275690 e `-500` vira 1898, ambos aceitos | caracterização com decisão pendente |
-| 16 | **O §1.6 descreve o Responsável sem mapa como era antes de `H-93`** (`E-61`): ele diz que a agregação "migrou para `colorResponsible`", e medido não migra para nada — todo processo fica em "Sem responsável", que é o que `D-40` decidiu | redação do corpus · **RESOLVIDO** |
-| 7 | A relação "desfazer devolve o hash original" (§5) usa o critério que o ADR-0004 rejeita. Pelo critério certo — entrada a entrada — ela **segura**: `sheet1.xml` volta byte a byte, e só o pool de strings guarda uma órfã (`E-10`, `E-11`) | redação do corpus · **RESOLVIDO** |
-| 8 | **O conflito do `ConflictDialog` não precisa de fixture, e sim de sequência** (`E-09`). `PD-07` item 2 e o §4 item 3 partem de uma premissa falsa | pendência a reescrever |
+| 4 | A fila de edições aceita a edição sobre planilha deslocada, e grava um `previous` lido da coluna vizinha; só `apply` recusa | comportamento a decidir — aguarda história |
 
-Nenhum virou correção — a regra inviolável 1 manda que divergência vire achado, e
-que o achado decida se vira história.
+*(Esta tabela chegou a ter 16 linhas marcando só 3 como resolvidas, enquanto 12
+já estavam. Lida sem abrir o código, ela produziu duas afirmações falsas em
+21/09/2026, em `D-59` e no PR #144. A regra inviolável 1 continua: a divergência
+vira achado, e o achado decide se vira história.)*
 
 ---
 
