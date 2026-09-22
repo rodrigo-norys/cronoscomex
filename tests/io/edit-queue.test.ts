@@ -176,6 +176,38 @@ describe('consolidated — a ultima por (ref, field)', () => {
 
     expect(consolidated(queuePath)).toHaveLength(2)
   })
+
+  /**
+   * `D-63`. JSON **valido** com a forma errada tambem nao derruba. Um `ref` que
+   * nao e texto quebrava adiante, em `normKey`, e fazia `applyPendingEdits`
+   * REJEITAR — contra a invariante do cabecalho dela, de que toda falha vira
+   * recusa com motivo. Achado do revisor-xml.
+   */
+  it('ignora registro cujo `ref` nao e texto, sem derrubar as demais', () => {
+    enqueue(command(), queuePath)
+    const invalido = JSON.stringify({ kind: 'insert', ref: 12345, values: {}, id: 'x', ts: 'y' })
+    writeFileSync(queuePath, `${readFileSync(queuePath, 'utf-8') + invalido}\n`, 'utf-8')
+
+    expect(() => consolidated(queuePath)).not.toThrow()
+    expect(consolidated(queuePath)).toHaveLength(1)
+  })
+
+  it('ignora linha que e JSON escalar, e nao objeto', () => {
+    enqueue(command(), queuePath)
+    writeFileSync(queuePath, `${readFileSync(queuePath, 'utf-8')}123\nnull\n`, 'utf-8')
+
+    expect(() => consolidated(queuePath)).not.toThrow()
+    expect(consolidated(queuePath)).toHaveLength(1)
+  })
+
+  // O registro de descarte NAO tem `ref`: a guarda acima o deixaria de fora se
+  // nao o conferisse antes, e o esvaziamento da fila pararia de funcionar.
+  it('preserva o registro de descarte, que nao tem `ref`', () => {
+    const edit = enqueue(command(), queuePath)
+    discard(edit.id, queuePath)
+
+    expect(consolidated(queuePath)).toHaveLength(0)
+  })
 })
 
 describe('null e celula vazia, nunca cancelamento', () => {
