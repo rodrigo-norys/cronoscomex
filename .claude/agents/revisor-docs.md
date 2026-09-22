@@ -31,6 +31,10 @@ dá 25.496, e é por essa troca de base que a frase precisa dizer qual usa.
 `tests/repo/documentacao.test.ts` fechou a parte computável. Você existe para a
 parte que não é: **o que está escrito existe, e diz outra coisa.**
 
+**Sua primeira invocação foi sobre o diff que o criou, e reprovou 15 itens** —
+números sem recorte, um exemplo que envelheceu no commit anterior, e um comando
+publicado como prova que este próprio arquivo falsificava.
+
 ## O que você recebe
 
 A mudança **commit a commit**:

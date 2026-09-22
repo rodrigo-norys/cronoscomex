@@ -80,8 +80,9 @@ Um por fase concluída.
 | Quarta rodada — config, rotas, filtros, caracterização e navegador | 17/09/2026 | 48 | 2 divergências, 4 de escopo | ~40 min | — |
 | Quinta rodada — as sete meias-linhas que sobraram | 17/09/2026 | 7 | 1 de redação | ~10 min | — |
 
-**Fase 1 concluída.** As 9 rotas responderam `200`. O relatório está em
-`medicao-referencia.md`, e o estado da planilha é **limpo**: 650 lidas, 650
+**Fase 1 concluída.** As 9 rotas responderam `200`. O relatório foi gravado em
+`medicao-referencia.md` — que saiu de `docs/` em 21/09/2026 (`D-59`) e se
+regenera por `tools/medir-numeros.mjs` —, e o estado da planilha é **limpo**: 650 lidas, 650
 aceitas, **0 em quarentena**, **0 divergências de esquema**. É a linha de base
 ideal — qualquer mutação da fase 2 aparece contra um fundo sem ruído.
 
@@ -724,8 +725,9 @@ abaixo saíram deles e hoje rodam no portão, sem depender de ninguém invocar n
 segunda acrescentava era o **tamanho** por entrada — que é o que torna
 "estritamente aditivo" (TD-05.1, passo 5b) conferível sem reabrir os zips à mão.
 
-**`tools/medir-numeros.mjs` fica**, e não por ser do ensaio: ele gera
-`medicao-referencia.md` e mede o **produto**, não o exercício. O §7 o cita como o
+**`tools/medir-numeros.mjs` fica**, e não por ser do ensaio: ele gera o
+relatório de medição — em `data/` desde 21/09/2026, fora do versionamento
+(`D-59`) — e mede o **produto**, não o exercício. O §7 o cita como o
 caminho de conferir todo número que a tela mostra.
 
 > **O que se perde, declarado.** Nada do registro: as 61 entradas abaixo têm

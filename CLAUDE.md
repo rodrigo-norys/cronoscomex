@@ -239,7 +239,7 @@ Não bloqueiam a implementação. Fechar antes da entrega ao operador.
 | # | Pendência | Quando fechar |
 |---|---|---|
 | **PD-07** | **O resto de `VN-5` (forced colors), e sobrou pouco.** A pendência nasceu supondo que o procedimento exigia Windows, e **isso foi medido como falso em 31/08/2026**: o Chrome emula `forced-colors: active` no Linux, e o que o procedimento pergunta não é que cor o tema pinta, e sim se o desenho sobrevive quando as cores do autor são descartadas. **`H-65` fechou o item 4 por medição**: sob o modo forçado os dois esquemas são paletas de sistema **realmente distintas** — branco com `rgb(0, 0, 159)` e preto com `rgb(255, 255, 0)` —, e a lateral distingue o item corrente nas duas. **E o item 3(e) tinha o diagnóstico errado**, corrigido em `H-64`: `:hover` **casa** no headless, e o que faltava era o apontador **declarado** — o Tailwind v4 envolve todo `hover:` em `@media (hover: hover)`, e o headless responde `hover: none`. Resolvido pela flag `--blink-settings`, exposta como `apontadorFino`. **Sobra um:** a paleta **nominal** do Windows — Aquático e as demais —, que é confirmação de segunda ordem. **O item 3(d) fechou em 17/09/2026:** o ensaio produziu o conflito num navegador real, e a gestão de foco do `ConflictDialog` saiu junto, por `useModalFocus` | **O item (1) na próxima visita à máquina.** A instalação de 04/09/2026 fechou `PD-01` e não o exerceu — ele é confirmação de segunda ordem, e ficou para trás sem custo. O que restava do item (2) deixou de depender de fixture: o ensaio produziu o conflito na planilha real |
-| **PD-08** | **Os dois mapas de negócio de `H-48` viajam à parte, e o `README.md` da distribuição ainda nega isso.** Eles estão no `.gitignore` e a árvore leva só os `.exemplo`. **A cópia manual foi feita em 04/09/2026 e funcionou** — `client-map.json` `d4b8b5dd…` e `team-map.json` `2054fe7b…` conferidos byte a byte nas duas pontas, e o campo Cliente passou a mostrar o nome consolidado. **A parte documental fechou em 04/09/2026**, e esta linha a descrevia como aberta até 17/09: conferido na branch, o `README.md` dela não diz mais "você não precisa editar arquivo nenhum", a tabela de pastas cita "os dois mapas de negócio", e o bloco "Como refazer esta branch" **não lista arquivo nenhum** — manda calcular pelo script. **O que sobra não é documental: é `H-88`**, que tira o mapa da cópia manual (`D-32`). Os detalhes estão em `.claude/rules/distribuicao.md`, que já registrava isso | **Quando `H-88` entregar a edição pela tela.** A branch está sincronizada com a `main` — conferido em 17/09/2026: dos 138 arquivos, 136 são idênticos, e os dois que diferem são os exclusivos dela por desenho. **A JANELA de 03/09 fechou:** a instalação do operador agora tem `E13` e grava no mapa, então **as duas pontas escrevem** e a cópia cega deixou de ser segura — daqui em diante, reconciliar antes de copiar. **Repita a cópia toda vez que a regra de consolidação ou a equipe mudar**: nenhum aviso existe para lembrar |
+| **PD-08** | **Os dois mapas de negócio de `H-48` viajam à parte, e o `README.md` da distribuição ainda nega isso.** Eles estão no `.gitignore` e a árvore leva só os `.exemplo`. **A cópia manual foi feita em 04/09/2026 e funcionou** — `client-map.json` `d4b8b5dd…` e `team-map.json` `2054fe7b…` conferidos byte a byte nas duas pontas, e o campo Cliente passou a mostrar o nome consolidado. **A parte documental fechou em 04/09/2026**, e esta linha a descrevia como aberta até 17/09: conferido na branch, o `README.md` dela não diz mais "você não precisa editar arquivo nenhum", a tabela de pastas cita "os dois mapas de negócio", e o bloco "Como refazer esta branch" **não lista arquivo nenhum** — manda calcular pelo script. **O que sobra não é documental: é `H-88`**, que tira o mapa da cópia manual (`D-32`). Os detalhes estão em `.claude/rules/distribuicao.md`, que já registrava isso | **Quando `H-88` entregar a edição pela tela.** A branch está sincronizada com a `main` — última em 21/09/2026, `8a2454d`, com 17 arquivos atrás de `D-49` a `D-58`. **Sem contagem aqui**, pelo motivo que este arquivo já declara na seção de versionamento: quem mede é o script, a cada execução. **A JANELA de 03/09 fechou:** a instalação do operador agora tem `E13` e grava no mapa, então **as duas pontas escrevem** e a cópia cega deixou de ser segura — daqui em diante, reconciliar antes de copiar. **Repita a cópia toda vez que a regra de consolidação ou a equipe mudar**: nenhum aviso existe para lembrar |
 | **PD-09** | **A premissa `P-15` ficou sem dono, e há uma frase da tela apoiada nela.** `P-15` — o OneDrive sincroniza o arquivo de lock `~$<nome>.xlsx` entre máquinas — está "não afirmada" desde o plano, e `docs/00-visao-escopo.md` e `A-58` mandavam medi-la em `H-30`, que **fechou em 18/08/2026 sem medir**. Mesmo padrão de `PD-05` entre 14 e 17/08/2026. A medição direta pede **duas máquinas com a mesma pasta sincronizada**, e nada indica que exista uma segunda conta com acesso à pasta da organização; o **proxy de uma máquina só** — abrir a planilha no Excel e observar se o `~$` sobe, pelo ícone do OneDrive ou pela visão web do SharePoint — responde a mesma pergunta. O que não pode ficar como está: `web/src/components/StatusBanner.tsx` afirma "Alguém está com a planilha aberta no Excel", que é a leitura **forte** da premissa. Ou ela é medida e a frase se justifica, ou a frase recua para o que é sabidamente verdadeiro — o arquivo está aberto **nesta** máquina — com o motivo no cabeçalho do componente | **Medido em 03/09/2026, e o proxy não é executável nesta instalação:** a planilha real do operador está em `Downloads`, **fora do OneDrive** — a pasta sincronizada existe e não a contém. `P-15` supõe o `~$` viajando entre máquinas por pasta compartilhada; sem isso, não há o que observar. **A leitura forte da frase é falsa por construção aqui**, e não por falta de medição: o `~$` só pode ser de quem abriu o arquivo NESTA máquina. Resta decidir entre recuar a frase de `StatusBanner.tsx` — o caminho que os fatos apoiam — ou medir `P-15` num cenário que o operador não usa |
 
 Ao fechar uma pendência, remova a linha.
@@ -361,43 +361,24 @@ registro. A segunda é a razão de ele existir: medido, **zero** das 5.458
 citações de ID em prosa apontam para identificador inexistente, então linter
 nenhum as alcança — é semântica.
 
-> **Nasceu de repetição medida:** **51 defeitos** numa passada de ~490 linhas,
-> em 11/09/2026, e a família de citação sobreviveu inteira à revisão automática.
-> **A linha dele na tabela de marcos foi escrita DEPOIS do evento**, e é a
-> primeira que é — as quatro anteriores declararam o gatilho antes de ele ser
-> atingido. Registro isso em vez de apagar: a tabela vale como anteparo quando
-> o gatilho precede a peça, e aqui ela documenta, não previu.
->
-> **Não há gatilho, e a ausência é decisão do usuário em 11/09/2026**, tomada
-> depois de o custo ser medido: **~200 mil tokens e ~20 minutos** por invocação,
-> para **~30%** das divergências conhecidas. E ele **não é reprodutível** — três
-> execuções sobre o mesmo diff concordaram em **23%**, com metade dos achados
-> aparecendo uma vez só, e quatro itens recebendo veredictos **opostos**. Uma
-> execução limpa não prova ausência de defeito. O piso automático é a guarda,
-> que roda no `verify` e no CI sem depender de ninguém invocar nada.
->
-> **A primeira invocação dele foi sobre o diff que o cria, e reprovou 15 itens**
-> — números sem recorte, um exemplo que envelheceu no commit anterior, e um
-> comando publicado como prova que o próprio arquivo falsificava. Ele **não**
-> confere o que a guarda já confere, e isso é instrução dele, não convenção —
-> duas fontes de verdade que divergem é o defeito que este repositório mais
-> registra.
-
 **Rules** (`.claude/rules/`). Instrução com `paths:` no frontmatter, que entra em
 contexto **só quando o Claude lê arquivo que casa o glob** — e por isso não custa
-token nas sessões que não tocam o assunto. São cinco:
+token nas sessões que não tocam o assunto. São seis:
 
 | Rule | Carrega ao tocar |
 |---|---|
 | `comentarios.md` | `src/`, `web/`, `tests/` — a régua de comentários |
 | `documentacao.md` | `docs/` e `.md` da raiz — números afirmados em prosa, e o que o `revisor-docs` custa e pega, para quem for decidir invocá-lo. **Ela não manda invocar**: não há gatilho. Carrega em quase toda sessão, porque o protocolo de fatia lê `docs/`, e por isso é curta |
 | `escrita-xlsx.md` | `xlsx-surgeon.ts`, `write-guard.ts` — o procedimento do `revisor-xml` e a forma medida do `calcChain` |
+| `microcopia.md` | `web/src/**/*.tsx` — o texto que o operador lê. Nasceu em 21/09/2026 de `/avaliar-claude`: a régua vivia só na conversa, e quem conferia era o usuário, print a print |
 | `operacao-windows.md` | `scripts/` — o que `PD-06` deixou como regra, e a lição que já se pagou |
 | `distribuicao.md` | o script de sincronização e os `.exemplo` — o que entra na branch, e `PD-08` |
 
-**As três últimas nasceram em 31/08/2026, do `CLAUDE.md`**, que era carregado em
-toda sessão e pagava ~1750 palavras por três assuntos que só interessam a quem
-abre aqueles arquivos. **Não é garantia**: rule é contexto, não
+**`escrita-xlsx.md`, `operacao-windows.md` e `distribuicao.md` nasceram em
+31/08/2026, do `CLAUDE.md`**, que era carregado em toda sessão e pagava ~1750
+palavras por três assuntos que só interessam a quem abre aqueles arquivos.
+**Nomeadas, e não "as três últimas"**: a frase por posição era verdadeira até
+`microcopia.md` entrar no meio da tabela, em 21/09/2026. **Não é garantia**: rule é contexto, não
 configuração aplicada. **Ela sobrevive ao `/compact`** — a documentação é
 explícita: rules com `paths:` recarregam quando o Claude volta a ler arquivo que
 casa o glob, e o hook `InstructionsLoaded` chega a expor `load_reason: compact`.
@@ -430,12 +411,6 @@ e `jq`.
 até então só existia no CI: o portão local passava e o workflow reprovava, que
 é a ordem errada de descobrir. Foi assim que a guarda das fixtures chegou ao
 `dados-sensiveis.yml` com a âncora reprovando o check de caminho absoluto.
-
-> Ele tem **uma** isenção estrutural, e ela nasceu no mesmo dia: quando a conta
-> do GitHub tem o nome do usuário do sistema, a URL do próprio repositório passa
-> a conter o nome. Só `github.com/<dono>/` é isento — o nome nu continua
-> reprovando, inclusive na mesma linha. Sem isso o check reprovava na máquina do
-> dono e aprovava no runner, onde `$USER` é `runner`.
 
 **Permissões** (`.claude/settings.json`). `npm install` e `npm ci` pedem
 confirmação. `curl`, `wget`, force-push e leitura ou escrita de `*.xlsx` e
@@ -506,22 +481,6 @@ declarado contra a régua do topo, só nas histórias abertas**. Nenhuma
 expectativa é lista fixa: épico, história e requisito novos entram sem tocar no
 arquivo.
 
-> **A régua é cobrada só no que ainda não fechou, e a assimetria é o desenho.**
-> `D-24` declara a função do rótulo — "avisar que a fatia é longa" —, e em
-> história fechada não há mais o que avisar. Medido em 16/09/2026: **dez** das
-> 96 estavam abaixo da régua; as três abertas de `E15` foram corrigidas, e as
-> sete fechadas ficam declaradas no topo do backlog em vez de reescritas.
-
-> **Nasceu de defeito observado, não de previsão.** O agrupamento do índice era
-> o único elo que asserção nenhuma via, e quem o achou foi o usuário, a olho, em
-> 11/09/2026 — as quatro histórias de `E15` listadas sob o cabeçalho de `E14`.
-> Na mesma execução ele reprovou **dois números vivos** que a revisão
-> adversarial não pegara, e um deles estava na skill que conduz a história.
-> **`docs/sessao-autonoma/` era isento**, e a isenção é estrutural: são relatórios
-> datados, e reprovar neles ensinaria a reescrever registro histórico. **O
-> diretório saiu em 18/09/2026 (`D-46`)** e a isenção fica, como precedente para
-> o próximo record datado que entrar.
-
 **`npm run test:strip`** importa os módulos de `src/` sob
 `--experimental-strip-types`, que é como a aplicação roda de verdade. **Nada de
 `parameter property`, `enum`, `namespace` ou decorator em `src/`.**
@@ -558,7 +517,7 @@ processo e são abandonados. Os gatilhos abaixo são objetivos.
 | ~~**Antes de iniciar a Fase 3** (`H-24`)~~ | ~~Subagent de review para manipulação de XML~~ | ✅ **Criado em 11/08/2026** como `revisor-xml`, antes da primeira linha de `H-24`. `H-24` tem **11** casos-limite — 8 no plano original, mais 3 que a própria revisão acrescentou (linha auto-fechada, célula ausente recebendo data, fórmula compartilhada) — e o custo de errar é a planilha da empresa. **Pagou-se na primeira invocação**: reprovou por dois defeitos reais, um deles gerando XML malformado, o outro reproduzindo A-56 no caso mais provável |
 | ~~**Ao concluir `H-20`**~~ | ~~Skill `nova-pagina`~~ | ✅ **Criada em 07/08/2026**, ao fechar `H-20`. Cinco páginas de `H-16` a `H-20` com o mesmo padrão — consumir rota → respeitar filtros globais → estado vazio explícito → nunca calcular no cliente —, e as mesmas coisas fora do plano toda vez. `H-22` foi a primeira história conduzida por ela |
 | ~~**Ao acumular 20 `session_id` distintos**~~ | ~~Conferir se cada rule dispara~~ | ✅ **Conferido em 04/09/2026**, ao fechar `H-82`: **28 sessões** distintas no log, e **as cinco rules dispararam** — `documentacao` 19 vezes, `comentarios` 13, `operacao-windows` 7, `escrita-xlsx` 4, `distribuicao` 2. Nenhuma precisa voltar para cá nem ter o glob consertado, e o hook vira só observabilidade. **O log é TSV, não JSON** — a primeira contagem leu 0 por supor o formato errado |
-| ~~**Ao medir defeito de documentação em lote**~~ | ~~Guarda `documentacao.test.ts` e subagent `revisor-docs`~~ | ✅ **Criados em 11/09/2026**, no dia em que o gatilho foi atingido: **51 defeitos confirmados** numa passada de ~490 linhas, e um deles achado **a olho pelo dono depois de a suíte passar**. Nasceram como par, e a divisão é declarada nos dois: a guarda cobra o computável, o revisor cobra o que não é. **A ordem importou** — a guarda reprova qualquer ponto em que as cópias divirjam, então precisou nascer depois de `README.md` e backlog concordarem, senão reprovaria o próprio histórico que a introduziu |
+| ~~**Ao medir defeito de documentação em lote**~~ | ~~Guarda `documentacao.test.ts` e subagent `revisor-docs`~~ | ✅ **Criados em 11/09/2026**, no dia em que o gatilho foi atingido: **51 defeitos confirmados** numa passada de ~490 linhas, e um deles achado **a olho pelo dono depois de a suíte passar**. Nasceram como par, e a divisão é declarada nos dois: a guarda cobra o computável, o revisor cobra o que não é. **A ordem importou** — a guarda reprova qualquer ponto em que as cópias divirjam, então precisou nascer depois de `README.md` e backlog concordarem, senão reprovaria o próprio histórico que a introduziu. **Esta linha foi escrita DEPOIS do evento, e é a primeira que é** — as quatro anteriores declararam o gatilho antes de ele ser atingido: aqui a tabela documenta, não previu |
 | **Se aparecer a aba `2027`** | Reexecutar `H-01` | `python3 tools/profile_workbook.py`, depois `tools/build_fixtures.py`. As abas `2025` e `2024` provam que **o esquema muda entre anos**. Risco R-14 |
 | **Nunca** | Subagents para paralelizar o backlog | O caminho crítico é uma cadeia sequencial de 18 sessões (`docs/07-plano-entrega.md §3`). Fan-out não encurta |
 
@@ -568,6 +527,8 @@ processo e são abandonados. Os gatilhos abaixo são objetivos.
   **pt-br** (o usuário final é brasileiro e não é técnico).
 - **Comentários:** a régua está em `.claude/rules/comentarios.md` e carrega
   sozinha ao tocar `src/`, `web/` ou `tests/`. Não repita nada dela aqui.
+- **Texto que o operador lê:** a régua está em `.claude/rules/microcopia.md` e
+  carrega ao tocar `web/src/`. Pelo mesmo motivo, não repita nada dela aqui.
 - Toda regra classificatória precisa de teste com os valores concretos das
   tabelas de decisão. Os 44 casos obrigatórios estão em
   `docs/08-qualidade-operacao.md §1.3`.
@@ -603,6 +564,9 @@ python3 tools/profile_workbook.py "<caminho.xlsx>" /tmp/saida.json   # reperfila
 
 > `node: bad option` **não é erro de código**: o shell herdou um Node abaixo de
 > `engines`. Prefixe `nvm use &&` — o `nvm use` não persiste entre chamadas.
+
+> **Para consultar a aplicação no ar, `node -e` com `fetch`** — `curl` e `wget`
+> são negados. O mesmo vale para esperar: `sleep` em foreground é bloqueado.
 
 > **Depois de `git switch` com o `dev` no ar, reinicie o `npm run dev`.**
 > Medido duas vezes em 07/08/2026: o `node --watch` continuou servindo o código

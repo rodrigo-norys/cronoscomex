@@ -50,9 +50,11 @@ coisa**. Isso é semântica, e nenhuma asserção a alcança.
 - o retorno cresce com o **tamanho** e com a **densidade de citação cruzada** —
   23 achados em 584 linhas de épico novo, 15 em 231 de um agente; emenda de três
   linhas não tem o que ele ache;
-- ele custa **~200 mil tokens e ~20 minutos** por invocação;
+- ele custa **~200 mil tokens e ~20 minutos** por invocação, para **~30%** das
+  divergências conhecidas;
 - **não é reprodutível**: três execuções sobre o mesmo diff concordaram em 23%,
-  e metade dos achados apareceu uma vez só. Uma execução limpa **não** é prova
+  metade dos achados apareceu uma vez só, e quatro itens receberam veredictos
+  **opostos**. Uma execução limpa **não** é prova
   de que não há defeito.
 
 ## Record não fica em `docs/`
@@ -88,7 +90,13 @@ linhas** em dois lotes, e a densidade decidiu a forma de cada um:
 - as três auditorias de configuração — 3.927 linhas, **14,2%** — precisaram de
   **um documento**, e viraram `ADR-0007` (`D-47`).
 
-**Densidade baixa extrai para linhas; densidade alta pede documento.** E o
+**Densidade baixa extrai para linhas; densidade alta pede documento.**
+
+**A segunda passada, em 21/09/2026, tirou um arquivo só — e é o resultado
+certo:** `medicao-referencia.md`, 532 linhas a **0,0%** (`D-59`). Os dois
+vizinhos ficaram, um porque é régua e o outro porque carrega 16 achados abertos
+que nunca viraram backlog. **Exaurido não é redundante:** o arquivo que se
+declara "percorrido inteiro" é o que mais precisa ser aberto antes de sair. E o
 destino de um consolidado é `adr/`, não a raiz de `docs/`: os três removidos
 nasceram justamente como documento de configuração fora da numeração, sem
 consumidor mecânico, e foi por isso que ninguém os revisitou em seis semanas.
