@@ -239,7 +239,19 @@ abaixo — não há por onde vazar nome de cliente ou conteúdo de célula.
 | `write.restored` | `backupPath` |
 | `queue.archived` | `archivedQueuePath` quando arquivou; `errorCode` quando não |
 | `history.appended` | `events` quando gravou; `errorCode` e `skippedLines` quando descartou linha ilegível |
+| `queue.unreadable` | nenhum campo além dos fixos (`D-67`) |
 | `quarantine.reported` | `rowsQuarantined`, `quarantineRate` |
+
+> **`queue.unreadable` entrou em 22/09/2026 (`D-67`), e é o único sem campo
+> próprio.** Ele diz que a fila **existe e não pôde ser lida** — caminho virado
+> diretório, arquivo sem permissão —, e a ausência de campo é a decisão: a
+> mensagem do `fs` carrega o **caminho do arquivo**, e a regra inviolável 8 não
+> o quer em log nenhum; o `errno` não acrescenta ação nenhuma ao operador.
+> Evento próprio porque o par `write.refused` + `ESCRITA_INVALIDA` já serve
+> outros oito sítios do `write-guard` e **não distingue fila ilegível de
+> anomalia da cirurgia** — o mesmo defeito que `ERRO_INTERNO` existe para
+> evitar no `catch` externo daquele módulo. É emitido pelos **dois** chamadores
+> que leem a fila: `applyPendingEdits` e `getState`. Achado do `revisor-xml`.
 
 > `queue.archived` entrou em `H-26`, fora do catálogo fechado que `H-31` fixou.
 > Evento próprio, e não uma segunda linha de `write.done`, porque `write.done`
