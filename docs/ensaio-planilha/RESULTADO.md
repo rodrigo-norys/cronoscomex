@@ -775,14 +775,17 @@ divergência vire achado, e a correção veio depois, por decisão do dono.
 
 ## Achados em aberto
 
-**Um segue aberto, de dezesseis.** Os outros foram resolvidos no código,
+**Nenhum segue aberto, dos dezesseis.** Eles foram resolvidos no código,
 emendados nos documentos ou movidos para os cabeçalhos — conferido item a item
 contra o código em 22/09/2026, e o destino de cada um está em `D-60`. Cada
 achado que saiu desta tabela conserva sua seção `E-NN` acima.
 
-| # | Achado | Natureza |
-|---|---|---|
-| 4 | A fila de edições aceita a edição sobre planilha deslocada, e grava um `previous` lido da coluna vizinha; só `apply` recusa | comportamento a decidir — aguarda história |
+**O último a cair foi o #4**, em 22/09/2026, por `D-65`: a fila aceitava a
+edição sobre planilha deslocada, e só o `apply` recusava. As três rotas que
+enfileiram passaram a recusar com o mesmo código — o `previous` lido da coluna
+vizinha some junto, porque nada chega a ser enfileirado. **Sem história**, e a
+decisão que ele aguardava foi tomada na conversa: enfileirar com o cabeçalho
+bloqueado é enfileirar para nada.
 
 *(Esta tabela chegou a ter 16 linhas marcando só 3 como resolvidas, enquanto 12
 já estavam. Lida sem abrir o código, ela produziu duas afirmações falsas em
