@@ -593,6 +593,13 @@ export interface ApplyRefusal {
    * inviolavel 6), e `describeDivergence` e a fonte unica do texto.
    */
   schemaDivergence: string | null
+
+  /**
+   * As REF que a fila nao consegue gravar (`D-64`). Vazio quando a recusa nao
+   * tem item a nomear — nao e ausencia de informacao, e sim recusa de outro
+   * tipo. Vem montada do servidor, como `schemaDivergence`.
+   */
+  invalidRefs: readonly string[]
 }
 
 /**
@@ -623,6 +630,7 @@ interface ApplyErrorBody {
       restored?: boolean
       backupPath?: string
       schemaDivergence?: string
+      invalidRefs?: string[]
     }
   }
 }
@@ -658,6 +666,7 @@ export async function applyEdits(): Promise<ApplyResponse> {
     backupPath: detail?.backupPath ?? null,
     fileAtRisk: detail?.backupPath !== undefined && detail?.restored !== true,
     schemaDivergence: detail?.schemaDivergence ?? null,
+    invalidRefs: detail?.invalidRefs ?? [],
   })
 }
 

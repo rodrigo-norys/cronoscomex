@@ -89,6 +89,7 @@ export function ApplyChangesButton({
           // Nao houve conferencia de cabecalho: o `fetch` nem chegou a ter
           // resposta. `null` aqui e a ausencia real, e nao preenchimento.
           schemaDivergence: null,
+          invalidRefs: [],
         })
       }
     } finally {

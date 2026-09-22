@@ -23,6 +23,7 @@ function recusa(overrides: Partial<ApplyRefusal> = {}): ApplyRefusal {
   return {
     code: 'ARQUIVO_MUDOU',
     message: 'A planilha mudou desde a ultima leitura.',
+    invalidRefs: [],
     conflicts: [
       {
         ref: 'FT051.26',
@@ -99,5 +100,37 @@ describe('ConflictDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Entendi' }))
 
     expect(fechar).toHaveBeenCalledOnce()
+  })
+})
+
+/**
+ * `D-64`. A mensagem de `ESCRITA_INVALIDA` diz que nada foi perdido, e não
+ * dizia o que descartar. O diálogo passa a nomear as REF, pelo mesmo motivo que
+ * já nomeia a coluna deslocada.
+ */
+describe('D-64 — os processos que não podem ser gravados', () => {
+  it('nomeia as REF e diz o que fazer com elas', () => {
+    render(
+      <ConflictDialog
+        refusal={recusa({
+          code: 'ESCRITA_INVALIDA',
+          message: 'A gravacao nao pode ser concluida com seguranca. Nada foi perdido.',
+          conflicts: [],
+          invalidRefs: ['FT533.26', 'FT900.26'],
+        })}
+        onClose={vi.fn()}
+      />,
+    )
+
+    const aviso = screen.getByText(/FT533\.26/)
+
+    expect(aviso.textContent).toContain('FT900.26')
+    expect(aviso.textContent).toContain('Descarte')
+  })
+
+  it('não diz nada quando não há item a nomear', () => {
+    render(<ConflictDialog refusal={recusa({ invalidRefs: [] })} onClose={vi.fn()} />)
+
+    expect(screen.queryByText(/Descarte/)).toBeNull()
   })
 })
