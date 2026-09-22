@@ -33,11 +33,12 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
  *     node --experimental-strip-types tools/medir-numeros.mjs
  *     node --experimental-strip-types tools/medir-numeros.mjs <destino.md>
  *
- * O destino padrao e `docs/ensaio-planilha/medicao-referencia.md`.
+ * O destino padrao e `data/medicao-referencia.md`, fora do versionamento:
+ * a medicao e regeneravel, e o arquivo saiu de `docs/` em 21/09/2026 (`D-59`).
  */
 
 const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const PADRAO = 'docs/ensaio-planilha/medicao-referencia.md'
+const PADRAO = 'data/medicao-referencia.md'
 
 /** As rotas que servem numero. `GET` apenas: medir nao altera estado. */
 const ROTAS = [
