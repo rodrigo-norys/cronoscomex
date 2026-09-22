@@ -9,6 +9,7 @@ import {
 } from '../../domain/editable-fields.ts'
 import { normKey } from '../../domain/normalizer.ts'
 import { UNWRITTEN_ROW } from '../../domain/process-projection.ts'
+import { writeBlock } from '../../domain/sheet-schema.ts'
 import {
   consolidated,
   DEFAULT_QUEUE_PATH,
@@ -21,7 +22,7 @@ import {
   type PendingFieldEdit,
   type PendingRowInsert,
 } from '../../io/edit-queue.ts'
-import { apiError } from '../errors.ts'
+import { apiError, queueBlockedError } from '../errors.ts'
 
 /**
  * As CINCO rotas de edicao — contrato em `docs/05-contratos-api.md §3`. A quinta
@@ -108,6 +109,21 @@ export function registerEditsRoutes(
           ),
         )
     }
+
+    // `D-65`. Com o cabecalho bloqueando, o `apply` recusa a fila INTEIRA:
+    // enfileirar neste estado e enfileirar para nada, e o operador so
+    // descobriria ao clicar em Aplicar, com o trabalho ja acumulado.
+    //
+    // **Vem antes da validacao de corpo, junto das outras duas recusas de
+    // ESTADO** — `recusaDuranteEscrita` e `ARQUIVO_INDISPONIVEL` —, e a
+    // consequencia fica declarada: com o cabecalho quebrado, requisicao
+    // malformada recebe `409` no lugar de `400`. Nao ha caminho de escrita
+    // antes dela, e o operador nao produz corpo malformado — quem produz e o
+    // cliente, e ai o `409` e a informacao certa. Descer a guarda para depois
+    // da validacao poria esta recusa de estado num lugar diferente das duas
+    // irmas, sem ganhar nada. Achado do revisor-xml.
+    const block = writeBlock(state.schemaDivergences)
+    if (block !== null) return reply.code(409).send(queueBlockedError(block))
 
     const body = (request.body ?? {}) as EditRequestBody
     if (typeof body.ref !== 'string' || typeof body.field !== 'string') {
@@ -246,6 +262,16 @@ export function registerEditsRoutes(
           ),
         )
     }
+
+    // `D-65`. Com o cabecalho bloqueando, o `apply` recusa a fila INTEIRA:
+    // enfileirar neste estado e enfileirar para nada, e o operador so
+    // descobriria ao clicar em Aplicar, com o trabalho ja acumulado.
+    // **Vem antes da validacao de corpo, junto das outras duas recusas de
+    // ESTADO** — ver a justificativa inteira em `POST /api/edits`, onde ela
+    // esta escrita uma vez so: o argumento vale igual nas tres. Achado do
+    // revisor-xml.
+    const block = writeBlock(state.schemaDivergences)
+    if (block !== null) return reply.code(409).send(queueBlockedError(block))
 
     const body = (request.body ?? {}) as { ref?: unknown; values?: unknown }
     if (typeof body.ref !== 'string' || body.ref.trim() === '') {

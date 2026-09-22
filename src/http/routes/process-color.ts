@@ -9,6 +9,7 @@ import {
 } from '../../domain/color-mapper.ts'
 import { normKey } from '../../domain/normalizer.ts'
 import { UNWRITTEN_ROW } from '../../domain/process-projection.ts'
+import { writeBlock } from '../../domain/sheet-schema.ts'
 import {
   consolidated,
   DEFAULT_QUEUE_PATH,
@@ -16,7 +17,7 @@ import {
   isColorEdit,
   type PendingColorEdit,
 } from '../../io/edit-queue.ts'
-import { apiError } from '../errors.ts'
+import { apiError, queueBlockedError } from '../errors.ts'
 import { refuseDuringWrite } from './edits.ts'
 
 /**
@@ -95,6 +96,16 @@ export function registerProcessColorRoute(
           ),
         )
     }
+
+    // `D-65`. Com o cabecalho bloqueando, o `apply` recusa a fila INTEIRA:
+    // enfileirar neste estado e enfileirar para nada, e o operador so
+    // descobriria ao clicar em Aplicar, com o trabalho ja acumulado.
+    // **Vem antes da validacao de corpo, junto das outras duas recusas de
+    // ESTADO** — ver a justificativa inteira em `POST /api/edits`, onde ela
+    // esta escrita uma vez so: o argumento vale igual nas tres. Achado do
+    // revisor-xml.
+    const block = writeBlock(state.schemaDivergences)
+    if (block !== null) return reply.code(409).send(queueBlockedError(block))
 
     const body = (request.body ?? {}) as ColorRequestBody
     if (
