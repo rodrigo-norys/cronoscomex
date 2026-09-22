@@ -171,6 +171,29 @@ export function blockingDivergence(
   return divergences.find(blocksWritingOne) ?? null
 }
 
+/**
+ * O motivo de recusar a escrita, pronto para virar codigo de erro (`D-65`).
+ *
+ * O mapeamento vivia inline no `write-guard`, e as tres rotas que enfileiram
+ * precisavam do mesmo par: quatro copias divergiriam na primeira mudanca.
+ * `null` quando nada bloqueia.
+ *
+ * **`DESLOCADO` e o unico movimento DETECTADO.** Os outros dois que bloqueiam —
+ * linha 1 em branco, e rotulo apagado numa coluna — sao a mesma coisa para o
+ * operador: falta o nome com que conferir, e o que se pede e restaurar, nao
+ * desfazer.
+ */
+export function writeBlock(
+  divergences: readonly SchemaDivergence[],
+): { code: 'CABECALHO_DESLOCADO' | 'CABECALHO_VAZIO'; detail: string } | null {
+  const blocking = blockingDivergence(divergences)
+  if (blocking === null) return null
+  return {
+    code: blocking.kind === 'DESLOCADO' ? 'CABECALHO_DESLOCADO' : 'CABECALHO_VAZIO',
+    detail: describeDivergence(blocking),
+  }
+}
+
 /** Alguma destas divergencias recusa a escrita? */
 export function blocksWriting(divergences: readonly SchemaDivergence[]): boolean {
   return blockingDivergence(divergences) !== null
