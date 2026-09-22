@@ -21,7 +21,15 @@ import { normKey } from './normalizer.ts'
  *
  * O modo de falha que ele mata esta medido em `D-43`: deslocar uma coluna faz
  * **616 dos 650** processos lerem o dado do vizinho e **580 categorias**
- * ficarem erradas, com quarentena zero e nenhuma anomalia.
+ * ficarem erradas, com quarentena zero. *(A frase dizia tambem "nenhuma
+ * anomalia"; o ensaio de 17/09/2026 mediu ao menos uma no primeiro processo, e
+ * o total nao foi medido — `D-60`.)*
+ *
+ * **Os ramos de rotulo vazio e repetido nao sao alcancados pelo gesto do
+ * operador.** Enquanto a `Tabela1` cobrir a coluna, o Excel renomeia sozinho o
+ * cabecalho apagado para `Column1` e o repetido para `IMPORTADOR2` — medido no
+ * ensaio de 17/09/2026 (`D-60`). So arquivo escrito fora do Excel chega a eles,
+ * e ali eles reagem como declarado.
  */
 
 /**
