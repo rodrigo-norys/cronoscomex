@@ -1,6 +1,12 @@
 import type { FastifyInstance, FastifyReply } from 'fastify'
 import { store as defaultStore, type StoreAccess } from '../../app/process-store.ts'
-import { currentValue, type EditableField, validateEdit } from '../../domain/editable-fields.ts'
+import {
+  currentValue,
+  type EditableField,
+  type EditRejection,
+  hasForbiddenXmlChar,
+  validateEdit,
+} from '../../domain/editable-fields.ts'
 import { normKey } from '../../domain/normalizer.ts'
 import { UNWRITTEN_ROW } from '../../domain/process-projection.ts'
 import {
@@ -133,16 +139,7 @@ export function registerEditsRoutes(
     */
     const rejection = validateEdit(body.field, body.value)
     if (rejection !== null) {
-      return reply
-        .code(400)
-        .send(
-          apiError(
-            rejection,
-            rejection === 'CAMPO_NAO_EDITAVEL'
-              ? `O campo "${body.field}" nao e editavel.`
-              : `Valor invalido para "${body.field}".`,
-          ),
-        )
+      return reply.code(400).send(apiError(rejection, rejectionMessage(rejection, body.field)))
     }
 
     const process = state.processes.find((candidate) => normKey(candidate.ref) === wanted)
@@ -254,6 +251,18 @@ export function registerEditsRoutes(
     if (typeof body.ref !== 'string' || body.ref.trim() === '') {
       return reply.code(400).send(apiError('CORPO_INVALIDO', 'Informe `ref` como texto nao vazio.'))
     }
+    // A REF nao passa por `validateEdit` — vai direto para a coluna A — e por
+    // isso precisa da mesma recusa por conta propria (`D-61`).
+    if (hasForbiddenXmlChar(body.ref)) {
+      return reply
+        .code(400)
+        .send(
+          apiError(
+            'CARACTERE_INVALIDO',
+            'A REF tem um caractere que a planilha nao aceita — costuma vir de texto colado de outro sistema.',
+          ),
+        )
+    }
 
     const wanted = normKey(body.ref)
     /*
@@ -287,16 +296,7 @@ export function registerEditsRoutes(
       }
       const rejection = validateEdit(field, value)
       if (rejection !== null) {
-        return reply
-          .code(400)
-          .send(
-            apiError(
-              rejection,
-              rejection === 'CAMPO_NAO_EDITAVEL'
-                ? `O campo "${field}" nao e editavel.`
-                : `Valor invalido para "${field}".`,
-            ),
-          )
+        return reply.code(400).send(apiError(rejection, rejectionMessage(rejection, field)))
       }
       values[field] = value
     }
@@ -334,4 +334,13 @@ export function registerEditsRoutes(
     const body: DiscardAllResponse = { discarded: discardAll(queuePath) }
     return reply.code(200).send(body)
   })
+}
+
+/** A frase de cada recusa de `validateEdit`, a mesma nas duas rotas que a usam. */
+function rejectionMessage(rejection: EditRejection, field: string): string {
+  if (rejection === 'CAMPO_NAO_EDITAVEL') return `O campo "${field}" nao e editavel.`
+  if (rejection === 'CARACTERE_INVALIDO') {
+    return `O texto de "${field}" tem um caractere que a planilha nao aceita — costuma vir de texto colado de outro sistema.`
+  }
+  return `Valor invalido para "${field}".`
 }

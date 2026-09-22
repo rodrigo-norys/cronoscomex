@@ -4,6 +4,8 @@ export type ApiErrorCode =
   | 'FILTRO_INVALIDO'
   | 'CORPO_INVALIDO'
   | 'CAMPO_NAO_EDITAVEL'
+  /** `D-61`: caractere que o XML 1.0 nao admite, em geral de texto colado. */
+  | 'CARACTERE_INVALIDO'
   | 'PROCESSO_NAO_ENCONTRADO'
   /** A REF da linha nova ja esta na planilha (02/09/2026). */
   | 'REF_DUPLICADA'

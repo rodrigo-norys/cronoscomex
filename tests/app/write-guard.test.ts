@@ -1230,6 +1230,28 @@ describe('linha nova', () => {
     expect(celulas.B).toBe('CLIENTE NOVO')
   })
 
+  /**
+   * `D-62`. A edição de célula converte texto vazio em `null` por `toCellValue`,
+   * e a inserção reimplementava a conversão inline, sem esse caso. O gesto que
+   * chega aqui é o operador apagar um campo da linha nova: `EditableCell` manda
+   * `''`. Sem o conserto, a validação pós-escrita reprova, o arquivo é
+   * regravado e restaurado, e a fila fica presa. Achado do revisor-xml.
+   */
+  it('grava a linha nova com um campo apagado, em vez de travar a fila', async () => {
+    const antes = await ultimaLinha()
+    queueInsert('FT900.26', { clientRaw: '' })
+
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.ok).toBe(true)
+    expect(await ultimaLinha()).toBe(antes + 1)
+    const celulas = await cellsOf(antes + 1)
+    expect(celulas.A).toBe('FT900.26')
+    expect(celulas.B ?? '').toBe('')
+  })
+
   /** A linha nasce sem preenchimento, e desde 02/09/2026 isso é estado
       legítimo — não vai para a quarentena. */
   it('a linha nova nasce SEM cor', async () => {
@@ -1679,4 +1701,64 @@ describe('cabecalho deslocado recusa a ESCRITA (H-96)', () => {
       expect(events).toContain('resume')
     })
   }
+})
+
+/**
+ * `D-61`. A fila pode ter o caractere desde ANTES do conserto: a rota passou a
+ * recusa-lo, mas nao alcanca o que ja estava enfileirado. Por isso o teste
+ * enfileira direto, por fora da rota.
+ *
+ * **Zero leituras e o que prende esta camada.** A admissibilidade recusa ANTES
+ * da leitura canonica; a barreira do surgeon recusa DEPOIS dela. Sem a contagem,
+ * remover a checagem daqui deixaria os testes verdes — a recusa passaria a vir
+ * do surgeon —, e a camada seria redundante sem ninguem saber. Achado do
+ * revisor-xml.
+ */
+describe('D-61 — caractere que o XML nao admite, na fila de antes do conserto', () => {
+  function contandoLeituras(): {
+    leituras: () => number
+    readWorkbookFn: () => Promise<ReadResult>
+  } {
+    let leituras = 0
+    return {
+      leituras: () => leituras,
+      readWorkbookFn: async () => {
+        leituras += 1
+        return await readWorkbook(config())
+      },
+    }
+  }
+
+  it('recusa um valor com o caractere na admissibilidade, antes de ler o arquivo', async () => {
+    enqueue(
+      {
+        ref: REF,
+        sourceRow: SOURCE_ROW,
+        field: 'clientRaw',
+        value: 'SINT\u0001x',
+        previous: 'CLIENTE A',
+      },
+      queuePath,
+    )
+    const contador = contandoLeituras()
+    await setup({ readWorkbookFn: contador.readWorkbookFn })
+
+    const result = await applyPendingEdits()
+
+    expect(result.refusal).toBe('ESCRITA_INVALIDA')
+    expect(contador.leituras()).toBe(0)
+    expect(readFileSync(workbook)).toEqual(originalBytes)
+  })
+
+  it('recusa a insercao cuja REF tem o caractere, antes de ler o arquivo', async () => {
+    enqueue({ kind: 'insert', ref: 'FT9\u0001.26', values: {} }, queuePath)
+    const contador = contandoLeituras()
+    await setup({ readWorkbookFn: contador.readWorkbookFn })
+
+    const result = await applyPendingEdits()
+
+    expect(result.refusal).toBe('ESCRITA_INVALIDA')
+    expect(contador.leituras()).toBe(0)
+    expect(readFileSync(workbook)).toEqual(originalBytes)
+  })
 })

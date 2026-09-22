@@ -647,3 +647,29 @@ describe('applyCellEdits — achados da revisão adversarial', () => {
     expect(formatosExistentes).toContain(escolhido)
   })
 })
+
+/**
+ * `D-61`. A ultima barreira: o pool de `sharedStrings.xml` e GLOBAL, e um
+ * caractere que o XML 1.0 proibe estragaria o texto das quatro abas.
+ */
+describe('applyCellEdits — caractere que o XML nao admite (D-61)', () => {
+  it('recusa gravar o texto, em vez de deixar o XML malformado', () => {
+    expect(() =>
+      applyCellEdits(
+        fixture('formatado.xlsx'),
+        [{ sourceRow: 2, column: 'B', value: 'SINT\u0001x' }],
+        SHEET_PATH,
+      ),
+    ).toThrow(/caractere que o XML nao admite/)
+  })
+
+  it('grava o mesmo texto sem o caractere', () => {
+    expect(() =>
+      applyCellEdits(
+        fixture('formatado.xlsx'),
+        [{ sourceRow: 2, column: 'B', value: 'SINT x' }],
+        SHEET_PATH,
+      ),
+    ).not.toThrow()
+  })
+})

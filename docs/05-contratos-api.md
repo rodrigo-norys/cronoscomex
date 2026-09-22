@@ -55,6 +55,7 @@ Parâmetro com valor fora do domínio → `400 FILTRO_INVALIDO`.
 | `FILTRO_INVALIDO` | 400 | Valor de filtro fora do domínio |
 | `CORPO_INVALIDO` | 400 | Corpo não satisfaz o schema |
 | `CAMPO_NAO_EDITAVEL` | 400 | Tentativa de editar campo derivado ou fora da lista editável |
+| `CARACTERE_INVALIDO` | 400 | Texto com caractere que o XML 1.0 não admite, em geral colado de outro sistema (`D-61`) |
 | `PROCESSO_NAO_ENCONTRADO` | 404 | REF inexistente na leitura corrente |
 | `EDICAO_NAO_ENCONTRADA` | 404 | `id` de edição inexistente na fila |
 | `GRUPO_INEXISTENTE` | 404 | Não há agrupamento de clientes com essa chave (`H-88`) |
@@ -942,6 +943,7 @@ e a célula visível não mudava.
 | `201` | Enfileirada |
 | `400 CORPO_INVALIDO` | `ref` ausente ou vazia, ou valor inválido em algum campo |
 | `400 CAMPO_NAO_EDITAVEL` | Campo fora da lista |
+| `400 CARACTERE_INVALIDO` | A `ref` ou algum valor traz caractere que o XML 1.0 não admite (`D-61`). A `ref` é conferida por conta própria: ela não passa por `validateEdit` |
 | `409 REF_DUPLICADA` | Já existe processo com essa REF |
 | `409 ESCRITA_EM_ANDAMENTO` | Aplicação em curso |
 | `503 ARQUIVO_INDISPONIVEL` | Nunca houve leitura |
@@ -1324,7 +1326,7 @@ Enfileira uma edição. **Não toca no `.xlsx`.**
 | Código | Situação |
 |---|---|
 | 201 | Enfileirada |
-| 400 | `CORPO_INVALIDO`, `CAMPO_NAO_EDITAVEL` |
+| 400 | `CORPO_INVALIDO`, `CAMPO_NAO_EDITAVEL`, `CARACTERE_INVALIDO` (`D-61`) |
 | 404 | `PROCESSO_NAO_ENCONTRADO` |
 | 409 | `ESCRITA_EM_ANDAMENTO` — uma aplicação está em curso |
 | 409 | `LINHA_NAO_GRAVADA` — o processo é linha nova ainda não aplicada ao arquivo, então não há linha a pintar |

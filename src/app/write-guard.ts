@@ -10,6 +10,7 @@ import {
   currentValue,
   EDITABLE_FIELDS,
   type EditableField,
+  hasForbiddenXmlChar,
   isEditableField,
   validateEdit,
 } from '../domain/editable-fields.ts'
@@ -517,10 +518,17 @@ function resolve(
       // caminho — que e a hipotese que a admissibilidade acima ja cobre para o
       // vazio. `validate` compara por `normKey` e aprovaria a REF com espaços.
       const values: Record<string, CellEdit['value']> = { [REF_COLUMN]: edit.ref.trim() }
+      // **`toCellValue`, e nao uma copia dele** (`D-62`). A conversao vivia aqui
+      // reimplementada, e a copia tinha perdido o texto VAZIO: o `''` ia para a
+      // cirurgia, o leitor devolvia `null`, e a validacao pos-escrita reprovava
+      // — o arquivo era regravado e restaurado a cada tentativa, e a fila ficava
+      // presa. Campo vazio e campo ausente sao a mesma celula na releitura.
       for (const [field, value] of Object.entries(edit.values)) {
         const spec = EDITABLE_FIELDS[field as EditableField]
-        if (spec === undefined || value === null) continue
-        values[spec.column] = spec.kind === 'date' ? new Date(`${value}T00:00:00Z`) : value
+        if (spec === undefined) continue
+        const celula = toCellValue(field as EditableField, value)
+        if (celula === null) continue
+        values[spec.column] = celula
       }
 
       // Cada insercao ocupa a proxima linha livre: aplicadas em sequencia sobre
@@ -818,13 +826,15 @@ async function guardedWrite(
     // que a regra inviolavel 3 proibe.
     //
     // Na insercao o inadmissivel e o mesmo de um campo, campo a campo, MAIS a
-    // REF vazia: sem ela a linha nova nao e um processo, e nasceria direto na
-    // quarentena por `REF_AUSENTE`.
+    // REF vazia — sem ela a linha nova nao e um processo, e nasceria direto na
+    // quarentena por `REF_AUSENTE` — e a REF com caractere que o XML nao admite,
+    // que a rota ja recusa e que pode estar na fila desde antes de `D-61`.
     const inadmissible = pending.some((edit) => {
       if (isColorEdit(edit)) return resolveFillTarget(edit.target, deps.colorMap) === null
       if (isRowInsert(edit)) {
         return (
           edit.ref.trim() === '' ||
+          hasForbiddenXmlChar(edit.ref) ||
           Object.entries(edit.values).some(
             ([field, value]) => !isEditableField(field) || validateEdit(field, value) !== null,
           )

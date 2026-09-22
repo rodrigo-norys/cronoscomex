@@ -866,3 +866,55 @@ describe('a linha pendente valida como qualquer outra', () => {
     }
   })
 })
+
+/**
+ * `D-61`. As duas portas de texto recusam o caractere que o XML 1.0 nao admite
+ * ANTES de enfileirar — os valores por `validateEdit`, e a REF da linha nova por
+ * conta propria, porque ela vai direto para a coluna A sem passar por ele.
+ */
+describe('D-61 — caractere que o XML nao admite', () => {
+  it('recusa a edicao de campo com 400 CARACTERE_INVALIDO', async () => {
+    const app = buildApp()
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/edits',
+      payload: { ref: 'FT533.26', field: 'statusRaw', value: 'SINT\u0001x' },
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.json().error.code).toBe('CARACTERE_INVALIDO')
+
+    await app.close()
+  })
+
+  it('recusa a linha nova cuja REF tem o caractere', async () => {
+    const app = buildApp()
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/edits/row',
+      payload: { ref: 'FT9\u0001.26' },
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.json().error.code).toBe('CARACTERE_INVALIDO')
+
+    await app.close()
+  })
+
+  it('recusa a linha nova com um valor que tem o caractere', async () => {
+    const app = buildApp()
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/edits/row',
+      payload: { ref: 'FT901.26', values: { clientRaw: 'SINT\u0001x' } },
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.json().error.code).toBe('CARACTERE_INVALIDO')
+
+    await app.close()
+  })
+})
