@@ -34,6 +34,16 @@ export type LogEvent =
    * escrita. Achado do revisor-xml.
    */
   | 'queue.archived'
+  /**
+   * `D-67`: a fila existe e nao pode ser LIDA — caminho virado diretorio,
+   * arquivo sem permissao. Evento proprio porque o par `write.refused` +
+   * `ESCRITA_INVALIDA` ja serve outros oito sitios do `write-guard`, e nao
+   * distingue programa que quebrou de arquivo que recusou — que e a razao pela
+   * qual `ERRO_INTERNO` existe no `catch` externo daquele modulo. Sem texto
+   * livre: a mensagem do `fs` carrega o caminho, e a regra inviolavel 8 nao o
+   * quer em log nenhum. Achado do revisor-xml.
+   */
+  | 'queue.unreadable'
   | 'history.appended'
   | 'quarantine.reported'
 
