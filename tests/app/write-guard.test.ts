@@ -1762,3 +1762,128 @@ describe('D-61 — caractere que o XML nao admite, na fila de antes do conserto'
     expect(readFileSync(workbook)).toEqual(originalBytes)
   })
 })
+
+/**
+ * `D-63`. O cabecalho de `applyPendingEdits` promete que ela **nunca rejeita**:
+ * toda falha vira recusa com motivo, porque quem chama e uma rota HTTP que
+ * precisa traduzi-lo em codigo. Um registro de fila com `ref` que nao e texto
+ * quebrava essa promessa — `consolidated` lancava em `normKey`, e a chamada
+ * esta fora do `try`. Achado do revisor-xml.
+ */
+describe('D-63 — a promessa de nunca rejeitar', () => {
+  /**
+   * `D-66`. O outro eixo, e `D-63` nao o alcancava: ler a fila e I/O, e I/O
+   * falha por causas que nao sao o CONTEUDO dela. Sem o `try`, a rejeicao
+   * escapa para o 500 padrao do Fastify — fora do envelope de
+   * `docs/05-contratos-api.md` §1.2,
+   * e com o caminho do arquivo de fila no corpo da resposta. Achado do
+   * revisor-xml.
+   *
+   * O diretorio no lugar do arquivo produz `EISDIR` e roda em qualquer maquina;
+   * o par por permissao (`EACCES`) nao roda como root, e diz a mesma coisa.
+   */
+  it('recusa com motivo quando a fila nem pode ser lida', async () => {
+    rmSync(queuePath, { force: true })
+    mkdirSync(queuePath)
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.refusal).toBe('ESCRITA_INVALIDA')
+    expect(result.invalidRefs).toEqual([])
+    expect(readFileSync(workbook)).toEqual(originalBytes)
+    expect(backupNames()).toEqual([])
+  })
+
+  /**
+   * O evento e proprio, e nao so o `write.refused` que `refused` emite: o par
+   * `write.refused` + `ESCRITA_INVALIDA` ja serve outros oito sitios deste
+   * modulo. Sem distinguir, o log repete o defeito que o `catch` externo
+   * declara — programa que quebrou parecendo arquivo que recusou. Achado do
+   * revisor-xml, na segunda passada.
+   */
+  it('registra a fila ilegivel em evento proprio, sem o caminho', async () => {
+    rmSync(queuePath, { force: true })
+    mkdirSync(queuePath)
+    const entries: LogInput[] = []
+    await setup({
+      logger: {
+        log: (entry) => {
+          entries.push(entry)
+        },
+        purgeExpired: () => [],
+        currentFile: () => '',
+      },
+    })
+
+    await applyPendingEdits()
+
+    expect(entries.find((entry) => entry.event === 'queue.unreadable')).toEqual({
+      level: 'warn',
+      event: 'queue.unreadable',
+    })
+    expect(JSON.stringify(entries)).not.toContain(queuePath)
+  })
+
+  it('recusa com motivo, em vez de rejeitar, com registro de forma errada na fila', async () => {
+    writeFileSync(
+      queuePath,
+      `${JSON.stringify({ kind: 'insert', ref: 12345, values: {}, id: 'x', ts: 'y' })}\n`,
+      'utf-8',
+    )
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.refusal).toBe('NADA_A_APLICAR')
+    expect(readFileSync(workbook)).toEqual(originalBytes)
+  })
+})
+
+/**
+ * `D-64`. Um item inadmissivel recusa a fila INTEIRA, e a mensagem dizia apenas
+ * que nada foi perdido: o operador ficava com a fila presa sem saber o que
+ * descartar. A recusa passa a nomear as REF. Achado do revisor-xml.
+ */
+describe('D-64 — a recusa nomeia o item que nao pode ser gravado', () => {
+  it('traz a REF do item inadmissivel', async () => {
+    enqueue({ kind: 'insert', ref: 'FT9\u0001.26', values: {} }, queuePath)
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.refusal).toBe('ESCRITA_INVALIDA')
+    expect(result.invalidRefs).toEqual(['FT9\u0001.26'])
+  })
+
+  /**
+   * **O ramo mudo, e ele e declarado e nao consertado** (`src/app/write-guard.ts`,
+   * no cabecalho de `invalidRefs`): REF vazia e um dos motivos de
+   * inadmissibilidade, e nao serve de endereco para o operador procurar. Se
+   * TODOS os itens inadmissiveis forem assim, a lista sai vazia e a mensagem
+   * volta a dizer so que nada foi perdido.
+   *
+   * O teste existe para o ramo nao mudar sem decisao: consertar exigiria um
+   * endereco que a fila nao tem. Achado do revisor-xml.
+   */
+  it('fica muda quando o item inadmissivel e a REF vazia', async () => {
+    enqueue({ kind: 'insert', ref: '   ', values: {} }, queuePath)
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.refusal).toBe('ESCRITA_INVALIDA')
+    expect(result.invalidRefs).toEqual([])
+  })
+
+  // Recusa de outro tipo nao tem item a nomear, e a lista vazia diz isso — nao
+  // e informacao faltando.
+  it('devolve lista vazia quando a recusa nao e de item', async () => {
+    await setup()
+
+    const result = await applyPendingEdits()
+
+    expect(result.refusal).toBe('NADA_A_APLICAR')
+    expect(result.invalidRefs).toEqual([])
+  })
+})

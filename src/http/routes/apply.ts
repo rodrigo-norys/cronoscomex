@@ -108,6 +108,9 @@ function detailOf(result: WriteResult): Record<string, unknown> | undefined {
   // e o painel que nomeia as duas pontas nao e montado na tela em que o
   // operador aperta `Aplicar alteracoes`. Ver `WriteResult.schemaDivergence`.
   if (result.schemaDivergence !== null) detail.schemaDivergence = result.schemaDivergence
+  // As REF que a fila nao consegue gravar. Sem elas a mensagem diz que nada foi
+  // perdido e nao diz o que descartar, e a fila fica presa (`D-64`).
+  if (result.invalidRefs.length > 0) detail.invalidRefs = result.invalidRefs
   // Decide por `fileState`, nunca por `restored`: `restored: false` sai tanto de
   // recusa que nunca gravou quanto de restauracao que FALHOU, e so a segunda
   // precisa do caminho do backup — e e a que mais precisa. Quem sabe o estado
