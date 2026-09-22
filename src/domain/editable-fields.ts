@@ -38,7 +38,30 @@ export function isEditableField(field: string): field is EditableField {
 }
 
 /** Por que uma edicao foi recusada. A rota mapeia para 400. */
-export type EditRejection = 'CAMPO_NAO_EDITAVEL' | 'CORPO_INVALIDO'
+export type EditRejection = 'CAMPO_NAO_EDITAVEL' | 'CORPO_INVALIDO' | 'CARACTERE_INVALIDO'
+
+/**
+ * O texto tem caractere que o XML 1.0 nao admite (`D-61`)?
+ *
+ * **O texto gravado vai para `sharedStrings.xml`, que e GLOBAL ao arquivo**, e
+ * um caractere desses deixa o XML malformado: o Excel pede reparo, e o reparo
+ * alcanca o texto das quatro abas, inclusive as fora de escopo. Medido em
+ * 22/09/2026: o `<input>` do Chrome mantem U+0001, U+000B e U+001F colados, e
+ * `validateEdit` so conferia o tamanho — o caminho da tela ate o arquivo estava
+ * aberto.
+ *
+ * O XML 1.0 admite so TAB, LF e CR abaixo de U+0020, e nao admite U+FFFE,
+ * U+FFFF nem surrogate isolado. **Percorre por code point:** o `for...of` junta
+ * o par de surrogate de um emoji num code point so, que e valido e passa.
+ */
+export function hasForbiddenXmlChar(value: string): boolean {
+  for (const character of value) {
+    const code = character.codePointAt(0) ?? 0
+    if (code < 0x20 && code !== 0x09 && code !== 0x0a && code !== 0x0d) return true
+    if ((code >= 0xd800 && code <= 0xdfff) || code === 0xfffe || code === 0xffff) return true
+  }
+  return false
+}
 
 /**
  * Valida o par (campo, valor). `null` e **celula vazia**, nunca cancelamento.
@@ -53,6 +76,11 @@ export function validateEdit(field: string, value: string | null): EditRejection
 
   const spec = EDITABLE_FIELDS[field]
   if (value === null) return null
+  // O tipo diz `string`, mas a fila e JSON em disco e pode ter sido editada a
+  // mao: um numero num campo de texto faria `hasForbiddenXmlChar` lancar
+  // `TypeError`, que o `write-guard` registra como defeito do programa. O
+  // motivo certo e corpo invalido (`D-61`).
+  if (typeof value !== 'string') return 'CORPO_INVALIDO'
 
   if (spec.kind === 'date') {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return 'CORPO_INVALIDO'
@@ -65,6 +93,7 @@ export function validateEdit(field: string, value: string | null): EditRejection
     return null
   }
 
+  if (hasForbiddenXmlChar(value)) return 'CARACTERE_INVALIDO'
   return value.length > spec.maxLength ? 'CORPO_INVALIDO' : null
 }
 

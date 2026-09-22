@@ -55,6 +55,7 @@ Parâmetro com valor fora do domínio → `400 FILTRO_INVALIDO`.
 | `FILTRO_INVALIDO` | 400 | Valor de filtro fora do domínio |
 | `CORPO_INVALIDO` | 400 | Corpo não satisfaz o schema |
 | `CAMPO_NAO_EDITAVEL` | 400 | Tentativa de editar campo derivado ou fora da lista editável |
+| `CARACTERE_INVALIDO` | 400 | Texto com caractere que o XML 1.0 não admite, em geral colado de outro sistema (`D-61`) |
 | `PROCESSO_NAO_ENCONTRADO` | 404 | REF inexistente na leitura corrente |
 | `EDICAO_NAO_ENCONTRADA` | 404 | `id` de edição inexistente na fila |
 | `GRUPO_INEXISTENTE` | 404 | Não há agrupamento de clientes com essa chave (`H-88`) |
@@ -71,8 +72,8 @@ Parâmetro com valor fora do domínio → `400 FILTRO_INVALIDO`.
 | `REF_DUPLICADA` | 409 | Linha nova cuja `ref` já está na fila |
 | `LINHA_NAO_GRAVADA` | 409 | Edição de célula sobre linha nova ainda não aplicada ao arquivo |
 | `TABELA_CHEIA` | 409 | A folga da Tabela do Excel acabou; a aplicação **recusa** em vez de gravar fora dela |
-| `CABECALHO_DESLOCADO` | 409 | Uma coluna mudou de lugar; gravar escreveria na coluna errada (`H-96`). **Recusa de escrita apenas** — a leitura segue |
-| `CABECALHO_VAZIO` | 409 | A linha 1 está sem nomes, e sem eles um deslocamento real fica invisível à conferência (`H-96`). **Recusa de escrita apenas** — a leitura segue |
+| `CABECALHO_DESLOCADO` | 409 | Uma coluna mudou de lugar; gravar escreveria na coluna errada (`H-96`). **Recusa de escrita apenas** — a leitura segue. Desde `D-65`, recusa também o **enfileiramento** |
+| `CABECALHO_VAZIO` | 409 | A linha 1 está sem nomes, e sem eles um deslocamento real fica invisível à conferência (`H-96`). **Recusa de escrita apenas** — a leitura segue. Desde `D-65`, recusa também o **enfileiramento** |
 | `CAMINHO_INVALIDO` | 400 | Caminho de planilha que não resolve, não existe ou não tem a aba (`H-34`) |
 | `CONFIG_NAO_GRAVAVEL` | 500 | `config/app.json` não pôde ser escrito (`H-35`) |
 | `SELETOR_INDISPONIVEL` | 503 | O sistema não oferece diálogo de arquivo (`H-37`) |
@@ -942,8 +943,10 @@ e a célula visível não mudava.
 | `201` | Enfileirada |
 | `400 CORPO_INVALIDO` | `ref` ausente ou vazia, ou valor inválido em algum campo |
 | `400 CAMPO_NAO_EDITAVEL` | Campo fora da lista |
+| `400 CARACTERE_INVALIDO` | A `ref` ou algum valor traz caractere que o XML 1.0 não admite (`D-61`). A `ref` é conferida por conta própria: ela não passa por `validateEdit` |
 | `409 REF_DUPLICADA` | Já existe processo com essa REF |
 | `409 ESCRITA_EM_ANDAMENTO` | Aplicação em curso |
+| `409 CABECALHO_DESLOCADO` · `409 CABECALHO_VAZIO` | O cabeçalho da planilha bloqueia a escrita, e a fila inteira seria recusada ao aplicar (`D-65`) |
 | `503 ARQUIVO_INDISPONIVEL` | Nunca houve leitura |
 
 ---
@@ -1324,10 +1327,11 @@ Enfileira uma edição. **Não toca no `.xlsx`.**
 | Código | Situação |
 |---|---|
 | 201 | Enfileirada |
-| 400 | `CORPO_INVALIDO`, `CAMPO_NAO_EDITAVEL` |
+| 400 | `CORPO_INVALIDO`, `CAMPO_NAO_EDITAVEL`, `CARACTERE_INVALIDO` (`D-61`) |
 | 404 | `PROCESSO_NAO_ENCONTRADO` |
 | 409 | `ESCRITA_EM_ANDAMENTO` — uma aplicação está em curso |
 | 409 | `LINHA_NAO_GRAVADA` — o processo é linha nova ainda não aplicada ao arquivo, então não há linha a pintar |
+| 409 | `CABECALHO_DESLOCADO` · `CABECALHO_VAZIO` — o cabeçalho bloqueia a escrita, e a fila inteira seria recusada ao aplicar (`D-65`) |
 | 503 | `ARQUIVO_INDISPONIVEL` — nunca houve leitura, não há processo a editar |
 
 > As CINCO rotas que ESCREVEM na fila — `POST /api/edits`,
@@ -1414,6 +1418,7 @@ A tabela é **derivada** de `config/color-map.json`, não uma segunda fonte: o
 | 400 | `CORPO_INVALIDO` — combinação sem cor correspondente |
 | 404 | `PROCESSO_NAO_ENCONTRADO` |
 | 409 | `ESCRITA_EM_ANDAMENTO` — uma aplicação está em curso |
+| 409 | `CABECALHO_DESLOCADO` · `CABECALHO_VAZIO` — o cabeçalho bloqueia a escrita, e a fila inteira seria recusada ao aplicar (`D-65`) |
 | 503 | `ARQUIVO_INDISPONIVEL` — nunca houve leitura, não há processo a editar |
 
 ---
@@ -1656,6 +1661,17 @@ A fila **não** é descartada em nenhum caminho de erro. O operador relê e deci
 > mensagem diz "coluna sem nome na linha 1", e não que a linha toda está vazia —
 > **qual** coluna vem no `detail`.
 >
+> **Desde `D-65` as duas recusam também o ENFILEIRAMENTO**, nas três rotas que
+> enfileiram — `POST /api/edits`, `POST /api/edits/row` e
+> `PATCH /api/processes/:ref/color`. O motivo é aritmético: com o cabeçalho
+> bloqueando, o `apply` recusa a fila **inteira**, então cada item enfileirado
+> nesse estado é trabalho que não vai ser gravado, e o operador só descobriria
+> ao clicar em `Aplicar alterações`. A frase muda numa palavra que importa —
+> nada foi **enfileirado**, em vez de nada foi **gravado** —, e o par
+> (código, frase que nomeia a coluna) mora em `writeBlock`, no domínio, para não
+> existir em cinco cópias. **Nada é descartado:** a fila que já existia
+> continua lá, e volta a aplicar quando o cabeçalho for restaurado.
+>
 > **Renome não recusa**, e é o contraste que define a regra: `AUSENTE` com o
 > rótulo trocado por **outro nome** deixa a coluna onde estava, e gravar nela
 > continua acertando; `AUSENTE` com o rótulo **apagado** recusa. A separação é
@@ -1670,6 +1686,14 @@ A fila **não** é descartada em nenhum caminho de erro. O operador relê e deci
 > sozinha não bastava** — o painel que nomeia a coluna é montado só na Página
 > Configuração e no arranque a frio, e o botão `Aplicar alterações` não vive
 > nessas telas.
+
+> **`ESCRITA_INVALIDA` carrega `invalidRefs` desde `D-64`**, a lista das REF que
+> a fila não consegue gravar. Um item inadmissível recusa a fila **inteira**, e
+> a mensagem dizia apenas que nada foi perdido: o operador ficava com a fila
+> presa sem saber o que descartar, e a rota que nomeia o motivo — `CARACTERE_INVALIDO`
+> e as demais — não é consultada de novo na aplicação. **REF vazia fica de fora**:
+> ela é um dos motivos de inadmissibilidade e não serve de endereço. Lista vazia
+> é o caso normal das outras recusas, e não informação faltando.
 
 > **`TABELA_CHEIA` entrou em 02/09/2026**, com a criação de linha. `Tabela1`
 > cobre `A1:P997` contra 745 linhas escritas, então há folga; quando ela acabar,

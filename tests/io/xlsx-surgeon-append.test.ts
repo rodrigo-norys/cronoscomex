@@ -587,3 +587,18 @@ describe('appendRow — regressões da segunda revisão', () => {
     ).not.toThrow()
   })
 })
+
+/**
+ * `D-61`. A criacao de linha escreve no mesmo pool global que a edicao, e passa
+ * pela mesma barreira.
+ */
+describe('appendRow — caractere que o XML nao admite (D-61)', () => {
+  it('recusa inserir texto com o caractere', () => {
+    const original = fixture('basico.xlsx')
+    const proxima = lastRowOf(sheetOf(original)) + 1
+
+    expect(() =>
+      appendRow(original, { sourceRow: proxima, values: { A: 'SINT\u0001x' } }, SHEET_PATH),
+    ).toThrow(/caractere que o XML nao admite/)
+  })
+})

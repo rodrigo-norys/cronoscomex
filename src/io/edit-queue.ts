@@ -145,7 +145,16 @@ function readRecords(path: string): QueueRecord[] {
     .filter((line) => line.trim() !== '')
     .flatMap((line) => {
       try {
-        return [JSON.parse(line) as QueueRecord]
+        const record = JSON.parse(line) as QueueRecord
+        // **JSON valido com a forma errada tambem nao derruba** (`D-63`). Um
+        // `ref` que nao e texto passava por aqui e quebrava adiante, em
+        // `normKey`: `applyPendingEdits` REJEITAVA, contra a invariante do
+        // proprio cabecalho dela — toda falha vira recusa com motivo, porque
+        // quem chama e uma rota que precisa traduzi-lo. O registro de descarte
+        // nao tem `ref`, e por isso e conferido antes.
+        if (typeof record !== 'object' || record === null) return []
+        if (!isDiscard(record) && typeof record.ref !== 'string') return []
+        return [record]
       } catch {
         // Linha ilegivel nao derruba a fila inteira: as demais continuam
         // valendo, e o operador nao perde o que enfileirou por causa de uma

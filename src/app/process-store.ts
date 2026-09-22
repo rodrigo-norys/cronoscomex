@@ -216,7 +216,30 @@ export function getState(): StoreState {
   */
   if (options === null) return { ...current }
 
-  const edits = consolidated(options.queuePath ?? DEFAULT_QUEUE_PATH)
+  /*
+    **`D-67`. Ler a fila e I/O, e `getState` e a porta de TODAS as rotas:** sem
+    o `try`, o caminho da fila virado diretorio (`EISDIR`) ou sem permissao
+    (`EACCES`) derruba `GET /api/health`, `/api/processes` e as demais com o
+    500 cru do Fastify — fora do envelope de `docs/05-contratos-api.md` §1.2, e
+    com o CAMINHO DO ARQUIVO no corpo da resposta. `D-66` fechou o mesmo eixo em
+    `applyPendingEdits`, e o fechou num chamador so; era por aqui que o dano
+    acontecia primeiro, porque o painel morre antes de o operador alcancar o
+    botao. Achado do revisor-xml.
+
+    **O painel segue, e mostra a planilha SEM a fila** — que e o que o arquivo
+    tem. A fila nao se perde: ela esta em disco, ilegivel agora, e a escrita
+    recusa (`D-66`) em vez de gravar sem ela. O que o operador NAO ve e que ela
+    existe: o contador de pendencias marca zero. Dizer isso na tela e fatia
+    propria — pede campo novo no contrato de `/api/health` —, e ate la o
+    registro e o log.
+  */
+  let edits: PendingEdit[]
+  try {
+    edits = consolidated(options.queuePath ?? DEFAULT_QUEUE_PATH)
+  } catch {
+    options.logger?.log({ level: 'warn', event: 'queue.unreadable' })
+    return { ...current }
+  }
   if (edits.length === 0) return { ...current }
 
   const { processes } = applyEdits(current.processes, toProjected(edits, options.colorMap), {

@@ -4,6 +4,7 @@ import {
   DECLARED_HEADERS,
   describeDivergence,
   type SchemaDivergence,
+  writeBlock,
 } from '../../src/domain/sheet-schema.ts'
 
 /**
@@ -273,5 +274,51 @@ describe('o que recusa a escrita', () => {
 
     expect(check.ok).toBe(true)
     expect(check.blocksWriting).toBe(false)
+  })
+})
+
+/**
+ * `D-65`. O par (codigo, frase) que o `write-guard` e as tres rotas de
+ * enfileiramento consomem.
+ *
+ * O que estes testes protegem e a EQUIVALENCIA entre os consumidores: antes de
+ * `D-65` o mapeamento vivia inline no `write-guard`, e levar a recusa as rotas
+ * o copiaria. Uma copia que divergisse daria ao operador codigos diferentes
+ * para o mesmo estado da planilha, dependendo de onde ele clicasse.
+ */
+describe('writeBlock — D-65', () => {
+  it('devolve null quando o cabecalho bate', () => {
+    expect(writeBlock(checkSheetSchema(BOM).divergences)).toBeNull()
+  })
+
+  it('coluna inserida vira CABECALHO_DESLOCADO, com a frase que nomeia a coluna', () => {
+    const block = writeBlock(checkSheetSchema(comColunaInserida(true)).divergences)
+
+    expect(block?.code).toBe('CABECALHO_DESLOCADO')
+    expect(block?.detail).toBe(
+      '14 colunas andaram 1 coluna à direita, a partir de C — a primeira é "IMPORTADOR".',
+    )
+  })
+
+  it('linha 1 em branco vira CABECALHO_VAZIO', () => {
+    expect(writeBlock(checkSheetSchema({}).divergences)?.code).toBe('CABECALHO_VAZIO')
+  })
+
+  // Renome NAO bloqueia: a coluna fica onde estava, e gravar nela continua
+  // acertando. E o contraste que separa `AUSENTE` com `found` de `AUSENTE` sem.
+  it('cabecalho renomeado nao bloqueia', () => {
+    expect(writeBlock(checkSheetSchema({ ...BOM, E: 'REPRESENTANTE' }).divergences)).toBeNull()
+  })
+
+  /**
+   * O rotulo APAGADO de uma coluna so e `CABECALHO_VAZIO`, e nao
+   * `CABECALHO_DESLOCADO`: nada foi detectado fora do lugar, e mandar desfazer
+   * nomearia uma coluna que nao se moveu.
+   */
+  it('rotulo apagado de uma coluna vira CABECALHO_VAZIO, e nao deslocamento', () => {
+    const headers: Record<string, string> = { ...BOM }
+    delete headers.E
+
+    expect(writeBlock(checkSheetSchema(headers).divergences)?.code).toBe('CABECALHO_VAZIO')
   })
 })

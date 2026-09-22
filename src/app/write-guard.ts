@@ -10,11 +10,12 @@ import {
   currentValue,
   EDITABLE_FIELDS,
   type EditableField,
+  hasForbiddenXmlChar,
   isEditableField,
   validateEdit,
 } from '../domain/editable-fields.ts'
 import { normKey } from '../domain/normalizer.ts'
-import { blockingDivergence, describeDivergence } from '../domain/sheet-schema.ts'
+import { writeBlock } from '../domain/sheet-schema.ts'
 import { REF_COLUMN } from '../domain/status-classifier.ts'
 import type { Process, RawCell, RawRow } from '../domain/types.ts'
 import {
@@ -286,6 +287,20 @@ export interface WriteResult {
    * Achado do revisor-xml.
    */
   schemaDivergence: string | null
+
+  /**
+   * As REF dos itens da fila que nao podem ser gravados (`D-64`).
+   *
+   * Mesma razao de `schemaDivergence`, um passo adiante: um item inadmissivel
+   * recusa a fila INTEIRA, e a mensagem dizia so que nada foi perdido. O
+   * operador ficava com a fila presa sem saber o que descartar, e a rota que
+   * nomeia o motivo — `CARACTERE_INVALIDO` e as demais — nao e consultada de
+   * novo na aplicacao. Achado do revisor-xml.
+   *
+   * **REF vazia fica de fora**: ela e um dos motivos de inadmissibilidade, e
+   * nao serve de endereco para o operador procurar.
+   */
+  invalidRefs: readonly string[]
 }
 
 /** O que o guard usa do store. `StoreAccess` nao serve: nao tem as transicoes. */
@@ -402,6 +417,7 @@ function refuse(
     rowsInserted: 0,
     backupPath: null,
     conflicts: [],
+    invalidRefs: [],
     restored: false,
     durationMs: Math.round(performance.now() - startedAt),
     expectedHash: null,
@@ -517,10 +533,17 @@ function resolve(
       // caminho — que e a hipotese que a admissibilidade acima ja cobre para o
       // vazio. `validate` compara por `normKey` e aprovaria a REF com espaços.
       const values: Record<string, CellEdit['value']> = { [REF_COLUMN]: edit.ref.trim() }
+      // **`toCellValue`, e nao uma copia dele** (`D-62`). A conversao vivia aqui
+      // reimplementada, e a copia tinha perdido o texto VAZIO: o `''` ia para a
+      // cirurgia, o leitor devolvia `null`, e a validacao pos-escrita reprovava
+      // — o arquivo era regravado e restaurado a cada tentativa, e a fila ficava
+      // presa. Campo vazio e campo ausente sao a mesma celula na releitura.
       for (const [field, value] of Object.entries(edit.values)) {
         const spec = EDITABLE_FIELDS[field as EditableField]
-        if (spec === undefined || value === null) continue
-        values[spec.column] = spec.kind === 'date' ? new Date(`${value}T00:00:00Z`) : value
+        if (spec === undefined) continue
+        const celula = toCellValue(field as EditableField, value)
+        if (celula === null) continue
+        values[spec.column] = celula
       }
 
       // Cada insercao ocupa a proxima linha livre: aplicadas em sequencia sobre
@@ -731,7 +754,28 @@ export async function applyPendingEdits(): Promise<WriteResult> {
 
   // Antes de pausar o observador: fila vazia nao justifica interromper a
   // releitura, e o criterio de aceite exige que o arquivo nao seja tocado.
-  const pending = consolidated(deps.queuePath)
+  //
+  // **O `try` e o que sustenta a invariante do cabecalho** (`D-66`). Ler a fila
+  // e I/O, e I/O falha por causas que nao sao o conteudo dela: o caminho virou
+  // diretorio (`EISDIR`), o arquivo perdeu permissao (`EACCES`). `D-63`
+  // consertou o que `readRecords` sabe ler e deixou este eixo de fora — sem o
+  // `try`, a rejeicao escapa para o 500 padrao do Fastify, FORA do envelope de
+  // `docs/05-contratos-api.md` §1.2, e com o caminho da fila no corpo da resposta. Achado do
+  // revisor-xml, medido nas duas causas.
+  let pending: PendingEdit[]
+  try {
+    pending = consolidated(deps.queuePath)
+  } catch {
+    // **Evento proprio, e nao so o `write.refused` que `refused` emite**: o par
+    // `write.refused` + `ESCRITA_INVALIDA` ja serve outros oito sitios deste
+    // modulo, e sem distinguir fila ilegivel de anomalia da cirurgia o log
+    // repete o defeito que o `catch` externo declara — programa que quebrou
+    // parecendo arquivo que recusou. Sem texto livre: a mensagem do `fs`
+    // carrega o caminho, e a regra inviolavel 8 nao o quer em log nenhum.
+    // Achado do revisor-xml.
+    deps.logger.log({ level: 'warn', event: 'queue.unreadable' })
+    return refused('ESCRITA_INVALIDA')
+  }
   if (pending.length === 0) return refused('NADA_A_APLICAR')
 
   writing = true
@@ -791,15 +835,11 @@ async function guardedWrite(
       de hash adiante: arquivo alterado sem releitura cai em `ARQUIVO_MUDOU`, e
       `knownHash` nulo cai no mesmo codigo.
     */
-    const blocking = blockingDivergence(store.getState().schemaDivergences)
-    if (blocking !== null) {
-      // `DESLOCADO` e o unico movimento DETECTADO. Os outros dois que bloqueiam
-      // — linha 1 em branco, e rotulo apagado numa coluna — sao a mesma coisa
-      // para o operador: falta o nome com que conferir, e o que se pede e
-      // restaurar, nao desfazer.
-      const code = blocking.kind === 'DESLOCADO' ? 'CABECALHO_DESLOCADO' : 'CABECALHO_VAZIO'
-      return refused(code, { schemaDivergence: describeDivergence(blocking) })
-    }
+    // O par (codigo, frase) vem do dominio desde `D-65`: as portas de
+    // enfileiramento precisam do mesmo, e o mapeamento nao pode viver em cinco
+    // copias.
+    const block = writeBlock(store.getState().schemaDivergences)
+    if (block !== null) return refused(block.code, { schemaDivergence: block.detail })
 
     // O lock primeiro, na ordem de 04-arquitetura.md secao 3.2: com o Excel
     // aberto E a fila inadmissivel, o motivo que o operador precisa ouvir e o
@@ -818,13 +858,15 @@ async function guardedWrite(
     // que a regra inviolavel 3 proibe.
     //
     // Na insercao o inadmissivel e o mesmo de um campo, campo a campo, MAIS a
-    // REF vazia: sem ela a linha nova nao e um processo, e nasceria direto na
-    // quarentena por `REF_AUSENTE`.
-    const inadmissible = pending.some((edit) => {
+    // REF vazia — sem ela a linha nova nao e um processo, e nasceria direto na
+    // quarentena por `REF_AUSENTE` — e a REF com caractere que o XML nao admite,
+    // que a rota ja recusa e que pode estar na fila desde antes de `D-61`.
+    const inadmissiveis = pending.filter((edit) => {
       if (isColorEdit(edit)) return resolveFillTarget(edit.target, deps.colorMap) === null
       if (isRowInsert(edit)) {
         return (
           edit.ref.trim() === '' ||
+          hasForbiddenXmlChar(edit.ref) ||
           Object.entries(edit.values).some(
             ([field, value]) => !isEditableField(field) || validateEdit(field, value) !== null,
           )
@@ -832,7 +874,12 @@ async function guardedWrite(
       }
       return !isEditableField(edit.field) || validateEdit(edit.field, edit.value) !== null
     })
-    if (inadmissible) return refused('ESCRITA_INVALIDA')
+    if (inadmissiveis.length > 0) {
+      const invalidRefs = [
+        ...new Set(inadmissiveis.map((edit) => edit.ref.trim()).filter((ref) => ref !== '')),
+      ]
+      return refused('ESCRITA_INVALIDA', { invalidRefs })
+    }
 
     // Leitura canonica: dela saem o hash, o caminho da aba dentro do zip, o
     // endereco real de cada linha e o valor atual de cada campo. Uma leitura so,
@@ -991,6 +1038,7 @@ async function guardedWrite(
       return {
         ok: true,
         refusal: null,
+        invalidRefs: [],
         schemaDivergence: null,
         applied: targets.length + fills.length + inserts.length,
         cellsWritten: 0,
@@ -1050,6 +1098,7 @@ async function guardedWrite(
     return {
       ok: true,
       refusal: null,
+      invalidRefs: [],
       schemaDivergence: null,
       applied: targets.length + fills.length + inserts.length,
       cellsWritten,

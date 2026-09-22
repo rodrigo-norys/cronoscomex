@@ -23,6 +23,7 @@ function result(overrides: Partial<WriteResult> = {}): WriteResult {
   return {
     ok: false,
     refusal: null,
+    invalidRefs: [],
     applied: 0,
     cellsWritten: 0,
     rowsRepainted: 0,
@@ -160,6 +161,28 @@ describe('POST /api/edits/apply — o codigo de cada recusa', () => {
 })
 
 describe('POST /api/edits/apply — o detail de cada recusa', () => {
+  /**
+   * `D-64`, o elo do MEIO: o `WriteResult` tem a lista, e o `ConflictDialog` a
+   * exibe, mas nada afirmava que a rota a repassa. E o elo exato que
+   * `TABELA_CHEIA` perdeu em 02/09/2026, quando o codigo nao atravessou ate a
+   * tela e caiu em `ERRO_INTERNO`. Achado do revisor-xml.
+   */
+  it('leva as REF inadmissiveis em ESCRITA_INVALIDA', async () => {
+    const response = await post(
+      result({ refusal: 'ESCRITA_INVALIDA', invalidRefs: ['FT533.26', 'FT900.26'] }),
+    )
+
+    expect(response.json().error.detail.invalidRefs).toEqual(['FT533.26', 'FT900.26'])
+  })
+
+  // Lista vazia nao vira campo: o `detail` de uma recusa sem item a nomear nao
+  // pode sugerir que a informacao faltou.
+  it('omite invalidRefs quando a lista esta vazia', async () => {
+    const response = await post(result({ refusal: 'ESCRITA_INVALIDA', invalidRefs: [] }))
+
+    expect(response.json().error.detail?.invalidRefs).toBeUndefined()
+  })
+
   it('leva os dois hashes e os conflitos em ARQUIVO_MUDOU', async () => {
     const response = await post(
       result({

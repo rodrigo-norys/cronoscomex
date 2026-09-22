@@ -1,8 +1,15 @@
 import type { FastifyInstance, FastifyReply } from 'fastify'
 import { store as defaultStore, type StoreAccess } from '../../app/process-store.ts'
-import { currentValue, type EditableField, validateEdit } from '../../domain/editable-fields.ts'
+import {
+  currentValue,
+  type EditableField,
+  type EditRejection,
+  hasForbiddenXmlChar,
+  validateEdit,
+} from '../../domain/editable-fields.ts'
 import { normKey } from '../../domain/normalizer.ts'
 import { UNWRITTEN_ROW } from '../../domain/process-projection.ts'
+import { writeBlock } from '../../domain/sheet-schema.ts'
 import {
   consolidated,
   DEFAULT_QUEUE_PATH,
@@ -15,7 +22,7 @@ import {
   type PendingFieldEdit,
   type PendingRowInsert,
 } from '../../io/edit-queue.ts'
-import { apiError } from '../errors.ts'
+import { apiError, queueBlockedError } from '../errors.ts'
 
 /**
  * As CINCO rotas de edicao — contrato em `docs/05-contratos-api.md §3`. A quinta
@@ -103,6 +110,21 @@ export function registerEditsRoutes(
         )
     }
 
+    // `D-65`. Com o cabecalho bloqueando, o `apply` recusa a fila INTEIRA:
+    // enfileirar neste estado e enfileirar para nada, e o operador so
+    // descobriria ao clicar em Aplicar, com o trabalho ja acumulado.
+    //
+    // **Vem antes da validacao de corpo, junto das outras duas recusas de
+    // ESTADO** — `recusaDuranteEscrita` e `ARQUIVO_INDISPONIVEL` —, e a
+    // consequencia fica declarada: com o cabecalho quebrado, requisicao
+    // malformada recebe `409` no lugar de `400`. Nao ha caminho de escrita
+    // antes dela, e o operador nao produz corpo malformado — quem produz e o
+    // cliente, e ai o `409` e a informacao certa. Descer a guarda para depois
+    // da validacao poria esta recusa de estado num lugar diferente das duas
+    // irmas, sem ganhar nada. Achado do revisor-xml.
+    const block = writeBlock(state.schemaDivergences)
+    if (block !== null) return reply.code(409).send(queueBlockedError(block))
+
     const body = (request.body ?? {}) as EditRequestBody
     if (typeof body.ref !== 'string' || typeof body.field !== 'string') {
       return reply.code(400).send(apiError('CORPO_INVALIDO', 'Informe `ref` e `field` como texto.'))
@@ -133,16 +155,7 @@ export function registerEditsRoutes(
     */
     const rejection = validateEdit(body.field, body.value)
     if (rejection !== null) {
-      return reply
-        .code(400)
-        .send(
-          apiError(
-            rejection,
-            rejection === 'CAMPO_NAO_EDITAVEL'
-              ? `O campo "${body.field}" nao e editavel.`
-              : `Valor invalido para "${body.field}".`,
-          ),
-        )
+      return reply.code(400).send(apiError(rejection, rejectionMessage(rejection, body.field)))
     }
 
     const process = state.processes.find((candidate) => normKey(candidate.ref) === wanted)
@@ -250,9 +263,31 @@ export function registerEditsRoutes(
         )
     }
 
+    // `D-65`. Com o cabecalho bloqueando, o `apply` recusa a fila INTEIRA:
+    // enfileirar neste estado e enfileirar para nada, e o operador so
+    // descobriria ao clicar em Aplicar, com o trabalho ja acumulado.
+    // **Vem antes da validacao de corpo, junto das outras duas recusas de
+    // ESTADO** — ver a justificativa inteira em `POST /api/edits`, onde ela
+    // esta escrita uma vez so: o argumento vale igual nas tres. Achado do
+    // revisor-xml.
+    const block = writeBlock(state.schemaDivergences)
+    if (block !== null) return reply.code(409).send(queueBlockedError(block))
+
     const body = (request.body ?? {}) as { ref?: unknown; values?: unknown }
     if (typeof body.ref !== 'string' || body.ref.trim() === '') {
       return reply.code(400).send(apiError('CORPO_INVALIDO', 'Informe `ref` como texto nao vazio.'))
+    }
+    // A REF nao passa por `validateEdit` — vai direto para a coluna A — e por
+    // isso precisa da mesma recusa por conta propria (`D-61`).
+    if (hasForbiddenXmlChar(body.ref)) {
+      return reply
+        .code(400)
+        .send(
+          apiError(
+            'CARACTERE_INVALIDO',
+            'A REF tem um caractere que a planilha nao aceita — costuma vir de texto colado de outro sistema.',
+          ),
+        )
     }
 
     const wanted = normKey(body.ref)
@@ -287,16 +322,7 @@ export function registerEditsRoutes(
       }
       const rejection = validateEdit(field, value)
       if (rejection !== null) {
-        return reply
-          .code(400)
-          .send(
-            apiError(
-              rejection,
-              rejection === 'CAMPO_NAO_EDITAVEL'
-                ? `O campo "${field}" nao e editavel.`
-                : `Valor invalido para "${field}".`,
-            ),
-          )
+        return reply.code(400).send(apiError(rejection, rejectionMessage(rejection, field)))
       }
       values[field] = value
     }
@@ -334,4 +360,13 @@ export function registerEditsRoutes(
     const body: DiscardAllResponse = { discarded: discardAll(queuePath) }
     return reply.code(200).send(body)
   })
+}
+
+/** A frase de cada recusa de `validateEdit`, a mesma nas duas rotas que a usam. */
+function rejectionMessage(rejection: EditRejection, field: string): string {
+  if (rejection === 'CAMPO_NAO_EDITAVEL') return `O campo "${field}" nao e editavel.`
+  if (rejection === 'CARACTERE_INVALIDO') {
+    return `O texto de "${field}" tem um caractere que a planilha nao aceita — costuma vir de texto colado de outro sistema.`
+  }
+  return `Valor invalido para "${field}".`
 }

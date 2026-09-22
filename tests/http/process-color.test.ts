@@ -5,6 +5,7 @@ import Fastify from 'fastify'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { StoreAccess, StoreState } from '../../src/app/process-store.ts'
 import type { ColorMapEntry } from '../../src/domain/color-mapper.ts'
+import { checkSheetSchema } from '../../src/domain/sheet-schema.ts'
 import type { Process } from '../../src/domain/types.ts'
 import { registerProcessColorRoute } from '../../src/http/routes/process-color.ts'
 import { consolidated, isColorEdit, type PendingColorEdit } from '../../src/io/edit-queue.ts'
@@ -333,5 +334,38 @@ describe('PATCH /api/processes/:ref/color', () => {
 
     expect(response.json().pendingEditsCount).toBe(1)
     expect(consolidated(queuePath)).toHaveLength(1)
+  })
+})
+
+/**
+ * `D-65`. A rota de cor recusa enfileirar quando o cabecalho bloqueia a escrita,
+ * pelo mesmo motivo das duas rotas de edicao: o `apply` recusaria a fila
+ * inteira, e o operador so descobriria ao clicar em `Aplicar alteracoes`.
+ *
+ * **A cor nao escapa por ser outra coluna.** Ela troca o `fillId` da linha, e a
+ * linha e localizada pela mesma aritmetica de colunas que um deslocamento
+ * invalida.
+ */
+describe('PATCH /api/processes/:ref/color — o cabecalho bloqueado — D-65', () => {
+  const CORRETA = {
+    responsible: 'indefinido',
+    customsChannel: 'indefinido',
+    importerOutsideRj: false,
+  }
+
+  it('recusa com 409 CABECALHO_VAZIO, e nao enfileira', async () => {
+    const app = buildApp(state({ schemaDivergences: checkSheetSchema({}).divergences }))
+
+    const response = await patch(app, CORRETA)
+
+    expect(response.statusCode).toBe(409)
+    expect(response.json().error.code).toBe('CABECALHO_VAZIO')
+    expect(consolidated(queuePath)).toHaveLength(0)
+  })
+
+  it('nao recusa quando o cabecalho bate', async () => {
+    const response = await patch(buildApp(), CORRETA)
+
+    expect(response.statusCode).toBe(201)
   })
 })

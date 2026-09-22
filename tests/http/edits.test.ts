@@ -4,6 +4,7 @@ import { join } from 'node:path'
 import Fastify from 'fastify'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import type { StoreAccess, StoreState } from '../../src/app/process-store.ts'
+import { checkSheetSchema, DECLARED_HEADERS } from '../../src/domain/sheet-schema.ts'
 import type { Process } from '../../src/domain/types.ts'
 import { registerEditsRoutes } from '../../src/http/routes/edits.ts'
 import { buildServer } from '../../src/http/server.ts'
@@ -109,6 +110,21 @@ function buildApp(initial: StoreState = state()) {
 }
 
 const EDICAO = { ref: 'FT533.26', field: 'eta2', value: '2026-08-06' }
+
+/** Uma coluna inserida antes de `IMPORTADOR`: empurra as 14 seguintes. */
+function comColunaInserida(): Record<string, string> {
+  const letras = Object.keys(DECLARED_HEADERS)
+  const headers: Record<string, string> = {
+    A: DECLARED_HEADERS.A as string,
+    B: DECLARED_HEADERS.B as string,
+    C: 'NOVA',
+  }
+  for (let i = 2; i < letras.length; i += 1) {
+    const destino = letras[i + 1] ?? 'Q'
+    headers[destino] = DECLARED_HEADERS[letras[i] as string] as string
+  }
+  return headers
+}
 
 describe('POST /api/edits', () => {
   it('enfileira e devolve 201 com o contrato', async () => {
@@ -864,5 +880,152 @@ describe('a linha pendente valida como qualquer outra', () => {
 
       expect(resposta.statusCode).toBe(400)
     }
+  })
+})
+
+/**
+ * `D-61`. As duas portas de texto recusam o caractere que o XML 1.0 nao admite
+ * ANTES de enfileirar — os valores por `validateEdit`, e a REF da linha nova por
+ * conta propria, porque ela vai direto para a coluna A sem passar por ele.
+ */
+describe('D-61 — caractere que o XML nao admite', () => {
+  it('recusa a edicao de campo com 400 CARACTERE_INVALIDO', async () => {
+    const app = buildApp()
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/edits',
+      payload: { ref: 'FT533.26', field: 'statusRaw', value: 'SINT\u0001x' },
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.json().error.code).toBe('CARACTERE_INVALIDO')
+
+    await app.close()
+  })
+
+  it('recusa a linha nova cuja REF tem o caractere', async () => {
+    const app = buildApp()
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/edits/row',
+      payload: { ref: 'FT9\u0001.26' },
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.json().error.code).toBe('CARACTERE_INVALIDO')
+
+    await app.close()
+  })
+
+  it('recusa a linha nova com um valor que tem o caractere', async () => {
+    const app = buildApp()
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/api/edits/row',
+      payload: { ref: 'FT901.26', values: { clientRaw: 'SINT\u0001x' } },
+    })
+
+    expect(response.statusCode).toBe(400)
+    expect(response.json().error.code).toBe('CARACTERE_INVALIDO')
+
+    await app.close()
+  })
+})
+
+/**
+ * `D-65`. As duas rotas de edicao recusam ENFILEIRAR quando o cabecalho bloqueia
+ * a escrita.
+ *
+ * **O motivo e aritmetico**, e nao de simetria: com o cabecalho bloqueando, o
+ * `apply` recusa a fila INTEIRA, entao tudo o que for enfileirado nesse estado
+ * e trabalho que nao vai ser gravado — e o operador so descobriria ao clicar em
+ * `Aplicar alteracoes`, com a fila ja acumulada.
+ *
+ * A divergencia vem de `checkSheetSchema` sobre um cabecalho real, e nao
+ * montada a mao: um literal com a forma errada passaria nestes testes e
+ * divergiria do que a leitura produz.
+ */
+describe('as rotas de edicao recusam enfileirar com o cabecalho bloqueado — D-65', () => {
+  const DESLOCADO = checkSheetSchema(comColunaInserida()).divergences
+  const VAZIO = checkSheetSchema({}).divergences
+
+  it.each([
+    ['POST /api/edits', '/api/edits', EDICAO],
+    ['POST /api/edits/row', '/api/edits/row', { ref: 'FT901.26' }],
+  ] as const)('%s recusa com 409 CABECALHO_DESLOCADO', async (_nome, url, payload) => {
+    const app = buildApp(state({ schemaDivergences: DESLOCADO }))
+
+    const response = await app.inject({ method: 'POST', url, payload })
+
+    expect(response.statusCode).toBe(409)
+    expect(response.json().error.code).toBe('CABECALHO_DESLOCADO')
+    // A frase que nomeia a coluna vem do servidor, montada uma vez so — e entra
+    // na MENSAGEM, porque e so ela que o cliente le.
+    expect(response.json().error.detail.schemaDivergence).toContain('IMPORTADOR')
+    expect(response.json().error.message).toContain('IMPORTADOR')
+    expect(response.json().error.message).toContain('Desfaca a mudanca no Excel')
+
+    await app.close()
+  })
+
+  it.each([
+    ['POST /api/edits', '/api/edits', EDICAO],
+    ['POST /api/edits/row', '/api/edits/row', { ref: 'FT901.26' }],
+  ] as const)('%s recusa com 409 CABECALHO_VAZIO', async (_nome, url, payload) => {
+    const app = buildApp(state({ schemaDivergences: VAZIO }))
+
+    const response = await app.inject({ method: 'POST', url, payload })
+
+    expect(response.statusCode).toBe(409)
+    expect(response.json().error.code).toBe('CABECALHO_VAZIO')
+
+    await app.close()
+  })
+
+  // A recusa e o ponto: nada pode chegar ao `.jsonl`.
+  it('nao enfileira nada quando recusa', async () => {
+    const app = buildApp(state({ schemaDivergences: DESLOCADO }))
+
+    await app.inject({ method: 'POST', url: '/api/edits', payload: EDICAO })
+    await app.inject({ method: 'POST', url: '/api/edits/row', payload: { ref: 'FT901.26' } })
+
+    expect(existsSync(queuePath)).toBe(false)
+
+    await app.close()
+  })
+
+  /**
+   * **A fila que ja existia NAO e descartada** (regra inviolavel 2): quem
+   * enfileirou antes da mudanca no Excel continua com o trabalho dele, e volta
+   * a aplicar quando o cabecalho for restaurado. O descarte tambem segue
+   * disponivel — e a saida do operador que prefira comecar de novo.
+   */
+  it('preserva a fila anterior, e o descarte segue funcionando', async () => {
+    enqueue({ ref: 'FT533.26', sourceRow: 483, field: 'eta2', value: 'x', previous: '' }, queuePath)
+    const app = buildApp(state({ schemaDivergences: DESLOCADO }))
+
+    const lista = await app.inject({ method: 'GET', url: '/api/edits' })
+    expect(lista.json().count).toBe(1)
+
+    const descarte = await app.inject({ method: 'DELETE', url: '/api/edits' })
+    expect(descarte.statusCode).toBe(200)
+    expect(descarte.json().discarded).toBe(1)
+
+    await app.close()
+  })
+
+  // Renome nao bloqueia a escrita, e por isso nao pode bloquear o enfileiramento.
+  it('cabecalho renomeado nao recusa', async () => {
+    const renomeado = checkSheetSchema({ ...DECLARED_HEADERS, E: 'REPRESENTANTE' }).divergences
+    const app = buildApp(state({ schemaDivergences: renomeado }))
+
+    const response = await app.inject({ method: 'POST', url: '/api/edits', payload: EDICAO })
+
+    expect(response.statusCode).toBe(201)
+
+    await app.close()
   })
 })

@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -1005,5 +1005,52 @@ describe('process-store — projeção sobre aba sem processo', () => {
     expect(projetados[0]?.clientRaw).toBe('NOVO')
     // `0` é o sentinela de "ainda não gravada", e não um endereço.
     expect(projetados[0]?.sourceRow).toBe(0)
+  })
+})
+
+/**
+ * `D-67`. `getState` e a porta de TODAS as rotas, e ela lia a fila sem `try`:
+ * uma fila ilegivel derrubava o painel inteiro com o 500 cru do Fastify — fora
+ * do envelope de `docs/05-contratos-api.md` §1.2, e com o caminho do arquivo no
+ * corpo da resposta.
+ *
+ * `D-66` fechou o mesmo eixo em `applyPendingEdits`, e o fechou num chamador
+ * so. Era por AQUI que o dano acontecia primeiro: o painel morre antes de o
+ * operador alcancar o botao de aplicar. Achado do revisor-xml, na segunda
+ * passada.
+ *
+ * O diretorio no lugar do arquivo produz `EISDIR` e roda em qualquer maquina; o
+ * par por permissao (`EACCES`) nao roda como root, e diz a mesma coisa.
+ */
+describe('process-store — fila ilegivel nao derruba o painel', () => {
+  it('devolve o estado lido, em vez de lancar', async () => {
+    const queuePath = join(dir, 'pending-edits.jsonl')
+    const logger = spyLogger()
+    start({ queuePath, logger })
+    await reload()
+    const lidos = getState().processes.length
+    expect(lidos).toBeGreaterThan(0)
+
+    mkdirSync(queuePath)
+
+    expect(() => getState()).not.toThrow()
+    expect(getState().processes).toHaveLength(lidos)
+    expect(getState().pendingEdits).toEqual([])
+  })
+
+  // O evento e proprio: `write.refused` + `ESCRITA_INVALIDA` ja serve outros
+  // oito sitios, e nao distingue fila ilegivel de anomalia da cirurgia.
+  it('registra o evento, sem texto livre que carregue o caminho', async () => {
+    const queuePath = join(dir, 'pending-edits.jsonl')
+    const logger = spyLogger()
+    start({ queuePath, logger })
+    await reload()
+    mkdirSync(queuePath)
+
+    getState()
+
+    const registro = logger.entries.find((entry) => entry.event === 'queue.unreadable')
+    expect(registro).toEqual({ level: 'warn', event: 'queue.unreadable' })
+    expect(JSON.stringify(logger.entries)).not.toContain(queuePath)
   })
 })
