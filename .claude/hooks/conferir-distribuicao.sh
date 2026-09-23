@@ -2,8 +2,8 @@
 # PostToolUse(Bash) — avisa quando a branch `distribuicao` ficou para tras da
 # `main` depois de um merge.
 #
-# O gatilho e `git pull` ou `git merge` COM A MAIN EM HEAD, porque a
-# distribuicao se sincroniza APENAS a partir da `main` mesclada — regra em
+# O gatilho e `git pull`, `git merge` ou `git fetch` COM A MAIN EM HEAD, porque
+# a distribuicao se sincroniza APENAS a partir da `main` mesclada — regra em
 # `.claude/rules/distribuicao.md` e no bloco "A branch distribuicao" do
 # CLAUDE.md. Rodar o `scripts/sincronizar-distribuicao.ts` depois disso depende
 # de alguem lembrar, e a consequencia de esquecer nao aparece aqui: aparece na
@@ -40,7 +40,18 @@ comando=$(printf '%s' "$entrada" | jq -r '.tool_input.command // empty' 2>/dev/n
 # O filtro barato vem PRIMEIRO: o hook roda em todo Bash da sessao, e o script
 # de conferencia le uma arvore inteira de imports. Sem este recorte, cada `ls`
 # pagaria por ele.
-printf '%s' "$comando" | grep -qE '\bgit\s+(pull|merge)\b' || exit 0
+# `fetch` entrou em 23/09/2026, por /avaliar-claude: este repositorio mescla NO
+# GITHUB, entao `pull` e `merge` quase nao acontecem aqui — a `main` local
+# alcanca por `fetch`. Sem ele o hook nao disparou uma vez em toda a sessao do
+# PR #145, e a distribuicao ficou 14 arquivos atras sem aviso.
+#
+# DOIS LIMITES, e o segundo e estrutural. Nenhum PostToolUse ve o terminal do
+# usuario — mesmo limite que o CLAUDE.md declara para o PreToolUse. E o
+# casamento e na STRING do comando, nao no que o git fez: um comando que apenas
+# MENCIONE `git pull` dispara. Medido no dia, por acidente, num laco de teste
+# que nao rodou git nenhum. O falso positivo e barato — avisa de uma condicao
+# que ou e verdadeira, ou sai em zero divergencia.
+printf '%s' "$comando" | grep -qE '\bgit\s+(pull|merge|fetch)\b' || exit 0
 
 # So com a `main` em HEAD. Um `git pull` numa branch de historia nao muda o que
 # o operador deveria estar rodando.
