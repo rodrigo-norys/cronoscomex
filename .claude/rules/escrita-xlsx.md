@@ -96,6 +96,36 @@ Em 17/09/2026 a quarta passagem foi disparada por aplicação literal dela, com 
 diagnóstico correto já escrito na própria sessão — "estou usando o revisor da
 escrita cirúrgica como revisor de prosa" — e mesmo assim.
 
+## Ao consertar uma CHAMADA, procure as outras
+
+**Medido em 22/09/2026, duas vezes na mesma sessão e na mesma função.**
+`consolidated` é lida em dois lugares — `applyPendingEdits`, aqui, e `getState`,
+em `src/app/process-store.ts`. Os dois liam sem `try`, e cada conserto alcançou
+um só:
+
+- `D-63` consertou o eixo de **forma**, dentro de `readRecords`, e o título
+  declarou a invariante restaurada. Não estava — o eixo de **I/O** seguia.
+- `D-66` pôs o `try` em `applyPendingEdits` e declarou de novo. Faltava
+  `getState`, e era **pior**: ela é a porta de todas as rotas, então fila
+  ilegível derrubava o painel inteiro com o `500` cru do Fastify — fora do
+  envelope de `docs/05-contratos-api.md` §1.2, e com o caminho do arquivo no
+  corpo da resposta.
+
+Quem achou as duas foi o `revisor-xml`, a ~220 mil tokens por passagem — e a
+segunda **por sorte**: `src/app/process-store.ts` não casa o `paths:` desta
+rule, então ele só olhou lá porque escolheu olhar. Não acrescente o arquivo aos
+globs: ele não reescreve bytes, e carregar esta régua inteira em toda sessão do
+store é o trade errado.
+
+O que custa um comando:
+
+```bash
+grep -rn "consolidated(\|<outra funcao>(" src/ --include='*.ts' | grep -v "export function"
+```
+
+**Consertar um chamador e declarar a invariante restaurada é o defeito, e não o
+conserto.** Vale para qualquer invariante que um cabeçalho de módulo afirme.
+
 ## A cadeia de cálculo, e a premissa que foi REFUTADA — `PD-05`, fechada em 01/09/2026
 
 A pendência supunha que o Excel emite o atributo `i` apenas na **primeira**

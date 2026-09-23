@@ -17,7 +17,10 @@ fazendo, se houver algo em andamento.
 - NÃO altere o trabalho em andamento nem tome decisão sobre ele.
 
 ORÇAMENTO — esta sessão já está carregada; a análise não pode competir com ela
-- Evidência primária: esta conversa. Ela já está no contexto e é gratuita.
+- Evidência primária: esta conversa. Ela já está no contexto e é gratuita —
+  MENOS o que a compactação levou. Ver a seção seguinte: houve compactação, o
+  primeiro passo é recuperar os turnos do transcript, e ele não conta no
+  orçamento de leituras.
 - Leitura de arquivo: no máximo UMA listagem de .claude/ e CINCO leituras de
   arquivo, escolhidas entre os que a análise citar. Proibido varrer o
   repositório, usar busca recursiva ampla ou ler diretórios de código em massa.
@@ -29,10 +32,41 @@ ORÇAMENTO — esta sessão já está carregada; a análise não pode competir c
 HONESTIDADE SOBRE O QUE VOCÊ ENXERGA
 Sessões longas perdem detalhe: parte do histórico pode ter sido resumida ou não
 estar mais acessível com fidelidade.
+
+HOUVE COMPACTAÇÃO? ENTÃO O PRIMEIRO PASSO É RECUPERAR OS TURNOS.
+Você sabe que houve quando o contexto traz um resumo no lugar dos turnos — e o
+proprio aviso de compactação imprime o caminho do transcript. Rode isto ANTES
+da varredura, e uma vez so:
+
+    jq -r 'select(.type=="user" and .isMeta!=true and (.message.content|type=="array"))
+      | select([.message.content[]|select(.type=="tool_result")]|length==0)
+      | [.message.content[]|select(.type=="text")|.text] | join(" ")' <transcript>
+
+Ele devolve os turnos DIGITADOS pelo usuário, do começo da sessão. Não conta no
+orçamento: é UMA leitura, e sem ela os sinais que dependem de contagem —
+S1 e S2, e em parte S7 e S8 — são medidos só no trecho pós-compactação e saem
+subestimados. Um sinal que ocorreu duas vezes antes do resumo vira "nada a
+propor", com sinceridade e errado.
+
+**O filtro ingênuo mente, e a razão é estrutural** — o que segue vale
+independentemente de contagem: resultado de ferramenta também chega como
+`type=="user"`, e o harness injeta texto pelo mesmo canal. O que separa é a
+forma: o turno DIGITADO tem `message.content` em **array**, e `isMeta:true`
+marca a injeção do harness. Por isso `type=="user"` sozinho, ou com conteúdo em
+texto, devolve um conjunto que é quase todo ruído — e o pouco que sobra ali não
+contém turno digitado nenhum.
+
+*(Medido a meio da sessão de 22/09/2026, e o número envelhece com a própria
+sessão, então vale como ordem de grandeza e não como alvo: 669 registros para
+`type=="user"` sozinho, 535 com conteúdo em texto, 13 destes fora da injeção do
+harness e nenhum deles um turno — contra algumas dezenas no filtro acima, que é
+o conjunto completo. Confira o seu, não o meu.)*
+
 REGRA: se você não consegue CITAR o trecho ou a ação concreta, o sinal não
 existe. Não reconstitua de memória o que "provavelmente aconteceu".
 Comece declarando, em uma linha, que parte da sessão você consegue examinar com
-citação e o que está fora de alcance.
+citação e o que está fora de alcance — e, se houve compactação, diga que os
+turnos do usuário vieram do transcript e o resto do trecho antigo, não.
 Se esta auto-avaliação já rodou nesta sessão, não reproponha o que foi
 descartado — considere apenas sinais surgidos desde então.
 
