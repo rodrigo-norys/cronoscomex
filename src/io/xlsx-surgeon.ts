@@ -1,4 +1,5 @@
 import { strFromU8, strToU8, unzipSync, zipSync } from 'fflate'
+import { hasForbiddenXmlChar } from '../domain/editable-fields.ts'
 
 /**
  * Cirurgia no XML do .xlsx: altera apenas os nos <c> alvo e recompacta, sem
@@ -222,11 +223,16 @@ export function applyCellEdits(
  * (A-56).
  *
  * **CINCO recusas na entrada, e duas a jusante — todas a mesma preocupacao, nao
- * gravar as cegas.** Quem escrever o chamador precisa traduzir as sete em recusa
- * ao operador; hoje elas sobem como excecao.
+ * gravar as cegas.** O chamador, `write-guard.ts`, as traduz em recusa ao
+ * operador: `TableFullError` vira `TABELA_CHEIA`, e as demais `ESCRITA_INVALIDA`.
  *
  * 1. `values` vazio. Criar linha sem celula alguma mudaria os bytes do arquivo
  *    — hash novo, backup consumido, releitura do watcher — para gravar nada.
+ *    **A rota nunca chega aqui:** `write-guard.ts` monta `values` com a REF
+ *    antes de chamar esta funcao, entao ele nao vem vazio por
+ *    `POST /api/edits/row` (`D-60`). A recusa cobre so o `{}` literal: `values`
+ *    so com nulos passa e grava uma linha sem valor — caso que o `write-guard`
+ *    tambem nunca produz, porque a REF nao chega nula e campo nulo e pulado.
  * 2. Chave de coluna que nao e letra de coluna, ou passa de `XFD`. Coordenada
  *    fora do espaco de endereçamento faz o Excel reconstruir a aba.
  * 3. `sourceRow` que nao e indice de linha valido (1 a `MAX_ROW`).
@@ -1052,7 +1058,17 @@ function canonicalXf(xf: string): string {
   return `${attributes}|${inner}`
 }
 
+/**
+ * **A ultima barreira contra o caractere que o XML 1.0 proibe** (`D-61`). As
+ * portas da rota e a admissibilidade do `write-guard` ja o recusam; esta existe
+ * porque o pool e GLOBAL, e um caractere desses aqui estraga o texto das quatro
+ * abas. `escapeXml` trata so `& < > "`, e o XML 1.0 nao admite esses caracteres
+ * nem como referencia de caractere. O SpreadsheetML tem escape proprio,
+ * `_xHHHH_` (ECMA-376, `ST_Xstring`), e e assim que o Excel os persiste — mas a
+ * decisao do usuario e recusar, e nao codificar.
+ */
 function renderSharedString(value: string): string {
+  if (hasForbiddenXmlChar(value)) throw new Error('texto com caractere que o XML nao admite')
   const needsPreserve = value !== value.trim() || value.includes('\n')
   const space = needsPreserve ? ' xml:space="preserve"' : ''
   return `<si><t${space}>${escapeXml(value)}</t></si>`

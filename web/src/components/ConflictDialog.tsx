@@ -139,6 +139,22 @@ export function ConflictDialog({ refusal, onClose }: ConflictDialogProps) {
           <p className="mt-2 text-sm font-medium text-text-primary">{refusal.schemaDivergence}</p>
         )}
 
+        {/*
+          `D-64`: QUAL item, pelo mesmo motivo da linha acima. Um item que nao
+          pode ser gravado recusa a fila INTEIRA, e a mensagem dizia apenas que
+          nada foi perdido — o operador ficava com a fila presa sem saber o que
+          descartar. Achado do revisor-xml.
+        */}
+        {refusal.invalidRefs.length > 0 && (
+          <p className="mt-2 text-sm font-medium text-text-primary">
+            Não dá para gravar{' '}
+            {refusal.invalidRefs.length > 1 ? 'estes processos' : 'este processo'}:{' '}
+            {refusal.invalidRefs.join(', ')}. Descarte{' '}
+            {refusal.invalidRefs.length > 1 ? 'as alterações deles' : 'a alteração dele'} na lista
+            de pendências para aplicar o resto.
+          </p>
+        )}
+
         {refusal.restored && refusal.backupPath !== null && (
           <p
             className={`mt-3 flex items-start gap-2 rounded-container border border-state-warning-border bg-state-warning-bg px-3 py-2 text-sm text-state-warning-fg ${severityBand('warning')}`}

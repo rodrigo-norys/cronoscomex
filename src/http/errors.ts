@@ -4,6 +4,8 @@ export type ApiErrorCode =
   | 'FILTRO_INVALIDO'
   | 'CORPO_INVALIDO'
   | 'CAMPO_NAO_EDITAVEL'
+  /** `D-61`: caractere que o XML 1.0 nao admite, em geral de texto colado. */
+  | 'CARACTERE_INVALIDO'
   | 'PROCESSO_NAO_ENCONTRADO'
   /** A REF da linha nova ja esta na planilha (02/09/2026). */
   | 'REF_DUPLICADA'
@@ -47,6 +49,31 @@ export interface ApiErrorBody {
     message: string
     detail?: Record<string, unknown>
   }
+}
+
+/**
+ * A recusa de ENFILEIRAR quando o cabecalho bloqueia a escrita (`D-65`).
+ *
+ * A frase difere da do `apply` numa palavra que importa: la nada foi *gravado*,
+ * aqui nada foi *enfileirado*. E `409`, como as irmas dela no `apply`: o estado
+ * do arquivo conflita com o que a aplicacao conhece, e o operador tem o que
+ * fazer.
+ */
+export function queueBlockedError(block: {
+  code: 'CABECALHO_DESLOCADO' | 'CABECALHO_VAZIO'
+  detail: string
+}): ApiErrorBody {
+  const instrucao =
+    block.code === 'CABECALHO_DESLOCADO'
+      ? 'Uma coluna mudou de lugar na planilha, e o que voce editou seria registrado a partir da coluna errada. Desfaca a mudanca no Excel e tente de novo; nada foi enfileirado.'
+      : 'Falta o nome de uma coluna na linha 1, e sem ele nao da para conferir onde gravar. Restaure o cabecalho no Excel e tente de novo; nada foi enfileirado.'
+  // A frase QUE NOMEIA A COLUNA entra na mensagem, e nao so no `detail`: as tres
+  // rotas de enfileiramento sao consumidas por `api-client.ts`, que le
+  // `error.message` e descarta o resto — o operador receberia a instrucao sem
+  // saber onde olhar, que e o buraco que `H-96` fechou para o `apply`. O
+  // `detail` continua, para quem quiser o dado estruturado. Achado do
+  // revisor-xml.
+  return apiError(block.code, `${block.detail} ${instrucao}`, { schemaDivergence: block.detail })
 }
 
 export function apiError(

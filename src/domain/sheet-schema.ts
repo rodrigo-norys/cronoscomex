@@ -21,7 +21,15 @@ import { normKey } from './normalizer.ts'
  *
  * O modo de falha que ele mata esta medido em `D-43`: deslocar uma coluna faz
  * **616 dos 650** processos lerem o dado do vizinho e **580 categorias**
- * ficarem erradas, com quarentena zero e nenhuma anomalia.
+ * ficarem erradas, com quarentena zero. *(A frase dizia tambem "nenhuma
+ * anomalia"; o ensaio de 17/09/2026 mediu ao menos uma no primeiro processo, e
+ * o total nao foi medido — `D-60`.)*
+ *
+ * **Os ramos de rotulo vazio e repetido nao sao alcancados pelo gesto do
+ * operador.** Enquanto a `Tabela1` cobrir a coluna, o Excel renomeia sozinho o
+ * cabecalho apagado para `Column1` e o repetido para `IMPORTADOR2` — medido no
+ * ensaio de 17/09/2026 (`D-60`). So arquivo escrito fora do Excel chega a eles,
+ * e ali eles reagem como declarado.
  */
 
 /**
@@ -161,6 +169,29 @@ export function blockingDivergence(
   divergences: readonly SchemaDivergence[],
 ): SchemaDivergence | null {
   return divergences.find(blocksWritingOne) ?? null
+}
+
+/**
+ * O motivo de recusar a escrita, pronto para virar codigo de erro (`D-65`).
+ *
+ * O mapeamento vivia inline no `write-guard`, e as tres rotas que enfileiram
+ * precisavam do mesmo par: quatro copias divergiriam na primeira mudanca.
+ * `null` quando nada bloqueia.
+ *
+ * **`DESLOCADO` e o unico movimento DETECTADO.** Os outros dois que bloqueiam —
+ * linha 1 em branco, e rotulo apagado numa coluna — sao a mesma coisa para o
+ * operador: falta o nome com que conferir, e o que se pede e restaurar, nao
+ * desfazer.
+ */
+export function writeBlock(
+  divergences: readonly SchemaDivergence[],
+): { code: 'CABECALHO_DESLOCADO' | 'CABECALHO_VAZIO'; detail: string } | null {
+  const blocking = blockingDivergence(divergences)
+  if (blocking === null) return null
+  return {
+    code: blocking.kind === 'DESLOCADO' ? 'CABECALHO_DESLOCADO' : 'CABECALHO_VAZIO',
+    detail: describeDivergence(blocking),
+  }
 }
 
 /** Alguma destas divergencias recusa a escrita? */
