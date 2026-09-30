@@ -277,12 +277,21 @@ guarda a referência do processo *daquele* cliente, não o cliente. Medido em
 na ordem do arquivo, e **a primeira que casa vence** — a ordem é a ferramenta de
 desempate do operador.
 
+*(**Emendada por `D-68`**, registrada em 30/09/2026, sobre o código de
+21/09/2026: `resolveClient` passa a receber as **três** colunas — CLT, REF e
+IMPORTADOR — e cada regra procura na coluna que declara em `field`; regra sem
+`field` vale `clt`, porque o mapa do operador é anterior à extensão. **Célula
+vazia nunca casa regra alguma**, em nenhuma das colunas — e por isso CLT vazia
+deixou de significar "sem cliente": o processo pode ter dono pela REF ou pelo
+importador.)*
+
 | Regra | Casa quando | Existe porque |
 |---|---|---|
 | `prefix` | a chave começa com `value` | é a forma do sufixo numérico crescente |
 | `contains` | a chave contém `value` | dois grupos levam o nome do cliente dentro do texto |
 | `exact` | a chave é igual a `value` | grupo de valor único |
 | `importer` (qualificador, opcional) | além da regra, o importador é o declarado | medido: um prefixo de **62** processos cobre **três** clientes, separáveis só pelo importador |
+| `field` (opcional, `D-68`) | a regra procura em `clt`, `ref` ou `importer`; ausente vale `clt` | o dono do processo pode estar na REF ou no importador, e não só na CLT |
 
 Resultado, com o mapa real do operador: as 509 chaves caem para **124** — **466**
 processos consolidados em **11** clientes, e **183** permanecem com a chave da
@@ -292,7 +301,7 @@ célula (62 do prefixo de três clientes, 121 ainda sem regra declarada).
 |---|---|---|---|
 | Regra casou | chave do mapa | chave da célula | `label` do mapa |
 | Nenhuma regra casou | chave da célula | chave da célula | **primeira grafia** da célula (A-26) |
-| Célula vazia | `""` | `""` | `""` |
+| CLT vazia, e nenhuma regra casou pela REF nem pelo importador | `""` | `""` | `""` |
 | Mapa ausente | chave da célula | chave da célula | primeira grafia da célula |
 
 **Não consolidar é resultado legítimo**, não falha: a regra é do negócio e não é

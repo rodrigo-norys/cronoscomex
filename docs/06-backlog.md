@@ -46,7 +46,7 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E14 — A casca que se opera, não só se lê ✅ | **H-82 a H-92 ✅ — o épico fechou em 16/09/2026, com `H-91`.** Primeiro épico **prospectivo** desde `E12`: as nove primeiras nascem antes do código (`D-29` a `D-34`), `H-91` entra em 08/09/2026 por `D-35`, e `H-92` em 10/09/2026 por `D-39`. `H-91` passou de M para **G** na fatia de 11/09, quando o contrato dela dobrou | 3 | 6 | 2 |
 | E15 — A tabela é a planilha, e a cor é só cor ✅ | **`H-93` a `H-96`, todas concluídas** — o épico fechou em 17/09/2026. Nasce de `D-40` a `D-43`, em 10 e 11/09/2026: a cor deixa de apontar responsável e vira aparência, e a tabela passa a espelhar o arquivo — as 16 colunas com o nome do cabeçalho. `H-93` veio de `E14` em 11/09, por estar grande demais. **`H-96` nasce de defeito simulado, não observado**, ficou seis dias fora da fila por escolha do usuário, e foi reaberta por ordem dele em 17/09 — a única do backlog com esse percurso. **As quatro são G**, pela régua do topo | 0 | 0 | 4 |
 | E16 — A tabela que se lê, e o endereço que não mente | **`H-97` a `H-100` ✅; só `H-101` aberta, e escrita para não ser executada agora.** Nasce de `D-44`, em 16/09/2026, do uso da tela que `E15` entregou: o fundo pintado ficou ilegível no tema escuro, o painel lateral disputava largura com 17 colunas, e os parâmetros da página viajavam para as outras seis telas. **Nenhuma das quatro é regra de negócio** — são apresentação e endereço | 3 | 1 | 1 |
-| E17 — A tela que o uso refez ✅ | **`H-102` a `H-107`, todas concluídas.** Épico **retroativo por método**, escolha do usuário: o código entrou entre 18 e 21/09/2026, por `D-49` a `D-58`, e as histórias foram escritas em 30/09 (`D-69`) | 0 | 4 | 2 |
+| E17 — A tela que o uso refez ✅ | **`H-102` a `H-107`, todas concluídas.** Épico **retroativo por método**, escolha do usuário: o código entrou entre 18 e 21/09/2026, por `D-49` a `D-58` (menos `D-52`), e as histórias foram escritas em 30/09 (`D-69`) | 0 | 4 | 2 |
 | E18 — O que o ensaio na planilha real achou ✅ | **`H-108` a `H-114`, todas concluídas.** Épico **retroativo por método**, escolha do usuário: o código entrou em 18 e 22/09/2026, pelos achados do ensaio e por `D-61` a `D-67`, e as histórias foram escritas em 30/09 (`D-69`) | 1 | 3 | 3 |
 | **Total** | **114** — 113 concluídas, 1 aberta | **40** | **58** | **16** |
 
@@ -10145,6 +10145,9 @@ desfazer o que agrupou.
    `D-21` e `D-34`.)* Ele é **componente**, não parte da página, e é montado
    **fora** do estado dos rankings — escondido quando o indicador falha, o
    operador perderia a ferramenta que conserta o que o ranking mostra.
+   *(**Emendada por `D-50`** em 18/09/2026: o painel volta à Página
+   Configuração, ao lado do de equipe — `H-103`. O motivo desta determinação, o
+   painel fora do estado de qualquer indicador, continua valendo lá.)*
 2. **A lista ignora os filtros globais.** É dívida de configuração, não recorte —
    se seguisse o filtro, filtrar por um cliente faria a dívida "sumir", e o
    operador concluiria que declarou tudo.
@@ -11781,7 +11784,7 @@ mostrar que ela dobra o tamanho; e persistir largura fora do endereço.
 
 **Épico retroativo por método, e não por omissão — é o que o separa de `E13`
 (`D-26`).** Nasce do uso da tela entre **18 e 21/09/2026**: as decisões `D-49` a
-`D-58` saíram, uma a uma, do que o usuário viu ao abrir a Página Início, a
+`D-58`, menos `D-52`, saíram, uma a uma, do que o usuário viu ao abrir a Página Início, a
 Configuração, a Clientes e o Histórico. **Não abrir história a cada medida foi
 escolha dele durante o desenvolvimento**: acumular o que fosse feito e agrupar
 depois, pela origem — de outro modo cada ajuste viraria uma história solta, e o
@@ -11814,7 +11817,10 @@ antes da escolha — os arranjos de `D-50`, `D-56` e `D-57` foram desenhados e
 apresentados antes de o usuário escolher, e o efeito numérico de `D-49` e
 `D-54` foi medido e apresentado antes do aceite —, e não pelo checklist. O que
 escapou é do tipo que o checklist cobra: os dois parâmetros sem contrato,
-acima. **Por isso o bloco de cada história cita os commits que a entregaram:**
+acima, e três elos da cascata que `D-50` e `D-68` não alcançaram — a TD-04.1
+de `03-modelo-dados.md`, a frase de `00-visao-escopo.md` sobre o painel, e a
+determinação 1 de `H-88`. Os três foram alcançados em 30/09/2026, pela revisão
+desta escrita; os parâmetros seguem sem contrato. **Por isso o bloco de cada história cita os commits que a entregaram:**
 ele descreve o que foi feito, e não o que se pretendia fazer.
 
 **Três determinações valem para o épico e não se re-litigam:**
@@ -11885,7 +11891,8 @@ os de outra dentro do mesmo PR.
 > e sai `meta.dataRange`, que só aquela linha consumia.
 >
 > **"Atrasados" exclui o desembaraçado, e o número mostra por quê** (`D-49`):
-> sem a cláusula o cartão mede **542 das 650** linhas, com ela **62**. `DUIMP`
+> sem a cláusula o cartão mede **542 das 650** linhas da cópia de
+> desenvolvimento, que tem a sintética de `D-28`, e com ela **62**. `DUIMP`
 > casa por **continência** — as 8 linhas com `DOCS APROVADOS - AG CONFECÇÃO DE
 > DUIMP` contam como tendo DUIMP, embora a declaração ainda esteja por fazer —,
 > e a consequência foi apresentada ao usuário antes do aceite e mantida por ele.
@@ -11902,7 +11909,7 @@ os de outra dentro do mesmo PR.
 > **A conferência de A-12 saiu do cliente e só aparece quando quebra.** Os
 > cartões deixaram de ser as quatro categorias, e somá-los diria "não
 > conferem" todo dia; `categoryCheck` vem pronto do servidor, e medido em
-> 18/09/2026 soma 650 de 650. **O critério de aceite dos nove passou a ser
+> 18/09/2026 na cópia de desenvolvimento, soma 650 de 650. **O critério de aceite dos nove passou a ser
 > executável** (`D-51`): acrescentar a linha que satisfaz a regra soma 1,
 > tirá-la subtrai 1, e a mesma linha com o atributo exigido trocado deixa o
 > contador parado — a metade que distingue "conta esta linha" de "conta
@@ -11963,7 +11970,8 @@ que resolve as chaves uma vez, no registro.
   "Todo o período", e não a faixa das datas.
 - **Dado** cada um dos nove cartões, **quando** a testemunha entra, **então** o
   contador sobe exatamente 1 e volta ao sair; **e** a contra-testemunha deixa o
-  contador parado. Exercido contra a planilha real em 18/09/2026, ainda com
+  contador parado. Exercido contra a cópia de desenvolvimento (650 linhas, com a sintética
+  de `D-28`) em 18/09/2026, ainda com
   IND-23: `Total 650→651→650`, `Em desembaraço 167→168→167`,
   `Chegando hoje 0→1→0` e `Atrasados 62→63→62`.
 - **Dado** a resposta de `GET /api/indicators`, **então** ela não traz
@@ -12303,7 +12311,7 @@ derivação é na leitura.
 > **uma** posição no corte — `Vivi` com `av` e `kelly` gasta uma das dez, não
 > três —, porque o corte roda depois do colapso em `groupCountWithGroups`
 > (`H-56`). **Medido:** com "Todos", o ranking de clientes devolve 180 itens
-> somando os 650 processos — e é por isso que `75dc84c` numera o ranking e dá
+> somando os 650 processos da cópia de desenvolvimento — e é por isso que `75dc84c` numera o ranking e dá
 > teto de 300 px ao quadro, com rolagem.
 
 **Objetivo:** o operador escolher, na Página Clientes, quantos itens cada
@@ -12317,8 +12325,8 @@ cortava, e `groupTotals` continua dizendo quantos existem antes do corte.
 registra só `meta.topN`.
 
 **Arquivos:**
-- `web/src/hooks/useTopN.ts` — novo: `TOP_N_PARAM`, os cinco tamanhos e o
-  "Todos"
+- `web/src/hooks/useTopN.ts` — novo: `TOP_N_PARAM`, os cinco tamanhos, o
+  último "Todos"
 - `web/src/pages/Clients.tsx` — o seletor "Itens por dimensão", e a frase
   lendo `meta.topN`
 - `web/src/App.tsx` — `PARAMS_POR_PAGINA`, que apaga o `topN` ao sair de
@@ -12451,7 +12459,8 @@ continuam servidos.
 - **Dado** a planilha lida sem nenhum processo com `ETA2` ou RG, **então** a
   página diz "Nenhum processo tem data para montar a série." — ausência de
   data, e nunca zero processo (regra inviolável 3).
-- **Medido na planilha real em 21/09/2026:** jan 79, fev 58, mar 64, abr 47,
+- **Medido na cópia de desenvolvimento em 21/09/2026** (650 linhas, com a
+  sintética de `D-28`): jan 79, fev 58, mar 64, abr 47,
   mai 77, jun 83, jul 75 — 483 registros, e 167 dos 650 processos sem RG fora
   de todos os meses.
 
@@ -12566,7 +12575,7 @@ por ordem do usuário, #3 e #6 na redação, e os demais nas emendas do corpus e
 > virava **16/08/1898**, ambos aceitos, sem quarentena e sem anomalia.
 > `e4ecf1f` recusa ano fora de **1900 a 2200** com a anomalia nova
 > `DATA_FORA_DA_FAIXA`: a data vira buraco (regra inviolável 3), e o processo
-> segue lido. **Zero das 650 linhas reais caem fora da faixa**, medido em
+> segue lido. **Nenhuma linha da planilha real cai fora da faixa**, medido em
 > 17/09/2026 — nenhum número de hoje muda.
 >
 > **Pasta protegida por senha respondia `invalid zip data`** — achado #12, de
@@ -12796,7 +12805,7 @@ aviso de conflito no momento em que ele abre.
 **Arquivos:**
 - `web/src/components/ConflictDialog.tsx` — `useModalFocus`, e o título focável
 - `web/src/components/FilterPanel.tsx` — só o cabeçalho, que dava o diálogo por parado em `PD-07`
-- `web/tests/ConflictDialog.test.tsx` — novo, o segundo modal do conjunto com teste
+- `web/tests/ConflictDialog.test.tsx` — novo, o terceiro modal com teste, depois de `CommandSearch` e `FilterPanel`
 - `web/tests/FilterPanel.test.tsx` — só o cabeçalho
 
 **Critérios de aceite:**

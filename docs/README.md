@@ -104,12 +104,12 @@ atingido com folga: as 649 linhas da aba `2026` são aceitas com **0% de
 quarentena** (`H-07`), contra o limite de 2% de RNF-24.
 
 **113 das 114 histórias estão concluídas.** `E9`, `E10`, `E11` e `E12` fecharam em
-01/09/2026, `E13` em 03/09/2026, e `E14` e `E15` em 16/09/2026. `E17` e `E18`,
+01/09/2026, `E13` em 03/09/2026, `E14` em 16/09/2026 e `E15` em 17/09/2026. `E17` e `E18`,
 retroativos, foram escritos e fechados em 30/09/2026 (`D-69`). Os **dez** épicos posteriores ao plano não
 têm fase atribuída; a ordem entre eles vive no cabeçalho de cada um, em
 `06-backlog.md`.
 
-**`E14` fechou em 16/09/2026, e `E15` é o único aberto** — `H-82` a `H-92`, as nove primeiras numeradas na ordem de execução,
+**`E14` fechou em 16/09/2026** — `H-82` a `H-92`, as nove primeiras numeradas na ordem de execução,
 com `H-90`, `H-91` e `H-92` fora dela por terem nascido depois. **Seis fecharam
 em 04/09/2026**: os filtros num painel sobreposto (`D-30`), a busca por atalho, o
 quadro que rola com cabeçalho fixo e tamanho de página escolhível (`D-31` e
@@ -129,7 +129,7 @@ Três dos épicos posteriores ao
 plano nasceram de documentos de auditoria que estão em `docs/estilizacao/`,
 `docs/uso/` e a proposta do mockup Cronos Console, 31/08/2026 (`D-48`) sem nunca terem virado história.
 
-**`E13` é retroativo**, e é o único: a criação de linha, a edição na tabela, a
+**`E13` é retroativo por omissão**, e `E17` e `E18` por método (`D-69`). No primeiro, a criação de linha, a edição na tabela, a
 ordenação e a gravação do mapa de clientes entraram em 02/09/2026 **sem história
 no backlog**, e as cinco histórias — `H-77` a `H-81` — foram escritas no dia
 seguinte, a partir dos commits (`D-26`). O que elas registram estava vivo desde
@@ -139,12 +139,15 @@ então nos testes, no contrato de `05-contratos-api.md §3` e em
 **As pendências abertas são três** — `PD-07`, `PD-08` e `PD-09`. Estão no
 `CLAUDE.md` da raiz, com o gatilho de cada uma. **`PD-10` fechou em `H-84`**, e
 **`PD-01` fechou com a primeira instalação na máquina do operador**, em
-04/09/2026; `PD-08` encolheu para uma correção no `README.md` da branch
+04/09/2026 — a planilha apontada pela tela, sem `config/app.json` prévio, e
+`/api/health` respondendo `state: "pronto"`, com 649 linhas lidas e zero em
+quarentena; `PD-08` encolheu para uma correção no `README.md` da branch
 `distribuicao`, que a sincronização de 04/09 já fez. **`PD-06` fechou em
 03/09/2026** e **`PD-05` em 01/09/2026**, medida em dois arquivos que o próprio
-Excel gerou, e a premissa dela foi **refutada**. **O que não exige Windows:** o
-item 2 de `PD-07` — o `ConflictDialog` — precisa de uma fixture que produza o
-conflito, e nenhuma das nove produz. **`PD-09` não fecha pelo proxy de uma
+Excel gerou, e a premissa dela foi **refutada**. **`PD-07` resta só na paleta nominal do Windows**, que quer a máquina do
+operador: o item do `ConflictDialog`, que pedia uma fixture capaz de produzir o
+conflito, fechou pelo ensaio sobre a planilha real, que o produziu num
+navegador, e a gestão de foco saiu junto — `H-111`, 18/09/2026. **`PD-09` não fecha pelo proxy de uma
 máquina só**: medido em 03/09/2026, a planilha do operador está em `Downloads`,
 fora do OneDrive, e não há `~$` a observar — resta decidir se a frase de
 `StatusBanner.tsx` recua.
