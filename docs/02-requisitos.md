@@ -18,7 +18,7 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 | RF-06 | Registrar em quarentena, com motivo estruturado, toda linha não interpretável, sem descartá-la silenciosamente | A-03, A-21 | H-07, H-108 |
 | RF-07 | Detectar alteração externa do arquivo e reprocessar automaticamente | "tempo real", §1 | H-08 |
 | RF-08 | Emitir relatório de divergências: RG em processo não desembaraçado, intervalo documental negativo, texto de canal no STATUS, variante de grafia não catalogada | A-05, A-30, A-06, A-03 | H-07 |
-| RF-44 | Reportar divergência entre o cabeçalho encontrado e o esquema declarado, nomeando as duas pontas, sem descartar linha nem inventar campo | H-96, H-114 |
+| RF-44 | Reportar divergência entre o cabeçalho encontrado e o esquema declarado, nomeando as duas pontas, sem descartar linha nem inventar campo | `D-43`, `D-45` | H-96, H-114 |
 
 ### 1.2. Indicadores (§4)
 
@@ -113,7 +113,7 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 | RF-33 | Editar o campo **onde ele está**, na própria tabela da Página Operacional, com Categoria de leitura porque ela sai de cinco regras das quais só uma lê a célula (A-22) *(dizia "sete colunas editáveis" até `D-43`; o domínio declara quinze, e quantas a tabela expõe deixa de ser número fixado aqui)* | H-80, H-95 |
 | RF-34 | **Criar um processo novo** pela tela, enfileirado como as demais edições e gravado depois da última linha existente da aba `2026` sob comando explícito. A **remoção** de linha permanece fora de escopo (`D-25`) | H-78, H-79, H-80, H-112 |
 | RF-35 | ~~Declarar o cliente consolidado de um processo pela tela~~ *(**REVOGADO por `D-43`** em 11/09/2026: o único consumidor era a coluna Cliente da tabela, que sai em `H-95`. Declarar passa a ser só pelo painel da Página Clientes, por grafia e por prefixo — `RF-39`. A perda foi apresentada ao usuário e ele manteve a decisão: uma grafia já capturada por regra de prefixo não aparece em lista nenhuma do painel)* | H-79, H-95 |
-| RF-39 | Exibir quais grafias de CLT ainda **não** têm cliente declarado, com a contagem de processos de cada uma e independentes dos filtros globais, e permitir declarar cada uma dali | H-88, H-103, H-105 |
+| RF-39 | Exibir quais grafias de CLT ainda **não** têm cliente declarado, com a contagem de processos de cada uma e independentes dos filtros globais, e permitir declarar cada uma dali *(**Emendado por `D-68`:** a lista e a declaração acompanham a coluna escolhida — CLT, REF ou IMPORTADOR —, uma aba por coluna; `H-105`)* | H-88, H-103, H-105 |
 | RF-40 | Declarar quem é responsável por quais importadores pela tela, gravando em `team-map.json`, e desfazer um responsável devolvendo a carteira dele a "Sem responsável" | H-91, H-103, H-109 |
 
 ### 1.7. Histórico

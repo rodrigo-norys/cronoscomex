@@ -103,7 +103,7 @@ consumidor mecânico, e foi por isso que ninguém os revisitou em seis semanas.
 A ferramenta que mede é a skill global `desinchar-docs`.
 
 **A terceira passada, em 30/09/2026, não tirou nada.** O único candidato,
-`ensaio-planilha/RESULTADO.md`, mediu **15,5%** — 125 linhas inéditas em 56
+`ensaio-planilha/RESULTADO.md`, mediu **15,3%** — 124 linhas inéditas em 56
 seções, 4 citações —, e o ensaio fechou os 16 achados: exaurido, e não
 redundante. Sair exigiria um consolidado em `adr/` com o que o ensaio mediu
 sobre o Excel e a escrita cirúrgica, e o dono preferiu manter. **Ponteiro para
