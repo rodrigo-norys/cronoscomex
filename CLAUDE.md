@@ -419,8 +419,11 @@ confirmação. `curl`, `wget`, force-push e leitura ou escrita de `*.xlsx` e
 `docs/10-governanca.md`).
 
 **O git é permitido até o PR, e negado do PR em diante.** `git add`, `commit`,
-`push`, `switch` e `gh pr create` rodam sem confirmação; **`gh pr merge` está
-negado**, e o merge continua sendo do dono, no GitHub. Negados também os
+`push` e `switch` rodam sem confirmação, e `gh pr create` também pelo
+`settings.json` do projeto — mas nesta máquina ele pede desde 30/09/2026, porque
+o settings global pôs `gh pr *` em `ask`, e `ask` vence `allow` em qualquer
+escopo; **`gh pr merge` está negado**, e o merge continua sendo do dono, no
+GitHub. Negados também os
 comandos que **perdem trabalho ou reescrevem história**: `reset --hard`,
 `clean`, `checkout --`, `switch -f`, `rebase`, `commit --amend`,
 `commit --no-verify`, `branch -D` e `gh repo delete`.
