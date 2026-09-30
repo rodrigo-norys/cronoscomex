@@ -467,6 +467,23 @@ fonte; `verifica-dados-sensiveis.sh` é quem recusa.
 O repositório traz `config/app.json.exemplo` com o caminho substituído por um
 marcador.
 
+**O lint barra credencial no código de produção desde 30/09/2026**: o
+`noSecrets` do Biome é `error` em `src/`, `web/src/`, `tools/` e `scripts/`, e
+roda no portão, antes do commit. Um `override` em `biome.json` o desliga em duas
+partes, pelo que a primeira passada mediu — 125 acusações, **todas** falso
+positivo (URL de rota com query string, fragmento de XML, caminho UNC):
+
+- **os testes**, onde estavam 115 delas;
+- **`src/io/xlsx-surgeon.ts`**, onde estavam 6, porque o módulo manipula XML
+  como texto.
+
+No resto do código de produção, cada texto acusado que não é segredo leva um
+`biome-ignore` dizendo o que ele é. **Subir o `entropyThreshold` não serve**:
+com 60, a regra deixa de pegar 3 dos 6 segredos plantados que pegava, entre eles
+o token do GitHub e a chave da OpenAI. **E ela não pega segredo fraco**:
+`"supersecretkey"` e `"password123"` passam, porque a regra mede entropia. Nos
+testes, formato de provedor fica com o push protection do GitHub (§5.2).
+
 ### 5.4. Backup e restauração testada
 
 | Item | Estratégia | Teste |

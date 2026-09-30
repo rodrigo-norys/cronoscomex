@@ -73,6 +73,7 @@ ok(`respondeu "${eco.stdout}" em ${eco.ms} ms`)
 
 passo('System.Windows.Forms carrega?', 'e a biblioteca que desenha o dialogo')
 const forms = await powershell(
+  // biome-ignore lint/security/noSecrets: comando PowerShell literal, nao credencial
   'Add-Type -AssemblyName System.Windows.Forms; [Console]::Out.Write("carregou")',
   30_000,
 )
@@ -107,15 +108,21 @@ Add-Type -AssemblyName System.Windows.Forms
 let temDesktop = null
 if (desktop.erro) {
   falhou(`nao deu para medir: ${desktop.erro.message}`)
-  console.log('>>> Estado desconhecido. O passo 4 ainda vale, mas leia o resultado dele com ressalva.')
+  console.log(
+    '>>> Estado desconhecido. O passo 4 ainda vale, mas leia o resultado dele com ressalva.',
+  )
 } else if (desktop.stdout === 'True') {
   temDesktop = true
   ok('UserInteractive = True')
 } else {
   temDesktop = false
   falhou(`UserInteractive = ${desktop.stdout} — esta sessao nao tem area de trabalho`)
-  console.log('>>> Proxima pergunta: voce esta rodando por SSH? SSH cai na Sessao 0, que nao tem desktop por design.')
-  console.log('>>> Rode da sessao grafica do console, ou alcance-a por `schtasks /ru <usuario> /it`.')
+  console.log(
+    '>>> Proxima pergunta: voce esta rodando por SSH? SSH cai na Sessao 0, que nao tem desktop por design.',
+  )
+  console.log(
+    '>>> Rode da sessao grafica do console, ou alcance-a por `schtasks /ru <usuario> /it`.',
+  )
 }
 
 passo(
@@ -171,7 +178,9 @@ if (dialogo.erro) {
 }
 
 if (dialogo.stdout === '') {
-  ok(`cancelado pelo operador, em ${Math.round(dialogo.ms / 1000)} s — o caminho normal de cancelar`)
+  ok(
+    `cancelado pelo operador, em ${Math.round(dialogo.ms / 1000)} s — o caminho normal de cancelar`,
+  )
 } else {
   const caminho = Buffer.from(dialogo.stdout, 'base64').toString('utf8')
   ok(`escolhido em ${Math.round(dialogo.ms / 1000)} s`)
@@ -186,7 +195,9 @@ if (dialogo.stdout === '') {
   // quais nao-ASCII chegaram; a terceira e a unica prova de ponta a ponta —
   // acento mangled em qualquer camada produz base64 valido de bytes errados,
   // passa na primeira, e so falha ao tocar o sistema de arquivos.
-  console.log(`    base64 fecha: ${Buffer.from(caminho, 'utf8').toString('base64') === dialogo.stdout}`)
+  console.log(
+    `    base64 fecha: ${Buffer.from(caminho, 'utf8').toString('base64') === dialogo.stdout}`,
+  )
 
   const naoAscii = [...caminho].filter((c) => c.codePointAt(0) > 0x7f)
   const espacos = [...caminho].filter((c) => c === ' ').length
@@ -194,7 +205,9 @@ if (dialogo.stdout === '') {
     `    nao-ASCII: ${
       naoAscii.length === 0
         ? 'nenhum'
-        : naoAscii.map((c) => `${c} U+${c.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')}`).join(' ')
+        : naoAscii
+            .map((c) => `${c} U+${c.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')}`)
+            .join(' ')
     } · espacos: ${espacos}`,
   )
   console.log(`    o caminho existe em disco: ${existsSync(caminho)}`)

@@ -6,7 +6,17 @@
     "useIgnoreFile": true
   },
   "files": {
-    "includes": ["src/**", "web/**", "tests/**", "*.json", "!dist", "!data", "!node_modules"]
+    "includes": [
+      "src/**",
+      "web/**",
+      "tests/**",
+      "tools/**",
+      "scripts/**",
+      "*.json",
+      "!dist",
+      "!data",
+      "!node_modules"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -21,6 +31,12 @@
       "correctness": {
         "noUnusedImports": "error",
         "noUnusedVariables": "error"
+      },
+      "security": {
+        "noSecrets": "error"
+      },
+      "nursery": {
+        "noImpliedEval": "error"
       }
     }
   },
@@ -64,6 +80,16 @@
                 ]
               }
             }
+          }
+        }
+      }
+    },
+    {
+      "includes": ["tests/**", "web/tests/**", "src/io/xlsx-surgeon.ts"],
+      "linter": {
+        "rules": {
+          "security": {
+            "noSecrets": "off"
           }
         }
       }

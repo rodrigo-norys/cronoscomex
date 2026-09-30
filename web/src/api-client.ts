@@ -84,6 +84,7 @@ export type {
  * inviolavel 3). Por isso vira um tipo proprio em vez de mensagem de erro.
  */
 export class NoReadYetError extends Error {
+  // biome-ignore lint/security/noSecrets: nome da classe de erro, nao credencial
   override readonly name = 'NoReadYetError'
 
   constructor(readonly route: string) {

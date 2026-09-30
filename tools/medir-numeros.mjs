@@ -137,7 +137,9 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const resultado = await medirNumeros(process.argv[2])
   console.log(`processos: ${resultado.processos}`)
   console.log(`rotas medidas: ${resultado.rotas}`)
-  console.log(`rotas fora de 200: ${resultado.falhas.length ? resultado.falhas.join(', ') : 'nenhuma'}`)
+  console.log(
+    `rotas fora de 200: ${resultado.falhas.length ? resultado.falhas.join(', ') : 'nenhuma'}`,
+  )
   console.log(`tempo: ${resultado.segundos}s`)
   console.log(`relatorio: ${resultado.destino}`)
 }

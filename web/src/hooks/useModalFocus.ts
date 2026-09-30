@@ -26,6 +26,7 @@ import { type RefObject, useEffect } from 'react'
  * voltar para ele em vez de avancar.
  */
 const FOCUSABLE =
+  // biome-ignore lint/security/noSecrets: seletor CSS dos elementos focaveis, nao credencial
   'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
 
 interface ModalFocusOptions {

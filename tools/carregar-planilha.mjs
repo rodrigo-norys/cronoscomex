@@ -225,8 +225,7 @@ export async function compararZip(caminhoA, caminhoB) {
   const depois = ler(caminhoB)
   const nomes = [...new Set([...Object.keys(antes), ...Object.keys(depois)])].sort()
   const mudadas = nomes.filter(
-    (nome) =>
-      Buffer.compare(antes[nome] ?? Buffer.alloc(0), depois[nome] ?? Buffer.alloc(0)) !== 0,
+    (nome) => Buffer.compare(antes[nome] ?? Buffer.alloc(0), depois[nome] ?? Buffer.alloc(0)) !== 0,
   )
 
   /*

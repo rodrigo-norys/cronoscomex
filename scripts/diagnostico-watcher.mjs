@@ -128,7 +128,7 @@ veredictos.push(['forma de caminho', caminhoCasa ? 'coincide' : 'DIVERGE'])
 passo('chokidar CRU — sem ignored, sem debounce')
 {
   const { dir, arquivo } = criarArea('cronos-diag-cru-')
-  let eventos = []
+  const eventos = []
   const observador = watch(dir, { ignoreInitial: true, depth: 0, persistent: true })
   observador.on('all', (evento, caminho) => eventos.push({ evento, caminho }))
 
