@@ -45,7 +45,9 @@ for (const porta of PORTAS) {
   try {
     if (await ocupada(porta)) ocupadas.push(porta)
   } catch (erro) {
-    console.warn(`portas: nao foi possivel sondar ${porta} (${erro.code ?? erro.message}); seguindo`)
+    console.warn(
+      `portas: nao foi possivel sondar ${porta} (${erro.code ?? erro.message}); seguindo`,
+    )
   }
 }
 

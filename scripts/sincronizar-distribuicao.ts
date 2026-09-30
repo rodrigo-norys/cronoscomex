@@ -279,7 +279,9 @@ function main(): void {
 
   const relatar = (titulo: string, lista: readonly string[]): void => {
     if (lista.length === 0) return
-    process.stdout.write(`${titulo} (${lista.length}):\n${lista.map((a) => `  ${a}`).join('\n')}\n\n`)
+    process.stdout.write(
+      `${titulo} (${lista.length}):\n${lista.map((a) => `  ${a}`).join('\n')}\n\n`,
+    )
   }
 
   relatar('FALTANDO na distribuicao', faltando)

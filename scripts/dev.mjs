@@ -44,7 +44,9 @@ function start({ label, args }) {
 
   child.on('exit', (code, signal) => {
     if (shuttingDown) return
-    process.stderr.write(`\n[${label}] encerrou (${signal ?? `codigo ${code}`}). Derrubando o resto.\n`)
+    process.stderr.write(
+      `\n[${label}] encerrou (${signal ?? `codigo ${code}`}). Derrubando o resto.\n`,
+    )
     shutdown(code ?? 1)
   })
 

@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process'
-import { createServer } from 'node:net'
 import { copyFileSync, existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs'
+import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -315,6 +315,7 @@ export async function comNavegador(opcoes, fn) {
     // FINE = 4. E o que o mouse do operador declara.
     ...(apontadorFino
       ? [
+          // biome-ignore lint/security/noSecrets: flag do Chrome que declara o apontador, nao credencial
           '--blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4',
         ]
       : []),
@@ -386,7 +387,11 @@ export async function comNavegador(opcoes, fn) {
       },
       /** Uma tecla, para percorrer as paradas de tabulacao. */
       async teclar(key, { shift = false } = {}) {
-        const comuns = { key, modifiers: shift ? 8 : 0, windowsVirtualKeyCode: key === 'Tab' ? 9 : 0 }
+        const comuns = {
+          key,
+          modifiers: shift ? 8 : 0,
+          windowsVirtualKeyCode: key === 'Tab' ? 9 : 0,
+        }
         await conexao.enviar('Input.dispatchKeyEvent', { type: 'rawKeyDown', ...comuns })
         await conexao.enviar('Input.dispatchKeyEvent', { type: 'keyUp', ...comuns })
         await esperar(20)
