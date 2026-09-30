@@ -87,9 +87,10 @@ oportuno. **Enquanto o envio for manual, repita a cópia toda vez que a regra de
 consolidação ou a equipe mudar** — nenhum aviso existe para lembrar.
 
 **As duas coisas que mentiam sobre isso já foram corrigidas na branch.** O
-`README.md` dela ainda diz "você não precisa editar arquivo nenhum", mas a frase
-é sobre o OPERADOR e vem seguida do parágrafo que explica os dois mapas copiados
+`README.md` dela diz "Você não edita arquivo nenhum", mas a frase é sobre o
+OPERADOR e vem seguida do parágrafo que explica os dois mapas copiados
 por quem instala; o bloco "Como refazer esta branch" não lista arquivo nenhum —
 ele manda calcular pelo script; e a tabela de pastas passou a citar os dois mapas
-em 04/09/2026. **O que sobra de `PD-08` não é documental: é `H-88`**, que tira o
-mapa da cópia manual (`D-32`).
+em 04/09/2026. **O que sobrava de `PD-08` não era documental: era `H-88`**, que tira o
+mapa da cópia manual (`D-32`) — e ela fechou em 09/09/2026. Falta conferir que
+ela chegou à instalação do operador.
