@@ -424,6 +424,14 @@ negado**, e o merge continua sendo do dono, no GitHub. Negados também os
 comandos que **perdem trabalho ou reescrevem história**: `reset --hard`,
 `clean`, `checkout --`, `switch -f`, `rebase`, `commit --amend`,
 `commit --no-verify`, `branch -D` e `gh repo delete`.
+**A negação por prefixo não alcança a forma, e quem a impõe é o guard.**
+`git push origin x --force`, `-uf`, `--force-w` e `+x` escapam de
+`git push --force *` e caem no `allow` de `git push *` — medido em 23/09/2026,
+71 formas passavam sem prompt. Desde 30/09/2026 o `guard-dados-sensiveis.sh`
+barra as mesmas negações em qualquer posição, grupo, abreviação e atrás de
+`git -C`/`-c`, `env`, `timeout` ou `bash -c`, e barra também push para destino
+que não é remoto nomeado, `push --mirror`/`--delete`, escrita em `git config` e
+`gh pr merge` fora de posição.
 
 > **A confirmação em `git add` e `git push` saiu em 31/08/2026**, ao abrir a
 > sessão sem supervisão. Quem protege deixou de ser o prompt e passou a ser o
@@ -489,8 +497,12 @@ arquivo.
 `bypass_actors` **vazio** — nem o dono do repositório escapa. Quatro regras:
 `pull_request`, `required_status_checks` (`verify` e `dados-sensiveis`, com
 `strict_required_status_checks_policy` **ligado desde 16/09/2026** — a branch
-precisa estar atualizada com a `main` para mesclar),
-`non_fast_forward` e `deletion`. É configuração do GitHub, não arquivo
+precisa estar atualizada com a `main` para mesclar — e cada check preso ao
+GitHub Actions por `integration_id` **desde 23/09/2026**: sem ele, qualquer
+status com o mesmo nome, inclusive um postado por `gh api`, satisfazia o check),
+`non_fast_forward` e `deletion`. **A `distribuicao` tem ruleset próprio desde
+23/09/2026**, `distribuicao protegida`, só com `deletion` e `non_fast_forward`:
+ela não recebe PR, então não há check a exigir. É configuração do GitHub, não arquivo
 versionado; leia o estado real com
 `gh api repos/<owner>/<repo>/rulesets/<id>` em vez de confiar nesta linha.
 
