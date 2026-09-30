@@ -13,7 +13,8 @@ import { watch } from 'chokidar'
  * `tests/io/watcher.test.ts`, **os 6 que esperam disparo falharam e os 6 que
  * esperam silencio passaram**. Lentidao de runner produziria falha parcial;
  * isto parece ausencia total de evento. E o caminho nunca foi exercido em
- * Windows — `docs-windows/` tem quatro sessoes, nenhuma sobre o watcher —,
+ * Windows — os registros das quatro sessoes na maquina do operador, que ficam
+ * locais em `docs-windows/` (fora do git), nao tem nenhuma sobre o watcher —,
  * embora seja **em Windows que a aplicacao roda**.
  *
  * A pergunta que ele responde nao e "passou ou falhou", e sim ONDE para:
