@@ -75,7 +75,7 @@ para que a proposta volte sabendo o que já foi respondido.
 | **`autoMemoryEnabled: false`** | A memória automática é reinjetada do disco após compactação, e grava **fora** do repositório. Numa cadeia longa tem valor |
 | **`defaultMode` ≠ `default`** | `acceptEdits` alcança `mv`/`cp` sobre a planilha real; `auto`, `dontAsk` e `bypassPermissions` mudam o regime inteiro |
 | **`AGENTS.md` como fonte compartilhada** | Todas as fontes localizadas eram T4. E a premissa falharia: uma ferramenta, um desenvolvedor |
-| **Ampliar permissão sobre `npm install`/`ci` ou o perfilador** | Instalação de dependência e dado sensível. Aqui o diálogo de permissão **é** o controle |
+| **Ampliar permissão sobre `npm install`/`ci` ou o perfilador** | Instalação de dependência e dado sensível. Aqui o diálogo de permissão **é** o controle. **Medido em 23/09/2026: o controle não alcançava `npm install <pacote>`.** O `ask` do projeto casa só o comando sem argumento, e um `allow` de `Bash(npm install *)` no `~/.claude/settings.json` global liberava o resto sem prompt — o controle vale enquanto nenhum settings de escopo mais amplo liberar o comando |
 
 ## O que foi recusado e depois adotado — e é a parte que ensina
 
