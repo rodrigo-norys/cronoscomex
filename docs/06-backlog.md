@@ -46,7 +46,9 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E14 — A casca que se opera, não só se lê ✅ | **H-82 a H-92 ✅ — o épico fechou em 16/09/2026, com `H-91`.** Primeiro épico **prospectivo** desde `E12`: as nove primeiras nascem antes do código (`D-29` a `D-34`), `H-91` entra em 08/09/2026 por `D-35`, e `H-92` em 10/09/2026 por `D-39`. `H-91` passou de M para **G** na fatia de 11/09, quando o contrato dela dobrou | 3 | 6 | 2 |
 | E15 — A tabela é a planilha, e a cor é só cor ✅ | **`H-93` a `H-96`, todas concluídas** — o épico fechou em 17/09/2026. Nasce de `D-40` a `D-43`, em 10 e 11/09/2026: a cor deixa de apontar responsável e vira aparência, e a tabela passa a espelhar o arquivo — as 16 colunas com o nome do cabeçalho. `H-93` veio de `E14` em 11/09, por estar grande demais. **`H-96` nasce de defeito simulado, não observado**, ficou seis dias fora da fila por escolha do usuário, e foi reaberta por ordem dele em 17/09 — a única do backlog com esse percurso. **As quatro são G**, pela régua do topo | 0 | 0 | 4 |
 | E16 — A tabela que se lê, e o endereço que não mente | **`H-97` a `H-100` ✅; só `H-101` aberta, e escrita para não ser executada agora.** Nasce de `D-44`, em 16/09/2026, do uso da tela que `E15` entregou: o fundo pintado ficou ilegível no tema escuro, o painel lateral disputava largura com 17 colunas, e os parâmetros da página viajavam para as outras seis telas. **Nenhuma das quatro é regra de negócio** — são apresentação e endereço | 3 | 1 | 1 |
-| **Total** | **101** — 100 concluídas, 1 aberta | **39** | **51** | **11** |
+| E17 — A tela que o uso refez ✅ | **`H-102` a `H-107`, todas concluídas.** Épico **retroativo por método**, escolha do usuário: o código entrou entre 18 e 21/09/2026, por `D-49` a `D-58`, e as histórias foram escritas em 30/09 (`D-69`) | 0 | 4 | 2 |
+| E18 — O que o ensaio na planilha real achou ✅ | **`H-108` a `H-114`, todas concluídas.** Épico **retroativo por método**, escolha do usuário: o código entrou em 18 e 22/09/2026, pelos achados do ensaio e por `D-61` a `D-67`, e as histórias foram escritas em 30/09 (`D-69`) | 1 | 3 | 3 |
+| **Total** | **114** — 113 concluídas, 1 aberta | **40** | **58** | **16** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com
@@ -59,9 +61,9 @@ bloco; o índice agora é obrigado a concordar com ele.
 
 `H-30` teve a ressalva do bloco dela **levantada em 31/08/2026**: o
 `iniciar.cmd` foi executado na máquina do operador, sobe e carrega a planilha.
-`PD-06` guardava os itens que faltavam, e **fechou em 03/09/2026** — os três últimos foram exercidos por SSH, e o registro está em `docs-windows/2026-09-03-pd06-fechada.md`.
+`PD-06` guardava os itens que faltavam, e **fechou em 03/09/2026** — os três últimos foram exercidos por SSH, e o que virou regra está em `.claude/rules/operacao-windows.md`, na seção "`PD-06` fechou em 03/09/2026". O registro da sessão fica em `docs-windows/`, que é local e não versionado (`.gitignore`).
 
-**Onze histórias são G.** `H-101` entrou em 16/09/2026 por `D-44`, e o G dela é
+**Dezesseis histórias são G.** `H-101` entrou em 16/09/2026 por `D-44`, e o G dela é
 diagnóstico: o autoajuste exige `<colgroup>`, `table-layout: fixed` e largura em
 estado, e os três desfazem o `max-w-56 truncate` que segura a linha de 40 px de
 `H-61` — **nove blocos de teste dependem da geometria atual**. As demais:
@@ -74,7 +76,9 @@ declarações manuais, e o usuário preferiu a história maior. `H-91` e `H-96`
 nasceram G nas decisões de 11/09/2026. As demais — estas duas por medição do que já estava commitado: 29 e 15
 arquivos, e duas rotas novas. **Nas duas o rótulo é diagnóstico, não escolha**,
 e é o preço de escrever a história depois do código: fatiar em M teria sido
-decisão de antes. As três
+decisão de antes. **As cinco G de `E17` e `E18` — `H-102`, `H-105`, `H-109`,
+`H-112` e `H-113` — pagam o mesmo preço**: foram medidas nos commits em
+30/09/2026, com o código já na `main`. As três
 candidatas naturais anteriores foram quebradas: a
 escrita no `.xlsx` virou `H-24` (cirurgia), `H-25` (defesas) e `H-26` (comando
 ponta a ponta); os indicadores viraram cinco histórias por natureza de cálculo;
@@ -236,6 +240,25 @@ foi cortada de novo em 31/08/2026, e `H-66` saiu dela (`D-24`).
 - [H-99 — Os parâmetros da Operacional não sobrevivem à saída dela](#h-99) ✅
 - [H-100 — "Todas as linhas" entra no seletor](#h-100) ✅
 - [H-101 — A coluna se ajusta ao maior conteúdo](#h-101)
+
+**[Épico E17 — A tela que o uso refez](#e17)**
+
+- [H-102 — A Página Início em nove cartões, e a cor volta a contar status](#h-102) ✅
+- [H-103 — Os dois painéis de declaração abrem a Página Configuração](#h-103) ✅
+- [H-104 — Toda data em dd/mm/aaaa](#h-104) ✅
+- [H-105 — O cliente é declarado sempre como grupo, pela CLT, pela REF ou pelo IMPORTADOR](#h-105) ✅
+- [H-106 — Quantos itens cada ranking mostra é escolha do operador](#h-106) ✅
+- [H-107 — O Histórico conta os registros do mês](#h-107) ✅
+
+**[Épico E18 — O que o ensaio na planilha real achou](#e18)**
+
+- [H-108 — A planilha que não se sabe ler é recusada com motivo](#h-108) ✅
+- [H-109 — O arquivo de configuração editado à mão: BOM tolerado, importador repetido recusado](#h-109) ✅
+- [H-110 — A rota de cor grava na fila injetada](#h-110) ✅
+- [H-111 — O diálogo de conflito abre com o foco](#h-111) ✅
+- [H-112 — A escrita recusa o caractere que o XML não admite, e a linha nova converte como a célula](#h-112) ✅
+- [H-113 — A fila nunca derruba o painel, e a recusa nomeia os processos](#h-113) ✅
+- [H-114 — Enfileirar recusa com o cabeçalho bloqueado](#h-114) ✅
 
 
 ---
@@ -11752,17 +11775,1379 @@ mostrar que ela dobra o tamanho; e persistir largura fora do endereço.
 
 ---
 
+<a id="e17"></a>
+
+## Épico E17 — A tela que o uso refez
+
+**Épico retroativo por método, e não por omissão — é o que o separa de `E13`
+(`D-26`).** Nasce do uso da tela entre **18 e 21/09/2026**: as decisões `D-49` a
+`D-58` saíram, uma a uma, do que o usuário viu ao abrir a Página Início, a
+Configuração, a Clientes e o Histórico. **Não abrir história a cada medida foi
+escolha dele durante o desenvolvimento**: acumular o que fosse feito e agrupar
+depois, pela origem — de outro modo cada ajuste viraria uma história solta, e o
+épico não existiria. O código entrou na `main` pelos PRs #139, #141, #142 e #143
+— catorze commits de produto, 46 arquivos de código e teste —, e as próprias
+decisões registram a escolha: `D-49` e `D-50` declaram "nenhuma história" no
+custo, e a primeira chama o trabalho de "ajuste avulso por escolha do usuário".
+As seis histórias abaixo foram escritas em **30/09/2026**, a partir dos commits,
+e o registro disso é `D-69`.
+
+**`D-52` fica fora, e não por esquecimento.** É o patch do Vitest de 4.1.10
+para 4.1.11 — dependência, não tela —, e entrou sozinho pelo PR #140. Ficam
+fora também `2d8f739` e `354bffd`, que viajaram nos PRs #141 e #142: corrigem
+a guarda de âncora de `tests/repo/contratos.test.ts` e a citação que ela
+reprovava, e não são produto.
+
+**A cascata de documentos foi percorrida em parte.** Os commits de
+documentação dos quatro PRs registraram as decisões em `10-governanca.md`,
+emendaram `05-contratos-api.md`, a matriz de `09-rastreabilidade.md`, `TD-01`
+em `03-modelo-dados.md` e a regra inviolável 4 do `CLAUDE.md`; este backlog só
+recebeu a emenda ao contrato de `H-88`, em `4bd8aa7`. **Conferido em
+30/09/2026, dois parâmetros de rota não estão em `05-contratos-api.md`:** o
+`topN` de `GET /api/indicators` (`H-106`) e o `field` das três rotas do mapa
+de clientes (`H-105`). A emenda de `4bd8aa7` remete a `05-contratos-api.md`
+como redação vigente das três colunas, e ele não as traz.
+
+**A troca é declarada: escrever depois dá o agrupamento e a rastreabilidade, e
+abre mão do checklist antes do código.** Aqui o papel de anteparo foi exercido pelo desenho
+antes da escolha — os arranjos de `D-50`, `D-56` e `D-57` foram desenhados e
+apresentados antes de o usuário escolher, e o efeito numérico de `D-49` e
+`D-54` foi medido e apresentado antes do aceite —, e não pelo checklist. O que
+escapou é do tipo que o checklist cobra: os dois parâmetros sem contrato,
+acima. **Por isso o bloco de cada história cita os commits que a entregaram:**
+ele descreve o que foi feito, e não o que se pretendia fazer.
+
+**Três determinações valem para o épico e não se re-litigam:**
+
+1. **A cor conta status só nos cartões que `D-49` e `D-54` nomeiam** —
+   "Chegando hoje" (IND-24, linha branca **e** `eta2` de hoje),
+   "Desembaraçados" (IND-26, linha verde ou vermelha) e "Em desembaraço"
+   (IND-27, linha branca). É a emenda de `D-49` à regra inviolável 4, que
+   passou a dizer "a cor nunca infere a CATEGORIA": o classificador de `TD-01`
+   não lê cor, e o filtro Categoria, a coluna da Página Operacional e
+   `categoryCheck` continuam vindo do STATUS. As duas leituras divergem de
+   propósito — medido em 18/09/2026, a categoria `desembaracado` dá 480 e a
+   cor dá 482.
+2. **"Ou similares" é o `display` de `D-42`, e não um limiar.** Tons que o
+   operador vê como a mesma cor já compartilham a cor de exibição — os dois
+   verdes do arquivo são `#00FF00` —, e o limiar calculado é a alternativa que
+   o `ADR-0003` recusa. Chave sem `display` não entra em cartão nenhum, e cor
+   nova continua caindo na quarentena.
+3. **Indicador cuja pergunta mudou é aposentado, e não redefinido** — escolha
+   do usuário em `D-49`. **O que sai da tela sai do contrato e do domínio**,
+   porque indicador servido sem tela é o defeito que `A-65` varreu; **mas sai
+   o contador, e não a regra:** `hasPendingDocs` e `isOverdue` ficam, servindo
+   ALE-02, ALE-01 e o `overdueCount` de IND-17.
+
+**As seis histórias, na ordem do primeiro commit de cada uma.** A numeração
+segue a ordem das decisões, de `D-49` a `D-58`, e por isso não coincide com a
+da tabela. **E aqui a ordem dos commits não é a da cadeia canônica**, ao
+contrário de `E13`: sem história, os commits de uma decisão se intercalaram com
+os de outra dentro do mesmo PR.
+
+| Ordem | História | Commits | Camada | Por que vem aqui |
+|---|---|---|---|---|
+| 1 | `H-102` | `11acfa8`, `aa9cc6d`, `f9bab05` · `7007268` | `domain`, `http`, `web` | `styleKeysByDisplay` abre o PR #139: é o que os cartões de cor consomem. Termina no PR #141, com os cartões de `D-54` |
+| 2 | `H-104` | `edf4aa7`, `bf3d952` | `web` | `DateField` entra entre os dois primeiros commits de `H-102`, porque `aa9cc6d` já o usa nos dois campos da Página Início |
+| 3 | `H-103` | `d2205e4` | `web` | Só muda de lugar componentes que já existiam, e não depende dos cartões |
+| 4 | `H-106` | `75dc84c` · `7007268` · `51dcd02` | `http`, `web` | O quadro rolável vem antes de o ranking poder ter 180 itens, e a rota aceita `topN` antes de a tela pedi-lo |
+| 5 | `H-105` | `52a144c` · `87c5b60` | `domain`, `app`, `http`, `web` | Fecha o PR #141; o PR #142 tira o desfecho que ela deixou sem produtor |
+| 6 | `H-107` | `1b00b98`, `3a678a6`, `bcff27d` | `domain`, `http`, `web` | PR próprio, o #143, e o único do épico na ordem da cadeia: domínio, rota, tela |
+
+> **`7007268` entrega três coisas, e por isso aparece em três blocos.** Os
+> cartões de cor de `D-54` são de `H-102`, e é lá que os arquivos do commit são
+> contados; o `topN` da query é de `H-106`; e o ramo do ranking que repete o
+> nome do grupo — a metade de `D-53` que não é declaração — entrou no mesmo
+> commit, e está descrito em `H-105`.
+>
+> **`aa9cc6d` também troca os dois campos de data da Página Início por
+> `DateField`**, que é `D-51` e portanto `H-104`. O arquivo é contado em
+> `H-102`, cujo commit o traz.
+
+---
+
+<a id="h-102"></a>
+
+### H-102 — A Página Início em nove cartões, e a cor volta a contar status
+
+> ✅ **CONCLUÍDA em 21/09/2026**, nos PRs #139 (commits `11acfa8`, `aa9cc6d` e
+> `f9bab05`; documentação em `3d7d0c5`) e #141 (commit `7007268`, citado também
+> em `H-106`; documentação em `9e06ac2`). História escrita retroativamente em
+> 30/09/2026.
+>
+> **Treze cartões viraram nove, e o que saiu levou o indicador junto**
+> (`D-49`). Saíram "Chegando esta semana" (IND-08), "Documentos pendentes"
+> (IND-14), "Desembaraçados hoje" (IND-16) e "Desembaraçados no período (por
+> registro)", de `H-52` — da tela, do contrato e do domínio. Três cartões
+> mudaram de regra, e os indicadores antigos foram aposentados: IND-23 no lugar
+> de IND-03, IND-24 no de IND-07, IND-25 no de IND-15. Abaixo do contador não
+> aparece mais nada: sai a janela de `H-52`, sai o `hint` "Pede ação" de `H-45`,
+> e sai `meta.dataRange`, que só aquela linha consumia.
+>
+> **"Atrasados" exclui o desembaraçado, e o número mostra por quê** (`D-49`):
+> sem a cláusula o cartão mede **542 das 650** linhas, com ela **62**. `DUIMP`
+> casa por **continência** — as 8 linhas com `DOCS APROVADOS - AG CONFECÇÃO DE
+> DUIMP` contam como tendo DUIMP, embora a declaração ainda esteja por fazer —,
+> e a consequência foi apresentada ao usuário antes do aceite e mantida por ele.
+>
+> **No mesmo dia, "Desembaraçados" e "Em desembaraço" passaram a contar só
+> COR** (`D-54`), e IND-23 viveu menos de um dia. IND-26 conta a linha verde ou
+> vermelha, IND-27 a branca, e o STATUS deixou de participar dos dois:
+> `mentionsDuimp` sobrevive só para IND-25. Medido na planilha real,
+> "Desembaraçados" vai de 480 para **482** e "Em desembaraço" de 167 para
+> **1**, porque o arquivo tem uma única linha branca. `D-54` é de 18/09/2026, e
+> o código dela entrou em 21/09/2026, em `7007268` — é por isso que a história
+> fecha nessa data.
+>
+> **A conferência de A-12 saiu do cliente e só aparece quando quebra.** Os
+> cartões deixaram de ser as quatro categorias, e somá-los diria "não
+> conferem" todo dia; `categoryCheck` vem pronto do servidor, e medido em
+> 18/09/2026 soma 650 de 650. **O critério de aceite dos nove passou a ser
+> executável** (`D-51`): acrescentar a linha que satisfaz a regra soma 1,
+> tirá-la subtrai 1, e a mesma linha com o atributo exigido trocado deixa o
+> contador parado — a metade que distingue "conta esta linha" de "conta
+> qualquer linha".
+
+**Objetivo:** a Página Início mostrar nove cartões, cada um com a regra que o
+usuário definiu, e o contrato servir exatamente esses nove.
+
+**Contrato:** `GET /api/indicators`, em `05-contratos-api.md` §2. `counts`
+passa a ser os nove cartões: saem `chegandoSemana`, `documentosPendentes`,
+`desembaracadosHoje` e `desembaracadosNoPeriodo`, e mudam de indicador
+`emDesembaraco` (IND-27), `desembaracados` (IND-26), `chegandoHoje` (IND-24) e
+`atrasados` (IND-25). Entra o bloco `categoryCheck` — `sum`, `total`,
+`matches` —, e sai `meta.dataRange`. `buildServer` passa o mapa de cor à rota,
+que resolve as chaves uma vez, no registro.
+
+**Arquivos:**
+- `src/domain/indicators.ts` — `arrivingTodayWhite`, `overdueWithoutDuimpCount`,
+  `colorCount`, `mentionsDuimp` e `categoryCheck`; saem os contadores de
+  IND-07, IND-08, IND-14, IND-15, IND-16 e de `H-52`. `inClearanceCount`, de
+  IND-23, nasce em `aa9cc6d` e sai em `7007268`. Traz também `repeteONome`, que
+  é de `D-53` (ver `H-105`)
+- `src/domain/color-mapper.ts` — `styleKeysByDisplay`
+- `src/http/routes/indicators.ts` — o bloco `counts` dos nove, `categoryCheck`,
+  e o mapa de cor resolvido no registro. Traz também o `topN` da query, que é
+  de `H-106`
+- `src/http/server.ts` — o mapa de cor chega à rota
+- `web/src/pages/Home.tsx` — os nove cartões, a conferência só quando quebra, e
+  os dois campos de data em `DateField` (`H-104`)
+- `web/src/components/StatCard.tsx` — sem `hint` e sem `period`
+- `tests/domain/cartoes-mais-um.test.ts` — novo, o critério +1/−1
+- `tests/domain/indicators-counts.test.ts` · `tests/domain/indicators-calendar.test.ts` ·
+  `tests/domain/indicators-risk.test.ts` · `tests/domain/indicators-time.test.ts`
+- `tests/domain/indicators-rankings.test.ts` — o ramo que repete o nome
+  (`D-53`) e o grupo como uma posição no corte (`D-55`)
+- `tests/http/indicators.test.ts` · `web/tests/Home.test.tsx` ·
+  `web/tests/support/api-stub.ts`
+
+**Critérios de aceite:**
+- **Dado** a Página Início, **então** ela mostra nove cartões, nesta ordem:
+  Total, Desembaraçados, Processos ativos, Em desembaraço, Aguardando draft,
+  Canal Vermelho, Chegando hoje, Chegando em 15 dias e Atrasados — o último na
+  variante de urgência —, e nada abaixo de cada contador.
+- **Dado** uma linha verde ou vermelha, **então** ela conta em
+  "Desembaraçados" (IND-26), qualquer que seja o STATUS; **e** uma linha azul
+  com STATUS `DESEMBARAÇADA` **não** conta.
+- **Dado** uma linha branca, **então** ela conta em "Em desembaraço" (IND-27);
+  **e** uma linha verde com `DUIMP` no STATUS **não** conta.
+- **Dado** uma linha branca com `eta2` de hoje, **então** ela conta em
+  "Chegando hoje" (IND-24); a mesma data em linha verde **não** conta.
+- **Dado** `eta2` até hoje+10, sem `DUIMP` no STATUS e fora da categoria
+  `desembaracado`, **então** a linha conta em "Atrasados" (IND-25); com `eta2`
+  em hoje+11, **não** conta.
+- **Dado** a soma das quatro categorias igual ao total, **então** a Página
+  Início não exibe a conferência; **quando** diverge, **então** exibe "NÃO
+  conferem" e anuncia pela região viva.
+- **Dado** nenhum recorte de período, **então** o seletor da Página Início diz
+  "Todo o período", e não a faixa das datas.
+- **Dado** cada um dos nove cartões, **quando** a testemunha entra, **então** o
+  contador sobe exatamente 1 e volta ao sair; **e** a contra-testemunha deixa o
+  contador parado. Exercido contra a planilha real em 18/09/2026, ainda com
+  IND-23: `Total 650→651→650`, `Em desembaraço 167→168→167`,
+  `Chegando hoje 0→1→0` e `Atrasados 62→63→62`.
+- **Dado** a resposta de `GET /api/indicators`, **então** ela não traz
+  `chegandoSemana`, `documentosPendentes`, `desembaracadosHoje`,
+  `desembaracadosNoPeriodo` nem `meta.dataRange`.
+
+**Casos-limite:**
+- **Dois tons, uma cor:** as chaves `argb:FF00FF00` e `argb:FF00FF0D`
+  compartilham `#00FF00`, e as duas contam em IND-26 — é a prova de que a
+  fronteira resolve pela cor de exibição, e não pela chave.
+- **Sem mapa de cor passado a `buildServer`, os dois cartões de cor valem
+  zero:** chave sem `display` não vira cor próxima.
+- **A cor é a da célula-âncora**, e não as doze colunas A–L: exigir as doze
+  brancas contaria a linha cujas colunas não têm cor declarada, e ausência de
+  declaração não é branco (regra inviolável 3).
+- **IND-24 é subconjunto de IND-27, por escolha do usuário** — `D-54` não
+  iguala "Chegando hoje" a "Em desembaraço".
+- **IND-26 coincide hoje com `channelDistribution.known`, e a coincidência é
+  do mapa, não da regra:** verde e vermelho são as duas únicas cores que
+  derivam canal, e uma cor nova declarada com canal mudaria um sem mudar o
+  outro.
+- **"Total" não tem contra-testemunha:** contar toda linha é o que ele faz.
+- **O `hint` saiu, e o custo foi aceito:** era o que distinguia a variante de
+  urgência em texto (`ACHADO 18`, `SC 1.4.1`), e a distinção volta a ser só o
+  par de cores.
+
+**Fora desta história:** o classificador de `TD-01`, que `D-49` não tocou; as
+regras de ALE-01, ALE-02 e do `overdueCount` de IND-17, que ficam com
+`isOverdue` e `hasPendingDocs`; o formato das datas, que é `H-104`; o `topN`,
+que é `H-106`; e o ramo do ranking que repete o nome, que é `D-53` e está em
+`H-105`.
+
+**Dependências:** `H-09`, `H-10`, `H-12`, `H-13`, `H-16`, `H-45`, `H-52`, `H-94`, `H-104`.
+**Tamanho:** G (15 arquivos, contrato de `GET /api/indicators` alterado)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-103"></a>
+
+### H-103 — Os dois painéis de declaração abrem a Página Configuração
+
+> ✅ **CONCLUÍDA em 18/09/2026**, no PR #139 (commit `d2205e4`; documentação
+> em `3d7d0c5`). História escrita retroativamente em 30/09/2026.
+>
+> **É a terceira casa do painel de clientes** (`D-50`): nasceu na
+> Configuração (`D-32`), foi para a Página Clientes em 09/09/2026 (`D-36`) e
+> volta agora, ao lado do de responsáveis, que nunca saiu dali. **O que `D-36`
+> protegia continua protegido:** o painel segue fora do estado de qualquer
+> indicador. **O que se perde é a vizinhança**, e fica declarado: quem vê um
+> ranking com a grafia da célula deixa de ter a saída na mesma tela.
+>
+> **Lado a lado, e não empilhado, contra a recomendação apresentada.** Os dois
+> arranjos foram desenhados antes da escolha, e o custo do escolhido está
+> medido: os breakpoints do Tailwind olham a janela, e não o contêiner, então o
+> grid interno de cada painel aberto continua em duas colunas dentro de uma
+> coluna de ~600 px. Corrigir exigiria container queries, que o projeto não usa
+> em lugar nenhum.
+>
+> **Dois efeitos da ordem nova, e nenhum de layout.** `WorkbookSetup.test.tsx`
+> achava as regiões vivas do caminho pela ORDEM no DOM, e os painéis acima a
+> inverteram — o bloco ganhou `aria-labelledby` no próprio `h2`. E os 31 testes
+> do painel de clientes vieram de `Clients.test.tsx` com o render trocado e
+> nada mais, porque o componente não mudou.
+
+**Objetivo:** abrir a Página Configuração pelos dois painéis de declaração,
+lado a lado, com o caminho da planilha abaixo deles.
+
+**Arquivos:**
+- `web/src/pages/WorkbookSetup.tsx` — os dois painéis no topo, e o bloco do
+  caminho como seção própria
+- `web/src/pages/Clients.tsx` — deixa de montar `ClientDeclaration`
+- `web/src/components/TeamMap.tsx` — sai o `mt-8` da seção
+- `web/tests/WorkbookSetup.test.tsx` · `web/tests/Clients.test.tsx` — os 31
+  testes do painel mudam de arquivo
+
+**Critérios de aceite:**
+- **Dado** a Página Configuração, **então** "Clientes por declarar" e
+  "Responsáveis por importador" vêm primeiro, lado a lado a partir de `lg`, e o
+  bloco do caminho da planilha vem depois.
+- **Dado** a Página Clientes, **então** ela mostra só os rankings — o painel de
+  clientes não é montado ali.
+- **Dado** um painel aberto ao lado de um fechado, **então** o fechado não
+  estica junto (`items-start`).
+- **Dado** o bloco do caminho, **então** a largura de leitura `max-w-3xl` vale
+  para ele, e não para a seção inteira — com 768 px, duas colunas dariam 370 px
+  cada.
+- **Dado** uma falha de indicador, **então** o painel de clientes continua na
+  tela: ele não depende do estado de nada.
+
+**Casos-limite:**
+- **Abaixo de `lg`, a grade empilha**, e os dois painéis voltam a ocupar a
+  largura inteira.
+- **O grid interno de cada painel aberto continua em duas colunas** dentro da
+  coluna de ~600 px, e as listas apertam: custo aceito em `D-50`.
+- **O título do caminho muda com `firstRun`**, e por isso a seção é nomeada
+  por `aria-labelledby`: um `aria-label` escrito à mão divergiria dele na
+  primeira execução.
+- **As regiões vivas do caminho são achadas DENTRO da seção**, e não pela
+  ordem no DOM, que qualquer painel acima volta a inverter.
+
+**Fora desta história:** container queries; e mudar os dois componentes, que só
+mudaram de lugar.
+
+**Dependências:** `H-34`, `H-88`, `H-91`.
+**Tamanho:** M (5 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-104"></a>
+
+### H-104 — Toda data em dd/mm/aaaa
+
+> ✅ **CONCLUÍDA em 18/09/2026**, no PR #139 (commits `edf4aa7` e `bf3d952`;
+> documentação em `3d7d0c5`). História escrita retroativamente em 30/09/2026.
+>
+> **O formato não era escolhível onde estava** (`D-51`): o Chrome desenha
+> `input type="date"` no idioma da interface do navegador, e não no `lang` do
+> documento — medido na máquina do operador, que exibia `mm/dd/yyyy` com
+> `lang="pt-BR"` já declarado em `web/index.html`. Num painel aduaneiro, `03/09`
+> e `09/03` são datas diferentes e igualmente plausíveis: ler errado não gera
+> erro, gera número errado.
+>
+> **O calendário nativo não foi perdido, e o que atravessa não mudou.**
+> `DateField` é texto mascarado; o calendário vive num `input type="date"` fora
+> de alcance que o botão ao lado abre por `showPicker()`. O valor que entra e
+> sai é sempre `AAAA-MM-DD`, então URL, API e domínio não souberam da mudança.
+> O usuário escreveu "dd/mm/aa", e foi entregue com quatro dígitos de ano, que
+> é o padrão e o que a planilha usa.
+>
+> **Dos quatro campos, dois estão aqui.** Os do painel de filtros entraram em
+> `bf3d952`; os dois da Página Início, em `aa9cc6d`, que é o commit dos cartões
+> e está contado em `H-102`.
+
+**Objetivo:** todo campo de data da aplicação ser lido e escrito em
+`dd/mm/aaaa`, sem mudar o formato que atravessa URL, API e domínio.
+
+**Arquivos:**
+- `web/src/components/DateField.tsx` — novo: a máscara, `isoToBr`, `brToIso` e
+  o calendário por botão
+- `web/src/components/FilterPanel.tsx` — os dois campos de ETA2
+- `web/src/index.css` — o comentário de `color-scheme`, cujo consumidor passou
+  a ser o calendário escondido
+- `web/tests/DateField.test.tsx` — novo
+- `web/tests/FilterPanel.test.tsx`
+
+**Critérios de aceite:**
+- **Dado** qualquer um dos quatro campos de data, **então** ele exibe e aceita
+  `dd/mm/aaaa`.
+- **Dado** `01/09/2026` digitado, **então** o valor emitido é `2026-09-01`;
+  **e** um valor recebido em `AAAA-MM-DD` é exibido em `dd/mm/aaaa`.
+- **Dado** `31/02/2026`, **então** nada é emitido — a data não vira 03/03, que é
+  o que o `Date` faria —, e o campo diz "Data incompleta ou inexistente."
+  (regra inviolável 3).
+- **Dado** 29 de fevereiro, **então** o campo aceita em ano bissexto e recusa
+  fora dele.
+- **Dado** o operador digitando só dígitos, **então** as barras entram
+  sozinhas, o que não é dígito é descartado, e o campo para em oito dígitos.
+- **Dado** o campo limpo, **então** ele emite vazio.
+- **Dado** o botão ao lado do campo, **então** ele abre o calendário nativo e
+  tem nome acessível: "Abrir o calendário — " seguido do rótulo do campo.
+
+**Casos-limite:**
+- **Enquanto a data está incompleta, nada é emitido:** `01/0` não forma data,
+  e a URL ainda não a tem.
+- **O valor de fora vence só quando MUDA.** Sem essa comparação, cada
+  re-render devolveria o campo ao valor confirmado e apagaria o que o operador
+  está digitando.
+- **O campo nativo continua renderizado**, fora da tabulação (`tabIndex={-1}`)
+  e da leitura (`aria-hidden`): `showPicker()` recusa elemento que o navegador
+  não desenha.
+- **`color-scheme: light dark` continua valendo** — quem o consome agora é o
+  calendário nativo que o componente esconde.
+
+**Fora desta história:** o formato do que atravessa, que segue `AAAA-MM-DD`; e
+os dois campos da Página Início, que estão em `aa9cc6d` e contados em `H-102`.
+
+**Dependências:** `H-82`.
+**Tamanho:** M (5 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-105"></a>
+
+### H-105 — O cliente é declarado sempre como grupo, pela CLT, pela REF ou pelo IMPORTADOR
+
+> ✅ **CONCLUÍDA em 21/09/2026**, nos PRs #141 (commit `52a144c`;
+> documentação em `9e06ac2`) e #142 (commit `87c5b60`; o contrato em
+> `4bd8aa7`). História escrita retroativamente em 30/09/2026.
+>
+> **Cliente solto deixa de ser estado possível** (`D-53`). Dois clientes
+> declarados soltos não tinham botão nenhum — "Tirar de" e "Desfazer" nomeiam
+> o pai —, e desfazer exigia editar `config/client-map.json` à mão, que é o que
+> `H-88` existiu para eliminar. **Emenda a determinação 8 de `H-88`**, que
+> fazia o pai nascer no segundo conjunto: agora ele nasce no primeiro, e
+> `entrada-nova` deixa de ser desfecho de `planClientRule`. O arquivo gravado
+> ao fim de duas declarações é o mesmo; o que some é o estado intermediário.
+>
+> **Os declarados antes de 18/09/2026 são lidos como grupo de um membro, e o
+> arquivo do operador não é reescrito** — migrar por gravação mexeria em
+> `config/` na partida sem ninguém pedir. `removeClientGroup` passou a alcançar
+> o grupo que não está no arquivo: o `return` antecipado engolia o pedido, e
+> "Desfazer" não tinha efeito. Um efeito colateral foi achado e corrigido
+> junto: o caminho de gravação do pai empurrava o filho para o fim, e com a
+> `exact` de uma grafia passando por ele a regra ficaria atrás do prefixo que
+> já a captura — no-op silencioso (regra inviolável 2).
+>
+> **A regra passa a procurar em três colunas — CLT, REF ou IMPORTADOR**
+> (`D-68`), com uma aba por coluna na tela, a opção B escolhida pelo usuário.
+> Regra sem `field` vale `clt`, porque o mapa do operador é anterior a isto; e
+> CLT vazia deixa de significar "sem cliente", porque o processo pode ter dono
+> pela REF ou pelo importador.
+>
+> **`87c5b60` tira `entrada-nova` dos dois unions**, sem produtor desde `D-53`,
+> e `4bd8aa7` o tira do contrato. **A metade do ranking de `D-53` entrou por
+> outro commit:** o grupo cujo único membro repete o nome deixa de devolver
+> `segments`, e a Página Clientes para de desenhar um galho de 47 sob uma barra
+> de 47 com o mesmo nome. Está em `7007268`, junto dos cartões, e é contada
+> em `H-102`.
+
+**Objetivo:** toda declaração de cliente formar grupo, procurar o valor em
+CLT, REF ou IMPORTADOR, e poder ser desfeita pela tela — inclusive as
+anteriores a 18/09/2026.
+
+**Contrato:** as três rotas do mapa de clientes aceitam `field` — `clt`, `ref`
+ou `importer`, e ausente vale `clt`. Em `GET /api/clients`, na query, valor
+inválido cai em `clt`; em `GET /api/clients/preview`, na query, recusa com
+`400 FILTRO_INVALIDO`; em `POST /api/clients/rules`, no corpo, recusa com
+`400 CORPO_INVALIDO`. O `outcome` de `POST /api/clients/rules` perde
+`entrada-nova` — nome inexistente devolve `grupo-criado` —, e isso está em
+`05-contratos-api.md` §3 desde `4bd8aa7`; o `field`, não. No arquivo, a regra
+ganha `field` opcional, e `clt` fica implícito.
+
+**Arquivos:**
+- `src/domain/client-mapper.ts` — `ClientField`, `resolveClient` sobre
+  `ClientFields`, e o grupo no primeiro conjunto; sem `entrada-nova` desde
+  `87c5b60`
+- `src/domain/process-builder.ts` — a REF entra na resolução do cliente
+- `src/app/client-map-loader.ts` — `field` na carga e na gravação, o grupo
+  implícito, e a remoção que o alcança
+- `src/http/routes/clients.ts` — `field` nas três rotas
+- `web/src/api-client.ts` · `web/src/hooks/usePendingClients.ts` — `field` até
+  a rota
+- `web/src/components/ClientDeclaration.tsx` — as três abas, e um botão só
+  quando pai e filho dizem a mesma palavra
+- `tests/domain/client-mapper.test.ts` · `tests/domain/pending-clients.test.ts` ·
+  `tests/app/client-map-loader.test.ts` · `tests/http/clients.test.ts` ·
+  `web/tests/WorkbookSetup.test.tsx` · `web/tests/support/api-stub.ts`
+
+**Critérios de aceite:**
+- **Dado** um nome que ainda não existe no mapa, **quando** a regra é
+  declarada, **então** o desfecho é `grupo-criado`, com um pai e um filho —
+  nunca `entrada-nova`.
+- **Dado** um segundo conjunto declarado ao mesmo nome, **então** ele entra no
+  pai que a primeira declaração criou.
+- **Dado** um cliente declarado antes de 18/09/2026, sem grupo no arquivo,
+  **então** ele é lido como grupo de um membro, **e** o arquivo não é
+  reescrito para isso.
+- **Dado** esse grupo implícito, **quando** o operador o desfaz, **então** a
+  entrada do cliente sai do arquivo, e o cliente que não foi pedido permanece.
+- **Dado** pai e filho com o mesmo nome, sem distinguir caixa, **então** a tela
+  mostra só o nome e um botão — sem repetir `NOME › NOME`; com nome próprio no
+  pai, **então** os dois botões.
+- **Dado** a aba "Por REF", **então** a lista "Por declarar" mostra REFs, o
+  título diz "· REF", o rótulo do campo diz "Valor na coluna REF", e a regra vai
+  com `field: 'ref'`. A tela abre em CLT.
+- **Dado** um processo de CLT vazia e uma regra por REF ou por IMPORTADOR que
+  casa, **então** ele tem cliente.
+- **Dado** uma regra sem `field` no arquivo, **então** ela procura na CLT;
+  **e** `field` fora de `clt`, `ref` e `importer` faz a carga do mapa recusar.
+- **Dado** `ALFA` declarado em CLT e depois em IMPORTADOR, **então** são duas
+  regras — a segunda não vira no-op.
+- **Medido no mapa real** (`D-53`): 5 clientes, 5 grupos, zero sem pai, e zero
+  ramos que repetem o próprio nome.
+
+**Casos-limite:**
+- **Célula vazia nunca casa, em coluna nenhuma**, nem por prefixo: `''` como
+  prefixo casaria tudo, e coluna em branco é ausência de dado (regra
+  inviolável 3).
+- **A primeira regra que casa vence, mesmo entre colunas diferentes.**
+- **O qualificador `importer` e a coluna `field: 'importer'` coexistem:** o
+  primeiro restringe uma regra de outra coluna, a segunda faz do importador a
+  coluna procurada.
+- **Fora da CLT, o rótulo da lista é a própria chave** — em REF e IMPORTADOR a
+  chave normalizada já é o que a célula diz, e inventar outra grafia seria
+  adivinhar.
+- **O alcance de uma regra agrupa pela chave da coluna dela:** uma regra por
+  importador alcança linhas de CLT vazia, e agrupá-las sob `''` diria que ela
+  alcança uma grafia só.
+- **O critério do ranking é o NOME, e não a contagem de filhos** — o mesmo de
+  `ClientDeclaration`: `FAN` sobre a grafia `D2529` mantém o ramo, porque ali o
+  ramo diz qual grafia o nome consolida.
+- **`GET /api/clients` com `field` inválido cai em `clt` em vez de recusar:** o
+  parâmetro escolhe o que a lista mostra, e derrubar o painel por ele seria
+  desproporcional.
+
+**Fora desta história:** reescrever o `config/client-map.json` do operador — a
+derivação é na leitura.
+
+**Dependências:** `H-48`, `H-49`, `H-55`, `H-88`, `H-103`.
+**Tamanho:** G (13 arquivos, contrato do mapa de clientes alterado)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-106"></a>
+
+### H-106 — Quantos itens cada ranking mostra é escolha do operador
+
+> ✅ **CONCLUÍDA em 21/09/2026**, no PR #141 (commits `75dc84c`, `7007268` —
+> citado também em `H-102` — e `51dcd02`; documentação em `9e06ac2`). História
+> escrita retroativamente em 30/09/2026.
+>
+> **O número vivia só em `config/app.json`** (`D-55`): mudar de 10 para 20
+> exigia editar JSON e reiniciar — o mesmo gesto que `H-34` tirou do caminho da
+> planilha e `H-88` do mapa de clientes. A rota passou a aceitar `topN` na
+> query, e `config.topN` virou **padrão** em vez de valor único. **Valor
+> inválido cai no padrão em vez de recusar**, porque o parâmetro é de
+> apresentação: `topN=abc` na URL não pode derrubar o painel inteiro. O teto é
+> `MAX_LIMIT`, o mesmo da paginação, e o maior valor do seletor se chama
+> "Todos" pelo mesmo motivo do "Todas" de `H-100`.
+>
+> **Nasceu global e virou da página no mesmo dia**, por ordem do usuário ao ver
+> `?topN=50` sobreviver à troca de página. O argumento original — Clientes e
+> Performance consomem os mesmos rankings — continua verdadeiro e deixou de ser
+> decisivo; o custo é que a Performance volta ao padrão de `app.json`. O teste
+> literal `route.pageId === 'operational'` deu lugar à tabela
+> `PARAMS_POR_PAGINA`.
+>
+> **A segunda metade do pedido já era verdade, e virou teste:** o grupo ocupa
+> **uma** posição no corte — `Vivi` com `av` e `kelly` gasta uma das dez, não
+> três —, porque o corte roda depois do colapso em `groupCountWithGroups`
+> (`H-56`). **Medido:** com "Todos", o ranking de clientes devolve 180 itens
+> somando os 650 processos — e é por isso que `75dc84c` numera o ranking e dá
+> teto de 300 px ao quadro, com rolagem.
+
+**Objetivo:** o operador escolher, na Página Clientes, quantos itens cada
+ranking mostra, sem editar arquivo nem reiniciar.
+
+**Contrato:** `GET /api/indicators` aceita `topN` na query — inteiro de 1 a
+`MAX_LIMIT`, que é 1000; ausente ou fora da faixa, vale `config.topN` —, e
+`meta.topN` ecoa o valor aplicado. Ele substitui `config.topN` onde este já
+cortava, e `groupTotals` continua dizendo quantos existem antes do corte.
+**Conferido em 30/09/2026, `05-contratos-api.md` não registra o parâmetro**;
+registra só `meta.topN`.
+
+**Arquivos:**
+- `web/src/hooks/useTopN.ts` — novo: `TOP_N_PARAM`, os cinco tamanhos e o
+  "Todos"
+- `web/src/pages/Clients.tsx` — o seletor "Itens por dimensão", e a frase
+  lendo `meta.topN`
+- `web/src/App.tsx` — `PARAMS_POR_PAGINA`, que apaga o `topN` ao sair de
+  Clientes
+- `web/src/components/RankingBar.tsx` — a posição em ordinal, e o quadro
+  rolável
+- `web/src/index.css` — `ranking-viewport`, o teto de 300 px
+- `web/tests/useTopN.test.tsx` — novo
+- `web/tests/Clients.test.tsx`
+
+O lado da rota — `parseTopN` em `src/http/routes/indicators.ts`, e os testes
+em `tests/http/indicators.test.ts` e `tests/domain/indicators-rankings.test.ts`
+— está em `7007268`, e é contado em `H-102`.
+
+**Critérios de aceite:**
+- **Dado** `GET /api/indicators?topN=3`, **então** os rankings vêm cortados em
+  3 e `meta.topN` é 3.
+- **Dado** a rota sem `topN`, **então** vale o padrão de `app.json`.
+- **Dado** `topN` igual a `abc`, `0`, `-5`, `2.5` ou `99999`, **então** vale o
+  padrão, e não há recusa.
+- **Dado** o seletor, **então** ele oferece 5, 10, 20, 50 e "Todos", que vale
+  1000.
+- **Dado** a URL pedindo um valor que a rota recusou, **então** a frase "Os N
+  maiores de cada dimensão" diz o que o servidor aplicou, e não o que foi
+  pedido.
+- **Dado** um grupo de três membros e dois clientes soltos, **então** o
+  ranking tem três itens; com `topN` 2, o grupo é um dos dois; com 1, sobra só
+  o grupo, com os três membros dentro.
+- **Dado** o `topN` na URL, **então** ele sobrevive enquanto a rota é Clientes
+  e some ao trocar de página, sem levar os filtros globais junto.
+- **Dado** o ranking, **então** a posição aparece em ordinal à esquerda, e o
+  membro de grupo não é numerado.
+- **Dado** um ranking maior que o quadro, **então** ele rola por dentro, com
+  teto de 300 px, e o quadro é parada de tabulação nomeada.
+
+**Casos-limite:**
+- **A posição é `aria-hidden`:** o `<ol>` já anuncia "item 3 de 10", e
+  repetir diria a mesma coisa duas vezes.
+- **A coluna da posição acomoda três dígitos**, porque "Todos" leva o ranking
+  de clientes a 180 itens; `tabular-nums` a mantém alinhada.
+- **O teto vive em `index.css`, e não no JSX:** `max-h-[` no componente é o
+  sinal que `tests/repo/estilo.test.ts` usa para reconhecer painel modal.
+- **Quem valida é o servidor:** valor fora da faixa volta ao padrão lá, e não
+  no cliente — duas validações divergem no primeiro ajuste.
+- **"Todos" não mente:** passando de mil grupos, o corte volta a acontecer, e
+  `groupTotals` diz de quantos (regra inviolável 2).
+
+**Fora desta história:** o `topN` da Página Performance, que volta ao padrão de
+`app.json` pela emenda de `D-55`; e mudar `MAX_LIMIT`.
+
+**Dependências:** `H-11`, `H-18`, `H-56`, `H-99`.
+**Tamanho:** M (7 arquivos, 1 contrato novo: o parâmetro `topN`)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-107"></a>
+
+### H-107 — O Histórico conta os registros do mês
+
+> ✅ **CONCLUÍDA em 21/09/2026**, no PR #143 (commits `1b00b98`, `3a678a6` e
+> `bcff27d`; documentação em `6dd7eb3` e `8af034a`). História escrita
+> retroativamente em 30/09/2026.
+>
+> **A medida que o operador nomeou já estava no arquivo e não estava legível**
+> (`D-56`): *"o principal é referenciar a coluna RG e a data. é como medimos
+> quantos registros por mês."* A série reconstruída de `H-54` sai da mesma
+> coluna K e **acumula** — responde "quantos já foram registrados até aqui", e
+> não "quantos registrei neste mês". Barra, e não linha, porque a contagem é
+> discreta e de período fechado; e o checkbox **troca** a medida em vez de
+> somar camada, que é a opção (A) entre quatro desenhadas: `cleared` é 480
+> contra 483 de `registered`, e qualquer sobreposição prometeria uma comparação
+> de 3 linhas em 483.
+>
+> **O intervalo vai do primeiro RG até o mês corrente**, e não até o último RG:
+> o mais recente da planilha é 31/07/2026, e parar ali faria a série terminar
+> em julho numa tela aberta em setembro. **Fica declarado, e é pergunta para o
+> operador:** agosto e setembro têm zero RG, e só ele sabe se a coluna parou de
+> ser preenchida ou se o processo mudou.
+>
+> **Os dois gráficos ficam lado a lado, com os números recolhidos** (`D-57`). O
+> par não leva `items-start` — é a ausência dela que faz os dois esticarem
+> juntos, 478/478 contra 478/382 no Chrome a 1920 (`D-37`) —, e as tabelas
+> entram num `<details>` "Ver os números", o que faz a altura do par ser a do
+> gráfico.
+>
+> **A série observada saiu da tela, e não do dado** (`D-58`): ela tinha 2
+> pontos contra os 10 que a planilha data. `GET /api/history/monthly` continua
+> servindo `series`, e `data/history.jsonl` continua sendo gravado. Com ela
+> saíram o seletor de janela, que virava controle mudo, e as quatro notas que a
+> descreviam.
+
+**Objetivo:** a Página Histórico mostrar quantos registros a coluna RG marca
+em cada mês, ao lado do acumulado pelas datas da planilha.
+
+**Contrato:** `GET /api/history/monthly` ganha o bloco `registrations` —
+`points` com `month`, `registered` e `cleared`, e `missingRegistration` —,
+especificado em `05-contratos-api.md` §2 desde `8af034a`. Ele segue os filtros
+globais, e `months` não o alcança. `series`, `historyStartedAt` e `truncated`
+continuam servidos.
+
+**Arquivos:**
+- `src/domain/history.ts` — `countRegistrationsMonthly`
+- `src/http/routes/history.ts` — o bloco `registrations`
+- `web/src/pages/History.tsx` — "Registros por mês", o par lado a lado, as
+  tabelas em `<details>`, e a série observada fora da tela
+- `tests/domain/history.test.ts` · `tests/http/history.test.ts` ·
+  `web/tests/History.test.tsx` · `web/tests/support/api-stub.ts`
+
+**Critérios de aceite:**
+- **Dado** duas linhas com RG em fevereiro — uma desembaraçada, outra não — e
+  uma sem RG, **então** fevereiro traz `registered` 2 e `cleared` 1, março
+  traz 0, e `missingRegistration` é 1: o mês, e não o acumulado.
+- **Dado** o último RG anterior ao mês corrente, **então** a série se estende
+  até o mês corrente, com zero medido; **e** RG posterior ao mês corrente não é
+  cortado.
+- **Dado** nenhum processo com RG, **então** `points` é vazio, e os ausentes
+  são contados — série de zeros pareceria medida.
+- **Dado** um filtro global que exclui as linhas com RG, **então**
+  `registrations` segue o recorte; **e** `months=1` não o altera.
+- **Dado** o painel "Registros por mês", **então** as barras contam
+  `registered`; **quando** "Somente categoria Desembaraçado" é marcado,
+  **então** passam a contar `cleared`, e a ressalva abaixo do controle muda
+  junto, ligada a ele por `aria-describedby`.
+- **Dado** a janela a partir de `lg`, **então** os dois painéis ficam lado a
+  lado com a mesma altura, os dois gráficos em `h-64`; abaixo, empilham.
+- **Dado** a página, **então** ela não desenha a série observada, nem o seletor
+  de janela.
+- **Dado** a planilha lida sem nenhum processo com `ETA2` ou RG, **então** a
+  página diz "Nenhum processo tem data para montar a série." — ausência de
+  data, e nunca zero processo (regra inviolável 3).
+- **Medido na planilha real em 21/09/2026:** jan 79, fev 58, mar 64, abr 47,
+  mai 77, jun 83, jul 75 — 483 registros, e 167 dos 650 processos sem RG fora
+  de todos os meses.
+
+**Casos-limite:**
+- **`A-05` medido:** 3 linhas em 483 têm RG e não estão na categoria
+  Desembaraçado, e os 480 da categoria têm todos RG. `cleared` nunca excede
+  `registered`.
+- **A virada de ano** não abre buraco na série.
+- **Sem registros não há par:** a evolução ocupa a largura inteira, em vez de
+  metade com um vão ao lado.
+- **Fechada, a tabela sai da árvore de acessibilidade até a primeira
+  abertura**, embora continue no DOM e alcançável por teclado — custo declarado
+  em `D-57`, porque ela é a alternativa textual do gráfico.
+- **A reconstruída se reescreve a cada leitura** — um processo que saia da
+  planilha desaparece também de março —, e a observada, que não se reescrevia,
+  é a que saiu da vista: preço declarado em `D-58`.
+- **`ACHADO 11` continua protegido, com a asserção reescrita:** o teste
+  afirmava nenhum `aria-hidden` na seção inteira, e a amostra de traço da chave
+  é decorativa e carrega `aria-hidden` de propósito.
+
+**Fora desta história:** tirar `series` do contrato, ou parar de gravar
+`data/history.jsonl`; e responder por que agosto e setembro têm zero RG, que é
+pergunta para o operador.
+
+**Dependências:** `H-21`, `H-28`, `H-54`, `H-74`, `H-81`.
+**Tamanho:** M (7 arquivos, 1 contrato novo em `GET /api/history/monthly`)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="e18"></a>
+
+## Épico E18 — O que o ensaio na planilha real achou
+
+**Épico retroativo por método, como `E17`, e não por omissão, como `E13`
+(`D-26`).** Não abrir história a cada achado foi escolha do usuário: os
+consertos entraram conforme o ensaio os produzia, e o agrupamento pela origem
+ficou para depois (`D-69`). A origem é o ensaio mecânico de
+`docs/ensaio-planilha/`: forçar erro na aplicação contra uma **cópia** da
+planilha real, nos dois sentidos — mutar o arquivo e observar a aplicação, agir
+pela tela e observar o arquivo — e fechar o ciclo no Excel de verdade, na
+máquina do operador. Rodou em 17/09/2026, em cinco fases, com o original
+intocado, conferido por hash, e deixou **16 achados** em `RESULTADO.md`.
+
+O código entrou por dois PRs, com as histórias deixadas para depois: o #137, em
+18/09/2026 — seis commits de código, 21 arquivos —, e o #145, em 22/09/2026 —
+sete commits de código, 26 arquivos distintos. Os seis consertos do #137 não têm
+decisão própria: `D-60` os lista como resolvidos quatro dias depois. O #145
+registrou `D-60` a `D-67` em `10-governanca.md` e os contratos em
+`05-contratos-api.md` e `08-qualidade-operacao.md`, e nenhum dos dois PRs tocou
+`02-requisitos.md`, este backlog ou `09-rastreabilidade.md`. As sete histórias
+abaixo foram escritas em **30/09/2026**, a partir dos commits, e o registro
+disso é `D-69`.
+
+**A troca é a mesma de `E17`: escrever depois dá o agrupamento e a
+rastreabilidade, e abre mão do checklist antes do código.** Aqui o anteparo foi o `revisor-xml`, **em cadeia**:
+invocado sobre a parte documental de `D-60`, achou `D-61`; revisando o conserto,
+`D-62`; revisando esse, `D-63` e `D-64`; revisando `D-63` a `D-65`, `D-66`; e,
+na segunda passada sobre o próprio delta, `D-67`. **`D-65` é a exceção** — é o
+#4 do ensaio, e o revisor só corrigiu onde a frase dele entra. **Por isso o
+bloco de cada história cita os commits que a entregaram:** ela descreve o que
+foi feito, e não o que se pretendia fazer.
+
+**`H-112` e `H-113` não vêm da tabela de achados, e sim da cadeia que o parecer
+dela abriu.** A origem é a mesma: foi a revisão de `D-60` que pôs o
+`revisor-xml` sobre a escrita.
+
+**Fica fora de história** o que não é comportamento: o corpus (`3409290`); o
+andaime da máquina Windows (`b813697` — `tools/ensaio-windows.sh`,
+`tools/ensaio-excel.ps1` e `.cmd`, e `tools/medir-numeros.mjs`); o registro do
+resultado (`1b25571`); e o parecer `D-60` (`b5a5673`, e `7787d62`, que leva o #3
+e o #6 ao cabeçalho de `sheet-schema.ts` — a parte do #6 que cabe a
+`xlsx-surgeon.ts` viajou dentro de `9eabd07`). `D-60` é registro, não história.
+
+**Nenhum dos 16 achados segue aberto** — `926eecf` zerou a tabela em 22/09/2026,
+com o #4. **Sete viraram código, e são as histórias abaixo:** #15 e #12 em
+`H-108`, #5 e #13 em `H-109`, #9 em `H-110`, #11 em `H-111` e #4 em `H-114`. Os
+outros nove eram de documento ou de operação e fecharam fora delas (`D-60`): #1
+por ordem do usuário, #3 e #6 na redação, e os demais nas emendas do corpus e do
+`CLAUDE.md`.
+
+**As sete histórias, na ordem do commit que fecha cada uma:**
+
+| Ordem | História | Commits | Camada | Por que vem aqui |
+|---|---|---|---|---|
+| 1 | `H-108` | `e4ecf1f`, `3590d33` | `domain`, `io` | O sentido planilha → aplicação: a data impossível e a pasta cifrada, que a leitura não sabia recusar (#15, #12) |
+| 2 | `H-109` | `81b7b8c`, `c4d15c0` | `app`, `domain` | A partida: os arquivos de configuração editados à mão (#5, #13) |
+| 3 | `H-110` | `ffa9067` | `http` | O único achado que a tabela original chamava de defeito de código (#9) |
+| 4 | `H-111` | `6cc2873` | `web` | A tela fecha o #137: o defeito de acessibilidade (#11), e o item de `PD-07` que ele fecha |
+| 5 | `H-112` | `9eabd07` | `domain`, `io`, `app`, `http` | Abre o #145: o primeiro achado do `revisor-xml`, sobre a parte documental de `D-60` |
+| 6 | `H-113` | `bc050b8`, `207c6e4`, `df09910`, `7211261` | `io`, `app`, `http`, `web` | O que o revisor achou revisando `H-112` e os próprios consertos, da fila ao diálogo |
+| 7 | `H-114` | `19de41e`, `5509a95`, `926eecf` | `domain`, `http`, `docs` | O último achado aberto do ensaio (#4); `926eecf` zera a tabela |
+
+> **No #145 as duas últimas se intercalam**: `19de41e`, de `H-114`, vem antes de
+> `bc050b8`, o primeiro de `H-113`, porque `df09910` já consome o `writeBlock`
+> que `19de41e` cria. `df09910` serve às duas — é contado em `H-113` e citado
+> em `H-114`. `8f06e60`, só documento, registra `D-63` a `D-67` e os contratos
+> que `H-113` e `H-114` mudam, antes do código delas.
+
+---
+
+<a id="h-108"></a>
+
+### H-108 — A planilha que não se sabe ler é recusada com motivo
+
+> ✅ **CONCLUÍDA em 18/09/2026**, no PR #137 (commits `e4ecf1f` e `3590d33`).
+> História escrita retroativamente em 30/09/2026.
+>
+> **O serial do Excel não tem teto, e a data absurda chegava à tela como fato**
+> — achado #15, de `E-55`. O serial `99999999` virava o ano **275690** e `-500`
+> virava **16/08/1898**, ambos aceitos, sem quarentena e sem anomalia.
+> `e4ecf1f` recusa ano fora de **1900 a 2200** com a anomalia nova
+> `DATA_FORA_DA_FAIXA`: a data vira buraco (regra inviolável 3), e o processo
+> segue lido. **Zero das 650 linhas reais caem fora da faixa**, medido em
+> 17/09/2026 — nenhum número de hoje muda.
+>
+> **Pasta protegida por senha respondia `invalid zip data`** — achado #12, de
+> `E-59`, o único caminho do §1.4 do corpus em que a mensagem não orientava.
+> Protegido por senha, o `.xlsx` vira container OLE2 com a mesma extensão, e o
+> `fflate` falhava sem nomear a causa. `3590d33` confere a assinatura
+> `D0 CF 11 E0 A1 B1 1A E1` **antes** de descompactar, e a mensagem cita `P-12`
+> e diz como remover a proteção no Excel. Validado contra um arquivo cifrado
+> pelo Excel real, na máquina do operador.
+>
+> **O #15 não entrou na tabela "O que foi corrigido" de `RESULTADO.md`**, e o
+> parecer de 22/09 ainda o deu por aberto, propondo uma faixa de 2000 a 2100 que
+> o domínio já tinha de 1900 a 2200 — achado ao montar o checklist, antes de
+> código nenhum (`D-60`).
+
+**Objetivo:** o que a aplicação não sabe ler — uma data impossível, uma pasta
+cifrada — virar buraco visível ou recusa que diz o motivo, e não valor errado
+nem erro de biblioteca.
+
+**Contrato:** nenhuma rota nem código de erro. `DATA_FORA_DA_FAIXA` é valor
+novo de `AnomalyCode`, e chega a `anomalies[].code` de `GET /api/quarantine`
+(`docs/05-contratos-api.md`).
+
+**Arquivos:**
+- `src/domain/normalizer.ts` — a faixa 1900–2200 em `parseCellDate`, nos ramos `Date` e `number`
+- `src/domain/types.ts` — `DATA_FORA_DA_FAIXA` em `AnomalyCode`
+- `src/domain/process-builder.ts` — a descrição da anomalia
+- `src/io/xlsx-reader.ts` — a assinatura OLE2, conferida antes da descompactação
+- `tests/domain/normalizer.test.ts`
+- `tests/io/xlsx-reader.test.ts`
+
+**Critérios de aceite:**
+- **Dado** a célula com o serial `99999999`, **quando** `parseCellDate` roda,
+  **então** a data é `null` e a anomalia é `DATA_FORA_DA_FAIXA`.
+- **Dado** a `Date` de 16/08/1898 que o leitor produz a partir do serial `-500`,
+  **então** a data é `null` e a anomalia é `DATA_FORA_DA_FAIXA`.
+- **Dado** 01/01/1900 e 31/12/2200, **então** as duas são aceitas sem anomalia;
+  e o serial `46282` vira uma data de 2026, sem anomalia.
+- **Dado** um arquivo que começa por `D0 CF 11 E0 A1 B1 1A E1`, **quando**
+  `readWorkbook` roda, **então** a recusa é `WorkbookReadError`, e a mensagem
+  contém "protegida por senha", `P-12` e "Excel", e **não** contém
+  `invalid zip data`.
+- **Dado** `basico.xlsx`, **então** a leitura segue normal.
+
+**Casos-limite:**
+- **O serial NEGATIVO continua em `DATA_SEM_ANO`**, como antes: `serialToDate`
+  já o recusava. O caminho que o ensaio mediu é o outro — `src/io/xlsx-parts.ts`
+  converte o serial em `Date` sem conferir faixa, e o domínio recebia 1898 como
+  fato. Por isso a guarda está nos dois ramos.
+- **1900 é o piso do formato**, e não escolha: o serial 1 é 01/01/1900. **2200
+  é folga deliberada** — o que se quer pegar é o dígito a mais.
+- **As bordas são as âncoras:** uma faixa invertida ou estreita demais passaria
+  nos casos de recusa e recusaria a planilha inteira.
+- **A fixture cifrada é só a assinatura, em oito bytes.** Nenhuma das nove
+  fixtures tem forma OLE2, e produzi-la exige o Excel; o que se confere é que a
+  detecção vem antes da descompactação. Arquivo com menos de oito bytes não é
+  tratado como cifrado.
+- **`P-12` afirma que o arquivo real NÃO é protegido.** A mensagem é para o dia
+  em que alguém proteger.
+
+**Fora desta história:** mandar a linha para a quarentena — a data vira buraco
+com anomalia, e o processo segue; e decifrar a pasta — a mensagem manda remover
+a proteção no Excel.
+
+**Dependências:** `H-05`, `H-33`.
+**Tamanho:** M (6 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-109"></a>
+
+### H-109 — O arquivo de configuração editado à mão: BOM tolerado, importador repetido recusado
+
+> ✅ **CONCLUÍDA em 18/09/2026**, no PR #137 (commits `81b7b8c` e `c4d15c0`).
+> História escrita retroativamente em 30/09/2026.
+>
+> **`app.json` com BOM matava a partida** — achado #5, de `E-07`, que apareceu
+> por acidente de método: o ensaio gravou o arquivo por
+> `[System.Text.Encoding]::UTF8` do .NET, que inclui BOM, e `JSON.parse`
+> recusou com `Unexpected token`. O alvo é Windows (RNF-26), e o Bloco de Notas
+> grava UTF-8 com BOM sem avisar. `readJsonConfig`, em `src/app/json-config.ts`,
+> tira o BOM **só do início** — no meio do arquivo ele é caractere, e apagá-lo
+> mudaria o conteúdo.
+>
+> **Uma fonte, e não uma cópia por loader.** A tolerância começou em
+> `config.ts` e virou `readJsonConfig` quando os outros loaders apareceram no
+> mesmo `grep` (`RESULTADO.md`). `81b7b8c` troca **nove** leituras em quatro
+> arquivos — a mensagem do commit e o cabeçalho de `json-config.ts` dizem oito
+> —, e `c4d15c0` acrescenta duas, em `team-map-loader.ts`: são os **cinco**
+> loaders que `RESULTADO.md` cita.
+>
+> **O importador em dois responsáveis passava na carga** — achado #13, de
+> `E-50`. A tela recusava desde `H-91`, por `planTeamMember`; o `team-map.json`
+> editado à mão passava, e `IND-20`, que conta por pessoa, contava o processo
+> duas vezes. `loadTeamMap` passa a recusar pelo **mesmo** critério da tela —
+> `overlaps`, exportada de `src/domain/team-mapper.ts`, que trata o sufixo de
+> filial. **A âncora pegou um defeito na própria correção:** a primeira versão
+> recusava o importador repetido dentro de um membro só, o que não é conflito e
+> mataria a partida por uma linha inócua.
+
+**Objetivo:** o arquivo de configuração editado à mão ser lido como o operador
+o gravou, e recusado quando contradiz o que a tela já recusava.
+
+**Arquivos:**
+- `src/app/json-config.ts` — novo, `readJsonConfig`
+- `src/app/config.ts` · `src/app/client-map-loader.ts` · `src/app/color-map-loader.ts` · `src/app/status-aliases-loader.ts` — as leituras passam por ele
+- `src/app/team-map-loader.ts` — a recusa na carga, e as duas leituras
+- `src/domain/team-mapper.ts` — `overlaps` exportada
+- `tests/app/config.test.ts`
+- `tests/app/team-map-loader.test.ts`
+
+**Critérios de aceite:**
+- **Dado** um `app.json` que começa por `﻿`, **quando** `loadConfig` roda,
+  **então** o `workbookPath` é lido; sem BOM, lê igual.
+- **Dado** um `﻿` dentro de um valor — `sheetName: 'a﻿b'` —, **então**
+  ele é preservado.
+- **Dado** `ACME` em `membro1` e em `membro2`, **quando** `loadTeamMap` roda,
+  **então** a recusa é `TeamMapError`, nomeando o importador e os dois membros.
+- **Dado** `ACME` num membro e `ACME - SC` noutro, **então** a recusa é a mesma
+  — "mais de um responsavel".
+- **Dado** `ACME` e `OUTRA` em membros diferentes, **então** os dois membros são
+  aceitos; **dado** `['ACME', 'ACME']` no mesmo membro, **então** ele é aceito.
+
+**Casos-limite:**
+- **O BOM sai só do início** (regra inviolável 3): apagá-lo no meio mudaria um
+  valor.
+- **`ACME` e `ACME - SC` disputam os mesmos processos sem que string alguma se
+  repita** — é por isso que a comparação é `overlaps`, e não igualdade.
+- **Repetição dentro de um membro não é conflito:** a carteira é dele nas duas
+  vezes, e o conflito é entre pessoas.
+- **A recusa encerra a partida.** `TeamMapError` está em `STARTUP_ERRORS` de
+  `src/http/server.ts`: o mapa com o importador em dois responsáveis passa a
+  parar com "Erro de configuracao", em vez de contar em dobro.
+
+**Fora desta história:** a recusa pela tela, que já existia (`H-91`); e o
+`app.json` somente-leitura, que o ensaio mediu conforme no Windows (`E-60`).
+
+**Dependências:** `H-34`, `H-48`, `H-91`.
+**Tamanho:** G (9 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-110"></a>
+
+### H-110 — A rota de cor grava na fila injetada
+
+> ✅ **CONCLUÍDA em 18/09/2026**, no PR #137 (commit `ffa9067`). História
+> escrita retroativamente em 30/09/2026.
+>
+> **As duas pontas do mesmo gesto apontavam para arquivos diferentes** — achado
+> #9, o único que a tabela original de `RESULTADO.md` chamava de defeito de
+> código. `buildServer` repassava `queuePath` a `registerEditsRoutes` e **não** a
+> `registerProcessColorRoute`, embora a assinatura desta sempre o aceitasse:
+> com fila injetada, o `PATCH` gravava em `data/pending-edits.jsonl`, e o
+> `apply` lia a injetada e respondia `NADA_A_APLICAR` sobre uma cor que acabara
+> de ser enfileirada.
+>
+> **É o sexto caminho de escrita, e o mesmo modo de falha** que custou quatro
+> edições na fila do operador em 01/09/2026. Passou despercebido porque em
+> produção as duas pontas caem no padrão, e porque o teste da própria rota
+> registra o registrador direto, justamente para poder passar a fila — o buraco
+> era de quem monta o servidor inteiro.
+>
+> **`D-59` o afirmou aberto em 21/09, três dias depois do conserto**, por ler o
+> registro sem abrir o código; `D-60` corrigiu.
+
+**Objetivo:** a cor enfileirada chegar ao mesmo arquivo que o `apply` lê.
+
+**Arquivos:**
+- `src/http/server.ts` — `queuePath` repassado a `registerProcessColorRoute`
+- `tests/http/edits.test.ts`
+
+**Critérios de aceite:**
+- **Dado** `buildServer` com `queuePath` injetado, **quando**
+  `PATCH /api/processes/FT533.26/color` chega com
+  `{ responsible: 'colaborador1', customsChannel: 'indefinido', importerOutsideRj: false }`,
+  **então** a resposta é `201` e o arquivo **injetado** contém a edição.
+
+**Casos-limite:**
+- **A asserção é sobre o arquivo injetado, e não sobre a ausência do padrão:**
+  `data/pending-edits.jsonl` pode existir na máquina de quem roda a suíte, e
+  reprovar por isso seria o teste medindo o estado da máquina (regra
+  inviolável 7).
+- **O teste mora no bloco de `buildServer`**, ao lado do caso de
+  `registerEditsRoutes`: a guarda é de quem monta o servidor, e não da rota.
+
+**Fora desta história:** o caminho padrão em produção, que segue
+`data/pending-edits.jsonl`.
+
+**Dependências:** `H-27`.
+**Tamanho:** P (2 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-111"></a>
+
+### H-111 — O diálogo de conflito abre com o foco
+
+> ✅ **CONCLUÍDA em 18/09/2026**, no PR #137 (commit `6cc2873`). História
+> escrita retroativamente em 30/09/2026.
+>
+> **O diálogo abria e o foco ficava no `<body>`** — achado #11, de `E-58`. O
+> ensaio produziu o conflito num Chrome real — enfileirar, alterar a planilha
+> por fora, esperar o watcher, aplicar —, recebeu `409 ARQUIVO_MUDOU`, e o
+> `alertdialog` abriu em 200 ms com `document.activeElement` fora dele. Um
+> modal que não recebe o foco deixa quem navega por teclado ou leitor de tela
+> fora do aviso.
+>
+> **Fecha o item 3(d) de `PD-07`**, como o `CLAUDE.md` o numera — `E-58` o chama
+> de item 2. A gestão de foco estava parada porque o diálogo "só abre com a
+> planilha alterada durante a sessão", e a premissa era falsa: o conflito não
+> pede fixture, pede **sequência** (`E-09`, achado #8).
+>
+> **O mesmo `useModalFocus` dos outros dois modais, e não uma segunda
+> implementação** — o critério de aceite de `H-83`. A primeira tentativa foi
+> implementação própria, e virou o hook (`RESULTADO.md`).
+
+**Objetivo:** o operador que navega por teclado ou leitor de tela receber o
+aviso de conflito no momento em que ele abre.
+
+**Arquivos:**
+- `web/src/components/ConflictDialog.tsx` — `useModalFocus`, e o título focável
+- `web/src/components/FilterPanel.tsx` — só o cabeçalho, que dava o diálogo por parado em `PD-07`
+- `web/tests/ConflictDialog.test.tsx` — novo, o segundo modal do conjunto com teste
+- `web/tests/FilterPanel.test.tsx` — só o cabeçalho
+
+**Critérios de aceite:**
+- **Dado** uma recusa `ARQUIVO_MUDOU`, **quando** o diálogo monta, **então** o
+  foco está no título "As alterações não foram gravadas", dentro do
+  `alertdialog`.
+- **Dado** o diálogo aberto, **quando** o operador aperta `Escape`, **então**
+  `onClose` é chamado uma vez.
+- **Dado** o foco no botão "Entendi", o único focável, **quando** o operador
+  aperta `Tab`, **então** o foco continua nele.
+- **Dado** `refusal` nulo, **então** nada é montado.
+
+**Casos-limite:**
+- **O hook vem antes do `refusal === null`:** chamada condicional de hook é
+  proibida, e o retorno antecipado ficava acima dele.
+- **O título tem `tabIndex={-1}`:** recebe o foco de entrada sem entrar na
+  ordem de tabulação — o `FOCUSABLE` do hook exclui `[tabindex="-1"]` de
+  propósito, para a primeira `Tab` avançar em vez de voltar.
+- **O foco entra no título, e não no botão:** entrar num controle faz o leitor
+  de tela anunciar o controle sem dizer onde ele está.
+- **O papel é `alertdialog`, e não `dialog`.** Em `E-58`, as duas primeiras
+  execuções reportaram "o diálogo não abriu" porque o seletor procurava
+  `role="dialog"` — teria virado falso positivo grave contra o produto.
+
+**Fora desta história:** a paleta nominal do Windows, item (1) de `PD-07`, que
+segue aberta; e o texto do diálogo, que `H-113` estende.
+
+**Dependências:** `H-26`, `H-83`.
+**Tamanho:** M (4 arquivos, 0 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-112"></a>
+
+### H-112 — A escrita recusa o caractere que o XML não admite, e a linha nova converte como a célula
+
+> ✅ **CONCLUÍDA em 22/09/2026**, no PR #145 (commit `9eabd07`). História
+> escrita retroativamente em 30/09/2026.
+>
+> **Um caractere entre U+0000 e U+001F ia cru para o pool GLOBAL** (`D-61`).
+> `escapeXml` tratava só `& < > "`, `validateEdit` conferia só o tamanho, e o
+> XML malformado de `sharedStrings.xml` faz o Excel pedir reparo — que alcança
+> o texto das quatro abas, inclusive a `CNPJ` da regra inviolável 10. Defeito
+> antigo, de `H-24`, achado pelo `revisor-xml` ao revisar a parte documental de
+> `D-60`. **Medido em 22/09/2026, pela tela:** o `<input>` do Chrome mantém
+> U+0001, U+000B e U+001F colados — só o LF vira espaço —, e o parser XML
+> recusa o resultado.
+>
+> **Recusar, e não limpar nem codificar — decisão do usuário.** Remover o
+> caractere em silêncio alteraria o que o operador digitou (regras invioláveis
+> 2 e 3); o SpreadsheetML tem escape próprio, `_xHHHH_` (ECMA-376), e a decisão
+> é não usá-lo. **Três camadas, e nenhuma redundante:** as portas da rota — duas,
+> porque a REF da linha nova não passa por `validateEdit` —, a admissibilidade
+> do `write-guard`, porque a fila pode ter o caractere de antes do conserto, e
+> `renderSharedString`, o ponto único por onde todo texto entra no pool. A regra
+> mora no domínio, em `hasForbiddenXmlChar`, e o surgeon a importa.
+>
+> **A linha nova passa a converter como a célula** (`D-62`, achado do
+> `revisor-xml` ao revisar `D-61`). A inserção reimplementava `toCellValue`
+> inline, e a cópia tinha perdido o texto vazio: o `''` que `EditableCell` manda
+> quando o operador apaga um campo de linha nova ia para a cirurgia, a validação
+> pós-escrita reprovava, e o arquivo era **regravado e restaurado a cada
+> tentativa**, gastando um backup por vez, com a fila presa. Os dois consertos
+> viajam juntos porque dividem `write-guard.ts` e os testes dele.
+
+**Objetivo:** nenhum texto que a aplicação grava deixar o XML do arquivo
+malformado, e apagar um campo da linha nova não travar a fila.
+
+**Contrato:** código novo `400 CARACTERE_INVALIDO`, em `POST /api/edits` e
+`POST /api/edits/row` — `docs/05-contratos-api.md` §1.2 e §3, no próprio
+`9eabd07`.
+
+**Arquivos:**
+- `src/domain/editable-fields.ts` — `hasForbiddenXmlChar`, `CARACTERE_INVALIDO` em `EditRejection`, e valor que não é texto como `CORPO_INVALIDO`
+- `src/http/errors.ts` — o código `CARACTERE_INVALIDO`
+- `src/http/routes/edits.ts` — as duas portas, e `rejectionMessage`
+- `src/app/write-guard.ts` — a REF na admissibilidade, e `toCellValue` na inserção (`D-62`)
+- `src/io/xlsx-surgeon.ts` — `renderSharedString` recusa
+- `tests/domain/editable-fields.test.ts` — novo
+- `tests/http/edits.test.ts`
+- `tests/app/write-guard.test.ts`
+- `tests/io/xlsx-surgeon.test.ts`
+- `tests/io/xlsx-surgeon-append.test.ts`
+
+**Critérios de aceite:**
+- **Dado** `POST /api/edits` com `{ ref: 'FT533.26', field: 'statusRaw', value: 'SINT\u0001x' }`,
+  **então** a resposta é `400 CARACTERE_INVALIDO`.
+- **Dado** `POST /api/edits/row` com `{ ref: 'FT9\u0001.26' }`, ou com
+  `{ ref: 'FT901.26', values: { clientRaw: 'SINT\u0001x' } }`, **então** a
+  resposta é `400 CARACTERE_INVALIDO`.
+- **Dado** uma edição ou uma inserção com o caractere enfileirada por fora da
+  rota, **quando** o `apply` roda, **então** a recusa é `ESCRITA_INVALIDA` com
+  **zero** leituras do arquivo, e os bytes ficam intactos.
+- **Dado** `applyCellEdits` ou `appendRow` com `'SINT\u0001x'`, **então** a
+  cirurgia lança "caractere que o XML nao admite"; com `'SINT x'`, grava.
+- **Dado** TAB, LF, CR, acento, o emoji `'a😀b'` ou texto vazio, **então**
+  `hasForbiddenXmlChar` aceita; **dado** U+0000, U+0001, U+0008, U+000B,
+  U+000C, U+000E, U+001F, U+FFFE, U+FFFF ou um surrogate isolado, **então**
+  recusa.
+- **Dado** o número `123` num campo de texto, **então** `validateEdit` devolve
+  `CORPO_INVALIDO`, sem lançar.
+- **Dado** uma inserção `FT900.26` com `{ clientRaw: '' }`, **quando** o
+  `apply` roda, **então** a aba ganha uma linha, com `FT900.26` em A e B vazia.
+
+**Casos-limite:**
+- **A fronteira é a do XML 1.0, e não "todo caractere de controle":** TAB, LF e
+  CR passam, e o emoji também, porque o `for...of` junta o par de surrogate num
+  code point válido.
+- **O caminho que recria o caractere depois da rota:** editar uma célula de uma
+  linha pendente faz `POST /api/edits` reenfileirar a inserção com a REF antiga,
+  sem passá-la pela checagem — só a admissibilidade a pega, medido pelo
+  `revisor-xml`.
+- **A contagem de leituras é o que separa as camadas.** Com a admissibilidade
+  removida, os testes do `write-guard` seguiam verdes, porque a recusa passava a
+  vir do surgeon; agora a admissibilidade recusa com zero leituras, e o surgeon
+  só depois de uma.
+- **O caractere vem antes do tamanho:** `'\u0001'` seguido de 2000 caracteres é
+  `CARACTERE_INVALIDO` — encurtar não resolveria.
+- **Data já recusava:** `'2026\u0001-09-30'` segue `CORPO_INVALIDO`.
+- **Campo vazio e campo ausente são a mesma célula na releitura**, e a fila que
+  já estivesse presa pelo `''` volta a aplicar sem descarte.
+- **Contraprova:** com `hasForbiddenXmlChar` desligada, os 19 testes de recusa
+  falham e os de aceitação passam; com a cópia inline de volta, o teste de
+  `D-62` reprova.
+
+**Fora desta história:** codificar em `_xHHHH_`; nomear, na recusa da
+admissibilidade, o item inadmissível, que é `H-113`. **Não exercitados**
+(`D-61`): o Ctrl+V com a área de transferência real e a abertura num Excel.
+
+**Dependências:** `H-24`, `H-79`.
+**Tamanho:** G (10 arquivos, 1 contrato novo)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-113"></a>
+
+### H-113 — A fila nunca derruba o painel, e a recusa nomeia os processos
+
+> ✅ **CONCLUÍDA em 22/09/2026**, no PR #145 (commits `bc050b8`, `207c6e4`,
+> `df09910` e `7211261`). História escrita retroativamente em 30/09/2026.
+>
+> **Quatro decisões, todas do `revisor-xml`, cada uma sobre um conserto
+> anterior.** `D-63` e `D-64` são as divergências 1 e 2 da revisão de `D-62`;
+> `D-66`, da revisão de `D-63` a `D-65`, falsifica `D-63`; `D-67`, da segunda
+> passada, corrige `D-66`. O cabeçalho de `applyPendingEdits` promete que ela
+> **nunca rejeita** — toda falha vira recusa com motivo —, e a promessa estava
+> quebrada por dois eixos: **forma**, porque um registro com `ref` que não é
+> texto fazia `normKey` lançar; e **I/O**, porque o caminho da fila virado
+> diretório (`EISDIR`) ou sem permissão (`EACCES`) fazia a leitura lançar.
+>
+> **Consertar um chamador não bastou, duas vezes.** `consolidated` é lida por
+> `applyPendingEdits` e por `getState`. `bc050b8` consertou a forma dentro de
+> `readRecords` (`D-63`); `df09910` pôs o `try` no `apply` (`D-66`); faltava
+> `getState`, a porta de todas as rotas, onde o dano acontecia **primeiro** —
+> sem `setErrorHandler` em `src/http/`, `GET /api/health` e as demais
+> devolviam o `500` cru do Fastify, fora do envelope de
+> `docs/05-contratos-api.md` §1.2 e com o caminho do arquivo no corpo
+> (`207c6e4`, `D-67`). A lição virou seção de `.claude/rules/escrita-xlsx.md`
+> em 23/09/2026 (`444f09d`).
+>
+> **A recusa passa a nomear os processos** (`D-64`). Um item inadmissível
+> recusa a fila **inteira**, e `ESCRITA_INVALIDA` dizia só que nada foi perdido:
+> o operador ficava com a fila presa sem saber o que descartar. `WriteResult`
+> ganha `invalidRefs`, a rota o repassa no `detail` (`df09910`), e o
+> `ConflictDialog` nomeia as REF (`7211261`). **Os dois elos do meio não tinham
+> guarda:** desligando o repasse na rota e a tradução no cliente, a suíte
+> inteira passava — o elo que `TABELA_CHEIA` perdeu em 02/09/2026.
+
+**Objetivo:** a fila que a aplicação não consegue ler ou gravar nunca derrubar
+o painel, e a recusa dizer ao operador quais processos descartar.
+
+**Contrato:** nenhum código nem rota nova. `ESCRITA_INVALIDA`, em
+`POST /api/edits/apply`, ganha `detail.invalidRefs`, omitido quando vazio —
+`docs/05-contratos-api.md` §3, em `8f06e60`. O evento `queue.unreadable` entra
+no catálogo de `docs/08-qualidade-operacao.md`.
+
+**Arquivos:**
+- `src/io/edit-queue.ts` — `readRecords` descarta JSON válido de forma errada (`D-63`)
+- `src/app/process-store.ts` — `getState` lê a fila dentro de `try` (`D-67`)
+- `src/app/logger.ts` — o evento `queue.unreadable`
+- `src/app/write-guard.ts` — `consolidated` no `try` (`D-66`), `invalidRefs` (`D-64`), e o consumo de `writeBlock`
+- `src/http/routes/apply.ts` — `detail.invalidRefs`
+- `web/src/api-client.ts` — `ApplyRefusal.invalidRefs`
+- `web/src/components/ApplyChangesButton.tsx` — `invalidRefs: []` na recusa sem resposta
+- `web/src/components/ConflictDialog.tsx` — a frase que nomeia os processos
+- `tests/io/edit-queue.test.ts`
+- `tests/app/process-store.test.ts`
+- `tests/app/write-guard.test.ts`
+- `tests/http/apply.test.ts`
+- `web/tests/ConflictDialog.test.tsx`
+- `web/tests/api-client-apply.test.ts` — novo, o primeiro teste de `applyEdits`
+
+**Critérios de aceite:**
+- **Dado** um registro com `ref: 12345` na fila, **quando** `consolidated` a
+  lê, **então** ele é ignorado e os demais seguem; e `applyPendingEdits`
+  responde `NADA_A_APLICAR`, em vez de rejeitar.
+- **Dado** as linhas `123` e `null` na fila, **então** são ignoradas; **dado**
+  um registro de descarte, que não tem `ref`, **então** ele é preservado, e a
+  fila esvazia.
+- **Dado** o caminho da fila virado diretório, **quando** `getState` roda,
+  **então** devolve os processos lidos com `pendingEdits` vazio, e registra
+  `{ level: 'warn', event: 'queue.unreadable' }` sem o caminho.
+- **Dado** o mesmo estado, **quando** `applyPendingEdits` roda, **então** a
+  recusa é `ESCRITA_INVALIDA` com `invalidRefs` vazio, o arquivo fica intacto e
+  nenhum backup é criado.
+- **Dado** uma inserção com a REF `FT9\u0001.26` na fila, **então** a recusa é
+  `ESCRITA_INVALIDA` com `invalidRefs: ['FT9\u0001.26']`.
+- **Dado** `invalidRefs: ['FT533.26', 'FT900.26']`, **então** a rota os leva em
+  `detail.invalidRefs`, `applyEdits` os traduz, e o diálogo diz "Não dá para
+  gravar estes processos: FT533.26, FT900.26. Descarte as alterações deles na
+  lista de pendências para aplicar o resto."
+- **Dado** a lista vazia, **então** o campo sai do `detail`, e o diálogo não diz
+  nada sobre processos.
+
+**Casos-limite:**
+- **O registro de descarte é conferido antes da guarda de `ref`:** sem essa
+  ordem, ele cairia fora, e o esvaziamento da fila pararia de funcionar.
+- **O ramo mudo, declarado e com teste:** REF vazia é motivo de
+  inadmissibilidade e não serve de endereço. Se todos os itens inadmissíveis
+  forem assim, a lista sai `[]` e a mensagem volta a dizer só que nada foi
+  perdido.
+- **`queue.unreadable` não tem campo:** a mensagem do `fs` carrega o caminho, e
+  a regra inviolável 8 não o quer em log. É evento próprio porque o par
+  `write.refused` + `ESCRITA_INVALIDA` já serve outros oito sítios do
+  `write-guard`, e não distingue fila ilegível de anomalia da cirurgia.
+- **`EISDIR`, e não `EACCES`, nos testes:** o diretório no lugar do arquivo
+  roda em qualquer máquina; a permissão não roda como root, e diz a mesma coisa.
+- **Contraprova:** com a guarda de `readRecords` desligada, 3 testes reprovam;
+  com o `catch` do `apply` relançando, 1; com o de `getState`, 2.
+
+**Fora desta história** — declarado e não consertado: `ESCRITA_INVALIDA` segue
+`500`, embora fila inadmissível seja coisa que o operador resolve, e separar os
+dois casos é fatia própria (`D-64`); com a fila ilegível o contador de
+pendências marca zero, e dizer isso na tela pede campo novo em `/api/health`
+(`D-67`); a frase "Suas alterações continuam na fila" fica imprecisa nesse
+estado (`D-67`); e o descarte de `readRecords` é silencioso — `src/io/` não tem
+logger, e `DELETE /api/edits/:id` devolve `404` para o registro descartado, que
+fica no `.jsonl` (`D-63`).
+
+**Dependências:** `H-26`, `H-112`, e `H-114`, pelo `writeBlock` de `19de41e`,
+que `df09910` já consome.
+**Tamanho:** G (14 arquivos, contrato de `ESCRITA_INVALIDA` alterado: `detail.invalidRefs`)
+
+[↑ Índice](#indice)
+
+---
+
+<a id="h-114"></a>
+
+### H-114 — Enfileirar recusa com o cabeçalho bloqueado
+
+> ✅ **CONCLUÍDA em 22/09/2026**, no PR #145 (commits `19de41e`, `5509a95` e
+> `926eecf`; os contratos em `8f06e60`). História escrita retroativamente em
+> 30/09/2026.
+>
+> **A fila aceitava a edição sobre planilha deslocada, e só o `apply`
+> recusava** — achado #4, de `E-05`, o único que `D-60` deixou aguardando
+> história e o único que mexia em dado: no arquivo deslocado, a fila registrou
+> como `previous` de `statusRaw` um valor de data, o conteúdo da coluna vizinha.
+> `H-96` fez a **escrita** recusar e parou aí. **O motivo de estender é
+> aritmético** (`D-65`): com o cabeçalho bloqueando, o `apply` recusa a fila
+> inteira, então enfileirar nesse estado é enfileirar para nada — e o operador
+> só descobriria ao clicar em `Aplicar alterações`.
+>
+> **O par (código, frase) sai para o domínio**, em `writeBlock` (`19de41e`): o
+> `write-guard` o tinha inline, e levá-lo às três rotas faria quatro cópias. O
+> `write-guard` passa a consumi-lo em `df09910`, commit de `H-113`. **A frase
+> que nomeia a coluna entra na MENSAGEM, e não só no `detail`** — achado do
+> `revisor-xml` no mesmo dia: `api-client.ts` lê `error.message` e descarta o
+> resto, e o operador receberia a instrução sem saber onde olhar. A frase muda
+> numa palavra: nada foi *enfileirado*, em vez de nada foi *gravado*.
+>
+> **`D-65` é a única de `D-61` a `D-67` que não veio do `revisor-xml`**, e
+> `926eecf` registrou o #4 como fechado "sem história" — esta é a história,
+> escrita depois.
+
+**Objetivo:** o operador não acumular na fila trabalho que o `apply` vai
+recusar, e saber na hora qual coluna mudou.
+
+**Contrato:** `CABECALHO_DESLOCADO` e `CABECALHO_VAZIO` (`409`), do `apply` desde
+`H-96`, passam a sair também de `POST /api/edits`, `POST /api/edits/row` e
+`PATCH /api/processes/:ref/color`, com a frase que nomeia a coluna na mensagem e
+em `detail.schemaDivergence` — `docs/05-contratos-api.md` §1.2 e §3, em
+`8f06e60`.
+
+**Arquivos:**
+- `src/domain/sheet-schema.ts` — `writeBlock`
+- `src/http/errors.ts` — `queueBlockedError`, a frase do enfileiramento
+- `src/http/routes/edits.ts` — a guarda em `POST /api/edits` e `POST /api/edits/row`
+- `src/http/routes/process-color.ts` — a guarda na rota de cor
+- `tests/domain/sheet-schema.test.ts`
+- `tests/http/edits.test.ts`
+- `tests/http/process-color.test.ts`
+
+**Critérios de aceite:**
+- **Dado** uma coluna inserida antes de `IMPORTADOR`, **quando** chega
+  `POST /api/edits` ou `POST /api/edits/row`, **então** a resposta é
+  `409 CABECALHO_DESLOCADO`, a mensagem contém "IMPORTADOR" e "Desfaca a mudanca
+  no Excel", e `detail.schemaDivergence` nomeia a coluna.
+- **Dado** a linha 1 vazia, **então** as duas rotas e o `PATCH` de cor
+  respondem `409 CABECALHO_VAZIO`.
+- **Dado** qualquer das recusas, **então** nada chega ao `.jsonl`.
+- **Dado** uma fila anterior com um item e o cabeçalho deslocado, **então**
+  `GET /api/edits` conta 1, e `DELETE /api/edits` descarta 1.
+- **Dado** o cabeçalho de `E` renomeado para `REPRESENTANTE`, **então**
+  `POST /api/edits` responde `201`.
+- **Dado** a coluna inserida, **então** `writeBlock` devolve
+  `CABECALHO_DESLOCADO` com a frase `14 colunas andaram 1 coluna à direita, a
+  partir de C — a primeira é "IMPORTADOR".`; com o cabeçalho íntegro, `null`.
+
+**Casos-limite:**
+- **A guarda vem antes da validação de corpo**, junto das outras duas recusas
+  de estado — `recusaDuranteEscrita` e `ARQUIVO_INDISPONIVEL` —, e a
+  consequência é declarada: com o cabeçalho quebrado, requisição malformada
+  recebe `409` no lugar de `400`.
+- **A cor não escapa por ser outra coluna:** ela troca o `fillId` da linha, e a
+  linha é localizada pela mesma aritmética de colunas que o deslocamento
+  invalida.
+- **O rótulo apagado de uma coluna só é `CABECALHO_VAZIO`, e não
+  deslocamento:** nada foi detectado fora do lugar, e mandar desfazer nomearia
+  uma coluna que não se moveu.
+- **A divergência dos testes sai de `checkSheetSchema` sobre um cabeçalho
+  real**, e não de um literal montado à mão, que passaria com a forma errada.
+- **Contraprova:** com a guarda desligada nas três rotas, 6 testes reprovam.
+
+**Fora desta história:** descartar a fila anterior — ela fica intacta e volta a
+aplicar quando o cabeçalho for restaurado (regra inviolável 2); e recusar por
+renome, que deixa a coluna onde estava.
+
+**Dependências:** `H-96`.
+**Tamanho:** M (7 arquivos, contrato de três rotas alterado: passam a devolver `CABECALHO_*`)
+
+[↑ Índice](#indice)
+
+---
+
 ### Varredura de verbos de decisão em aberto
 
 Os textos das 34 histórias **do plano original** foram varridos em busca de
 "escolher", "avaliar", "definir", "decidir" e "ver qual". As ocorrências
 encontradas foram eliminadas:
 
-> **A varredura nunca foi refeita.** O backlog tem 101 histórias hoje, e as **69**
-> posteriores — `H-33` em diante, o que já inclui os épicos `E9` a `E16` — não
+> **A varredura nunca foi refeita.** O backlog tem 114 histórias hoje, e as **82**
+> posteriores — `H-33` em diante, o que já inclui os épicos `E9` a `E18` — não
 > passaram por ela. *(A redação anterior dizia "`H-33` em diante, mais os épicos
 > `E9` a `E14`", e o "mais" contava o mesmo conjunto duas vezes — foi por isso
-> que o 56 nunca bateu com nada.)* As cinco de `E13` não poderiam passar: foram escritas **depois** do
+> que o 56 nunca bateu com nada.)* As cinco de `E13` e as treze de `E17` e `E18` não poderiam passar: foram escritas **depois** do
 > código, e verbo de decisão em aberto num texto retroativo descreveria uma
 > escolha que já foi feita. A conclusão abaixo vale para o recorte varrido, não para o backlog.
 

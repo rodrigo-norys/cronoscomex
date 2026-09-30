@@ -10,15 +10,15 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 
 | ID | Requisito | Origem | Histórias |
 |---|---|---|---|
-| RF-01 | Ler o arquivo `.xlsx` no caminho configurado e extrair as colunas A–P de todas as linhas de dados | §2 | H-03 |
+| RF-01 | Ler o arquivo `.xlsx` no caminho configurado e extrair as colunas A–P de todas as linhas de dados | §2 | H-03, H-108 |
 | RF-02 | Extrair a chave de estilo de preenchimento da célula da coluna A de cada linha | §3 | H-04 |
 | RF-03 | Traduzir a chave de estilo em `responsible`, `customs_channel` e `importer_outside_rj` conforme `color-map.json` | §3 | H-04 |
-| RF-04 | Normalizar textos de agrupamento e converter células de data em datas | §2, A-26 | H-05 |
+| RF-04 | Normalizar textos de agrupamento e converter células de data em datas | §2, A-26 | H-05, H-108 |
 | RF-05 | Classificar cada linha em uma das 4 categorias canônicas | §2.1, §2.2 | H-06 |
-| RF-06 | Registrar em quarentena, com motivo estruturado, toda linha não interpretável, sem descartá-la silenciosamente | A-03, A-21 | H-07 |
+| RF-06 | Registrar em quarentena, com motivo estruturado, toda linha não interpretável, sem descartá-la silenciosamente | A-03, A-21 | H-07, H-108 |
 | RF-07 | Detectar alteração externa do arquivo e reprocessar automaticamente | "tempo real", §1 | H-08 |
 | RF-08 | Emitir relatório de divergências: RG em processo não desembaraçado, intervalo documental negativo, texto de canal no STATUS, variante de grafia não catalogada | A-05, A-30, A-06, A-03 | H-07 |
-| RF-44 | Reportar divergência entre o cabeçalho encontrado e o esquema declarado, nomeando as duas pontas, sem descartar linha nem inventar campo | H-96 |
+| RF-44 | Reportar divergência entre o cabeçalho encontrado e o esquema declarado, nomeando as duas pontas, sem descartar linha nem inventar campo | H-96, H-114 |
 
 ### 1.2. Indicadores (§4)
 
@@ -62,15 +62,15 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 
 | ID | Requisito | Histórias |
 |---|---|---|
-| RF-09 | Página Inicial com cartões-resumo das 4 categorias, total, Canal Vermelho, chegadas hoje/semana/15 dias, atrasados e documentos pendentes, **e o calendário de chegadas por navio** (`H-98`) | H-16, H-98 |
+| RF-09 | Página Inicial com cartões-resumo das 4 categorias, total, Canal Vermelho, chegadas hoje/semana/15 dias, atrasados e documentos pendentes, **e o calendário de chegadas por navio** (`H-98`) | H-16, H-98, H-102, H-104 |
 | RF-10 | Página Operacional: tabela de processos com busca sobre os seis campos de texto da planilha (`D-34`). **Abre com todos os processos, na ordem da planilha**; o operador reduz aos ativos por um controle próprio (`D-33`). *(Dizia "e calendário de chegadas por navio" até `D-44`: ele foi para a Página Inicial em `H-98`, para a tabela de 17 colunas ficar com a largura inteira.)* | H-17, H-84, H-89, H-90, H-98, H-100 |
-| RF-11 | Página Clientes: ranking e distribuição por CLT e IMPORTADOR | H-18 |
+| RF-11 | Página Clientes: ranking e distribuição por CLT e IMPORTADOR | H-18, H-106 |
 | RF-12 | Página Performance: tempo médio de envio documental por cliente, agente, navio e responsável, com denominador visível | H-19 |
 | RF-13 | Página Alertas: lista dos 6 alertas ordenada por severidade fixa | H-20 |
-| RF-14 | Página Histórico: evolução mensal de volume, desembaraçados e Canal Vermelho | H-21 |
+| RF-14 | Página Histórico: evolução mensal de volume, desembaraçados e Canal Vermelho | H-21, H-107 |
 | RF-15 | Tela de detalhe do processo, exibindo o texto original de STATUS e todos os campos, inclusive os fora de escopo | H-22 |
 | RF-16 | Painel de saúde da ingestão: última leitura, linhas lidas, quarentena e divergências | H-16, H-31 |
-| RF-31 | Página Configuração: apontar a planilha pela tela — com o diálogo de arquivo do sistema —, salvar o caminho sem editar JSON, e revalidar a partida sem reexecutar o atalho | H-34, H-35, H-36, H-37, H-38 |
+| RF-31 | Página Configuração: apontar a planilha pela tela — com o diálogo de arquivo do sistema —, salvar o caminho sem editar JSON, e revalidar a partida sem reexecutar o atalho | H-34, H-35, H-36, H-37, H-38, H-103, H-109 |
 | RF-32 | Ordenar a tabela da Página Operacional por **qualquer** uma das suas colunas, com a ordem de categoria seguindo o fluxo do processo e não o alfabeto *(dizia "nove colunas" até `D-43`, que leva a tabela às dezesseis da planilha)* | H-77, H-95 |
 | RF-36 | Exibir, ao lado de Operacional e de Alertas na navegação, quantos itens o **recorte ativo** tem — o mesmo número que a página mostra ao abrir, ausente enquanto não se sabe e nunca zero por omissão | H-87 |
 | RF-37 | Achar um processo de qualquer tela por atalho de teclado, buscando os seis campos de texto da planilha (`A-39`, `D-34`), com os sete destinos do menu num grupo à parte | H-83, H-90 |
@@ -93,7 +93,7 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 
 | ID | Requisito | Histórias |
 |---|---|---|
-| RF-17 | Aplicar simultaneamente 14 filtros: Período (ETA2), Cliente, **Processo do cliente**, **Grupo de clientes**, Importador, Navio, Agente, Mercadoria, Categoria de status, Responsável, **Cor do responsável**, Canal, Porto e Importador fora do RJ. Eram 11 até `H-49`, que separou o cliente consolidado do valor da célula CLT, 12 até `H-55`, que acrescentou o grupo, e 13 até `H-50`, que separou a pessoa responsável do que a cor diz. **Um não tem controle próprio** na barra: o grupo é o primeiro nível da árvore dentro de Cliente. São 13 controles para 14 filtros | H-15, H-49, H-55, H-50, H-66 |
+| RF-17 | Aplicar simultaneamente 14 filtros: Período (ETA2), Cliente, **Processo do cliente**, **Grupo de clientes**, Importador, Navio, Agente, Mercadoria, Categoria de status, Responsável, **Cor do responsável**, Canal, Porto e Importador fora do RJ. Eram 11 até `H-49`, que separou o cliente consolidado do valor da célula CLT, 12 até `H-55`, que acrescentou o grupo, e 13 até `H-50`, que separou a pessoa responsável do que a cor diz. **Um não tem controle próprio** na barra: o grupo é o primeiro nível da árvore dentro de Cliente. São 13 controles para 14 filtros | H-15, H-49, H-55, H-50, H-66, H-104 |
 | RF-18 | Todo indicador e todo alerta respeita os filtros ativos | H-15 |
 | RF-19 | Os valores disponíveis em cada filtro são derivados do arquivo, não de lista fixa | H-15 |
 
@@ -101,20 +101,20 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 
 | ID | Requisito | Histórias |
 |---|---|---|
-| RF-20 | Editar campos de texto e data de um processo, gravando a edição em fila local e refletindo-a imediatamente na interface | H-23 |
-| RF-21 | Aplicar as edições pendentes no arquivo `.xlsx` apenas sob comando explícito | H-26 |
-| RF-22 | Preservar integralmente formatação, cores, filtros, comentários, validações e larguras do arquivo ao gravar | H-24 |
+| RF-20 | Editar campos de texto e data de um processo, gravando a edição em fila local e refletindo-a imediatamente na interface | H-23, H-114 |
+| RF-21 | Aplicar as edições pendentes no arquivo `.xlsx` apenas sob comando explícito | H-26, H-113 |
+| RF-22 | Preservar integralmente formatação, cores, filtros, comentários, validações e larguras do arquivo ao gravar | H-24, H-112 |
 | RF-23 | Recusar a gravação quando o Excel estiver com o arquivo aberto | H-25 |
-| RF-24 | Recusar a gravação e exibir o conflito quando o arquivo tiver mudado desde a última leitura | H-25 |
+| RF-24 | Recusar a gravação e exibir o conflito quando o arquivo tiver mudado desde a última leitura | H-25, H-111, H-113 |
 | RF-25 | Gravar backup do arquivo antes de cada escrita | H-25 |
 | RF-26 | Validar o arquivo após a escrita e restaurar o backup automaticamente em caso de falha | H-25 |
-| RF-27 | Editar os campos codificados em cor (responsável, canal, importador fora do RJ) | H-27 |
+| RF-27 | Editar os campos codificados em cor (responsável, canal, importador fora do RJ) | H-27, H-110 |
 | RF-28 | Descartar edições pendentes individualmente ou em bloco, antes da aplicação | H-23 |
 | RF-33 | Editar o campo **onde ele está**, na própria tabela da Página Operacional, com Categoria de leitura porque ela sai de cinco regras das quais só uma lê a célula (A-22) *(dizia "sete colunas editáveis" até `D-43`; o domínio declara quinze, e quantas a tabela expõe deixa de ser número fixado aqui)* | H-80, H-95 |
-| RF-34 | **Criar um processo novo** pela tela, enfileirado como as demais edições e gravado depois da última linha existente da aba `2026` sob comando explícito. A **remoção** de linha permanece fora de escopo (`D-25`) | H-78, H-79, H-80 |
+| RF-34 | **Criar um processo novo** pela tela, enfileirado como as demais edições e gravado depois da última linha existente da aba `2026` sob comando explícito. A **remoção** de linha permanece fora de escopo (`D-25`) | H-78, H-79, H-80, H-112 |
 | RF-35 | ~~Declarar o cliente consolidado de um processo pela tela~~ *(**REVOGADO por `D-43`** em 11/09/2026: o único consumidor era a coluna Cliente da tabela, que sai em `H-95`. Declarar passa a ser só pelo painel da Página Clientes, por grafia e por prefixo — `RF-39`. A perda foi apresentada ao usuário e ele manteve a decisão: uma grafia já capturada por regra de prefixo não aparece em lista nenhuma do painel)* | H-79, H-95 |
-| RF-39 | Exibir quais grafias de CLT ainda **não** têm cliente declarado, com a contagem de processos de cada uma e independentes dos filtros globais, e permitir declarar cada uma dali | H-88 |
-| RF-40 | Declarar quem é responsável por quais importadores pela tela, gravando em `team-map.json`, e desfazer um responsável devolvendo a carteira dele a "Sem responsável" | H-91 |
+| RF-39 | Exibir quais grafias de CLT ainda **não** têm cliente declarado, com a contagem de processos de cada uma e independentes dos filtros globais, e permitir declarar cada uma dali | H-88, H-103, H-105 |
+| RF-40 | Declarar quem é responsável por quais importadores pela tela, gravando em `team-map.json`, e desfazer um responsável devolvendo a carteira dele a "Sem responsável" | H-91, H-103, H-109 |
 
 ### 1.7. Histórico
 

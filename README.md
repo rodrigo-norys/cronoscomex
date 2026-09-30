@@ -239,7 +239,7 @@ idênticas**, incluindo as abas fora de escopo.
 
 ## Estado
 
-**100 das 101 histórias** de [`docs/06-backlog.md`](docs/06-backlog.md) estão
+**113 das 114 histórias** de [`docs/06-backlog.md`](docs/06-backlog.md) estão
 concluídas — o bloco `✅ CONCLUÍDA` de cada uma é a fonte, e é lá que o número
 se reconfere, com `grep -c '✅ \*\*CONCLUÍDA' docs/06-backlog.md`. A única
 aberta é `H-101`, o autoajuste de largura de coluna, escrita e **não executada**
