@@ -55,8 +55,11 @@ Portões inegociáveis:
   se o plano tiver mostrado **os comandos literais, o remote e a base** antes. Perguntar de novo
   depois de uma aprovação assim não acrescenta informação: quem aprovou já viu o que seria
   executado e para onde. **Plano vago não autoriza nada**, por mais "sim" que receba.
-- **Não há prompt de permissão depois do aceite**, e por isso o plano precisa ser literal:
-  `Bash(git push *)` está em **`allow`** no `.claude/settings.json`, e `gh pr create` também.
+- **Não há prompt de permissão para o push depois do aceite**, e por isso o plano precisa ser
+  literal: `Bash(git push *)` está em **`allow`** no `.claude/settings.json` e no settings global.
+  O `gh pr create` também está em `allow` no projeto, mas **pede confirmação nesta máquina desde
+  30/09/2026**: o settings global pôs `gh pr *` em `ask`, e `ask` vence `allow` em qualquer
+  escopo. Esse prompt não é o portão — ele chega depois do push, com a branch já pública.
   Um plano que esconda o remote, a base ou o texto do corpo tira do dono a única chance de
   recusar que ele tem. O que sobra contra plano e comando divergentes é a leitura do plano —
   nada automático.
