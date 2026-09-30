@@ -21,11 +21,12 @@ antes de decidir.
    invisível.
 4. **A cor nunca infere a CATEGORIA.** São campos independentes em TD-01, e o
    classificador não lê cor. Medido: 66 linhas com STATUS vazio, 1 linha branca.
-   **`D-49` emendou a redação — que era "nunca infere o status" — e o alcance:**
-   dois cartões da Página Início contam por cor (IND-23 e IND-24), por ordem do
-   usuário. O que não mudou é o que a regra sempre protegeu: o filtro Categoria,
-   a coluna da Página Operacional e a conferência de A-12 continuam vindo do
-   STATUS, e as duas leituras divergem de propósito — 33 contra 167.
+   **`D-49` emendou a redação — que era "nunca infere o status" — e o alcance, e
+   `D-54` o estendeu:** três cartões da Página Início contam por cor (IND-24,
+   IND-26 e IND-27), por ordem do usuário. O que não mudou é o que a regra sempre
+   protegeu: o filtro Categoria, a coluna da Página Operacional e a conferência
+   de A-12 continuam vindo do STATUS, e as duas leituras divergem de propósito —
+   medido em `D-54`, "Desembaraçados" dá 480 pela categoria e 482 pela cor.
 5. **`src/domain/` não importa `src/io/`, `src/app/`, `src/http/` nem `web/`.**
    O lint verifica e quebra a build.
 6. **Nenhuma regra de negócio no cliente ou nas rotas.** Só em `src/domain/`.
@@ -143,7 +144,7 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**100 das 101 histórias estão concluídas**, e o épico aberto é `E16`. O que
+**113 das 114 histórias estão concluídas**, e o épico aberto é `E16`. O que
 cada uma aprendeu — número medido, defeito encontrado, decisão tomada — está
 no bloco `✅ CONCLUÍDA` dela em `docs/06-backlog.md`, e é lá que se procura
 antes de reabrir decisão que pareça em aberto. **Este bloco diz só o que está
@@ -166,18 +167,23 @@ vazar para as outras seis telas, e o "Todas as linhas". **`H-101`, o autoajuste
 de largura de coluna, fica escrita e não executada**, por escolha do usuário.
 Restam também as **três pendências abertas** abaixo,
 e nenhuma bloqueia implementação: `PD-09` espera só uma decisão, `PD-08` a
-próxima sincronização da branch `distribuicao`, e `PD-07` se divide — a paleta
-nominal quer a máquina do operador, e o `ConflictDialog` quer uma fixture que
-nenhuma das nove produz.
+próxima sincronização da branch `distribuicao`, e `PD-07` resta só na paleta
+nominal, que quer a máquina do operador.
 
-> **`E13` é retroativo, e é o único do backlog que é.** O código entrou em
-> 02/09/2026 pelo PR #111 — edição na tabela, ordenação, criação de linha e a
-> gravação do mapa de clientes — **sem história**, e a cascata de documentos foi
-> percorrida só em parte. As cinco histórias, os cinco RF novos e a linha da
-> Página Configuração na matriz foram escritos em 03/09 (`D-26`). **A lição não é
-> sobre documento:** o protocolo de fatia existe para o defeito de plano aparecer
-> antes do código, e escrever depois recupera a rastreabilidade, nunca o
-> anteparo.
+> **`E13`, `E17` e `E18` são retroativos, por motivos diferentes.** `E13` foi
+> **omissão**: o código entrou em 02/09/2026 pelo PR #111 — edição na tabela,
+> ordenação, criação de linha e a gravação do mapa de clientes — **sem
+> história**, e a cascata de documentos foi percorrida só em parte; as cinco
+> histórias, os cinco RF novos e a linha da Página Configuração na matriz foram
+> escritos em 03/09 (`D-26`). **`E17` e `E18` são método, escolha do usuário**:
+> durante 17 a 22/09/2026 ele não abriu história a cada medida, acumulou o que
+> foi feito por `D-49` a `D-67` e o agrupou depois, pela origem, em 13 histórias
+> escritas em 30/09 (`D-69`) — `E17` com o que o uso da tela pediu, `E18` com o
+> que o ensaio sobre a planilha real achou. **Código sem história não é, por si,
+> defeito aqui.** A troca é declarada: escrever depois dá o agrupamento e a
+> rastreabilidade, e abre mão do checklist antes do código.
+> O levantamento sai de `node tools/levantar-retroativo.mjs --desde H-NN`, sem
+> modelo, em `data/levantamento-retroativo.md`; a redação parte dele.
 
 Os dois documentos que geraram trabalho depois do plano estão exauridos:
 a verificação no navegador de 01/09/2026 (`D-48`) — os seis procedimentos de navegador nos dois
@@ -215,31 +221,15 @@ status de `docs/09-rastreabilidade.md` mudou.
 
 Não bloqueiam a implementação. Fechar antes da entrega ao operador.
 
-> **`PD-06` fechou em 03/09/2026**, na terceira visita à máquina: os três itens
-> que restavam foram exercidos por SSH, inclusive o da janela — `schtasks /it`
-> abre com janela na sessão gráfica, e `taskkill` sem `/F` é o `WM_CLOSE` do
-> clique no X. O que virou regra está na rule de operação em Windows.
->
-> **A instalação aconteceu em 04/09/2026, e com ela `PD-01` fechou.** A árvore de
-> `distribuicao` foi baixada na máquina do operador, os dois mapas de negócio
-> copiados para `config\`, e a planilha apontada **pela tela**, sem `app.json`
-> prévio: `/api/health` respondeu `state: "pronto"`, 649 linhas lidas, zero em
-> quarentena. Era exatamente o que `PD-01` esperava.
->
-> **Duas lições da instalação, que não estão em nenhuma história.** A pasta lá
-> **não é um repositório git** — foi baixada como árvore, não clonada —, então
-> não há `git pull` para atualizar nem `git status` para detectar arquivo
-> sobrescrito; e foi precisamente o `git status` que diagnosticou a tela preta da
-> primeira tentativa, quando 101 arquivos de `src/` e `web/src/` apareceram numa
-> versão anterior a `H-52` sobre um `.git` correto. O sintoma no navegador era
-> mudo: `Uncaught TypeError` ao desestruturar `meta.period`, `#root` vazio, fundo
-> escuro. **Cliente novo com servidor velho falha assim, e sem git não há o que
-> comparar.**
+> As fechadas saem daqui e vivem onde são usadas: `PD-06` (03/09/2026) em
+> `.claude/rules/operacao-windows.md`, `PD-01` (04/09/2026) em `docs/README.md`,
+> e as lições da instalação — a árvore baixada sem `.git`, e o cliente novo com
+> servidor velho que falha mudo — em `.claude/rules/distribuicao.md`.
 
 | # | Pendência | Quando fechar |
 |---|---|---|
 | **PD-07** | **O resto de `VN-5` (forced colors), e sobrou pouco.** A pendência nasceu supondo que o procedimento exigia Windows, e **isso foi medido como falso em 31/08/2026**: o Chrome emula `forced-colors: active` no Linux, e o que o procedimento pergunta não é que cor o tema pinta, e sim se o desenho sobrevive quando as cores do autor são descartadas. **`H-65` fechou o item 4 por medição**: sob o modo forçado os dois esquemas são paletas de sistema **realmente distintas** — branco com `rgb(0, 0, 159)` e preto com `rgb(255, 255, 0)` —, e a lateral distingue o item corrente nas duas. **E o item 3(e) tinha o diagnóstico errado**, corrigido em `H-64`: `:hover` **casa** no headless, e o que faltava era o apontador **declarado** — o Tailwind v4 envolve todo `hover:` em `@media (hover: hover)`, e o headless responde `hover: none`. Resolvido pela flag `--blink-settings`, exposta como `apontadorFino`. **Sobra um:** a paleta **nominal** do Windows — Aquático e as demais —, que é confirmação de segunda ordem. **O item 3(d) fechou em 17/09/2026:** o ensaio produziu o conflito num navegador real, e a gestão de foco do `ConflictDialog` saiu junto, por `useModalFocus` | **O item (1) na próxima visita à máquina.** A instalação de 04/09/2026 fechou `PD-01` e não o exerceu — ele é confirmação de segunda ordem, e ficou para trás sem custo. O que restava do item (2) deixou de depender de fixture: o ensaio produziu o conflito na planilha real |
-| **PD-08** | **Os dois mapas de negócio de `H-48` viajam à parte, e o `README.md` da distribuição ainda nega isso.** Eles estão no `.gitignore` e a árvore leva só os `.exemplo`. **A cópia manual foi feita em 04/09/2026 e funcionou** — `client-map.json` `d4b8b5dd…` e `team-map.json` `2054fe7b…` conferidos byte a byte nas duas pontas, e o campo Cliente passou a mostrar o nome consolidado. **A parte documental fechou em 04/09/2026**, e esta linha a descrevia como aberta até 17/09: conferido na branch, o `README.md` dela não diz mais "você não precisa editar arquivo nenhum", a tabela de pastas cita "os dois mapas de negócio", e o bloco "Como refazer esta branch" **não lista arquivo nenhum** — manda calcular pelo script. **O que sobra não é documental: é `H-88`**, que tira o mapa da cópia manual (`D-32`). Os detalhes estão em `.claude/rules/distribuicao.md`, que já registrava isso | **Quando `H-88` entregar a edição pela tela.** A branch está sincronizada com a `main` — última em 21/09/2026, `8a2454d`, com 17 arquivos atrás de `D-49` a `D-58`. **Sem contagem aqui**, pelo motivo que este arquivo já declara na seção de versionamento: quem mede é o script, a cada execução. **A JANELA de 03/09 fechou:** a instalação do operador agora tem `E13` e grava no mapa, então **as duas pontas escrevem** e a cópia cega deixou de ser segura — daqui em diante, reconciliar antes de copiar. **Repita a cópia toda vez que a regra de consolidação ou a equipe mudar**: nenhum aviso existe para lembrar |
+| **PD-08** | **Os dois mapas de negócio de `H-48` viajam à parte, e o `README.md` da distribuição ainda nega isso.** Eles estão no `.gitignore` e a árvore leva só os `.exemplo`. **A cópia manual foi feita em 04/09/2026 e funcionou** — `client-map.json` `d4b8b5dd…` e `team-map.json` `2054fe7b…` conferidos byte a byte nas duas pontas, e o campo Cliente passou a mostrar o nome consolidado. **A parte documental fechou em 04/09/2026**, e esta linha a descrevia como aberta até 17/09: conferido na branch, o `README.md` dela não diz mais "você não precisa editar arquivo nenhum", a tabela de pastas cita "os dois mapas de negócio", e o bloco "Como refazer esta branch" **não lista arquivo nenhum** — manda calcular pelo script. **O que sobra não é documental: é `H-88`**, que tira o mapa da cópia manual (`D-32`). Os detalhes estão em `.claude/rules/distribuicao.md`, que já registrava isso | **Quando `H-88` entregar a edição pela tela.** A última sincronização foi em 23/09/2026, `6622391`, com a `main` em `d05ec0b`. **Sem contagem aqui**, pelo motivo que este arquivo já declara na seção de versionamento: quem mede é o script, a cada execução. **A JANELA de 03/09 fechou:** a instalação do operador agora tem `E13` e grava no mapa, então **as duas pontas escrevem** e a cópia cega deixou de ser segura — daqui em diante, reconciliar antes de copiar. **Repita a cópia toda vez que a regra de consolidação ou a equipe mudar**: nenhum aviso existe para lembrar |
 | **PD-09** | **A premissa `P-15` ficou sem dono, e há uma frase da tela apoiada nela.** `P-15` — o OneDrive sincroniza o arquivo de lock `~$<nome>.xlsx` entre máquinas — está "não afirmada" desde o plano, e `docs/00-visao-escopo.md` e `A-58` mandavam medi-la em `H-30`, que **fechou em 18/08/2026 sem medir**. Mesmo padrão de `PD-05` entre 14 e 17/08/2026. A medição direta pede **duas máquinas com a mesma pasta sincronizada**, e nada indica que exista uma segunda conta com acesso à pasta da organização; o **proxy de uma máquina só** — abrir a planilha no Excel e observar se o `~$` sobe, pelo ícone do OneDrive ou pela visão web do SharePoint — responde a mesma pergunta. O que não pode ficar como está: `web/src/components/StatusBanner.tsx` afirma "Alguém está com a planilha aberta no Excel", que é a leitura **forte** da premissa. Ou ela é medida e a frase se justifica, ou a frase recua para o que é sabidamente verdadeiro — o arquivo está aberto **nesta** máquina — com o motivo no cabeçalho do componente | **Medido em 03/09/2026, e o proxy não é executável nesta instalação:** a planilha real do operador está em `Downloads`, **fora do OneDrive** — a pasta sincronizada existe e não a contém. `P-15` supõe o `~$` viajando entre máquinas por pasta compartilhada; sem isso, não há o que observar. **A leitura forte da frase é falsa por construção aqui**, e não por falta de medição: o `~$` só pode ser de quem abriu o arquivo NESTA máquina. Resta decidir entre recuar a frase de `StatusBanner.tsx` — o caminho que os fatos apoiam — ou medir `P-15` num cenário que o operador não usa |
 
 Ao fechar uma pendência, remova a linha.
@@ -390,8 +380,8 @@ porque o harness exige `Read` antes de `Edit`. Quem garante é a asserção em
 
 **Hooks** (`.claude/hooks/`). `guard-dados-sensiveis.sh` (`PreToolUse`) bloqueia
 o que pode publicar dado de cliente e falha **fechado**.
-`conferir-distribuicao.sh` (`PostToolUse`) avisa, depois de `git pull` ou
-`git merge` **com a `main` em HEAD**, que a branch `distribuicao` ficou para
+`conferir-distribuicao.sh` (`PostToolUse`) avisa, depois de `git pull`,
+`git merge` ou `git fetch` **com a `main` em HEAD**, que a branch `distribuicao` ficou para
 trás — mede e reporta, nunca sincroniza sozinho. Falha **aberto**, e é barato:
 filtra o comando por regex antes de olhar a árvore.
 `conferir-alinhamento.sh` (`ConfigChange`) avisa quando existe skill, subagente
@@ -415,6 +405,9 @@ até então só existia no CI: o portão local passava e o workflow reprovava, q
 **Permissões** (`.claude/settings.json`). `npm install` e `npm ci` pedem
 confirmação. `curl`, `wget`, force-push e leitura ou escrita de `*.xlsx` e
 `*.jpeg` da raiz estão negados. O modo bypass está desabilitado.
+**Mudar permissão (`settings`) ou ruleset do GitHub é do dono**: o classificador
+do modo automático bloqueia o agente nos dois casos (medido em 23/09/2026) —
+entregue o JSON ou o comando literal, e confira depois de aplicado.
 **`mcp__*` está negado — todo MCP, de todo servidor** (D-19 e D-20 em
 `docs/10-governanca.md`).
 
@@ -524,15 +517,12 @@ você.
 
 A estrutura `.claude/` foi deliberadamente mantida mínima. Skill e subagent
 escritos antes de existir repetição observada viram adivinhação do próprio
-processo e são abandonados. Os gatilhos abaixo são objetivos.
+processo e são abandonados. Os gatilhos abaixo são objetivos. Os cinco já
+atingidos — de `novo-indicador` ao par `documentacao.test.ts`/`revisor-docs` —
+estão na ADR-0007, com o que cada um ensinou.
 
 | Gatilho | O que criar | Por que agora e não antes |
 |---|---|---|
-| ~~**Ao concluir `H-13`**~~ | ~~Skill `novo-indicador`~~ | ✅ **Criada em 06/08/2026**, ao fechar `H-13`. Saiu da repetição real de `H-09` a `H-13`, com o formato já estabilizado — e com a omissão sistemática da rota como motivo principal |
-| ~~**Antes de iniciar a Fase 3** (`H-24`)~~ | ~~Subagent de review para manipulação de XML~~ | ✅ **Criado em 11/08/2026** como `revisor-xml`, antes da primeira linha de `H-24`. `H-24` tem **11** casos-limite — 8 no plano original, mais 3 que a própria revisão acrescentou (linha auto-fechada, célula ausente recebendo data, fórmula compartilhada) — e o custo de errar é a planilha da empresa. **Pagou-se na primeira invocação**: reprovou por dois defeitos reais, um deles gerando XML malformado, o outro reproduzindo A-56 no caso mais provável |
-| ~~**Ao concluir `H-20`**~~ | ~~Skill `nova-pagina`~~ | ✅ **Criada em 07/08/2026**, ao fechar `H-20`. Cinco páginas de `H-16` a `H-20` com o mesmo padrão — consumir rota → respeitar filtros globais → estado vazio explícito → nunca calcular no cliente —, e as mesmas coisas fora do plano toda vez. `H-22` foi a primeira história conduzida por ela |
-| ~~**Ao acumular 20 `session_id` distintos**~~ | ~~Conferir se cada rule dispara~~ | ✅ **Conferido em 04/09/2026**, ao fechar `H-82`: **28 sessões** distintas no log, e **as cinco rules dispararam** — `documentacao` 19 vezes, `comentarios` 13, `operacao-windows` 7, `escrita-xlsx` 4, `distribuicao` 2. Nenhuma precisa voltar para cá nem ter o glob consertado, e o hook vira só observabilidade. **O log é TSV, não JSON** — a primeira contagem leu 0 por supor o formato errado |
-| ~~**Ao medir defeito de documentação em lote**~~ | ~~Guarda `documentacao.test.ts` e subagent `revisor-docs`~~ | ✅ **Criados em 11/09/2026**, no dia em que o gatilho foi atingido: **51 defeitos confirmados** numa passada de ~490 linhas, e um deles achado **a olho pelo dono depois de a suíte passar**. Nasceram como par, e a divisão é declarada nos dois: a guarda cobra o computável, o revisor cobra o que não é. **A ordem importou** — a guarda reprova qualquer ponto em que as cópias divirjam, então precisou nascer depois de `README.md` e backlog concordarem, senão reprovaria o próprio histórico que a introduziu. **Esta linha foi escrita DEPOIS do evento, e é a primeira que é** — as quatro anteriores declararam o gatilho antes de ele ser atingido: aqui a tabela documenta, não previu |
 | **Se aparecer a aba `2027`** | Reexecutar `H-01` | `python3 tools/profile_workbook.py`, depois `tools/build_fixtures.py`. As abas `2025` e `2024` provam que **o esquema muda entre anos**. Risco R-14 |
 | **Nunca** | Subagents para paralelizar o backlog | O caminho crítico é uma cadeia sequencial de 18 sessões (`docs/07-plano-entrega.md §3`). Fan-out não encurta |
 

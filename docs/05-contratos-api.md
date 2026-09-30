@@ -1776,25 +1776,25 @@ requisição, então rodar o `build` com o servidor no ar dispensa reiniciá-lo.
 | `GET /api/health` | H-02, H-31, H-32, H-15 |
 | `GET /api/processes` | H-17, H-49 |
 | `GET /api/processes/:ref` | H-22 |
-| `GET /api/indicators` | H-09, H-10, H-11, H-12, H-13, H-16, H-17, H-49, H-56 |
+| `GET /api/indicators` | H-09, H-10, H-11, H-12, H-13, H-16, H-17, H-49, H-56, H-102, H-106 |
 | `GET /api/alerts` | H-14, H-29 |
 | `GET /api/edits` | H-23 |
 | `DELETE /api/edits/:id` | H-23 |
 | `DELETE /api/edits` | H-23 |
-| `POST /api/edits/row` | H-78, H-79, H-80 — histórias escritas retroativamente em 03/09/2026 (`D-26`) |
-| `PATCH /api/processes/:ref/color` | H-27 |
-| `GET /api/clients`, `GET /api/clients/preview`, `POST /api/clients/rules`, `DELETE /api/clients/groups/:key` | H-88 |
+| `POST /api/edits/row` | H-78, H-79, H-80 — histórias escritas retroativamente em 03/09/2026 (`D-26`); H-112 e H-114, escritas retroativamente em 30/09/2026 (`D-69`) |
+| `PATCH /api/processes/:ref/color` | H-27, H-110, H-114 |
+| `GET /api/clients`, `GET /api/clients/preview`, `POST /api/clients/rules`, `DELETE /api/clients/groups/:key` | H-88, H-105 |
 | `GET /api/team`, `PUT /api/team/:key`, `DELETE /api/team/:key`, `DELETE /api/team/:key/importers/:importer` | H-91 |
 | `GET /api/config/workbook` | H-34, H-35, H-36 |
 | `PUT /api/config/workbook` | H-34, H-35, H-36 |
 | `POST /api/config/workbook/browse` | H-37 |
-| `GET /api/history/monthly` | H-21, H-28 |
+| `GET /api/history/monthly` | H-21, H-28, H-107 |
 | `GET /api/filters/options` | H-15, H-49, H-55 |
-| `GET /api/quarantine` | H-07 |
+| `GET /api/quarantine` | H-07, H-108 |
 | `POST /api/reload` | H-08 |
-| `POST /api/edits`, `GET`, `DELETE` | H-23 |
-| `GET /api/color-options`, `PATCH /api/processes/:ref/color` | H-27 |
-| `POST /api/edits/apply` | H-26 |
+| `POST /api/edits`, `GET`, `DELETE` | H-23, H-112, H-114 |
+| `GET /api/color-options`, `PATCH /api/processes/:ref/color` | H-27, H-110, H-114 |
+| `POST /api/edits/apply` | H-26, H-113 |
 | `GET /*` (rota estática) | H-30 |
 
 > `GET /*` ficou **sem dono até 07/08/2026** — especificada em §4 e ausente
