@@ -144,6 +144,103 @@ blocks 'git commit -m "$(python3 tools/profile_workbook.py x.xlsx saida.json)"'
 blocks 'npm test && git add -A'
 blocks 'echo ok; echo x > config/app.json'
 
+# --- git: a negacao por prefixo nao alcanca posicao, grupo nem abreviacao ---
+# Medido em 23/09/2026: 71 formas passavam no guard E sem prompt. O deny
+# `git push --force *` so pega a forma canonica; `git push origin x --force`
+# cai no allow `git push *` antes. Mesma coisa em commit, branch e switch.
+# Estas sao as formas que o roadmap nomeou (B1).
+blocks 'git add -fA'
+blocks 'git add -Af'
+blocks 'git add -vf config/app.json'
+blocks 'git push origin distribuicao --force'
+blocks 'git push -uf origin distribuicao'
+blocks 'git push --force-with-lease origin distribuicao'
+blocks 'git push --force-w origin distribuicao'
+blocks 'git push origin +distribuicao'
+blocks 'git push origin +HEAD:distribuicao'
+blocks 'git commit -n -m "x"'
+blocks 'git commit -nm "x"'
+blocks 'git commit -m "x" --no-verify'
+blocks 'git commit --no-verif -m "x"'
+blocks 'git branch feature -D'
+blocks 'git branch -df feature'
+blocks 'git branch --delete --force feature'
+blocks 'git branch --del --forc feature'
+
+# O mesmo push atras do que vem antes do `git` sem mudar o que ele faz.
+blocks 'git -C . push -f origin x'
+blocks 'env git push -f origin x'
+blocks 'timeout 30 git push -f origin x'
+blocks '\git push -f origin x'
+blocks '/usr/bin/git push -f origin x'
+blocks 'sleep 1 & git push -f origin x'
+blocks '(git push -f origin x)'
+blocks 'bash -c "git push -f origin x"'
+
+# --- git: o resto da familia, que o roadmap nao nomeava (B ampliado) --------
+# Publica ou apaga sem forcar.
+blocks 'git push --mirror origin'
+blocks 'git push --mirr origin'
+blocks 'git push --delete origin distribuicao'
+blocks 'git push -d origin distribuicao'
+blocks 'git push origin :distribuicao'
+blocks 'git push --prune origin x'
+blocks 'git push https://example.invalid/copia.git HEAD:main'
+blocks 'git push git@example.invalid:copia.git HEAD'
+# Descarta mudanca nao commitada: o mesmo que `checkout --`, ja negado.
+blocks 'git checkout .'
+blocks 'git checkout HEAD -- .'
+blocks 'git restore .'
+blocks 'git restore --staged --worktree .'
+blocks 'git switch main -f'
+blocks 'git switch -qf main'
+blocks 'git switch --disc main'
+blocks 'git checkout main --force'
+# Recria ou move branch, e os commits dela ficam orfaos.
+blocks 'git switch -C main origin/main'
+blocks 'git checkout -B main origin/main'
+blocks 'git branch -f main HEAD~5'
+# Reescreve historico.
+blocks 'git reset HEAD~1 --hard'
+blocks 'git commit --no-edit --amend'
+blocks 'git commit --amen --no-edit'
+blocks 'git pull --rebase origin main'
+blocks 'git pull -r'
+# Configuracao que vira execucao ou publicacao no comando seguinte.
+blocks 'git config core.hooksPath /dev/null'
+blocks 'git config remote.origin.url https://example.invalid/copia.git'
+blocks 'git config --add alias.x "push -f"'
+blocks 'git -c core.fsmonitor=/tmp/x.sh status'
+# O merge e do dono, no GitHub: nem com flag antes do verbo, nem pela API.
+blocks 'gh pr -R dono/repo merge 146 --merge'
+blocks 'gh api -X PUT repos/dono/repo/pulls/146/merge'
+blocks 'gh repo delete dono/repo --yes'
+
+# Os usos do dia a dia, tirados do corpus de comandos ja rodados aqui.
+allows 'git push -u origin H-99/feat-exemplo'
+allows 'git push origin distribuicao'
+allows 'git push'
+allows 'git push 2>/dev/null'
+allows 'git commit -m "menciona --force, -n e --amend so no texto"'
+allows 'git commit -am "x"'
+allows 'git branch -d feature'
+allows 'git branch --show-current'
+allows 'git switch -c H-99/feat-exemplo'
+allows 'git switch -'
+allows 'git checkout -b H-99/feat-exemplo'
+allows 'git checkout main'
+allows 'git restore --staged src/domain/indicators.ts'
+allows 'git reset src/domain/indicators.ts'
+allows 'git pull origin main'
+allows 'git pull --no-rebase origin main'
+allows 'git config --get remote.origin.url'
+allows 'git config user.name'
+allows 'git config --list --show-origin'
+allows 'git -c core.quotepath=false status'
+allows 'gh pr create --title "merge da fase B" --body "sem merge pelo agente"'
+allows 'gh pr view 146 --json mergeStateStatus'
+allows 'gh api repos/dono/repo/rulesets'
+
 # --- falsos positivos que precisam continuar passando ----------------------
 # Este mordeu de verdade: `grep` cujo ARGUMENTO e a string "git add".
 allows 'grep -n "git add" docs/06-backlog.md'
