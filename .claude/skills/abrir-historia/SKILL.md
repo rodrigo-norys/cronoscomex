@@ -73,7 +73,9 @@ linha de leitura; identificador ausente que passe despercebido custa a fatia.
 
 ## O contrato da ROTA que esta história serve
 
-!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); B=$(sed -n "/^### ${H:?informe H-NN} /,/^##/p" docs/06-backlog.md | head -n -1); { printf '%s' "$B" | grep -oE '/api/[a-z0-9/:-]+'; printf '%s' "$B" | grep -oE 'src/http/routes/[a-z-]+\.ts' | sed 's|.*/|/api/|; s|\.ts$||'; } | sed 's|^\(/api/[a-z0-9-]*\).*|\1|' | sort -u | while read -r r; do awk -v r="$r" '/^##/ { on = index($0, r) } on' docs/05-contratos-api.md; done`
+!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); B=$(sed -n "/^### ${H:?informe H-NN} /,/^##/p" docs/06-backlog.md | head -n -1); { printf '%s' "$B" | grep -oE '/api/[a-z0-9/:-]+'; printf '%s' "$B" | grep -oE 'src/http/routes/[a-z-]+\.ts' | sed 's|.*/|/api/|; s|\.ts$||'; } | sed 's|^\(/api/[a-z0-9-]*\).*|\1|' | sort -u | while read -r r; do awk -v r="$r" '/^##/ { on = index($(0), r) } on' docs/05-contratos-api.md; done`
+
+*(`$(0)`, e não `\$0`: o harness troca `\$0`, `\$1`… pelos argumentos da skill, e esta seção saía vazia sem aviso — medido em 01/10/2026 na `H-27`, 0 linhas em vez de 19.)*
 
 **Confira campo a campo: cada um é derivável do que esta história cria?**
 
