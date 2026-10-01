@@ -212,7 +212,7 @@ mesmo que nenhuma regra os tenha disparado:
 ═══════════════════════════════════════════════════════════════════════════════
 Pare quando TODAS as condições abaixo forem verdadeiras:
   (P1) Z1 e Z2 declarados.
-  (P2) As 40 regras do corpus principal foram percorridas e cada uma tem exatamente
+  (P2) As <!-- conta:regras-corpus -->40<!-- /conta --> regras do corpus principal foram percorridas e cada uma tem exatamente
        um destes desfechos registrados: achado(s) emitido(s) | "sem achado" |
        "não aplicável — <motivo factual>" | "VERIFICAR NO NAVEGADOR".
        Regra sem desfecho registrado significa revisão incompleta.

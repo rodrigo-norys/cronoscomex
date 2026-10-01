@@ -11,11 +11,11 @@ argument-hint: '[H-NN]'
 
 ## Casos-limite obrigatórios atribuídos a esta história
 
-Extraídos de `docs/08-qualidade-operacao.md` §1.3 — os 44 casos obrigatórios do
+Extraídos de `docs/08-qualidade-operacao.md` §1.3 — os !`awk '/^### 1\.3/{f=1;next} f&&/^#{1,3} /{exit} f&&/^\| /&&!/^\| (Caso-limite \||-)/{n++} END{print n}' docs/08-qualidade-operacao.md` casos obrigatórios do
 projeto. Cada linha abaixo precisa virar um teste com o **valor concreto** que
 aparece nela.
 
-!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); grep -F "| ${H:?informe H-NN} |" docs/08-qualidade-operacao.md || echo "NENHUM caso obrigatório atribuído a esta história em §1.3 — os 44 casos cobrem 11 histórias, e a ausência aqui é esperada, não defeito. Os casos-limite do backlog continuam obrigatórios."`
+!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); grep -F "| ${H:?informe H-NN} |" docs/08-qualidade-operacao.md || echo "NENHUM caso obrigatório atribuído a esta história em §1.3 — os $(awk '/^### 1\.3/{f=1;next} f&&/^#{1,3} /{exit} f&&/^\| /&&!/^\| (Caso-limite \||-)/{n++} END{print n}' docs/08-qualidade-operacao.md) casos cobrem $(awk '/^### 1\.3/{f=1;next} f&&/^#{1,3} /{exit} f&&/^\| /&&!/^\| (Caso-limite \||-)/' docs/08-qualidade-operacao.md | grep -oE '\| H-[0-9]+ \|\s*$' | sort -u | wc -l) histórias, e a ausência aqui é esperada, não defeito. Os casos-limite do backlog continuam obrigatórios."`
 
 ## Linhas da matriz de rastreabilidade que citam esta história
 

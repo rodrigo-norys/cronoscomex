@@ -15,13 +15,13 @@ próprio repositório, escrita sem dizer o que contava.
 **Contagem sobre o repositório** — achados, histórias, premissas, riscos,
 indicadores. Diga o **recorte** e **onde o conjunto vive**:
 
-> os 65 achados (`A-NN`, em `docs/01-auditoria-especificacao.md`)
-> os 21 indicadores **em escopo** — 22 definidos, `IND-21` fora
+> os <!-- conta:achados -->65<!-- /conta --> achados (`A-NN`, em `docs/01-auditoria-especificacao.md`)
+> os <!-- conta:indicadores-ativos -->18<!-- /conta --> indicadores **ativos** — <!-- conta:indicadores-definidos -->27<!-- /conta --> definidos, `IND-21` bloqueado e <!-- conta:indicadores-aposentados -->8<!-- /conta --> aposentados
 
-Sem o recorte a frase não é reconferível, e o erro é invisível: `IND-NN` tem 22
-entradas e a afirmação correta é 21. Contar a família daria 22 e estaria errado.
+Sem o recorte a frase não é reconferível, e o erro é invisível: `IND-NN` tem <!-- conta:indicadores-definidos -->27<!-- /conta -->
+entradas e a afirmação correta é <!-- conta:indicadores-ativos -->18<!-- /conta -->. Contar a família daria <!-- conta:indicadores-definidos -->27<!-- /conta --> e estaria errado.
 
-**Medição sobre a planilha** — 649 linhas, 9 chaves de cor, 20,7% de
+**Medição sobre a planilha** — 649 linhas, <!-- conta:chaves-de-cor -->9<!-- /conta --> chaves de cor, 20,7% de
 `DOCS ENVIADOS`. Teste nenhum confere: a regra inviolável 7 proíbe a suíte de
 tocar o arquivo real. Cite **fonte e data**:
 
