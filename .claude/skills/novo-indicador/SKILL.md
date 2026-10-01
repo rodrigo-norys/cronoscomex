@@ -17,26 +17,29 @@ armadilhas já medidas, para que não sejam redescobertas.
 A regra formalizada é esta. **Não a reescreva**: se ela parecer errada, é
 divergência e para a implementação.
 
-!`grep -F "| $ARGUMENTS |" docs/09-rastreabilidade.md`
+!`grep -F "| $ARGUMENTS |" ${CLAUDE_PROJECT_DIR}/docs/09-rastreabilidade.md`
 
 ## O requisito de origem
 
-!`grep -F "| $ARGUMENTS |" docs/02-requisitos.md`
+!`grep -F "| $ARGUMENTS |" ${CLAUDE_PROJECT_DIR}/docs/02-requisitos.md`
 
 ## Onde ele aparece no contrato da API
 
 O campo e o bloco já estão fixados em `docs/05-contratos-api.md`. O nome, o
 tipo e a posição vêm de lá — não invente nem renomeie.
 
-!`grep -n -- "$ARGUMENTS" docs/05-contratos-api.md`
+!`grep -n -- "$ARGUMENTS" ${CLAUDE_PROJECT_DIR}/docs/05-contratos-api.md`
 
 ## Casos-limite obrigatórios que o citam
 
-!`grep -F -- "$ARGUMENTS" docs/08-qualidade-operacao.md`
+!`grep -F -- "$ARGUMENTS" ${CLAUDE_PROJECT_DIR}/docs/08-qualidade-operacao.md`
 
 ## O que a rota já serve hoje
 
-!`sed -n '/export interface IndicatorsCounts/,/^}/p' src/http/routes/indicators.ts`
+A interface está em !`grep -n 'export interface IndicatorsCounts' ${CLAUDE_PROJECT_DIR}/src/http/routes/indicators.ts` —
+leia `src/http/routes/indicators.ts` dessa linha até o `}` que a fecha. *(Ponteiro, e
+não o trecho: fora do modo automático, `sed` lendo arquivo aborta a skill — medido em
+01/10/2026.)*
 
 ---
 
@@ -57,7 +60,7 @@ de **conjunto vazio** — ele é o que separa "zero medido" de "campo não
 calculado".
 
 **3. Campo em `src/http/routes/indicators.ts` E no teste dela.**
-`GET /api/indicators` **está completo desde `H-13`** — os !`grep -E '^\| IND-[0-9]+ \|' docs/09-rastreabilidade.md | cut -d'|' -f8 | grep -vcE 'Bloqueado|Aposentado'` indicadores
+`GET /api/indicators` **está completo desde `H-13`** — os !`grep -E '^\| IND-[0-9]+ \|' ${CLAUDE_PROJECT_DIR}/docs/09-rastreabilidade.md | cut -d'|' -f8 | grep -vcE 'Bloqueado|Aposentado'` indicadores
 ativos. Ele nasceu parcial em `H-09` e cresceu bloco a bloco, nunca preenchendo
 com zero o que ainda não calculava. O teste que assegurava a ausência dos últimos
 dois campos virou o inverso: **fixa a lista completa das chaves**, e campo que

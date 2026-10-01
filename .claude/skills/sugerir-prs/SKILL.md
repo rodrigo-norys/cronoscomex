@@ -160,7 +160,7 @@ gh pr create --base main \
 - **Um marcador por mudança técnica relevante** no resumo; prefixe pela área quando ajudar
   (`Domain:`/`IO:`/`HTTP:`/`Web:`). Não despeje o diff.
 - **Verificação: só o que existe, e aqui existe portão de verdade.** O projeto tem
-  `npm run verify`, com !`grep -oE '"verify": "[^"]*"' package.json | tr -s '&' '\n' | grep -c .`
+  `npm run verify`, com !`grep -oE '"verify": "[^"]*"' ${CLAUDE_PROJECT_DIR}/package.json | tr -s '&' '\n' | grep -c .`
   passos — contados de `scripts.verify` na invocação; a composição vive lá, e só lá. Informe o resultado **real**,
   com o número que o Vitest devolveu naquela execução. **Nunca copie contagem de teste de outro
   documento** — a contagem muda a cada fatia, e cópia manual diverge em silêncio.
