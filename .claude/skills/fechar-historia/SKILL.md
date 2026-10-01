@@ -7,9 +7,9 @@ argument-hint: '[H-NN]'
 
 ## Estado atual dos três arquivos, antes de mexer
 
-!`grep -m1 -A 4 "^### $ARGUMENTS " docs/06-backlog.md`
-!`grep -F "$ARGUMENTS" docs/09-rastreabilidade.md`
-!`grep -m1 -A 6 "^## Estado" CLAUDE.md`
+!`grep -m1 -A 4 "^### $ARGUMENTS " ${CLAUDE_PROJECT_DIR}/docs/06-backlog.md`
+!`grep -F "$ARGUMENTS" ${CLAUDE_PROJECT_DIR}/docs/09-rastreabilidade.md`
+!`grep -m1 -A 6 "^## Estado" ${CLAUDE_PROJECT_DIR}/CLAUDE.md`
 
 ## Passos
 

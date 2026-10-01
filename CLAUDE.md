@@ -411,6 +411,12 @@ do modo automático bloqueia o agente nos dois casos (medido em 23/09/2026) —
 entregue o JSON ou o comando literal, e confira depois de aplicado.
 **`mcp__*` está negado — todo MCP, de todo servidor** (D-19 e D-20 em
 `docs/10-governanca.md`).
+**Skill libera comando só por `allowed-tools`, e um só:** a `/abrir-historia` libera
+`node ${CLAUDE_PROJECT_DIR}/tools/abrir-historia.mjs`, desde 01/10/2026, por decisão
+do dono. Fora do modo automático, comando injetado em skill que não é leitura pura —
+`awk`, `sed` lendo arquivo, `$(…)`, `${…}` — **aborta a invocação**, e caminho
+relativo também, com a sessão fora da raiz; a régua está em
+`.claude/rules/documentacao.md`.
 
 **O git é permitido até o PR, e negado do PR em diante.** `git add`, `commit`,
 `push` e `switch` rodam sem confirmação, e `gh pr create` também pelo

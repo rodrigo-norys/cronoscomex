@@ -3,23 +3,28 @@ name: abrir-historia
 description: Abre uma história do backlog do CronosComex montando o checklist do protocolo de fatia, com o contrato fixado, os critérios de aceite e os casos-limite obrigatórios já embutidos. Use ao iniciar qualquer história H-NN, antes de escrever a primeira linha de código.
 when_to_use: Quando o usuário disser "vamos para a H-12", "iniciar H-13", "próxima história" ou invocar /abrir-historia H-NN.
 argument-hint: '[H-NN]'
+allowed-tools: Bash(node ${CLAUDE_PROJECT_DIR}/tools/abrir-historia.mjs *)
 ---
+
+*(As seções vêm de `tools/abrir-historia.mjs`, o único comando que esta skill
+pré-aprova: fora do modo automático, o Claude Code recusa injeção com expansão de
+shell, `awk` ou `sed` lendo arquivo, e a skill abortava — medido em 01/10/2026.)*
 
 ## A história, direto do backlog
 
-!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); sed -n "/^### ${H:?informe H-NN} /,/^##/p" docs/06-backlog.md | head -n -1`
+!`node ${CLAUDE_PROJECT_DIR}/tools/abrir-historia.mjs historia "$ARGUMENTS"`
 
 ## Casos-limite obrigatórios atribuídos a esta história
 
-Extraídos de `docs/08-qualidade-operacao.md` §1.3 — os !`awk '/^### 1\.3/{f=1;next} f&&/^#{1,3} /{exit} f&&/^\| /&&!/^\| (Caso-limite \||-)/{n++} END{print n}' docs/08-qualidade-operacao.md` casos obrigatórios do
+Extraídos de `docs/08-qualidade-operacao.md` §1.3 — os !`node ${CLAUDE_PROJECT_DIR}/tools/abrir-historia.mjs total-casos` casos obrigatórios do
 projeto. Cada linha abaixo precisa virar um teste com o **valor concreto** que
 aparece nela.
 
-!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); grep -F "| ${H:?informe H-NN} |" docs/08-qualidade-operacao.md || echo "NENHUM caso obrigatório atribuído a esta história em §1.3 — os $(awk '/^### 1\.3/{f=1;next} f&&/^#{1,3} /{exit} f&&/^\| /&&!/^\| (Caso-limite \||-)/{n++} END{print n}' docs/08-qualidade-operacao.md) casos cobrem $(awk '/^### 1\.3/{f=1;next} f&&/^#{1,3} /{exit} f&&/^\| /&&!/^\| (Caso-limite \||-)/' docs/08-qualidade-operacao.md | grep -oE '\| H-[0-9]+ \|\s*$' | sort -u | wc -l) histórias, e a ausência aqui é esperada, não defeito. Os casos-limite do backlog continuam obrigatórios."`
+!`node ${CLAUDE_PROJECT_DIR}/tools/abrir-historia.mjs casos "$ARGUMENTS"`
 
 ## Linhas da matriz de rastreabilidade que citam esta história
 
-!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); grep -F "${H:?informe H-NN}" docs/09-rastreabilidade.md`
+!`node ${CLAUDE_PROJECT_DIR}/tools/abrir-historia.mjs matriz "$ARGUMENTS"`
 
 ## Confira a lista de arquivos ANTES de aceitá-la
 
@@ -52,7 +57,7 @@ o campo que nenhum arquivo da lista sabe produzir.
 
 ## Identificadores que o contrato cita e o código ainda não tem
 
-!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); sed -n "/^### ${H:?informe H-NN} /,/^##/p" docs/06-backlog.md | head -n -1 | grep -oP '\x60[A-Za-z_][A-Za-z0-9_]{3,}\x60|\b[a-z]+[A-Z][A-Za-z0-9]*\b' | sed 's/\x60//g' | sort -u | while read -r id; do grep -rqF -- "$id" src/ 2>/dev/null || echo "  $id"; done`
+!`node ${CLAUDE_PROJECT_DIR}/tools/abrir-historia.mjs identificadores "$ARGUMENTS"`
 
 Cada nome acima é **uma de duas coisas**, e a diferença decide a fatia:
 
@@ -73,9 +78,7 @@ linha de leitura; identificador ausente que passe despercebido custa a fatia.
 
 ## O contrato da ROTA que esta história serve
 
-!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); B=$(sed -n "/^### ${H:?informe H-NN} /,/^##/p" docs/06-backlog.md | head -n -1); { printf '%s' "$B" | grep -oE '/api/[a-z0-9/:-]+'; printf '%s' "$B" | grep -oE 'src/http/routes/[a-z-]+\.ts' | sed 's|.*/|/api/|; s|\.ts$||'; } | sed 's|^\(/api/[a-z0-9-]*\).*|\1|' | sort -u | while read -r r; do awk -v r="$r" '/^##/ { on = index($(0), r) } on' docs/05-contratos-api.md; done`
-
-*(`$(0)`, e não `\$0`: o harness troca `\$0`, `\$1`… pelos argumentos da skill, e esta seção saía vazia sem aviso — medido em 01/10/2026 na `H-27`, 0 linhas em vez de 19.)*
+!`node ${CLAUDE_PROJECT_DIR}/tools/abrir-historia.mjs contrato "$ARGUMENTS"`
 
 **Confira campo a campo: cada um é derivável do que esta história cria?**
 

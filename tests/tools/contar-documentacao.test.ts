@@ -83,6 +83,26 @@ describe('os contadores, sobre fonte com valor concreto', () => {
     expect(COUNTERS.epicos(source)).toBe(2)
   })
 
+  it('caso obrigatorio atribuido a duas historias conta as duas', () => {
+    write(
+      'docs/08-qualidade-operacao.md',
+      [
+        '### 1.3. Cobertura obrigatória por regra',
+        '',
+        '| Caso-limite | Valor concreto | Resultado esperado | História |',
+        '|---|---|---|---|',
+        '| STATUS canônico | `"X"` | `x` | H-06 |',
+        '| Cor não reconhecida | `"theme:9\\|tint"` | quarentena | H-04, H-07 |',
+        '',
+        '## 2. Ingestão',
+      ].join('\n'),
+    )
+    track()
+    const source = createSource(root)
+    expect(COUNTERS['casos-obrigatorios'](source)).toBe(2)
+    expect(COUNTERS['historias-com-caso-obrigatorio'](source)).toBe(3)
+  })
+
   it('passos do verify sao os comandos encadeados por &&, sem o prefixo do npm', () => {
     track()
     const source = createSource(root)
