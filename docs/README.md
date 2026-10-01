@@ -36,14 +36,14 @@ Leia nesta ordem. Cada documento pressupõe o anterior.
 
 | # | Documento | O que traz | Leitura obrigatória antes de |
 |---|---|---|---|
-| 1 | [00-visao-escopo.md](00-visao-escopo.md) | Escopo, fora de escopo, 15 premissas (P-NN), o princípio da planilha-referência e o glossário | Tudo |
+| 1 | [00-visao-escopo.md](00-visao-escopo.md) | Escopo, fora de escopo, <!-- conta:premissas -->15<!-- /conta --> premissas (P-NN), o princípio da planilha-referência e o glossário | Tudo |
 | 2 | [01-auditoria-especificacao.md](01-auditoria-especificacao.md) | Os **65 defeitos** da especificação e a resolução de cada um | Qualquer regra de negócio |
 | 3 | [02-requisitos.md](02-requisitos.md) | Requisitos funcionais e os RNF quantificados, com origem declarada | Qualquer decisão de desempenho |
 | 4 | [03-modelo-dados.md](03-modelo-dados.md) | Modelo em memória, arquivos locais e **as 9 tabelas de decisão** — TD-01 a TD-06, mais TD-05.1 (escrita de estilo), TD-04.1 (consolidação do cliente, `H-49`) e TD-04.2 (grupo de clientes, `H-55`) | H-04, H-05, H-06, H-07, H-27 |
 | 5 | [04-arquitetura.md](04-arquitetura.md) | Diagramas de contexto, containers e componentes; estrutura de diretórios | H-02 |
 | 6 | [05-contratos-api.md](05-contratos-api.md) | Rotas, schemas, códigos de erro e campos editáveis | Qualquer rota |
-| 7 | [06-backlog.md](06-backlog.md) | **114 histórias executáveis** em 18 épicos (`E1` a `E18`), com contrato, aceite e casos-limite — 113 concluídas, **`H-101` aberta**, escrita para não ser executada agora | — |
-| 8 | [07-plano-entrega.md](07-plano-entrega.md) | 5 fases, grafo de dependências, caminho crítico e **16 riscos** — `R-03` encerrado por `H-01`, `R-09` por `H-33`, `R-16` aberto por `E11`. **As fases cobrem o plano original e só ele** | Planejar a ordem |
+| 7 | [06-backlog.md](06-backlog.md) | **<!-- conta:historias -->114<!-- /conta --> histórias executáveis** em <!-- conta:epicos -->18<!-- /conta --> épicos (`E1` a `E18`), com contrato, aceite e casos-limite — <!-- conta:historias-concluidas -->113<!-- /conta --> concluídas, **`H-101` aberta**, escrita para não ser executada agora | — |
+| 8 | [07-plano-entrega.md](07-plano-entrega.md) | 5 fases, grafo de dependências, caminho crítico e **<!-- conta:riscos -->16<!-- /conta --> riscos** — `R-03` encerrado por `H-01`, `R-09` por `H-33`, `R-16` aberto por `E11`. **As fases cobrem o plano original e só ele** | Planejar a ordem |
 | 9 | [08-qualidade-operacao.md](08-qualidade-operacao.md) | Testes, ingestão, observabilidade, LGPD e build | Escrever testes |
 | 10 | [09-rastreabilidade.md](09-rastreabilidade.md) | Matriz de indicador/alerta → história → teste → status, mais uma linha por história — concluída ou aberta, desde 11/09/2026 | Verificar cobertura |
 | 11 | [10-governanca.md](10-governanca.md) | Quem decide o quê, protocolo de mudança de escopo, ciclo de vida de ADR, *definition of done* e o log de decisões | Mudar escopo ou reabrir um ADR |
@@ -68,7 +68,7 @@ Cada um tem um documento de origem, e o cabeçalho do épico em
 
 | Origem | Épico | O que traz |
 |---|---|---|
-| [estilizacao/corpus-estilo.md](estilizacao/corpus-estilo.md) | — | **40 regras de estilização verificáveis**, com identificador de norma, sinal sintático e contraexemplo. É o corpus que o subagente `revisor-estilo` usa |
+| [estilizacao/corpus-estilo.md](estilizacao/corpus-estilo.md) | — | **<!-- conta:regras-corpus -->40<!-- /conta --> regras de estilização verificáveis**, com identificador de norma, sinal sintático e contraexemplo. É o corpus que o subagente `revisor-estilo` usa |
 | [uso/RESULTADO.md](uso/RESULTADO.md) | `E10` | O que apareceu na tela em 31/08/2026, com o operador usando o painel para trabalhar — 12 observações, 8 viraram história |
 
 ### Regras de processo
@@ -103,7 +103,7 @@ em `src/`; por que uma guarda existe, no cabeçalho do próprio script ou teste.
 atingido com folga: as 649 linhas da aba `2026` são aceitas com **0% de
 quarentena** (`H-07`), contra o limite de 2% de RNF-24.
 
-**113 das 114 histórias estão concluídas.** `E9`, `E10`, `E11` e `E12` fecharam em
+**<!-- conta:historias-concluidas -->113<!-- /conta --> das <!-- conta:historias -->114<!-- /conta --> histórias estão concluídas.** `E9`, `E10`, `E11` e `E12` fecharam em
 01/09/2026, `E13` em 03/09/2026, `E14` em 16/09/2026 e `E15` em 17/09/2026. `E17` e `E18`,
 retroativos, foram escritos e fechados em 30/09/2026 (`D-69`). Os **dez** épicos posteriores ao plano não
 têm fase atribuída; a ordem entre eles vive no cabeçalho de cada um, em

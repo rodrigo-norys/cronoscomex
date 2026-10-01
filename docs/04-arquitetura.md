@@ -160,8 +160,8 @@ efeito colateral em disco. Verde = fronteira.
 | `quarantine-reporter` | Persistir o relatório de linhas não interpretadas e de divergências | `QuarantineItem[]` | `data/quarantine.json` |
 | `process-store` | Guardar o conjunto corrente em memória e aplicar os filtros globais | `Process[]`, `FilterSet` | `Process[]` filtrado |
 | `history-store` | Detectar mudanças de categoria, gravá-las e responder há quantos dias cada processo está parado | `Process[]` | `data/history.jsonl`, `Map<ref, dias>`, série mensal |
-| `indicators` | Calcular os 21 indicadores em escopo sobre um conjunto já filtrado | `Process[]` | `IndicatorSet` |
-| `alerts` | Calcular os 6 alertas e ordená-los por severidade | `Process[]`, dias parados | `Alert[]` |
+| `indicators` | Calcular os <!-- conta:indicadores-ativos -->18<!-- /conta --> indicadores ativos sobre um conjunto já filtrado | `Process[]` | `IndicatorSet` |
+| `alerts` | Calcular os <!-- conta:alertas -->6<!-- /conta --> alertas e ordená-los por severidade | `Process[]`, dias parados | `Alert[]` |
 | `http-api` | Expor os contratos de `05-contratos-api.md` e servir a SPA | Requisição HTTP | Resposta JSON |
 
 ### 3.1. Componentes de escrita
@@ -283,6 +283,7 @@ sequenceDiagram
 
 ## 4. Estrutura de diretórios
 
+<!-- confere:arvore[src/domain src/io src/app src/http src/http/routes web/src/pages] -->
 ```
 cronoscomex/
 ├─ config/
@@ -311,7 +312,8 @@ cronoscomex/
 │  │  ├─ editable-fields.ts
 │  │  ├─ filters.ts
 │  │  ├─ client-mapper.ts     # H-49
-│  │  └─ team-mapper.ts       # H-50
+│  │  ├─ team-mapper.ts       # H-50
+│  │  └─ sheet-schema.ts      # H-96
 │  ├─ io/
 │  │  ├─ xlsx-reader.ts
 │  │  ├─ xlsx-parts.ts
@@ -332,12 +334,13 @@ cronoscomex/
 │  │  ├─ team-map-loader.ts   # H-50
 │  │  ├─ file-dialog.ts       # H-37
 │  │  ├─ logger.ts
-│  │  └─ config.ts
+│  │  ├─ config.ts
+│  │  └─ json-config.ts       # H-109
 │  └─ http/
 │     ├─ server.ts
 │     ├─ errors.ts
 │     ├─ filter-request.ts
-│     └─ routes/              # 14 arquivos de rota — ver 05-contratos-api.md
+│     └─ routes/              # 15 arquivos de rota — ver 05-contratos-api.md
 ├─ web/
 │  ├─ src/
 │  │  ├─ pages/               # 9 arquivos: as 8 páginas + Placeholders.tsx
@@ -363,10 +366,11 @@ cronoscomex/
 │                              # são versionados; há um .exemplo de cada
 └─ package.json
 ```
+<!-- /confere -->
 
 > **A árvore é conferível:** `ls src/domain src/io src/app src/http src/http/routes`
-> devolve exatamente os arquivos acima — 15 · 10 · 9 · 3 · 14, medido em
-> 02/09/2026. O comando anterior omitia `src/http/routes/`, e a lista tinha
+> devolve exatamente os arquivos acima — <!-- conta:arvore-src -->16 · 10 · 10 · 3 · 15<!-- /conta -->, contados por
+> `tools/contar-documentacao.mjs`. Em 02/09/2026, o comando anterior omitia `src/http/routes/`, e a lista tinha
 > ficado para trás em `src/domain/` e `src/app/`. A pasta `src/profiling/`, que este documento
 > listou até 18/08/2026, **nunca existiu** — o perfilador de `H-01` é Python e
 > mora em `tools/`.

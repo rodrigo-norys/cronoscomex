@@ -57,8 +57,8 @@ de **conjunto vazio** — ele é o que separa "zero medido" de "campo não
 calculado".
 
 **3. Campo em `src/http/routes/indicators.ts` E no teste dela.**
-`GET /api/indicators` **está completo desde `H-13`** — os 21 indicadores em
-escopo. Ele nasceu parcial em `H-09` e cresceu bloco a bloco, nunca preenchendo
+`GET /api/indicators` **está completo desde `H-13`** — os !`grep -E '^\| IND-[0-9]+ \|' docs/09-rastreabilidade.md | cut -d'|' -f8 | grep -vcE 'Bloqueado|Aposentado'` indicadores
+ativos. Ele nasceu parcial em `H-09` e cresceu bloco a bloco, nunca preenchendo
 com zero o que ainda não calculava. O teste que assegurava a ausência dos últimos
 dois campos virou o inverso: **fixa a lista completa das chaves**, e campo que
 entre sem passar pelo contrato quebra a suíte.

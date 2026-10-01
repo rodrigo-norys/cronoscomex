@@ -85,7 +85,7 @@ Não re-derive isto; está medido.
 - Aba em escopo: **`2026`**, 649 linhas de dados, colunas A–P
 - **Todas as datas são seriais reais do Excel.** Zero texto sem ano
 - Coluna E = `AGENTE` · Coluna P = `Coluna1`, 99,9% vazia
-- **9 chaves de cor**, cobrindo 100% das linhas — em `config/color-map.json`
+- **<!-- conta:chaves-de-cor -->9<!-- /conta --> chaves de cor**, cobrindo 100% das linhas — em `config/color-map.json`
 - Zero REF duplicada, zero REF vazia
 - `DOCS ENVIADOS` preenchida em apenas **20,7%** das linhas
 - Uma mesma cor vem de **vários `styleId`** — por isso a escrita de cor troca
@@ -144,7 +144,7 @@ testes que não o usam, ou a deixar a interface sem teste.
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
 quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
-**113 das 114 histórias estão concluídas**, e o épico aberto é `E16`. O que
+**<!-- conta:historias-concluidas -->113<!-- /conta --> das <!-- conta:historias -->114<!-- /conta --> histórias estão concluídas**, e o épico aberto é `E16`. O que
 cada uma aprendeu — número medido, defeito encontrado, decisão tomada — está
 no bloco `✅ CONCLUÍDA` dela em `docs/06-backlog.md`, e é lá que se procura
 antes de reabrir decisão que pareça em aberto. **Este bloco diz só o que está
@@ -165,7 +165,7 @@ saíram do que ele viu. As quatro primeiras fecharam no mesmo dia — a tinta da
 célula pintada, o calendário que mudou de página, os parâmetros que deixaram de
 vazar para as outras seis telas, e o "Todas as linhas". **`H-101`, o autoajuste
 de largura de coluna, fica escrita e não executada**, por escolha do usuário.
-Restam também as **três pendências abertas** abaixo,
+Restam também as **<!-- conta:pendencias-abertas -->3<!-- /conta --> pendências abertas** abaixo,
 e nenhuma bloqueia implementação: `PD-09` espera só uma decisão, `PD-08` a
 conferência, na máquina do operador, de que `H-88` chegou lá, e `PD-07` resta só na paleta
 nominal, que quer a máquina do operador.
@@ -330,9 +330,9 @@ consequência do projeto cair de nível em silêncio quando a sessão que a invo
 estiver em outro modelo.
 
 `revisor-estilo` revisa a estilização das sete páginas contra o corpus
-verificável de `docs/estilizacao/corpus-estilo.md` — 40 regras com identificador
+verificável de `docs/estilizacao/corpus-estilo.md` — <!-- conta:regras-corpus -->40<!-- /conta --> regras com identificador
 de norma, sinal sintático e contraexemplo. **Recebe a casca MAIS as sete páginas
-de uma vez**, porque 11 das 40 regras são composicionais: a violação delas não
+de uma vez**, porque <!-- conta:regras-corpus[balde=COMPOSICIONAL] -->11<!-- /conta --> das <!-- conta:regras-corpus -->40<!-- /conta --> regras são composicionais: a violação delas não
 existe dentro de um arquivo, é a diferença entre arquivos. Também não tem `Edit`
 nem `Write`, e `model: opus` pelo mesmo motivo do anterior — o eixo de contraste
 exige converter `oklch()` para sRGB e calcular a razão da WCAG com a conta à
@@ -354,7 +354,7 @@ nenhum as alcança — é semântica.
 
 **Rules** (`.claude/rules/`). Instrução com `paths:` no frontmatter, que entra em
 contexto **só quando o Claude lê arquivo que casa o glob** — e por isso não custa
-token nas sessões que não tocam o assunto. São seis:
+token nas sessões que não tocam o assunto. São <!-- conta:rules -->6<!-- /conta -->:
 
 | Rule | Carrega ao tocar |
 |---|---|
@@ -486,6 +486,13 @@ declarado contra a régua do topo, só nas histórias abertas**. Nenhuma
 expectativa é lista fixa: épico, história e requisito novos entram sem tocar no
 arquivo.
 
+**Guarda de contagem:** `tests/repo/contagens.test.ts`, desde 01/10/2026. Número
+de estado atual em `docs/`, `.claude/`, no `CLAUDE.md` e no `README.md` vive numa
+região `conta`, que `tools/contar-documentacao.mjs` confere contra a fonte; a
+reprovação diz o comando que corrige (`--write`). Skill não tem região: calcula o
+número na invocação. Registro datado fica de fora — a régua está em
+`.claude/rules/documentacao.md`.
+
 **`npm run test:strip`** importa os módulos de `src/` sob
 `--experimental-strip-types`, que é como a aplicação roda de verdade. **Nada de
 `parameter property`, `enum`, `namespace` ou decorator em `src/`.**
@@ -536,7 +543,7 @@ estão na ADR-0007, com o que cada um ensinou.
 - **Texto que o operador lê:** a régua está em `.claude/rules/microcopia.md` e
   carrega ao tocar `web/src/`. Pelo mesmo motivo, não repita nada dela aqui.
 - Toda regra classificatória precisa de teste com os valores concretos das
-  tabelas de decisão. Os 44 casos obrigatórios estão em
+  tabelas de decisão. Os <!-- conta:casos-obrigatorios -->44<!-- /conta --> casos obrigatórios estão em
   `docs/08-qualidade-operacao.md §1.3`.
 
 ## Comandos

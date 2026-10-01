@@ -256,15 +256,15 @@ Critério de **CUSTO**, declarado: medido em **quantos arquivos precisam mudar**
 
 | Eixo | Regras | IDs |
 |---|---|---|
-| Acessibilidade | **17** | A01–A17 |
-| Consistência | **10** | C01–C10 |
-| Responsividade | **6** | R01–R06 |
-| Modo escuro | **7** | D01–D07 |
-| **Total** | **40** | dentro da faixa 30–45 |
+| Acessibilidade | **<!-- conta:regras-corpus[eixo=A] -->17<!-- /conta -->** | <!-- conta:regras-corpus-faixa[eixo=A] -->A01–A17<!-- /conta --> |
+| Consistência | **<!-- conta:regras-corpus[eixo=C] -->10<!-- /conta -->** | <!-- conta:regras-corpus-faixa[eixo=C] -->C01–C10<!-- /conta --> |
+| Responsividade | **<!-- conta:regras-corpus[eixo=R] -->6<!-- /conta -->** | <!-- conta:regras-corpus-faixa[eixo=R] -->R01–R06<!-- /conta --> |
+| Modo escuro | **<!-- conta:regras-corpus[eixo=D] -->7<!-- /conta -->** | <!-- conta:regras-corpus-faixa[eixo=D] -->D01–D07<!-- /conta --> |
+| **Total** | **<!-- conta:regras-corpus -->40<!-- /conta -->** | dentro da faixa 30–45 |
 
-Por balde: **LOCAL 24** · **COMPOSICIONAL 11** · **DE EXECUÇÃO 5** (dos quais A01, A02 e R01 viram estáticos pela cadeia de §3.2; A15 e A17 viram parcialmente estáticos).
-Por custo: **baixo 19** · **médio 17** · **alto 4**.
-Medido em 02/09/2026 sobre as colunas BALDE e CUSTO das quatro tabelas de regras.
+Por balde: **LOCAL <!-- conta:regras-corpus[balde=LOCAL] -->24<!-- /conta -->** · **COMPOSICIONAL <!-- conta:regras-corpus[balde=COMPOSICIONAL] -->11<!-- /conta -->** · **DE EXECUÇÃO <!-- conta:regras-corpus[balde=EXECUÇÃO] -->5<!-- /conta -->** (dos quais A01, A02 e R01 viram estáticos pela cadeia de §3.2; A15 e A17 viram parcialmente estáticos).
+Por custo: **baixo <!-- conta:regras-corpus[custo=baixo] -->19<!-- /conta -->** · **médio <!-- conta:regras-corpus[custo=médio] -->17<!-- /conta -->** · **alto <!-- conta:regras-corpus[custo=alto] -->4<!-- /conta -->**.
+Contado por `tools/contar-documentacao.mjs` sobre as colunas EIXO, BALDE e CUSTO das quatro tabelas de regras; a primeira contagem, à mão, foi de 02/09/2026.
 
 ---
 
