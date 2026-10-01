@@ -457,7 +457,7 @@ navio — coincidência de dado, não identidade.
 
 ### `GET /api/alerts` **[F]**
 
-Os 6 alertas, achatados em lista única e ordenados por severidade fixa (A-41),
+Os <!-- conta:alertas -->6<!-- /conta --> alertas, achatados em lista única e ordenados por severidade fixa (A-41),
 depois por ETA2 ascendente com nulos por último.
 
 ```jsonc
@@ -482,7 +482,7 @@ depois por ETA2 ascendente com nulos por último.
 }
 ```
 
-Os seis alertas exigem `category ≠ 'desembaracado'` (A-59). A condição está
+Os <!-- conta:alertas -->6<!-- /conta --> alertas exigem `category ≠ 'desembaracado'` (A-59). A condição está
 explícita apenas em ALE-01 e ALE-02 na especificação, mas vale nos seis: a
 página é **fila de trabalho**, e processo concluído não pede ação.
 

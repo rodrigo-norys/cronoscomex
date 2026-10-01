@@ -193,7 +193,7 @@ Todos com origem **medido**. Ver [perfilamento/RESULTADO.md](perfilamento/RESULT
 
 ## Fechamento
 
-**65 achados** — A-01 a A-65, sem lacunas na numeração — todos com destino.
+**<!-- conta:achados -->65<!-- /conta --> achados** — A-01 a A-65, sem lacunas na numeração — todos com destino.
 Nenhum ficou sem resolução.
 
 | Destino | Quantidade | Quais |

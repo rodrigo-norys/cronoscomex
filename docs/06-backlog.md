@@ -13152,7 +13152,7 @@ Os textos das 34 histórias **do plano original** foram varridos em busca de
 "escolher", "avaliar", "definir", "decidir" e "ver qual". As ocorrências
 encontradas foram eliminadas:
 
-> **A varredura nunca foi refeita.** O backlog tem 114 histórias hoje, e as **82**
+> **A varredura nunca foi refeita.** O backlog tem <!-- conta:historias -->114<!-- /conta --> histórias hoje, e as **<!-- conta:historias-desde[H-33] -->82<!-- /conta -->**
 > posteriores — `H-33` em diante, o que já inclui os épicos `E9` a `E18` — não
 > passaram por ela. *(A redação anterior dizia "`H-33` em diante, mais os épicos
 > `E9` a `E14`", e o "mais" contava o mesmo conjunto duas vezes — foi por isso

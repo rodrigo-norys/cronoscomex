@@ -66,7 +66,7 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 | RF-10 | Página Operacional: tabela de processos com busca sobre os seis campos de texto da planilha (`D-34`). **Abre com todos os processos, na ordem da planilha**; o operador reduz aos ativos por um controle próprio (`D-33`). *(Dizia "e calendário de chegadas por navio" até `D-44`: ele foi para a Página Inicial em `H-98`, para a tabela de 17 colunas ficar com a largura inteira.)* | H-17, H-84, H-89, H-90, H-98, H-100 |
 | RF-11 | Página Clientes: ranking e distribuição por CLT e IMPORTADOR | H-18, H-106 |
 | RF-12 | Página Performance: tempo médio de envio documental por cliente, agente, navio e responsável, com denominador visível | H-19 |
-| RF-13 | Página Alertas: lista dos 6 alertas ordenada por severidade fixa | H-20 |
+| RF-13 | Página Alertas: lista dos <!-- conta:alertas -->6<!-- /conta --> alertas ordenada por severidade fixa | H-20 |
 | RF-14 | Página Histórico: evolução mensal de volume, desembaraçados e Canal Vermelho | H-21, H-107 |
 | RF-15 | Tela de detalhe do processo, exibindo o texto original de STATUS e todos os campos, inclusive os fora de escopo | H-22 |
 | RF-16 | Painel de saúde da ingestão: última leitura, linhas lidas, quarentena e divergências | H-16, H-31 |

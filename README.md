@@ -154,7 +154,7 @@ decisão e não um esquecimento.
 
 A aplicação lê o preenchimento de cada linha e deriva dele três campos —
 responsável, canal aduaneiro e importador fora do RJ. O mapa está em
-[`config/color-map.json`](config/color-map.json), com **9 chaves de cor**
+[`config/color-map.json`](config/color-map.json), com **<!-- conta:chaves-de-cor -->9<!-- /conta --> chaves de cor**
 medidas sobre o arquivo real em 03/08/2026 (`H-01`), cobrindo 100% das linhas.
 
 **Cor nunca infere status:** são campos independentes. E cor desconhecida não
@@ -239,7 +239,7 @@ idênticas**, incluindo as abas fora de escopo.
 
 ## Estado
 
-**113 das 114 histórias** de [`docs/06-backlog.md`](docs/06-backlog.md) estão
+**<!-- conta:historias-concluidas -->113<!-- /conta --> das <!-- conta:historias -->114<!-- /conta --> histórias** de [`docs/06-backlog.md`](docs/06-backlog.md) estão
 concluídas — o bloco `✅ CONCLUÍDA` de cada uma é a fonte, e é lá que o número
 se reconfere, com `grep -c '✅ \*\*CONCLUÍDA' docs/06-backlog.md`. A única
 aberta é `H-101`, o autoajuste de largura de coluna, escrita e **não executada**
@@ -262,7 +262,7 @@ Cadeia de ingestão validada contra o arquivo real em 03/08/2026: 649 linhas,
 
 O plano completo está em [`docs/`](docs/) — requisitos, modelo de dados com as
 tabelas de decisão, contratos de API, backlog executável, matriz de
-rastreabilidade e seis ADRs. Comece por [`docs/README.md`](docs/README.md).
+rastreabilidade e <!-- conta:adrs -->7<!-- /conta --> ADRs. Comece por [`docs/README.md`](docs/README.md).
 
 A auditoria da especificação original ([`docs/01`](docs/01-auditoria-especificacao.md))
 registra os defeitos encontrados nela e como cada um foi resolvido — é o

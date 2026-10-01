@@ -352,11 +352,12 @@ virada de escopo (edição) ou por necessidade operacional.
 | Indicadores da especificação | 22 |
 | Alertas da especificação | 6 |
 | **Linhas na matriz obrigatória** | **28** |
-| ✅ Implementáveis de imediato | **21 indicadores + 6 alertas** |
+| ✅ Ativos | **<!-- conta:indicadores-ativos -->18<!-- /conta --> indicadores + <!-- conta:alertas -->6<!-- /conta --> alertas** |
+| ⏹️ Aposentados | <!-- conta:indicadores-aposentados -->8<!-- /conta --> indicadores |
 | Condicionados a perfilamento | **0** — `H-01` concluída em 03/08/2026 |
 | Bloqueados por lacuna de dado | 1 (IND-21) |
 | Destravados por decisão de arquitetura | 2 (ALE-06 e Página Histórico, via ADR-0005) |
-| Histórias no backlog | **96**, das quais 91 concluídas (o 31 era do plano original de quatro fases; `E13` é o épico retroativo, por `D-26`, e `E14` e `E15` são os abertos). Conte com `grep -c '✅ \*\*CONCLUÍDA' docs/06-backlog.md` |
+| Histórias no backlog | **<!-- conta:historias -->114<!-- /conta -->**, das quais <!-- conta:historias-concluidas -->113<!-- /conta --> concluídas (o 31 era do plano original de quatro fases; `E13` é o épico retroativo, por `D-26`, e `E14` e `E15` são os abertos). Conte com `grep -c '✅ \*\*CONCLUÍDA' docs/06-backlog.md` |
 | Histórias órfãs | **0** — conferido em 08/09/2026, quando `H-82` e `H-83` foram acrescentadas: elas estavam concluídas e fora da matriz, que afirmava "nenhuma órfã" |
 
 **A Fase 0 está concluída.** `H-01` rodou sobre o arquivo real e resolveu as

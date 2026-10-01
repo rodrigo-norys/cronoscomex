@@ -6,7 +6,7 @@
 
 | Camada | Alvo | O que cobre | Ferramenta |
 |---|---|---|---|
-| **Unidade — domínio** | ~70% da suíte · cobertura **≥ 90%** de linhas (RNF-35, alvo não verificado) | Normalização, classificação, mapeamento de cor, os 21 indicadores, os 6 alertas, filtros | Vitest 4.1.10 |
+| **Unidade — domínio** | ~70% da suíte · cobertura **≥ 90%** de linhas (RNF-35, alvo não verificado) | Normalização, classificação, mapeamento de cor, os <!-- conta:indicadores-ativos -->18<!-- /conta --> indicadores ativos, os <!-- conta:alertas -->6<!-- /conta --> alertas, filtros | Vitest 4.1.10 |
 | **Integração — I/O** | ~25% da suíte · cobertura **≥ 80%** (RNF-36, alvo não verificado) | Leitura de `.xlsx`, cirurgia no XML, defesas de escrita, histórico, fila de edições | Vitest + fixtures `.xlsx` |
 | **Ponta a ponta** | ~5% da suíte | Fluxo completo: ler → filtrar → editar → aplicar → reler | Vitest + servidor Fastify em processo |
 | **Interface** | ~25% da suíte — medido em 03/09/2026: o projeto `interface` responde por 460 dos 1842 testes | Casca, navegação, faixa de estado, filtros e as oito páginas | Vitest + Testing Library 16.3.2 + jsdom 30.0.1 |
@@ -18,7 +18,7 @@
 nem limiar nenhum reprova. Isto foi notado na auditoria de tooling de
 04/08/2026, e a decisão de 03/09/2026 foi **corrigir a
 afirmação e não ligar a cobertura**: percentual de linha não verifica o que a
-lacuna de fato pede — que os 44 casos-limite obrigatórios de §1.3 tenham virado
+lacuna de fato pede — que os <!-- conta:casos-obrigatorios -->44<!-- /conta --> casos-limite obrigatórios de §1.3 tenham virado
 teste — e ligar limiar por camada é mudança de código, com o backlog fechado.
 Quem quiser o número roda `npx vitest run --coverage`; ele não é portão.
 
@@ -96,7 +96,7 @@ ano (R-14).
 ### 1.3. Cobertura obrigatória por regra
 
 Toda regra classificatória e todo indicador precisa de teste com dado
-concreto. Os **44 casos** abaixo são obrigatórios e derivam das tabelas de
+concreto. Os **<!-- conta:casos-obrigatorios -->44<!-- /conta --> casos** abaixo são obrigatórios e derivam das tabelas de
 decisão de `03-modelo-dados.md`. A contagem foi verificada sobre a própria
 tabela.
 
