@@ -7,7 +7,7 @@ argument-hint: '[H-NN]'
 
 ## A história, direto do backlog
 
-!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); sed -n "/^### ${H:?informe H-NN} /,/^### H-/p" docs/06-backlog.md | head -n -1`
+!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); sed -n "/^### ${H:?informe H-NN} /,/^##/p" docs/06-backlog.md | head -n -1`
 
 ## Casos-limite obrigatórios atribuídos a esta história
 
@@ -52,7 +52,7 @@ o campo que nenhum arquivo da lista sabe produzir.
 
 ## Identificadores que o contrato cita e o código ainda não tem
 
-!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); sed -n "/^### ${H:?informe H-NN} /,/^### H-/p" docs/06-backlog.md | head -n -1 | grep -oP '\x60[A-Za-z_][A-Za-z0-9_]{3,}\x60|\b[a-z]+[A-Z][A-Za-z0-9]*\b' | sed 's/\x60//g' | sort -u | while read -r id; do grep -rqF -- "$id" src/ 2>/dev/null || echo "  $id"; done`
+!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); sed -n "/^### ${H:?informe H-NN} /,/^##/p" docs/06-backlog.md | head -n -1 | grep -oP '\x60[A-Za-z_][A-Za-z0-9_]{3,}\x60|\b[a-z]+[A-Z][A-Za-z0-9]*\b' | sed 's/\x60//g' | sort -u | while read -r id; do grep -rqF -- "$id" src/ 2>/dev/null || echo "  $id"; done`
 
 Cada nome acima é **uma de duas coisas**, e a diferença decide a fatia:
 
@@ -73,7 +73,7 @@ linha de leitura; identificador ausente que passe despercebido custa a fatia.
 
 ## O contrato da ROTA que esta história serve
 
-!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); B=$(sed -n "/^### ${H:?informe H-NN} /,/^### H-/p" docs/06-backlog.md | head -n -1); { printf '%s' "$B" | grep -oE '/api/[a-z0-9/:-]+'; printf '%s' "$B" | grep -oE 'src/http/routes/[a-z-]+\.ts' | sed 's|.*/|/api/|; s|\.ts$||'; } | sed 's|^\(/api/[a-z0-9-]*\).*|\1|' | sort -u | while read -r r; do awk -v r="$r" '/^##/ { on = index($0, r) } on' docs/05-contratos-api.md; done`
+!`H=$(printf '%s' "$ARGUMENTS" | grep -oE 'H-[0-9]+' | head -1); B=$(sed -n "/^### ${H:?informe H-NN} /,/^##/p" docs/06-backlog.md | head -n -1); { printf '%s' "$B" | grep -oE '/api/[a-z0-9/:-]+'; printf '%s' "$B" | grep -oE 'src/http/routes/[a-z-]+\.ts' | sed 's|.*/|/api/|; s|\.ts$||'; } | sed 's|^\(/api/[a-z0-9-]*\).*|\1|' | sort -u | while read -r r; do awk -v r="$r" '/^##/ { on = index($0, r) } on' docs/05-contratos-api.md; done`
 
 **Confira campo a campo: cada um é derivável do que esta história cria?**
 
