@@ -27,8 +27,14 @@ entradas e a afirmação correta é <!-- conta:indicadores-ativos -->18<!-- /con
 reprova a região que divergir. Os nomes e a regra de cada contador estão em
 `COUNTERS`, no próprio arquivo — contador novo entra lá, com teste. Skill não usa
 região: calcula na invocação, com `` !`comando` `` depois de espaço e sem `$0`,
-`$1`… no comando, que o harness troca pelos argumentos. Registro datado não vira
-região: o número dele está certo na data.
+`$1`… no comando, que o harness troca pelos argumentos. **E só com `grep`, e com
+`tr`, `cut`, `sort` e `grep -c` lendo o pipe:** fora do modo automático, `awk`,
+`sed` lendo arquivo e qualquer `$(…)` ou `${…}` abortam a skill inteira — medido
+em 01/10/2026. Lógica maior vai para script em `tools/`, liberado na skill por
+`allowed-tools`, como `tools/abrir-historia.mjs`. **Todo caminho injetado leva
+`${CLAUDE_PROJECT_DIR}/`**: o relativo resolve contra o diretório da sessão, e com
+ela fora da raiz a skill inteira aborta — medido na mesma data. Registro datado não
+vira região: o número dele está certo na data.
 
 **Medição sobre a planilha** — 649 linhas, <!-- conta:chaves-de-cor -->9<!-- /conta --> chaves de cor, 20,7% de
 `DOCS ENVIADOS`. Teste nenhum confere: a regra inviolável 7 proíbe a suíte de
