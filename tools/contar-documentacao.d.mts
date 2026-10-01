@@ -10,6 +10,7 @@ export interface Source {
   read(path: string): string
   filesIn(dir: string): string[]
   scope: string[]
+  tracked: string[]
 }
 
 export function createSource(root: string): Source

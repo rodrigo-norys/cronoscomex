@@ -50,6 +50,7 @@ export function createSource(root) {
         .filter((path) => dirname(path) === dir && !basename(path).startsWith('.'))
         .map((path) => basename(path)),
     scope: tracked.filter((path) => IN_SCOPE.test(path)),
+    tracked,
   }
 }
 
@@ -84,10 +85,15 @@ function section(text, heading) {
   return lines.slice(start + 1, end === -1 ? undefined : end).join('\n')
 }
 
-function mandatoryCases(source) {
+export function mandatoryCases(source) {
   return section(source.read('docs/08-qualidade-operacao.md'), /^### 1\.3/)
     .split('\n')
     .filter((line) => /^\| (?!Caso-limite \||-)/.test(line))
+}
+
+/** A ultima celula da linha de §1.3 nomeia a historia, ou duas: `| H-04, H-07 |`. */
+export function caseStories(row) {
+  return /\| (H-\d+(?:, H-\d+)*) \|\s*$/.exec(row)?.[1].split(', ') ?? []
 }
 
 function verifySteps(source) {
@@ -142,11 +148,7 @@ export const COUNTERS = {
   riscos: (source) => distinct(source.read('docs/07-plano-entrega.md'), /^#{3,4} (R-\d+)/gm),
   'casos-obrigatorios': (source) => mandatoryCases(source).length,
   'historias-com-caso-obrigatorio': (source) =>
-    new Set(
-      mandatoryCases(source)
-        .map((row) => /\| (H-\d+) \|\s*$/.exec(row)?.[1])
-        .filter(Boolean),
-    ).size,
+    new Set(mandatoryCases(source).flatMap(caseStories)).size,
   achados: (source) =>
     distinct(
       source.read('docs/01-auditoria-especificacao.md'),
