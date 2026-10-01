@@ -21,6 +21,15 @@ indicadores. Diga o **recorte** e **onde o conjunto vive**:
 Sem o recorte a frase não é reconferível, e o erro é invisível: `IND-NN` tem <!-- conta:indicadores-definidos -->27<!-- /conta -->
 entradas e a afirmação correta é <!-- conta:indicadores-ativos -->18<!-- /conta -->. Contar a família daria <!-- conta:indicadores-definidos -->27<!-- /conta --> e estaria errado.
 
+**Se é estado atual, prenda à fonte.** O número vai numa região
+`<!-- conta:NOME -->N<!-- /conta -->`, nunca no início da linha, e
+`node tools/contar-documentacao.mjs --write` o preenche; `tests/repo/contagens.test.ts`
+reprova a região que divergir. Os nomes e a regra de cada contador estão em
+`COUNTERS`, no próprio arquivo — contador novo entra lá, com teste. Skill não usa
+região: calcula na invocação, com `` !`comando` `` depois de espaço e sem `$0`,
+`$1`… no comando, que o harness troca pelos argumentos. Registro datado não vira
+região: o número dele está certo na data.
+
 **Medição sobre a planilha** — 649 linhas, <!-- conta:chaves-de-cor -->9<!-- /conta --> chaves de cor, 20,7% de
 `DOCS ENVIADOS`. Teste nenhum confere: a regra inviolável 7 proíbe a suíte de
 tocar o arquivo real. Cite **fonte e data**:

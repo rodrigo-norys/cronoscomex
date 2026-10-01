@@ -486,6 +486,13 @@ declarado contra a régua do topo, só nas histórias abertas**. Nenhuma
 expectativa é lista fixa: épico, história e requisito novos entram sem tocar no
 arquivo.
 
+**Guarda de contagem:** `tests/repo/contagens.test.ts`, desde 01/10/2026. Número
+de estado atual em `docs/`, `.claude/`, no `CLAUDE.md` e no `README.md` vive numa
+região `conta`, que `tools/contar-documentacao.mjs` confere contra a fonte; a
+reprovação diz o comando que corrige (`--write`). Skill não tem região: calcula o
+número na invocação. Registro datado fica de fora — a régua está em
+`.claude/rules/documentacao.md`.
+
 **`npm run test:strip`** importa os módulos de `src/` sob
 `--experimental-strip-types`, que é como a aplicação roda de verdade. **Nada de
 `parameter property`, `enum`, `namespace` ou decorator em `src/`.**
