@@ -99,8 +99,8 @@ desde 30/09/2026; os cumpridos vivem aqui, com o que cada um ensinou.
 | Skill `novo-indicador`, ao concluir `H-13` | 06/08/2026 | Saiu da repetição real de `H-09` a `H-13`, com o formato estável; o motivo principal foi a omissão sistemática da rota |
 | Subagente `revisor-xml`, antes de `H-24` | 11/08/2026 | `H-24` tinha 11 casos-limite, e errar custa a planilha da empresa. Pagou-se na primeira invocação: reprovou por dois defeitos reais, um gerando XML malformado |
 | Skill `nova-pagina`, ao concluir `H-20` | 07/08/2026 | Cinco páginas com o mesmo padrão e as mesmas omissões; `H-22` foi a primeira conduzida por ela |
-| Conferir se cada rule dispara, aos 20 `session_id` | 04/09/2026 | 28 sessões no log, e as cinco rules dispararam; o hook virou só observabilidade. O log é TSV, e não JSON |
-| Guarda `documentacao.test.ts` e subagente `revisor-docs` | 11/09/2026 | 51 defeitos numa passada de ~490 linhas, um achado a olho depois de a suíte passar. A guarda cobra o computável, o revisor o que não é; ela precisou nascer depois de backlog e `README.md` concordarem |
+| Conferir se cada rule dispara, aos 20 `session_id` | 04/09/2026 | 28 sessões no log, e as cinco rules dispararam — `documentacao` 19 vezes, `comentarios` 13, `operacao-windows` 7, `escrita-xlsx` 4, `distribuicao` 2 —; o hook virou só observabilidade. O log é TSV, e não JSON: a primeira contagem leu 0 por supor o formato errado |
+| Guarda `documentacao.test.ts` e subagente `revisor-docs` | 11/09/2026 | 51 defeitos numa passada de ~490 linhas, um achado a olho depois de a suíte passar. A guarda cobra o computável, o revisor o que não é; ela precisou nascer depois de backlog e `README.md` concordarem. **Foi o primeiro marco registrado DEPOIS do evento** — os quatro anteriores declararam o gatilho antes de ele ser atingido |
 
 ## O que nunca foi verificado
 
