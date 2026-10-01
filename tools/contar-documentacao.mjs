@@ -208,7 +208,9 @@ const insideInlineCode = (line, index) => (line.slice(0, index).match(/`/g) ?? [
  * linha (base 1), e os erros de estrutura — o que impede saber o que a regiao diz.
  */
 export function scanRegions(text) {
-  const lines = text.split('\n')
+  // O checkout do Windows converte para CRLF, e o `\r` final quebrava o `$` dos marcadores
+  // de bloco: o `verify-windows` do PR #153 reprovou a arvore de `04-arquitetura.md`.
+  const lines = text.split('\n').map((line) => line.replace(/\r$/, ''))
   const counts = []
   const checks = []
   const errors = []

@@ -253,4 +253,34 @@ describe('inspect e rewrite, sobre o repositorio temporario', () => {
     expect(rewrite(root)).toEqual([])
     expect(readFileSync(join(root, 'docs/04-arquitetura.md'), 'utf-8')).toBe(tree)
   })
+
+  it('CRLF, como no checkout do Windows: a regiao confere vale, e o --write preserva o CRLF', () => {
+    const crlf = (lines: string[]) => lines.join('\r\n')
+    write('src/domain/a.ts', '')
+    write(
+      'docs/04-arquitetura.md',
+      crlf([
+        '<!-- confere:arvore[src/domain] -->',
+        '```',
+        'repo/',
+        '├─ src/',
+        '│  └─ domain/',
+        '│     └─ a.ts',
+        '```',
+        '<!-- /confere -->',
+        '',
+      ]),
+    )
+    write('README.md', crlf(['tem <!-- conta:adrs -->1<!-- /conta --> ADRs', '']))
+    track()
+
+    expect(inspect(root)).toEqual({
+      divergences: [{ file: 'README.md', line: 1, name: 'adrs', written: '1', actual: '2' }],
+      errors: [],
+    })
+    rewrite(root)
+    expect(readFileSync(join(root, 'README.md'), 'utf-8')).toBe(
+      crlf(['tem <!-- conta:adrs -->2<!-- /conta --> ADRs', '']),
+    )
+  })
 })
