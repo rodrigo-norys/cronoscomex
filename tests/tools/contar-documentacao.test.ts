@@ -97,6 +97,14 @@ describe('os contadores, sobre fonte com valor concreto', () => {
     expect(COUNTERS.adrs(createSource(root))).toBe(2)
   })
 
+  it('rules sao os .md de .claude/rules, pela mesma regra do git', () => {
+    write('.claude/rules/comentarios.md', '')
+    write('.claude/rules/microcopia.md', '')
+    write('.claude/rules/LEIA.txt', '')
+    track()
+    expect(COUNTERS.rules(createSource(root))).toBe(2)
+  })
+
   it('regra do corpus filtra pelo comeco do valor, e as duas variantes de EXECUCAO somam', () => {
     write(
       'docs/estilizacao/corpus-estilo.md',
@@ -130,6 +138,7 @@ describe('os contadores, sobre fonte com valor concreto', () => {
     const source = createSource(root)
     expect(COUNTERS['indicadores-definidos'](source)).toBe(4)
     expect(COUNTERS['indicadores-ativos'](source)).toBe(2)
+    expect(COUNTERS['indicadores-aposentados'](source)).toBe(1)
   })
 })
 

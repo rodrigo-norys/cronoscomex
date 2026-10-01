@@ -32,9 +32,11 @@ export const COUNTERS: {
   'regras-corpus-faixa': Counter
   'indicadores-definidos': Counter
   'indicadores-ativos': Counter
+  'indicadores-aposentados': Counter
   alertas: Counter
   'chaves-de-cor': Counter
   adrs: Counter
+  rules: Counter
   'pendencias-abertas': Counter
   'arvore-src': Counter
 }

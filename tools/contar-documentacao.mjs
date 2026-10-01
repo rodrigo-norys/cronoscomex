@@ -165,9 +165,12 @@ export const COUNTERS = {
   'indicadores-definidos': (source) => indicatorRows(source).length,
   'indicadores-ativos': (source) =>
     indicatorRows(source).filter((row) => !/Bloqueado|Aposentado/.test(row.status)).length,
+  'indicadores-aposentados': (source) =>
+    indicatorRows(source).filter((row) => /Aposentado/.test(row.status)).length,
   alertas: (source) => distinct(source.read(TRACEABILITY), /^\| (ALE-\d+) \|/gm),
   'chaves-de-cor': (source) => JSON.parse(source.read('config/color-map.json')).entries.length,
   adrs: (source) => source.filesIn('docs/adr').filter((name) => name.endsWith('.md')).length,
+  rules: (source) => source.filesIn('.claude/rules').filter((name) => name.endsWith('.md')).length,
   'pendencias-abertas': (source) =>
     distinct(
       section(source.read('CLAUDE.md'), /^### Pendências abertas/),
