@@ -116,14 +116,14 @@ describe('os contadores, sobre fonte com valor concreto', () => {
     expect(COUNTERS['regras-corpus-faixa'](source, 'eixo=A')).toBe('A01–A02')
   })
 
-  it('indicador ativo exclui bloqueado e aposentado, e a linha sem | final ainda conta', () => {
+  it('indicador ativo le a coluna de status, e nao a nota que algumas linhas trazem depois dela', () => {
     write(
       'docs/09-rastreabilidade.md',
       [
         '| IND-01 | a | b | c | H-09 | t | ✅ **Entregue** |',
         '| IND-03 | a | b | c | H-09 | t | ⏹️ **Aposentado** em D-49 — substituído por IND-23',
+        '| IND-15 | a | b | c | H-12 | t | ✅ **Entregue** | *(**APOSENTADO** so na nota)*',
         '| IND-21 | a | b | c | — | — | **Bloqueado por lacuna.** |',
-        '| IND-23 | a | b | c | H-102 | t | ✅ **Entregue** em 18/09/2026',
       ].join('\n'),
     )
     track()

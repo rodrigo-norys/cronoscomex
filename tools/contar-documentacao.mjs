@@ -120,10 +120,15 @@ function styleRules(source, filter) {
   return rules.filter((rule) => rule[field].startsWith(value))
 }
 
+/**
+ * Colunas da §1: #, Indicador, Campos, Regra, Historias, Testes, Status. O status e a
+ * setima, e nao a ultima: oito linhas trazem depois dele uma nota sem `|` final, e a
+ * nota do IND-15 diz "APOSENTADO" enquanto a do IND-14 diz "REMOVIDO da tela".
+ */
 function indicatorRows(source) {
   return [...source.read(TRACEABILITY).matchAll(/^\| (IND-\d+) \|(.*)$/gm)].map(([, id, rest]) => ({
     id,
-    status: cellsOf(rest).at(-1),
+    status: cellsOf(rest)[5] ?? '',
   }))
 }
 
