@@ -33,6 +33,42 @@ Reconferir é obrigação de quem edita, não de quem lê depois. **Se não der 
 reconferir em um comando, a frase está mal escrita** — conserte a frase, não
 só o número.
 
+## Ler `docs/06-backlog.md` pela estrutura, não pela linha
+
+São 13.173 linhas, e o `Read` corta em 2.000. Medido em 30/09/2026, sobre as 40
+transcrições guardadas do projeto: o maior custo de leitura dele é a **janela
+fixa** — 186 chamadas de `sed -n 'X,Yp'`, de 200 a 340 linhas em volta de um
+`grep -n`, somando 538 mil caracteres. Os títulos são estáveis — `###` abre
+história, `##` abre épico, e os rótulos em negrito se repetem em toda história —,
+e os três recortes abaixo seguem por eles.
+
+Em que história um termo aparece, com a contagem, sem abrir nenhuma:
+
+```bash
+awk -v t='TERMO' '/^##/{h=$0} index($0,t){c[h]++; if(!(h in f)) f[h]=NR}
+  END{for(k in c) printf "%5d %2dx %s\n", f[k], c[k], k}' docs/06-backlog.md | sort -n
+```
+
+A história inteira — até `^##`, e não `^### H-`, para a última de um épico não
+levar junto a abertura do seguinte:
+
+```bash
+sed -n '/^### H-NN /,/^##/p' docs/06-backlog.md | head -n -1
+```
+
+Só uma seção dela — `Casos-limite`, `Critérios de aceite`, `Contrato`,
+`Arquivos`:
+
+```bash
+sed -n '/^### H-NN /,/^##/p' docs/06-backlog.md \
+  | sed -n '/^\*\*Casos-limite/,/^\*\*[A-Z][^*]*:\*\*/p' | head -n -1
+```
+
+Na mesma data, a `H-98` inteira sai com 2.353 caracteres contra 14.717 da
+janela de ±150 linhas, e os casos-limite da `H-25` com 529 contra 8.778 da
+história — o bloco `✅ CONCLUÍDA` vem **antes** do contrato, e nela é 5.875
+deles.
+
 ## O `revisor-docs` existe, e quem o invoca é o dono
 
 **Não há gatilho, e a ausência é decisão de 11/09/2026, não esquecimento.**
