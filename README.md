@@ -1,4 +1,4 @@
-# CronosComex
+# 🚢 CronosComex
 
 Painel operacional de desembaraço aduaneiro. Lê uma planilha `.xlsx` local,
 calcula indicadores e grava de volta no arquivo **sob comando explícito**.
@@ -7,7 +7,7 @@ Sem banco de dados, sem nuvem, sem autenticação — a planilha **é** o banco.
 
 ---
 
-## Por que assim
+## 🎯 Por que assim
 
 A operação já roda sobre uma planilha compartilhada, editada por fora o dia
 inteiro e sincronizada por uma pasta de nuvem. Substituí-la por um sistema
@@ -17,163 +17,64 @@ está em [ADR-0001](docs/adr/0001-planilha-como-fonte-da-verdade.md) e
 
 Três restrições moldam todo o resto:
 
-- **A planilha é a referência prioritária.** Quando a especificação e o arquivo
+- 📑 **A planilha é a referência prioritária.** Quando a especificação e o arquivo
   divergem, o arquivo vence — e a divergência vira achado documentado, nunca
   correção silenciosa.
-- **Nada é adivinhado.** Cor não reconhecida não vira a cor mais próxima; data
+- 🔍 **Nada é adivinhado.** Cor não reconhecida não vira a cor mais próxima; data
   sem ano não recebe ano inventado. Buraco visível é melhor que valor errado
   invisível.
-- **Nada é descartado em silêncio.** Toda linha não interpretada vai para um
+- 🧾 **Nada é descartado em silêncio.** Toda linha não interpretada vai para um
   relatório de quarentena com motivo estruturado.
 
-## Stack
+## 🧰 Stack
 
 Node 22 · TypeScript · Fastify · fflate (leitura e escrita cirúrgica no zip) ·
 chokidar · React · Vite · Tailwind · Recharts · Vitest · Biome
 
 ---
 
-## Instalação
+## 📦 Instalação
 
-O destinatário desta seção é quem vai **usar** a aplicação, não desenvolvê-la.
-
-### 1. Escolha a pasta — e não é dentro do OneDrive
-
-Extraia o projeto em uma pasta **fora** de qualquer pasta sincronizada com a
-nuvem. Por exemplo, `C:\CronosComex`.
-
-Isto não é preferência. A aplicação grava em `data/`, **relativo à pasta do
-projeto**: histórico de leituras, relatório de quarentena e — o que importa
-aqui — uma cópia integral do `.xlsx` antes de cada escrita, em `data/backups/`.
-Com o projeto dentro do OneDrive, cada backup vira um upload da planilha
-inteira, e a pasta de segurança local passa a replicar na nuvem exatamente o
-dado que ela existe para proteger.
-
-**A planilha continua no OneDrive** — é o ponto da aplicação. O que fica fora é
-o projeto.
-
-### 2. Instale o Node 22
-
-Baixe o **Node.js 22 LTS** em [nodejs.org](https://nodejs.org) e instale.
-
-A aplicação executa TypeScript diretamente, com `--experimental-strip-types`,
-que só existe a partir do Node 22. Versão anterior falha com `bad option`, que
-não diz o que fazer.
-
-### 3. Compile a interface — ou deixe o atalho fazer
-
-Se você tem um terminal à mão, na pasta do projeto, uma vez:
-
-```bash
-npm ci
-npm run build
-```
-
-**Esquecer este passo não trava a instalação.** `dist/` está no `.gitignore`,
-então numa extração nova a interface nunca vem compilada — e por isso o atalho
-do passo 5 **oferece compilar por você**, com confirmação, quando encontra a
-pasta ausente. Ele só baixa as dependências se `node_modules` também faltar, o
-que preserva a máquina que já tem tudo e está sem internet.
-
-### 4. Aponte para a planilha — pela tela
-
-**Não é preciso editar arquivo nenhum.** Siga para o passo 5, inicie a
-aplicação, e ela abre na tela de configuração pedindo o caminho da planilha:
-cole o caminho completo do arquivo na pasta sincronizada e clique em *Carregar
-esta planilha*. Isso é pedido **uma vez** — o caminho fica salvo, e nas
-aberturas seguintes a leitura acontece sozinha.
-
-Para trocar de arquivo depois — na virada de ano, por exemplo — a mesma tela
-está em `/configuracao`, alcançável pelo painel de saúde da Página Inicial. A
-troca vale de imediato, sem reiniciar.
-
-**`config/app.json` não precisa existir antes.** Ele é criado sozinho quando
-você salva o caminho na tela, já com os demais campos nos valores padrão. O
-atalho avisa que o arquivo ainda não existe e sobe assim mesmo — até `H-35` ele
-parava aqui, mandando copiar um arquivo e editar JSON à mão.
-
-A própria tela mostra **o que está configurado**: os oito campos, o valor em uso
-e a origem de cada um — se veio do arquivo ou se é o padrão aplicado. Para o
-caminho da planilha ela responde quatro coisas separadamente: está informado,
-existe no disco, pode ser lido, e a aba foi encontrada na última leitura.
-
-<details>
-<summary>Se preferir configurar por arquivo</summary>
-
-```bash
-copy config\app.json.exemplo config\app.json
-```
-
-Abra `config/app.json` e ajuste **`workbookPath`** para o caminho completo da
-planilha — algo como
-`C:\Users\<usuário>\OneDrive - <organização>\<pasta>\<arquivo>.xlsx`. As barras
-invertidas precisam ser dobradas, como no arquivo de exemplo.
-
-O arquivo está no `.gitignore`: o caminho revela a estrutura de pastas e o nome
-da organização.
-
-</details>
-
-Os demais campos têm padrão utilizável. Eles continuam sendo editados no arquivo
-— a tela configura **apenas** o caminho da planilha, e mostra os outros. Dois
-merecem atenção:
-
-| Campo | O que muda |
-|---|---|
-| `port` | A porta do painel. Altere se a `5173` já estiver em uso na máquina |
-| `stalledDaysThreshold` | Dias sem mudança de categoria para o alerta *Processos parados*. O valor `15` é **premissa**, não regra da especificação (achado A-32) |
-
-### 5. Inicie
-
-Duplo clique em **`scripts\iniciar.cmd`**.
-
-Ele confere **quatro coisas, e só quatro** — Node instalado, Node 22 ou maior, a
-interface compilada, e o `config\app.json` sendo JSON válido, se ele existir —,
-sobe o servidor e abre o navegador em `http://127.0.0.1:5173`. **Fechar a janela
-encerra a aplicação** — é assim que se desliga.
-
-São quatro porque são as únicas anteriores ao navegador por natureza: sem elas
-não há servidor, e sem servidor não há tela para reportar coisa alguma — a
-última porque um arquivo de configuração malformado mata o processo antes de ele
-escutar. Tudo o mais — o caminho da planilha, os limiares — é resolvido no
-painel. E cada uma das quatro traz a receita completa: o que baixar, de onde, o
-que fazer, e que basta executar o atalho de novo depois.
-
-Um caso continua parando a partida de propósito: `config/app.json` **existir e
-estar corrompido**. Aplicar os padrões por cima de uma configuração que existe
-trocaria uma falha visível por uma aplicação se comportando errado em silêncio.
-A mensagem ensina a apagar o arquivo pelo Explorer, e a tela o recria.
-
-O servidor escuta **exclusivamente** em `127.0.0.1` (RNF-29). Nenhuma outra
-máquina da rede alcança o painel, e é isso que torna a ausência de senha uma
-decisão e não um esquecimento.
+> [!NOTE]
+> Quem vai **usar** a aplicação recebe a branch `distribuicao`, e o passo a passo
+> de instalação — escrito para quem não é técnico — está no `README.md` dela.
+> Este arquivo é para quem desenvolve: o ambiente está em
+> [Desenvolvimento](#desenvolvimento).
 
 ---
 
-## As cores da planilha
+## 🎨 As cores da planilha
 
-A aplicação lê o preenchimento de cada linha e deriva dele três campos —
-responsável, canal aduaneiro e importador fora do RJ. O mapa está em
+A aplicação lê o preenchimento de cada linha e deriva dele três campos — a cor
+de responsável, o canal aduaneiro e o importador fora do RJ. O mapa está em
 [`config/color-map.json`](config/color-map.json), com **<!-- conta:chaves-de-cor -->9<!-- /conta --> chaves de cor**
 medidas sobre o arquivo real em 03/08/2026 (`H-01`), cobrindo 100% das linhas.
+O **responsável** não vem da cor desde `H-93` (`D-40`): vem do mapa de equipe,
+pelo importador.
 
-**Cor nunca infere status:** são campos independentes. E cor desconhecida não
-vira a mais próxima — a linha vai para a quarentena com o motivo, visível em
-`GET /api/quarantine`.
+> [!IMPORTANT]
+> **Cor nunca infere a categoria:** a coluna STATUS e a cor são campos
+> independentes. Três cartões da Página Início contam pela cor, de propósito
+> (`D-49` e `D-54`), e por isso podem divergir da contagem por categoria. E cor
+> desconhecida não vira a mais próxima — a linha vai para a quarentena com o
+> motivo, visível em `GET /api/quarantine`.
 
-Refaça o mapa quando:
+🔁 Refaça o mapa quando:
 
 - **a planilha ganhar a aba do ano seguinte** — o esquema muda entre anos, e as
   abas `2025` e `2024` são a prova;
 - **aparecerem linhas na quarentena por cor não reconhecida**.
 
 O procedimento está em [`docs/perfilamento/RESULTADO.md`](docs/perfilamento/RESULTADO.md),
-seção 5. A saída bruta do perfilador traz amostras de célula das quatro abas —
-**grave em pasta temporária e sanitize antes de mover para o projeto**.
+seção 5.
+
+> [!WARNING]
+> A saída bruta do perfilador traz amostras de célula das quatro abas —
+> **grave em pasta temporária e sanitize antes de mover para o projeto**.
 
 ---
 
-## Backup e restauração
+## 💾 Backup e restauração
 
 Antes de **cada** escrita na planilha, a aplicação copia o arquivo inteiro para
 `data/backups/`, com o nome `planilha-AAAAMMDD-HHMMSS.xlsx` — carimbo no
@@ -182,15 +83,18 @@ horário local da máquina, que é o relógio de quem vai escolher a cópia.
 Ficam guardados os **30 mais recentes** ou os dos **últimos 90 dias**: uma cópia
 sobrevive se passar em **qualquer um** dos dois critérios (RNF-21).
 
-**Restauração automática.** Se a validação posterior à escrita falhar, a
+✅ **Restauração automática.** Se a validação posterior à escrita falhar, a
 aplicação restaura o backup sozinha e informa o caminho na resposta e no log.
 Não é presumido: `H-25` testa a falha e a restauração no mesmo caso.
 
-**Restauração manual** — para desfazer uma escrita correta, mas indesejada:
+🖐️ **Restauração manual** — para desfazer uma escrita correta, mas indesejada:
+
+> [!WARNING]
+> **Pause a sincronização do OneDrive** antes de trocar o arquivo. Substituí-lo
+> com a sincronização ativa pode gerar cópia de conflito no meio da operação.
 
 1. Feche o Excel, se a planilha estiver aberta.
-2. **Pause a sincronização do OneDrive.** Substituir o arquivo com a
-   sincronização ativa pode gerar cópia de conflito no meio da operação.
+2. **Pause a sincronização do OneDrive.**
 3. Em `data/backups/`, escolha o arquivo pelo carimbo — o mais recente **antes**
    da escrita indesejada.
 4. Copie-o por cima da planilha, mantendo o nome original dela.
@@ -200,19 +104,24 @@ Se a aplicação estiver no ar, ela detecta a troca do arquivo e relê sozinha.
 
 ---
 
-## Desenvolvimento
+<a id="desenvolvimento"></a>
+
+## 🛠️ Desenvolvimento
 
 ```bash
 nvm use                                       # Node 22, conforme .nvmrc
 npm ci
-cp config/app.json.exemplo config/app.json    # aponte para a sua planilha
 npm run dev                                   # servidor em 5173, interface em 5174
 ```
 
-`npm run verify` é o portão obrigatório: guarda de dados sensíveis +
-`--experimental-strip-types` + lint + typecheck + testes + build.
+O caminho da planilha se aponta pela tela, em `/configuracao`, que cria o
+`config/app.json`; os demais campos estão documentados em `config/app.json.exemplo`.
 
-## Arquitetura
+> [!IMPORTANT]
+> `npm run verify` é o portão obrigatório. Os passos e a ordem dele estão em
+> `scripts.verify`, no `package.json`, e só lá.
+
+## 🏗️ Arquitetura
 
 ```
 src/domain/    funções puras — indicadores, alertas, classificação. Sem I/O
@@ -227,17 +136,24 @@ convenção:** o Biome tem uma regra de fronteira que quebra a build se a
 dependência for introduzida. O resultado é um núcleo de regra de negócio
 testável sem servidor e sem arquivo.
 
-## Escrita no arquivo
+🔒 O servidor escuta **exclusivamente** em `127.0.0.1` (RNF-29). Nenhuma outra
+máquina da rede alcança o painel, e é isso que torna a ausência de senha uma
+decisão e não um esquecimento.
 
-Reserializar a planilha com uma biblioteca de `.xlsx` perde formatação
-condicional e validações de dados silenciosamente. Por isso a escrita é
-**cirúrgica no XML**, entrada por entrada do zip — ver
-[ADR-0004](docs/adr/0004-escrita-cirurgica-xlsx.md).
+## ✍️ Escrita no arquivo
 
-Medido: alterar uma célula deixa **28 das 30 entradas do arquivo byte a byte
-idênticas**, incluindo as abas fora de escopo.
+> [!CAUTION]
+> Reserializar a planilha com uma biblioteca de `.xlsx` perde formatação
+> condicional e validações de dados silenciosamente. Por isso a escrita é
+> **cirúrgica no XML**, entrada por entrada do zip — ver
+> [ADR-0004](docs/adr/0004-escrita-cirurgica-xlsx.md).
 
-## Estado
+📏 Medido no ensaio de 17/09/2026 sobre a planilha real (`E-10`, em
+[`docs/ensaio-planilha/RESULTADO.md`](docs/ensaio-planilha/RESULTADO.md)): editar
+uma célula de texto deixa **28 das 30 entradas do arquivo byte a byte idênticas**,
+incluindo as abas fora de escopo.
+
+## 📊 Estado
 
 **<!-- conta:historias-concluidas -->113<!-- /conta --> das <!-- conta:historias -->114<!-- /conta --> histórias** de [`docs/06-backlog.md`](docs/06-backlog.md) estão
 concluídas — o bloco `✅ CONCLUÍDA` de cada uma é a fonte, e é lá que o número
@@ -245,20 +161,17 @@ se reconfere, com `grep -c '✅ \*\*CONCLUÍDA' docs/06-backlog.md`. A única
 aberta é `H-101`, o autoajuste de largura de coluna, escrita e **não executada**
 por escolha do usuário.
 
-*(Esta frase dizia `H-96` até 17/09/2026, e estava errada desde 16/09: `H-101`
-nasceu aberta com `E16` e a frase não acompanhou. `H-96` foi reaberta por ordem
-do usuário e fechou em 17/09.)*
-
 O plano original tinha 34 histórias; as demais nasceram do uso, e cada épico
 posterior explica no próprio cabeçalho de onde veio.
 
 Todos os indicadores e alertas em escopo estão entregues, com uma exceção
 declarada: `IND-21` depende de uma coluna que a planilha não tem (decisão D-04).
 
-Cadeia de ingestão validada contra o arquivo real em 03/08/2026: 649 linhas,
-649 aceitas, **quarentena 0%**, parse em 111–144 ms.
+A primeira validação da cadeia de ingestão contra o arquivo real, em 03/08/2026
+(`H-01`), leu 649 linhas e aceitou as 649 — **quarentena 0%** —, com parse em
+111–144 ms.
 
-## Documentação
+## 📚 Documentação
 
 O plano completo está em [`docs/`](docs/) — requisitos, modelo de dados com as
 tabelas de decisão, contratos de API, backlog executável, matriz de
