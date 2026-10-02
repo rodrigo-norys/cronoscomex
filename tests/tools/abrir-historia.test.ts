@@ -30,7 +30,7 @@ const BACKLOG = [
   '### H-10 — Dez',
   '',
   'Serve `GET /api/indicators` e mexe em `src/http/routes/alerts.ts`.',
-  'Cria `fooBar` e usa `existingName`.',
+  'Cria `fooBar` e usa `existingName` e `useScreenThing`.',
   '',
   '### H-101 — Cento e um',
   '',
@@ -81,6 +81,7 @@ beforeEach(() => {
     ].join('\n'),
   )
   write('src/domain/a.ts', 'export const existingName = 1\n')
+  write('web/src/hooks/useScreenThing.ts', 'export function useScreenThing() {}\n')
   execFileSync('git', ['add', '-A'], { cwd: root })
 })
 
@@ -118,7 +119,7 @@ describe('render — as secoes da skill', () => {
     ])
   })
 
-  it('identificador citado que o codigo nao tem aparece; o que tem, nao', () => {
+  it('identificador citado que o codigo nao tem aparece; o que tem, em src/ ou em web/src/, nao', () => {
     expect(render(root, 'identificadores', ['H-10'])).toBe('  fooBar')
   })
 

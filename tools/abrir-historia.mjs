@@ -108,8 +108,10 @@ export function render(root, section, args) {
         .filter((line) => mentions(line, id))
         .join('\n')
     case 'identificadores': {
+      // As duas arvores: buscando so em `src/`, todo nome ja existente da interface saia como
+      // ausente — na H-101, a unica aberta em 01/10/2026, os tres listados existiam em `web/src/`.
       const code = source.tracked
-        .filter((path) => path.startsWith('src/'))
+        .filter((path) => path.startsWith('src/') || path.startsWith('web/src/'))
         .map((path) => source.read(path))
         .join('\n')
       return citedIdentifiers(story)
