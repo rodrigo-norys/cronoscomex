@@ -6,7 +6,7 @@
 
 | Camada | Alvo | O que cobre | Ferramenta |
 |---|---|---|---|
-| **Unidade — domínio** | ~70% da suíte · cobertura **≥ 90%** de linhas (RNF-35, alvo não verificado) | Normalização, classificação, mapeamento de cor, os <!-- conta:indicadores-ativos -->18<!-- /conta --> indicadores ativos, os <!-- conta:alertas -->6<!-- /conta --> alertas, filtros | Vitest 4.1.11 |
+| **Unidade — domínio** | ~70% da suíte · cobertura **≥ 90%** de linhas (RNF-35, alvo não verificado) | Normalização, classificação, mapeamento de cor, os <!-- conta:indicadores-ativos -->18<!-- /conta --> indicadores ativos, os <!-- conta:alertas -->6<!-- /conta --> alertas, filtros | Vitest <!-- conta:versao[vitest] -->4.1.11<!-- /conta --> |
 | **Integração — I/O** | ~25% da suíte · cobertura **≥ 80%** (RNF-36, alvo não verificado) | Leitura de `.xlsx`, cirurgia no XML, defesas de escrita, histórico, fila de edições | Vitest + fixtures `.xlsx` |
 | **Ponta a ponta** | ~5% da suíte | Fluxo completo: ler → filtrar → editar → aplicar → reler | Vitest + servidor Fastify em processo |
 | **Interface** | ~25% da suíte — medido em 03/09/2026: o projeto `interface` responde por 460 dos 1842 testes | Casca, navegação, faixa de estado, filtros e as oito páginas | Vitest + Testing Library 16.3.2 + jsdom 30.0.1 |

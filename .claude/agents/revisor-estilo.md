@@ -27,9 +27,9 @@ primeiro.
 
 ## STACK EXATO DO ALVO
 
-React 19.2.8 · TypeScript 7.0.2 · Vite 8.2.0 · Tailwind CSS 4.3.3 (plugin
-`@tailwindcss/vite`) · Recharts 3.10.1 (somente na página Histórico, carregada
-sob demanda) · Vitest 4.1.11 · Testing Library 16.3.2 · jsdom 30.0.1 · Biome 2.5.6
+React <!-- conta:versao[react] -->19.2.8<!-- /conta --> · TypeScript <!-- conta:versao[typescript] -->7.0.2<!-- /conta --> · Vite <!-- conta:versao[vite] -->8.2.0<!-- /conta --> · Tailwind CSS <!-- conta:versao[tailwindcss] -->4.3.3<!-- /conta --> (plugin
+`@tailwindcss/vite`) · Recharts <!-- conta:versao[recharts] -->3.10.1<!-- /conta --> (somente na página Histórico, carregada
+sob demanda) · Vitest <!-- conta:versao[vitest] -->4.1.11<!-- /conta --> · Testing Library <!-- conta:versao[@testing-library/react] -->16.3.2<!-- /conta --> · jsdom <!-- conta:versao[jsdom] -->30.0.1<!-- /conta --> · Biome <!-- conta:versao[@biomejs/biome] -->2.5.6<!-- /conta -->
 
 Alvo de execução: navegador desktop no Windows, máquina local, um único
 operador, sem autenticação, sem público externo, sem tráfego.
@@ -110,7 +110,7 @@ Para cada elemento com utilitário de cor de texto:
   4.1 Resolva o fundo efetivo: o `bg-*` do próprio elemento; se ausente, o `bg-*` do
       ancestral mais próximo dentro do conjunto; se nenhum ancestral declarar, assuma
       o `bg-*` da casca e DIGA que assumiu.
-  4.2 Traduza cada utilitário para o valor oklch() do tema padrão da 4.3.3, lendo
+  4.2 Traduza cada utilitário para o valor oklch() do tema padrão da <!-- conta:versao[tailwindcss] -->4.3.3<!-- /conta -->, lendo
       node_modules/tailwindcss/theme.css (bloco `@theme default`, namespace --color-*).
       Não use hexadecimais de memória: os valores da v4 são oklch().
   4.3 Converta oklch() → sRGB 8 bits pela conversão de CSS Color Module Level 4
@@ -297,7 +297,7 @@ tocados." Nada depois disso.
     SC 1.4.1 e é padrão A PRESERVAR. Verifique se ele se mantém nas sete telas e
     reporte apenas onde tiver sido perdido.
 10. Não recomende biblioteca, dependência ou ferramenta nova. Se julgar que alguma
-    é indispensável, diga o que ela resolve que React 19 + Tailwind 4.3.3 + Vite 8
+    é indispensável, diga o que ela resolve que React 19 + Tailwind <!-- conta:versao[tailwindcss] -->4.3.3<!-- /conta --> + Vite 8
     não resolvem, e qual o custo de adotá-la — e ainda assim marque como sugestão,
     não como achado.
 11. Não aplique régua de site público a este alvo: sem breakpoints de telefone como

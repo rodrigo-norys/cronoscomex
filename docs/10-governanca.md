@@ -116,7 +116,7 @@ texto antigo sem deixar rastro.
 - [ ] O protocolo de fatia (`CLAUDE.md`) foi apresentado e aprovado
 - [ ] Todos os critérios de aceite passam
 - [ ] Todos os casos-limite da história têm teste com **valor concreto**
-- [ ] `npm run verify` passa — os sete passos: `test:hooks`, `test:dados`, `test:strip`, lint, typecheck, testes, build
+- [ ] `npm run verify` passa — os <!-- conta:passos-verify -->8<!-- /conta --> passos: <!-- conta:passos-verify-lista -->`test:portas`, `test:hooks`, `test:dados`, `test:strip`, `lint`, `typecheck`, `test`, `build`<!-- /conta -->
 - [ ] Nenhuma regra de negócio fora de `src/domain/`
 - [ ] Nenhum teste aponta para a planilha real
 - [ ] Conferida contra a **planilha real** por `tools/carregar-planilha.mjs`, e o
