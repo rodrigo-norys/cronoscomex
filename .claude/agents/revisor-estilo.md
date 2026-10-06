@@ -29,7 +29,7 @@ primeiro.
 
 React 19.2.8 · TypeScript 7.0.2 · Vite 8.2.0 · Tailwind CSS 4.3.3 (plugin
 `@tailwindcss/vite`) · Recharts 3.10.1 (somente na página Histórico, carregada
-sob demanda) · Vitest 4.1.10 · Testing Library 16.3.2 · jsdom 30.0.1 · Biome 2.5.6
+sob demanda) · Vitest 4.1.11 · Testing Library 16.3.2 · jsdom 30.0.1 · Biome 2.5.6
 
 Alvo de execução: navegador desktop no Windows, máquina local, um único
 operador, sem autenticação, sem público externo, sem tráfego.

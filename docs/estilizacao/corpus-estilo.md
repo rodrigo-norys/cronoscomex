@@ -1,6 +1,6 @@
 # Corpus de estilização verificável — painel operacional interno
 
-**Stack alvo:** React 19.2.8 · TypeScript 7.0.2 · Vite 8.2.0 · Tailwind CSS 4.3.3 (`@tailwindcss/vite`) · Recharts 3.10.1 · Vitest 4.1.10 · Testing Library 16.3.2 · jsdom 30.0.1 · Biome 2.5.6
+**Stack alvo:** React 19.2.8 · TypeScript 7.0.2 · Vite 8.2.0 · Tailwind CSS 4.3.3 (`@tailwindcss/vite`) · Recharts 3.10.1 · Vitest 4.1.11 · Testing Library 16.3.2 · jsdom 30.0.1 · Biome 2.5.6
 **Data de todas as consultas:** 2026-08-18
 **Escopo:** casca comum (cabeçalho, abas, barra de filtros globais, faixa de estado) + 7 páginas (Início, Operacional, Clientes, Desempenho, Alertas, Histórico, Detalhe do Processo)
 
