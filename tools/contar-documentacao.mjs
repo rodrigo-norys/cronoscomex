@@ -23,12 +23,29 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
  * da linha deixa de ser markdown. Marcador dentro de bloco cercado ou entre crases e
  * ignorado — e texto que documenta a sintaxe, e o GitHub o mostra literalmente.
  *
- * O que NAO faz: achar numero fora de regiao; reescrever regiao `confere`; contar
- * sobre codigo de `web/src/` — as tres ficaram fora por decisao de 01/10/2026.
+ * `--nuas` aponta o numero com unidade escrito FORA de regiao — "sete passos", "18
+ * epicos" — nas linhas que o diff contra a base acrescentou. So avisa, e nunca reprova:
+ * medido em 06/10/2026, a varredura completa achou 260 numeros, e a classificacao a mao
+ * deu ~47% de falso positivo mesmo depois das regras estruturais abaixo. No diff de
+ * seis PRs recentes foram de 0 a 13 avisos, ~6 em 10 verdadeiros — e o #150 teria
+ * apontado as copias de "114 historias" que o #153 precisou prender em regiao depois.
+ * O que NAO e apontado, por estrutura, sem marcacao no documento: bloco cercado,
+ * titulo, regiao, trecho entre crases, linha com data ou "medido", linha de matriz
+ * `✅ **Concluida`, item de indice terminado em `✅`, decisao `| D-NN`, "plano
+ * original", limite de formato ("no maximo 3 linhas"), historia fechada inteira e
+ * epico com todas as historias fechadas, e os arquivos de registro. A
+ * `00-visao-escopo.md` NAO e registro: mistura a especificacao com o escopo vigente.
+ *
+ * O que NAO faz: reescrever regiao `confere`; contar sobre codigo de `web/src/` — as
+ * duas ficaram fora por decisao de 01/10/2026; avisar pela idade de uma medicao da
+ * planilha — um terco das afirmacoes nao tem data, e o gatilho real e a aba `2027`.
  *
  * Uso, a partir da raiz do projeto:
- *   node tools/contar-documentacao.mjs            confere; sai com 1 se divergir
- *   node tools/contar-documentacao.mjs --write    reescreve as regioes `conta`
+ *   node tools/contar-documentacao.mjs                   confere; sai com 1 se divergir
+ *   node tools/contar-documentacao.mjs --write           reescreve as regioes `conta`
+ *   node tools/contar-documentacao.mjs --nuas            avisa no diff contra a `main`
+ *   node tools/contar-documentacao.mjs --nuas --base X   avisa no diff contra `X`
+ *   node tools/contar-documentacao.mjs --nuas --tudo     avisa nos documentos inteiros
  */
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -182,6 +199,14 @@ export const COUNTERS = {
     ['src/domain', 'src/io', 'src/app', 'src/http', 'src/http/routes']
       .map((dir) => source.filesIn(dir).length)
       .join(' · '),
+  /** `versao[vitest]` le o `package.json`; `versao[node]`, o `.nvmrc`. A versao e exata: o projeto fixa todas. */
+  versao: (source, name) => {
+    if (name === 'node') return source.read('.nvmrc').trim()
+    const pkg = JSON.parse(source.read('package.json'))
+    const version = { ...pkg.dependencies, ...pkg.devDependencies }[name]
+    if (!version) throw new Error(`pacote ausente do package.json: ${name}`)
+    return version
+  },
 }
 
 export const CHECKS = {
@@ -400,7 +425,146 @@ export function rewrite(root) {
   return changed
 }
 
+const RECORD_FILES =
+  /^docs\/(?:adr|perfilamento|ensaio-planilha|uso)\/|^docs\/01-auditoria-especificacao\.md$/
+const NUMBER_WORDS = [
+  ...['dois', 'duas', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez'],
+  ...['onze', 'doze', 'treze', 'catorze', 'quatorze', 'quinze', 'dezesseis', 'dezessete'],
+  ...['dezoito', 'dezenove', 'vinte', 'trinta', 'quarenta', 'cinquenta', 'cem'],
+]
+const UNITS = [
+  ...['histórias?', 'testes?', 'arquivos?', 'linhas?', 'épicos?', 'indicadores?', 'alertas?'],
+  ...['premissas?', 'riscos?', 'achados?', 'casos(?:-limite)?', 'passos?', 'regras?', 'ADRs?'],
+  ...['pendências?', 'colunas?', 'cartões', 'cartão', 'filtros?', 'destinos?', 'páginas?'],
+  ...['telas?', 'chaves?', 'fases?', 'rotas?', 'skills?', 'rules?', 'hooks?', 'subagentes?'],
+  ...['agentes?', 'workflows?', 'requisitos?', 'RFs?', 'RNFs?', 'decisões', 'decisão', 'campos?'],
+  ...['abas?', 'documentos?', 'módulos?', 'componentes?', 'cenários?', 'procedimentos?'],
+  ...['contadores?', 'regiões', 'região', 'blocos?', 'asserções', 'commits?', 'PRs?', 'cores?'],
+  ...['estados?', 'seções', 'seção', 'itens', 'item', 'células?', 'eixos?', 'baldes?', 'ondas?'],
+  'categorias?',
+]
+// O numero, no maximo uma palavra entre ele e a unidade — "649 linhas", "seis campos
+// novos", "18 **épicos**" —, e negrito em volta de qualquer parte.
+const LOOSE = new RegExp(
+  String.raw`(?<![\w.\-/:#°§])(\d{1,3}(?:\.\d{3})+|\d+|${NUMBER_WORDS.join('|')})(?:\*\*)?(?:\s+(?:\*\*)?[\wÀ-ú-]+(?:\*\*)?)?\s+(?:\*\*)?(${UNITS.join('|')})\b`,
+  'giu',
+)
+const DATED = /\b\d{2}\/\d{2}(?:\/\d{4})?\b|\b[Mm]edid[oa]s?\b/
+const RECORD_LINE = /✅ \*\*Conclu|\]\(#h-\d+\) ✅\s*$|^\| D-\d+ \||plano original/
+const FORMAT_LIMIT = /(?:no máximo|no mínimo|até|máximo de|mínimo de|cada|por)\s*(?:\*\*)?$/i
+
+/** No backlog, historia fechada e epico com todas as historias fechadas sao registro inteiros. */
+function closedBacklogLines(lines) {
+  const closed = new Set()
+  const isClosed = (line) => line.startsWith('> ✅ **CONCLUÍDA')
+  let story = -1
+  let epic = -1
+  const closeStory = (end) => {
+    if (story >= 0 && lines.slice(story, end).some(isClosed))
+      for (let i = story; i < end; i++) closed.add(i)
+    story = -1
+  }
+  const closeEpic = (end) => {
+    if (epic < 0) return
+    const body = lines.slice(epic, end)
+    const opened = body.filter((line) => line.startsWith('### H-')).length
+    const done = body.filter(isClosed).length
+    if (opened > 0 && done >= opened) for (let i = epic; i < end; i++) closed.add(i)
+    epic = -1
+  }
+  lines.forEach((line, index) => {
+    if (/^##/.test(line)) closeStory(index)
+    if (/^## /.test(line)) closeEpic(index)
+    if (line.startsWith('## Épico ')) epic = index
+    if (line.startsWith('### H-')) story = index
+  })
+  closeStory(lines.length)
+  closeEpic(lines.length)
+  return closed
+}
+
+/** Os numeros soltos de um arquivo; com `onlyLines`, so nas linhas (base 1) do conjunto. */
+export function looseNumbers(file, text, onlyLines) {
+  if (RECORD_FILES.test(file)) return []
+  const lines = text.split('\n').map((line) => line.replace(/\r$/, ''))
+  const closed = file === BACKLOG ? closedBacklogLines(lines) : new Set()
+  const found = []
+  let fenced = false
+  lines.forEach((raw, index) => {
+    if (FENCE.test(raw)) {
+      fenced = !fenced
+      return
+    }
+    if (fenced || (onlyLines && !onlyLines.has(index + 1))) return
+    if (/^#{1,6} /.test(raw) || closed.has(index) || RECORD_LINE.test(raw) || DATED.test(raw))
+      return
+    const clean = raw.replace(new RegExp(INLINE.source, 'g'), ' ').replace(/`[^`]*`/g, ' ')
+    for (const match of clean.matchAll(LOOSE)) {
+      if (FORMAT_LIMIT.test(clean.slice(Math.max(0, match.index - 25), match.index))) continue
+      found.push({ file, line: index + 1, number: match[1], unit: match[2], text: raw.trim() })
+    }
+  })
+  return found
+}
+
+/**
+ * Linhas acrescentadas desde o ponto em que a arvore saiu de `base`, incluindo o que
+ * ainda nao foi commitado, e os arquivos novos nao rastreados por inteiro.
+ */
+export function changedLines(root, base) {
+  const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf-8' })
+  const forkPoint = git('merge-base', base, 'HEAD').trim()
+  const changed = new Map()
+  let file = null
+  for (const line of git(
+    'diff',
+    '-U0',
+    '--no-color',
+    '--no-ext-diff',
+    '--src-prefix=a/',
+    '--dst-prefix=b/',
+    forkPoint,
+  ).split('\n')) {
+    if (line.startsWith('+++ ')) {
+      file = line.startsWith('+++ b/') ? line.slice(6) : null
+      continue
+    }
+    const hunk = /^@@ -\S+ \+(\d+)(?:,(\d+))? @@/.exec(line)
+    if (!hunk || !file || !IN_SCOPE.test(file)) continue
+    if (!changed.has(file)) changed.set(file, new Set())
+    const start = Number(hunk[1])
+    for (let i = 0; i < Number(hunk[2] ?? 1); i++) changed.get(file).add(start + i)
+  }
+  for (const path of git('ls-files', '--others', '--exclude-standard').split('\n')) {
+    if (IN_SCOPE.test(path)) changed.set(path, null)
+  }
+  return changed
+}
+
+/** Os numeros soltos do escopo: no diff contra `base`, ou em tudo com `all`. */
+export function findLooseNumbers(root, { base = 'main', all = false } = {}) {
+  const source = createSource(root)
+  if (all) return source.scope.flatMap((file) => looseNumbers(file, source.read(file)))
+  return [...changedLines(root, base)].flatMap(([file, lines]) =>
+    looseNumbers(file, readFileSync(join(root, file), 'utf-8'), lines ?? undefined),
+  )
+}
+
+function reportLoose() {
+  const all = process.argv.includes('--tudo')
+  const baseIndex = process.argv.indexOf('--base')
+  const base = baseIndex === -1 ? 'main' : process.argv[baseIndex + 1]
+  const found = findLooseNumbers(ROOT, { base, all })
+  for (const { file, line, number, unit, text } of found)
+    console.log(`${file}:${line}  [${number} ${unit}]  ${text.slice(0, 140)}`)
+  console.log(
+    `\n${found.length} numero(s) solto(s) ${all ? 'nos documentos' : `no diff contra ${base}`} — aviso, nao reprovacao.` +
+      '\nEstado atual: prenda numa regiao `conta`, ou diga a data da medicao. Registro: ignore.',
+  )
+}
+
 function main() {
+  if (process.argv.includes('--nuas')) return reportLoose()
   const write = process.argv.includes('--write')
   if (write) {
     const changed = rewrite(ROOT)

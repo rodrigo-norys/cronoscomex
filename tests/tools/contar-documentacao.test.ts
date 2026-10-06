@@ -6,7 +6,9 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
   COUNTERS,
   createSource,
+  findLooseNumbers,
   inspect,
+  looseNumbers,
   parseTree,
   rewrite,
   scanRegions,
@@ -159,6 +161,124 @@ describe('os contadores, sobre fonte com valor concreto', () => {
     expect(COUNTERS['indicadores-definidos'](source)).toBe(4)
     expect(COUNTERS['indicadores-ativos'](source)).toBe(2)
     expect(COUNTERS['indicadores-aposentados'](source)).toBe(1)
+  })
+
+  it('versao le o package.json, de dependencia ou de desenvolvimento, e a do node le o .nvmrc', () => {
+    write(
+      'package.json',
+      JSON.stringify({
+        dependencies: { fastify: '5.12.1' },
+        devDependencies: { vitest: '4.1.11' },
+      }),
+    )
+    write('.nvmrc', '22.23.2\n')
+    track()
+    const source = createSource(root)
+    expect(COUNTERS.versao(source, 'fastify')).toBe('5.12.1')
+    expect(COUNTERS.versao(source, 'vitest')).toBe('4.1.11')
+    expect(COUNTERS.versao(source, 'node')).toBe('22.23.2')
+    expect(() => COUNTERS.versao(source, 'exceljs')).toThrow('pacote ausente')
+  })
+})
+
+describe('looseNumbers — o numero escrito fora de regiao', () => {
+  const numbers = (file: string, lines: string[]) =>
+    looseNumbers(file, lines.join('\n')).map(
+      ({ line, number, unit }) => `${line}:${number} ${unit}`,
+    )
+
+  it('aponta algarismo e numero por extenso, com negrito e uma palavra no meio', () => {
+    expect(
+      numbers('CLAUDE.md', [
+        'o verify tem os sete passos de sempre',
+        'sao **18** épicos e 649 linhas reais',
+      ]),
+    ).toEqual(['1:sete passos', '2:18 épicos', '2:649 linhas'])
+  })
+
+  it('nao aponta regiao, crase, titulo, data, medicao, limite de formato nem bloco cercado', () => {
+    expect(
+      numbers('CLAUDE.md', [
+        'sao <!-- conta:adrs -->7<!-- /conta --> ADRs',
+        'o comando `grep 3 linhas` fica',
+        '### 4.1. Premissas',
+        'em 03/08/2026 eram 649 linhas',
+        'medido: 649 linhas',
+        'no máximo 12 linhas',
+        '```',
+        'sete passos',
+        '```',
+      ]),
+    ).toEqual([])
+  })
+
+  it('nao aponta linha de registro: matriz concluida, indice fechado, decisao, plano original', () => {
+    expect(
+      numbers('docs/09-rastreabilidade.md', [
+        '| H-77 | RF-32 | ✅ **Concluída.** a tabela tem nove colunas |',
+        '- [H-77 — A tabela ordena pelas nove colunas](#h-77) ✅',
+        '| D-52 | 2026-09-18 | sobe em dois passos |',
+        'o plano original tinha 34 histórias',
+        '| H-101 | RF-46 | **Aberta.** Nove blocos de teste |',
+      ]),
+    ).toEqual(['5:Nove blocos'])
+  })
+
+  it('no backlog, historia fechada e epico todo fechado sao registro; o epico aberto nao', () => {
+    const backlog = [
+      '## Épico E1 — Fechado',
+      '',
+      'o cabecalho fala de nove colunas',
+      '',
+      '### H-01 — Uma',
+      '',
+      'tinha sete passos',
+      '',
+      '> ✅ **CONCLUÍDA em 01/08/2026.**',
+      '',
+      '## Épico E2 — Aberto',
+      '',
+      'o cabecalho fala de 17 colunas',
+      '',
+      '### H-02 — Duas',
+      '',
+      'mexe em cinco arquivos',
+    ]
+    expect(numbers('docs/06-backlog.md', backlog)).toEqual(['13:17 colunas', '17:cinco arquivos'])
+  })
+
+  it('arquivo de registro nao e varrido; a visao de escopo, que mistura spec e estado, e', () => {
+    const line = ['a especificacao descreve 15 colunas']
+    expect(numbers('docs/01-auditoria-especificacao.md', line)).toEqual([])
+    expect(numbers('docs/adr/0001-um.md', line)).toEqual([])
+    expect(numbers('docs/00-visao-escopo.md', line)).toEqual(['1:15 colunas'])
+  })
+})
+
+describe('findLooseNumbers — so as linhas que o diff acrescentou', () => {
+  const commit = (message: string) =>
+    execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', message], {
+      cwd: root,
+    })
+
+  it('aponta a linha nova, commitada ou nao, e o arquivo novo inteiro; a velha fica', () => {
+    write('CLAUDE.md', 'antes havia sete passos\n')
+    track()
+    commit('base')
+    const base = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf-8' }).trim()
+
+    write('CLAUDE.md', 'antes havia sete passos\nagora sao 18 épicos\n')
+    track()
+    commit('na branch')
+    write('CLAUDE.md', 'antes havia sete passos\nagora sao 18 épicos\ne seis ADRs sem commit\n')
+    write('docs/novo.md', 'um arquivo com 3 rotas\n')
+
+    expect(
+      findLooseNumbers(root, { base }).map(({ file, line, number }) => `${file}:${line}:${number}`),
+    ).toEqual(['CLAUDE.md:2:18', 'CLAUDE.md:3:seis', 'docs/novo.md:1:3'])
+    expect(findLooseNumbers(root, { base, all: true }).map(({ number }) => number)).toContain(
+      'sete',
+    )
   })
 })
 
