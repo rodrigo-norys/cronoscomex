@@ -200,7 +200,7 @@ mesmo que nenhuma regra os tenha disparado:
     todo estado que deixou de ser distinguível porque dependia só de
     background-color, de box-shadow ou de cor de borda. Só a paleta NOMINAL do
     Windows (Aquático e as demais) fica para a máquina do operador — é confirmação
-    de segunda ordem, e é o que resta em `PD-07`. Fonte: MDN @media (forced-colors)
+    de segunda ordem, e foi conferida lá em 06/10/2026, fechando `PD-07`. Fonte: MDN @media (forced-colors)
     e CSS Color Adjustment Module Level 1 (CR Snapshot 16/12/2025).
   [VN-6] CONTRASTE COM ALFA OU GRADIENTE — procedimento: DevTools → Elements →
     conta-gotas sobre o pixel do texto e sobre o pixel do fundo imediatamente atrás;

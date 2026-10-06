@@ -127,8 +127,8 @@ texto antigo sem deixar rastro.
       `main` protegida não aceita outro caminho
 - [ ] História marcada em `06-backlog.md`
 - [ ] `09-rastreabilidade.md` conferido, se algum status mudou
-- [ ] `CLAUDE.md`, bloco Estado: pendência criada acrescentada, pendência fechada
-      removida — e nada mais
+- [ ] Pendência criada acrescentada e pendência fechada removida, nos dois lugares —
+      a linha no bloco Estado do `CLAUDE.md` e o detalhe em `docs/README.md` — e nada mais
 - [ ] Comentário novo diz o que o código não diz, e todo fato medido nele cita a
       fonte (`A-NN`, `TD-NN`, `H-NN`) — régua em `.claude/rules/comentarios.md`
 

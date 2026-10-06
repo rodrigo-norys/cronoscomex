@@ -92,5 +92,5 @@ OPERADOR e vem seguida do parágrafo que explica os dois mapas copiados
 por quem instala; o bloco "Como refazer esta branch" não lista arquivo nenhum —
 ele manda calcular pelo script; e a tabela de pastas passou a citar os dois mapas
 em 04/09/2026. **O que sobrava de `PD-08` não era documental: era `H-88`**, que tira o
-mapa da cópia manual (`D-32`) — e ela fechou em 09/09/2026. Falta conferir que
-ela chegou à instalação do operador.
+mapa da cópia manual (`D-32`) — e ela fechou em 09/09/2026. **Conferida na
+instalação do operador em 06/10/2026, e `PD-08` fechou.**
