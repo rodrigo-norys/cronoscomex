@@ -438,6 +438,7 @@ morta em `tests/repo/contratos.test.ts`.
 O portão local é o mesmo comando, e é obrigatório antes de qualquer entrega:
 
 ```
+npm run test:portas # recusa o portão com o dev no ar — o build apagaria o cache dele
 npm run test:hooks  # regressao de .claude/hooks/guard-dados-sensiveis.sh
 npm run test:dados  # .github/scripts/verifica-dados-sensiveis.sh, sobre o indice
 npm run test:strip  # importa src/ sob --experimental-strip-types
@@ -447,9 +448,32 @@ npm test            # Vitest — `vitest run`, SEM cobertura (ver a ressalva de 
 npm run build       # servidor + SPA em dist/
 ```
 
-`npm run verify` encadeia os **sete** e é o comando único do portão. As duas
-regressões de guarda vêm primeiro de propósito: verificar a proteção antes de
-verificar o código.
+`npm run verify` encadeia os **<!-- conta:passos-verify -->8<!-- /conta -->** e é o comando único do portão. As duas
+regressões de guarda vêm logo depois da conferência de portas, de propósito:
+verificar a proteção antes de verificar o código.
+
+**`verifica-dados-sensiveis.sh` entrou no portão local em 02/09/2026**; até
+então só existia no CI, e o portão local passava enquanto o workflow reprovava —
+a ordem errada de descobrir. Foi assim que a guarda das fixtures chegou ao
+`dados-sensiveis.yml` com a âncora reprovando o check de caminho absoluto.
+
+**Os dois rulesets são configuração do GitHub, não arquivo versionado** — leia o
+estado real com `gh api repos/<owner>/<repo>/rulesets/<id>`. `main protegida` tem
+quatro regras: `pull_request`, `required_status_checks`, `non_fast_forward` e
+`deletion`. **Cada check obrigatório está preso ao GitHub Actions por
+`integration_id` desde 23/09/2026**: sem ele, qualquer status com o mesmo nome,
+inclusive um postado por `gh api`, satisfazia o check. `distribuicao protegida`,
+da mesma data, tem só `deletion` e `non_fast_forward`: a branch não recebe PR, e
+não há check a exigir. **`non_fast_forward` proíbe reescrever histórico**, e PR
+não contorna — commit reescrito tem SHA novo, e o PR o somaria. Reescrever exige
+desativar o ruleset, empurrar e reativar, e o `PUT` da API **reenvia o objeto
+inteiro**: mandar só `enforcement` zera as regras e deixa a proteção vazia
+parecendo ativa. Medido em 18/08/2026, ao limpar 12 mensagens de commit.
+
+**`delete_branch_on_merge` está ligado**, e com ele uma pilha de PRs se corrige
+sozinha: mesclado o de baixo, o GitHub reaponta o seguinte para a `main`.
+Desligado, não acontece — medido em 01/09/2026, numa pilha de seis: dois PRs
+ficaram apontando para a branch de baixo e precisaram ser reabertos.
 
 ### 5.3. Gestão de segredos
 

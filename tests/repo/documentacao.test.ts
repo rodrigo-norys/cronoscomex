@@ -15,6 +15,10 @@ import { describe, expect, it } from 'vitest'
  * história nova e requisito novo entram sem tocar neste arquivo. O que ele
  * cobra é concordância entre cópias do mesmo fato, e a fonte é sempre o bloco
  * da história ou a linha de definição — nunca a prosa que a resume.
+ *
+ * O total de histórias afirmado em prosa saiu daqui em 06/10/2026: desde as
+ * regiões de 01/10/2026 o regex não casava linha nenhuma, e quem o cobre é
+ * `tests/repo/contagens.test.ts`.
  */
 
 const BACKLOG = readFileSync('docs/06-backlog.md', 'utf-8')
