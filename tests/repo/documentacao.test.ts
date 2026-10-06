@@ -1,4 +1,4 @@
-import { existsSync, readdirSync, readFileSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
 /**
@@ -268,86 +268,5 @@ describe('requisito revogado não continua entregue na matriz', () => {
     )
 
     expect(desalinhadas).toEqual([])
-  })
-})
-
-/** Todo `.md` de um diretório, recursivamente. */
-function arquivosMarkdown(diretorio: string): string[] {
-  const encontrados: string[] = []
-  if (!existsSync(diretorio)) return encontrados
-
-  for (const entrada of readdirSync(diretorio, { withFileTypes: true })) {
-    const caminho = `${diretorio}/${entrada.name}`
-    if (entrada.isDirectory()) encontrados.push(...arquivosMarkdown(caminho))
-    else if (entrada.name.endsWith('.md')) encontrados.push(caminho)
-  }
-
-  return encontrados
-}
-
-/**
- * `docs/sessao-autonoma/` fica fora do palheiro, e a isenção é estrutural, não
- * conveniência: são relatórios datados de sessão, congelados no dia em que
- * foram escritos — dizem o que era verdade naquela data, como uma mensagem de
- * commit. `RELATORIO-01-09-2026-2.md` afirma "66 das 72 histórias", e estava
- * certo em 01/09/2026. Reprovar ali ensinaria a reescrever registro histórico,
- * que é o oposto do que o repositório quer.
- *
- * **O diretório saiu do repositório em 18/09/2026 (`D-46`)**, e o filtro fica:
- * ele é no-op sobre um palheiro que já não contém esses caminhos, e volta a
- * valer no próximo relatório datado que entrar. Apagá-lo apagaria a razão.
- */
-const PALHEIRO = [
-  ...arquivosMarkdown('docs'),
-  ...arquivosMarkdown('.claude'),
-  'CLAUDE.md',
-  'README.md',
-].filter((caminho) => !caminho.startsWith('docs/sessao-autonoma/'))
-
-/**
- * O total de histórias é o fato derivado mais copiado do projeto — ele vive em
- * sete lugares. A única cópia que tem asserção — a linha de Total do backlog,
- * conferida em `contratos.test.ts` — é a única que nunca esteve errada. Das
- * demais, **duas estavam erradas quando esta asserção foi escrita**, em
- * 11/09/2026: `README.md` dizia "89 das 91 histórias" e
- * `.claude/skills/abrir-historia/SKILL.md` dizia "11 das 90 histórias", contra
- * 91 de 96.
- * A segunda é a que pesa: a skill que conduz a história, e que manda copiar do
- * plano "copiados, não inventados", mentia sobre o tamanho do plano.
- *
- * **`.claude/` está no palheiro de propósito:** a peça que conduz a história é
- * a que menos pode mentir sobre o backlog, porque a `/abrir-historia` manda
- * copiar do plano, "copiados, não inventados".
- *
- * A forma casada é estreita — `N das M histórias` —, e é isso que a torna
- * segura: ela só casa afirmação sobre o conjunto vigente, nunca número
- * histórico em prosa corrente ("o plano original tinha 34 histórias",
- * `README.md:248`, que é verdade e continua sendo).
- */
-describe('o total de histórias afirmado em prosa é o total real', () => {
-  it('encontra o palheiro — âncora contra guarda verde por vacuidade', () => {
-    expect(PALHEIRO.length).toBeGreaterThan(20)
-    expect(TOTAL).toBeGreaterThan(30)
-  })
-
-  it('nenhum documento afirma um backlog que não é este', () => {
-    const erradas: string[] = []
-
-    for (const caminho of PALHEIRO) {
-      readFileSync(caminho, 'utf-8')
-        .split('\n')
-        .forEach((linha, indice) => {
-          for (const achado of linha.matchAll(/(\d+) das \*{0,2}(\d+)\*{0,2} histórias/g)) {
-            const posicao = `${caminho}:${indice + 1}`
-            if (Number(achado[2]) !== TOTAL) {
-              erradas.push(`${posicao} diz que o backlog tem ${achado[2]}; tem ${TOTAL}`)
-            } else if (/conclu/i.test(linha) && Number(achado[1]) !== CONCLUIDAS) {
-              erradas.push(`${posicao} diz ${achado[1]} concluídas; são ${CONCLUIDAS}`)
-            }
-          }
-        })
-    }
-
-    expect(erradas).toEqual([])
   })
 })

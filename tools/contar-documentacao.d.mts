@@ -40,7 +40,27 @@ export const COUNTERS: {
   rules: Counter
   'pendencias-abertas': Counter
   'arvore-src': Counter
+  versao: Counter
 }
+
+export interface LooseNumber {
+  file: string
+  line: number
+  number: string
+  unit: string
+  text: string
+}
+
+export function looseNumbers(
+  file: string,
+  text: string,
+  onlyLines?: ReadonlySet<number>,
+): LooseNumber[]
+
+export function findLooseNumbers(
+  root: string,
+  options?: { base?: string; all?: boolean },
+): LooseNumber[]
 
 export function scanRegions(text: string): {
   counts: { line: number; raw: string; written: string }[]

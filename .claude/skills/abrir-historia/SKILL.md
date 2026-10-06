@@ -160,7 +160,7 @@ estiver lá é divergência, e divergência **para** a implementação.
   tabela em 650. Decisão citada pelo backlog é material da fatia, não pano de
   fundo.
 - Use `TodoWrite` em paralelo, para acompanhamento.
-- Confira `node --version`. Se não devolver `v22.23.2`, prefixe `nvm use &&` em
+- Confira `node --version`. Se não devolver a versão de `.nvmrc`, prefixe `nvm use &&` em
   todo comando que execute Node — o shell reinicia a cada chamada.
 - Nenhuma regra de negócio fora de `src/domain/`. O Biome quebra a build se a
   fronteira for violada.

@@ -41,7 +41,7 @@ graph TB
     subgraph maquina["Máquina Windows do operador"]
         subgraph app["CronosComex"]
             SRV["Servidor Node<br/>Fastify 5.11.2 · TypeScript<br/>127.0.0.1:5173"]
-            WEB["Interface web<br/>React 19.2.8 · Vite 8.2.0<br/>SPA servida pelo próprio Node"]
+            WEB["Interface web<br/>React 19 · Vite 8<br/>SPA servida pelo próprio Node"]
         end
 
         XLSX[("planilha.xlsx")]
@@ -67,7 +67,7 @@ graph TB
 
 | Container | Responsabilidade | Tecnologia |
 |---|---|---|
-| **Servidor Node** | Ler a planilha, calcular indicadores e alertas, servir a API e a SPA, gravar no `.xlsx` sob comando | Node 22 · Fastify 5.11.2 · TypeScript 7.0.2 |
+| **Servidor Node** | Ler a planilha, calcular indicadores e alertas, servir a API e a SPA, gravar no `.xlsx` sob comando | Node 22 · Fastify <!-- conta:versao[fastify] -->5.12.1<!-- /conta --> · TypeScript <!-- conta:versao[typescript] -->7.0.2<!-- /conta --> |
 | **Interface web** | Apresentar as **oito páginas** — as sete do menu, incluindo Configuração (`H-34`), mais o detalhe do processo, que vive fora dele (`web/src/router.ts`) —, os filtros globais e o formulário de edição. **Nenhuma regra de negócio** (RNF-38) | React 19.2.8 · Vite 8.2.0 · Tailwind 4.3.3 · Recharts 3.10.1 |
 | **planilha.xlsx** | Fonte da verdade. Não pertence ao sistema | Arquivo OOXML |
 | **data/** | Histórico, fila de edições, quarentena e backups. Descartável sem perda de dado de negócio | JSONL, JSON, XLSX |

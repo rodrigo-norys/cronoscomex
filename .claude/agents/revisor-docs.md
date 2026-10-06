@@ -68,14 +68,15 @@ skill afirmando um backlog de 90 quando ele tinha 92.
 
 ## O que você NÃO revisa
 
-Estas já têm asserção em `tests/repo/documentacao.test.ts`, e repeti-las é
-gastar a revisão no que a suíte entrega de graça:
+Estas já têm asserção em `tests/repo/documentacao.test.ts` e em
+`tests/repo/contagens.test.ts`, e repeti-las é gastar a revisão no que a suíte
+entrega de graça:
 
 - o índice do backlog agrupando cada história sob o épico do corpo;
 - as contagens P/M/G de cada linha da tabela de resumo, e o `N abertas`;
 - a matriz da §4 concordando com o backlog, história a história;
 - requisito marcado `REVOGADO` que siga "Entregue" na §5;
-- o total de histórias afirmado em prosa, em qualquer documento.
+- todo número preso em região `conta` — o total de histórias entre eles.
 
 Se alguma delas estiver errada, a suíte reprova antes de você ser invocado.
 **Assuma que o chamador rodou o portão.** Se ele não rodou, diga isso e pare.
