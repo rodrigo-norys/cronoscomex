@@ -143,7 +143,7 @@ testes que não o usam, ou a deixar a interface sem teste.
 ## Estado
 
 **O plano original está fechado, e tudo que veio depois dele também** — as
-quatro fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
+cinco fases, mais `H-33` a `H-38`, acrescentadas por uso e não por plano.
 **<!-- conta:historias-concluidas -->113<!-- /conta --> das <!-- conta:historias -->114<!-- /conta --> histórias estão concluídas**, e o épico aberto é `E16`. O que
 cada uma aprendeu — número medido, defeito encontrado, decisão tomada — está
 no bloco `✅ CONCLUÍDA` dela em `docs/06-backlog.md`, e é lá que se procura

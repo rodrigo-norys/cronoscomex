@@ -357,7 +357,7 @@ virada de escopo (edição) ou por necessidade operacional.
 | Condicionados a perfilamento | **0** — `H-01` concluída em 03/08/2026 |
 | Bloqueados por lacuna de dado | 1 (IND-21) |
 | Destravados por decisão de arquitetura | 2 (ALE-06 e Página Histórico, via ADR-0005) |
-| Histórias no backlog | **<!-- conta:historias -->114<!-- /conta -->**, das quais <!-- conta:historias-concluidas -->113<!-- /conta --> concluídas (o 31 era do plano original de quatro fases; `E13` é o épico retroativo, por `D-26`, e `E14` e `E15` são os abertos). Conte com `grep -c '✅ \*\*CONCLUÍDA' docs/06-backlog.md` |
+| Histórias no backlog | **<!-- conta:historias -->114<!-- /conta -->**, das quais <!-- conta:historias-concluidas -->113<!-- /conta --> concluídas (o 31 era do plano original de cinco fases; `E13`, `E17` e `E18` são retroativos, por `D-26` e `D-69`, e `E16` é o único aberto). Conte com `grep -c '✅ \*\*CONCLUÍDA' docs/06-backlog.md` |
 | Histórias órfãs | **0** — conferido em 08/09/2026, quando `H-82` e `H-83` foram acrescentadas: elas estavam concluídas e fora da matriz, que afirmava "nenhuma órfã" |
 
 **A Fase 0 está concluída.** `H-01` rodou sobre o arquivo real e resolveu as
