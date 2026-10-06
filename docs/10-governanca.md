@@ -316,7 +316,7 @@ apagá-las esconderia que a escolha mudou.
 | SLA de resposta, RACI, matriz de aprovação | Duas pessoas |
 | Versionamento semântico do produto | Aplicação local sem distribuição pública |
 | Processo de release | **Deixou de ser ausência, e não é `git pull`.** O release é a branch `distribuicao`, calculada por `scripts/sincronizar-distribuicao.ts` a partir da `main` mesclada e **baixada como árvore** na máquina do operador — que não é repositório git (medido em 04/09/2026, ao fechar `PD-01`). O detalhe está em `.claude/rules/distribuicao.md` |
-| Política de dependências | A stack está fixada em `CLAUDE.md`. **Acrescentar dependência é decisão do log da §5, não de ADR** — foi assim em `D-13` (Biome) e `D-17` (Testing Library e jsdom), e nenhum ADR nasceu desde o 0006 |
+| Política de dependências | A stack está fixada no `package.json` e no `.nvmrc`, e a régua de troca em `.claude/rules/dependencias.md`. **Acrescentar dependência é decisão do log da §5, não de ADR** — foi assim em `D-13` (Biome) e `D-17` (Testing Library e jsdom), e nenhum ADR nasceu desde o 0006 |
 
 Se alguma dessas passar a fazer falta, o gatilho é o mesmo dos ADRs: quando a
 ausência causar um problema concreto, e não antes.
