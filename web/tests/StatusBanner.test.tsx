@@ -108,11 +108,13 @@ describe('StatusBanner', () => {
     expect(screen.queryByText(/Ainda não houve nenhuma leitura/)).toBeNull()
   })
 
-  it('avisa que alguem esta com a planilha aberta, sem dizer que ha problema', () => {
+  it('avisa que a planilha esta aberta, sem dizer que ha problema nem quem a abriu', () => {
     render(<StatusBanner health={healthFixture({ externalLock: true })} />)
 
-    expect(screen.getByRole('status').textContent).toMatch(/planilha aberta no Excel/)
+    expect(screen.getByText('A planilha está aberta no Excel')).toBeTruthy()
     expect(screen.getByText(/A leitura continua normal/)).toBeTruthy()
+    // A trava nao diz quem abriu o arquivo (P-15 nunca foi medida).
+    expect(screen.getByRole('status').textContent).not.toMatch(/Alguém/)
   })
 
   it('lista os nomes dos arquivos de conflito, que e o criterio de aceite', () => {

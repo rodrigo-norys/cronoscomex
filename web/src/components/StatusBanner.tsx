@@ -56,7 +56,11 @@ export function bannerSignals(health: HealthResponse): readonly StatusSignal[] {
   if (health.externalLock) {
     signals.push({
       key: 'arquivoAberto',
-      title: 'Alguém está com a planilha aberta no Excel',
+      // Diz so o que o `~$` prova: o arquivo esta aberto no Excel. "Alguem"
+      // supunha a trava viajando entre maquinas pelo OneDrive (P-15), que nunca
+      // foi medida — e na instalacao do operador a planilha fica fora do
+      // OneDrive, onde a trava so pode ser de quem a abriu na mesma maquina.
+      title: 'A planilha está aberta no Excel',
       detail: 'A leitura continua normal. O aviso existe para explicar edições que aparecerem.',
       files: [],
     })

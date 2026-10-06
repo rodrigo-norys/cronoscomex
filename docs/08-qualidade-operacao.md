@@ -305,7 +305,7 @@ O canal de alerta é a própria interface, para o único destinatário existente
 |---|---|
 | Estado `degradado` | Faixa persistente no topo de todas as páginas, com o motivo e o horário da última leitura válida. Entregue por `H-15`, na casca (A-57) |
 | `conflictFiles` não vazio | Mesma faixa, com os nomes dos arquivos. **O mais severo dos avisos:** duas versões da planilha coexistem na pasta (A-58) |
-| `externalLock: true` | Mesma faixa: alguém está com a planilha aberta no Excel. Não impede a leitura (A-58) |
+| `externalLock: true` | Mesma faixa: a planilha está aberta no Excel — sem dizer quem a abriu, porque `P-15` não foi medida. Não impede a leitura (A-58) |
 | `quarantineRate > 2%` | Destaque no painel de saúde, com ligação para o relatório |
 | Escrita recusada | Diálogo modal com o motivo e a instrução correspondente |
 | Escrita restaurada do backup | Diálogo modal com o caminho do backup |
