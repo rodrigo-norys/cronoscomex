@@ -123,6 +123,18 @@ destroem.
 - **Datas dependem do formato já existente na coluna.** O valor é gravado como
   serial; a exibição usa o formato da célula. Se a coluna não tiver formato de
   data, o Excel exibirá o número. `H-01` revela isso antes.
+- **As abas fora de escopo não podem deixar de ser lidas, só de ser processadas.**
+  A regra inviolável 10 dizia "nunca leia as abas", e isso era inatingível: a aba
+  `CNPJ` tem 250 células que referenciam o pool **global** `xl/sharedStrings.xml`,
+  então nenhuma leitura de texto do arquivo é possível sem carregá-lo inteiro —
+  limitação do formato OOXML, não da biblioteca. O isolamento real está no
+  processamento e na escrita, e está **provado**: editar uma célula de texto da aba
+  `2026` deixa 28 das 30 entradas do zip byte a byte idênticas, incluindo as três
+  abas fora de escopo. Gravar data em célula **sem formato** altera também
+  `xl/styles.xml`, de forma estritamente aditiva (TD-05.1, passo 5b), mas essa
+  condição não ocorre no arquivo real: medido em 17/09/2026 (`E-24`), escrever numa
+  célula de data ausente deixa `styles.xml` idêntico, porque o surgeon reusa o `xf`
+  que a coluna já tem.
 
 ## Alternativas descartadas
 
