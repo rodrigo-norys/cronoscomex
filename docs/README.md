@@ -136,7 +136,7 @@ seguinte, a partir dos commits (`D-26`). O que elas registram estava vivo desde
 então nos testes, no contrato de `05-contratos-api.md §3` e em
 `.claude/rules/escrita-xlsx.md`.
 
-**As pendências abertas são <!-- conta:pendencias-abertas -->1<!-- /conta -->**, com o detalhe em [Pendências abertas](#pendências-abertas).
+**Pendências abertas: <!-- conta:pendencias-abertas -->0<!-- /conta -->** — o registro das fechadas está em [Pendências abertas](#pendências-abertas).
 
 **O que cada história mediu e decidiu está no bloco `✅ CONCLUÍDA` dela**, em
 [06-backlog.md](06-backlog.md) — é lá que o registro técnico vive, não aqui. O
@@ -170,13 +170,8 @@ corrigida** — trocava o `styleId` inteiro, o que destruiria bordas.
 
 ## Pendências abertas
 
-Não bloqueiam a implementação; fecham antes da entrega ao operador. O
-`CLAUDE.md` da raiz traz uma linha por pendência, e o detalhe vive aqui — ao
-fechar uma, remova a linha nos dois.
-
-| # | Pendência | Quando fechar |
-|---|---|---|
-| **PD-09** | **A premissa `P-15` ficou sem dono, e há uma frase da tela apoiada nela.** `P-15` — o OneDrive sincroniza o arquivo de lock `~$<nome>.xlsx` entre máquinas — está "não afirmada" desde o plano, e `docs/00-visao-escopo.md` e `A-58` mandavam medi-la em `H-30`, que **fechou em 18/08/2026 sem medir**. Mesmo padrão de `PD-05` entre 14 e 17/08/2026. A medição direta pede **duas máquinas com a mesma pasta sincronizada**, e nada indica que exista uma segunda conta com acesso à pasta da organização; o **proxy de uma máquina só** — abrir a planilha no Excel e observar se o `~$` sobe, pelo ícone do OneDrive ou pela visão web do SharePoint — responde a mesma pergunta. O que não pode ficar como está: `web/src/components/StatusBanner.tsx` afirma "Alguém está com a planilha aberta no Excel", que é a leitura **forte** da premissa. Ou ela é medida e a frase se justifica, ou a frase recua para o que é sabidamente verdadeiro — o arquivo está aberto **nesta** máquina — com o motivo no cabeçalho do componente | **Medido em 03/09/2026, e o proxy não é executável nesta instalação:** a planilha real do operador está em `Downloads`, **fora do OneDrive** — a pasta sincronizada existe e não a contém. `P-15` supõe o `~$` viajando entre máquinas por pasta compartilhada; sem isso, não há o que observar. **A leitura forte da frase é falsa por construção aqui**, e não por falta de medição: o `~$` só pode ser de quem abriu o arquivo NESTA máquina. Resta decidir entre recuar a frase de `StatusBanner.tsx` — o caminho que os fatos apoiam — ou medir `P-15` num cenário que o operador não usa |
+**Abertas: <!-- conta:pendencias-abertas -->0<!-- /conta -->**, desde 06/10/2026. O `CLAUDE.md` da raiz traz uma linha por
+pendência aberta, e o detalhe vive aqui; ao fechar uma, ela sai dos dois.
 
 > As fechadas saem daqui e vivem onde são usadas: `PD-06` (03/09/2026) em
 > `.claude/rules/operacao-windows.md`, `PD-01` (04/09/2026) no parágrafo abaixo,
@@ -184,7 +179,9 @@ fechar uma, remova a linha nos dois.
 > servidor velho que falha mudo — em `.claude/rules/distribuicao.md`. **`PD-07` e
 > `PD-08` fecharam em 06/10/2026**, conferidas pelo usuário na máquina do operador:
 > as cores sem problema sob o modo forçado, e o mapa de clientes de `H-88` operando
-> pela tela.
+> pela tela. **`PD-09` fechou no mesmo dia, por decisão (`D-70`)**: a faixa
+> deixou de dizer "alguém" e diz só que a planilha está aberta no Excel, sem
+> depender de `P-15`.
 
 **`PD-10` fechou em `H-84`**, e
 **`PD-01` fechou com a primeira instalação na máquina do operador**, em
@@ -196,10 +193,10 @@ quarentena; `PD-08` encolheu para uma correção no `README.md` da branch
 Excel gerou, e a premissa dela foi **refutada**. **`PD-07` restou só na paleta nominal do Windows**, que queria a máquina do
 operador: o item do `ConflictDialog`, que pedia uma fixture capaz de produzir o
 conflito, fechou pelo ensaio sobre a planilha real, que o produziu num
-navegador, e a gestão de foco saiu junto — `H-111`, 18/09/2026. **`PD-09` não fecha pelo proxy de uma
+navegador, e a gestão de foco saiu junto — `H-111`, 18/09/2026. **`PD-09` não fechava pelo proxy de uma
 máquina só**: medido em 03/09/2026, a planilha do operador está em `Downloads`,
-fora do OneDrive, e não há `~$` a observar — resta decidir se a frase de
-`StatusBanner.tsx` recua.
+fora do OneDrive, e não há `~$` a observar — e fechou quando a frase de
+`StatusBanner.tsx` recuou (`D-70`).
 
 ## Regras que valem para todo o projeto
 

@@ -163,13 +163,9 @@ aberto**: não transcreva para cá o que a história já registrou lá.
 
 ### Pendências abertas
 
-Nenhuma bloqueia implementação; fecham antes da entrega ao operador. O detalhe e
-o gatilho de cada uma estão em `docs/README.md` — ao fechar uma, remova a linha
-aqui e lá.
-
-| # | O que falta |
-|---|---|
-| **PD-09** | decidir se a frase de `StatusBanner.tsx` recua — `P-15` não é medível nesta instalação |
+**Abertas: <!-- conta:pendencias-abertas -->0<!-- /conta -->.** Pendência nova entra aqui como linha da
+tabela `| **PD-NN** | o que falta |`, com o detalhe e o gatilho em
+`docs/README.md`; ao fechar, sai dos dois.
 
 ## Onde a regra já aprendida foi parar
 
