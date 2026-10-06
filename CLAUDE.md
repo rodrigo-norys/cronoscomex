@@ -265,265 +265,81 @@ do uso. Nada aqui repete o que está lá — abra quando a linha disser.
 
 ## Infraestrutura de agente
 
-**Versionamento.** Há repositório git, com remote **público** em `origin`.
-Nunca commite direto na `main`: branch por história (`H-NN/<tipo>-<descrição>`)
-ou, fora de história, `<tipo>/<escopo>-<descrição>`. Escopos: `domain`, `io`,
-`app`, `http`, `web`, `tools`, `config`, `docs`, `claude`, `repo`. Mensagem em
-pt-br, sem o tipo `test`.
+O que vigora está aqui; o **porquê** de cada peça está no cabeçalho dela, e a
+história da configuração, em `docs/adr/0007-governanca-da-configuracao-do-agente.md`.
 
-**O merge acontece no GitHub, não localmente.** `branch → commits → push da
-branch → PR → merge por lá`. Mesclar na `main` antes do push **mata o PR**.
+**Git.** Remote **público** em `origin`. Nunca commite na `main`: branch
+`H-NN/<tipo>-<descrição>` por história, ou `<tipo>/<escopo>-<descrição>` fora
+dela. Escopos: `domain`, `io`, `app`, `http`, `web`, `tools`, `config`, `docs`,
+`claude`, `repo`. Mensagem em pt-br, sem o tipo `test`. **O merge é no GitHub**:
+`branch → commits → push → PR → merge lá` — mesclar na `main` antes do push mata o
+PR. `delete_branch_on_merge` está ligado, e PR empilhado se reaponta sozinho.
+**Um commit por ponto verde** — a preocupação fecha **e** o portão passa; ofereça o
+commit quando uma camada da cadeia fechar, sem esperar o fim da história.
 
-**`delete_branch_on_merge` está ligado**, e com ele uma cascata de PRs
-encadeados se corrige sozinha: mesclado o de baixo, o GitHub reaponta o
-seguinte para a `main`. **Desligado, não acontece** — medido em 01/09/2026,
-numa pilha de seis: dois PRs ficaram apontando para a branch de baixo em vez
-da `main` e precisaram ser reabertos depois de ligar a opção.
+> Portão reprovado: **rode de novo antes de agir**. Há um teste intermitente em
+> `src/io/` que devolve `exit=1` com zero testes falhando (`H-12`).
 
-**A branch `distribuicao` é a árvore que vai para a máquina do operador.**
-**Sem contagem aqui**, pela mesma razão que `.claude/rules/distribuicao.md` já
-declara: o número envelhece a cada história que acrescenta arquivo, e já esteve
-errado em 108, 117 e 124. Quem mede é o script, a cada execução. `D-28` fechou: as
-seis fontes de `H-58` e a licença delas entraram na sincronização de 03/09, e a
-instalação do operador renderiza com a tipografia certa desde então. Sem `docs/`,
-`tests/`, `tools/` nem `.claude/`. Ela **não recebe PR**:
-é artefato, não revisão. Confira com
-`node --experimental-strip-types scripts/sincronizar-distribuicao.ts`, e
-**sincronize apenas a partir da `main` mesclada**. O resto —  o que entra e por
-quê, os dois arquivos exclusivos da branch, e os mapas de negócio de `PD-08` que
-não vão junto — está em `.claude/rules/distribuicao.md`, que carrega ao abrir o
-script ou os `.exemplo`.
+**A branch `distribuicao`** é a árvore da máquina do operador: não recebe PR, e
+só se sincroniza a partir da `main` mesclada, com
+`node --experimental-strip-types scripts/sincronizar-distribuicao.ts`. O que
+entra, e os mapas de `PD-08` que não vão, estão em `.claude/rules/distribuicao.md`.
 
-**Um commit por ponto verde.** O corte não é tempo nem tamanho: é o momento em
-que uma preocupação fecha **e** o portão passa. Todo commit verde mantém o
-`git bisect` utilizável, que é o que faz o commit atômico pagar — commit
-vermelho no meio quebra a busca binária. Ofereça o commit **quando uma camada da
-cadeia fechar e o portão passar**, sem esperar o fim da história. Lembrete, não
-garantia: é instrução, e instrução falha. Se falhar seguido, o gatilho vira hook
-`PostToolUse` — ver a tabela de marcos.
-
-> Ao concluir que o portão reprovou, **rode de novo antes de agir**: há um teste
-> intermitente conhecido em `src/io/`, que devolve `exit=1` com **zero testes
-> falhando**. Medido em `H-12`: 1 falha em 4 a 8 execuções.
-
-**Skills** (`.claude/skills/`). O corpo de cada uma **só carrega quando é
-invocada** — é lá que mora o porquê de cada regra, sem custar contexto aqui.
+**Skills** (`.claude/skills/`) — o corpo só carrega na invocação.
 
 | Skill | Conduz |
 |---|---|
-| `/abrir-historia H-NN` | abre a história com contrato e casos-limite; confere a lista de arquivos e **despacha** para a skill certa |
-| `/nova-pagina` | uma página, pelo padrão de `H-16` a `H-20` |
-| `/novo-indicador IND-NN` | um indicador pelas quatro camadas: domínio → teste → rota → planilha real |
+| `/abrir-historia H-NN` | abre a história com contrato e casos-limite, e despacha para a skill certa |
+| `/nova-pagina` · `/novo-indicador IND-NN` | uma página; um indicador pelas quatro camadas |
 | `/fechar-historia H-NN` | o portão, a *definition of done*, os três documentos e a prova |
 | `/sugerir-commits` · `/sugerir-prs` | os commits e os PRs, com **um aceite só** |
-| `/avaliar-claude` | varre a própria sessão atrás de capacidade faltando em `.claude/`; só o usuário a invoca |
+| `/avaliar-claude` | capacidade faltando em `.claude/`; só o usuário a invoca |
 
-**Subagentes** (`.claude/agents/`). `revisor-xml` é o revisor adversarial da
-escrita cirúrgica: invocado **antes de commitar** qualquer mudança em
-`src/io/xlsx-surgeon.ts`, `src/app/write-guard.ts` ou em código que reescreva
-bytes do `.xlsx` — `H-24` a `H-27` e `H-78`, a criação de linha. Não tem
-`Edit` nem `Write`, e é invocado **sem** o raciocínio de quem escreveu o
-código: começar cego é o mecanismo, não um efeito colateral. Enumera os
-casos-limite do backlog a cada invocação, em vez de carregar cópia deles.
-**`model: opus` fixado, não herdado** — herdar faria a revisão de maior
-consequência do projeto cair de nível em silêncio quando a sessão que a invoca
-estiver em outro modelo.
+**Subagentes** (`.claude/agents/`), todos sem `Edit` nem `Write` e com
+`model: opus` fixado. `revisor-xml`: **obrigatório antes de commitar** mudança em
+`src/io/xlsx-surgeon.ts`, `src/app/write-guard.ts` ou código que reescreva bytes
+do `.xlsx`, invocado sem o raciocínio de quem escreveu. `revisor-estilo`: a casca
+mais as páginas de uma vez, contra `docs/estilizacao/corpus-estilo.md`.
+`revisor-docs`: mudança em `docs/`, `.claude/` e nos `.md` da raiz, **só sob
+demanda do usuário**.
 
-`revisor-estilo` revisa a estilização das sete páginas contra o corpus
-verificável de `docs/estilizacao/corpus-estilo.md` — <!-- conta:regras-corpus -->40<!-- /conta --> regras com identificador
-de norma, sinal sintático e contraexemplo. **Recebe a casca MAIS as sete páginas
-de uma vez**, porque <!-- conta:regras-corpus[balde=COMPOSICIONAL] -->11<!-- /conta --> das <!-- conta:regras-corpus -->40<!-- /conta --> regras são composicionais: a violação delas não
-existe dentro de um arquivo, é a diferença entre arquivos. Também não tem `Edit`
-nem `Write`, e `model: opus` pelo mesmo motivo do anterior — o eixo de contraste
-exige converter `oklch()` para sRGB e calcular a razão da WCAG com a conta à
-mostra. Devolve achados em formato fixo e um plano de **ondas por dependência
-técnica**, cada uma declarando quantos arquivos toca.
+**Rules** (`.claude/rules/`) — entram em contexto quando se **lê** arquivo que casa
+o `paths:`; criar arquivo novo não as carrega. Regra inviolável não vai para lá.
+São <!-- conta:rules -->6<!-- /conta -->: `comentarios.md` (`src/`, `web/`, `tests/`),
+`documentacao.md` (`docs/` e `.md` da raiz), `escrita-xlsx.md` (o surgeon e o
+write-guard), `microcopia.md` (`web/src/**/*.tsx`), `operacao-windows.md`
+(`scripts/`) e `distribuicao.md` (o script de sincronização e os `.exemplo`).
 
-`revisor-docs` revisa mudança em `docs/`, em `.claude/`, no `CLAUDE.md` e nos
-dois `README.md` — **invocado sob demanda do usuário, e não antes de commitar**,
-sem `Edit` nem `Write` e com `model: opus` pelo mesmo motivo. **Ele começa onde
-`tests/repo/documentacao.test.ts` para**, e a divisão está escrita **dentro
-dele**, não no teste: a guarda cobra o que é computável — índice, contagens,
-matriz, requisito revogado —, e o revisor cobra o que não é. São **cinco**
-famílias: número cuja **base** está errada, **citação de identificador que
-existe e diz outra coisa**, elo da cascata não alcançado **e não declarado**,
-contradição entre duas afirmações **do mesmo diff**, e emenda que apaga
-registro. A segunda é a razão de ele existir: medido, **zero** das 5.458
-citações de ID em prosa apontam para identificador inexistente, então linter
-nenhum as alcança — é semântica.
+**Hooks** (`.claude/hooks/`). `guard-dados-sensiveis.sh` (`PreToolUse`) barra o
+que publicaria dado de cliente e as formas de git negadas, e falha **fechado**;
+`test-guard.sh` é a regressão dele, no `verify`. `conferir-distribuicao.sh` avisa
+que a `distribuicao` ficou para trás; `conferir-alinhamento.sh`, que este arquivo
+não cita uma peça; `registrar-instrucoes.sh` registra em `data/` cada instrução
+carregada. Os três falham **aberto**.
 
-**Rules** (`.claude/rules/`). Instrução com `paths:` no frontmatter, que entra em
-contexto **só quando o Claude lê arquivo que casa o glob** — e por isso não custa
-token nas sessões que não tocam o assunto. São <!-- conta:rules -->6<!-- /conta -->:
-
-| Rule | Carrega ao tocar |
-|---|---|
-| `comentarios.md` | `src/`, `web/`, `tests/` — a régua de comentários |
-| `documentacao.md` | `docs/` e `.md` da raiz — números afirmados em prosa, e o que o `revisor-docs` custa e pega, para quem for decidir invocá-lo. **Ela não manda invocar**: não há gatilho. Carrega em quase toda sessão, porque o protocolo de fatia lê `docs/`, e por isso é curta |
-| `escrita-xlsx.md` | `xlsx-surgeon.ts`, `write-guard.ts` — o procedimento do `revisor-xml` e a forma medida do `calcChain` |
-| `microcopia.md` | `web/src/**/*.tsx` — o texto que o operador lê. Nasceu em 21/09/2026 de `/avaliar-claude`: a régua vivia só na conversa, e quem conferia era o usuário, print a print |
-| `operacao-windows.md` | `scripts/` — o que `PD-06` deixou como regra, e a lição que já se pagou |
-| `distribuicao.md` | o script de sincronização e os `.exemplo` — o que entra na branch, e `PD-08` |
-
-**`escrita-xlsx.md`, `operacao-windows.md` e `distribuicao.md` nasceram em
-31/08/2026, do `CLAUDE.md`**, que era carregado em toda sessão e pagava ~1750
-palavras por três assuntos que só interessam a quem abre aqueles arquivos.
-**Nomeadas, e não "as três últimas"**: a frase por posição era verdadeira até
-`microcopia.md` entrar no meio da tabela, em 21/09/2026. **Não é garantia**: rule é contexto, não
-configuração aplicada. **Ela sobrevive ao `/compact`** — a documentação é
-explícita: rules com `paths:` recarregam quando o Claude volta a ler arquivo que
-casa o glob, e o hook `InstructionsLoaded` chega a expor `load_reason: compact`.
-O que não sobrevive é o disparo sem leitura. **O gatilho é `Read`, não `Write`**,
-e isso é limitação medida, não escolha: criar arquivo novo em `scripts/` não
-carrega `operacao-windows.md` (issue #23478 do `claude-code`). Editar carrega,
-porque o harness exige `Read` antes de `Edit`. Quem garante é a asserção em
-`tests/repo/`. Regra inviolável não vai para cá.
-
-**Hooks** (`.claude/hooks/`). `guard-dados-sensiveis.sh` (`PreToolUse`) bloqueia
-o que pode publicar dado de cliente e falha **fechado**.
-`conferir-distribuicao.sh` (`PostToolUse`) avisa, depois de `git pull`,
-`git merge` ou `git fetch` **com a `main` em HEAD**, que a branch `distribuicao` ficou para
-trás — mede e reporta, nunca sincroniza sozinho. Falha **aberto**, e é barato:
-filtra o comando por regex antes de olhar a árvore.
-`conferir-alinhamento.sh` (`ConfigChange`) avisa quando existe skill, subagente
-ou hook que este arquivo não menciona, **e quando uma peça já criada continua
-com o gatilho em aberto na tabela de marcos** — mencionar e marcar são coisas
-diferentes. Falha **aberto**.
-`registrar-instrucoes.sh` (`InstructionsLoaded`) escreve uma linha por arquivo de
-instrução que entra em contexto — quando, **por que** (`load_reason`) e qual —,
-em `data/instrucoes-carregadas.log`, que é gitignored. Não imprime nada: o log é
-para leitura agregada, não para a sessão. **Falha aberto, e aqui isso é mais
-grave que nos outros:** neste evento `exit 2` **bloqueia o arquivo de instrução
-de carregar**, e uma sessão rodaria sem as regras invioláveis em silêncio.
-`test-guard.sh` é a regressão do guard, roda no `npm run verify` e exige `bash`
-e `jq`.
-
-**`verifica-dados-sensiveis.sh` entrou no portão local em 02/09/2026**, e
-até então só existia no CI: o portão local passava e o workflow reprovava, que
-é a ordem errada de descobrir. Foi assim que a guarda das fixtures chegou ao
-`dados-sensiveis.yml` com a âncora reprovando o check de caminho absoluto.
-
-**Permissões** (`.claude/settings.json`). `npm install` e `npm ci` pedem
-confirmação. `curl`, `wget`, force-push e leitura ou escrita de `*.xlsx` e
-`*.jpeg` da raiz estão negados. O modo bypass está desabilitado.
-**Mudar permissão (`settings`) ou ruleset do GitHub é do dono**: o classificador
-do modo automático bloqueia o agente nos dois casos (medido em 23/09/2026) —
-entregue o JSON ou o comando literal, e confira depois de aplicado.
-**`mcp__*` está negado — todo MCP, de todo servidor** (D-19 e D-20 em
-`docs/10-governanca.md`).
-**Skill libera comando só por `allowed-tools`, e um só:** a `/abrir-historia` libera
-`node ${CLAUDE_PROJECT_DIR}/tools/abrir-historia.mjs`, desde 01/10/2026, por decisão
-do dono. Fora do modo automático, comando injetado em skill que não é leitura pura —
-`awk`, `sed` lendo arquivo, `$(…)`, `${…}` — **aborta a invocação**, e caminho
-relativo também, com a sessão fora da raiz; a régua está em
-`.claude/rules/documentacao.md`.
-
-**O git é permitido até o PR, e negado do PR em diante.** `git add`, `commit`,
-`push` e `switch` rodam sem confirmação, e `gh pr create` também pelo
-`settings.json` do projeto — mas nesta máquina ele pede desde 30/09/2026, porque
-o settings global pôs `gh pr *` em `ask`, e `ask` vence `allow` em qualquer
-escopo; **`gh pr merge` está negado**, e o merge continua sendo do dono, no
-GitHub. Negados também os
-comandos que **perdem trabalho ou reescrevem história**: `reset --hard`,
+**Permissões** (`.claude/settings.json`). Negados: `curl`, `wget`, todo
+`mcp__*`, leitura ou escrita de `*.xlsx` e `*.jpeg` da raiz, `gh pr merge`, e o
+git que perde trabalho ou reescreve história — force-push, `reset --hard`,
 `clean`, `checkout --`, `switch -f`, `rebase`, `commit --amend`,
-`commit --no-verify`, `branch -D` e `gh repo delete`.
-**A negação por prefixo não alcança a forma, e quem a impõe é o guard.**
-`git push origin x --force`, `-uf`, `--force-w` e `+x` escapam de
-`git push --force *` e caem no `allow` de `git push *` — medido em 23/09/2026,
-71 formas passavam sem prompt. Desde 30/09/2026 o `guard-dados-sensiveis.sh`
-barra as mesmas negações em qualquer posição, grupo, abreviação e atrás de
-`git -C`/`-c`, `env`, `timeout` ou `bash -c`, e barra também push para destino
-que não é remoto nomeado, `push --mirror`/`--delete`, escrita em `git config` e
-`gh pr merge` fora de posição.
+`commit --no-verify`, `branch -D`, `gh repo delete`. `npm install` e `npm ci`
+pedem confirmação; `gh pr create` também, nesta máquina, pelo settings global. O
+resto do git roda sem prompt — quem protege é o portão antes do commit e a `main`
+protegida depois. **Mudar permissão ou ruleset é do dono:** entregue o JSON ou o
+comando literal. Skill libera comando só por `allowed-tools`, e a régua da
+injeção está em `.claude/rules/documentacao.md`.
 
-> **A confirmação em `git add` e `git push` saiu em 31/08/2026**, ao abrir a
-> sessão sem supervisão. Quem protege deixou de ser o prompt e passou a ser o
-> par: **o portão antes do commit** e a **`main` protegida** depois dele — nada
-> chega à `main` sem PR, `verify` e `dados-sensiveis`. As negações acima
-> entraram no mesmo commit, e são o outro lado da troca: sem prompt, o que não
-> pode acontecer precisa ser impossível, e não apenas desaconselhado.
->
-> `git switch -f` e `--discard-changes` negados têm par no repositório:
-> `scripts/sincronizar-distribuicao.ts` recusa árvore suja antes do seu próprio
-> `git switch`. Os dois defendem a mesma coisa — mudança não commitada não
-> atravessa troca de branch — por caminhos diferentes.
-
-**Gates no GitHub** (`.github/workflows/`), em `pull_request` e em `push` na
-`main`. `verify.yml` roda o portão inteiro com o Node de `.nvmrc`;
-`dados-sensiveis.yml` roda `verifica-dados-sensiveis.sh`. **É a única camada que
-roda sempre** — o hook é `PreToolUse` e não vê commit feito fora do Claude Code.
-**`verify-windows.yml` roda em `windows-latest` e NÃO é obrigatório**, desde
-16/09/2026: RNF-26 declara Windows como alvo e nenhuma execução rodava lá.
-**Separado, nunca matriz dentro de `verify.yml`** — a matriz renomearia o
-contexto para `verify (ubuntu-latest)`, o ruleset exige o literal `verify`, e a
-`main` ficaria desprotegida parecendo protegida. Ver `docs/08` §5.2.
-
-**Três proteções são configuração, não arquivo** — ligadas em 16/09/2026 e
-conferíveis por `gh api`: **secret scanning** e **push protection**, porque o
-repositório é público e `verifica-dados-sensiveis.sh` não procura credencial
-nenhuma; e **Dependabot com alertas ligados e updates automáticos desligados**,
-porque as versões são fixadas exatas e PR por pacote briga com a regra de não
-trocar versão sem motivo registrado.
-
-**Guarda de contrato:** `tests/repo/contratos.test.ts` e
-`web/tests/paginas-montadas.test.tsx`, no `verify` e no CI. **Sem número aqui**
-— ele dizia sete e os dois arquivos somam 23 blocos `it()`, contando âncoras.
-Nenhuma asserção tem lista fixa: rota sem teste, contrato de `GET /api/indicators`
-divergindo do documento, história `✅ CONCLUÍDA` sem página montada, peça de
-`.claude/` que o `CLAUDE.md` não menciona, **nome de peça divergindo entre o
-diretório e o `name:` do frontmatter**, **âncora morta em comentário** — ID
-do plano, caminho de arquivo ou identificador em camelCase — e **gatilho de
-reavaliação de `D-16` atingido sem registro** reprovam a suíte. **Rota
-documentada e não servida NÃO é coberta** — esta linha afirmou que era até
-17/08/2026, enquanto o cabeçalho do próprio teste dizia o contrário.
-**A guarda não substitui a fatia; libera a atenção dela.**
-
-**Guarda de documentação:** `tests/repo/documentacao.test.ts`, desde 11/09/2026.
-Os dois acima guardam o eixo **documento↔código**; este guarda o outro —
-**documento contra documento** —, que é onde metade do trabalho acontece.
-Medido em 11/09/2026: **220 dos 445** commits não-merge da `main` tocam
-**apenas** `docs/`, `CLAUDE.md` ou `README.md`, e o `.md` do repositório tem
-mais linhas que `src/` e `web/src/` somados. Ele cobra o índice do backlog
-agrupando cada história sob o épico do corpo, as contagens P/M/G de cada linha
-do resumo, a matriz concordando com o backlog história a história, requisito
-revogado que segue "Entregue" e o **tamanho declarado contra a régua do topo,
-só nas histórias abertas**. O total de histórias em prosa saiu dele em
-06/10/2026: desde as regiões de 01/10 o regex não casava linha nenhuma, e quem o
-cobre é a guarda de contagem. Nenhuma
-expectativa é lista fixa: épico, história e requisito novos entram sem tocar no
-arquivo.
-
-**Guarda de contagem:** `tests/repo/contagens.test.ts`, desde 01/10/2026. Número
-de estado atual em `docs/`, `.claude/`, no `CLAUDE.md` e no `README.md` vive numa
-região `conta`, que `tools/contar-documentacao.mjs` confere contra a fonte; a
-reprovação diz o comando que corrige (`--write`). Skill não tem região: calcula o
-número na invocação. Registro datado fica de fora. O número escrito **fora** de
-região é apontado no diff por `--nuas`, que a `/sugerir-prs` roda antes do aceite e
-que só avisa — a régua está em `.claude/rules/documentacao.md`.
-
-**`npm run test:strip`** importa os módulos de `src/` sob
-`--experimental-strip-types`, que é como a aplicação roda de verdade. **Nada de
-`parameter property`, `enum`, `namespace` ou decorator em `src/`.**
-
-**A `main` está protegida** pelo ruleset `main protegida`, ativo e com
-`bypass_actors` **vazio** — nem o dono do repositório escapa. Quatro regras:
-`pull_request`, `required_status_checks` (`verify` e `dados-sensiveis`, com
-`strict_required_status_checks_policy` **ligado desde 16/09/2026** — a branch
-precisa estar atualizada com a `main` para mesclar — e cada check preso ao
-GitHub Actions por `integration_id` **desde 23/09/2026**: sem ele, qualquer
-status com o mesmo nome, inclusive um postado por `gh api`, satisfazia o check),
-`non_fast_forward` e `deletion`. **A `distribuicao` tem ruleset próprio desde
-23/09/2026**, `distribuicao protegida`, só com `deletion` e `non_fast_forward`:
-ela não recebe PR, então não há check a exigir. É configuração do GitHub, não arquivo
-versionado; leia o estado real com
-`gh api repos/<owner>/<repo>/rulesets/<id>` em vez de confiar nesta linha.
-
-> `non_fast_forward` **proíbe reescrever histórico**, e não há como contornar
-> por PR: commits reescritos têm SHA novo, e um PR os somaria em vez de
-> substituir. Reescrita exige desativar o ruleset, empurrar e reativar — e o
-> `PUT` da API **precisa reenviar o objeto inteiro**, porque mandar só
-> `enforcement` zera as regras e deixa a proteção vazia parecendo ativa. Medido
-> em 18/08/2026, ao limpar 12 mensagens de commit.
+**Gates.** No GitHub, `verify.yml` e `dados-sensiveis.yml` são obrigatórios na
+`main` — ruleset `main protegida`, sem bypass, com branch atualizada exigida;
+`verify-windows.yml` roda e **não** é obrigatório. Os detalhes, e por que não é
+matriz, estão em `docs/08-qualidade-operacao.md` §5.2. No repositório, quatro
+guardas reprovam a suíte, cada uma com o alcance no cabeçalho:
+`tests/repo/contratos.test.ts` e `web/tests/paginas-montadas.test.tsx`
+(documento↔código, inclusive peça de `.claude/` que este arquivo não cita),
+`tests/repo/documentacao.test.ts` (documento contra documento) e
+`tests/repo/contagens.test.ts` (número em região contra a fonte; o número fora de
+região é avisado no diff por `--nuas`). **A guarda não substitui a fatia; libera
+a atenção dela.** `npm run test:strip` importa `src/` como a aplicação roda:
+**nada de `parameter property`, `enum`, `namespace` ou decorator em `src/`.**
 
 **Ao acrescentar skill, rule, hook, workflow ou regra de permissão, atualize
 este bloco.** O hook de alinhamento avisa **e a suíte reprova**; quem escreve é
