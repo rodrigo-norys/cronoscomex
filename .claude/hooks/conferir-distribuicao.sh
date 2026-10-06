@@ -46,7 +46,7 @@ comando=$(printf '%s' "$entrada" | jq -r '.tool_input.command // empty' 2>/dev/n
 # PR #145, e a distribuicao ficou 14 arquivos atras sem aviso.
 #
 # DOIS LIMITES, e o segundo e estrutural. Nenhum PostToolUse ve o terminal do
-# usuario — mesmo limite que o CLAUDE.md declara para o PreToolUse. E o
+# usuario — mesmo limite que `docs/08-qualidade-operacao.md` §5.2 declara para o PreToolUse. E o
 # casamento e na STRING do comando, nao no que o git fez: um comando que apenas
 # MENCIONE `git pull` dispara. Medido no dia, por acidente, num laco de teste
 # que nao rodou git nenhum. O falso positivo e barato — avisa de uma condicao

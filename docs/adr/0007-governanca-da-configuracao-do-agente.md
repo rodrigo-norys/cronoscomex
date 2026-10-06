@@ -57,6 +57,17 @@ vira público e permanente. É dele que saem a guarda de dados sensíveis, o
   protegida depois dele.
 - **Regra inviolável não migra para `.claude/rules/`**: rule é contexto, não
   configuração aplicada.
+- **O gatilho da rule é `Read`, não `Write`** — limitação medida, não escolha:
+  criar arquivo novo em `scripts/` não carrega `operacao-windows.md` (issue
+  #23478 do `claude-code`). Editar carrega, porque o harness exige `Read` antes de
+  `Edit`. Quem garante a regra é a asserção em `tests/repo/`, e não a rule.
+- **Mudar permissão ou ruleset é do dono**: o classificador do modo automático
+  bloqueia o agente nos dois casos (medido em 23/09/2026). O agente entrega o
+  JSON ou o comando literal, e confere depois de aplicado.
+- **`git switch -f` e `--discard-changes` negados têm par no repositório:**
+  `scripts/sincronizar-distribuicao.ts` recusa árvore suja antes do próprio
+  `git switch`. Os dois defendem a mesma coisa — mudança não commitada não
+  atravessa troca de branch — por caminhos diferentes.
 
 ## O que foi recusado, e continua recusado
 
