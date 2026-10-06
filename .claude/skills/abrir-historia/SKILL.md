@@ -39,7 +39,7 @@ tudo que faltar entra como divergência.
 | cria ou altera **rota** | `src/http/routes/<nome>.ts` · `src/http/server.ts` (registro) · `tests/http/<nome>.test.ts` |
 | acrescenta campo a **rota existente** | a própria rota **e** o teste dela — o teste costuma fixar a lista de chaves |
 | altera **tipo exportado** de `src/domain/` | todo consumidor **e** as fábricas de estado dos testes que o constroem |
-| acrescenta **dependência ou script** | `package.json` · `CLAUDE.md` (tabela de stack ou bloco de infraestrutura) |
+| acrescenta **dependência ou script** | `package.json` · o log da §5 de `docs/10-governanca.md` (`.claude/rules/dependencias.md`) · `CLAUDE.md`, bloco de infraestrutura, se for script do portão |
 
 Casos reais que essas perguntas teriam pego:
 
