@@ -95,17 +95,17 @@ Não re-derive isto; está medido.
 
 | Camada | Versão |
 |---|---|
-| Node | **22.23.2** LTS em `.nvmrc`; `engines` aceita `>=22.12.0 <23` |
-| TypeScript | 7.0.2 (fallback declarado: 5.9.3, se a build falhar) |
-| Fastify | 5.12.1 |
-| fflate | 0.8.3 — leitura e escrita cirúrgica no zip |
-| chokidar | 5.0.0 |
-| React · Vite | 19.2.8 · 8.2.0 |
-| Tailwind | 4.3.3 |
-| Recharts | 3.10.1 |
-| Vitest | 4.1.11 — patch de segurança, `D-52` |
-| Testing Library · jsdom | 16.3.2 · 30.0.1 — **só teste**, ver D-17 |
-| Biome (lint + format) | 2.5.6 |
+| Node | **<!-- conta:versao[node] -->22.23.2<!-- /conta -->** LTS em `.nvmrc`; `engines` aceita `>=22.12.0 <23` |
+| TypeScript | <!-- conta:versao[typescript] -->7.0.2<!-- /conta --> (fallback declarado: 5.9.3, se a build falhar) |
+| Fastify | <!-- conta:versao[fastify] -->5.12.1<!-- /conta --> |
+| fflate | <!-- conta:versao[fflate] -->0.8.3<!-- /conta --> — leitura e escrita cirúrgica no zip |
+| chokidar | <!-- conta:versao[chokidar] -->5.0.0<!-- /conta --> |
+| React · Vite | <!-- conta:versao[react] -->19.2.8<!-- /conta --> · <!-- conta:versao[vite] -->8.2.0<!-- /conta --> |
+| Tailwind | <!-- conta:versao[tailwindcss] -->4.3.3<!-- /conta --> |
+| Recharts | <!-- conta:versao[recharts] -->3.10.1<!-- /conta --> |
+| Vitest | <!-- conta:versao[vitest] -->4.1.11<!-- /conta --> — patch de segurança, `D-52` |
+| Testing Library · jsdom | <!-- conta:versao[@testing-library/react] -->16.3.2<!-- /conta --> · <!-- conta:versao[jsdom] -->30.0.1<!-- /conta --> — **só teste**, ver D-17 |
+| Biome (lint + format) | <!-- conta:versao[@biomejs/biome] -->2.5.6<!-- /conta --> |
 
 Não troque versão sem registrar o motivo. Não acrescente dependência que o
 plano não prevê.
@@ -486,9 +486,10 @@ Medido em 11/09/2026: **220 dos 445** commits não-merge da `main` tocam
 mais linhas que `src/` e `web/src/` somados. Ele cobra o índice do backlog
 agrupando cada história sob o épico do corpo, as contagens P/M/G de cada linha
 do resumo, a matriz concordando com o backlog história a história, requisito
-revogado que segue "Entregue", o total de histórias afirmado em prosa — em
-`docs/`, em `.claude/`, no `CLAUDE.md` e nos dois `README.md` — e o **tamanho
-declarado contra a régua do topo, só nas histórias abertas**. Nenhuma
+revogado que segue "Entregue" e o **tamanho declarado contra a régua do topo,
+só nas histórias abertas**. O total de histórias em prosa saiu dele em
+06/10/2026: desde as regiões de 01/10 o regex não casava linha nenhuma, e quem o
+cobre é a guarda de contagem. Nenhuma
 expectativa é lista fixa: épico, história e requisito novos entram sem tocar no
 arquivo.
 
@@ -496,8 +497,9 @@ arquivo.
 de estado atual em `docs/`, `.claude/`, no `CLAUDE.md` e no `README.md` vive numa
 região `conta`, que `tools/contar-documentacao.mjs` confere contra a fonte; a
 reprovação diz o comando que corrige (`--write`). Skill não tem região: calcula o
-número na invocação. Registro datado fica de fora — a régua está em
-`.claude/rules/documentacao.md`.
+número na invocação. Registro datado fica de fora. O número escrito **fora** de
+região é apontado no diff por `--nuas`, que a `/sugerir-prs` roda antes do aceite e
+que só avisa — a régua está em `.claude/rules/documentacao.md`.
 
 **`npm run test:strip`** importa os módulos de `src/` sob
 `--experimental-strip-types`, que é como a aplicação roda de verdade. **Nada de
@@ -555,7 +557,7 @@ estão na ADR-0007, com o que cada um ensinou.
 ## Comandos
 
 ```bash
-nvm use             # Node 22.23.2, conforme .nvmrc
+nvm use             # o Node de .nvmrc
 npm run verify      # o portão inteiro — a ORDEM está em scripts.verify, no package.json
 npm test            # Vitest
 npm run dev         # servidor (5173) + interface (5174), no mesmo terminal
@@ -567,7 +569,7 @@ python3 tools/profile_workbook.py "<caminho.xlsx>" /tmp/saida.json   # reperfila
 > **A ORDEM dos passos do portão vive em `scripts.verify`, no `package.json`,
 > e só lá.** Este arquivo já a afirmou em três lugares, e acrescentar um passo
 > em 17/09/2026 tornou dois deles falsos de uma vez — achados por raciocínio, e
-> não por teste: a guarda de documentação cobra o total de histórias em prosa,
+> não por teste: a guarda de documentação cobrava o total de histórias em prosa,
 > não a composição do portão.
 
 > **`npm install` reprova com `Cannot read properties of null (reading 'edgesOut')`,

@@ -36,6 +36,16 @@ em 01/10/2026. Lógica maior vai para script em `tools/`, liberado na skill por
 ela fora da raiz a skill inteira aborta — medido na mesma data. Registro datado não
 vira região: o número dele está certo na data.
 
+**O número que escapou da região é apontado no diff, não no portão.**
+`node tools/contar-documentacao.mjs --nuas` lista o número com unidade — algarismo
+ou por extenso — escrito fora de região nas linhas que o diff contra a `main`
+acrescentou, e a `/sugerir-prs` o roda antes do aceite. **Só avisa**: medido em
+06/10/2026, ~47% dos 260 números dos documentos inteiros são falso positivo mesmo
+depois das regras estruturais. Não há marcação de isenção: o que fica de fora é
+estrutura — título, data ou "medido" na linha, matriz `✅ **Concluída`, índice
+fechado, história e épico fechados, e os arquivos de registro. Versão também é
+estado atual: `versao[pacote]` lê o `package.json`, e `versao[node]`, o `.nvmrc`.
+
 **Medição sobre a planilha** — 649 linhas, <!-- conta:chaves-de-cor -->9<!-- /conta --> chaves de cor, 20,7% de
 `DOCS ENVIADOS`. Teste nenhum confere: a regra inviolável 7 proíbe a suíte de
 tocar o arquivo real. Cite **fonte e data**:

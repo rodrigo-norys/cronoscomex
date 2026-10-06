@@ -14,7 +14,7 @@ argument-hint: '[H-NN]'
 ## Passos
 
 1. **Portão.** Rode `npm run verify`. Se `node --version` não devolver
-   `v22.23.2`, prefixe `nvm use &&`. Se o portão reprovar, **pare aqui** e
+   a versão de `.nvmrc`, prefixe `nvm use &&`. Se o portão reprovar, **pare aqui** e
    conserte — não marque nada.
 
 2. **Definition of done** (`docs/10-governanca.md`). Percorra os 9 itens e diga,
@@ -45,8 +45,8 @@ argument-hint: '[H-NN]'
    porque a correção de um achado da revisão acrescentava teste e invalidava o
    número já corrigido na rodada anterior. Escrever antes do último portão
    garante reincidência, e guarda nenhuma o alcança —
-   `tests/repo/documentacao.test.ts` cobra o total de **histórias** afirmado em
-   prosa, não a contagem da suíte.
+   `tests/repo/contagens.test.ts` cobra os números presos em região, e a
+   contagem da suíte não é um deles.
 
    **Contar blocos `it(` também erra**, e foi o que produziu um dos quatro: um
    `it.each`, ou um `it` dentro de laço, faz um bloco render N testes. O total do
