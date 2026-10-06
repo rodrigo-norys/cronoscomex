@@ -65,8 +65,10 @@ argument-hint: '[H-NN]'
    só o que está aberto". *(Esta instrução citava a frase "As 81 histórias estão
    concluídas", que o `CLAUDE.md` não contém desde que o total passou de 81 — a
    citação literal envelhece, o ponteiro não.)* O que se atualiza aqui é a lista de **pendências
-   abertas** — acrescente a que a história criou, remova a que ela fechou. Se a
-   história não mexeu em nenhuma, o bloco não muda, e isso é o caso normal.
+   abertas** — acrescente a que a história criou, remova a que ela fechou, **nos dois
+   lugares**: uma linha no `CLAUDE.md` e o detalhe na seção "Pendências abertas" do
+   `docs/README.md`. Se a história não mexeu em nenhuma, o bloco não muda, e isso é o
+   caso normal.
 
    **O bloco é curto por decisão, e continua curto.** Todo aprendizado técnico da história
    (número medido, defeito encontrado, decisão tomada) vai no bloco
