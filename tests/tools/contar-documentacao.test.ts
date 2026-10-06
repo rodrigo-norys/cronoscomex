@@ -274,7 +274,7 @@ describe('inspect e rewrite, sobre o repositorio temporario', () => {
     expect(readFileSync(join(root, 'docs/04-arquitetura.md'), 'utf-8')).toBe(tree)
   })
 
-  it('CRLF, como no checkout do Windows: a regiao confere vale, e o --write preserva o CRLF', () => {
+  it('CRLF, como de editor no Windows: a regiao confere vale, e o --write preserva o CRLF', () => {
     const crlf = (lines: string[]) => lines.join('\r\n')
     write('src/domain/a.ts', '')
     write(

@@ -1,0 +1,9 @@
+# Fim de linha fixo em LF no checkout, inclusive no runner Windows do CI.
+# Sem isto, o Git for Windows converte tudo para CRLF, e o verify-windows
+# testa bytes que a maquina do operador nunca recebe: a arvore chega la por
+# download da branch distribuicao e por scp, sempre em LF.
+* text=auto eol=lf
+
+# Binarios declarados, e nao deixados a heuristica do Git.
+*.xlsx binary
+*.woff2 binary

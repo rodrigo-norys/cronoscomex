@@ -210,8 +210,9 @@ const insideInlineCode = (line, index) => (line.slice(0, index).match(/`/g) ?? [
  * linha (base 1), e os erros de estrutura — o que impede saber o que a regiao diz.
  */
 export function scanRegions(text) {
-  // O checkout do Windows converte para CRLF, e o `\r` final quebrava o `$` dos marcadores
-  // de bloco: o `verify-windows` do PR #153 reprovou a arvore de `04-arquitetura.md`.
+  // Arquivo em CRLF deixa um `\r` final que quebrava o `$` dos marcadores de bloco: o
+  // `verify-windows` do PR #153 reprovou assim a arvore de `04-arquitetura.md`, antes de o
+  // `.gitattributes` fixar LF no checkout. A tolerancia fica para CRLF vindo de editor.
   const lines = text.split('\n').map((line) => line.replace(/\r$/, ''))
   const counts = []
   const checks = []

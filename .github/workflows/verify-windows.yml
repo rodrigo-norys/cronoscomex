@@ -52,8 +52,9 @@ jobs:
       # de shell sem cobrir risco novo.
       #
       # O que sobra e exatamente o que muda entre SO: resolucao de modulo sob
-      # --experimental-strip-types, separador de caminho, fim de linha e o
-      # build da SPA.
+      # --experimental-strip-types, separador de caminho e o build da SPA. Fim
+      # de linha nao muda mais: o `.gitattributes` fixa LF no checkout daqui
+      # tambem, que e como a arvore chega a maquina do operador.
       - name: Strip types
         run: npm run test:strip
 
