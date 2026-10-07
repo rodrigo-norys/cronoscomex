@@ -15,6 +15,9 @@
 # que e como o proprio git as le. Na mesma familia entram push para destino que
 # nao e remoto nomeado, escrita em `git config` e `gh pr merge` fora de posicao.
 #
+# E barra o acesso a data/ pelo shell, que o deny de `Read(/data/**)` nao
+# alcanca: o caminho explicito, em comando que le, lista ou grava (D-74).
+#
 # Falha FECHADO: sem jq ou com entrada ilegivel, bloqueia em vez de liberar.
 # Um bloqueio falso custa redigitar um comando; uma passagem falsa publica
 # dado de cliente.
@@ -656,6 +659,173 @@ check_profiler() {
   block "perfilador com destino fora de /tmp: a saida traz amostras de celula das quatro abas, inclusive CNPJ. Grave em /tmp, sanitize, e so entao mova."
 }
 
+# So o comando que cita data/ ou `cd` paga o `jq` do diretorio corrente.
+data_context_ready=0
+load_data_context() {
+  [ "$data_context_ready" = 0 ] || return 0
+  data_context_ready=1
+  project_root="${CLAUDE_PROJECT_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../.." 2>/dev/null && pwd)}"
+  project_root="${project_root%/}"
+  data_dir="$project_root/data"
+  data_cwd=$(printf '%s' "$payload" | jq -r '.cwd // empty' 2>/dev/null)
+  [ -n "$data_cwd" ] || data_cwd="$project_root"
+}
+
+# Absoluto e normalizado, sem tocar o disco: `data/../src` nao e data/, e
+# `src/../data` e.
+resolve_path() {
+  local path="$1" part
+  local -a parts=() normalized=()
+  case "$path" in
+    '~'|'~/'*) path="${HOME:-}${path#\~}" ;;
+    '$HOME'|'$HOME/'*) path="${HOME:-}${path#\$HOME}" ;;
+    '${HOME}'|'${HOME}/'*) path="${HOME:-}${path#\$\{HOME\}}" ;;
+    '$CLAUDE_PROJECT_DIR'|'$CLAUDE_PROJECT_DIR/'*) path="$project_root${path#\$CLAUDE_PROJECT_DIR}" ;;
+    '${CLAUDE_PROJECT_DIR}'|'${CLAUDE_PROJECT_DIR}/'*) path="$project_root${path#\$\{CLAUDE_PROJECT_DIR\}}" ;;
+    '$PWD'|'$PWD/'*) path="$data_cwd${path#\$PWD}" ;;
+    '${PWD}'|'${PWD}/'*) path="$data_cwd${path#\$\{PWD\}}" ;;
+  esac
+  case "$path" in /*) ;; *) path="$data_cwd/$path" ;; esac
+
+  IFS=/ read -r -a parts <<< "$path"
+  for part in ${parts[@]+"${parts[@]}"}; do
+    case "$part" in
+      ''|.) ;;
+      ..) [ "${#normalized[@]}" -eq 0 ] || unset 'normalized[${#normalized[@]}-1]' ;;
+      *) normalized+=("$part") ;;
+    esac
+  done
+  resolved=''
+  for part in ${normalized[@]+"${normalized[@]}"}; do
+    resolved="$resolved/$part"
+  done
+  [ -n "$resolved" ] || resolved=/
+}
+
+check_data_word() {
+  [ -n "$1" ] || return 0
+  resolve_path "$1"
+  case "$resolved" in
+    "$data_dir"|"$data_dir"/*)
+      block "acesso a data/ pelo shell: $1 — data/ e o estado do operador, negado ao agente (D-74). O que o agente grava para si fica em .claude/local/." ;;
+  esac
+  return 0
+}
+
+# Opcao curta que toma valor: em `grep -A 3` o `3` nao e caminho, e em
+# `grep -f ARQUIVO` e.
+short_option_value() {
+  local rest="${1#-}" letter values
+  case "$executable" in
+    grep|egrep|fgrep|rgrep|zgrep) values='ABCmdDef' ;;
+    rg) values='ABCmgtTMjrEef' ;;
+    ls) values='I' ;;
+    *) return 0 ;;
+  esac
+  while [ -n "$rest" ]; do
+    letter="${rest:0:1}"
+    rest="${rest:1}"
+    case "$values" in
+      *"$letter"*)
+        if [ -n "$rest" ]; then
+          [ "$letter" = f ] && check_data_word "$rest"
+        elif [ "$letter" = f ]; then
+          value_next=path
+        else
+          value_next=text
+        fi
+        return 0 ;;
+    esac
+  done
+}
+
+# `data/` e o estado do operador — fila, historico, quarentena, backups da
+# planilha. Barra o caminho que resolve para dentro dele como argumento de
+# comando que le, lista ou grava arquivo, como valor de atribuicao e como alvo
+# de `<`, acompanhando o `cd`. So comando conhecido: linha de heredoc e prosa,
+# e `- o log sai de data/` nao e acesso. O padrao do grep e texto, e o valor
+# de `--exclude-dir=data` tambem. Fragmento com aspa sem par fica de fora: e o
+# corte do `|` dentro de aspas que `split_subcommands` faz, e as palavras dali
+# sao texto — `grep -E 'tem data|outra'` era barrado. Fica de fora tambem,
+# declarado em D-74: caminho dentro de codigo ou de `$(...)`, variavel, laco,
+# glob que nao nomeia data/ e busca recursiva.
+check_data_access() {
+  local subcommand="$1" word index executable tokens value_next='' pattern_pending=0 find_roots=1 after_separator=0
+  local -a words=() arguments=()
+  local start=0
+
+  case "$subcommand" in *data*|cd|*'cd '*|*pushd*) ;; *) return 0 ;; esac
+  load_data_context
+
+  tokens=$(printf '%s\n' "$subcommand" | sed -E 's/^[[:space:](){}!&]+//' | xargs printf '%s\n' 2>/dev/null) || return 0
+  while IFS= read -r word; do
+    words+=("$word")
+  done <<< "$tokens"
+
+  for ((index = 0; index < ${#words[@]}; index++)); do
+    case "${words[$index]}" in
+      '<<'*) ;;
+      '<'|[0-9]'<') check_data_word "${words[$((index + 1))]:-}" ;;
+      '<'*) check_data_word "${words[$index]#<}" ;;
+    esac
+  done
+
+  drop_redirections
+  find_executable
+  for ((index = 0; index < start; index++)); do
+    case "${words[$index]}" in
+      [A-Za-z_]*=*) check_data_word "${words[$index]#*=}" ;;
+    esac
+  done
+  [ "$start" -lt "${#words[@]}" ] || return 0
+  executable="${words[$start]##*/}"
+  arguments=("${words[@]:$((start + 1))}")
+
+  case "$executable" in
+    cd|pushd)
+      word="${arguments[0]:-}"
+      case "$word" in -) return 0 ;; -?*) word="${arguments[1]:-}" ;; esac
+      if [ -z "$word" ]; then data_cwd="${HOME:-/}"; return 0; fi
+      check_data_word "$word"
+      data_cwd="$resolved"
+      return 0 ;;
+    grep|egrep|fgrep|rgrep|zgrep|rg)
+      pattern_pending=1
+      for word in ${arguments[@]+"${arguments[@]}"}; do
+        case "$word" in --regexp*|--file*) pattern_pending=0 ;; --*) ;; -*[ef]*) pattern_pending=0 ;; esac
+      done ;;
+    cat|tac|head|tail|less|more|wc|nl|cut|sort|uniq|paste|column|diff|cmp|comm|ls|stat|file|du|find|cp|mv|rm|ln|touch|mkdir|rmdir|chmod|truncate|tee|dd|xxd|od|hexdump|strings|base64|md5sum|sha1sum|sha256sum|iconv|jq|awk|gawk|mawk|sed|zcat|unzip|zip|tar|gzip|gunzip|node|python|python3|bash|sh|zsh|source|.|test|'['|'[['|export) ;;
+    *) return 0 ;;
+  esac
+
+  for word in ${arguments[@]+"${arguments[@]}"}; do
+    if [ -n "$value_next" ]; then
+      [ "$value_next" = path ] && check_data_word "$word"
+      value_next=''
+      continue
+    fi
+    if [ "$after_separator" = 0 ]; then
+      case "$word" in
+        --) after_separator=1; continue ;;
+        --exclude*=*|--include*=*|--glob*=*|--iglob*=*|--ignore*=*|--hide*=*) continue ;;
+        --exclude|--exclude-dir|--include|--glob|--iglob|--ignore|--hide|--regexp|--max-count|--after-context|--before-context|--context|--directories|--devices|--label|--binary-files)
+          value_next=text; continue ;;
+        --file) value_next=path; continue ;;
+        --*=*) check_data_word "${word#*=}"; continue ;;
+        -?*) find_roots=0; short_option_value "$word"; continue ;;
+        '('|'!') find_roots=0; continue ;;
+      esac
+    fi
+    # No find, so a raiz e caminho: `-path ./data -prune` e expressao.
+    [ "$executable" = find ] && [ "$find_roots" = 0 ] && continue
+    if [ "$pattern_pending" = 1 ]; then pattern_pending=0; continue; fi
+    case "$word" in
+      [A-Za-z_]*=*) check_data_word "${word#*=}" ;;
+      *) check_data_word "$word" ;;
+    esac
+  done
+}
+
 inspect_line() {
   local line="$1" depth="$2" raw_subcommand subcommand
   [ "$depth" -le 3 ] || block "comando embrulhado em mais de tres niveis de shell."
@@ -668,6 +838,7 @@ inspect_line() {
     check_git_diff_output "$subcommand"
     check_recursive_remove "$subcommand"
     check_profiler "$subcommand"
+    check_data_access "$subcommand"
     check_executable "$subcommand" "$depth"
   done < <(split_subcommands "$line")
 }

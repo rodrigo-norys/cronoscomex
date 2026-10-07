@@ -31,8 +31,9 @@ passed=0
 failed=0
 
 run_case() {
-  local expected="$1" command="$2" actual
-  jq -nc --arg c "$command" '{tool_input:{command:$c}}' | bash "$guard" >/dev/null 2>&1
+  local expected="$1" command="$2" cwd="${3:-}" actual
+  jq -nc --arg c "$command" --arg d "$cwd" '{tool_input:{command:$c}} + (if $d == "" then {} else {cwd:$d} end)' \
+    | bash "$guard" >/dev/null 2>&1
   actual=$?
   if [ "$actual" -eq "$expected" ]; then
     passed=$((passed + 1))
@@ -44,6 +45,10 @@ run_case() {
 
 blocks() { run_case 2 "$1"; }
 allows() { run_case 0 "$1"; }
+blocks_in() { run_case 2 "$2" "$1"; }
+allows_in() { run_case 0 "$2" "$1"; }
+
+repo_root=$(cd -- "$hook_dir/../.." && pwd)
 
 # --- staging forcado ou em massa -------------------------------------------
 blocks 'git add -f config/app.json'
@@ -275,6 +280,60 @@ allows 'git commit -m "fix(tools): profile_workbook.py exige destino em /tmp"'
 allows 'git diff main...HEAD -- tools/profile_workbook.py'
 allows 'node --version 2>/dev/null'
 allows 'echo "config/app.json e o arquivo de configuracao local"'
+
+# --- acesso a data/ pelo shell (D-74) ---------------------------------------
+# O deny de `Read(/data/**)` so alcanca a ferramenta Read. Os bloqueios abaixo
+# sao as formas que as transcricoes mostraram lendo data/, inclusive a fila do
+# operador.
+blocks 'ls -la data/'
+blocks 'ls data 2>/dev/null'
+blocks 'head -c 300 data/pending-edits.jsonl 2>/dev/null'
+blocks 'wc -l data/history.jsonl && echo ok'
+blocks 'wc -l < data/history.jsonl'
+blocks "awk -F'\t' '{print \$2}' data/quarantine.json | sort -u"
+blocks "stat -c '%y %n' data/*"
+blocks 'grep -n "REF" data/history.jsonl'
+blocks 'grep -rn -e x -- data/'
+blocks 'jq . ./data/quarantine.json'
+blocks 'cat src/../data/history.jsonl'
+blocks 'cat "$CLAUDE_PROJECT_DIR/data/history.jsonl"'
+blocks 'cat ${CLAUDE_PROJECT_DIR}/data/history.jsonl'
+blocks "cat $repo_root/data/history.jsonl"
+blocks "L=$repo_root/data/instrucoes-carregadas.log; wc -l \"\$L\""
+blocks 'export L=data/history.jsonl'
+blocks 'cd data && ls'
+blocks 'cd docs && cat ../data/history.jsonl'
+blocks 'find data -type f'
+blocks 'cp data/history.jsonl /tmp/'
+blocks 'timeout 5 tail -n 20 data/logs/app.jsonl'
+blocks 'python3 tools/ler.py data/history.jsonl'
+blocks 'bash -c "cat data/history.jsonl"'
+blocks '[ -f data/pending-edits.jsonl ] && echo sim'
+blocks_in "$repo_root/docs" 'cat ../data/history.jsonl'
+# Texto que cita data/ nao e acesso: padrao de busca, mensagem de commit, prosa
+# de heredoc e exclusao. Os tres primeiros passam pelo corte ingenuo do `|` e
+# do `;` dentro das aspas, que `split_subcommands` faz por desenho; eles e o
+# `for` foram barrados na primeira versao, medida contra as transcricoes.
+allows 'grep -n "data/\|config/" .claude/hooks/guard-dados-sensiveis.sh'
+allows "grep -n -E 'Nenhum processo tem data|Ver os numeros' web/src/pages/History.tsx"
+allows "sed -i 's#nao em data/, que e#x#; s#y#z#' .claude/hooks/registrar-instrucoes.sh"
+allows 'for d in docs data dist; do grep -c "$d/" CLAUDE.md; done'
+allows 'grep -rn "data/" src/'
+allows 'grep -e "data/" -n src/app/config.ts'
+allows 'grep -n -A 3 "data/" docs/04-arquitetura.md'
+allows 'grep -rn x . --exclude-dir=data'
+allows 'find . -path ./data -prune -o -name "*.ts" -print'
+allows "sed -n '/data\\//p' docs/04-arquitetura.md"
+allows 'echo "data/ e o estado do operador"'
+allows 'git log --oneline -- data/'
+allows 'git commit -m "fix: o log sai de data/; data/ fica so com o estado"'
+allows "$(printf 'git commit -F - <<%sEOF%s\n- o guard barra data/ pelo shell\nEOF' "'" "'")"
+allows 'ls src/data'
+allows 'cat /tmp/data/x.json'
+allows 'du -sh --exclude=data .'
+allows 'cd docs && ls'
+allows 'sed -n 1,40p .claude/local/levantamento-retroativo.md'
+allows_in /tmp 'cat data/x.json'
 
 total=$((passed + failed))
 if [ "$failed" -eq 0 ]; then
