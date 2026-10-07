@@ -36,6 +36,19 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
  * epico com todas as historias fechadas, e os arquivos de registro. A
  * `00-visao-escopo.md` NAO e registro: mistura a especificacao com o escopo vigente.
  *
+ * `--pares` lista, para cada ID cuja DEFINICAO o diff mudou — a linha de tabela que
+ * abre com ele, ou o titulo `### H-NN` e `## Épico ENN` —, os outros blocos que o
+ * citam: e neles que o fato que acabou de mudar pode ter ficado para tras. Historia
+ * fechada no diff traz junto o epico dela. So avisa. Medido sobre os 68 PRs de #100 a
+ * #168: a lista tem mediana de 5 blocos e p90 de 30, e 30 PRs nao geram lista; em cinco
+ * PRs de origem, achou 22 dos 24 lugares que de fato envelheceram — os aposentados de
+ * `D-49` vivos na `02` e na §3 da `09`, e o estado dos epicos copiado no `07`. Tomar a
+ * chave de todo bloco alterado achava os 24, com lista mediana de 138. Nao sao alvo: o
+ * proprio diff, o bloco cercado, que e exemplo, o titulo que define a chave, e o
+ * registro, pela estrutura do `--nuas` menos "plano original", que escondia o paragrafo
+ * de estado do `07`. O que NAO alcanca: fato sem ID — a contagem fica com o `--nuas`, o
+ * resto com a revisao —, a lista que devia ganhar um item novo, e o codigo.
+ *
  * O que NAO faz: reescrever regiao `confere`; contar sobre codigo de `web/src/` — as
  * duas ficaram fora por decisao de 01/10/2026; avisar pela idade de uma medicao da
  * planilha — um terco das afirmacoes nao tem data, e o gatilho real e a aba `2027`.
@@ -46,6 +59,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
  *   node tools/contar-documentacao.mjs --nuas            avisa no diff contra a `main`
  *   node tools/contar-documentacao.mjs --nuas --base X   avisa no diff contra `X`
  *   node tools/contar-documentacao.mjs --nuas --tudo     avisa nos documentos inteiros
+ *   node tools/contar-documentacao.mjs --pares           pares no diff contra a `main`
+ *   node tools/contar-documentacao.mjs --pares --base X  pares no diff contra `X`
  */
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -550,6 +565,166 @@ export function findLooseNumbers(root, { base = 'main', all = false } = {}) {
   )
 }
 
+// As regras do `--pares` ficam nestas constantes, e nao espalhadas pela logica: sao o
+// que um projeto novo troca para adotar o mecanismo.
+const PAIR_ID = String.raw`(?:IND|ALE|RNF|RF|TD|PD|A|D|H|P|R)-\d{2,3}(?:\.\d+)?|ADR-\d{4}|E\d{1,2}`
+const PAIR_CITATION = new RegExp(String.raw`\b(?:${PAIR_ID})\b`, 'g')
+// A linha de tabela que abre com o ID tambem e alvo quando nao mudou: a `02` espelha a
+// `09`, e foi o espelho que envelheceu. O titulo nao: ele e a propria fonte.
+const PAIR_DEFINITION_ROW = new RegExp(String.raw`^\| \*{0,2}(${PAIR_ID})\*{0,2} \|`)
+const PAIR_DEFINITION_HEADING = new RegExp(String.raw`^#{2,4} (?:Épico )?(${PAIR_ID})\b`)
+const PAIR_EPIC = /^## Épico (E\d+)/
+const PAIR_STORY_CLOSED = /^> ✅ \*\*CONCLUÍDA/
+const PAIR_RECORD_LINE = /✅ \*\*Conclu|\]\(#h-\d+\) ✅\s*$|^\| D-\d+ \|/
+
+/** Os blocos de um arquivo, base 1: paragrafo, linha de tabela, item de lista, titulo, bloco cercado. */
+export function blocks(lines) {
+  const found = []
+  let start = -1
+  let fenced = false
+  let fencedBlock = false
+  const close = (end) => {
+    if (start >= 0) found.push({ start: start + 1, end, fenced: fencedBlock })
+    start = -1
+    fencedBlock = false
+  }
+  lines.forEach((line, index) => {
+    if (FENCE.test(line)) {
+      if (!fenced) {
+        close(index)
+        start = index
+        fencedBlock = true
+      }
+      fenced = !fenced
+      if (!fenced) close(index + 1)
+      return
+    }
+    if (fenced) return
+    if (line.trim() === '') {
+      close(index)
+      return
+    }
+    const previous = lines[index - 1] ?? ''
+    const opens = line.startsWith('|') || /^#{1,6} /.test(line) || /^\s*(?:[-*]|\d+\.) /.test(line)
+    if (opens || previous.startsWith('|') || /^#{1,6} /.test(previous)) close(index)
+    if (start < 0) start = index
+  })
+  close(lines.length)
+  return found
+}
+
+/** O epico de cada historia que o diff fechou, com a linha do fechamento: o estado dele pode ter mudado. */
+function epicsOfClosedStories(lines, isChanged) {
+  const epics = new Map()
+  let epic = null
+  lines.forEach((line, index) => {
+    epic = PAIR_EPIC.exec(line)?.[1] ?? epic
+    if (epic && PAIR_STORY_CLOSED.test(line) && isChanged(index + 1)) epics.set(epic, index + 1)
+  })
+  return epics
+}
+
+/**
+ * Para cada ID cuja definicao o diff contra `base` mudou, os outros blocos que o citam.
+ * Bloco alterado no proprio diff, bloco cercado e registro nao sao alvo.
+ */
+export function findPairs(root, { base = 'main' } = {}) {
+  const source = createSource(root)
+  const changed = changedLines(root, base)
+  const parsed = new Map()
+  for (const file of new Set([...source.scope, ...changed.keys()])) {
+    const lines = source
+      .read(file)
+      .split('\n')
+      .map((line) => line.replace(/\r$/, ''))
+    const closed = file === BACKLOG ? closedBacklogLines(lines) : new Set()
+    parsed.set(file, { lines, blocks: blocks(lines), closed })
+  }
+
+  const keys = new Map()
+  const touched = new Set()
+  const define = (key, where) => keys.set(key, [...(keys.get(key) ?? []), where])
+  for (const [file, set] of changed) {
+    const info = parsed.get(file)
+    if (!info) continue
+    const isChanged = (line) => set === null || set.has(line)
+    for (const block of info.blocks) {
+      let hit = false
+      for (let line = block.start; line <= block.end && !hit; line++) hit = isChanged(line)
+      if (!hit) continue
+      touched.add(`${file}:${block.start}`)
+      if (block.fenced) continue
+      for (const pattern of [PAIR_DEFINITION_ROW, PAIR_DEFINITION_HEADING]) {
+        const key = pattern.exec(info.lines[block.start - 1])?.[1]
+        if (key) define(key, `${file}:${block.start}`)
+      }
+    }
+    if (file === BACKLOG)
+      for (const [epic, line] of epicsOfClosedStories(info.lines, isChanged))
+        define(epic, `${file}:${line}`)
+  }
+
+  const citations = []
+  for (const [file, info] of parsed) {
+    if (RECORD_FILES.test(file)) continue
+    for (const block of info.blocks) {
+      if (block.fenced || touched.has(`${file}:${block.start}`)) continue
+      if (info.closed.has(block.start - 1)) continue
+      const text = info.lines.slice(block.start - 1, block.end)
+      if (text.some((line) => PAIR_RECORD_LINE.test(line))) continue
+      const ownHeading = PAIR_DEFINITION_HEADING.exec(text[0] ?? '')?.[1]
+      text.forEach((line, offset) => {
+        for (const match of line.matchAll(PAIR_CITATION)) {
+          if (match[0] === ownHeading) continue
+          citations.push({
+            key: match[0],
+            file,
+            line: block.start + offset,
+            block: block.start,
+            text: line,
+          })
+        }
+      })
+    }
+  }
+
+  return [...keys].map(([key, definedAt]) => {
+    const seen = new Set()
+    const citedBy = citations
+      .filter((citation) => citation.key === key)
+      .filter(
+        (citation) =>
+          !seen.has(`${citation.file}:${citation.block}`) &&
+          seen.add(`${citation.file}:${citation.block}`),
+      )
+      .map(({ file, line, text }) => ({ file, line, text: text.trim() }))
+    return { key, definedAt, citedBy }
+  })
+}
+
+function reportPairs() {
+  const baseIndex = process.argv.indexOf('--base')
+  const base = baseIndex === -1 ? 'main' : process.argv[baseIndex + 1]
+  const pairs = findPairs(ROOT, { base })
+  let total = 0
+  for (const { key, definedAt, citedBy } of pairs.filter((pair) => pair.citedBy.length > 0)) {
+    console.log(`${key} — definicao alterada em ${definedAt.join(', ')}`)
+    for (const { file, line, text } of citedBy) {
+      const at = Math.max(0, text.indexOf(key) - 50)
+      console.log(`  ${file}:${line}  ${at > 0 ? '…' : ''}${text.slice(at, at + 130)}`)
+    }
+    console.log('')
+    total += citedBy.length
+  }
+  console.log(
+    `${pairs.length} chave(s) com definicao alterada no diff contra ${base}, ${total} bloco(s) que as citam — aviso, nao reprovacao.`,
+  )
+  if (total > 0)
+    console.log(
+      'Para cada bloco: ainda diz a verdade depois da mudanca? Se nao, corrija antes do commit.',
+    )
+}
+
 function reportLoose() {
   const all = process.argv.includes('--tudo')
   const baseIndex = process.argv.indexOf('--base')
@@ -564,6 +739,7 @@ function reportLoose() {
 }
 
 function main() {
+  if (process.argv.includes('--pares')) return reportPairs()
   if (process.argv.includes('--nuas')) return reportLoose()
   const write = process.argv.includes('--write')
   if (write) {
