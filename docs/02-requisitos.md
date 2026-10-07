@@ -22,30 +22,39 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 
 ### 1.2. Indicadores (§4)
 
+`IND-23` a `IND-27` não vêm da especificação: nasceram de `D-49` e `D-54`. Os
+aposentados ficam riscados, como registro, com a decisão e o substituto — a
+mesma legenda de [09-rastreabilidade.md](09-rastreabilidade.md).
+
 | ID | Indicador | Regra formalizada | Histórias |
 |---|---|---|---|
 | IND-01 | Quantidade de processos | `count(REF ≠ vazio)`, incluindo "Fechado — aguardando draft" | H-09 |
 | IND-02 | Processos em andamento | `count(categoria = "Em andamento")` | H-09 |
-| IND-03 | Processos em desembaraço | `count(categoria = "Em desembaraço")` | H-09 |
-| IND-04 | Processos desembaraçados | `count(categoria = "Desembaraçado")` | H-09 |
+| IND-03 | ⏹️ ~~Processos em desembaraço~~ *(**aposentado em `D-49`**, substituído por IND-23)* | `count(categoria = "Em desembaraço")` | H-09 |
+| IND-04 | ⏹️ ~~Processos desembaraçados~~ *(**aposentado em `D-54`**, substituído por IND-26)* | `count(categoria = "Desembaraçado")` | H-09 |
 | IND-05 | Fechado — aguardando draft | `count(categoria = "Fechado — aguardando draft")` | H-09 |
 | IND-06 | Canal Vermelho | `count(customs_channel = "vermelho")` | H-12 |
-| IND-07 | Containers chegando hoje | `count(ETA2 = hoje)` | H-10 |
-| IND-08 | Containers chegando esta semana | `count(hoje <= ETA2 <= domingo da semana ISO corrente)` | H-10 |
+| IND-07 | ⏹️ ~~Containers chegando hoje~~ *(**aposentado em `D-49`**, substituído por IND-24)* | `count(ETA2 = hoje)` | H-10 |
+| IND-08 | ⏹️ ~~Containers chegando esta semana~~ *(**aposentado em `D-49`**, sem substituto)* | `count(hoje <= ETA2 <= domingo da semana ISO corrente)` | H-10 |
 | IND-09 | Containers chegando em 15 dias | `count(hoje <= ETA2 <= hoje+15)` | H-10 |
 | IND-10 | Clientes com mais processos | `count agrupado por norm(CLT)`, desc | H-11 |
 | IND-11 | Importadores com mais processos | `count agrupado por norm(IMPORTADOR)`, desc | H-11 |
 | IND-12 | Navios previstos | `lista de (NAVIO, ETA2) onde ETA2 >= hoje`, asc por ETA2 | H-10 |
 | IND-13 | Mercadorias | `count agrupado por norm(MERCADORIA)`, desc, com "BAZAR" destacado | H-11, H-18 |
-| IND-14 | Documentos pendentes | `count(DOCS_ENVIADOS vazio E ETA2 <= hoje+10 E categoria ≠ "Desembaraçado")` | H-12 |
-| IND-15 | Processos atrasados | `count(ETA2 < hoje E categoria ≠ "Desembaraçado")` | H-12 |
-| IND-16 | Processos desembaraçados hoje | `count(RG = hoje E categoria = "Desembaraçado")` | H-13 |
+| IND-14 | ⏹️ ~~Documentos pendentes~~ *(**aposentado em `D-49`**, sem substituto)* | `count(DOCS_ENVIADOS vazio E ETA2 <= hoje+10 E categoria ≠ "Desembaraçado")` | H-12 |
+| IND-15 | ⏹️ ~~Processos atrasados~~ *(**aposentado em `D-49`**, substituído por IND-25)* | `count(ETA2 < hoje E categoria ≠ "Desembaraçado")` | H-12 |
+| IND-16 | ⏹️ ~~Processos desembaraçados hoje~~ *(**aposentado em `D-49`**, sem substituto)* | `count(RG = hoje E categoria = "Desembaraçado")` | H-13 |
 | IND-17 | Ranking de agentes | `count agrupado por norm(AGENTE)`, desc, com coluna de atrasados | H-11, H-19 |
 | IND-18 | Ranking de clientes | Top 10 de IND-10 | H-11 |
 | IND-19 | Ranking de importadores | Top 10 de IND-11 | H-11 |
 | IND-20 | Ranking por responsável | `count` agrupado por `responsible` — uma chave por pessoa do mapa de equipe, mais a chave vazia. Eram 4 valores fixos, vindos da cor, até `H-50` | H-11, H-19, H-50 |
 | IND-21 | Tempo médio até desembaraço | **Fora de escopo.** Exige data de presença de carga, que não existe e não será criada | — |
 | IND-22 | Tempo médio de envio documental | `avg(RG − DOCS_ENVIADOS)` em dias, pares completos, intervalos negativos excluídos | H-13 |
+| IND-23 | ⏹️ ~~Em desembaraço (cor ou DUIMP)~~ *(**aposentado em `D-54`**, substituído por IND-27)* | `count(cor da linha ∈ {#FFE599, #5B9BD5, #A74F7B} OU STATUS contém "DUIMP")` | H-102 |
+| IND-24 | Containers chegando hoje, em linha branca | `count(cor da linha = #FFFFFF E ETA2 = hoje)` | H-102 |
+| IND-25 | Processos atrasados (sem DUIMP) | `count(ETA2 <= hoje+10 E STATUS não contém "DUIMP" E categoria ≠ "Desembaraçado")` | H-102 |
+| IND-26 | Desembaraçados (por cor) | `count(cor da linha ∈ {#00FF00, #FF0000})` | H-102 |
+| IND-27 | Em desembaraço (linha branca) | `count(cor da linha = #FFFFFF)` | H-102 |
 
 ### 1.3. Alertas (§5)
 
@@ -110,7 +119,7 @@ matriz de rastreabilidade (`09-rastreabilidade.md`).
 | RF-26 | Validar o arquivo após a escrita e restaurar o backup automaticamente em caso de falha | H-25 |
 | RF-27 | Editar os campos codificados em cor (responsável, canal, importador fora do RJ) | H-27, H-110 |
 | RF-28 | Descartar edições pendentes individualmente ou em bloco, antes da aplicação | H-23 |
-| RF-33 | Editar o campo **onde ele está**, na própria tabela da Página Operacional, com Categoria de leitura porque ela sai de cinco regras das quais só uma lê a célula (A-22) *(dizia "sete colunas editáveis" até `D-43`; o domínio declara quinze, e quantas a tabela expõe deixa de ser número fixado aqui)* | H-80, H-95 |
+| RF-33 | Editar o campo **onde ele está**, na própria tabela da Página Operacional, com Categoria de leitura porque ela não é célula: sai das regras de TD-01 (A-22) *(dizia "sete colunas editáveis" até `D-43`; o domínio declara quinze, e quantas a tabela expõe deixa de ser número fixado aqui)* | H-80, H-95 |
 | RF-34 | **Criar um processo novo** pela tela, enfileirado como as demais edições e gravado depois da última linha existente da aba `2026` sob comando explícito. A **remoção** de linha permanece fora de escopo (`D-25`) | H-78, H-79, H-80, H-112 |
 | RF-35 | ~~Declarar o cliente consolidado de um processo pela tela~~ *(**REVOGADO por `D-43`** em 11/09/2026: o único consumidor era a coluna Cliente da tabela, que sai em `H-95`. Declarar passa a ser só pelo painel da Página Clientes, por grafia e por prefixo — `RF-39`. A perda foi apresentada ao usuário e ele manteve a decisão: uma grafia já capturada por regra de prefixo não aparece em lista nenhuma do painel)* | H-79, H-95 |
 | RF-39 | Exibir quais grafias de CLT ainda **não** têm cliente declarado, com a contagem de processos de cada uma e independentes dos filtros globais, e permitir declarar cada uma dali *(**Emendado por `D-68`:** a lista e a declaração acompanham a coluna escolhida — CLT, REF ou IMPORTADOR —, uma aba por coluna; `H-105`)* | H-88, H-103, H-105 |
@@ -161,8 +170,9 @@ Todos os valores abaixo, exceto RNF-02, têm origem **medido**. Detalhe em
 
 > **RNF-06 tem uma consequência de produto:** DOCS ENVIADOS está preenchida em
 > apenas 20,7% das linhas. IND-22 (tempo médio de envio documental) terá amostra
-> pequena, e IND-14 (documentos pendentes) tende a acusar volume alto. Ambos
-> exibem o denominador na tela justamente por isso (A-42).
+> pequena, e exibe o denominador na tela justamente por isso (A-42). IND-14
+> (documentos pendentes), que tendia a acusar volume alto pelo mesmo motivo,
+> saiu da tela em `D-49`.
 
 ### 2.2. Usuários
 
@@ -267,6 +277,8 @@ memória.
 > formatação condicional e validações.
 
 > **Consequência registrada em voz alta:** qualquer fonte que perca formatação
-> — CSV, export simplificado, cópia como texto — **invalida** a extração de
-> responsável, canal e localização do importador, porque esses três campos só
-> existem como cor. A aplicação exige o `.xlsx` original.
+> — CSV, export simplificado, cópia como texto — **invalida** tudo o que só
+> existe como cor: o canal, a localização do importador, o responsável que a cor
+> declara (`colorResponsible`) e os cartões que contam pela cor (IND-24, IND-26 e
+> IND-27). O responsável do ranking não entra desde `H-93`: vem do importador,
+> pelo mapa de equipe. A aplicação exige o `.xlsx` original.

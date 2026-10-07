@@ -1,7 +1,7 @@
 # 03 — Modelo de Dados e Tabelas de Decisão
 
 Não há banco de dados. O estado autoritativo é o `.xlsx`; a aplicação mantém
-uma projeção em memória e três arquivos locais de apoio.
+uma projeção em memória e os arquivos locais de apoio da §3.
 
 ---
 

@@ -87,9 +87,10 @@ export interface IndicatorsRankings {
 /**
  * `H-19`. IND-22 quebrado nas quatro dimensoes da Pagina Performance.
  *
- * As tres primeiras vem cortadas em `meta.topN`; `responsible` vem inteira. Sao
- * quatro chaves fixas, e A-28 exige as quatro — passa-la pelo teto deixaria uma
- * mudanca de configuracao quebrar um criterio de aceite em silencio. E o mesmo
+ * As tres primeiras vem cortadas em `meta.topN`; `responsible` vem inteira: sao
+ * as pessoas do mapa de equipe mais a chave vazia, e A-28 exige todas — passa-la
+ * pelo teto deixaria uma mudanca de configuracao quebrar um criterio de aceite
+ * em silencio. E o mesmo
  * tratamento que `rankings.responsible` ja recebe.
  */
 export interface LeadTimeBreakdowns {

@@ -105,8 +105,8 @@ quarentena** (`H-07`), contra o limite de 2% de RNF-24.
 
 **<!-- conta:historias-concluidas -->113<!-- /conta --> das <!-- conta:historias -->114<!-- /conta --> histórias estão concluídas.** `E9`, `E10`, `E11` e `E12` fecharam em
 01/09/2026, `E13` em 03/09/2026, `E14` em 16/09/2026 e `E15` em 17/09/2026. `E17` e `E18`,
-retroativos, foram escritos e fechados em 30/09/2026 (`D-69`). Os **dez** épicos posteriores ao plano não
-têm fase atribuída; a ordem entre eles vive no cabeçalho de cada um, em
+retroativos, foram escritos e fechados em 30/09/2026 (`D-69`). Os épicos posteriores ao plano, de `E8` em
+diante, não têm fase atribuída; a ordem entre eles vive no cabeçalho de cada um, em
 `06-backlog.md`.
 
 **`E14` fechou em 16/09/2026** — `H-82` a `H-92`, as nove primeiras numeradas na ordem de execução,

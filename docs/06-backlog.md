@@ -66,7 +66,8 @@ bloco; o índice agora é obrigado a concordar com ele.
 **Dezesseis histórias são G.** `H-101` entrou em 16/09/2026 por `D-44`, e o G dela é
 diagnóstico: o autoajuste exige `<colgroup>`, `table-layout: fixed` e largura em
 estado, e os três desfazem o `max-w-56 truncate` que segura a linha de 40 px de
-`H-61` — **nove blocos de teste dependem da geometria atual**. As demais:
+`H-61` — **nove blocos de teste dependiam da geometria em 16/09/2026**, e a
+contagem se refaz ao abrir a história. As demais:
 `H-50` desde `D-24`, `H-75` em `E12`, `H-79` e
 `H-80` em `E13`, `H-91` desde a fatia de 11/09/2026, as **quatro** de `E15` —
 `H-93` a `H-96`, rotuladas pela régua em 16/09/2026 —, e `H-88`
@@ -7371,7 +7372,7 @@ histórias abaixo tocam `web/src/` e `web/public/`, e nada mais. História deste
    `SC 1.4.4`, e desfaria `H-46`.
 
 **`E11` vem depois de `E9` e de `E10` inteiros, por dependência de arquivo e não
-por gosto.** `H-45` e `H-46` tocam os mesmos 25 arquivos que este épico
+por gosto** — os dois correm juntos, sem se bloquear. `H-45` e `H-46` tocam os mesmos 25 arquivos que este épico
 reescreve: corrigir acessibilidade sobre a casca antiga e depois redesenhá-la
 paga duas vezes, e redesenhar antes faz a casca nova nascer com os defeitos que
 `E9` estava fechando. `H-47` é a linha de base — os procedimentos de navegador

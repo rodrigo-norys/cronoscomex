@@ -3,7 +3,7 @@ import { useMemo, useSyncExternalStore } from 'react'
 /**
  * Roteamento a mao (D-16): `History API`, `popstate` e `URLSearchParams`.
  *
- * Sao sete paginas planas numa aplicacao local, e o `react-router` seria uma
+ * Sao poucas paginas planas numa aplicacao local, e o `react-router` seria uma
  * dependencia de execucao que o plano nao preve. A decisao registra os gatilhos
  * de reavaliacao — mais de ~10 paginas, rotas aninhadas, carregamento por rota,
  * ou este arquivo passando de ~100 linhas.

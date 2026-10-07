@@ -337,7 +337,7 @@ export const CHANNEL_LABELS: Readonly<Record<CustomsChannel, string>> = {
 /**
  * Opcoes de um dominio FECHADO: as chaves aparecem todas, inclusive as zeradas.
  *
- * Mesma razao de IND-20 exibir as quatro chaves de responsavel — esconder a que
+ * Mesma razao de IND-20 exibir todas as chaves de responsavel — esconder a que
  * tem zero faria o filtro parecer completo quando nao e, e o operador nao
  * saberia que a opcao existe.
  */
