@@ -11,8 +11,9 @@ paths:
 > medido (ADR-0007), nem sempre nesses casos. **O que nela não pode falhar tem
 > guarda:** número em região, índice do backlog, matriz e requisito revogado são
 > impostos por `tests/repo/contagens.test.ts` e `tests/repo/documentacao.test.ts`.
-> Número fora de região é avisado no diff pelo `--nuas`, sem reprovar. A semântica
-> é do `revisor-docs`, sob demanda.
+> Número fora de região é avisado no diff pelo `--nuas`, e o bloco que cita um ID
+> cuja definição mudou, pelo `--pares` — os dois sem reprovar. A semântica é do
+> `revisor-docs`, sob demanda.
 
 ## Duas classes, dois tratamentos
 
@@ -51,6 +52,13 @@ taxa de falso positivo medida está no cabeçalho da ferramenta. Não há marca�
 isenção: o que fica de fora é estrutura — título, data ou "medido" na linha, matriz
 `✅ **Concluída`, índice fechado, história e épico fechados, e os arquivos de
 registro.
+
+**A citação que pode ter envelhecido também é apontada no diff.**
+`node tools/contar-documentacao.mjs --pares` lista, para cada ID cuja definição o diff
+mudou, os outros blocos que o citam; roda nos mesmos dois pontos que o `--nuas`, e
+também só avisa. **O que ele não alcança é o que a escrita evita:** afirmação de regra
+sem o ID que a define, e lista de itens com estado escrita à mão — sem o ID, não há
+vínculo para seguir.
 
 **Medição sobre a planilha** — 649 linhas, <!-- conta:chaves-de-cor -->9<!-- /conta --> chaves de cor, 20,7% de
 `DOCS ENVIADOS`. Teste nenhum confere: a regra inviolável 7 proíbe a suíte de
