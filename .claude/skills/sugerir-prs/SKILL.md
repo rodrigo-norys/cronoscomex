@@ -94,13 +94,11 @@ Se a branch ainda não tiver commits (mudanças só na árvore de trabalho), use
 `git diff` e diga isso no fim. Se o repositório não estiver inicializado, ou não houver remote,
 pare e diga — não há pilha para fatiar nem destino para onde enviar.
 
-**Números soltos na documentação.** Rode
-`node ${CLAUDE_PROJECT_DIR}/tools/contar-documentacao.mjs --nuas --base <base>` e traga
-os avisos para o plano, ao lado do corpo do PR, cada um com o seu veredicto: **estado
-atual** — prenda numa região `conta` ou diga a data da medição, antes do aceite — ou
-**registro**, e fica. O comando só avisa, nunca reprova; medido em 06/10/2026, são de 0
-a 13 avisos por PR, e cerca de 4 em 10 são falso positivo. Este é o passo em que alguém
-lê o diff inteiro, e corrigir aqui ainda custa uma edição. Sem aviso, diga "nenhum".
+**Números soltos na documentação, segunda conferência.** A `/sugerir-commits` já os
+procurou antes do aceite dos commits (passo 7 dela). Aqui, rode de novo
+`node ${CLAUDE_PROJECT_DIR}/tools/contar-documentacao.mjs --nuas --base <base>` sobre o PR
+inteiro, que pode ter commit feito por fora da skill, e traga os avisos para o plano, com o
+mesmo veredicto: **estado atual** ou **registro**. Sem aviso, diga "nenhum".
 
 ### 2. Decida o número de PRs
 

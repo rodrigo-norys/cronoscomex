@@ -37,9 +37,8 @@ Régua derivada da literatura, não de gosto. A derivação com as fontes está 
 
 ## Convenções deste repositório
 
-- **Sem acento nos comentários de `src/` e `web/`**: medido em 02/09/2026 sobre
-  os 98 arquivos de `src/` e `web/src/` — 5.884 linhas de comentário, 98,0% sem
-  acento. O markdown de `docs/` usa acento normalmente.
+- **Sem acento nos comentários de `src/` e `web/`**, como quase todo o código já
+  faz. O markdown de `docs/` usa acento normalmente.
 - Cabeçalho vem **depois dos imports**, em bloco `/** */`.
 - Comentário em JSON de `config/` usa chave prefixada com `_`. As mais comuns
   são `_comentario`, `_origem` e `_evidencia`, mas a convenção é o prefixo, e não

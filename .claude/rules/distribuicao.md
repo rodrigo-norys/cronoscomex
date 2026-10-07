@@ -17,87 +17,47 @@ paths:
 > reprovar.
 
 A branch `distribuicao` é o artefato: sem `docs/`, `tests/`, `tools/` nem
-`.claude/`, que não servem para nada em produção. **Sem contagem aqui de
-propósito** — o próprio `sincronizar-distribuicao.ts` mede e imprime os dois
-lados a cada execução, e os números que já estiveram escritos aqui (108 arquivos,
-"3 de cada 4", depois 117 contra 124) envelheceram todos. Rode o script: ele é a
-única fonte que não mente. `D-28` fechou em 03/09/2026, e a conferência de
-04/09/2026 acusou a branch sincronizada com a `main`. Ela **não recebe PR** — é artefato, não
-revisão.
+`.claude/`, que não servem para nada em produção. Ela **não recebe PR** — é
+artefato, não revisão. **Sem contagem aqui de propósito:** o script mede e imprime
+os dois lados a cada execução, e todo número escrito aqui envelheceu.
 
-Sincronize com `node --experimental-strip-types scripts/sincronizar-distribuicao.ts`:
-sem argumento ele confere e sai `1` se divergir; com `--aplicar` ele **troca
-para a branch `distribuicao`** — recusando antes se a árvore estiver suja —,
-prepara os arquivos no índice e **para**, deixando você nela. Commit, push e o
-`git switch` de volta são seus.
+## Sincronizar
 
-**O script mede a branch LOCAL.** Ele diz "sincronizada com HEAD" com o commit
-ainda não empurrado — medido em 08/09/2026, quando `origin/distribuicao` ficou
-uma versão atrás e o dono precisou ser avisado. A conferência que não mente é
-`git rev-list --count origin/distribuicao..distribuicao`. Na árvore do operador,
-baixada sem `.git`, o efeito seria um `AppSidebar` importando um `NavIcon` que
-não chegou.
+Com `node --experimental-strip-types scripts/sincronizar-distribuicao.ts`: sem
+argumento ele confere e sai `1` se divergir; com `--aplicar` ele **troca para a
+branch `distribuicao`** — recusando antes se a árvore estiver suja —, prepara os
+arquivos no índice e **para**, deixando você nela. Commit, push e o `git switch` de
+volta são seus.
 
-**Sincronize apenas a partir da `main` mesclada**, para o operador nunca receber
-código que o CI e a revisão do PR ainda não aceitaram. Decidido em 31/08/2026,
-depois de `H-48` ter ido para a distribuição antes do merge.
+- **Sincronize apenas a partir da `main` mesclada**, para o operador nunca receber
+  código que o CI e a revisão do PR ainda não aceitaram.
+- **O script mede a branch LOCAL.** Ele diz "sincronizada com HEAD" com o commit
+  ainda não empurrado. A conferência que não mente é
+  `git rev-list --count origin/distribuicao..distribuicao`.
 
-**Baixar a árvore não é o mesmo que cloná-la.** A instalação de 04/09/2026 foi
-feita por download, sem `.git` — funciona, e custa duas coisas: não há
-`git pull` para atualizar, e não há `git status` para flagrar arquivo
-sobrescrito. Foi o `git status` que diagnosticou a tela preta da primeira
-tentativa, quando 101 arquivos de `src/` e `web/src/` apareceram numa versão
-anterior a `H-52` sobre um `.git` correto. O navegador só dizia
-`Uncaught TypeError` ao desestruturar `meta.period`, com `#root` vazio:
-**cliente compilado novo com servidor velho falha assim, e mudo.**
+## O que entra
 
-**O que entra não é lista escrita à mão:** é o fecho transitivo dos imports a
-partir de `src/http/server.ts` e `web/src/main.tsx`, mais os arquivos de suporte
-que nenhum import alcança.
+**Não é lista escrita à mão:** é o fecho transitivo dos imports a partir de
+`src/http/server.ts` e `web/src/main.tsx`, mais os arquivos de suporte que nenhum
+import alcança. **O fecho lê também os `url("/...")` das folhas de estilo**: fonte
+ausente não produz erro — o navegador cai no fallback —, e foi assim que as fontes
+da interface ficaram fora da branch enquanto o script dizia "sincronizada".
 
 `README.md` e `iniciar.cmd` da raiz são **exclusivos da branch** e nunca são
 sobrescritos — o primeiro é o guia do operador, o segundo é o lançador que põe o
 ponto de partida na primeira pasta que ele abre.
 
-**O fecho lê também os `url("/...")` das folhas de estilo**, desde 03/09/2026.
-Tratar `.css` como folha custou os seis `.woff2` de `H-58` e a licença OFL: eles
-nunca entraram na branch, e como fonte ausente **não produz erro** — o navegador
-cai no fallback — o script imprimia "sincronizada com HEAD" enquanto o operador
-via outra tipografia. Corrigido na causa, com regressão em
-`tests/repo/distribuicao.test.ts`, que reprova se um asset citado no CSS ficar
-fora da árvore (`D-28`).
+## Na máquina do operador
 
-Guardado por `tests/repo/distribuicao.test.ts`, que existe porque arquivo
-faltando ali não quebra teste nem build: **quebra a partida na máquina do
-operador, longe de quem poderia consertar.**
+**Baixar a árvore não é o mesmo que cloná-la.** A instalação feita por download, sem
+`.git`, funciona, e custa duas coisas: não há `git pull` para atualizar, e não há
+`git status` para flagrar arquivo sobrescrito por versão velha. **Cliente compilado
+novo com servidor velho falha mudo:** o navegador só mostra `Uncaught TypeError`,
+com `#root` vazio.
 
-## Os dois mapas de negócio não vão junto — `PD-08`
-
-`config/client-map.json` e `config/team-map.json` estão no `.gitignore` porque
-carregam nome real de cliente e de pessoa da equipe. O script leva só os dois
-`.exemplo`, com nomes fictícios — então **a máquina do operador chega sem eles**.
-
-**O efeito já é visível, e para os dois mapas:** `H-49` e `H-50` estão fechadas
-— a segunda em 01/09/2026 —, então na máquina do operador o campo Cliente mostra
-a grafia da célula em vez do nome consolidado, e o Responsável faz o mesmo
-(`D-23`).
-
-**Redigitar não é opção.** Os dois são lidos na partida em `src/http/server.ts`,
-e JSON malformado cai em `STARTUP_ERRORS` e mata o processo antes de existir
-tela: o operador ficaria sem painel por uma vírgula.
-
-**Decisão de 31/08/2026: fica como está, com envio manual** —
-`scp config/client-map.json config/team-map.json` para `config\` na máquina do
-operador. A solução (tela de edição, como `H-34` e `H-37` fizeram para o caminho
-da planilha, ou o envio virando passo do procedimento) é reexaminada em momento
-oportuno. **Enquanto o envio for manual, repita a cópia toda vez que a regra de
-consolidação ou a equipe mudar** — nenhum aviso existe para lembrar.
-
-**As duas coisas que mentiam sobre isso já foram corrigidas na branch.** O
-`README.md` dela diz "Você não edita arquivo nenhum", mas a frase é sobre o
-OPERADOR e vem seguida do parágrafo que explica os dois mapas copiados
-por quem instala; o bloco "Como refazer esta branch" não lista arquivo nenhum —
-ele manda calcular pelo script; e a tabela de pastas passou a citar os dois mapas
-em 04/09/2026. **O que sobrava de `PD-08` não era documental: era `H-88`**, que tira o
-mapa da cópia manual (`D-32`) — e ela fechou em 09/09/2026. **Conferida na
-instalação do operador em 06/10/2026, e `PD-08` fechou.**
+**Os dois mapas de negócio não vão na branch.** `config/client-map.json` e
+`config/team-map.json` estão no `.gitignore` porque carregam nome real de cliente e
+de pessoa da equipe; a branch leva só os `.exemplo`. Desde `H-88`, a instalação do
+operador os edita pela tela, então **as duas pontas escrevem**: nunca copie um mapa
+por cima do outro sem reconciliar. E JSON malformado cai em `STARTUP_ERRORS` e mata
+a partida antes de existir tela — o operador ficaria sem painel por uma vírgula.

@@ -61,7 +61,7 @@ bloco; o índice agora é obrigado a concordar com ele.
 
 `H-30` teve a ressalva do bloco dela **levantada em 31/08/2026**: o
 `iniciar.cmd` foi executado na máquina do operador, sobe e carrega a planilha.
-`PD-06` guardava os itens que faltavam, e **fechou em 03/09/2026** — os três últimos foram exercidos por SSH, e o que virou regra está em `.claude/rules/operacao-windows.md`, na seção "`PD-06` fechou em 03/09/2026". O registro da sessão fica em `docs-windows/`, que é local e não versionado (`.gitignore`).
+`PD-06` guardava os itens que faltavam, e **fechou em 03/09/2026** — os três últimos foram exercidos por SSH, e o que virou regra está em `.claude/rules/operacao-windows.md`, na seção "Testar a partida sem mão humana". O registro da sessão fica em `docs-windows/`, que é local e não versionado (`.gitignore`).
 
 **Dezesseis histórias são G.** `H-101` entrou em 16/09/2026 por `D-44`, e o G dela é
 diagnóstico: o autoajuste exige `<colgroup>`, `table-layout: fixed` e largura em

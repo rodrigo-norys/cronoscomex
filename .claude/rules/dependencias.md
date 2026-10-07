@@ -32,7 +32,7 @@ tem alertas ligados e updates automáticos desligados, pelo mesmo motivo
 **Não é o `package.json`.** É o **npm 10.9.8**, o que vem com o Node de `.nvmrc`,
 resolvendo o conjunto de pares de `vitest` neste grafo — `vite@8` traz
 `@vitejs/devtools-vitest`, que declara `vitest` como par, e o ciclo o derruba.
-**Medido em 18/09/2026 (`D-52`), e independe da versão do Vitest:** o erro aparece ao
+**Independe da versão do Vitest (`D-52`):** o erro aparece ao
 **trocar** uma versão, quando o par precisa ser resolvido do zero, e não no dia a dia.
 
 Use `npx --yes npm@11 install`, que resolve sem contorno nenhum. **`--legacy-peer-deps`

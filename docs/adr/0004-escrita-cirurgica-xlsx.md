@@ -192,6 +192,30 @@ byte a byte idêntica — inclusive as três abas fora de escopo. As quatro são
 alvo, `xl/sharedStrings.xml`, `xl/styles.xml` (aditivo, TD-05.1 passo 5b) e
 `xl/calcChain.xml`, esta última quando uma fórmula é removida junto com o valor.
 
+## A cadeia de cálculo: a premissa refutada (`PD-05`)
+
+A pendência supunha que o Excel emite o atributo `i` — o índice da aba — apenas na
+**primeira** entrada de `xl/calcChain.xml`, com as seguintes herdando a aba. A
+especificação OOXML permite essa forma, e a fixture `formulas.xlsx` a reproduz.
+**Medido em dois arquivos que o próprio Excel gerou, a premissa caiu:**
+
+| Origem | Entradas | Com `i` | Índices de aba |
+|---|---|---|---|
+| `Microsoft Excel` (desktop) | 705 | 705 | `1` e `3`, com `l` e `s` misturados |
+| `Microsoft Excel Online` | 2 | 2 | `1` |
+
+O Excel **repete `i` em toda entrada**. `removeFromCalcChain` nunca dependeu da
+premissa: só injeta o índice quando a entrada seguinte **não** tem o seu — a
+conferência que o `revisor-xml` pediu. Sem ela, a forma real produziria `i`
+duplicado, e o arquivo abriria pedindo reparo. `tests/io/xlsx-surgeon.test.ts` cobre
+as duas formas, e a mutação que remove a conferência reprova as duas.
+
+**Nenhuma fixture nova foi versionada, por dado pessoal:** o arquivo do Excel Online
+que serviria carrega comentário encadeado com nome de pessoa. A fixture
+`formulas.xlsx` continua com a forma de herança **de propósito** — é ela que exercita
+o repasse do índice ponta a ponta —, e agora se sabe que não é a forma que o Excel
+emite.
+
 ## Referências
 
 - `06-backlog.md` H-24 (cirurgia), H-25 (defesas), H-26 (comando), H-27 (cor)

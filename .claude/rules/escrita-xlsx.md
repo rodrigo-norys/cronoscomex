@@ -15,42 +15,28 @@ paths:
 > `tests/app/write-guard.test.ts`. A invocação do `revisor-xml` antes de commitar
 > está no `CLAUDE.md`, que carrega sempre.
 
-**É o ponto onde errar custa a planilha da empresa.** Esta régua carrega ao
-abrir os arquivos que reescrevem bytes do arquivo do operador — e é por isso
-que ela existe aqui e não no `CLAUDE.md`: lá era um parágrafo entre 6400
-palavras, e o gatilho dependia de alguém lembrar dele.
+**É o ponto onde errar custa a planilha da empresa.**
 
 ## Invoque o `revisor-xml` antes de commitar
 
 Vale para qualquer mudança em `src/io/xlsx-surgeon.ts`, em
 `src/app/write-guard.ts` ou em código que reescreva bytes do `.xlsx`.
 
-**O histórico dele é o argumento.** Em `H-24` reprovou na primeira invocação;
-em `H-25`, **três das quatro**; em `H-26`, **seis das sete**; em `H-27`, **três
-das quatro**. Vários defeitos foram introduzidos pelas correções dos anteriores
-— então **reinvoque depois de corrigir**, não só antes de commitar.
+- **Reinvoque depois de corrigir**, e não só antes de commitar: da segunda passagem
+  em diante, quase todo achado dele nasceu da correção do achado anterior.
+- **Mande o módulo inteiro**, e não só o trecho novo: ele já achou defeito em código
+  commitado havia várias histórias.
+- **Mande a tela junto** quando a mudança altera o que a aplicação **diz** ao
+  operador sobre a escrita: parte dos defeitos dele estava em mensagem que afirmava
+  o que o código não sabia.
 
-**Ele acha defeito em código já commitado.** Em `H-27` pegou uma leitura de
-atributo que varria o elemento inteiro em vez da tag de abertura — defeito
-silencioso em `writeCell` desde `H-24`. **Mande o módulo inteiro**, não só o
-trecho novo.
+Ele não tem `Edit` nem `Write`, e é invocado **sem** o raciocínio de quem escreveu
+o código: começar cego é o mecanismo, não efeito colateral.
 
-**Ele revisa a interface também.** Quatro dos seis defeitos de `H-26` estavam na
-tela: mensagens que afirmavam o que o código não sabia. Ao mudar o que a
-aplicação **diz** ao operador sobre a escrita, mande a tela junto.
-
-Ele não tem `Edit` nem `Write`, e é invocado **sem** o raciocínio de quem
-escreveu o código: começar cego é o mecanismo, não efeito colateral.
-
-**Onde ele acha os casos-limite.** Ele os enumera de `docs/06-backlog.md`, e a
-criação de linha é **`H-78`** — cinco casos-limite, escrita retroativamente em
-03/09/2026. Ela é a fonte primária; os três arquivos abaixo a complementam,
-porque parte da enumeração vive fora do backlog:
-
-*(Esta seção afirmou até 08/09/2026 que a criação de linha "não tem história
-lá". Era verdade em 02/09, quando o código entrou sem história, e deixou de ser
-no dia seguinte. `.claude/agents/revisor-xml.md` repetia a mesma frase, e as
-duas peças desviavam a revisão da fonte primária ao mesmo tempo.)*
+**Onde ele acha os casos-limite.** A criação de linha é **`H-78`**, a fonte
+primária; os arquivos abaixo complementam, porque parte da enumeração vive fora do
+backlog. Sem os quatro, a revisão reenumera do zero e a lista muda entre
+invocações.
 
 | Arquivo | O que enumera |
 |---|---|
@@ -59,107 +45,40 @@ duas peças desviavam a revisão da fonte primária ao mesmo tempo.)*
 | `tests/app/write-guard.test.ts` | quem a chama — piso de `firstDataRow`, duas inserções, `refExists`, REF aparada, `TABELA_CHEIA`, linhas vazias no fim da aba |
 | `docs/05-contratos-api.md §3` | o contrato de `POST /api/edits/row` e do desvio em `POST /api/edits` |
 
-Sem as quatro, a revisão reenumera do zero e a lista muda entre invocações — foi a
-divergência que ele levantou em **todas** as passagens.
-
-**Ele reprovou QUATRO vezes em 02/09/2026, em cinco passagens — e o padrão é a
-lição.** Da segunda passagem em diante, **quase todo achado nasceu da correção
-do achado anterior**:
-
-| Passagem | Achado introduzido pela correção anterior |
-|---|---|
-| 2ª | `growDimension` passou a derrubar a gravação numa forma de `<dimension>` que o Excel lê sem reclamar; e o filtro de colunas de `tableLastRow` deixou o guarda da Tabela **contornável pela escolha das colunas** |
-| 3ª | `TABELA_CHEIA` não atravessou até a tela, caindo em `ERRO_INTERNO`; e a edição de célula passou a ser engolida por uma inserção órfã invisível |
-| 4ª | o `404` na aba vazia, aberto pela correção anterior; e a guarda nova contra códigos faltando **não cobria os últimos códigos da lista** |
-| 5ª | dois artefatos descrevendo o que o código deixou de fazer |
-
-**Corrigir sem reinvocar teria trocado um defeito por outro, quatro vezes.**
-
 ## Reinvoque o revisor CERTO, e não sempre o mesmo
 
-A instrução acima — reinvocar depois de corrigir — diz *quando*, e não *quem*.
-**Medido em 17/09/2026, em `H-96`: quatro passagens, de ~200 a ~240 mil tokens
-cada.** As três primeiras aprovaram; a quarta reprovou, e os **dois** fundamentos
-dela eram documentais — o total da suíte errado, e um comentário de teste
-afirmando que a leitura "recusa a promoção" quando o código faz o oposto,
-contradizendo o teste quarenta linhas abaixo **no mesmo arquivo**.
-
-**Na terceira passagem, a maior parte dos achados era número ou frase em
-comentário** — a família que o `revisor-docs` declara cobrir, e o `revisor-xml`,
-não: "número cuja **base** está errada", "citação de identificador que existe e
-diz outra coisa", e "contradição entre duas afirmações **do mesmo diff**".
+"Reinvocar depois de corrigir" diz *quando*, e não *quem*. Uma passagem do
+`revisor-xml` custa cerca de 200 mil tokens, e ele não cobre número nem frase em
+comentário — essa família é do `revisor-docs`.
 
 | Se a rodada de correção tocou… | reinvoque |
 |---|---|
 | código que reescreve bytes do `.xlsx` — a cirurgia, o guard, a ordem das defesas | **`revisor-xml`**, como manda a seção acima |
 | só comentário, número, documento ou asserção de teste | **ofereça o `revisor-docs`** ao dono, e siga |
 
-**"Ofereça", e não "invoque":** o `revisor-docs` **não tem gatilho, por decisão
-do usuário em 11/09/2026**, tomada depois de o custo dele ser medido. Disparar
-por conta própria um subagente daquele porte contraria a decisão.
-
-**O erro a evitar é tratar esta rule como configuração, e não como julgamento.**
-Em 17/09/2026 a quarta passagem foi disparada por aplicação literal dela, com o
-diagnóstico correto já escrito na própria sessão — "estou usando o revisor da
-escrita cirúrgica como revisor de prosa" — e mesmo assim.
+**"Ofereça", e não "invoque":** o `revisor-docs` **não tem gatilho, por decisão do
+usuário**, tomada depois de o custo dele ser medido. **O erro a evitar é tratar esta
+rule como configuração, e não como julgamento.**
 
 ## Ao consertar uma CHAMADA, procure as outras
 
-**Medido em 22/09/2026, duas vezes na mesma sessão e na mesma função.**
-`consolidated` é lida em dois lugares — `applyPendingEdits`, aqui, e `getState`,
-em `src/app/process-store.ts`. Os dois liam sem `try`, e cada conserto alcançou
-um só:
-
-- `D-63` consertou o eixo de **forma**, dentro de `readRecords`, e o título
-  declarou a invariante restaurada. Não estava — o eixo de **I/O** seguia.
-- `D-66` pôs o `try` em `applyPendingEdits` e declarou de novo. Faltava
-  `getState`, e era **pior**: ela é a porta de todas as rotas, então fila
-  ilegível derrubava o painel inteiro com o `500` cru do Fastify — fora do
-  envelope de `docs/05-contratos-api.md` §1.2, e com o caminho do arquivo no
-  corpo da resposta.
-
-Quem achou as duas foi o `revisor-xml`, a ~220 mil tokens por passagem — e a
-segunda **por sorte**: `src/app/process-store.ts` não casa o `paths:` desta
-rule, então ele só olhou lá porque escolheu olhar. Não acrescente o arquivo aos
-globs: ele não reescreve bytes, e carregar esta régua inteira em toda sessão do
-store é o trade errado.
-
-O que custa um comando:
+`consolidated` é lida em dois lugares — `applyPendingEdits`, aqui, e `getState`, em
+`src/app/process-store.ts`. Dois consertos seguidos (`D-63` e `D-66`) declararam a
+invariante restaurada alcançando um chamador só; o segundo deixava a fila ilegível
+derrubar o painel inteiro.
 
 ```bash
 grep -rn "consolidated(\|<outra funcao>(" src/ --include='*.ts' | grep -v "export function"
 ```
 
 **Consertar um chamador e declarar a invariante restaurada é o defeito, e não o
-conserto.** Vale para qualquer invariante que um cabeçalho de módulo afirme.
+conserto.** Vale para qualquer invariante que um cabeçalho de módulo afirme. Não
+acrescente `src/app/process-store.ts` aos globs: ele não reescreve bytes, e carregar
+esta régua em toda sessão do store é o trade errado.
 
-## A cadeia de cálculo, e a premissa que foi REFUTADA — `PD-05`, fechada em 01/09/2026
+## A cadeia de cálculo
 
-A pendência supunha que o Excel emite o atributo `i` apenas na **primeira**
-entrada de `xl/calcChain.xml`, com as seguintes herdando a aba — o que a
-especificação OOXML permite, e o que a fixture `formulas.xlsx` reproduz.
-
-**Medido em dois arquivos que o Excel gerou sozinho, e os dois refutam:**
-
-| Origem | entradas | com `i` | índices de aba |
-|---|---|---|---|
-| `Microsoft Excel` (desktop) | **705** | **705** | `1` e `3`, com `l` e `s` misturados |
-| `Microsoft Excel Online` | 2 | 2 | `1` |
-
-O Excel **repete `i` em toda entrada**. A omissão é permitida pela
-especificação, não praticada por ele.
-
-**`removeFromCalcChain` nunca dependeu da premissa, e é o que salva.** Ela só
-injeta o índice quando a entrada seguinte **não** tem o seu — a conferência que o
-`revisor-xml` pediu. Sem ela, a forma real do Excel produziria `i` **duplicado**:
-XML malformado, e o arquivo abriria pedindo reparo. `tests/io/xlsx-surgeon.test.ts`
-cobre as duas formas, e a mutação que remove a conferência reprova as duas.
-
-**Nenhuma fixture nova foi versionada, e a razão é dado pessoal.** O arquivo do
-Excel Online que teria servido — saída da nossa própria fixture, reaberta e
-salva pelo Excel — carrega comentário encadeado com nome de pessoa. A evidência
-está na medição e no teste de regressão, não num artefato novo.
-
-**A fixture `formulas.xlsx` continua com a forma de herança de propósito**: é
-ela que exercita o repasse do índice ponta a ponta, e a especificação a permite.
-O que mudou é que agora se sabe que ela **não** é a forma que o Excel emite.
+O Excel repete o índice da aba (`i`) em **toda** entrada de `xl/calcChain.xml`, e a
+conferência de `removeFromCalcChain` — só injetar o índice quando a entrada seguinte
+não tem o seu — é o que evita `i` duplicado. A medição que refutou a premissa
+contrária, e o porquê da fixture `formulas.xlsx`, estão na ADR-0004 (`PD-05`).

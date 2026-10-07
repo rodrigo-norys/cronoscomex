@@ -14,10 +14,6 @@ paths:
 > Número fora de região é avisado no diff pelo `--nuas`, sem reprovar. A semântica
 > é do `revisor-docs`, sob demanda.
 
-Medido em 13/08/2026: **242 linhas** de `docs/` e `CLAUDE.md` afirmam um número.
-Quatro estavam erradas, e as quatro eram do mesmo tipo — contagem sobre o
-próprio repositório, escrita sem dizer o que contava.
-
 ## Duas classes, dois tratamentos
 
 **Contagem sobre o repositório** — achados, histórias, premissas, riscos,
@@ -33,26 +29,28 @@ entradas e a afirmação correta é <!-- conta:indicadores-ativos -->18<!-- /con
 `<!-- conta:NOME -->N<!-- /conta -->`, nunca no início da linha, e
 `node tools/contar-documentacao.mjs --write` o preenche; `tests/repo/contagens.test.ts`
 reprova a região que divergir. Os nomes e a regra de cada contador estão em
-`COUNTERS`, no próprio arquivo — contador novo entra lá, com teste. Skill não usa
-região: calcula na invocação, com `` !`comando` `` depois de espaço e sem `$0`,
-`$1`… no comando, que o harness troca pelos argumentos. **E só com `grep`, e com
-`tr`, `cut`, `sort` e `grep -c` lendo o pipe:** fora do modo automático, `awk`,
-`sed` lendo arquivo e qualquer `$(…)` ou `${…}` abortam a skill inteira — medido
-em 01/10/2026. Lógica maior vai para script em `tools/`, liberado na skill por
+`COUNTERS`, no próprio arquivo — contador novo entra lá, com teste. Versão também é
+estado atual: `versao[pacote]` lê o `package.json`, e `versao[node]`, o `.nvmrc`.
+Registro datado não vira região: o número dele está certo na data.
+
+**Skill não usa região: calcula na invocação**, com `` !`comando` `` depois de espaço
+e sem `$0`, `$1`… no comando, que o harness troca pelos argumentos. **E só com
+`grep`, e com `tr`, `cut`, `sort` e `grep -c` lendo o pipe:** fora do modo
+automático, `awk`, `sed` lendo arquivo e qualquer `$(…)` ou `${…}` abortam a skill
+inteira. Lógica maior vai para script em `tools/`, liberado na skill por
 `allowed-tools`, como `tools/abrir-historia.mjs`. **Todo caminho injetado leva
 `${CLAUDE_PROJECT_DIR}/`**: o relativo resolve contra o diretório da sessão, e com
-ela fora da raiz a skill inteira aborta — medido na mesma data. Registro datado não
-vira região: o número dele está certo na data.
+ela fora da raiz a skill inteira aborta.
 
 **O número que escapou da região é apontado no diff, não no portão.**
 `node tools/contar-documentacao.mjs --nuas` lista o número com unidade — algarismo
 ou por extenso — escrito fora de região nas linhas que o diff contra a `main`
-acrescentou, e a `/sugerir-prs` o roda antes do aceite. **Só avisa**: medido em
-06/10/2026, ~47% dos 260 números dos documentos inteiros são falso positivo mesmo
-depois das regras estruturais. Não há marcação de isenção: o que fica de fora é
-estrutura — título, data ou "medido" na linha, matriz `✅ **Concluída`, índice
-fechado, história e épico fechados, e os arquivos de registro. Versão também é
-estado atual: `versao[pacote]` lê o `package.json`, e `versao[node]`, o `.nvmrc`.
+acrescentou. A `/sugerir-commits` o roda antes do aceite dos commits, quando corrigir
+custa uma edição, e a `/sugerir-prs` o repete sobre o PR inteiro. **Só avisa:** a
+taxa de falso positivo medida está no cabeçalho da ferramenta. Não há marcação de
+isenção: o que fica de fora é estrutura — título, data ou "medido" na linha, matriz
+`✅ **Concluída`, índice fechado, história e épico fechados, e os arquivos de
+registro.
 
 **Medição sobre a planilha** — 649 linhas, <!-- conta:chaves-de-cor -->9<!-- /conta --> chaves de cor, 20,7% de
 `DOCS ENVIADOS`. Teste nenhum confere: a regra inviolável 7 proíbe a suíte de
@@ -68,12 +66,10 @@ só o número.
 
 ## Ler `docs/06-backlog.md` pela estrutura, não pela linha
 
-São 13.173 linhas, e o `Read` corta em 2.000. Medido em 30/09/2026, sobre as 40
-transcrições guardadas do projeto: o maior custo de leitura dele é a **janela
-fixa** — 186 chamadas de `sed -n 'X,Yp'`, de 200 a 340 linhas em volta de um
-`grep -n`, somando 538 mil caracteres. Os títulos são estáveis — `###` abre
-história, `##` abre épico, e os rótulos em negrito se repetem em toda história —,
-e os três recortes abaixo seguem por eles.
+O arquivo é muito maior que as 2.000 linhas que o `Read` lê de uma vez. Não leia
+por janela fixa em volta de um `grep -n`: ela traz várias vezes mais texto do que a
+história. Os títulos são estáveis — `###` abre história, `##` abre épico —, e os
+três recortes abaixo seguem por eles.
 
 Em que história um termo aparece, com a contagem, sem abrir nenhuma:
 
@@ -97,36 +93,31 @@ sed -n '/^### H-NN /,/^##/p' docs/06-backlog.md \
   | sed -n '/^\*\*Casos-limite/,/^\*\*[A-Z][^*]*:\*\*/p' | head -n -1
 ```
 
-Na mesma data, a `H-98` inteira sai com 2.353 caracteres contra 14.717 da
-janela de ±150 linhas, e os casos-limite da `H-25` com 529 contra 8.778 da
-história — o bloco `✅ CONCLUÍDA` vem **antes** do contrato, e nela é 5.875
-deles.
+O bloco `✅ CONCLUÍDA` vem **antes** do contrato, e pode ser a maior parte da
+história: para os casos-limite, use o terceiro recorte.
 
 ## O `revisor-docs` existe, e quem o invoca é o dono
 
-**Não há gatilho, e a ausência é decisão de 11/09/2026, não esquecimento.**
-Nenhuma skill o chama, nenhum hook o dispara, e esta rule **não** manda
-invocá-lo — ela diz o que ele faz, para a decisão ser informada.
+**Não há gatilho, por decisão do dono.** Nenhuma skill o chama, nenhum hook o
+dispara, e esta rule **não** manda invocá-lo — ela diz o que ele faz, para a decisão
+ser informada.
 
-O que ele pega, e o portão não: `tests/repo/documentacao.test.ts` cobra o que é
-computável — índice, contagens, matriz, requisito revogado. Medido em
-11/09/2026, **zero das 5.458 citações de ID em prosa apontam para identificador
-inexistente**: o defeito não é o ID que sumiu, é o ID que existe e **diz outra
-coisa**. Isso é semântica, e nenhuma asserção a alcança.
+O que ele pega, e o portão não: as guardas cobram o que é computável. O defeito que
+sobra não é o ID que sumiu — medido, nenhuma citação de ID em prosa apontava para
+identificador inexistente —, é o ID que existe e **diz outra coisa**. Isso é
+semântica, e nenhuma asserção a alcança.
 
-**O que a medição diz sobre quando ele se paga**, para quem for decidir:
+**Quando ele se paga**, para quem for decidir:
 
-- o retorno cresce com o **tamanho** e com a **densidade de citação cruzada** —
-  23 achados em 584 linhas de épico novo, 15 em 231 de um agente; emenda de três
-  linhas não tem o que ele ache;
-- ele custa **~200 mil tokens e ~20 minutos** por invocação, para **~30%** das
-  divergências conhecidas;
-- **não é reprodutível**: três execuções sobre o mesmo diff concordaram em 23%,
-  metade dos achados apareceu uma vez só, e quatro itens receberam veredictos
-  **opostos**. Uma execução limpa **não** é prova
-  de que não há defeito.
+- o retorno cresce com o **tamanho** e com a **densidade de citação cruzada** do
+  diff; emenda de três linhas não tem o que ele ache;
+- ele custa **cerca de 200 mil tokens e 20 minutos** por invocação, e acha **cerca
+  de 30%** das divergências conhecidas;
+- **não é reprodutível**: três execuções sobre o mesmo diff concordaram em 23% dos
+  achados, e alguns itens receberam veredictos **opostos**. Uma execução limpa
+  **não** é prova de que não há defeito.
 
-## Record não fica em `docs/`
+## Registro não fica em `docs/`
 
 **Documento datado que descreve um evento passado** — relatório de sessão,
 auditoria executada, medição — nunca fica obsoleto por construção, então nenhum
@@ -135,11 +126,8 @@ git é o arquivo dele. Remova, e deixe uma linha no log da §5 de
 `docs/10-governanca.md` com o comando que recupera — `D-46` é o exemplo.
 
 **Fica o que é referência ou explicação do estado atual**, com consumidor.
-
-**`docs/06-backlog.md` é o sumidouro, e não é candidato a limpeza.** É lá que o
-conteúdo dos outros sobrevive: foi o bloco `✅ CONCLUÍDA` que tornou os números
-da revisão de estilo de 01/09/2026 (`D-48`) redundantes. Esvaziá-lo destrói o destino
-das extrações.
+**`docs/06-backlog.md` é o sumidouro, e não é candidato a limpeza:** é lá que o
+conteúdo dos outros sobrevive, e esvaziá-lo destrói o destino das extrações.
 
 **Extraia antes de remover**, e o destino depende do tipo:
 
@@ -150,32 +138,11 @@ das extrações.
 | fato de configuração do repositório | `CLAUDE.md` |
 | achado ainda aberto | `docs/06-backlog.md` |
 
-**Medido em 18/09/2026**, para a próxima passada comparar. Saíram **5.713
-linhas** em dois lotes, e a densidade decidiu a forma de cada um:
+- **Densidade baixa extrai para linhas; densidade alta pede documento**, e o
+  destino de um consolidado é `adr/`, não a raiz de `docs/`.
+- **Exaurido não é redundante:** o arquivo que se declara "percorrido inteiro" é o
+  que mais precisa ser aberto antes de sair.
+- **Ponteiro para arquivo não versionado é ponteiro morto para quem clona.**
 
-- os quatro relatórios de `docs/sessao-autonoma/` — 1.786 linhas, **3,4%** de
-  fato inédito — viraram **três linhas** espalhadas onde são consultadas
-  (`D-46`);
-- as três auditorias de configuração — 3.927 linhas, **14,2%** — precisaram de
-  **um documento**, e viraram `ADR-0007` (`D-47`).
-
-**Densidade baixa extrai para linhas; densidade alta pede documento.**
-
-**A segunda passada, em 21/09/2026, tirou um arquivo só — e é o resultado
-certo:** `medicao-referencia.md`, 532 linhas a **0,0%** (`D-59`). Os dois
-vizinhos ficaram, um porque é régua e o outro porque carrega 16 achados abertos
-que nunca viraram backlog. **Exaurido não é redundante:** o arquivo que se
-declara "percorrido inteiro" é o que mais precisa ser aberto antes de sair. E o
-destino de um consolidado é `adr/`, não a raiz de `docs/`: os três removidos
-nasceram justamente como documento de configuração fora da numeração, sem
-consumidor mecânico, e foi por isso que ninguém os revisitou em seis semanas.
-A ferramenta que mede é a skill global `desinchar-docs`.
-
-**A terceira passada, em 30/09/2026, não tirou nada.** O único candidato,
-`ensaio-planilha/RESULTADO.md`, mediu **15,3%** — 124 linhas inéditas em 56
-seções, 4 citações —, e o ensaio fechou os 16 achados: exaurido, e não
-redundante. Sair exigiria um consolidado em `adr/` com o que o ensaio mediu
-sobre o Excel e a escrita cirúrgica, e o dono preferiu manter. **Ponteiro para
-arquivo não versionado é ponteiro morto para quem clona:** `docs-windows/` é
-local (`.gitignore`), e o backlog passou a apontar para a rule que guarda o que
-virou regra.
+A ferramenta que mede é a skill global `desinchar-docs`; as passadas já feitas estão
+em `D-46`, `D-47` e `D-59`.

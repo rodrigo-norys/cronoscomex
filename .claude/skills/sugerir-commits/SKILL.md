@@ -173,7 +173,17 @@ Derivados da estrutura real e da fronteira que o Biome impõe — use o mais esp
    - O `git add` com os caminhos **exatos** daquele commit.
    - A mensagem no padrão do `~/.claude/CLAUDE.md`.
 
-7. **Rode o portão inteiro antes de apresentar o plano**, sobre a árvore como ela vai ficar
+7. **Procure número solto na documentação antes de tudo.** Rode
+   `node ${CLAUDE_PROJECT_DIR}/tools/contar-documentacao.mjs --nuas`: ele lê as linhas que o diff
+   contra a `main` acrescentou, inclusive as não commitadas, e aponta número com unidade escrito
+   fora de região. Dê a cada aviso um veredicto: **registro**, e fica; ou **estado atual**, que
+   precisa de região `conta` ou da data da medição. **Havendo estado atual, pare e apresente os
+   avisos antes do plano**: a correção entra na árvore, e o portão do passo 8 roda sobre ela.
+   Sem aviso, diga "nenhum". O comando só avisa, nunca reprova; a taxa de falso positivo medida
+   está no cabeçalho da ferramenta. Aqui corrigir custa uma edição; depois do commit, custa outro
+   commit.
+
+8. **Rode o portão inteiro antes de apresentar o plano**, sobre a árvore como ela vai ficar
    depois do último commit: `npm run verify`, com o `dev` derrubado. Informe no plano o
    resultado e a contagem que o Vitest devolveu. **Se reprovar, pare e reporte — não há plano
    de commit com portão vermelho.** É o único momento em que o dono vê o portão **antes** do
