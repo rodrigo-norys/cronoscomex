@@ -62,6 +62,16 @@ export function findLooseNumbers(
   options?: { base?: string; all?: boolean },
 ): LooseNumber[]
 
+export function blocks(lines: readonly string[]): { start: number; end: number; fenced: boolean }[]
+
+export interface Pair {
+  key: string
+  definedAt: string[]
+  citedBy: { file: string; line: number; text: string }[]
+}
+
+export function findPairs(root: string, options?: { base?: string }): Pair[]
+
 export function scanRegions(text: string): {
   counts: { line: number; raw: string; written: string }[]
   checks: { line: number; raw: string; body: string[] }[]

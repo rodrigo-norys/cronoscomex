@@ -98,7 +98,9 @@ pare e diga — não há pilha para fatiar nem destino para onde enviar.
 procurou antes do aceite dos commits (passo 7 dela). Aqui, rode de novo
 `node ${CLAUDE_PROJECT_DIR}/tools/contar-documentacao.mjs --nuas --base <base>` sobre o PR
 inteiro, que pode ter commit feito por fora da skill, e traga os avisos para o plano, com o
-mesmo veredicto: **estado atual** ou **registro**. Sem aviso, diga "nenhum".
+mesmo veredicto: **estado atual** ou **registro**. Sem aviso, diga "nenhum". Repita o
+`--pares --base <base>` pelo mesmo motivo, e traga quantos blocos ele listou e se algum
+envelheceu.
 
 ### 2. Decida o número de PRs
 

@@ -183,6 +183,12 @@ Derivados da estrutura real e da fronteira que o Biome impõe — use o mais esp
    está no cabeçalho da ferramenta. Aqui corrigir custa uma edição; depois do commit, custa outro
    commit.
 
+   Rode também `node ${CLAUDE_PROJECT_DIR}/tools/contar-documentacao.mjs --pares`: para cada ID
+   cuja definição o diff mudou — a linha de tabela que abre com ele, o título da história ou do
+   épico —, ele lista os outros blocos que o citam. **Abra cada bloco e responda se ainda diz a
+   verdade.** O que envelheceu se corrige na árvore, antes do plano, e o plano diz quantos blocos
+   foram conferidos e quantos corrigidos. Sem par, diga "nenhum".
+
 8. **Rode o portão inteiro antes de apresentar o plano**, sobre a árvore como ela vai ficar
    depois do último commit: `npm run verify`, com o `dev` derrubado. Informe no plano o
    resultado e a contagem que o Vitest devolveu. **Se reprovar, pare e reporte — não há plano

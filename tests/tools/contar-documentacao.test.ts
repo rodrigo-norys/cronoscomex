@@ -4,9 +4,11 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import {
+  blocks,
   COUNTERS,
   createSource,
   findLooseNumbers,
+  findPairs,
   inspect,
   looseNumbers,
   parseTree,
@@ -422,5 +424,105 @@ describe('inspect e rewrite, sobre o repositorio temporario', () => {
     expect(readFileSync(join(root, 'README.md'), 'utf-8')).toBe(
       crlf(['tem <!-- conta:adrs -->2<!-- /conta --> ADRs', '']),
     )
+  })
+})
+
+describe('blocks — a unidade do par', () => {
+  it('linha de tabela, item de lista e titulo sao blocos proprios; o bloco cercado e marcado', () => {
+    const lines = ['# T', 'para', 'grafo', '| a |', '| b |', '- item', '  continua', '- outro']
+    lines.push('```', 'codigo', '```', 'fim')
+
+    expect(blocks(lines)).toEqual([
+      { start: 1, end: 1, fenced: false },
+      { start: 2, end: 3, fenced: false },
+      { start: 4, end: 4, fenced: false },
+      { start: 5, end: 5, fenced: false },
+      { start: 6, end: 7, fenced: false },
+      { start: 8, end: 8, fenced: false },
+      { start: 9, end: 11, fenced: true },
+      { start: 12, end: 12, fenced: false },
+    ])
+  })
+})
+
+/**
+ * O caso que motivou o `--pares`: `D-49` aposentou o IND-14 na matriz, e a `02`
+ * continuou listando-o como requisito vivo. A linha de definicao que muda e a chave;
+ * quem a cita e o alvo — menos o registro, o exemplo e o proprio diff.
+ */
+describe('findPairs — quem cita o ID cuja definicao mudou', () => {
+  const commit = (message: string) =>
+    execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', 'commit', '-qm', message], {
+      cwd: root,
+    })
+  const head = () =>
+    execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf-8' }).trim()
+
+  it('lista quem cita o ID da definicao alterada, e nao o registro, o exemplo nem o diff', () => {
+    write(
+      'docs/09-rastreabilidade.md',
+      '| IND-14 | Pendentes | ✅ **Entregue** |\n| IND-15 | x |\n',
+    )
+    write('docs/02-requisitos.md', '| IND-14 | Pendentes | `count` |\n\nO IND-15 acusa volume.\n')
+    write('docs/10-governanca.md', '| D-01 | 2026-09-18 | IND-14 sai da tela |\n')
+    write('docs/adr/0001-x.md', 'O IND-14 nasceu aqui.\n')
+    write('CLAUDE.md', '```\nexemplo com IND-14\n```\n\nO plano original lista o IND-14.\n')
+    track()
+    commit('base')
+    const base = head()
+
+    write(
+      'docs/09-rastreabilidade.md',
+      '| IND-14 | Pendentes | ⏹️ **Aposentado** |\n| IND-15 | x |\n',
+    )
+    write(
+      'docs/02-requisitos.md',
+      '| IND-14 | Pendentes | `count` |\n\nO IND-15, sem cartao, acusa.\n',
+    )
+
+    const pairs = findPairs(root, { base })
+
+    expect(pairs.map(({ key, definedAt }) => [key, definedAt])).toEqual([
+      ['IND-14', ['docs/09-rastreabilidade.md:1']],
+    ])
+    expect(pairs[0]?.citedBy.map(({ file, line }) => `${file}:${line}`)).toEqual([
+      'CLAUDE.md:5',
+      'docs/02-requisitos.md:1',
+    ])
+  })
+
+  it('historia fechada no diff traz o epico dela, e o titulo do epico nao cita a si mesmo', () => {
+    const backlog = (fechada: boolean) =>
+      ['## Épico E1 — Um', '', '### H-01 — Uma', '']
+        .concat(fechada ? ['> ✅ **CONCLUÍDA em 07/10/2026.**', ''] : [])
+        .concat(['corpo', '', '### H-02 — Duas', '', 'corpo', ''])
+        .join('\n')
+    write('docs/06-backlog.md', backlog(false))
+    write('README.md', 'O `E1` é o único aberto.\n')
+    track()
+    commit('base')
+    const base = head()
+
+    write('docs/06-backlog.md', backlog(true))
+
+    expect(
+      findPairs(root, { base }).map(({ key, definedAt, citedBy }) => ({
+        key,
+        definedAt,
+        citedBy: citedBy.map(({ file, line }) => `${file}:${line}`),
+      })),
+    ).toEqual([{ key: 'E1', definedAt: ['docs/06-backlog.md:5'], citedBy: ['README.md:1'] }])
+  })
+
+  it('sem definicao alterada nao ha par, mesmo com o ID citado no trecho que mudou', () => {
+    write('docs/09-rastreabilidade.md', '| IND-14 | Pendentes |\n')
+    write('docs/02-requisitos.md', 'O IND-14 acusa volume.\n')
+    track()
+    commit('base')
+    const base = head()
+
+    write('docs/02-requisitos.md', 'O IND-14 acusa volume alto.\n')
+
+    expect(findPairs(root, { base })).toEqual([])
   })
 })

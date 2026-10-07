@@ -18,7 +18,7 @@
 nem limiar nenhum reprova. Isto foi notado na auditoria de tooling de
 04/08/2026, e a decisão de 03/09/2026 foi **corrigir a
 afirmação e não ligar a cobertura**: percentual de linha não verifica o que a
-lacuna de fato pede — que os <!-- conta:casos-obrigatorios -->44<!-- /conta --> casos-limite obrigatórios de §1.3 tenham virado
+lacuna de fato pede — que os <!-- conta:casos-obrigatorios -->41<!-- /conta --> casos-limite obrigatórios de §1.3 tenham virado
 teste — e ligar limiar por camada é mudança de código, com o backlog fechado.
 Quem quiser o número roda `npx vitest run --coverage`; ele não é portão.
 
@@ -96,7 +96,7 @@ ano (R-14).
 ### 1.3. Cobertura obrigatória por regra
 
 Toda regra classificatória e todo indicador precisa de teste com dado
-concreto. Os **<!-- conta:casos-obrigatorios -->44<!-- /conta --> casos** abaixo são obrigatórios e derivam das tabelas de
+concreto. Os **<!-- conta:casos-obrigatorios -->41<!-- /conta --> casos** abaixo são obrigatórios e derivam das tabelas de
 decisão de `03-modelo-dados.md`. A contagem foi verificada sobre a própria
 tabela.
 
@@ -122,19 +122,16 @@ tabela.
 | Data fora de faixa | `"32/13/2026"` | `null` + `DATA_SEM_ANO` | H-05 |
 | Data no extremo do intervalo | hoje = `2026-08-03`, `eta2 = 2026-08-18` | conta em "15 dias" | H-10 |
 | Data logo além do extremo | `eta2 = 2026-08-19` | não conta | H-10 |
-| Fim de semana ISO | hoje = segunda `2026-08-03`, `eta2 = 2026-08-09` | conta em "esta semana" | H-10 |
-| Início da semana seguinte | `eta2 = 2026-08-10` | não conta | H-10 |
 | REF duplicada | `FT498.26` nas linhas 10 e 20 | linha 10 aceita, linha 20 em quarentena | H-07 |
 | REF duplicada por caixa | `FT498.26` e `ft498.26 ` | mesmo REF, segunda em quarentena | H-07 |
 | REF ausente com dado | REF vazio, CLT preenchido | quarentena `REF_AUSENTE` | H-07 |
 | Linha totalmente vazia | todas as células vazias | ignorada, não contada | H-07 |
-| RG em processo não desembaraçado | RG = hoje, categoria `em_andamento` | **não** conta em IND-16 | H-13 |
 | Intervalo documental negativo | RG `2026-07-20`, DOCS `2026-07-30` | excluído, `excludedNegative++` | H-13 |
 | Par documental incompleto | RG preenchido, DOCS `null` | `excludedIncomplete++` | H-13 |
 | Média de conjunto vazio | nenhum par válido | `averageDays: null`, não `0` | H-13 |
-| Documento pendente no limite | `eta2 = hoje+10`, DOCS `null`, `em_andamento` | conta em IND-14 | H-12 |
-| Documento pendente além do limite | `eta2 = hoje+11` | não conta | H-12 |
-| Documento pendente em processo concluído | `desembaracado`, DOCS `null` | **não** conta | H-12 |
+| Documento pendente no limite | `eta2 = hoje+10`, DOCS `null`, `em_andamento` | gera ALE-02 | H-14 |
+| Documento pendente além do limite | `eta2 = hoje+11` | **não** gera ALE-02 | H-14 |
+| Documento pendente em processo concluído | `desembaracado`, DOCS `null` | **não** gera ALE-02 | H-14 |
 | Canal em texto sem cor vermelha | STATUS com `CANAL VERMELHO`, cor azul | **não** conta em IND-06 | H-12 |
 | Agrupamento por caixa e espaço | `ACME LOG`, `acme log`, `  ACME LOG  ` | um grupo, `count: 3` | H-11 |
 | Nomes parecidos | `NAVIO ALFA` e `NAVIO ALFHA` | dois grupos distintos | H-11 |

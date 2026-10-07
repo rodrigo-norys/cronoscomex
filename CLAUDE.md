@@ -198,7 +198,7 @@ gatilhos já atingidos estão na ADR-0007, com o que cada um ensinou.
 - **Texto que o operador lê:** a régua está em `.claude/rules/microcopia.md` e
   carrega ao tocar `web/src/`. Pelo mesmo motivo, não repita nada dela aqui.
 - Toda regra classificatória precisa de teste com os valores concretos das
-  tabelas de decisão. Os <!-- conta:casos-obrigatorios -->44<!-- /conta --> casos obrigatórios estão em
+  tabelas de decisão. Os <!-- conta:casos-obrigatorios -->41<!-- /conta --> casos obrigatórios estão em
   `docs/08-qualidade-operacao.md §1.3`.
 
 ## Comandos

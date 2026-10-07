@@ -47,6 +47,11 @@ ou o recorte que o chamador indicar. Se vier só "revise a documentação", peç
 diff; não varra `docs/` inteiro, que tem 25 mil linhas e não cabe em revisão
 nenhuma.
 
+**E a lista de pares, que você mesmo gera:**
+`node tools/contar-documentacao.mjs --pares --base main`. Para cada ID cuja definição a
+mudança alterou, ela dá os blocos **fora do diff** que o citam — é por ela que a família
+3 começa, em vez de procurar às cegas.
+
 **`git log -p --reverse`, e nunca `git diff main...HEAD`.** O diff de duas
 pontas achata a pilha e apaga a ordem, que é onde mora uma classe inteira de
 defeito: em 11/09/2026 o `CLAUDE.md` declarou `tests/repo/documentacao.test.ts`
@@ -162,6 +167,11 @@ originou, `D-43` revogou `RF-35` e parou em dois elos, deixando
 `docs/00-visao-escopo.md` e `docs/05-contratos-api.md` afirmando o contrário sem
 nota — os dois foram alcançados depois, no mesmo dia, e hoje a decisão cobre
 seis dos oito.
+
+**Os elos são documentos; os pares são blocos.** Para cada bloco da lista do
+`--pares`: **conforme**, se ainda diz a verdade depois da mudança da definição, ou
+**reprovado**, com o que deveria dizer. A lista não limita o alcance — o bloco
+envelhecido que você achar fora dela vale igual.
 
 ### 4. Contradição dentro do próprio diff
 
