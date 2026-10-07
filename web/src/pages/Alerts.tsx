@@ -212,20 +212,21 @@ function StalledNote({
           O traço acima significa isso — não que nenhum processo esteja parado.
         </p>
       )}
+      {/* O limiar como premissa configuravel e A-32; a ausencia de retroatividade, A-43. */}
       <p className="mt-2">
         Limiar em uso: <strong className="tabular-nums">{thresholdDays} dias</strong> sem mudança.{' '}
-        <em>É premissa</em> — a especificação não define o valor, e ele é configurável (A-32).
+        <em>É premissa</em> — a especificação não define o valor, e ele é configurável.
       </p>
       <p className="mt-2">
         {historyStartedAt === null ? (
           <>
             O histórico ainda não começou. Quando começar, não haverá retroatividade: nada anterior
-            à primeira execução pode ser reconstruído (A-43).
+            à primeira execução pode ser reconstruído.
           </>
         ) : (
           <>
             Histórico desde <strong>{formatDay(historyStartedAt)}</strong>. Nada anterior a essa
-            data entra na conta — não há retroatividade (A-43).
+            data entra na conta — não há retroatividade.
           </>
         )}
       </p>

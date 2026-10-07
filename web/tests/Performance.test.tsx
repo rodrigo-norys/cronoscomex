@@ -382,8 +382,10 @@ describe('ranking por responsavel — IND-20', () => {
     expect(within(responsaveis).queryByRole('button')).toBeNull()
     expect(texto).toContain('vem do importador')
     expect(texto).toContain('Cor do responsável')
-    // A-31 continua valendo — para a COR, que agora e o outro filtro.
-    expect(texto).toContain('A-31')
+    // A-31 continua valendo — para a COR, que agora e o outro filtro. A tela diz
+    // isso sem o identificador, que e vocabulario do repositorio (microcopia, regra 2).
+    expect(texto).toContain('uma linha vermelha ou verde não a responde')
+    expect(texto).not.toContain('A-31')
   })
 
   // O texto anterior afirmava o contrario, e afirma-lo depois de `H-50` seria a
