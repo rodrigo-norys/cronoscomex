@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
@@ -15,6 +16,9 @@ import { describe, expect, it } from 'vitest'
  * história nova e requisito novo entram sem tocar neste arquivo. O que ele
  * cobra é concordância entre cópias do mesmo fato, e a fonte é sempre o bloco
  * da história ou a linha de definição — nunca a prosa que a resume.
+ *
+ * Guarda também a estrutura de que a renderização depende, que nenhum dos dois
+ * eixos alcança: a tabela partida por linha em branco.
  *
  * O total de histórias afirmado em prosa saiu daqui em 06/10/2026: desde as
  * regiões de 01/10/2026 o regex não casava linha nenhuma, e quem o cobre é
@@ -272,5 +276,58 @@ describe('requisito revogado não continua entregue na matriz', () => {
     )
 
     expect(desalinhadas).toEqual([])
+  })
+})
+
+/**
+ * Os `.md` que o projeto mantém — `docs/`, `.claude/` e os da raiz —, pelo
+ * `git ls-files`, como em `tests/repo/contratos.test.ts`: o que o git não
+ * rastreia não chega ao GitHub, e não há o que renderizar.
+ */
+function markdownVersionado(): string[] {
+  return execFileSync('git', ['ls-files', '-z', '--', '*.md'], { encoding: 'utf-8' })
+    .split('\0')
+    .filter(
+      (caminho) =>
+        /^(docs|\.claude)\//.test(caminho) || caminho === 'README.md' || caminho === 'CLAUDE.md',
+    )
+}
+
+/** `arquivo:linha` de cada linha de tabela que uma linha em branco separou da tabela dela. */
+function linhasSoltas(caminho: string): string[] {
+  const linhas = readFileSync(caminho, 'utf-8').split('\n')
+  let cercado = false
+
+  return linhas.flatMap((linha, indice) => {
+    if (/^\s*(```|~~~)/.test(linha)) {
+      cercado = !cercado
+      return []
+    }
+    const depoisDeBranco = indice > 0 && (linhas[indice - 1] ?? '').trim() === ''
+    const abreTabela = /^\|\s*:?-/.test(linhas[indice + 1] ?? '')
+
+    return !cercado && linha.startsWith('|') && depoisDeBranco && !abreTabela
+      ? [`${caminho}:${indice + 1}`]
+      : []
+  })
+}
+
+/**
+ * Linha em branco dentro de tabela encerra a tabela, e o que vem depois sai
+ * como texto corrido — no GitHub e no preview. A tabela de decisões quebrava na
+ * `D-44` e a de achados no `A-56`, com a suíte verde: nenhuma asserção olhava a
+ * estrutura, e quem achou foi o olho do usuário. Fora de bloco cercado, linha
+ * que abre com `|` logo depois de linha em branco só pode ser o cabeçalho de uma
+ * tabela nova, seguido do delimitador.
+ */
+describe('nenhuma linha de tabela fica solta depois de linha em branco', () => {
+  const arquivos = markdownVersionado()
+
+  it('encontra os arquivos — âncora contra guarda verde por vacuidade', () => {
+    expect(arquivos.length).toBeGreaterThan(30)
+  })
+
+  it('toda linha de tabela depois de linha em branco abre uma tabela', () => {
+    expect(arquivos.flatMap((caminho) => linhasSoltas(caminho))).toEqual([])
   })
 })
