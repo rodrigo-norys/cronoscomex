@@ -311,6 +311,30 @@ allows 'cd docs && ls'
 allows 'sed -n 1,40p .claude/local/levantamento-retroativo.md'
 allows_in /tmp 'cat data/x.json'
 
+# --- o guard que quebra bloqueia --------------------------------------------
+# Saida fora de 0 e 2 o Claude Code trata como erro nao bloqueante. A copia
+# tira a linha `data_dir=`, como fica o guard no meio de uma edicao, e roda um
+# comando que o guard inteiro libera: tem de sair 2, pelo `trap`. A mensagem e
+# conferida porque erro de sintaxe tambem sai 2, e passaria sem o `trap`.
+allows 'grep -rn data src/'
+broken_dir=$(mktemp -d)
+broken_guard="$broken_dir/guard-dados-sensiveis.sh"
+sed '/^  data_dir=/d' "$guard" > "$broken_guard"
+if cmp -s "$guard" "$broken_guard"; then
+  failed=$((failed + 1))
+  echo 'FALHOU  a copia quebrada saiu igual ao guard: a linha `data_dir=` mudou de forma' >&2
+else
+  message=$(jq -nc '{tool_input:{command:"grep -rn data src/"}}' | bash "$broken_guard" 2>&1 >/dev/null)
+  actual=$?
+  if [ "$actual" -eq 2 ] && [[ "$message" == *"o guard falhou"* ]]; then
+    passed=$((passed + 1))
+  else
+    failed=$((failed + 1))
+    printf 'FALHOU  guard quebrado: esperava 2 pelo trap, obteve %s  <-  %s\n' "$actual" "$message" >&2
+  fi
+fi
+rm -rf -- "$broken_dir"
+
 total=$((passed + failed))
 if [ "$failed" -eq 0 ]; then
   printf 'guard-dados-sensiveis: %s casos, todos passaram\n' "$total"

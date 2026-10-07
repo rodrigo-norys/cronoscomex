@@ -13,9 +13,9 @@
 # frente, grupo de opcao curta e lido letra a letra e opcao longa casa por
 # prefixo, como o proprio git as le.
 #
-# Falha FECHADO: sem jq ou com entrada ilegivel, bloqueia em vez de liberar.
-# Um bloqueio falso custa redigitar um comando; uma passagem falsa publica
-# dado de cliente.
+# Falha FECHADO: sem jq, com entrada ilegivel ou com saida inesperada do
+# proprio guard, bloqueia em vez de liberar. Um bloqueio falso custa redigitar
+# um comando; uma passagem falsa publica dado de cliente.
 
 set -uo pipefail
 
@@ -24,6 +24,12 @@ block() {
   echo "Se a acao for mesmo necessaria, execute-a voce mesmo no terminal." >&2
   exit 2
 }
+
+# Saida fora de 0 e 2 — variavel nao definida sob `set -u`, comando ausente — o
+# Claude Code trata como erro NAO bloqueante, e o comando rodaria sem inspecao.
+# Nao alcanca subshell: falha dentro de `$(...)` ou `<(...)` some com a saida
+# dela, e o guard segue com o que sobrou.
+trap 'exit_status=$?; [ "$exit_status" = 0 ] || [ "$exit_status" = 2 ] || block "o guard falhou (saida $exit_status) e nao terminou de inspecionar o comando."' EXIT
 
 command -v jq >/dev/null 2>&1 || block "jq ausente — o guard nao pode inspecionar o comando."
 
