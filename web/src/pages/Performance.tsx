@@ -269,7 +269,7 @@ function Aggregate({ leadTime }: { leadTime: IndicatorsResponse['documentaryLead
       {/* As duas exclusoes de A-30 seguem contadas, agora com o que cada uma
           significa: numero sem explicacao e descarte que parece medicao. */}
       <p className="mt-2 text-xs text-text-secondary">
-        <strong className="font-semibold">Excluídos e contados</strong> (A-30):{' '}
+        <strong className="font-semibold">Excluídos e contados</strong>:{' '}
         <strong className="tabular-nums">
           {leadTime.excludedIncomplete.toLocaleString('pt-BR')}
         </strong>{' '}
@@ -395,17 +395,18 @@ function OverdueBadge({ overdue }: { overdue: number | undefined }) {
  * cor era a unica fonte, linha vermelha ou verde perdia o responsavel (A-31,
  * R-02), e `Indefinido` liderava com 484 dos 649. `H-50` trocou a fonte para o
  * importador, e a limitacao de A-31 deixou de valer para este campo — ela
- * continua valendo para a COR, que agora e o outro filtro da barra.
+ * continua valendo para a COR, que agora e o outro filtro da barra. `H-93` tirou
+ * o desempate pela cor (`D-40`): o responsavel vem so do importador.
  */
 function ResponsibleCaveat() {
   return (
     <p className="mt-2 rounded-container border border-border-subtle bg-surface-sunken px-3 py-2 text-xs text-text-secondary">
-      O responsável vem do <strong>importador</strong>, e a cor da linha decide o que a lista de
-      importadores não alcança. <strong>Sem responsável</strong> é o processo que não tem nem uma
-      coisa nem a outra — ele aparece aqui de propósito, porque escondê-lo faria o ranking parecer
-      completo. Para recortar por <strong>o que a linha está pintada</strong>, use o filtro Cor do
-      responsável na barra do topo: ele responde outra pergunta, e uma linha vermelha ou verde não a
-      responde (A-31).
+      O responsável vem do <strong>importador</strong>, conforme a seção Responsáveis por
+      importador, em Configuração. <strong>Sem responsável</strong> é o processo cujo importador não
+      foi atribuído a ninguém — ele aparece aqui de propósito, porque escondê-lo faria o ranking
+      parecer completo. Para recortar por <strong>o que a linha está pintada</strong>, use o filtro
+      Cor do responsável na barra do topo: ele responde outra pergunta, e uma linha vermelha ou
+      verde não a responde.
     </p>
   )
 }
@@ -424,10 +425,11 @@ function OutOfScopeNote({ topN }: { topN: number }) {
         O cálculo exige a data de presença de carga, que a planilha não tem (§4 da especificação).
         Estimá-lo a partir de outra data produziria um número plausível e errado.
       </p>
+      {/* A quebra por responsavel vem inteira, com as chaves zeradas, por A-28. */}
       <p className="mt-2">
         As três primeiras quebras mostram até {topN} grupos cada, os de maior amostra. A quebra por
-        responsável vem inteira — são quatro chaves fixas, e todas aparecem, inclusive zeradas
-        (A-28).
+        responsável vem inteira — uma linha por pessoa da equipe, mais a de Sem responsável, e todas
+        aparecem, inclusive zeradas.
       </p>
     </section>
   )

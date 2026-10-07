@@ -286,8 +286,9 @@ function StatusHistory({
 
       {events.length === 0 && daysInCurrentCategory === null ? (
         <p className="mt-2 text-sm text-text-secondary">
+          {/* A ausencia de retroatividade e A-43. */}
           Nenhum evento registrado para este processo. O histórico começa quando a aplicação passa a
-          acompanhar a planilha, e não há retroatividade anterior a isso (A-43) — vazio aqui{' '}
+          acompanhar a planilha, e não há retroatividade anterior a isso — vazio aqui{' '}
           <strong>não</strong> significa que o processo nunca mudou de categoria.
         </p>
       ) : events.length === 0 ? (

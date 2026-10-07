@@ -37,6 +37,11 @@ dist/
 # Configuracao local do Claude Code — escolhas de maquina, nao da equipe
 .claude/settings.local.json
 
+# O que o agente grava para si: o log de instrucoes carregadas e a saida das
+# ferramentas de levantamento e medicao (D-73). Fica fora de data/, que e
+# estado do operador e e negado ao agente (D-74)
+.claude/local/
+
 # Perfilamento bruto: sanitizado nas 32 colunas identificaveis, mas mantem
 # amostras em ETA, ETA2, RG, DOCS ENVIADOS, ARMAD e ANDAMENTO. Decidir antes
 # de publicar; ate la fica fora do historico. RESULTADO.md continua versionado.
