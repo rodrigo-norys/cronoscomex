@@ -61,10 +61,11 @@ vendo, avise quem instalou.
 
 ## Quando algo der errado
 
-O atalho confere **três coisas, e só três**: Node instalado, Node 22 ou maior, e
-a interface compilada. As três acontecem antes de existir tela, e por isso são
-as únicas que ele reporta. Cada uma traz a receita completa — o que baixar, de
-onde, e o que fazer depois.
+O atalho confere só o que impede a aplicação de abrir: o Node instalado, o Node
+22 ou maior, a interface compilada e o arquivo `config\app.json` legível, quando
+ele existe. Tudo isso acontece antes de existir tela, e por isso é o que ele
+reporta. Cada aviso traz a receita completa — o que baixar, de onde, e o que
+fazer depois.
 
 Todo o resto — a planilha não encontrada, a leitura falhando, a aba ausente — é
 reportado **dentro do painel**, na tela de configuração, com o estado de cada
@@ -72,6 +73,26 @@ item.
 
 Se a janela preta fechar sozinha ou mostrar erro que não se resolve com a
 receita na tela, chame quem instalou a aplicação e mostre as linhas da janela.
+
+---
+
+## Desfazer uma gravação
+
+Antes de **cada** gravação na planilha, a aplicação guarda uma cópia inteira dela
+em `data\backups\`, nesta pasta, com o nome `planilha-AAAAMMDD-HHMMSS.xlsx` — a
+data e a hora da cópia, no relógio deste computador. As cópias mais recentes
+ficam guardadas.
+
+Se a gravação der errado, a aplicação devolve a cópia sozinha e avisa na tela.
+Para desfazer uma gravação que deu certo, mas não devia ter sido feita:
+
+1. Feche o Excel, se a planilha estiver aberta.
+2. Se a planilha estiver numa pasta do OneDrive, pause a sincronização até
+   terminar.
+3. Em `data\backups\`, escolha a cópia pela data e hora: a mais recente **antes**
+   da gravação que você quer desfazer.
+4. Copie-a por cima da planilha, mantendo o nome original da planilha.
+5. Se pausou o OneDrive, retome a sincronização. Abra a planilha para conferir.
 
 ---
 
