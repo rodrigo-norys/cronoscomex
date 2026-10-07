@@ -360,9 +360,14 @@ const COMMENT_LINE = /^\s*(\/\/|\*|\/\*)/
  * curto por higiene, não por necessidade: os `\b` já impedem que `D-\d{2}` case
  * dentro de `TD-05` ou `IND-22`, e que `R-\d{2}` case dentro de `ADR-0004` —
  * em todos falta fronteira de palavra antes da letra.
+ *
+ * **Dois ou três dígitos.** Com `\d{2}` e o `\b` do fim, `H-100` não casava — o
+ * `\b` exige fronteira entre o segundo e o terceiro dígito —, e desde que o
+ * backlog passou de `H-99` nenhuma citação de três dígitos era conferida: um
+ * comentário citando `H-999` passava verde. Achado por mutação (ADR-0007).
  */
 const PLAN_ID =
-  /\b(?:ADR-\d{4}|RNF-\d{2}|IND-\d{2}|ALE-\d{2}|TD-\d{2}(?:\.\d)?|RF-\d{2}|H-\d{2}|A-\d{2}|D-\d{2}|P-\d{2}|R-\d{2})\b/g
+  /\b(?:ADR-\d{4}|RNF-\d{2,3}|IND-\d{2,3}|ALE-\d{2,3}|TD-\d{2,3}(?:\.\d)?|RF-\d{2,3}|H-\d{2,3}|A-\d{2,3}|D-\d{2,3}|P-\d{2,3}|R-\d{2,3})\b/g
 /**
  * `src/` e `web/` entraram em `H-21`: sem eles, `\b` casava o `tests` de
  * `web/tests/paginas-montadas.test.tsx` no meio da palavra e a guarda cobrava
@@ -519,7 +524,10 @@ describe('toda âncora citada em comentário ainda existe', () => {
     const dead = CITATIONS.ids.filter((citation) => !DEFINED.has(citation.token))
 
     expect(
-      dead.map((citation) => `${citation.file}:${citation.line} cita ${citation.token}`),
+      dead.map(
+        (citation) =>
+          `${citation.file}:${citation.line} cita ${citation.token}, que não é definido em docs/ — todo fato medido cita uma fonte que existe (.claude/rules/comentarios.md, regra 4)`,
+      ),
     ).toEqual([])
   })
 
