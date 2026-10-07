@@ -5,21 +5,11 @@
 Cada fase termina em software **utilizável por quem usa a planilha hoje**.
 Nenhuma fase entrega apenas infraestrutura.
 
-> **As cinco fases cobrem o plano original, e só ele.** O que nasceu depois
-> **não tem fase atribuída**: as histórias `H-33` a `H-38` e os épicos `E8`
-> (configuração alcançável), `E9` (estilização), `E10` (melhorias de uso), `E11`
-> (a casca redesenhada), `E12` (os achados da revisão de estilo), `E13` (o
-> operacional que edita, ordena e cria) e `E14` (a lateral que se lê antes de se
-> ler). A ordem entre eles vive no cabeçalho de
-> cada épico, em `06-backlog.md`. **`E14` é o único aberto**, e a ordem dentro
-> dele está no cabeçalho do épico; os demais fecharam. **`E13` não teve ordem a respeitar** — ele é
-> retroativo, escrito em 03/09/2026 a partir de código que já estava na `main`
-> (`D-26`). A regra vigente até então:
-> `E9` e `E10` estão abertos ao mesmo tempo e não se bloqueiam;
-> **`E11` vem depois dos dois**, porque `H-45` e `H-46` tocam os mesmos 25
-> arquivos que ele reescreve, `H-47` era a linha de base da verificação no
-> navegador — **e ela fechou em 31/08/2026**, deixando `H-67` a `H-72` no lugar
-> —, e `H-50` ainda muda o que três telas dizem.
+> **As cinco fases cobrem o plano original, e só ele.** O que nasceu depois —
+> as histórias `H-33` a `H-36`, que entraram em `E7`, e os épicos de `E8` em
+> diante — **não tem fase atribuída**. De onde veio cada épico está em
+> [README.md](README.md), em "De onde vieram os épicos nascidos depois do
+> plano"; a ordem entre eles, no cabeçalho de cada um, em `06-backlog.md`.
 
 ### Fase 0 — Perfilamento ✅ CONCLUÍDA em 03/08/2026
 
