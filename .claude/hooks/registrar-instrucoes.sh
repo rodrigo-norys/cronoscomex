@@ -18,6 +18,11 @@
 # observabilidade. Nao virou assercao em tests/repo/ de proposito: dependeria de
 # arquivo em data/, que e gitignored, e foi assim que o CI reprovou em `H-49`.
 #
+# O criterio acima era insuficiente, e `D-71` o refez: o log mostra
+# o que CARREGOU, nunca o que deveria ter carregado e nao carregou. Quem mede a
+# falta sao as transcricoes, e quem garante o resultado e a guarda de cada rule —
+# ver ADR-0007, "A rule nao garante nada, e a guarda garante".
+#
 # Falha ABERTO, e aqui isso e mais grave que nos outros hooks: neste evento
 # `exit 2` BLOQUEIA o arquivo de instrucao de carregar. Um exit acidental
 # rodaria a sessao inteira sem as regras inviolaveis, em silencio. Por isso:

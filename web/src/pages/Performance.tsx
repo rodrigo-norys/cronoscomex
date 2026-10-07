@@ -269,7 +269,7 @@ function Aggregate({ leadTime }: { leadTime: IndicatorsResponse['documentaryLead
       {/* As duas exclusoes de A-30 seguem contadas, agora com o que cada uma
           significa: numero sem explicacao e descarte que parece medicao. */}
       <p className="mt-2 text-xs text-text-secondary">
-        <strong className="font-semibold">Excluídos e contados</strong> (A-30):{' '}
+        <strong className="font-semibold">Excluídos e contados</strong>:{' '}
         <strong className="tabular-nums">
           {leadTime.excludedIncomplete.toLocaleString('pt-BR')}
         </strong>{' '}
@@ -405,7 +405,7 @@ function ResponsibleCaveat() {
       coisa nem a outra — ele aparece aqui de propósito, porque escondê-lo faria o ranking parecer
       completo. Para recortar por <strong>o que a linha está pintada</strong>, use o filtro Cor do
       responsável na barra do topo: ele responde outra pergunta, e uma linha vermelha ou verde não a
-      responde (A-31).
+      responde.
     </p>
   )
 }
@@ -424,10 +424,10 @@ function OutOfScopeNote({ topN }: { topN: number }) {
         O cálculo exige a data de presença de carga, que a planilha não tem (§4 da especificação).
         Estimá-lo a partir de outra data produziria um número plausível e errado.
       </p>
+      {/* A quebra por responsavel vem inteira, com as chaves zeradas, por A-28. */}
       <p className="mt-2">
         As três primeiras quebras mostram até {topN} grupos cada, os de maior amostra. A quebra por
-        responsável vem inteira — são quatro chaves fixas, e todas aparecem, inclusive zeradas
-        (A-28).
+        responsável vem inteira — são quatro chaves fixas, e todas aparecem, inclusive zeradas.
       </p>
     </section>
   )

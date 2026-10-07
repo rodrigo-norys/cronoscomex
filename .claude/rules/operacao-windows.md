@@ -5,6 +5,14 @@ paths:
 
 # A partida na máquina do operador — `PD-06`
 
+> **Esta rule é orientação, e pode não carregar.** Ela entra em contexto quando
+> `Read`, `Edit` ou `Write` tocam arquivo do `paths:` — nunca pelo shell, e,
+> medido (ADR-0007), nem sempre nesses casos. **O que nela não pode falhar tem
+> guarda:** o disparo de `main()` por `pathToFileURL` é imposto por
+> `tests/http/partida.test.ts`, que cita esta rule ao reprovar. O resto só se
+> prova em Windows: `verify-windows.yml`, que não é obrigatório, e a máquina do
+> operador.
+
 **O único ambiente onde a aplicação roda de verdade é o único que a suíte não
 cobre.** Esta régua carrega ao abrir `scripts/`, que é onde a partida mora.
 

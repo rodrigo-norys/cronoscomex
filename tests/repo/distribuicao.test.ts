@@ -31,7 +31,10 @@ const { esperada, quebrados, alcancados } = arvoreEsperada()
 describe('a arvore de distribuicao e calculavel', () => {
   it('nao tem import que deixou de resolver', () => {
     // Import quebrado no fecho vira arquivo faltando na maquina do operador.
-    expect(quebrados).toEqual([])
+    expect(
+      quebrados,
+      'import que nao resolve vira modulo faltando na maquina do operador (.claude/rules/distribuicao.md)',
+    ).toEqual([])
   })
 
   it('alcanca os modulos a partir dos dois pontos de entrada', () => {

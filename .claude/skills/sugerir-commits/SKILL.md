@@ -173,6 +173,13 @@ Derivados da estrutura real e da fronteira que o Biome impõe — use o mais esp
    - O `git add` com os caminhos **exatos** daquele commit.
    - A mensagem no padrão do `~/.claude/CLAUDE.md`.
 
+7. **Rode o portão inteiro antes de apresentar o plano**, sobre a árvore como ela vai ficar
+   depois do último commit: `npm run verify`, com o `dev` derrubado. Informe no plano o
+   resultado e a contagem que o Vitest devolveu. **Se reprovar, pare e reporte — não há plano
+   de commit com portão vermelho.** É o único momento em que o dono vê o portão **antes** do
+   aceite: a prova por ponto verde do passo 4 roda depois dele, com o commit já criado, e só
+   com `vitest`, sem lint, typecheck e build.
+
 ## Decisão de branch
 
 - **Nunca commite direto na branch padrão (`main`).** Se o HEAD estiver em `main`, sugira criar

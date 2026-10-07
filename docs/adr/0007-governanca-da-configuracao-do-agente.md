@@ -110,8 +110,42 @@ desde 30/09/2026; os cumpridos vivem aqui, com o que cada um ensinou.
 | Skill `novo-indicador`, ao concluir `H-13` | 06/08/2026 | Saiu da repetição real de `H-09` a `H-13`, com o formato estável; o motivo principal foi a omissão sistemática da rota |
 | Subagente `revisor-xml`, antes de `H-24` | 11/08/2026 | `H-24` tinha 11 casos-limite, e errar custa a planilha da empresa. Pagou-se na primeira invocação: reprovou por dois defeitos reais, um gerando XML malformado |
 | Skill `nova-pagina`, ao concluir `H-20` | 07/08/2026 | Cinco páginas com o mesmo padrão e as mesmas omissões; `H-22` foi a primeira conduzida por ela |
-| Conferir se cada rule dispara, aos 20 `session_id` | 04/09/2026 | 28 sessões no log, e as cinco rules dispararam — `documentacao` 19 vezes, `comentarios` 13, `operacao-windows` 7, `escrita-xlsx` 4, `distribuicao` 2 —; o hook virou só observabilidade. O log é TSV, e não JSON: a primeira contagem leu 0 por supor o formato errado |
+| Conferir se cada rule dispara, aos 20 `session_id` — **critério insuficiente, refeito por `D-71`** | 04/09/2026 | 28 sessões no log, e as cinco rules dispararam — `documentacao` 19 vezes, `comentarios` 13, `operacao-windows` 7, `escrita-xlsx` 4, `distribuicao` 2 —; o hook virou só observabilidade. O log é TSV, e não JSON: a primeira contagem leu 0 por supor o formato errado |
 | Guarda `documentacao.test.ts` e subagente `revisor-docs` | 11/09/2026 | 51 defeitos numa passada de ~490 linhas, um achado a olho depois de a suíte passar. A guarda cobra o computável, o revisor o que não é; ela precisou nascer depois de backlog e `README.md` concordarem. **Foi o primeiro marco registrado DEPOIS do evento** — os quatro anteriores declararam o gatilho antes de ele ser atingido |
+
+## A rule não garante nada, e a guarda garante (`D-71`)
+
+**O critério de 04/09/2026 media se cada rule disparava ao menos uma vez, e não se
+disparava quando era necessária.** O log de `registrar-instrucoes.sh` só registra o
+que carregou; a carga que faltou não gera linha. Medido nas transcrições do projeto,
+só a linha principal e só depois da criação de cada rule:
+
+| rule | sessões que tocaram arquivo do glob | carregou | nunca carregou |
+|---|---|---|---|
+| `comentarios` | 19 | 10 | 9 |
+| `documentacao` | 23 | 14 | 9 |
+| `operacao-windows` | 16 | 4 | 12 |
+| `distribuicao` | 13 | 4 | 9 |
+| `escrita-xlsx` | 12 | 1 | 11 |
+| `microcopia` | 3 | 0 | 3 |
+
+**A documentação diz que a rule carrega quando `Read`, `Edit` ou `Write` tocam arquivo
+do `paths:`, nunca pelo shell, e o comportamento real é mais estreito.** Quatro
+sessões tocaram arquivo do glob por essas ferramentas sem carga registrada — uma só
+com `Edit`, outra só com `Write`, duas com `Read` —, e no mesmo dia uma leitura por
+`Read` de `scripts/sincronizar-distribuicao.ts` não carregou `distribuicao.md`. Rule
+já lida ou escrita na sessão também não é anexada de novo.
+
+**O efeito apareceu na tela:** a `microcopia.md` proíbe identificador de auditoria no
+texto que o operador lê, e sete estavam lá, em três páginas.
+
+**A decisão foi não forçar a carga.** Um hook que bloqueasse a ferramenta até a rule
+ser lida foi desenhado e recusado: complexidade alta, e ainda aproximado no shell. O
+que se adotou é a prática comum — a rule é orientação, e o que nela não pode falhar
+tem **guarda que reprova e cita a rule**. Cada guarda foi provada por mutação: as sete
+reprovam quando a regra é quebrada de propósito. A mutação da âncora achou um defeito
+da própria guarda: `H-\d{2}` não casava `H-100`, e citação de três dígitos passava
+sem conferência desde que o backlog passou de `H-99`.
 
 ## O que nunca foi verificado
 

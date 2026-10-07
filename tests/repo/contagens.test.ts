@@ -35,7 +35,7 @@ describe('as regiões de contagem da documentação batem com a fonte', () => {
       divergences.map(({ file, line, name, written, actual }) =>
         written === null
           ? `${file}:${line} ${name}: ${actual} — corrija à mão`
-          : `${file}:${line} ${name}: escrito "${written}", real "${actual}" — rode node tools/contar-documentacao.mjs --write`,
+          : `${file}:${line} ${name}: escrito "${written}", real "${actual}" — rode node tools/contar-documentacao.mjs --write (.claude/rules/documentacao.md)`,
       ),
     ).toEqual([])
   })
