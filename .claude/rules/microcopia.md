@@ -5,6 +5,13 @@ paths:
 
 # O texto que o operador lê
 
+> **Esta rule é orientação, e pode não carregar.** Ela entra em contexto quando
+> `Read`, `Edit` ou `Write` tocam arquivo do `paths:` — nunca pelo shell, e,
+> medido (ADR-0007), nem sempre nesses casos. **O que nela não pode falhar tem
+> guarda:** a regra 2 — identificador de auditoria não aparece na tela — é imposta
+> por `tests/repo/microcopia.test.ts`, que cita esta rule ao reprovar. As regras 1
+> e 3 são julgamento, e quem as cobra é a revisão.
+
 Régua da microcópia da interface — subtítulo de painel, apoio de controle, nota
 de rodapé, estado vazio. **Não cobre comentário de código:** isso é
 `.claude/rules/comentarios.md`, que carrega num glob maior e trata de outro eixo.

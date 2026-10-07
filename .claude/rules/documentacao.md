@@ -6,6 +6,14 @@ paths:
 
 # Números afirmados na documentação
 
+> **Esta rule é orientação, e pode não carregar.** Ela entra em contexto quando
+> `Read`, `Edit` ou `Write` tocam arquivo do `paths:` — nunca pelo shell, e,
+> medido (ADR-0007), nem sempre nesses casos. **O que nela não pode falhar tem
+> guarda:** número em região, índice do backlog, matriz e requisito revogado são
+> impostos por `tests/repo/contagens.test.ts` e `tests/repo/documentacao.test.ts`.
+> Número fora de região é avisado no diff pelo `--nuas`, sem reprovar. A semântica
+> é do `revisor-docs`, sob demanda.
+
 Medido em 13/08/2026: **242 linhas** de `docs/` e `CLAUDE.md` afirmam um número.
 Quatro estavam erradas, e as quatro eram do mesmo tipo — contagem sobre o
 próprio repositório, escrita sem dizer o que contava.

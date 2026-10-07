@@ -159,10 +159,10 @@ só o usuário invoca. Subagentes, sem `Edit` nem `Write` e com `model: opus`:
 `revisor-xml`, **obrigatório antes de commitar** mudança em
 `src/io/xlsx-surgeon.ts`, `src/app/write-guard.ts` ou código que reescreva bytes do
 `.xlsx`; `revisor-estilo`; e `revisor-docs`, **só sob demanda do usuário**.
-As <!-- conta:rules -->7<!-- /conta --> rules carregam quando a ferramenta `Read` abre arquivo do `paths:` — e só
-então: `comentarios.md`, `dependencias.md`, `documentacao.md`, `escrita-xlsx.md`,
-`microcopia.md`, `operacao-windows.md` e `distribuicao.md`; regra inviolável não
-vai para lá. Hooks: `guard-dados-sensiveis.sh`, que falha **fechado**, com a
+As <!-- conta:rules -->7<!-- /conta --> rules são **orientação, e podem não carregar** — `comentarios.md`,
+`dependencias.md`, `documentacao.md`, `escrita-xlsx.md`, `microcopia.md`,
+`operacao-windows.md` e `distribuicao.md`. O que nelas não pode falhar tem guarda,
+cuja reprovação cita a rule; regra inviolável não vai para lá (`D-71`). Hooks: `guard-dados-sensiveis.sh`, que falha **fechado**, com a
 regressão em `test-guard.sh`; `conferir-distribuicao.sh`,
 `conferir-alinhamento.sh` e `registrar-instrucoes.sh`, que falham aberto.
 

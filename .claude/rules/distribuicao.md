@@ -9,6 +9,13 @@ paths:
 
 # A árvore que vai para a máquina do operador
 
+> **Esta rule é orientação, e pode não carregar.** Ela entra em contexto quando
+> `Read`, `Edit` ou `Write` tocam arquivo do `paths:` — nunca pelo shell, e,
+> medido (ADR-0007), nem sempre nesses casos. **O que nela não pode falhar tem
+> guarda:** a árvore que resolve todo import — inclusive o que `server.ts` importa
+> — é imposta por `tests/repo/distribuicao.test.ts`, que cita esta rule ao
+> reprovar.
+
 A branch `distribuicao` é o artefato: sem `docs/`, `tests/`, `tools/` nem
 `.claude/`, que não servem para nada em produção. **Sem contagem aqui de
 propósito** — o próprio `sincronizar-distribuicao.ts` mede e imprime os dois

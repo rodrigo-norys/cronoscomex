@@ -27,7 +27,10 @@ const SERVER = readFileSync('src/http/server.ts', 'utf-8')
 
 describe('o disparo de main() sobrevive ao Windows', () => {
   it('resolve o caminho do processo com pathToFileURL', () => {
-    expect(SERVER).toMatch(/import\.meta\.url === pathToFileURL\(process\.argv\[1\]\)\.href/)
+    expect(
+      SERVER,
+      'main() precisa disparar por pathToFileURL, ou a aplicacao nao sobe em Windows (.claude/rules/operacao-windows.md)',
+    ).toMatch(/import\.meta\.url === pathToFileURL\(process\.argv\[1\]\)\.href/)
   })
 
   /**
@@ -35,7 +38,10 @@ describe('o disparo de main() sobrevive ao Windows', () => {
    * concatenacao em outra linha e a assercao acima segue verde.
    */
   it('nao concatena file:// com um caminho de sistema', () => {
-    expect(SERVER).not.toMatch(/`file:\/\/\$\{/)
+    expect(
+      SERVER,
+      'file:// concatenado a caminho de sistema nao casa em Windows (.claude/rules/operacao-windows.md)',
+    ).not.toMatch(/`file:\/\/\$\{/)
   })
 
   /**

@@ -7,6 +7,13 @@ paths:
 
 # Dependências e versões
 
+> **Esta rule é orientação, e pode não carregar.** Ela entra em contexto quando
+> `Read`, `Edit` ou `Write` tocam arquivo do `paths:` — nunca pelo shell, e,
+> medido (ADR-0007), nem sempre nesses casos. **O que nela não pode falhar tem
+> guarda:** a versão citada em documento é imposta por
+> `tests/repo/contagens.test.ts`, pela região `versao[...]`. "Não troque versão
+> sem registrar o motivo" está no `CLAUDE.md`, que carrega sempre.
+
 **A versão exata vive no `package.json` e no `.nvmrc`, e só lá.** O `engines` aceita
 Node `>=22.12.0 <23`. Documento que cita versão usa a região `versao[pacote]` — ou
 `versao[node]` —, e depois de trocar uma versão `node tools/contar-documentacao.mjs
