@@ -1,21 +1,13 @@
 #!/usr/bin/env bash
-# Teste de regressao do guard-dados-sensiveis.sh.
+# Teste de regressao do guard-dados-sensiveis.sh. Sem ele uma regex quebrada
+# falha em SILENCIO: o hook segue saindo 0, e a protecao some sem aviso. Por
+# isso roda PRIMEIRO no `npm run verify`, antes de lint, typecheck, teste e
+# build: verificar a protecao antes de verificar o codigo.
 #
-# O guard e a unica camada mecanica de autoria deste projeto: regra de
-# permissao e do cliente, skill e instrucao. Sem este teste uma regex
-# quebrada falha em SILENCIO — o hook segue saindo 0, e a protecao some
-# sem que nada avise.
-#
-# Por isso roda PRIMEIRO no `npm run verify`, antes de lint, typecheck,
-# teste e build: verificar a protecao antes de verificar o codigo.
-# Mesma razao pela qual test-verifica-dados-sensiveis.sh roda primeiro no
-# workflow do CI.
-#
-# Convencao: `blocks` espera exit 2, `allows` espera exit 0.
-# Os casos de `allows` nao sao enfeite: cada um e um falso positivo que
-# ja aconteceu ou que a estrutura do guard torna provavel, e QUATRO deles ja
-# morderam de verdade — a fixture (13/08/2026) e o exemplo de configuracao
-# (H-30), narrados nas secoes abaixo, mais os dois marcados no bloco final.
+# Convencao: `blocks` espera exit 2, `allows` espera exit 0, e as variantes
+# `_in` passam o diretorio corrente do payload. Os casos de `allows` nao sao
+# enfeite: cada um e um falso positivo que ja aconteceu ou que a estrutura do
+# guard torna provavel.
 #
 # Exige `bash` e `jq`.
 
@@ -63,10 +55,7 @@ blocks 'git add planilha1.jpeg'
 blocks 'git add config/app.json'
 blocks 'git add data/logs/app-20260805.jsonl'
 
-# --- fixture versionada: a excecao que o CI ja fazia e o guard nao ----------
-# O guard bloqueava `tests/fixtures/*.xlsx` enquanto
-# verifica-dados-sensiveis.sh a permitia. A contradicao apareceu ao versionar
-# data-vazia.xlsx, em 13/08/2026: o commit era legitimo e o guard o barrava.
+# --- fixture versionada: a mesma excecao que o CI faz ----------------------
 allows 'git add tests/fixtures/data-vazia.xlsx'
 allows 'git add tools/build_fixtures.py tests/fixtures/data-vazia.xlsx docs/06-backlog.md'
 # A excecao vale para a fixture, nunca para o vizinho no mesmo comando.
@@ -74,10 +63,9 @@ blocks 'git add tests/fixtures/data-vazia.xlsx config/app.json'
 # Travessia anula a excecao: em `case`, `*` atravessa `/`.
 blocks 'git add tests/fixtures/../CONTROLE.xlsx'
 
-# --- o exemplo de configuracao: versionado, e o guard o barrava --------------
-# Mesmo defeito da fixture acima, encontrado em H-30 ao atualizar o arquivo. O
-# glob `*"config/app.json"*` tem `*` nas duas pontas, entao o sufixo `.exemplo`
-# casava. O que carrega caminho local e `config/app.json`, e ele segue bloqueado.
+# --- o exemplo de configuracao e versionado ---------------------------------
+# O glob `*"config/app.json"*` tem `*` nas duas pontas e casaria o `.exemplo`.
+# O que carrega caminho local e `config/app.json`, e ele segue bloqueado.
 allows 'git add config/app.json.exemplo'
 allows 'git add README.md config/app.json.exemplo'
 blocks 'git add config/app.json.exemplo config/app.json'
@@ -101,10 +89,7 @@ blocks 'rm -rf src/domain'
 blocks 'rm -r tests/fixtures'
 blocks 'rm -R .claude'
 
-# Os tres casos acima passavam por ACIDENTE DE FORMA: dois trazem subdiretorio,
-# logo a barra que o glob exigia, e o terceiro caia no unico glob sem barra.
-# Nenhum exercitava o diretorio de topo nu, que era o furo — e a suite reportava
-# "todos passaram" com ele aberto. Medido em 02/09/2026: `rm -rf src` saia 0.
+# O diretorio de topo nu, sem barra, e o caso mais destrutivo.
 blocks 'rm -rf src'
 blocks 'rm -rf docs'
 blocks 'rm -rf config'
@@ -115,15 +100,14 @@ blocks 'rm -rf ./src'
 blocks 'rm -rf "src"'
 blocks 'rm -rf src -v'
 
-# Furo distinto do anterior, e este passava MESMO COM a barra: os dois
-# diretorios faltavam na lista por inteiro. Sao versionados e nasceram DEPOIS
-# do guard — `.github/` guarda os dois unicos gates que rodam em todo commit.
+# `scripts/` e `.github/` tambem sao versionados, e `.github/` guarda os gates
+# que rodam em todo commit.
 blocks 'rm -rf scripts'
 blocks 'rm -rf scripts/sincronizar-distribuicao.ts'
 blocks 'rm -rf .github'
 blocks 'rm -rf .github/workflows'
 
-# Os dois piores, que tambem saiam 0.
+# Os dois piores.
 blocks 'rm -rf .'
 blocks 'rm -rf .git'
 
@@ -131,10 +115,7 @@ blocks 'rm -rf .git'
 blocks 'python3 tools/profile_workbook.py "planilha.xlsx" saida.json'
 blocks 'python3 tools/profile_workbook.py "planilha.xlsx" docs/perfilamento/bruto.json'
 
-# O teste era sobre a LINHA, nao sobre o destino: qualquer ` /tmp/` em qualquer
-# posicao liberava o comando. Os tres primeiros saiam 0 em 02/09/2026 — o
-# primeiro gravando perfilamento bruto dentro de docs/perfilamento/, que o
-# .gitignore cobre justamente por trazer amostra de celula.
+# O destino decide, e nao a linha: ` /tmp/` na entrada nao libera a saida.
 blocks 'python3 tools/profile_workbook.py /tmp/copia.xlsx docs/perfilamento/bruto.json'
 blocks 'python3 tools/profile_workbook.py "planilha.xlsx" /tmp/../home/saida.json'
 blocks 'python3 tools/profile_workbook.py /tmp/copia.xlsx .claude/vazamento.json'
@@ -150,10 +131,8 @@ blocks 'npm test && git add -A'
 blocks 'echo ok; echo x > config/app.json'
 
 # --- git: a negacao por prefixo nao alcanca posicao, grupo nem abreviacao ---
-# Medido em 23/09/2026: 71 formas passavam no guard E sem prompt. O deny
-# `git push --force *` so pega a forma canonica; `git push origin x --force`
-# cai no allow `git push *` antes. Mesma coisa em commit, branch e switch.
-# Estas sao as formas que o roadmap nomeou (B1).
+# O deny `git push --force *` so pega a forma canonica; `git push origin x
+# --force` cai no allow `git push *` antes. Vale para commit, branch e switch.
 blocks 'git add -fA'
 blocks 'git add -Af'
 blocks 'git add -vf config/app.json'
@@ -182,7 +161,7 @@ blocks 'sleep 1 & git push -f origin x'
 blocks '(git push -f origin x)'
 blocks 'bash -c "git push -f origin x"'
 
-# --- git: o resto da familia, que o roadmap nao nomeava (B ampliado) --------
+# --- git: o resto da familia ----------------------------------------------
 # Publica ou apaga sem forcar.
 blocks 'git push --mirror origin'
 blocks 'git push --mirr origin'
@@ -247,9 +226,9 @@ allows 'gh pr view 146 --json mergeStateStatus'
 allows 'gh api repos/dono/repo/rulesets'
 
 # --- falsos positivos que precisam continuar passando ----------------------
-# Este mordeu de verdade: `grep` cujo ARGUMENTO e a string "git add".
+# `grep` cujo ARGUMENTO e a string "git add".
 allows 'grep -n "git add" docs/06-backlog.md'
-# Este tambem: `2>/dev/null` num comando que apenas MENCIONA .claude/.
+# `2>/dev/null` num comando que apenas MENCIONA .claude/.
 allows 'grep -rn "usuario" .claude/ 2>/dev/null'
 # Os dois mapas de H-48 estao no .gitignore por carregarem nome real; os
 # `.exemplo` sao versionados, e o glob com `*` nas duas pontas casaria os dois.
@@ -273,8 +252,7 @@ allows 'python3 tools/profile_workbook.py "planilha.xlsx" /tmp/saida.json'
 # `split_subcommands` nao quebra em `>`, entao o token de redirecionamento
 # entrava na conta dos posicionais e bloqueava comando legitimo.
 allows 'python3 tools/profile_workbook.py "planilha.xlsx" /tmp/saida.json 2>/dev/null'
-# Comando do git que CITA o perfilador nao o executa. Os tres saiam 2 ate
-# 03/09/2026, e o primeiro apareceu commitando a correcao do proprio guard.
+# Comando do git que CITA o perfilador nao o executa.
 allows 'git add tools/profile_workbook.py'
 allows 'git commit -m "fix(tools): profile_workbook.py exige destino em /tmp"'
 allows 'git diff main...HEAD -- tools/profile_workbook.py'
@@ -282,9 +260,8 @@ allows 'node --version 2>/dev/null'
 allows 'echo "config/app.json e o arquivo de configuracao local"'
 
 # --- acesso a data/ pelo shell (D-74) ---------------------------------------
-# O deny de `Read(/data/**)` so alcanca a ferramenta Read. Os bloqueios abaixo
-# sao as formas que as transcricoes mostraram lendo data/, inclusive a fila do
-# operador.
+# O deny de `Read(/data/**)` so alcanca a ferramenta Read. Os bloqueios sao
+# as formas que as transcricoes mostraram lendo data/.
 blocks 'ls -la data/'
 blocks 'ls data 2>/dev/null'
 blocks 'head -c 300 data/pending-edits.jsonl 2>/dev/null'
@@ -311,9 +288,8 @@ blocks 'bash -c "cat data/history.jsonl"'
 blocks '[ -f data/pending-edits.jsonl ] && echo sim'
 blocks_in "$repo_root/docs" 'cat ../data/history.jsonl'
 # Texto que cita data/ nao e acesso: padrao de busca, mensagem de commit, prosa
-# de heredoc e exclusao. Os tres primeiros passam pelo corte ingenuo do `|` e
-# do `;` dentro das aspas, que `split_subcommands` faz por desenho; eles e o
-# `for` foram barrados na primeira versao, medida contra as transcricoes.
+# de heredoc e exclusao. Os tres primeiros passam pelo corte do `|` e do `;`
+# dentro das aspas, que `split_subcommands` faz por desenho.
 allows 'grep -n "data/\|config/" .claude/hooks/guard-dados-sensiveis.sh'
 allows "grep -n -E 'Nenhum processo tem data|Ver os numeros' web/src/pages/History.tsx"
 allows "sed -i 's#nao em data/, que e#x#; s#y#z#' .claude/hooks/registrar-instrucoes.sh"

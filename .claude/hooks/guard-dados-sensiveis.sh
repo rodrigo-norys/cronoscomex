@@ -1,22 +1,17 @@
 #!/usr/bin/env bash
 # PreToolUse/Bash — bloqueia, antes da execucao, comandos que podem publicar
-# dado real, sobrescrever caminho protegido ou destruir trabalho.
+# dado real, sobrescrever caminho protegido, destruir trabalho ou ler data/.
 #
 # Fecha o que regra de permissao nao alcanca: staging forcado, redirecionamento
-# de saida, 'git diff --output=', remocao recursiva e o perfilador gravando
-# dentro do repositorio.
+# de saida, 'git diff --output=', remocao recursiva, o perfilador gravando
+# dentro do repositorio e o acesso a data/ pelo shell (D-74).
 #
 # E impoe, em QUALQUER forma, as negacoes de git que o settings.json declara
-# por prefixo. `Bash(git push --force *)` nao alcanca `git push origin x
-# --force`, `-uf`, `--force-w` nem `+x`, e o allow de `git push *` os libera
-# sem prompt: medido em 23/09/2026, 71 formas passavam assim. Aqui o comando e
-# tokenizado, o que vem antes do `git` sem mudar o que ele faz sai da frente,
-# grupo de opcao curta e lido letra a letra, e opcao longa casa por prefixo —
-# que e como o proprio git as le. Na mesma familia entram push para destino que
-# nao e remoto nomeado, escrita em `git config` e `gh pr merge` fora de posicao.
-#
-# E barra o acesso a data/ pelo shell, que o deny de `Read(/data/**)` nao
-# alcanca: o caminho explicito, em comando que le, lista ou grava (D-74).
+# por prefixo: `Bash(git push --force *)` nao alcanca `git push origin x
+# --force`, `-uf` nem `+x`, e o allow de `git push *` os libera sem prompt. O
+# comando e tokenizado, o que vem antes do `git` sem mudar o que ele faz sai da
+# frente, grupo de opcao curta e lido letra a letra e opcao longa casa por
+# prefixo, como o proprio git as le.
 #
 # Falha FECHADO: sem jq ou com entrada ilegivel, bloqueia em vez de liberar.
 # Um bloqueio falso custa redigitar um comando; uma passagem falsa publica
@@ -59,10 +54,9 @@ check_git_add() {
     block "'git add --pathspec-from-file' tira a lista de caminhos do comando, e o guard nao a le."
   fi
 
-  # Testa CAMINHO A CAMINHO, e nao a linha inteira: a excecao de fixture precisa
-  # valer para o caminho que a satisfaz sem liberar os outros argumentos do mesmo
-  # comando. Caminho com espaco quebra em varios tokens e cai no bloqueio — falha
-  # fechado, que e a direcao certa.
+  # Testa CAMINHO A CAMINHO: a excecao de fixture vale para o caminho que a
+  # satisfaz, sem liberar os outros argumentos. Caminho com espaco quebra em
+  # varios tokens e cai no bloqueio — falha fechado.
   local path
   for path in ${positionals[@]+"${positionals[@]}"}; do
     case "$path" in
@@ -76,41 +70,23 @@ check_git_add() {
       *..*) block "'git add' com travessia de diretorio: $path" ;;
     esac
 
-    # A mesma excecao que .github/scripts/verifica-dados-sensiveis.sh ja faz:
-    # planilha DENTRO de tests/fixtures/ e versionada por exigencia da regra 7.
-    # Sem isto as duas camadas se contradizem, e a que bloqueia e a que nao
-    # vale: o CI e quem roda em todo commit.
-    #
-    # A excecao e por CAMINHO — quem olha DENTRO delas e
-    # tests/repo/fixtures-anonimas.test.ts, no `npm run verify` e no verify.yml.
-    # Esta excecao so se sustenta com ela. Sem contagem de proposito: a que
-    # estava aqui nasceu errada — declarou 8 quando o indice tinha 7, porque foi
-    # contada na arvore de trabalho, e nada no portao a reconfere.
+    # Planilha DENTRO de tests/fixtures/ e versionada (regra 7), e o CI faz a
+    # mesma excecao. Ela e por CAMINHO: quem olha DENTRO das fixtures e
+    # tests/repo/fixtures-anonimas.test.ts.
     case "$path" in
       tests/fixtures/*.xlsx) continue ;;
     esac
 
-    # Mesma razao da excecao acima, e mesmo modo de falha: `config/app.json.exemplo`
-    # e VERSIONADO desde o primeiro commit — quem carrega caminho local e
-    # `config/app.json`, que o `.gitignore` cobre. O glob abaixo tem `*` nas duas
-    # pontas, entao o exemplo casava e o guard recusava `git add` de arquivo que o
-    # repositorio ja rastreia. Medido em `H-30`, ao atualizar o exemplo.
-    #
-    # De novo era ESTA a camada divergente: verifica-dados-sensiveis.sh casa
-    # `config/app.json` com `grep -xE`, exato, e nunca barrou o exemplo. O guard
-    # que bloqueia sozinho e o guard que nao vale — o CI e quem roda em todo commit.
-    # Os tres `.exemplo` de config/ sao versionados; os globs abaixo tem `*` nas
-    # duas pontas, entao cada um deles casaria o exemplo do seu par.
+    # Os tres `.exemplo` de config/ sao versionados, e o CI casa o nome exato.
+    # Os globs abaixo tem `*` nas duas pontas, entao cada um casaria o seu par.
     case "$path" in
       config/app.json.exemplo) continue ;;
       config/client-map.json.exemplo) continue ;;
       config/team-map.json.exemplo) continue ;;
     esac
 
-    # Os dois mapas de negocio de H-48 faltavam aqui e no CI ate 02/09/2026:
-    # carregam nome real de cliente e de pessoa da equipe (regra inviolavel 8),
-    # e `PUT /api/processes/:ref/client` CRIA o client-map.json, entao ele passa
-    # a existir em toda maquina de desenvolvimento.
+    # Os mapas de negocio trazem nome real de cliente e de pessoa (regra 8), e a
+    # aplicacao cria o client-map.json em qualquer maquina de desenvolvimento.
     case "$path" in
       *.xlsx*|*.jpeg*|*"config/app.json"*|*"config/client-map.json"*|*"config/team-map.json"*|*"data/"*)
         block "'git add' apontando para artefato com dado real ou configuracao local: $path" ;;
@@ -551,13 +527,9 @@ check_recursive_remove() {
     *) return 0 ;;
   esac
 
-  # Testa ARGUMENTO A ARGUMENTO e SEGMENTO A SEGMENTO, como check_git_add ja
-  # faz. Glob sobre a linha inteira deixava passar o caso mais destrutivo de
-  # todos — o diretorio nu: `rm -rf src` saia 0 e `rm -rf src/` saia 2, porque
-  # todo glob menos o de `.claude` exigia a barra. E `scripts/` e `.github/`
-  # faltavam por inteiro: os dois sao versionados e nasceram DEPOIS do guard.
-  # Comparar segmento tambem evita o falso positivo que o sufixo criaria —
-  # `mydocs` e `websrc` nao sao `docs` nem `src`.
+  # Testa ARGUMENTO A ARGUMENTO e SEGMENTO A SEGMENTO: o diretorio nu
+  # (`rm -rf src`) e o caso mais destrutivo, e comparar segmento evita o falso
+  # positivo do sufixo — `mydocs` e `websrc` nao sao `docs` nem `src`.
   local argument path segment
   for argument in ${subcommand#rm}; do
     case "$argument" in
@@ -591,17 +563,10 @@ check_profiler() {
     *) return 0 ;;
   esac
 
-  # Comando do git que CITA o perfilador nao o executa: preparar o arquivo dele
-  # para o indice, ou commita-lo, e manutencao do proprio script. Sem esta saida
-  # o gatilho — a string em qualquer posicao da linha — lia `git add` do arquivo
-  # como execucao sem destino e bloqueava. Medido em 03/09/2026, ao commitar a
-  # correcao deste guard; contornado na hora com um pathspec que casava so ele.
-  #
-  # A isencao vale para o git e CAI se o subcomando trouxer substituicao de
-  # comando ou interpretador: `git commit -m "$(python3 tools/profile_workbook.py
-  # x.xlsx saida.json)"` executa de verdade, e ali o guard volta a falhar
-  # fechado. Mesmo desenho de check_git_add, que delimita pelo verbo antes de
-  # olhar os argumentos.
+  # Comando do git que CITA o perfilador nao o executa: e manutencao do proprio
+  # script. A isencao CAI com substituicao de comando ou interpretador na linha:
+  # `git commit -m "$(python3 tools/profile_workbook.py x.xlsx saida.json)"`
+  # executa de verdade.
   case "$subcommand" in
     "git "*)
       case "$subcommand" in
@@ -611,10 +576,8 @@ check_profiler() {
       ;;
   esac
 
-  # Isola o DESTINO, em vez de testar a linha inteira: ` /tmp/` em qualquer
-  # posicao liberava o comando, inclusive quando era o caminho de ENTRADA — e a
-  # saida caia em docs/perfilamento/, que o .gitignore cobre justamente por
-  # trazer amostra de celula. O destino e o SEGUNDO posicional depois do script.
+  # Testa o DESTINO, que e o SEGUNDO posicional depois do script: ` /tmp/` na
+  # entrada nao libera a saida.
   local token destination='' seen_script=0 positionals=0 skip_next=0
   for token in ${subcommand}; do
     if [ "$skip_next" = 1 ]; then skip_next=0; continue; fi
@@ -739,16 +702,14 @@ short_option_value() {
   done
 }
 
-# `data/` e o estado do operador — fila, historico, quarentena, backups da
-# planilha. Barra o caminho que resolve para dentro dele como argumento de
-# comando que le, lista ou grava arquivo, como valor de atribuicao e como alvo
-# de `<`, acompanhando o `cd`. So comando conhecido: linha de heredoc e prosa,
-# e `- o log sai de data/` nao e acesso. O padrao do grep e texto, e o valor
-# de `--exclude-dir=data` tambem. Fragmento com aspa sem par fica de fora: e o
-# corte do `|` dentro de aspas que `split_subcommands` faz, e as palavras dali
-# sao texto — `grep -E 'tem data|outra'` era barrado. Fica de fora tambem,
-# declarado em D-74: caminho dentro de codigo ou de `$(...)`, variavel, laco,
-# glob que nao nomeia data/ e busca recursiva.
+# `data/` e o estado do operador. Barra o caminho que resolve para dentro dele
+# como argumento de comando conhecido, valor de atribuicao ou alvo de `<`, com o
+# `cd` acompanhado. Comando desconhecido — a linha de heredoc, a prosa — nao e
+# acesso, nem o padrao do grep e o valor de `--exclude-dir=data`. Fragmento com
+# aspa sem par fica de fora: e o corte do `|` dentro de aspas que
+# `split_subcommands` faz, e as palavras dali sao texto. Fica de fora tambem
+# (D-74): caminho dentro de codigo ou de `$(...)`, variavel, laco, glob que nao
+# nomeia data/ e busca recursiva.
 check_data_access() {
   local subcommand="$1" word index executable tokens value_next='' pattern_pending=0 find_roots=1 after_separator=0
   local -a words=() arguments=()
