@@ -1,4 +1,4 @@
-import { mkdtempSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
@@ -33,12 +33,13 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
  *     node --experimental-strip-types tools/medir-numeros.mjs
  *     node --experimental-strip-types tools/medir-numeros.mjs <destino.md>
  *
- * O destino padrao e `data/medicao-referencia.md`, fora do versionamento:
- * a medicao e regeneravel, e o arquivo saiu de `docs/` em 21/09/2026 (`D-59`).
+ * O destino padrao e `.claude/local/medicao-referencia.md`, fora do versionamento:
+ * a medicao e regeneravel, e o arquivo saiu de `docs/` em 21/09/2026 (`D-59`)
+ * e de `data/` em `D-73`.
  */
 
 const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const PADRAO = 'data/medicao-referencia.md'
+const PADRAO = '.claude/local/medicao-referencia.md'
 
 /** As rotas que servem numero. `GET` apenas: medir nao altera estado. */
 const ROTAS = [
@@ -128,6 +129,7 @@ export async function medirNumeros(destino = PADRAO) {
 
   const segundos = ((Date.now() - comecou) / 1000).toFixed(1)
   linhas.push('---', '', `**Custo desta medicao:** ${segundos}s de execucao.`, '')
+  mkdirSync(dirname(resolve(RAIZ, destino)), { recursive: true })
   writeFileSync(resolve(RAIZ, destino), linhas.join('\n'))
 
   return { destino, rotas: ROTAS.length, falhas, segundos, processos: estado.processes.length }
