@@ -24,7 +24,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
  *   node tools/levantar-retroativo.mjs --desde cc68238 --ate origin/main
  *   node tools/levantar-retroativo.mjs --tamanho 52a144c,87c5b60
  *
- * A saida vai para `data/levantamento-retroativo.md`, que e gitignored, e o
+ * A saida vai para `.claude/local/levantamento-retroativo.md`, gitignored, e o
  * terminal recebe so o resumo.
  */
 
@@ -32,7 +32,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const BACKLOG = 'docs/06-backlog.md'
 const CONTRACT = 'docs/05-contratos-api.md'
 const GOVERNANCE = 'docs/10-governanca.md'
-const OUTPUT = 'data/levantamento-retroativo.md'
+const OUTPUT = '.claude/local/levantamento-retroativo.md'
 
 /** So codigo e teste contam para a regua do backlog; documento nao entra na lista de arquivos. */
 export function classifyFile(path) {
@@ -337,7 +337,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     const until = option('--ate') ?? 'origin/main'
     const data = collect(since, until)
     const generatedAt = new Date().toISOString().slice(0, 10)
-    mkdirSync(join(ROOT, 'data'), { recursive: true })
+    mkdirSync(dirname(join(ROOT, OUTPUT)), { recursive: true })
     writeFileSync(join(ROOT, OUTPUT), renderReport({ since, until, generatedAt, ...data }))
     const product = data.pullRequests.filter((pr) => pr.kind === 'product').length
     console.log(`${data.pullRequests.length} PRs desde ${since}, ${product} de produto → ${OUTPUT}`)

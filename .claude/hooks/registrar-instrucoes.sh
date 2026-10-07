@@ -1,43 +1,29 @@
 #!/usr/bin/env bash
 # InstructionsLoaded — uma linha por arquivo de instrucao que entra em contexto:
-# quando, POR QUE, e qual. Nao imprime nada; o log e para leitura posterior.
+# quando, POR QUE (`load_reason`), qual, e a sessao. Nao imprime nada.
 #
-# Existe porque em 31/08/2026 ~1750 palavras do CLAUDE.md migraram para tres
-# rules novas, e nada prova que elas disparam. Rule que nunca carrega nao
-# economizou contexto: ESCONDEU a instrucao, e o efeito so aparece longe de quem
-# poderia consertar — o mesmo modo de falha de tests/repo/distribuicao.test.ts.
+# Como ler: rule com `paths:` aparece como `path_glob_match`; se aparecer sempre
+# como `session_start`, o `paths:` foi ignorado e ela custa contexto em toda
+# sessao. O limite: o log mostra o que CARREGOU, nunca o que deveria ter
+# carregado e nao carregou — essa falta so aparece nas transcricoes (`D-71`).
 #
-# O campo que importa e o `load_reason`, nao o nome do arquivo. Uma rule com
-# `paths:` deve aparecer como `path_glob_match`. Se aparecer sempre como
-# `session_start`, o `paths:` esta sendo ignorado e ela custa contexto em TODA
-# sessao — o oposto do que a migracao pretendia.
+# Grava em .claude/local/, gitignored, e nao em data/, que e estado do operador
+# (`D-73`). Sem assercao em tests/repo/: o arquivo e local, e o CI nao o tem.
 #
-# GATILHO DE REAVALIACAO, declarado: ao acumular 20 `session_id` distintos,
-# conferir o log. Rule que nunca apareceu com `path_glob_match` ou volta para o
-# CLAUDE.md, ou tem o glob consertado. Se as cinco dispararem, isto vira so
-# observabilidade. Nao virou assercao em tests/repo/ de proposito: dependeria de
-# arquivo em data/, que e gitignored, e foi assim que o CI reprovou em `H-49`.
-#
-# O criterio acima era insuficiente, e `D-71` o refez: o log mostra
-# o que CARREGOU, nunca o que deveria ter carregado e nao carregou. Quem mede a
-# falta sao as transcricoes, e quem garante o resultado e a guarda de cada rule —
-# ver ADR-0007, "A rule nao garante nada, e a guarda garante".
-#
-# Falha ABERTO, e aqui isso e mais grave que nos outros hooks: neste evento
-# `exit 2` BLOQUEIA o arquivo de instrucao de carregar. Um exit acidental
-# rodaria a sessao inteira sem as regras inviolaveis, em silencio. Por isso:
-# sem `set -e`, todo comando tolera falha, e `exit 0` explicito no fim.
+# Falha ABERTO, e aqui isso e critico: neste evento `exit 2` IMPEDE a instrucao
+# de carregar, e a sessao rodaria sem as regras inviolaveis, em silencio. Por
+# isso nao ha `set -e`, todo comando tolera falha, e o `exit 0` no fim e explicito.
 
 set -u
 
-LOG="${CLAUDE_PROJECT_DIR:-.}/data/instrucoes-carregadas.log"
+LOG="${CLAUDE_PROJECT_DIR:-.}/.claude/local/instrucoes-carregadas.log"
 MAX_LINHAS=5000
 
 registrar() {
   mkdir -p "$(dirname "$LOG")" 2>/dev/null || return 0
 
-  # Truncagem por corte da metade mais antiga: mantem o arquivo limitado sem
-  # perder a serie inteira, que e o que a comparacao entre sessoes precisa.
+  # Acima do limite, corta a metade mais antiga: o arquivo fica limitado sem
+  # perder a serie recente.
   if [ -f "$LOG" ]; then
     local total
     total=$(wc -l < "$LOG" 2>/dev/null || echo 0)
@@ -58,28 +44,18 @@ if command -v jq >/dev/null 2>&1; then
   arquivo=$(printf '%s' "$payload" | jq -r '.file_path // "?"' 2>/dev/null || printf '?')
   sessao=$(printf '%s' "$payload" | jq -r '.session_id // "?"' 2>/dev/null || printf '?')
 else
-  # Sem jq o hook continua util: o motivo e o arquivo saem por recorte simples.
-  # Nao bloqueia nem reclama — medir e o objetivo, e medir menos e melhor que
-  # travar o carregamento de uma instrucao.
+  # Sem jq, recorte simples: medir menos e melhor que travar a instrucao.
   motivo=$(printf '%s' "$payload" | grep -o '"load_reason"[^,}]*' | head -1 | cut -d'"' -f4)
   arquivo=$(printf '%s' "$payload" | grep -o '"file_path"[^,}]*' | head -1 | cut -d'"' -f4)
   sessao=$(printf '%s' "$payload" | grep -o '"session_id"[^,}]*' | head -1 | cut -d'"' -f4)
 fi
 
-# O caminho vai relativo a raiz: absoluto carregaria o nome de usuario do SO
-# para um arquivo que alguem pode colar num relatorio (regra inviolavel 8).
-#
-# A remocao de prefixo so alcanca instrucao DENTRO do projeto. O CLAUDE.md
-# global e o MEMORY.md do harness vem de fora e entravam absolutos, com o nome
-# do usuario — medido em 02/09/2026, e o do MEMORY.md o traz DUAS vezes, porque
-# o diretorio de projeto do harness e o caminho absoluto com `/` virando `-`.
-# Por isso o que nao perdeu o prefixo vira marcador, e nao caminho redigido:
-# redigir so o prefixo deixaria o nome no meio do segmento. `$HOME` fica fora de
-# proposito — `set -u` esta ativo, e referenciar variavel desassociada abortaria
-# o hook, que neste evento roda a sessao sem as regras inviolaveis.
-#
-# O `%/` cobre CLAUDE_PROJECT_DIR com barra final: sem ele o corte procura `//`,
-# nao casa nada, e TODO caminho passa a ser gravado absoluto.
+# Caminho relativo a raiz: o absoluto carregaria o nome de usuario do SO (regra
+# inviolavel 8). O que vem de fora do projeto — o CLAUDE.md global, o MEMORY.md
+# do harness — vira o marcador <externo>/<arquivo>, e nao caminho redigido: o
+# nome de usuario aparece tambem no meio do caminho do harness. Sem `$HOME` de
+# proposito: com `set -u`, variavel desassociada abortaria o hook. O `%/` cobre
+# CLAUDE_PROJECT_DIR com barra final, que sem ele faria todo caminho sair absoluto.
 raiz="${CLAUDE_PROJECT_DIR:-}"
 relativo="$arquivo"
 [ -n "$raiz" ] && relativo="${arquivo#"${raiz%/}"/}"
