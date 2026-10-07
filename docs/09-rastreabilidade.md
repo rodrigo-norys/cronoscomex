@@ -1,19 +1,20 @@
 # 09 — Matriz de Rastreabilidade
 
-Uma linha por indicador (22) e por alerta (6) da especificação funcional.
-**Cobertura total: 28 linhas.** Nenhum item da especificação fica de fora, e
-nenhuma história existe sem aparecer em ao menos uma linha (verificado na
-seção 4).
+Uma linha por indicador e por alerta — os da especificação funcional, `IND-01`
+a `IND-22` e `ALE-01` a `ALE-06`, mais `IND-23` a `IND-27`, que `D-49` e
+`D-54` acrescentaram: <!-- conta:indicadores-definidos -->27<!-- /conta --> indicadores e <!-- conta:alertas -->6<!-- /conta --> alertas. Nenhum item da
+especificação fica de fora, e nenhuma história existe sem aparecer em ao menos
+uma linha (verificado na seção 4).
 
 **Cadeia base**, pré-requisito de todos os itens e omitida das linhas para
 legibilidade: `H-02` → `H-03` → `H-05` → `H-06` → `H-07` → `H-08`.
 
 **Legenda de status:**
-- ✅ **Backend entregue** — a regra está calculada e servida pela API, com teste.
-  A apresentação pode continuar pendente da história de interface.
+- ✅ **Entregue** — implementado e coberto por teste; a linha diz em que história
+  e onde aparece.
 - ✅ **Implementável** — todos os campos existem, a regra está formalizada e as
   premissas foram confirmadas por medição.
-- **Bloqueado** — falta dado na origem; nenhuma implementação é possível sem
+- ⛔ **Bloqueado** — falta dado na origem; nenhuma implementação é possível sem
   mudar a planilha.
 - ⏹️ **Aposentado** — saiu de serviço por decisão registrada (`D-NN`); a linha
   continua como registro e diz o substituto, quando houver. Não conta como ativo.
@@ -49,7 +50,7 @@ legibilidade: `H-02` → `H-03` → `H-05` → `H-06` → `H-07` → `H-08`.
 | IND-18 | Ranking de clientes | CLT | Top 10 de IND-10, apresentação visual (A-25); grupo desenhado como árvore indentada (`H-56`) | H-11, H-18, H-49, H-56 | `indicators-rankings.test.ts` · `indicators.test.ts` · `Clients.test.tsx` | ✅ **Entregue** — backend em `H-11`, barras horizontais em `H-18`. O corte vem de `meta.topN`, e a página o anuncia em vez de fixar 10. Desde `H-49` o rótulo de cada barra é o `label` do mapa, e não a referência de um processo |
 | IND-19 | Ranking de importadores | IMPORTADOR | Top 10 de IND-11, apresentação visual | H-11, H-18 | `indicators-rankings.test.ts` · `Clients.test.tsx` | ✅ **Entregue** — backend em `H-11`, barras horizontais em `H-18` |
 | IND-20 | Ranking por responsável | **Importador** (`config/team-map.json`), e só ele desde `H-93` | `count` agrupado por `responsible`, com **todas as chaves conhecidas** sempre presentes — as pessoas do mapa e a chave vazia (A-17, A-18, A-28) | H-04, H-11, H-19, H-27, H-50 | `color-mapper.test.ts` · `team-mapper.test.ts` · `indicators-rankings.test.ts` · `Performance.test.tsx` | ✅ **Entregue** — backend em `H-11`, ranking em `H-19`, atribuído por **A-65**. **`H-50` trocou a fonte:** a cor preenchia 165 das 649 e o importador preenche 559, com o desempate da cor cobrindo mais 48 e 42 ficando sem responsável (medido em 01/09/2026). **`H-93` tirou o desempate** (`D-40`): medido em 16/09/2026, são **559 pelo importador e 90 sem responsável**, e os 48 que migraram são todos ativos. A limitação de A-31 e R-02 **deixou de valer para este indicador** — linha verde ou vermelha já não perde o responsável —, e a ressalva na Página Performance foi reescrita em `H-66`. **A linha continua não clicável**, e o motivo mudou: o impedimento era A-18, e com `H-50` o filtro recorta a pessoa e a contagem bate — torná-la clicável virou possibilidade, não pendência (`H-66`) |
-| IND-21 | Tempo médio até desembaraço | — | Exigiria `DATA_PRESENÇA_DE_CARGA − RG`. A coluna **não existe** e o usuário determinou que não haverá colunas novas | — | — | **Bloqueado por lacuna.** A própria especificação (§4, observação) já o declara fora de escopo. Custo da decisão registrado em `03-modelo-dados.md §5` |
+| IND-21 | Tempo médio até desembaraço | — | Exigiria `DATA_PRESENÇA_DE_CARGA − RG`. A coluna **não existe** e o usuário determinou que não haverá colunas novas | — | — | ⛔ **Bloqueado por lacuna.** A própria especificação (§4, observação) já o declara fora de escopo. Custo da decisão registrado em `03-modelo-dados.md §5` |
 | IND-22 | Tempo médio de envio documental | RG + DOCS ENVIADOS | `avg(rg − docsSent)` em dias. Ordem da subtração corrigida por A-02; negativos e pares incompletos excluídos e contados (A-30) | H-13, H-19, H-49, H-50 | `indicators-time.test.ts` · `indicators.test.ts` · `Performance.test.tsx` | ✅ **Entregue** — agregado em `H-13`, quebras por cliente, agente, navio e responsável em `H-19`. **Ordenadas por tamanho da amostra, não por volume:** dos 509 grupos de cliente, 425 não tinham par completo, e por volume o topo da tabela seria só traço. Com a consolidação de `H-49` são **124** grupos, 18 com amostra e 106 sem — a ordenação continua sendo a razão de a tabela não abrir em traços. A soma das quebras reproduz o agregado (101, 1, 547). P-03 confirmada. **Medido:** média 12,5 dias sobre amostra de 101 (15,6% da base), com 1 negativo e 547 pares incompletos. A exclusão de A-30 não era hipótese. **`H-50` trocou a quebra por responsável de dentro para fora:** ela era dominada por `indefinido` — 484 dos 649 —, e passou a ter uma linha por pessoa, medido em 01/09/2026 como 405 · 202 · 42, sem trabalho de tela |
 | IND-23 | Em desembaraço (cor ou DUIMP) | Cor da linha (célula A) + STATUS | `count(display(styleKey) ∈ {#FFE599, #5B9BD5, #A74F7B} ∨ STATUS contém 'DUIMP')`. **União, não interseção** (`D-49`) | H-102 (`D-49`) | `indicators-counts.test.ts` · `indicators.test.ts` · `Home.test.tsx` | ⏹️ **Aposentado** em `D-54` — substituído por IND-27. Antes: entregue em 18/09/2026, substituindo IND-03. **Não é exclusivo com os demais cartões**: medido na planilha real, 167 linhas, das quais 165 têm STATUS preenchido e já aparecem em outro cartão — é por isso que a conferência de A-12 deixou de somar cartões. A cor sozinha traz 165 e o texto traz 43. O "ou similares" sai do `display`, que já unifica os dois tons de roxo (`D-42`), e não de limiar — `ADR-0003`. **Emenda a regra inviolável 4**: a cor não decide a categoria de TD-01, e decide esta contagem | *(**APOSENTADO em 18/09/2026 por `D-54`.** O cartão "Em desembaraço" passou a ser IND-27, que conta só a linha branca. A contagem por categoria continua no domínio, como a de IND-03.)*
 | IND-24 | Containers chegando hoje, em linha branca | Cor da linha (célula A) + ETA2 | `count(display(styleKey) = '#FFFFFF' ∧ eta2 = hoje)`, fuso `America/Sao_Paulo` | H-102 (`D-49`) | `indicators-calendar.test.ts` · `indicators.test.ts` | ✅ **Entregue** em 18/09/2026, substituindo IND-07. **Medido: 0** — a planilha tem UMA linha branca, e o `ETA2` dela não é hoje; o `ETA2` mais distante do arquivo é 09/09/2026, anterior ao dia da medição. A cor é a da **célula-âncora**, como em todo o resto do sistema: exigir as doze colunas A–L brancas contaria a linha cujas colunas não têm cor **declarada**, e ausência de declaração não é branco (regra inviolável 3) |
@@ -133,19 +134,19 @@ especificação são rastreados aqui, para que **nenhum** fique fora.
 |---|---|---|---|
 | REF | Chave natural, IND-01 | H-03, H-07 | Implementável. Duplicidade tratada (TD-06) |
 | CLT | IND-10, IND-18, filtros `client`, `clientProcess` e `clientGroup` | H-03, H-11, H-49, H-55 | ✅ Implementável. Desde `H-49` a célula produz **dois** campos — o cliente consolidado e o processo daquele cliente (TD-04.1) —, e `H-55` acrescentou o grupo do filtro (TD-04.2), que não altera nenhum deles |
-| IMPORTADOR | IND-11, IND-19, filtro | H-03, H-11 | Implementável |
+| IMPORTADOR | IND-11, IND-19, IND-20 (pelo mapa de equipe), filtro | H-03, H-11, H-50 | Implementável |
 | BL | Consulta | H-03, H-17 | ✅ **Entregue.** Busca por substring, sem caixa e sem acento. Medido: `search=NBSC` devolve 61 no conjunto todo, 7 entre os ativos |
 | AGENTE | IND-17, filtro | H-03, H-11 | ✅ Implementável (P-01 confirmada) |
 | CNTR | Consulta | H-03, H-17 | ✅ **Entregue.** Mesma busca do BL; a coluna aparece na tabela para o operador ver por que a linha casou |
 | NAVIO | IND-12, filtro | H-03, H-10 | Implementável |
 | ETA (porto) | Filtro | H-03, H-15 | ✅ **Entregue** com o filtro de porto |
-| ETA2 | 9 indicadores e 4 alertas | H-03, H-05 | ✅ Implementável (P-03 confirmada) |
+| ETA2 | IND-09, IND-12, IND-24, IND-25 e o `overdueCount` de IND-17; ALE-01, ALE-02, ALE-04 e ALE-05 | H-03, H-05 | ✅ Implementável (P-03 confirmada) |
 | MERCADORIA | IND-13, filtro | H-03, H-11 | Implementável, com limitação |
-| RG | IND-16, IND-22 | H-03, H-05 | ✅ Implementável (P-03 confirmada) |
-| STATUS | Classificação, detalhe | H-03, H-06, H-22 | ✅ **Entregue.** O texto original é exibido **apenas** no detalhe (§2.1), ao lado da categoria, para a regra aplicada ficar auditável |
+| RG | IND-22 | H-03, H-05 | ✅ Implementável (P-03 confirmada) |
+| STATUS | Classificação, detalhe, IND-25 (`DUIMP`) | H-03, H-06, H-22 | ✅ **Entregue.** O texto original é exibido **apenas** no detalhe (§2.1), ao lado da categoria, para a regra aplicada ficar auditável |
 | Coluna 13 | Somente exibição | H-03, H-22 | ✅ **Entregue.** Fora de escopo para indicadores (§2), exibido como texto puro e **rotulado** como tal |
 | R$ ENVIADO | Somente exibição | H-03, H-22 | ✅ **Entregue.** Fora de escopo (§2), tipo misto (A-45), exibido como texto puro. Medido: 547 de 649 processos têm algum campo fora de escopo preenchido |
-| DOCS ENVIADOS | IND-14, IND-22, ALE-02 | H-03, H-05 | ✅ Implementável (P-03 confirmada) |
+| DOCS ENVIADOS | IND-22, ALE-02 | H-03, H-05 | ✅ Implementável (P-03 confirmada) |
 | Coluna P | Somente exibição | H-01, H-03, H-22 | ✅ **Entregue.** Não documentada em §2. P-02 resolvida: cabeçalho `Coluna1`, **1 valor em 649 linhas** (A-50), reconfirmado em `H-22` |
 
 ### 3.4. Convenção de cores (§3)
