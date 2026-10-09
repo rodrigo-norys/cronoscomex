@@ -34,7 +34,8 @@ import config from './contar-documentacao.config.mjs'
  * difere, o que falta de um lado sem significado declarado, e o lado que nao passa do
  * piso: o padrao que parou de casar deixaria a guarda verde por vacuidade. A mesma
  * conferencia reprova a linha de tabela solta depois de linha em branco, que o GitHub
- * mostra como texto, e o escopo com menos regioes e arquivos que o piso.
+ * mostra como texto, e o escopo com menos regioes, arquivos ou regioes de um nome que o
+ * piso.
  *
  * `--nuas` aponta o numero de estado escrito FORA de regiao — "sete passos", "18
  * epicos", "Abertas: 0" — nas linhas que o diff contra a base acrescentou; as formas
@@ -467,7 +468,7 @@ export function checkMirrors(source, mirrors, floors = {}) {
       const floor = floors[mirror.name]?.[role]
       const count = read[role].entries.size
       if (floor !== undefined && count <= floor)
-        report(mirror.name, side.file, 0, `leu ${count} ID(s), e o piso e ${floor}`)
+        report(mirror.name, side.file, 0, `leu ${count} ID(s); precisa passar de ${floor}`)
     }
     if (read.source.error || read.copy.error) continue
 
@@ -527,7 +528,8 @@ export function looseTableRows(text) {
 
 /**
  * As guardas de estrutura, alem do valor das regioes: espelho de estado, tabela solta, e o
- * piso de cada uma — quantas regioes, quantos arquivos e quantos IDs ela tem de examinar.
+ * piso de cada uma — quantas regioes, quantas de cada nome, quantos arquivos e quantos IDs
+ * ela tem de examinar.
  */
 export function inspectStructure(
   root,
@@ -543,8 +545,9 @@ export function inspectStructure(
         guard: 'tabela',
         message: 'linha de tabela solta depois de linha em branco: o GitHub a mostra como texto',
       })
+  const scanned = source.scope.map((file) => scanRegions(source.read(file)))
   const examined = [
-    ['regions', source.scope.flatMap((file) => scanRegions(source.read(file)).counts).length],
+    ['regions', scanned.flatMap((regions) => regions.counts).length],
     ['tables', source.scope.length],
   ]
   const what = { regions: 'regiao(oes) conta', tables: 'arquivo(s) em busca de tabela solta' }
@@ -554,8 +557,22 @@ export function inspectStructure(
         file: 'escopo',
         line: 0,
         guard: 'piso',
-        message: `examinou ${count} ${what[key]}, e o piso e ${floors[key]}`,
+        message: `examinou ${count} ${what[key]}; precisa passar de ${floors[key]}`,
       })
+  const names = scanned.flatMap(({ counts, checks }) => [
+    ...counts.map((region) => `conta:${parseName(region.raw).name}`),
+    ...checks.map((region) => `confere:${parseName(region.raw).name}`),
+  ])
+  for (const [name, floor] of Object.entries(floors.byName ?? {})) {
+    const count = names.filter((found) => found === name).length
+    if (count <= floor)
+      problems.push({
+        file: name,
+        line: 0,
+        guard: 'piso',
+        message: `achou ${count} regiao(oes) fora de bloco cercado; precisa passar de ${floor} (${config.rule}, R5)`,
+      })
+  }
   return { problems }
 }
 

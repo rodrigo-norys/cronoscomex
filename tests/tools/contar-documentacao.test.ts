@@ -1029,9 +1029,9 @@ describe('checkMirrors — o estado de um ID nos dois lados do espelho', () => {
       ({ guard }) => guard === 'espelho:historias',
     )
     expect(historias.map(({ file, line, message }) => `${file}:${line} ${message}`)).toEqual([
-      'docs/06-backlog.md:0 leu 3 ID(s), e o piso e 3',
+      'docs/06-backlog.md:0 leu 3 ID(s); precisa passar de 3',
       'docs/09-rastreabilidade.md:4 H-01 repetido neste lado do espelho',
-      'docs/09-rastreabilidade.md:0 leu 1 ID(s), e o piso e 3',
+      'docs/09-rastreabilidade.md:0 leu 1 ID(s); precisa passar de 3',
       'docs/06-backlog.md:9 H-02 falta em docs/09-rastreabilidade.md',
       'docs/06-backlog.md:17 H-33 falta em docs/09-rastreabilidade.md',
     ])
@@ -1094,8 +1094,36 @@ describe('looseTableRows e os pisos — a estrutura de que a renderizacao depend
       ),
     ).toEqual([
       'README.md:6 tabela linha de tabela solta depois de linha em branco: o GitHub a mostra como texto',
-      'escopo:0 piso examinou 1 regiao(oes) conta, e o piso e 1',
-      'escopo:0 piso examinou 4 arquivo(s) em busca de tabela solta, e o piso e 4',
+      'escopo:0 piso examinou 1 regiao(oes) conta; precisa passar de 1',
+      'escopo:0 piso examinou 4 arquivo(s) em busca de tabela solta; precisa passar de 4',
+    ])
+  })
+
+  it('reprova o nome abaixo do piso: a confere apagada e a cercada nao contam, e o argumento nao entra', () => {
+    write(
+      'docs/README.md',
+      [
+        'tem <!-- conta:adrs -->1<!-- /conta --> ADR',
+        '',
+        '<!-- confere:arvore[src/domain] -->',
+        '<!-- /confere -->',
+        '',
+        '```',
+        '<!-- confere:links[docs/adr] -->',
+        '<!-- /confere -->',
+        '```',
+      ].join('\n'),
+    )
+    track()
+    const byName = { 'conta:adrs': 0, 'confere:arvore': 0, 'confere:links': 0, 'conta:rules': 0 }
+
+    expect(
+      inspectStructure(root, { mirrors: [], floors: { byName } }).problems.map(
+        ({ file, line, guard, message }) => `${file}:${line} ${guard} ${message}`,
+      ),
+    ).toEqual([
+      'confere:links:0 piso achou 0 regiao(oes) fora de bloco cercado; precisa passar de 0 (.claude/rules/documentacao.md, R5)',
+      'conta:rules:0 piso achou 0 regiao(oes) fora de bloco cercado; precisa passar de 0 (.claude/rules/documentacao.md, R5)',
     ])
   })
 })

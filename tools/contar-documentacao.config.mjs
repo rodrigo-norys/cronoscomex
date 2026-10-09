@@ -345,14 +345,19 @@ const MIRRORS = [
 
 /**
  * O minimo que cada guarda tem de examinar — o numero tem de passar do piso: as regioes
- * `conta` do escopo, os arquivos em que a tabela solta e procurada, e os IDs de cada lado
- * de cada espelho. Pega o padrao que parou de casar e deixaria a guarda verde por
- * vacuidade, nao a variacao normal. O lado que pode estar vazio, como as pendencias
- * abertas do `CLAUDE.md`, nao tem piso.
+ * `conta` do escopo, os arquivos em que a tabela solta e procurada, as regioes de cada
+ * nome em `byName`, e os IDs de cada lado de cada espelho. Pega o padrao que parou de
+ * casar e deixaria a guarda verde por vacuidade, nao a variacao normal. O lado que pode
+ * estar vazio, como as pendencias abertas do `CLAUDE.md`, nao tem piso.
+ *
+ * A `confere` apagada inteira, ou posta em bloco cercado, nao abala o total de regioes
+ * nem tem numero que o `--nuas` aponte: so o piso do nome a ve. A chave e `confere:NOME`
+ * ou `conta:NOME`, sem o argumento, e piso 0 pede ao menos uma.
  */
 const FLOORS = {
   regions: 40,
   tables: 30,
+  byName: { 'confere:arvore': 0, 'confere:links': 0 },
   mirrors: {
     historias: { source: 30, copy: 30 },
     requisitos: { source: 30, copy: 15 },

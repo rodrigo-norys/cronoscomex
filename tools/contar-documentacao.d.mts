@@ -70,6 +70,7 @@ export interface Mirror {
 export interface Floors {
   regions?: number
   tables?: number
+  byName?: Record<string, number>
   mirrors?: Record<string, { source?: number; copy?: number }>
 }
 

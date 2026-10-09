@@ -83,7 +83,9 @@ de espelho.
 é a que esquece o item novo, e guarda nenhuma vê o que falta. Conjunto computável vai
 em região `conta` ou `confere`; o resto aponta para onde o conjunto é definido.
 *Guarda:* a região `confere`, e é erro a que não examina nenhum arquivo — sem
-diretório no argumento, ou com um que não tem arquivo no `git`. *Revisão:* o resto.
+diretório no argumento, ou com um que não tem arquivo no `git` —, e o piso por nome,
+em `floors.byName`, que reprova a `confere` apagada ou posta em bloco cercado.
+*Revisão:* o resto.
 
 **R6 — Registro se marca pela estrutura, e não conta como estado.** Registro diz o
 que era verdade na data, e a data mora nele — a decisão `| D-NN`, a história fechada
