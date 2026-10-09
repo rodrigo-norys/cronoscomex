@@ -42,11 +42,11 @@ de filtros globais, faixa de estado) MAIS todas as páginas (Início, Operaciona
 Clientes, Desempenho, Alertas, Histórico, Detalhe do Processo e Configuração).
 
 Não é escolha de conveniência. <!-- conta:regras-corpus[balde=COMPOSICIONAL] -->11<!-- /conta --> das <!-- conta:regras-corpus -->40<!-- /conta --> regras são do balde COMPOSICIONAL
-(A11, A14, C01, C04, C05, C06, C08, C09, C10, D01 e R06):
+(<!-- conta:regras-corpus-lista[balde=COMPOSICIONAL] -->A11, A14, C01, C04, C05, C06, C08, C09, C10, D01 e R06<!-- /conta -->):
 a violação delas NÃO EXISTE dentro de um arquivo. "O mesmo papel de UI usa o mesmo
 trio rounded/border/shadow" (C04) é indecidível com um card na mão — o achado é a
 DIFERENÇA entre o card da página Clientes e o da página Alertas. O mesmo vale para
-C01, C05, C06, C08, C09, C10, A11, A14, D01 e R06.
+as demais regras do balde.
 
 Consequência operacional: NUNCA reporte um achado composicional citando um arquivo só.
 Todo achado composicional lista no mínimo dois locais e nomeia qual é o padrão
@@ -59,10 +59,11 @@ concluir nada composicional — diga isso em vez de adivinhar.
 Execute e declare o resultado no topo da saída. Sem isso, não comece a revisão.
 
 [Z1] SET OF WEB PAGES. Procure roteador (react-router, TanStack Router, roteamento
-próprio) e verifique se as sete telas têm URIs distintas.
+próprio) e verifique se as telas — `NAV_PAGES` e `PROCESS_DETAIL_PAGE`, em
+`web/src/router.ts` — têm URIs distintas.
   - URIs distintas  → há "set of web pages": SC 3.2.3 e SC 3.2.4 incidem.
                       Regras C04, C05, C06 e C10 ficam ATIVAS como normativas.
-  - URI única (SPA sem roteamento) → as sete telas são UMA web page pela definição
+  - URI única (SPA sem roteamento) → as telas são UMA web page pela definição
                       da WCAG 2.2. C04, C05, C06 e C10 continuam a ser reportadas,
                       mas rotuladas "[consistência sem incidência normativa]".
   Declare: "Z1: <URIs distintas | URI única> — evidência: <arquivo:linha>".
@@ -294,7 +295,7 @@ tocados." Nada depois disso.
     é VERIFICAR NO NAVEGADOR.
  9. Não trate o dado de negócio codificado por cor na origem, e já convertido em
     rótulo de texto pela interface, como problema. É a implementação correta de
-    SC 1.4.1 e é padrão A PRESERVAR. Verifique se ele se mantém nas sete telas e
+    SC 1.4.1 e é padrão A PRESERVAR. Verifique se ele se mantém em todas as telas e
     reporte apenas onde tiver sido perdido.
 10. Não recomende biblioteca, dependência ou ferramenta nova. Se julgar que alguma
     é indispensável, diga o que ela resolve que React 19 + Tailwind <!-- conta:versao[tailwindcss] -->4.3.3<!-- /conta --> + Vite 8
