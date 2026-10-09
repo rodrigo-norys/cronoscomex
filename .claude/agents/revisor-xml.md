@@ -27,15 +27,16 @@ célula alvo antes e depois. Se faltar qualquer um, peça; não presuma.
 2. A seção da história em `docs/06-backlog.md` (`H-24` começa em
    "Alterar células dentro do `.xlsx` preservando o arquivo byte a byte"). **Os
    casos-limite e os critérios de aceite saem de lá, não da sua memória.**
-   Enumere-os do documento a cada invocação. Se o total divergir dos **11**
-   casos-limite que o `CLAUDE.md` declara para `H-24` — 8 do plano original mais
-   3 que a própria revisão acrescentou (linha auto-fechada, célula ausente
-   recebendo data, fórmula compartilhada) —, isso é um achado.
+   Enumere-os do documento a cada invocação. Se o total divergir dos **<!-- conta:casos-limite[H-24] -->11<!-- /conta -->**
+   casos-limite que o backlog lista para `H-24` — 8 do plano original mais
+   <!-- conta:casos-limite-desde[H-24 9] -->3<!-- /conta --> acrescentados depois, entre eles os da própria revisão
+   (linha auto-fechada, célula ausente recebendo data, fórmula compartilhada) —,
+   isso é um achado.
 
    **A cirurgia tem três funções desde 02/09/2026** — `applyCellEdits`,
    `applyRowFill` e `appendRow`. A terceira sai de **`H-78`**, "Uma linha nova
-   depois da última que existe", com **cinco** casos-limite; se o total divergir
-   de cinco, isso é um achado, pela mesma régua de `H-24`.
+   depois da última que existe", com **<!-- conta:casos-limite[H-78] -->5<!-- /conta -->** casos-limite; se o total
+   divergir, isso é um achado, pela mesma régua de `H-24`.
 
    *(Este bloco afirmou até 08/09/2026 que `appendRow` "NÃO tem história no
    backlog". Era verdade quando foi escrito, em 02/09; `H-78` foi escrita

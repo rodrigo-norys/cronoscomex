@@ -15,34 +15,6 @@ export interface Source {
 
 export function createSource(root: string): Source
 
-type Counter = (source: Source, arg?: string) => number | string
-
-export const COUNTERS: {
-  historias: Counter
-  'historias-concluidas': Counter
-  'historias-desde': Counter
-  epicos: Counter
-  premissas: Counter
-  riscos: Counter
-  'casos-obrigatorios': Counter
-  'historias-com-caso-obrigatorio': Counter
-  achados: Counter
-  'passos-verify': Counter
-  'passos-verify-lista': Counter
-  'regras-corpus': Counter
-  'regras-corpus-faixa': Counter
-  'indicadores-definidos': Counter
-  'indicadores-ativos': Counter
-  'indicadores-aposentados': Counter
-  alertas: Counter
-  'chaves-de-cor': Counter
-  adrs: Counter
-  rules: Counter
-  'pendencias-abertas': Counter
-  'arvore-src': Counter
-  versao: Counter
-}
-
 export interface LooseNumber {
   file: string
   line: number
@@ -71,6 +43,60 @@ export interface Pair {
 }
 
 export function findPairs(root: string, options?: { base?: string }): Pair[]
+
+export interface Definition {
+  id: string
+  family: string
+  citedAt: string
+  definedAt: string[]
+  mirror: string | null
+}
+
+export interface MirrorSide {
+  file: string
+  section?: RegExp
+  entries: 'headings' | 'rows'
+  state: (text: string) => string
+  absent?: string
+  cell?: number
+  merge?: (state: string, other: string) => string
+}
+
+export interface Mirror {
+  name: string
+  family: string
+  source: MirrorSide
+  copy: MirrorSide
+}
+
+export interface Floors {
+  regions?: number
+  tables?: number
+  byName?: Record<string, number>
+  mirrors?: Record<string, { source?: number; copy?: number }>
+}
+
+export function findDefinitions(root: string, options?: { mirrors?: Mirror[] }): Definition[]
+
+export interface Problem {
+  file: string
+  line: number
+  guard: string
+  message: string
+}
+
+export function checkMirrors(
+  source: Source,
+  mirrors: Mirror[],
+  floors?: Floors['mirrors'],
+): Problem[]
+
+export function looseTableRows(text: string): number[]
+
+export function inspectStructure(
+  root: string,
+  options?: { mirrors?: Mirror[]; floors?: Floors },
+): { problems: Problem[] }
 
 export function scanRegions(text: string): {
   counts: { line: number; raw: string; written: string }[]

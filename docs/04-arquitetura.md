@@ -68,7 +68,7 @@ graph TB
 | Container | Responsabilidade | Tecnologia |
 |---|---|---|
 | **Servidor Node** | Ler a planilha, calcular indicadores e alertas, servir a API e a SPA, gravar no `.xlsx` sob comando | Node 22 · Fastify <!-- conta:versao[fastify] -->5.12.1<!-- /conta --> · TypeScript <!-- conta:versao[typescript] -->7.0.2<!-- /conta --> |
-| **Interface web** | Apresentar as **oito páginas** — as sete do menu, incluindo Configuração (`H-34`), mais o detalhe do processo, que vive fora dele (`web/src/router.ts`) —, os filtros globais e o formulário de edição. **Nenhuma regra de negócio** (RNF-38) | React 19.2.8 · Vite 8.2.0 · Tailwind 4.3.3 · Recharts 3.10.1 |
+| **Interface web** | Apresentar as **páginas** — as do menu, incluindo Configuração (`H-34`), mais o detalhe do processo, que vive fora dele (`NAV_PAGES` e `PROCESS_DETAIL_PAGE`, em `web/src/router.ts`) —, os filtros globais e o formulário de edição. **Nenhuma regra de negócio** (RNF-38) | React <!-- conta:versao[react] -->19.2.8<!-- /conta --> · Vite <!-- conta:versao[vite] -->8.2.0<!-- /conta --> · Tailwind <!-- conta:versao[tailwindcss] -->4.3.3<!-- /conta --> · Recharts <!-- conta:versao[recharts] -->3.10.1<!-- /conta --> |
 | **planilha.xlsx** | Fonte da verdade. Não pertence ao sistema | Arquivo OOXML |
 | **data/** | Histórico, fila de edições, quarentena e backups. Descartável sem perda de dado de negócio | JSONL, JSON, XLSX |
 | **config/** | Caminho do arquivo, mapa de cores, dicionário de grafias | JSON |

@@ -1,6 +1,7 @@
 import { dirname, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
-import { COUNTERS, caseStories, createSource, mandatoryCases } from './contar-documentacao.mjs'
+import { COUNTERS, caseStories, mandatoryCases } from './contar-documentacao.config.mjs'
+import { createSource } from './contar-documentacao.mjs'
 
 /**
  * Monta as secoes da skill `/abrir-historia` a partir do repositorio. So le.
@@ -13,8 +14,8 @@ import { COUNTERS, caseStories, createSource, mandatoryCases } from './contar-do
  * expansao, `awk` e `sed` lendo arquivo. Este script e o unico comando que a skill
  * pre-aprova em `allowed-tools`.
  *
- * As contagens vem de `tools/contar-documentacao.mjs`, e nao de regra propria: o
- * numero da skill e o das regioes da documentacao nao podem divergir.
+ * As contagens vem dos contadores de `tools/contar-documentacao.config.mjs`, e nao de
+ * regra propria: o numero da skill e o das regioes da documentacao nao podem divergir.
  *
  * O que NAO faz: escrever em arquivo, chamar rede, ou julgar a historia — ele so
  * recorta; a conferencia e do protocolo de fatia.

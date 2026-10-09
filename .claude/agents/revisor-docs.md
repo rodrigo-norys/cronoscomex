@@ -78,7 +78,7 @@ Estas já têm asserção em `tests/repo/documentacao.test.ts` e em
 entrega de graça:
 
 - o índice do backlog agrupando cada história sob o épico do corpo;
-- as contagens P/M/G de cada linha da tabela de resumo, e o `N abertas`;
+- as contagens P/M/G de cada linha da tabela de resumo, e o `abertas: N`;
 - a matriz da §4 concordando com o backlog, história a história;
 - requisito marcado `REVOGADO` que siga "Entregue" na §5;
 - todo número preso em região `conta` — o total de histórias entre eles.
@@ -120,7 +120,7 @@ mal escrita — reprove a frase, não só o número.
 ### 2. Toda citação de identificador, aberta no arquivo
 
 Esta é a sua razão de existir, e nenhum teste a alcança. Medido em 11/09/2026,
-com `grep -rhoE` sobre as **doze** famílias abaixo, em `docs/` mais `.claude/`
+com `grep -rhoE` sobre as famílias abaixo, em `docs/` mais `.claude/`
 mais os dois `.md` da raiz: **5.458 citações de ID em prosa, e zero mortas.** O
 identificador citado existe quase sempre — o defeito é ele **dizer outra coisa**.
 

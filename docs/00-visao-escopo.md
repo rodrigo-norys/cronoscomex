@@ -31,7 +31,7 @@ ela a interpreta e a edita.
 | Indicadores | 21 dos 22 do catálogo (§4). O 22º está fora de escopo por decisão da própria especificação — ver 3.2 |
 | Alertas | Os 6 do catálogo (§5), incluindo "Processos parados" |
 | Telas | As 6 páginas de §6, a tela de detalhe do processo, e a **Página Configuração** — que não vem da especificação: ela nasceu entre `H-34` e `H-38` para o operador apontar a planilha sem editar JSON (RF-31) |
-| Filtros globais | Os **14** de `RF-17` — eram 10 em §7, e a auditoria mais `H-49` e `H-50` levaram ao número atual |
+| Filtros globais | Os de `RF-17`, que os lista — eram 10 em §7, e a auditoria mais `H-49` e `H-50` levaram à lista atual |
 | Edição | Campos de texto e data (Fase 2); campos que vivem na cor (Fase 4); a célula editada na **própria tabela**, a **criação de linha** e a declaração do cliente consolidado **a partir de um processo** (`E13`, por `D-25`; RF-33 a RF-35) *(**A declaração a partir do processo foi REVOGADA por `D-43`** em 11/09/2026: `PUT /api/processes/:ref/client` sai em `H-95`, junto da coluna Cliente da tabela. Declarar continua existindo, pelo painel da Página Clientes — `RF-39`; desde `D-50`, 18/09/2026, o painel está na Página Configuração.)* |
 | Escrita na planilha | Sob comando explícito, com seis defesas de integridade |
 | Histórico | Registro append-only das mudanças de categoria |
@@ -95,7 +95,7 @@ virada do ano, alterar essa linha aponta a aplicação para a aba nova.
 
 | ID | Premissa | Impacto se errada |
 |---|---|---|
-| P-08 | A máquina do operador roda **Windows**. *(A metade sobre o OneDrive foi MEDIDA COMO FALSA em 31/08 e 03/09/2026: a planilha real está em `Downloads`, fora da pasta sincronizada — registrado em `PD-09`, no `CLAUDE.md`; o registro das sessões fica em `docs-windows/`, local e não versionado.)* | Se o arquivo for acessado por caminho de rede em vez de pasta sincronizada, o watcher (`chokidar`) pode não receber eventos; passa a exigir polling. Alteração pontual em `H-08` |
+| P-08 | A máquina do operador roda **Windows**. *(A metade sobre o OneDrive foi MEDIDA COMO FALSA em 31/08 e 03/09/2026: a planilha real está em `Downloads`, fora da pasta sincronizada — registrado em `PD-09`, em `docs/README.md`; o registro das sessões fica em `docs-windows/`, local e não versionado.)* | Se o arquivo for acessado por caminho de rede em vez de pasta sincronizada, o watcher (`chokidar`) pode não receber eventos; passa a exigir polling. Alteração pontual em `H-08` |
 | P-09 | O operador fecha o Excel antes de aplicar alterações | Sem isso, o comando "Aplicar alterações" é recusado pela detecção de lock. Não corrompe nada; apenas exige o fechamento |
 | P-10 | Fuso horário `America/Sao_Paulo` para toda noção de "hoje", "semana" e "dias" | Datas de fronteira (processo chegando hoje às 23h) podem cair no dia errado |
 | P-11 | A propagação da pasta local para o SharePoint é responsabilidade do OneDrive/do operador; a aplicação escreve apenas no arquivo local | A aplicação não valida se a versão do SharePoint está atualizada |

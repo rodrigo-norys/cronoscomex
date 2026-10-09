@@ -60,7 +60,7 @@ quem regenerasse perdia os cinco em silêncio.
 | `so-ref.xlsx` | 4 | Linha só com REF; linha com REF e só `boletoRaw`; linha com REF e colunas só com espaços |
 | `formatado.xlsx` | 9 | **Teste de preservação byte a byte** — carrega tema, `styles.xml` completo, comentários encadeados, `vmlDrawing`, `persons` e 3 itens `customXml` do arquivo real |
 | `data-vazia.xlsx` | 4 | Célula de data **vazia e com estilo Geral** (`numFmtId=0`), para `H-27`: gravar data nela tem de exibir `29/ago`, não `46263` — o estilo é composto por TD-05.1, preservando fonte, borda e preenchimento (A-56) |
-| `formulas.xlsx` | 3 | **Cadeia de cálculo declarada** — 3 fórmulas encadeadas na coluna `I`, com `xl/calcChain.xml` em `[Content_Types].xml` e relacionada nos rels. Exercita a remoção de entrada da cadeia em `H-25`. Ver `PD-05`, que continua aberta: **fixture nossa não substitui arquivo salvo pelo Excel** |
+| `formulas.xlsx` | 3 | **Cadeia de cálculo declarada** — 3 fórmulas encadeadas na coluna `I`, com `xl/calcChain.xml` em `[Content_Types].xml` e relacionada nos rels. Exercita a remoção de entrada da cadeia em `H-25`. Ver `PD-05`, fechada pela medição em arquivos que o próprio Excel salvou: **fixture nossa não substitui arquivo salvo pelo Excel** |
 | `vazio.xlsx` | 0 | Cabeçalho sem nenhuma linha de dados |
 
 ### Como foram geradas, e por que assim
@@ -329,7 +329,7 @@ mesmo arquivo que o operador já pode abrir no Excel.
 | Nome de cliente (CLT) | Pode ser pessoa jurídica ou identificar pessoa natural | No `.xlsx`, em memória **e em disco**: `config/client-map.json` guarda a grafia da célula e o nome consolidado, e a aplicação **grava** nele por `saveClientRule` (`src/app/client-map-loader.ts`) quando o operador declara o cliente de uma linha |
 | Nome de importador | Idem | Somente no `.xlsx` e em memória |
 | Nome de agente de carga | Idem | Idem |
-| Nome do responsável interno (Colaborador 1, Colaborador 2) | Pessoa natural identificada | Derivado de cor, em memória, **e em disco**: `config/team-map.json` guarda o nome real de cada pessoa da equipe. A aplicação só o lê — o arquivo chega por cópia manual (`PD-08`) |
+| Nome do responsável interno (Colaborador 1, Colaborador 2) | Pessoa natural identificada | Derivado de cor, em memória, **e em disco**: `config/team-map.json` guarda o nome real de cada pessoa da equipe. A aplicação o lê, e o grava quando o responsável é declarado pela tela (`RF-40`); antes disso o arquivo chegava por cópia manual (`PD-08`) |
 
 **Os dois arquivos de `config/` acima estão no `.gitignore`** e nunca vão para o
 repositório nem para a branch `distribuicao`, que leva apenas os `.exemplo` de
@@ -433,21 +433,11 @@ morta em `tests/repo/contratos.test.ts`.
 > protection cobre.
 
 O portão local é o mesmo comando, e é obrigatório antes de qualquer entrega:
-
-```
-npm run test:portas # recusa o portão com o dev no ar — o build apagaria o cache dele
-npm run test:hooks  # regressao de .claude/hooks/guard-dados-sensiveis.sh
-npm run test:dados  # .github/scripts/verifica-dados-sensiveis.sh, sobre o indice
-npm run test:strip  # importa src/ sob --experimental-strip-types
-npm run lint        # inclui a regra de fronteira: domain/ não importa io/, app/, http/
-npm run typecheck
-npm test            # Vitest — `vitest run`, SEM cobertura (ver a ressalva de §1.1)
-npm run build       # servidor + SPA em dist/
-```
-
-`npm run verify` encadeia os **<!-- conta:passos-verify -->8<!-- /conta -->** e é o comando único do portão. As duas
-regressões de guarda vêm logo depois da conferência de portas, de propósito:
-verificar a proteção antes de verificar o código.
+`npm run verify` encadeia os **<!-- conta:passos-verify -->8<!-- /conta -->** passos de `scripts.verify`, no `package.json`, nesta
+ordem — <!-- conta:passos-verify-lista -->`test:portas`, `test:hooks`, `test:dados`, `test:strip`, `lint`, `typecheck`, `test`, `build`<!-- /conta --> —, e é o comando único do portão. O que cada um
+roda está no script de mesmo nome; o `test` é `vitest run`, **sem** cobertura (ver a
+ressalva de §1.1). As duas regressões de guarda vêm logo depois da conferência de
+portas, de propósito: verificar a proteção antes de verificar o código.
 
 **`verifica-dados-sensiveis.sh` entrou no portão local em 02/09/2026**; até
 então só existia no CI, e o portão local passava enquanto o workflow reprovava —

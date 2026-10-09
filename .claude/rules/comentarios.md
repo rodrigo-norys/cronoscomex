@@ -33,7 +33,10 @@ Régua derivada da literatura, não de gosto. A derivação com as fontes está 
 4. **Todo fato medido cita a fonte:** `A-NN`, `TD-NN`, `H-NN`, `IND-NN` ou o
    caminho do documento. "Medido: 40 linhas para 25 processos (A-60)", nunca
    "medido: 40 linhas". `tests/repo/contratos.test.ts` verifica que a âncora
-   existe — número sem âncora é afirmação que ninguém consegue reconferir.
+   existe — número sem âncora é afirmação que ninguém consegue reconferir. **A
+   data mora no registro, e o comentário cita o ID dele:** "(A-60)", e não "em
+   12/08/2026". O porquê que só vale para aquelas linhas fica no comentário; o de
+   uma decisão compartilhada fica no registro dela.
 
 ## Convenções deste repositório
 

@@ -325,8 +325,8 @@ fora de escopo por lacuna de dado (§4 da especificação).
 
 **`D-49` (18/09/2026) refez o bloco `counts`.** Ele passou a ser exatamente os
 nove cartões da Página Início: saíram IND-08, IND-14 e IND-16 — cujos cartões o
-usuário mandou remover — e a contagem por data de registro de `H-52`; três
-cartões mudaram de regra, e os indicadores antigos foram aposentados em favor de
+usuário mandou remover — e a contagem por data de registro de `H-52`; os
+cartões que mudaram de regra aposentaram os indicadores antigos em favor de
 IND-23, IND-24 e IND-25. `IND-14` e `IND-15` seguem calculados no domínio, para
 ALE-02, ALE-01 e o `overdueCount` de IND-17 — o que saiu foi o cartão, não a
 regra.
@@ -417,8 +417,8 @@ Operacional e `categoryCheck` usam; medido em 18/09/2026, ela dá 480 e a cor d�
 MAIS o `eta2` de hoje, e por isso é subconjunto deste.
 
 `categoryCheck` (`D-49`) é a conferência de A-12, e existe porque a soma deixou
-de ser derivável dos cartões. Ela continua incidindo sobre as **quatro
-categorias** de TD-01, que seguem mutuamente exclusivas; a Página Início só a
+de ser derivável dos cartões. Ela continua incidindo sobre as **categorias**
+de TD-01, que seguem mutuamente exclusivas; a Página Início só a
 exibe quando `matches` é falso. Somar no cliente diria "não conferem" todo dia,
 porque `counts.emDesembaraco` não é mais uma delas.
 
@@ -1641,7 +1641,7 @@ A fila **não** é descartada em nenhum caminho de erro. O operador relê e deci
 | 503 | `ARQUIVO_INDISPONIVEL` |
 
 > **`CABECALHO_DESLOCADO` e `CABECALHO_VAZIO` entraram em 17/09/2026**, com
-> `H-96`, e são as **duas** recusas que nascem de um estado que a **leitura**
+> `H-96`, e são as recusas da tabela que nascem de um estado que a **leitura**
 > aceita. Uma coluna mudou de lugar na planilha: o painel segue mostrando o dado
 > e o aviso — decisão do usuário, o painel nunca para —, mas gravar escreveria na
 > **coluna física errada** do arquivo da empresa, onde não há desfazer nem

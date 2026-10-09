@@ -4,35 +4,62 @@ paths:
   - "*.md"
 ---
 
-# Números afirmados na documentação
+# O contrato da documentação
 
 > **Esta rule é orientação, e pode não carregar.** Ela entra em contexto quando
 > `Read`, `Edit` ou `Write` tocam arquivo do `paths:` — nunca pelo shell, e,
 > medido (ADR-0007), nem sempre nesses casos. **O que nela não pode falhar tem
-> guarda:** número em região, índice do backlog, matriz e requisito revogado são
-> impostos por `tests/repo/contagens.test.ts` e `tests/repo/documentacao.test.ts`.
-> Número fora de região é avisado no diff pelo `--nuas`, e o bloco que cita um ID
-> cuja definição mudou, pelo `--pares` — os dois sem reprovar. A semântica é do
-> `revisor-docs`, sob demanda.
+> guarda:** região, espelho de estado, tabela solta e o piso de cada um são impostos
+> por `node tools/contar-documentacao.mjs`, que `tests/repo/contagens.test.ts` leva ao
+> portão; o índice, o resumo e o tamanho das histórias do backlog, por
+> `tests/repo/documentacao.test.ts`. O número fora de região, o bloco que cita um ID
+> cuja definição mudou e o ID sem definição são apontados pelo `--nuas`, pelo
+> `--pares` e pelo `--definicoes`, sem reprovar. A semântica é do `revisor-docs`, sob
+> demanda.
 
-## Duas classes, dois tratamentos
+## As regras
 
-**Contagem sobre o repositório** — achados, histórias, premissas, riscos,
-indicadores. Diga o **recorte** e **onde o conjunto vive**:
+O mecanismo diz quem cobra: **guarda** reprova o portão, **aviso** aponta sem
+reprovar, e **revisão** é de quem edita — ou do `revisor-docs`. O que é do projeto —
+contadores, espelhos, registro, pisos — está em `tools/contar-documentacao.config.mjs`.
 
-> os <!-- conta:achados -->65<!-- /conta --> achados (`A-NN`, em `docs/01-auditoria-especificacao.md`)
-> os <!-- conta:indicadores-ativos -->18<!-- /conta --> indicadores **ativos** — <!-- conta:indicadores-definidos -->27<!-- /conta --> definidos, `IND-21` bloqueado e <!-- conta:indicadores-aposentados -->8<!-- /conta --> aposentados
+**R1 — Fato de estado vive num lugar só, e os outros apontam.** A cópia de estado só
+existe como espelho declarado em `ids.mirrors`, e o espelho é conferido. *Guarda:* o
+espelho reprova o ID cujo estado difere entre os lados. *Aviso:* o `--pares` lista os
+blocos que citam o ID cuja definição o diff mudou.
 
-Sem o recorte a frase não é reconferível, e o erro é invisível: `IND-NN` tem <!-- conta:indicadores-definidos -->27<!-- /conta -->
-entradas e a afirmação correta é <!-- conta:indicadores-ativos -->18<!-- /conta -->. Contar a família daria <!-- conta:indicadores-definidos -->27<!-- /conta --> e estaria errado.
+**R2 — Número de estado atual só em região gerada.** A região é
+`<!-- conta:NOME -->N<!-- /conta -->`, nunca no início da linha, e o `--write` a
+preenche; contador novo entra em `counters`, com teste. Diga o recorte e onde o
+conjunto vive — os <!-- conta:indicadores-ativos -->18<!-- /conta --> indicadores **ativos**, e não
+os <!-- conta:indicadores-definidos -->27<!-- /conta --> `IND-NN`. Versão também é estado: `versao[pacote]`
+lê o `package.json`, e `versao[node]`, o `.nvmrc`. Número sobre código não se escreve em
+prosa: aponte o arquivo ou o comando. Número que nenhuma fonte do repositório calcula
+leva fonte e data — a planilha, que a regra inviolável 7 tira da suíte:
+"649 linhas de dados (medido em `H-01`, 03/08/2026)". Quem edita a linha reconfere o
+número; se não der em um comando, a frase está mal escrita. *Guarda:* a região. *Aviso:* o `--nuas`
+aponta número com unidade fora de região nas linhas que o diff acrescentou, menos a
+que só o `--write` tocou — a `/sugerir-commits` o roda antes do aceite, e a
+`/sugerir-prs` sobre o PR inteiro.
 
-**Se é estado atual, prenda à fonte.** O número vai numa região
-`<!-- conta:NOME -->N<!-- /conta -->`, nunca no início da linha, e
-`node tools/contar-documentacao.mjs --write` o preenche; `tests/repo/contagens.test.ts`
-reprova a região que divergir. Os nomes e a regra de cada contador estão em
-`COUNTERS`, no próprio arquivo — contador novo entra lá, com teste. Versão também é
-estado atual: `versao[pacote]` lê o `package.json`, e `versao[node]`, o `.nvmrc`.
-Registro datado não vira região: o número dele está certo na data.
+**O que o `--nuas` reconhece:** o número em algarismo ou por extenso, com negrito em
+volta de qualquer parte, em `N linhas` — no máximo uma palavra no meio, e a unidade
+pode vir entre crases, como `IND-NN` —, `N concluídas`, com o estado colado ao número,
+`N das M histórias`, que aponta os dois, `Pendências abertas: N` e `Total: N`,
+`Por custo: **baixo N** · **médio N**`, `os **N**` com a unidade na frase anterior,
+`N` no fim da linha com a unidade no começo da seguinte, e a versão exata depois do
+nome, `Vite X.Y.Z`. O vocabulário — unidades, estados, rótulos, nomes com versão —
+está em `language`, na configuração.
+
+**Fica de fora, por limite declarado** — medido sobre 104 frases de estado injetadas
+no corpus, das quais aponta 99, e sobre as regiões desembrulhadas no lugar (70 de
+85). A faixa de ID (`X-NN` a `X-MM`), o percentual, a versão só maior (`React N`), a
+célula de tabela com a unidade no cabeçalho ou com o rótulo na primeira célula
+(`| Total | N |`) e o número em negrito sem artigo custavam,
+no `--nuas --tudo`, mais falso positivo que acerto; o valor composto (`N · N · N`) não
+é número com unidade; a versão sem o nome do pacote (`da X.Y.Z`) é, sem ele, qualquer
+número; e a linha com data é o registro da medição. O que fica de fora
+é da revisão.
 
 **Skill não usa região: calcula na invocação**, com `` !`comando` `` depois de espaço
 e sem `$0`, `$1`… no comando, que o harness troca pelos argumentos. **E só com
@@ -43,34 +70,35 @@ inteira. Lógica maior vai para script em `tools/`, liberado na skill por
 `${CLAUDE_PROJECT_DIR}/`**: o relativo resolve contra o diretório da sessão, e com
 ela fora da raiz a skill inteira aborta.
 
-**O número que escapou da região é apontado no diff, não no portão.**
-`node tools/contar-documentacao.mjs --nuas` lista o número com unidade — algarismo
-ou por extenso — escrito fora de região nas linhas que o diff contra a `main`
-acrescentou. A `/sugerir-commits` o roda antes do aceite dos commits, quando corrigir
-custa uma edição, e a `/sugerir-prs` o repete sobre o PR inteiro. **Só avisa:** a
-taxa de falso positivo medida está no cabeçalho da ferramenta. Não há marcação de
-isenção: o que fica de fora é estrutura — título, data ou "medido" na linha, matriz
-`✅ **Concluída`, índice fechado, história e épico fechados, e os arquivos de
-registro.
+**R3 — Afirmação de regra cita o ID que a define.** Sem o ID não há vínculo, e o
+`--pares` não acha a frase quando a definição muda. *Revisão.*
 
-**A citação que pode ter envelhecido também é apontada no diff.**
-`node tools/contar-documentacao.mjs --pares` lista, para cada ID cuja definição o diff
-mudou, os outros blocos que o citam; roda nos mesmos dois pontos que o `--nuas`, e
-também só avisa. **O que ele não alcança é o que a escrita evita:** afirmação de regra
-sem o ID que a define, e lista de itens com estado escrita à mão — sem o ID, não há
-vínculo para seguir.
+**R4 — Todo ID tem uma definição, e o estado muda nela.** Definição é a linha de
+tabela que abre com o ID, ou o título. Ela não se apaga: o indicador aposentado leva
+⏹️, e a pendência fechada fica marcada `✅ Fechada em DD/MM/AAAA`. *Aviso:* o
+`--definicoes` lista o ID citado sem definição, e o definido em mais de um lugar fora
+de espelho.
 
-**Medição sobre a planilha** — 649 linhas, <!-- conta:chaves-de-cor -->9<!-- /conta --> chaves de cor, 20,7% de
-`DOCS ENVIADOS`. Teste nenhum confere: a regra inviolável 7 proíbe a suíte de
-tocar o arquivo real. Cite **fonte e data**:
+**R5 — Lista de itens com estado é gerada, ou vira ponteiro.** A lista escrita à mão
+é a que esquece o item novo, e guarda nenhuma vê o que falta. Conjunto computável vai
+em região `conta` ou `confere`; o resto aponta para onde o conjunto é definido.
+*Guarda:* a região `confere`, e é erro a que não examina nenhum arquivo — sem
+diretório no argumento, ou com um que não tem arquivo no `git` —, e o piso por nome,
+em `floors.byName`, que reprova a `confere` apagada ou posta em bloco cercado.
+*Revisão:* o resto.
 
-> 649 linhas de dados (medido em `H-01`, 03/08/2026)
+**R6 — Registro se marca pela estrutura, e não conta como estado.** Registro diz o
+que era verdade na data, e a data mora nele — a decisão `| D-NN`, a história fechada
+no backlog, o arquivo de `docs/adr/`. Não há marcação de isenção: o que é registro
+está em `record`, na configuração. *Aviso:* o `--nuas` e o `--pares` não o apontam.
 
-## Ao editar uma linha que afirma número
+**R7 — O documento renderiza.** Linha em branco dentro de tabela a encerra — também
+dentro de citação, onde o `>` sozinho é a linha em branco —, e o resto sai como texto; `conta` no início da linha abre bloco HTML. *Guarda:* a tabela solta e
+o marcador quebrado.
 
-Reconferir é obrigação de quem edita, não de quem lê depois. **Se não der para
-reconferir em um comando, a frase está mal escrita** — conserte a frase, não
-só o número.
+**O que o contrato não alcança:** fato sem ID e sem número, que fica com a revisão;
+a lista que devia ganhar um item e não ganhou; o código e a tela; e o dado externo,
+como a planilha.
 
 ## Ler `docs/06-backlog.md` pela estrutura, não pela linha
 

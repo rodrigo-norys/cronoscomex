@@ -1,4 +1,3 @@
-import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { describe, expect, it } from 'vitest'
 
@@ -17,17 +16,17 @@ import { describe, expect, it } from 'vitest'
  * cobra é concordância entre cópias do mesmo fato, e a fonte é sempre o bloco
  * da história ou a linha de definição — nunca a prosa que a resume.
  *
- * Guarda também a estrutura de que a renderização depende, que nenhum dos dois
- * eixos alcança: a tabela partida por linha em branco.
- *
  * O total de histórias afirmado em prosa saiu daqui em 06/10/2026: desde as
  * regiões de 01/10/2026 o regex não casava linha nenhuma, e quem o cobre é
  * `tests/repo/contagens.test.ts`.
+ *
+ * A matriz contra o backlog, e o requisito revogado contra a matriz, também saíram:
+ * são espelhos de estado declarados em `tools/contar-documentacao.config.mjs`, que o
+ * `--check` confere e `tests/repo/contagens.test.ts` cobra. A tabela partida por linha
+ * em branco, que nenhum dos dois eixos alcança, saiu pelo mesmo caminho.
  */
 
 const BACKLOG = readFileSync('docs/06-backlog.md', 'utf-8')
-const MATRIZ = readFileSync('docs/09-rastreabilidade.md', 'utf-8')
-const REQUISITOS = readFileSync('docs/02-requisitos.md', 'utf-8')
 
 interface Historia {
   id: string
@@ -127,8 +126,8 @@ describe('o índice do backlog agrupa cada história sob o épico do corpo', () 
 
 /**
  * A linha de Total da tabela de resumo já é conferida. As 15 linhas por épico —
- * 45 números — e o `N abertas` da própria linha de Total não eram: a regex de
- * `totalDeclarado()` casa `**N**` e `N concluídas`, e nada mais.
+ * 45 números — e o `abertas: N` da própria linha de Total não eram: a regex de
+ * `totalDeclarado()` casa `**N**` e `concluídas: N`, e nada mais.
  */
 describe('a tabela de resumo do backlog bate linha a linha', () => {
   const linhas = [...BACKLOG.matchAll(/^\| (E\d+) [^|]*\|[^|]*\| (\d+) \| (\d+) \| (\d+) \|$/gm)]
@@ -159,8 +158,10 @@ describe('a tabela de resumo do backlog bate linha a linha', () => {
   })
 
   it('as abertas declaradas no Total são as que não têm bloco de conclusão', () => {
-    const total = BACKLOG.split('\n').find((linha) => linha.startsWith('| **Total**')) ?? ''
-    const declaradas = /(\d+) abertas?/.exec(total)?.[1]
+    const total = (BACKLOG.split('\n').find((linha) => linha.startsWith('| **Total**')) ?? '')
+      // A contagem vive em região `conta`; o número é lido sem os marcadores.
+      .replace(/<!-- \/?conta[^>]*-->/g, '')
+    const declaradas = /abertas: (\d+)/.exec(total)?.[1]
 
     expect(declaradas).toBeDefined()
     expect(Number(declaradas)).toBe(TOTAL - CONCLUIDAS)
@@ -208,126 +209,5 @@ describe('o tamanho declarado respeita a régua, nas histórias abertas', () => 
       )
 
     expect(violacoes).toEqual([])
-  })
-})
-
-/**
- * A §4 da matriz é o único lugar do repositório que enumera história por
- * história fora do backlog, e o cabeçalho dela registra o modo de falha com
- * todas as letras: o número "já envelheceu QUATRO vezes — 33, depois 43, depois
- * 61, depois 81 —, e a ressalva que anunciava o modo de falha não o impediu,
- * nem na vez em que ela mesma trazia o número" (`docs/09-rastreabilidade.md:180`).
- * O documento publica as duas receitas `grep -cE` em prosa; isto as executa.
- */
-describe('a matriz de rastreabilidade concorda com o backlog', () => {
-  const naMatriz = [...MATRIZ.matchAll(/^\| (H-\d+) \|(.*)$/gm)].map((linha) => ({
-    id: linha[1] ?? '',
-    concluida: (linha[2] ?? '').includes('✅'),
-  }))
-
-  it('encontra as linhas — âncora contra guarda verde por vacuidade', () => {
-    expect(naMatriz.length).toBeGreaterThan(30)
-  })
-
-  it('toda história tem linha na §4, e toda linha tem história', () => {
-    expect(naMatriz.map((linha) => linha.id).sort()).toEqual(
-      HISTORIAS.map((historia) => historia.id).sort(),
-    )
-  })
-
-  it('o estado da §4 é o do bloco da história', () => {
-    const divergentes = naMatriz
-      .filter((linha) => linha.concluida !== HISTORIAS.find((h) => h.id === linha.id)?.concluida)
-      .map((linha) => linha.id)
-
-    expect(divergentes).toEqual([])
-  })
-})
-
-/** A primeira célula de uma linha de tabela — onde o identificador é definido. */
-function primeiraCelula(linha: string): string {
-  return linha.split('|')[1] ?? ''
-}
-
-/**
- * Revogar um requisito é a mudança de estado que mais viaja: ela nasce em
- * `02-requisitos.md` e precisa alcançar a §5 da matriz. Em 11/09/2026 `RF-35`
- * foi revogado por `D-43` e a matriz seguiu dizendo "✅ **Entregue**" — a
- * propagação que não aconteceu, e que nenhuma asserção via.
- */
-describe('requisito revogado não continua entregue na matriz', () => {
-  const revogados = [...REQUISITOS.matchAll(/^\| (RF-\d+) \|(.*)$/gm)]
-    .filter((linha) => /REVOGAD/i.test(linha[2] ?? ''))
-    .map((linha) => linha[1] ?? '')
-
-  it('encontra os requisitos — âncora contra guarda verde por vacuidade', () => {
-    expect([...REQUISITOS.matchAll(/^\| (RF-\d+) \|/gm)].length).toBeGreaterThan(30)
-  })
-
-  it('toda linha da matriz que define um revogado diz que ele foi revogado', () => {
-    const desalinhadas = revogados.flatMap((requisito) =>
-      MATRIZ.split('\n')
-        .filter(
-          (linha) =>
-            linha.startsWith('|') && new RegExp(`\\b${requisito}\\b`).test(primeiraCelula(linha)),
-        )
-        .filter((linha) => !/REVOGAD/i.test(linha))
-        .map((linha) => `${requisito}: ${linha.slice(0, 80)}`),
-    )
-
-    expect(desalinhadas).toEqual([])
-  })
-})
-
-/**
- * Os `.md` que o projeto mantém — `docs/`, `.claude/` e os da raiz —, pelo
- * `git ls-files`, como em `tests/repo/contratos.test.ts`: o que o git não
- * rastreia não chega ao GitHub, e não há o que renderizar.
- */
-function markdownVersionado(): string[] {
-  return execFileSync('git', ['ls-files', '-z', '--', '*.md'], { encoding: 'utf-8' })
-    .split('\0')
-    .filter(
-      (caminho) =>
-        /^(docs|\.claude)\//.test(caminho) || caminho === 'README.md' || caminho === 'CLAUDE.md',
-    )
-}
-
-/** `arquivo:linha` de cada linha de tabela que uma linha em branco separou da tabela dela. */
-function linhasSoltas(caminho: string): string[] {
-  const linhas = readFileSync(caminho, 'utf-8').split('\n')
-  let cercado = false
-
-  return linhas.flatMap((linha, indice) => {
-    if (/^\s*(```|~~~)/.test(linha)) {
-      cercado = !cercado
-      return []
-    }
-    const depoisDeBranco = indice > 0 && (linhas[indice - 1] ?? '').trim() === ''
-    const abreTabela = /^\|\s*:?-/.test(linhas[indice + 1] ?? '')
-
-    return !cercado && linha.startsWith('|') && depoisDeBranco && !abreTabela
-      ? [`${caminho}:${indice + 1}`]
-      : []
-  })
-}
-
-/**
- * Linha em branco dentro de tabela encerra a tabela, e o que vem depois sai
- * como texto corrido — no GitHub e no preview. A tabela de decisões quebrava na
- * `D-44` e a de achados no `A-56`, com a suíte verde: nenhuma asserção olhava a
- * estrutura, e quem achou foi o olho do usuário. Fora de bloco cercado, linha
- * que abre com `|` logo depois de linha em branco só pode ser o cabeçalho de uma
- * tabela nova, seguido do delimitador.
- */
-describe('nenhuma linha de tabela fica solta depois de linha em branco', () => {
-  const arquivos = markdownVersionado()
-
-  it('encontra os arquivos — âncora contra guarda verde por vacuidade', () => {
-    expect(arquivos.length).toBeGreaterThan(30)
-  })
-
-  it('toda linha de tabela depois de linha em branco abre uma tabela', () => {
-    expect(arquivos.flatMap((caminho) => linhasSoltas(caminho))).toEqual([])
   })
 })

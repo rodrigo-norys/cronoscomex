@@ -48,7 +48,7 @@ ela já foi decidida — em ADR ou nas tabelas de decisão de `03-modelo-dados.m
 | E16 — A tabela que se lê, e o endereço que não mente | **`H-97` a `H-100` ✅; só `H-101` aberta, e escrita para não ser executada agora.** Nasce de `D-44`, em 16/09/2026, do uso da tela que `E15` entregou: o fundo pintado ficou ilegível no tema escuro, o painel lateral disputava largura com 17 colunas, e os parâmetros da página viajavam para as outras seis telas. **Nenhuma das quatro é regra de negócio** — são apresentação e endereço | 3 | 1 | 1 |
 | E17 — A tela que o uso refez ✅ | **`H-102` a `H-107`, todas concluídas.** Épico **retroativo por método**, escolha do usuário: o código entrou entre 18 e 21/09/2026, por `D-49` a `D-58` (menos `D-52`), e as histórias foram escritas em 30/09 (`D-69`) | 0 | 4 | 2 |
 | E18 — O que o ensaio na planilha real achou ✅ | **`H-108` a `H-114`, todas concluídas.** Épico **retroativo por método**, escolha do usuário: o código entrou em 18 e 22/09/2026, pelos achados do ensaio e por `D-61` a `D-67`, e as histórias foram escritas em 30/09 (`D-69`) | 1 | 3 | 3 |
-| **Total** | **114** — 113 concluídas, 1 aberta | **40** | **58** | **16** |
+| **Total** | **<!-- conta:historias -->114<!-- /conta -->** — concluídas: <!-- conta:historias-concluidas -->113<!-- /conta -->, abertas: <!-- conta:historias-abertas -->1<!-- /conta --> | **40** | **58** | **16** |
 
 **O ✅ marca o épico e, desde 31/08/2026, também cada história do índice.**
 Marcar uma a uma já foi tentado e falhou: as marcas congelaram em 07/08/2026, com

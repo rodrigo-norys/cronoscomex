@@ -420,7 +420,7 @@ estrutura:**
 }
 ```
 
-### TD-05 — valores reais medidos (H-01, 03/08/2026)
+### Valores reais medidos de TD-05 (H-01, 03/08/2026)
 
 As 9 chaves presentes na aba `2026`, cobrindo **649 de 649 linhas (100%)**.
 Taxa de `COR_NAO_MAPEADA` esperada: **0%**.
