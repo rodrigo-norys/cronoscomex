@@ -33,8 +33,23 @@ function stories(source) {
       return {
         number: Number(/^### H-(\d+)/.exec(body[0])[1]),
         closed: body.some((line) => line.startsWith('> ✅ **CONCLUÍDA')),
+        body,
       }
     })
+}
+
+/**
+ * Os itens de primeiro nivel da secao `**Casos-limite:**` da historia, ate o proximo
+ * rotulo em negrito: a continuacao recuada e a citacao dentro de um item nao contam.
+ */
+function edgeCases(source, id) {
+  const body = stories(source).find((story) => story.number === Number(id.slice(2)))?.body
+  if (!body) throw new Error(`historia ausente do backlog: ${id}`)
+  const start = body.findIndex((line) => line.startsWith('**Casos-limite'))
+  if (start === -1) throw new Error(`${id} sem secao Casos-limite`)
+  const end = body.findIndex((line, index) => index > start && /^\*\*[^*]+:\*\*/.test(line))
+  const section = body.slice(start + 1, end === -1 ? undefined : end)
+  return section.filter((line) => /^[-*] /.test(line)).length
 }
 
 function distinct(text, regex) {
@@ -107,12 +122,14 @@ function indicatorRows(source) {
 export const COUNTERS = {
   historias: (source) => stories(source).length,
   'historias-concluidas': (source) => stories(source).filter((story) => story.closed).length,
+  'historias-abertas': (source) => stories(source).filter((story) => !story.closed).length,
   'historias-desde': (source, from) =>
     stories(source).filter((story) => story.number >= Number(from.slice(2))).length,
   epicos: (source) => (source.read(BACKLOG).match(/^## Épico /gm) ?? []).length,
   premissas: (source) => distinct(source.read('docs/00-visao-escopo.md'), /^\| *\*{0,2}(P-\d+)/gm),
   riscos: (source) => distinct(source.read('docs/07-plano-entrega.md'), /^#{3,4} (R-\d+)/gm),
   'casos-obrigatorios': (source) => mandatoryCases(source).length,
+  'casos-limite': edgeCases,
   'historias-com-caso-obrigatorio': (source) =>
     new Set(mandatoryCases(source).flatMap(caseStories)).size,
   achados: (source) =>

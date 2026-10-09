@@ -86,6 +86,7 @@ describe('os contadores, sobre fonte com valor concreto', () => {
     const source = createSource(root)
     expect(COUNTERS.historias(source)).toBe(3)
     expect(COUNTERS['historias-concluidas'](source)).toBe(2)
+    expect(COUNTERS['historias-abertas'](source)).toBe(1)
     expect(COUNTERS['historias-desde'](source, 'H-33')).toBe(1)
     expect(COUNTERS.epicos(source)).toBe(2)
   })
@@ -108,6 +109,36 @@ describe('os contadores, sobre fonte com valor concreto', () => {
     const source = createSource(root)
     expect(COUNTERS['casos-obrigatorios'](source)).toBe(2)
     expect(COUNTERS['historias-com-caso-obrigatorio'](source)).toBe(3)
+  })
+
+  it('casos-limite sao os itens de primeiro nivel da secao, ate o proximo rotulo', () => {
+    write(
+      'docs/06-backlog.md',
+      [
+        '# Backlog',
+        '',
+        '### H-01 — Sem a secao',
+        '',
+        '### H-102 — Com a secao',
+        '',
+        '**Casos-limite:**',
+        '- Um caso',
+        '  que continua na linha seguinte.',
+        '- Outro caso',
+        '',
+        '  > Nota recuada dentro do item, com - travessao.',
+        '- Terceiro',
+        '',
+        '**Dependências:** H-01',
+        '- nao e caso-limite',
+        '',
+      ].join('\n'),
+    )
+    track()
+    const source = createSource(root)
+    expect(COUNTERS['casos-limite'](source, 'H-102')).toBe(3)
+    expect(() => COUNTERS['casos-limite'](source, 'H-01')).toThrow('sem secao Casos-limite')
+    expect(() => COUNTERS['casos-limite'](source, 'H-07')).toThrow('historia ausente')
   })
 
   it('passos do verify sao os comandos encadeados por &&, sem o prefixo do npm', () => {

@@ -10,11 +10,13 @@ type Counter = (source: Source, arg?: string) => number | string
 export const COUNTERS: {
   historias: Counter
   'historias-concluidas': Counter
+  'historias-abertas': Counter
   'historias-desde': Counter
   epicos: Counter
   premissas: Counter
   riscos: Counter
   'casos-obrigatorios': Counter
+  'casos-limite': Counter
   'historias-com-caso-obrigatorio': Counter
   achados: Counter
   'passos-verify': Counter
