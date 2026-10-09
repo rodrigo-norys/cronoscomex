@@ -30,7 +30,7 @@ entradas e a afirmação correta é <!-- conta:indicadores-ativos -->18<!-- /con
 `<!-- conta:NOME -->N<!-- /conta -->`, nunca no início da linha, e
 `node tools/contar-documentacao.mjs --write` o preenche; `tests/repo/contagens.test.ts`
 reprova a região que divergir. Os nomes e a regra de cada contador estão em
-`COUNTERS`, no próprio arquivo — contador novo entra lá, com teste. Versão também é
+`counters`, em `tools/contar-documentacao.config.mjs` — contador novo entra lá, com teste. Versão também é
 estado atual: `versao[pacote]` lê o `package.json`, e `versao[node]`, o `.nvmrc`.
 Registro datado não vira região: o número dele está certo na data.
 

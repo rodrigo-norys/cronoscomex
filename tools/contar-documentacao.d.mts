@@ -15,34 +15,6 @@ export interface Source {
 
 export function createSource(root: string): Source
 
-type Counter = (source: Source, arg?: string) => number | string
-
-export const COUNTERS: {
-  historias: Counter
-  'historias-concluidas': Counter
-  'historias-desde': Counter
-  epicos: Counter
-  premissas: Counter
-  riscos: Counter
-  'casos-obrigatorios': Counter
-  'historias-com-caso-obrigatorio': Counter
-  achados: Counter
-  'passos-verify': Counter
-  'passos-verify-lista': Counter
-  'regras-corpus': Counter
-  'regras-corpus-faixa': Counter
-  'indicadores-definidos': Counter
-  'indicadores-ativos': Counter
-  'indicadores-aposentados': Counter
-  alertas: Counter
-  'chaves-de-cor': Counter
-  adrs: Counter
-  rules: Counter
-  'pendencias-abertas': Counter
-  'arvore-src': Counter
-  versao: Counter
-}
-
 export interface LooseNumber {
   file: string
   line: number

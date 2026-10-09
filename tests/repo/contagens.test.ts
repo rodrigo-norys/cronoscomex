@@ -10,7 +10,7 @@ import { createSource, inspect, scanRegions } from '../../tools/contar-documenta
  * frase: o levantamento de 01/10/2026 achou seis de 41 números de estado atual velhos
  * — 96 histórias com 114 no backlog, seis ADRs com sete, "sete passos" com oito no
  * `verify`. A reprovação diz o comando que corrige; quem decide a regra de cada
- * contador é `tools/contar-documentacao.mjs`, e não este arquivo.
+ * contador é `tools/contar-documentacao.config.mjs`, e não este arquivo.
  *
  * A região `confere` — a árvore de `04-arquitetura.md` — reprova aqui do mesmo jeito,
  * mas não se corrige pelo comando: é conteúdo escrito à mão.
