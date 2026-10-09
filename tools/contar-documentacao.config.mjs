@@ -49,7 +49,7 @@ function edgeCases(source, id) {
   if (start === -1) throw new Error(`${id} sem secao Casos-limite`)
   const end = body.findIndex((line, index) => index > start && /^\*\*[^*]+:\*\*/.test(line))
   const section = body.slice(start + 1, end === -1 ? undefined : end)
-  return section.filter((line) => /^[-*] /.test(line)).length
+  return section.filter((line) => /^[-*] /.test(line))
 }
 
 function distinct(text, regex) {
@@ -129,7 +129,17 @@ export const COUNTERS = {
   premissas: (source) => distinct(source.read('docs/00-visao-escopo.md'), /^\| *\*{0,2}(P-\d+)/gm),
   riscos: (source) => distinct(source.read('docs/07-plano-entrega.md'), /^#{3,4} (R-\d+)/gm),
   'casos-obrigatorios': (source) => mandatoryCases(source).length,
-  'casos-limite': edgeCases,
+  'casos-limite': (source, id) => edgeCases(source, id).length,
+  /**
+   * `casos-limite-desde[H-24 9]`: os itens do nono em diante, na ordem do backlog. A
+   * prosa que separa os do plano original dos acrescentados depois guarda o primeiro
+   * numero como registro, e o resto envelhecia ao lado da regiao do total (R5 de `D-76`).
+   */
+  'casos-limite-desde': (source, arg) => {
+    const [id, from] = (arg ?? '').split(/\s+/)
+    if (!/^[1-9]\d*$/.test(from ?? '')) throw new Error(`posicao invalida: ${arg}`)
+    return edgeCases(source, id).slice(Number(from) - 1).length
+  },
   'historias-com-caso-obrigatorio': (source) =>
     new Set(mandatoryCases(source).flatMap(caseStories)).size,
   achados: (source) =>
@@ -146,6 +156,17 @@ export const COUNTERS = {
   'regras-corpus-faixa': (source, filter) => {
     const ids = styleRules(source, filter).map((rule) => rule.id)
     return `${ids[0]}–${ids.at(-1)}`
+  },
+  /**
+   * A lista que a prosa escrevia a mao ao lado da contagem, e que esquecia a regra nova
+   * (R5 de `D-76`). Em ordem de ID, e nao na do corpus, que poe o eixo R antes do D.
+   */
+  'regras-corpus-lista': (source, filter) => {
+    const ids = styleRules(source, filter)
+      .map((rule) => rule.id)
+      .sort()
+    if (ids.length === 0) throw new Error(`nenhuma regra com ${filter}`)
+    return ids.length === 1 ? ids[0] : `${ids.slice(0, -1).join(', ')} e ${ids.at(-1)}`
   },
   'indicadores-definidos': (source) => indicatorRows(source).length,
   'indicadores-ativos': (source) =>

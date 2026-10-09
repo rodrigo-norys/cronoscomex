@@ -139,6 +139,10 @@ describe('os contadores, sobre fonte com valor concreto', () => {
     expect(COUNTERS['casos-limite'](source, 'H-102')).toBe(3)
     expect(() => COUNTERS['casos-limite'](source, 'H-01')).toThrow('sem secao Casos-limite')
     expect(() => COUNTERS['casos-limite'](source, 'H-07')).toThrow('historia ausente')
+    expect(COUNTERS['casos-limite-desde'](source, 'H-102 2')).toBe(2)
+    expect(COUNTERS['casos-limite-desde'](source, 'H-102 4')).toBe(0)
+    expect(() => COUNTERS['casos-limite-desde'](source, 'H-102')).toThrow('posicao invalida')
+    expect(() => COUNTERS['casos-limite-desde'](source, 'H-102 0')).toThrow('posicao invalida')
   })
 
   it('passos do verify sao os comandos encadeados por &&, sem o prefixo do npm', () => {
@@ -180,6 +184,28 @@ describe('os contadores, sobre fonte com valor concreto', () => {
     expect(COUNTERS['regras-corpus'](source, 'balde=EXECUÇÃO')).toBe(2)
     expect(COUNTERS['regras-corpus'](source, 'custo=baixo')).toBe(2)
     expect(COUNTERS['regras-corpus-faixa'](source, 'eixo=A')).toBe('A01–A02')
+  })
+
+  it('lista de regras do corpus sai em ordem de ID, com "e" antes da ultima', () => {
+    write(
+      'docs/estilizacao/corpus-estilo.md',
+      [
+        '| ID | EIXO | PREDICADO | BALDE | SINAL | CONTRAEXEMPLO | FONTE | CUSTO |',
+        '|---|---|---|---|---|---|---|---|',
+        '| A11 | acessibilidade | p | COMPOSICIONAL | s | c | f | baixo |',
+        '| C04 | consistência | p | COMPOSICIONAL | s | c | f | baixo |',
+        '| C05 | consistência | p | LOCAL | s | c | f | baixo |',
+        '| R06 | responsividade | p | COMPOSICIONAL | s | c | f | médio |',
+        '| D01 | modo escuro | p | COMPOSICIONAL | s | c | f | baixo |',
+      ].join('\n'),
+    )
+    track()
+    const source = createSource(root)
+    expect(COUNTERS['regras-corpus-lista'](source, 'balde=COMPOSICIONAL')).toBe(
+      'A11, C04, D01 e R06',
+    )
+    expect(COUNTERS['regras-corpus-lista'](source, 'custo=médio')).toBe('R06')
+    expect(() => COUNTERS['regras-corpus-lista'](source, 'balde=EXECUÇÃO')).toThrow('nenhuma regra')
   })
 
   it('indicador ativo le a coluna de status, e nao a nota que algumas linhas trazem depois dela', () => {

@@ -17,12 +17,14 @@ export const COUNTERS: {
   riscos: Counter
   'casos-obrigatorios': Counter
   'casos-limite': Counter
+  'casos-limite-desde': Counter
   'historias-com-caso-obrigatorio': Counter
   achados: Counter
   'passos-verify': Counter
   'passos-verify-lista': Counter
   'regras-corpus': Counter
   'regras-corpus-faixa': Counter
+  'regras-corpus-lista': Counter
   'indicadores-definidos': Counter
   'indicadores-ativos': Counter
   'indicadores-aposentados': Counter
