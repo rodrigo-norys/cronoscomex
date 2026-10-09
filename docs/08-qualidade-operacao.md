@@ -84,6 +84,13 @@ comentário são substituídos por marcadores. Os `styleId` usados são **reais*
 medidos por `H-01`, o que garante que `fillId`, fonte e borda sejam os do
 arquivo verdadeiro.
 
+**Em 01/09/2026 o texto de comentário vazou**, e a frase acima era falsa até ali:
+comentário tem duas formas — `<t>`, a legada, e `<text>`, a encadeada —, a regex de
+anonimização mirava só a primeira, e as nove fixtures versionadas carregaram texto
+real da planilha do operador. A regra de cada forma passou a tolerar atributo:
+`<text xml:space="preserve">` é o que o produtor emite quando o comentário começa ou
+termina com espaço.
+
 **Regenerar:**
 
 ```bash
@@ -413,6 +420,15 @@ exige o literal `verify`, o gate obrigatório nunca mais seria satisfeito — a
 `main` ficaria desprotegida com a aparência de protegida. Promovê-lo a check
 exige uma série estável de execuções verdes primeiro.
 
+**A primeira execução, em 16/09/2026, reprovou 6 dos 12 blocos de
+`tests/io/watcher.test.ts`** — os 6 que esperam o watcher disparar —, e a causa era
+de produção (`H-08`). `scripts/diagnostico-watcher.mjs` nasceu para separar as
+camadas. A mesma execução, em 16/09/2026, achou `scripts/sincronizar-distribuicao.ts`
+comparando `web\src\...` com a barra normal do `git ls-tree`: no Windows a árvore
+inteira aparecia como faltando. E achou satisfeita, no Windows, a guarda de privilégio
+de `tests/app/config-write.test.ts`: lá `process.getuid` não existe, e
+`undefined !== 0` dava `true` em 16/09/2026.
+
 **Três proteções do repositório são configuração, não arquivo versionado**, e
 foram ligadas em 16/09/2026. **Secret scanning e push protection**: o
 repositório é público, e `verifica-dados-sensiveis.sh` — medido — não procura
@@ -443,6 +459,19 @@ portas, de propósito: verificar a proteção antes de verificar o código.
 então só existia no CI, e o portão local passava enquanto o workflow reprovava —
 a ordem errada de descobrir. Foi assim que a guarda das fixtures chegou ao
 `dados-sensiveis.yml` com a âncora reprovando o check de caminho absoluto.
+
+**O alcance da guarda de dados sensíveis cresceu por defeito achado.** Em 13/08/2026
+o hook `guard-dados-sensiveis.sh` passou a fazer no `git add` a mesma exceção de
+`tests/fixtures/` que o CI faz. Em 01/09/2026 entrou `tests/repo/fixtures-anonimas.test.ts`,
+isento do check de caminho absoluto pela mesma razão das regressões de guarda: a
+exceção das fixtures é por caminho, e até 01/09/2026 nada olhava **dentro** delas —
+um comentário da planilha do operador, com o nome de duas pessoas, sobreviveu meses
+assim. Antes da exceção da URL do próprio repositório, o check do nome do dono achou,
+em 01/09/2026, 16 linhas em 1 arquivo, todas URL de PR, e zero ocorrências nuas. Em
+02/09/2026 a verificação 6 passou a cobrir `scripts/`, onde o caminho absoluto do
+Windows é mais provável, e o `git ls-files` passou a sair com `-z`: medido em
+02/09/2026 num repositório com três nomes hostis, o script de então alcançava 1 dos 3,
+e com `-z` alcança 3.
 
 **Os dois rulesets são configuração do GitHub, não arquivo versionado** — leia o
 estado real com `gh api repos/<owner>/<repo>/rulesets/<id>`. `main protegida` tem
@@ -558,6 +587,8 @@ Antes de escrever qualquer mecanismo, o repositório foi medido:
   `RNF-NN`, `ALE-NN`, `D-NN`, `P-NN`, `R-NN`) — **zero âncoras mortas**
 - **18 caminhos** de arquivo citados em comentários — **zero inexistentes**
 - **120 citações** de identificador em camelCase, 70 distintos — **zero ausentes**
+- **261 IDs distintos** em `docs/`, em 12/08/2026, todos com posição de definição —
+  título `#` ou primeira célula de tabela
 
 > Os três números contam **apenas linhas de comentário** de `src/` e `web/src`,
 > que é o recorte da asserção. Contagens sobre o arquivo inteiro, ou incluindo

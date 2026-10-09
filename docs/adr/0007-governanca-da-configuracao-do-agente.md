@@ -113,6 +113,32 @@ desde 30/09/2026; os cumpridos vivem aqui, com o que cada um ensinou.
 | Conferir se cada rule dispara, aos 20 `session_id` — **critério insuficiente, refeito por `D-71`** | 04/09/2026 | 28 sessões no log, e as cinco rules dispararam — `documentacao` 19 vezes, `comentarios` 13, `operacao-windows` 7, `escrita-xlsx` 4, `distribuicao` 2 —; o hook virou só observabilidade. O log é TSV, e não JSON: a primeira contagem leu 0 por supor o formato errado |
 | Guarda `documentacao.test.ts` e subagente `revisor-docs` | 11/09/2026 | 51 defeitos numa passada de ~490 linhas, um achado a olho depois de a suíte passar. A guarda cobra o computável, o revisor o que não é; ela precisou nascer depois de backlog e `README.md` concordarem. **Foi o primeiro marco registrado DEPOIS do evento** — os quatro anteriores declararam o gatilho antes de ele ser atingido |
 
+## O registro do ferramental
+
+**O porquê datado das ferramentas de `tools/` e das guardas de `tests/repo/` que
+nenhuma história registra.** Ferramenta e guarda ficam fora de história pela convenção
+do repositório (`D-69`), e o cabeçalho de cada peça diz o porquê no presente; o que
+aconteceu, e quando, mora aqui.
+
+| Peça | Data | O que aconteceu |
+|---|---|---|
+| `tools/verificar-strip-types.mjs` | 06/08/2026 | Uma `parameter property` num construtor passou por `lint`, `typecheck`, `test` e `build`, e teria derrubado a aplicação no primeiro `npm start`: nenhuma etapa do portão executava `src/` com `--experimental-strip-types` |
+| `tools/verificar-strip-types.mjs` | 02/09/2026 | O cabeçalho afirmava o ordinal do passo no portão, e ele envelheceu na inserção seguinte, a de `test:dados` |
+| `tools/medir-navegador.mjs` | 01/09/2026 | O mesmo harness foi reconstruído do zero em duas sessões: a de 31/08/2026 declarou os procedimentos de navegador inalcançáveis e estava errada; a de 01/09/2026 os executou, mediu seis histórias, e o harness morreu com o scratchpad dela — a Pendência 2 do relatório daquele dia. No mesmo dia, `ENOTEMPTY` voltou depois de uma medição que já tinha dado certo, e `maxRetries` não bastou |
+| `tools/medir-navegador.mjs` | 02/09/2026 | A cópia da fixture e o `app.json` passaram ao temporário, depois de um harness de medição gravar na fila do operador duas vezes em 01/09/2026: sem a cópia, "Aplicar alterações" numa medição gravaria na fixture do repositório; sem o `app.json`, `PUT /api/config/workbook` gravava na configuração do operador. O `AppConfig` incompleto — sem `headerRow`, `firstDataRow` e `stalledDaysThreshold` — apareceu como `linha invalida: NaN` na primeira medição de "Aplicar alterações", pego pela validação de `appendRow` |
+| `tools/medir-navegador.mjs`, `medirCenarios` | 08/09/2026 | O preâmbulo foi reescrito oito vezes em 04 e 08/09/2026, e duas delas custaram uma execução extra por defeito no andaime. Provando a função, em 08/09/2026, uma espera que só procurasse "Carregando" retornaria no ato: o esqueleto de `H-85` não põe texto no `<main>`, e a Página Alertas devolveu 900 px, a altura da janela, contra os 9.248 reais |
+| `tools/carregar-planilha.mjs` | 02/09/2026 | Passou a escrever no temporário por padrão: antes, sobrescrevia `data/quarantine.json` e fazia append em `data/history.jsonl`, estado do operador. E a lista de módulos de `src/domain/`, escrita à mão, envelheceu pela segunda vez (6 → 8): quatro dos cinco módulos alterados no dia — `color-mapper`, `process-query`, `process-builder` e `process-projection` — estavam fora do pacote, e passaram a ser enumerados do diretório |
+| `tools/conferir-portas-dev.mjs` | 17/09/2026 | O aviso de não rodar o portão com o `dev` no ar existia em prosa no `CLAUDE.md`; foi lembrado, e ainda assim custou o mesmo preâmbulo de guarda colado à mão em oito invocações do portão |
+| `tools/levantar-retroativo.mjs` | 30/09/2026 | O levantamento feito à mão na sessão custou uns quinze comandos, e a redação das 13 histórias de `E17` e `E18`, cerca de 630 mil tokens, a maior parte relendo diffs e decisões inteiras |
+| `tools/abrir-historia.mjs` | 01/10/2026 | As seções da `/abrir-historia` viviam em shell injetado na skill, sem teste, e três defeitos passaram em silêncio: o `$0` do `awk` virava o argumento da skill e o contrato saía vazio; o `grep -F` pela célula de `H-04` perdia a linha de `H-04, H-07`; e o de `H-10` trazia as linhas de `H-100` a `H-114` |
+| `tools/abrir-historia.mjs` | 02/10/2026 | A seção de identificadores buscava só em `src/`, e todo nome da interface saía como ausente: na `H-101`, a única aberta em 01/10/2026, os três listados existiam em `web/src/` |
+| `tools/contar-documentacao.mjs` | 01/10/2026 | O levantamento de 01/10/2026 achou seis de 41 números de estado atual velhos — 96 histórias com 114 no backlog, seis ADRs com sete, "sete passos" com oito no `verify` —, e os formatos que o contador precisa ler: história cujo bloco seguinte é um épico, linha de tabela sem a barra vertical final, e o balde "DE EXECUCAO" em duas variantes |
+| `tests/repo/contratos.test.ts`, peças de `.claude/` no `CLAUDE.md` | 07/08/2026 | `/nova-pagina` foi criada em 07/08/2026, e a tabela de marcos do `CLAUDE.md` seguiu mandando criá-la por quatro dias: `conferir-alinhamento.sh` roda em `ConfigChange`, e editar o `CLAUDE.md` não é mudança de configuração |
+| `tests/repo/contratos.test.ts`, a guarda de âncora | 21/09/2026 | Conferia o caminho citado por `existsSync`, e `config/app.json`, no `.gitignore`, existe na máquina do dono: o comentário que o citava passava no portão local e reprovava no CI. Custou o PR #131 e reprovou de novo em 21/09/2026, nos dois gates, `verify` e `verify-windows`; a guarda passou a consultar o git |
+| `tests/repo/documentacao.test.ts` | 11/09/2026 | Medido ao criá-la, em 11/09/2026: 220 dos 445 commits não-merge da `main` tocavam apenas `docs/`, `CLAUDE.md` ou `README.md`. No mesmo dia, as quatro histórias de `E15` entraram sob o cabeçalho de `E14` com as cinco asserções de índice verdes, e quem achou foi o olho do usuário |
+| `tests/repo/documentacao.test.ts` | 16/09/2026 | As quatro histórias de `E15` estavam rotuladas abaixo da régua de tamanho — `H-94` dizia `M` com 18 arquivos —, e a régua passou a ter guarda |
+| `tests/repo/documentacao.test.ts` | 06/10/2026 | O total de histórias afirmado em prosa saiu desta guarda: desde as regiões de 01/10/2026 o regex não casava linha nenhuma, e quem o cobre é `tests/repo/contagens.test.ts` |
+
 ## A rule não garante nada, e a guarda garante (`D-71`)
 
 **O critério de 04/09/2026 media se cada rule disparava ao menos uma vez, e não se

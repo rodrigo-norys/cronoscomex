@@ -893,6 +893,18 @@ Rota `GET /api/quarantine` conforme `05-contratos-api.md`.
 > **`GET /api/quarantine` passou a ter dado.** Até aqui `writeReport` não tinha
 > chamador em produção; `reload()` grava o relatório a cada leitura que muda o
 > hash, fechando o laço aberto em `H-07`.
+>
+> **Emenda de 16/09/2026 — o watcher nunca disparou no Windows.** A primeira
+> execução de `verify-windows` reprovou 6 dos 12 blocos de `tests/io/watcher.test.ts`,
+> exatamente os que esperam disparo. A causa, medida pelo passo 4 de
+> `scripts/diagnostico-watcher.mjs`: o chokidar entrega o candidato como `C:/...` e
+> `dirname()` devolve `C:\...`, então a igualdade de string era sempre falsa lá, o
+> diretório observado era ignorado e nenhum evento saía — desde a instalação de
+> 04/09/2026, o painel do operador nunca releu a planilha sozinho. `samePath` saiu da
+> closure e virou exportada, com teste que roda em qualquer sistema: o defeito
+> atravessou a suíte inteira por estar inalcançável de fora. No mesmo dia, o passo 4
+> do diagnóstico, que era uma cópia colada do filtro, virou fóssil com a correção, e
+> passou a importar o módulo real.
 
 **Objetivo:** o painel refletir, em até 5 segundos, o que o operador salvou no
 Excel.
@@ -1531,6 +1543,12 @@ ascendente, nulos por último.
 > rota → história, atribuída a `H-30`) e D-18 (o cliente importando tipos das
 > próprias rotas). `H-34` nasceu daqui, pedida pelo usuário ao ver a casca
 > rodando.
+>
+> **Medido na planilha real em 07/08/2026, e só registrado no código:** 509
+> clientes, 217 mercadorias, 70 navios, 35 agentes e 26 importadores, contra 6
+> portos, 4 categorias, 4 responsáveis e 3 canais. O limiar de `MultiSelect` separa
+> exatamente os dois grupos, e o teto de altura por controle no painel de filtros
+> existe pelos 509 clientes.
 
 **Objetivo:** navegação entre as páginas e filtros que se aplicam a todos os
 indicadores e alertas simultaneamente.
@@ -4081,6 +4099,22 @@ conteúdo, **nunca o caminho** — e é o caminho que o watcher precisa.
 > aceite, o checklist das etapas de partida no painel, o botão de revalidação e
 > um `config/app.json.exemplo` fiel ao real. Isso levaria a lista a nove
 > arquivos, e nenhuma história do plano é G: o diagnóstico virou `H-36`.
+>
+> **Emenda de 19/08/2026 (`PD-06`) — a primeira execução real em Windows, no mesmo
+> dia, derrubou dois itens do atalho.** O navegador abria depois de `timeout /t 4`, a
+> partida demorou mais que isso, e o operador recebeu `ERR_CONNECTION_REFUSED` com o
+> servidor subindo atrás: virou `scripts/esperar-porta.mjs`, que pergunta à porta em
+> vez de esperar um tempo fixo. E o abridor rodava com `start /b`, no mesmo console do
+> servidor: ao terminar, o evento de console alcançava o grupo, o `node` saía com
+> código zero e o atalho fechava a janela — a aplicação morria sozinha logo após o
+> navegador abrir, sem erro nenhum. `/min` dá ao abridor uma janela própria.
+>
+> **No mesmo 19/08/2026, a causa de a aplicação nunca ter subido em Windows
+> desde `H-30`:** o disparo de `main()` comparava `import.meta.url` com `file://`
+> concatenado a `process.argv[1]` — certo em Linux por acidente da barra inicial,
+> falso em todo caminho `C:\...`. `main()` não rodava, e o processo saía com código
+> zero, sem erro e sem servidor. `pathToFileURL` é o idioma correto, e
+> `tests/http/partida.test.ts` guarda a forma e o contraexemplo.
 
 **Objetivo:** numa máquina limpa, o operador dá duplo clique no atalho e chega ao
 painel — ou a uma tela que diz exatamente o que fazer em seguida — sem editar
@@ -4364,6 +4398,30 @@ Não vêm de auditoria nem do plano original. Vêm de uso.
 > Conferido no servidor real em Linux: `POST /api/config/workbook/browse`
 > responde `501 SELETOR_INDISPONIVEL` com a frase que manda digitar o caminho, e
 > o campo de texto continua sendo via de primeira classe.
+>
+> **Emenda de 31/08/2026 (`PD-06`) — o diagnóstico do seletor chega à máquina do
+> operador, e funcionando.** `scripts/diagnostico-seletor.mjs` estava fora da lista de
+> suporte de `scripts/sincronizar-distribuicao.ts`: a ferramenta que isola o defeito do
+> diálogo não existia onde o defeito acontece. E o passo 3 dele usava
+> `SystemInformation` sem `Add-Type`, e reprovava com `TypeNotFound` — um falso
+> negativo que dizia "sem área de trabalho" com a causa no próprio diagnóstico, medido
+> e corrigido na máquina do operador. Em 02/09/2026 o mesmo passo deixou de rotular OK
+> o `False` de `UserInteractive`, que é justamente a resposta de quem não tem área de
+> trabalho: passou a distinguir três estados.
+>
+> **Medido na primeira máquina Windows, em 19/08/2026 (`PD-06`):** o diálogo
+> não apareceu, e o único sinal foi o cursor girando. Três consequências em
+> `src/app/file-dialog.ts`: o limite do diálogo caiu de cinco para dois minutos,
+> porque passou a ser o teto de quanto tempo um defeito fica mudo; o dono do
+> diálogo é um `Form` mostrado de verdade, com `Show()` e `Activate()`, 1 px e
+> opacidade zero — o `Form` nunca mostrado não tem handle, e o diálogo nascia atrás
+> de tudo; e a opção `windowsHide` do Node fica de fora, porque o processo criado
+> com `CREATE_NO_WINDOW` tem dificuldade de trazer um diálogo ao primeiro plano.
+>
+> **Registrado no código, de 19/08/2026:** o teste do campo de
+> `web/tests/WorkbookSetup.test.tsx` falhou uma vez porque digitava no intervalo entre
+> o commit que mostra o campo e o efeito que o preenche; a espera pelo valor
+> preenchido passou a vir antes da digitação.
 
 **Objetivo:** o operador clica em *Escolher arquivo*, o seletor do Windows abre,
 ele seleciona o `.xlsx` e o caminho chega ao campo — sem digitar nem colar.
@@ -6230,6 +6288,14 @@ status, em lugar nenhum.
 > Cliente dentro de cliente exige hierarquia, que este formato não tem. Os três
 > ficam como clientes irmãos até `H-49` decidir a forma — acrescentar o campo
 > agora seria projetar o consumo antes de ele existir.
+>
+> **Emenda de 31/08/2026 — a distribuição só sai da `main` mesclada.** `H-48` foi
+> para a branch `distribuicao` antes do merge, e daí nasceu
+> `scripts/sincronizar-distribuicao.ts`, que calcula a árvore pelo fecho dos imports e
+> só sincroniza a partir da `main` mesclada. Na primeira execução dele, no mesmo dia, o
+> regex exigia espaço depois de `import` e não casava o `lazy(() => import(...))` de
+> `App.tsx`: `--aplicar` teria removido `History.tsx` e `useHistory.ts` da
+> distribuição, e a página quebraria só na máquina do operador.
 
 **Objetivo:** existir um lugar para os nomes reais de cliente e de equipe que
 não seja o código nem o histórico do git, com validação na partida e exemplo
@@ -6658,6 +6724,10 @@ de composição. O quinto critério está decidido em `D-23`.
 > denominador zero é regra de dado (A-42), não formatação; deixar a tela dividir
 > produziria `0%` no primeiro recorte vazio, afirmando que nenhum processo é
 > verde.
+>
+> **Emenda de 08/09/2026.** O cabeçalho de `representableTargets` afirmava seis
+> alvos graváveis; medido chamando a própria função, são sete — o sétimo é o branco
+> desta história (divergência 2).
 
 **Objetivo:** o canal deixar de ser um campo binário sobre 5 linhas e passar a
 descrever as 482 que a cor de fato classifica.
@@ -8984,6 +9054,12 @@ de categoria seguir o fluxo do processo.
 >
 > **Validado no Excel real**, e não só na fixture: `wb.Saved` devolve `true`, não
 > há log de reparo, e a linha nasce dentro da Tabela.
+>
+> **O caso do TAB, achado pelo `revisor-xml` em 02/09/2026:** `<row\tr="4">` era
+> ignorado pela leitura por espaço literal, e a linha nova saía com `r` duplicado.
+> `lastRowOf` passou a ler o `r` em qualquer posição da tag e depois de qualquer
+> whitespace — e por isso `appendRow` não usa `findRow`, que só lê o `r` na primeira
+> posição.
 
 **Objetivo:** acrescentar uma linha ao fim da aba `2026` sem que o Excel peça
 reparo e sem herdar cor de ninguém.
@@ -9067,6 +9143,20 @@ reparo e sem herdar cor de ninguém.
 >
 > **A fixture `cores.xlsx` ganhou uma cor real fora do mapa**, para a quarentena
 > por cor não ficar sem prova depois que `sem-cor` deixou de produzi-la.
+>
+> **Dois achados do mesmo 02/09/2026, que só o código registrava:** a saída de
+> `getState` por lista vazia caiu — numa aba sem processo nenhum, a linha nova era
+> enfileirada, não aparecia na tabela, e preencher uma célula dela voltava `404`
+> sobre a REF que a aplicação acabara de aceitar (achado do `revisor-xml`). E
+> `refreshClientMap` re-deriva em memória em vez de chamar `reload`: medido com a
+> regra gravada e a tela mostrando a consolidação antiga, porque `runReload` sai
+> antes de recompor quando o hash do arquivo não mudou — e quem mudou foi o mapa.
+>
+> **Outro achado do `revisor-xml` no mesmo 02/09/2026: a linha do arquivo vence
+> a inserção órfã.** Se a REF passa a existir na planilha — alguém a digitou no
+> Excel —, a projeção deixa de mostrar a linha pendente, mas a fila ainda a tem; a
+> edição da linha real era desviada para o registro invisível, o operador recebia
+> `201`, e a célula não mudava.
 
 **Objetivo:** enfileirar uma linha nova e declarar o cliente de um processo, sem
 que nenhuma das duas toque o `.xlsx` fora do comando explícito.
@@ -9152,6 +9242,17 @@ do operador, que segue manual por `PD-08`.
 > **Duas guardas novas conferem o que o cliente duplica do servidor** — a lista
 > de colunas editáveis e o rótulo de categoria existem nos dois lados, e
 > divergir em silêncio é o modo de falha.
+>
+> **Do código de 02 e 03/09/2026, que este bloco não registrava:** a grade de
+> `useGridNavigation` conserta uma medição feita num Chrome real em 02/09/2026 — 7
+> paradas de tabulação por linha, cerca de 1.400 numa página de 200 linhas antes do
+> botão "Próxima". No mesmo dia, `TABELA_CHEIA` entrou no servidor e não na lista de
+> códigos que a tela sabe nomear: a recusa caía em `ERRO_INTERNO`, e o rodapé "nada
+> foi gravado, sua fila está intacta" era suprimido justamente nela — daí a guarda de
+> `tests/repo/contratos.test.ts` sobre `WriteRefusal`. Em 03/09/2026 a marca de
+> navegação por tecla deixou de ser um `useRef` booleano e passou a viajar no estado:
+> a ref era a origem de dois defeitos, a seta que se perdia com efeitos de montagem
+> pendentes e a marca presa em `true` que arrastava o foco para a tabela.
 
 **Objetivo:** editar um processo sem sair da Página Operacional, e criar um
 processo novo ali mesmo.
@@ -9604,6 +9705,12 @@ transformariam a busca em paleta de comandos.
 > depois de `H-01`. Também ficou por fazer o que não é desta história: a seção 4
 > de `docs/09-rastreabilidade.md` para em `H-81`, e `H-82` e `H-83` não têm linha
 > lá.
+>
+> **No mesmo 04/09/2026, por achado do usuário ao usar a tela, nenhuma célula
+> da tabela declara mais tamanho de fonte:** as colunas de código nasceram `text-xs`
+> e as de texto livre ficaram em `text-sm`, e o degrau de 12 contra 14 px desalinhava
+> a mesma linha. Todas herdam os 14 px da `<table>`; medido, unificar custa zero a
+> 1920 px e +42 px a 1400 e 1280, onde a tabela já rolava.
 
 **Objetivo:** o cabeçalho da tabela acompanhar a rolagem, e o operador escolher
 quantas linhas vê de uma vez.
@@ -10081,6 +10188,25 @@ Performance, Histórico e Configuração não têm número que signifique recort
 > última hora (determinação 10) — os dois botões de desfazer passaram a apagar a
 > declaração junto, e a operação intermediária, tirar do pai mantendo a
 > declaração, deixou de existir.
+>
+> **Do percurso de 08 e 09/09/2026, o que só o código registrava:** em
+> 08/09/2026 a lista passou a mostrar também o que já tem dono — a primeira versão
+> trazia só o que faltava declarar, e agrupar `AV` sob `Vivi` exige ver `AV`, que já é
+> cliente —, e a falta de sugestão de nome criou um cliente `VIVI` ao lado do pai
+> `Vivi`, com o ranking mostrando 326 e 58 como se fossem clientes diferentes; por
+> isso o PAI vem antes do cliente na busca pelo alvo. Em 09/09/2026, ao usar a tela,
+> os nomes existentes viraram botões, e não um `datalist`, cujo dropdown nativo não
+> aceita a paleta e escondia a sugestão; o rótulo passou a dizer a ação — "Já
+> existem" descrevia a lista e não convidava a clicar —; e o pai passou a mostrar o
+> número de clientes no lugar da palavra "agrupa", jargão que, colado ao nome, se
+> lia como parte dele.
+>
+> **O quadro da lista por declarar, medido em 08/09/2026 num Chrome real:** com
+> fonte-base de 16 px, `26rem` mostra dez das 111 grafias, e a seção inteira fica em
+> 496 px contra os 1.832 px da página.
+>
+> **Ainda de 09/09/2026:** a frase de abertura do painel deixou o jargão
+> "grafia" e passou a dizer o efeito.
 
 > **`E14` cresceu de seis para sete histórias em 03/09/2026** (`D-32`), e esta é a
 > única que não veio da revisão de interação: ela nasce de `PD-08`, medida em
@@ -10998,6 +11124,10 @@ linhas vazias.
 > ausentes do XML **não** é implementada — `buildRow` recebe o interior da linha
 > e não os atributos dela. Medido: com a herança são 87,4% das células com cor,
 > sem ela 87,3%. Uma décima de ponto, ~10 células em 10.400.
+>
+> **A conferência contra a planilha real, em 16/09/2026, pegou o mapa sem
+> `display`:** sem a declaração nas 9 entradas, a tabela não pintava nada.
+> `tests/app/color-map-loader.test.ts` passou a exigir `display` em todas.
 
 > Nasce de `D-41`, em 10/09/2026. **É a primeira vez que a cor atravessa a API
 > no fluxo normal** — até aqui a `styleKey` só saía pelo relatório de
@@ -11304,6 +11434,10 @@ já são editáveis no domínio, e expor cada uma é decisão à parte.
 > do que a história entrega. E o contador não chegava à tela: `COUNT_TONE`,
 > `countedLabel` e `countOf` estavam certos, mas o rodapé da lateral, único item
 > que não passa pelo caminho dos demais, passava `count={null}` fixo.
+>
+> **Medido em 16/09/2026, e só registrado no código:** o contador de
+> divergências da lateral, nos dois fundos que o item pode ter — 5,92:1 e 5,13:1 no
+> claro, 8,93:1 e 7,65:1 no escuro, contra o piso de 4,5.
 
 **Objetivo:** inserir ou mover uma coluna na planilha deixar de trocar os dados
 de lugar em silêncio.
@@ -12314,6 +12448,10 @@ derivação é na leitura.
 > (`H-56`). **Medido:** com "Todos", o ranking de clientes devolve 180 itens
 > somando os 650 processos da cópia de desenvolvimento — e é por isso que `75dc84c` numera o ranking e dá
 > teto de 300 px ao quadro, com rolagem.
+>
+> **O teto de 300 px é o do Carbon Design System** para o mesmo caso — a tabela de
+> cabeçalho grudado, cujo `stickyHeader` limita a altura para forçar a rolagem —,
+> consultado em 21/09/2026.
 
 **Objetivo:** o operador escolher, na Página Clientes, quantos itens cada
 ranking mostra, sem editar arquivo nem reiniciar.
