@@ -88,8 +88,8 @@ passo('a sessao tem area de trabalho?', 'processo sem estacao grafica nunca most
 // O `Add-Type` e obrigatorio AQUI tambem: cada chamada de `powershell()` e um
 // processo novo, entao o carregamento do passo 2 nao atravessa. Sem ele o passo
 // reprovava com `TypeNotFound` — um falso negativo que dizia "sem area de
-// trabalho" quando a causa era o proprio diagnostico. Medido em 31/08/2026, na
-// maquina do operador: e justamente este passo que separa "nao tem desktop" de
+// trabalho" quando a causa era o proprio diagnostico. Medido na maquina do
+// operador (`H-37`): e justamente este passo que separa "nao tem desktop" de
 // "tem desktop e o dialogo falha", e quebrado ele tirava do diagnostico o poder
 // de isolar.
 const desktop = await powershell(
@@ -100,11 +100,11 @@ Add-Type -AssemblyName System.Windows.Forms
   15_000,
 )
 // TRES estados, e nao dois: `False` e a resposta que significa "nao ha area de
-// trabalho", e ate 02/09/2026 ela era rotulada OK — o unico passo capaz de
-// separar "nao tem desktop" de "tem desktop e o dialogo falha" aprovava a
-// resposta ruim. Fundir o ramo de erro com o `False` reintroduziria o falso
-// negativo curado em 31/08/2026, quando TypeNotFound dizia "sem area de
-// trabalho" com a causa sendo o proprio diagnostico.
+// trabalho", e rotula-la OK faria o unico passo capaz de separar "nao tem
+// desktop" de "tem desktop e o dialogo falha" aprovar a resposta ruim (`H-37`).
+// Fundir o ramo de erro com o `False` reintroduziria o falso negativo de
+// TypeNotFound, que dizia "sem area de trabalho" com a causa sendo o proprio
+// diagnostico.
 let temDesktop = null
 if (desktop.erro) {
   falhou(`nao deu para medir: ${desktop.erro.message}`)

@@ -4,8 +4,9 @@
 # mecanico sobre a planilha (docs/ensaio-planilha/corpus-ensaio.md).
 #
 # Existe pela lesson que tools/medir-navegador.mjs ja registra em outro contexto:
-# montar o preambulo a mao custou oito scripts iguais em 04 e 08/09/2026, e dois
-# deles falharam no ANDAIME, nao na medida. Aqui o andaime e um so.
+# montar o preambulo a mao custou oito scripts iguais, e dois deles falharam no
+# ANDAIME, nao na medida (docs/ensaio-planilha/RESULTADO.md). Aqui o andaime e
+# um so.
 #
 # Tres coisas que ele resolve, e que custaram uma rodada cada na primeira sessao:
 #
@@ -67,7 +68,8 @@ case "${1:-}" in
   gesto)
     # A copia da base para o alvo acontece DENTRO deste bloco, e nao numa chamada
     # anterior. Fazer as duas em conexoes SSH separadas e em sequencia rapida
-    # custou seis gestos de um lote em 17/09/2026: o `Copy-Item` reportava
+    # custou seis gestos de um lote no ensaio (docs/ensaio-planilha/RESULTADO.md):
+    # o `Copy-Item` reportava
     # sucesso — com `Test-Path` True e o arquivo aberto e fechado para conferir o
     # tamanho —, e o Excel da sessao grafica abria dizendo que o arquivo nao
     # existe. Isolado, ou com minutos de intervalo, o mesmo par sempre funcionou.

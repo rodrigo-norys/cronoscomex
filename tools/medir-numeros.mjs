@@ -34,7 +34,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
  *     node --experimental-strip-types tools/medir-numeros.mjs <destino.md>
  *
  * O destino padrao e `.claude/local/medicao-referencia.md`, fora do versionamento:
- * a medicao e regeneravel, e o arquivo saiu de `docs/` em 21/09/2026 (`D-59`)
+ * a medicao e regeneravel, e o arquivo saiu de `docs/` em `D-59`
  * e de `data/` em `D-73`.
  */
 

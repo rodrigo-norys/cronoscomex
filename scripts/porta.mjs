@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs'
  * **Ausencia do arquivo e o caso NORMAL da primeira execucao** (H-35). Ate
  * entao o `.cmd` barrava a partida antes de chegar aqui, e este script so via
  * arquivo existente; hoje ele e a primeira coisa que responde por um
- * `config/app.json` que ainda nao foi criado.
+ * `app.json` que ainda nao foi criado.
  *
  * Existe por limitacao do CMD, nao por necessidade de logica: dentro de
  * `for /f`, o comando entre backticks e reanalisado pelo interpretador, e

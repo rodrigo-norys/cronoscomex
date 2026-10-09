@@ -31,7 +31,8 @@
  * um terco das afirmacoes nao tem data, e o gatilho real e a aba `2027`.
  *
  * Os defeitos daqui que o nucleo guarda: o `verify-windows` do PR #153 reprovou a arvore de
- * `04-arquitetura.md` em CRLF, antes de o `.gitattributes` fixar LF; `links[docs/adrs]`
+ * `04-arquitetura.md` em CRLF, antes de o `.gitattributes` fixar LF; `links` sobre `adrs`,
+ * diretorio que nao existe,
  * comparava o indice vazio com o diretorio vazio, e conferia (R5); "RF-23 a RF-26" na §5 da
  * matriz deixava `RF-24` e `RF-25` fora do espelho; a tabela de decisoes quebrava na `D-44`,
  * e a de achados no `A-56`; `H-35` cita os bytes `D0 CF 11 E0 A1 B1` e o arquivo

@@ -11,7 +11,7 @@ import { pathToFileURL } from 'node:url'
  * transformador proprio que aceita mais sintaxe, e `vite build` so compila
  * `web/`. Uma `parameter property` num construtor passou pelos quatro e teria
  * derrubado a aplicacao no primeiro `npm start` — foi o que motivou este
- * arquivo, em 06/08/2026.
+ * arquivo (ADR-0007).
  *
  * O modo strip-only apenas REMOVE anotacoes de tipo. Recusa qualquer sintaxe
  * que precise gerar codigo: `parameter property`, `enum`, `namespace` e
@@ -20,12 +20,12 @@ import { pathToFileURL } from 'node:url'
  * Roda no `npm run verify` ANTES de `lint`, `typecheck`, `test` e `build` — as
  * quatro etapas que a `parameter property` atravessou. Hoje em terceiro, depois
  * de `test:hooks` e de `test:dados`, mas o ordinal nao e a parte duravel: ele
- * quebra na proxima insercao no portao, e foi o que aconteceu em 02/09/2026.
+ * quebra na proxima insercao no portao (ADR-0007).
  * Provado que pega: reintroduzir o defeito faz o passo sair com `1`.
  *
  * Sem contagem de modulos aqui: o proprio script a imprime na ultima linha, e o
- * numero que estava escrito envelheceu de 28 para 51 sem que nada acusasse —
- * `tools/` fica fora de `sourceFiles()` em tests/repo/contratos.test.ts.
+ * numero que estava escrito envelheceu de 28 para 51 sem que nada acusasse:
+ * guarda nenhuma confere numero em comentario.
  */
 
 const SRC = resolve(import.meta.dirname, '..', 'src')

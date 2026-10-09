@@ -7,7 +7,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
  * Levanta o que entrou na `main` depois da ultima historia escrita — o insumo da
  * escrita retroativa de historias (`D-69`) —, sem modelo e sem rede.
  *
- * Existe pelo custo medido em 30/09/2026: o mesmo levantamento, feito a mao na
+ * Existe pelo custo medido (ADR-0007): o mesmo levantamento, feito a mao na
  * sessao, custou uns quinze comandos, e a redacao das 13 historias de `E17` e
  * `E18` custou cerca de 630 mil tokens, a maior parte relendo diffs e decisoes
  * inteiras. O esqueleto que sai daqui e o insumo compacto da redacao.

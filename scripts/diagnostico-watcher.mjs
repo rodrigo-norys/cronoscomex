@@ -8,7 +8,7 @@ import { watch } from 'chokidar'
  * Mede, no sistema operacional em que roda, se o watcher recebe evento — e,
  * quando nao recebe, em qual das tres camadas ele para.
  *
- * Existe porque `verify-windows` reprovou na primeira execucao, em 16/09/2026,
+ * Existe porque `verify-windows` reprovou na primeira execucao (`H-08`),
  * com um padrao que uma hipotese so nao explica: dos 12 blocos de
  * `tests/io/watcher.test.ts`, **os 6 que esperam disparo falharam e os 6 que
  * esperam silencio passaram**. Lentidao de runner produziria falha parcial;
@@ -106,10 +106,10 @@ info(`chokidar: ${versaoChokidar}`)
 /**
  * O modulo REAL, importado uma vez e usado nos passos 4 e 5.
  *
- * Os dois precisam falar do mesmo codigo que roda em producao. Em 16/09/2026
- * o passo 4 era uma copia colada do filtro, e quando `watcher.ts` foi
- * corrigido a copia virou fossil: o script seguiu imprimindo "defeito de
- * producao" sobre codigo que nao existia mais em lugar nenhum.
+ * Os dois precisam falar do mesmo codigo que roda em producao: uma copia
+ * colada do filtro vira fossil quando `watcher.ts` e corrigido, e o script
+ * segue imprimindo "defeito de producao" sobre codigo que nao existe mais
+ * em lugar nenhum (`H-08`).
  */
 const { createWatcher, samePath } = await import(
   pathToFileURL(resolve(RAIZ, 'src/io/watcher.ts')).href

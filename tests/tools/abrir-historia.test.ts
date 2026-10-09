@@ -8,8 +8,8 @@ import { render, storyId } from '../../tools/abrir-historia.mjs'
 /**
  * `tools/abrir-historia.mjs` sobre um repositorio git temporario — regra inviolavel 7.
  *
- * Cada caso fixa um dos defeitos que o shell injetado da skill tinha, medidos em
- * 01/10/2026: o contrato da rota saindo vazio, o caso de `| H-04, H-07 |` perdido
+ * Cada caso fixa um dos defeitos que o shell injetado da skill tinha, medidos
+ * na ADR-0007: o contrato da rota saindo vazio, o caso de `| H-04, H-07 |` perdido
  * para as duas historias, e a matriz da `H-10` trazendo as linhas de `H-100` em diante.
  */
 

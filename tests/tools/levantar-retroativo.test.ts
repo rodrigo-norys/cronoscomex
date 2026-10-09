@@ -19,7 +19,7 @@ import {
  * inviolavel 7 nao deixa a suite tocar estado real. O que erra em silencio e a
  * CLASSIFICACAO: um PR de produto lido como ferramenta some do levantamento, e a
  * historia que ele devia virar nunca e escrita. Os casos vem dos PRs medidos em
- * 30/09/2026 (`D-69`).
+ * `D-69`.
  */
 
 describe('classifyFile — so codigo e teste contam para a regua', () => {

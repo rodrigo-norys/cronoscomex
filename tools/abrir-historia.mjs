@@ -7,7 +7,7 @@ import { createSource } from './contar-documentacao.mjs'
  * Monta as secoes da skill `/abrir-historia` a partir do repositorio. So le.
  *
  * Existe porque as secoes viviam em shell injetado na skill, sem teste, e tres
- * defeitos passaram em silencio (medido em 01/10/2026): o `$0` do `awk` virava o
+ * defeitos passaram em silencio (ADR-0007): o `$0` do `awk` virava o
  * argumento da skill e o contrato da rota saia vazio; `grep -F "| H-04 |"` perdia o
  * caso de `| H-04, H-07 |`; e `grep -F "H-10"` trazia as linhas de `H-100` a `H-114`.
  * Fora do modo automatico, o shell injetado nem rodava: o Claude Code recusa
@@ -110,7 +110,7 @@ export function render(root, section, args) {
         .join('\n')
     case 'identificadores': {
       // As duas arvores: buscando so em `src/`, todo nome ja existente da interface saia como
-      // ausente — na H-101, a unica aberta em 01/10/2026, os tres listados existiam em `web/src/`.
+      // ausente — na H-101, os tres listados existiam em `web/src/` (ADR-0007).
       const code = source.tracked
         .filter((path) => path.startsWith('src/') || path.startsWith('web/src/'))
         .map((path) => source.read(path))

@@ -36,9 +36,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
  * `--experimental-strip-types`, como a propria aplicacao.
  *
  * **Sincronize apenas a partir da `main` mesclada.** Assim o operador nunca
- * recebe codigo que o CI e a revisao do PR ainda nao aceitaram — decisao de
- * 31/08/2026, tomada depois de `H-48` ter ido para a distribuicao antes do
- * merge.
+ * recebe codigo que o CI e a revisao do PR ainda nao aceitaram (`H-48`).
  */
 
 const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -69,9 +67,9 @@ const SUPORTE = [
   'scripts/porta.mjs',
 
   // O diagnostico do seletor de arquivos, que `PD-06` manda rodar NA MAQUINA DO
-  // OPERADOR quando o dialogo de `H-37` nao abre. Ficou de fora ate 31/08/2026,
-  // e o efeito foi medido la: a ferramenta que isola o unico defeito conhecido
-  // da pendencia nao existia na maquina onde o defeito acontece.
+  // OPERADOR quando o dialogo de `H-37` nao abre: fora desta lista, a
+  // ferramenta que isola o unico defeito conhecido da pendencia nao chega a
+  // maquina onde o defeito acontece.
   'scripts/diagnostico-seletor.mjs',
 
   // A interface: o HTML hospedeiro, a configuracao do Vite e os tipos dele.
@@ -119,14 +117,15 @@ const EXCLUSIVOS = ['README.md', 'iniciar.cmd']
  * regex exigia espaco depois de `import`. Ela nao casava a chamada, o script
  * declarava `History.tsx` e `useHistory.ts` como sobrando, e `--aplicar` os
  * teria REMOVIDO da distribuicao — a pagina quebraria so na maquina do
- * operador. Medido em 31/08/2026, na primeira execucao.
+ * operador. Medido na primeira execucao (`H-48`).
  */
 const IMPORT_RELATIVO = /(?:\bfrom|\bimport)\s*\(?\s*['"](\.[^'"]+)['"]/g
 
 /**
  * A arvore calculada e comparada com `git ls-tree`, e o git fala barra normal
  * em todo sistema. Sem isto, `relative()` e `join()` devolvem `web\src\...` no
- * Windows e a arvore inteira aparece como faltando — medido em 16/09/2026.
+ * Windows e a arvore inteira aparece como faltando
+ * (docs/08-qualidade-operacao.md §5.2).
  */
 function paraPosix(caminho: string): string {
   return caminho.replaceAll('\\', '/')
@@ -150,7 +149,7 @@ function importsDe(arquivo: string): string[] {
 /**
  * Asset citado por caminho ABSOLUTO numa folha de estilo — `url("/fonts/x")`.
  *
- * **Tratar `.css` como folha foi o defeito medido em 03/09/2026:** os seis
+ * **Tratar `.css` como folha foi o defeito de `D-28`:** os seis
  * `.woff2` de `web/public/fonts/` nunca entraram na `distribuicao`, e a
  * ausencia deles nao produz erro nenhum — o navegador cai na fonte de fallback
  * —, entao o script imprimia "sincronizada com HEAD" com a tipografia de `H-58`
