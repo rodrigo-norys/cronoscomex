@@ -49,6 +49,11 @@ import config from './contar-documentacao.config.mjs'
  * registro. O que NAO alcanca: fato sem ID — a contagem fica com o `--nuas`, o resto
  * com a revisao —, a lista que devia ganhar um item novo, e o codigo.
  *
+ * `--definicoes` conta, para cada ID citado no escopo, os lugares que o definem — a
+ * linha de tabela que abre com ele, ou o titulo de nivel 1 a 4 —, e lista o ID sem
+ * definicao e o definido em mais de um lugar. So relata. Citacao entre crases so vale
+ * quando a crase e o proprio ID: `D0 CF 11 E0` sao bytes, e `~$E30.xlsx` e um arquivo.
+ *
  * O que NAO faz: reescrever regiao `confere`; contar sobre codigo de `web/src/` — as
  * duas ficaram fora por decisao de 01/10/2026; avisar pela idade de uma medicao da
  * planilha — um terco das afirmacoes nao tem data, e o gatilho real e a aba `2027`.
@@ -61,6 +66,7 @@ import config from './contar-documentacao.config.mjs'
  *   node tools/contar-documentacao.mjs --nuas --tudo     avisa nos documentos inteiros
  *   node tools/contar-documentacao.mjs --pares           pares no diff contra a `main`
  *   node tools/contar-documentacao.mjs --pares --base X  pares no diff contra `X`
+ *   node tools/contar-documentacao.mjs --definicoes      onde cada ID citado e definido
  */
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -423,6 +429,22 @@ export function blocks(lines) {
   return found
 }
 
+/**
+ * As citacoes de ID numa linha. Dentro de crases, so a crase que e o proprio ID cita:
+ * `H-35` cita; `D0 CF 11 E0 A1 B1` e `~$E30.xlsx` sao bytes e nome de arquivo.
+ */
+function citationsIn(line) {
+  const spans = [...line.matchAll(/`[^`]*`/g)].map((span) => ({
+    start: span.index,
+    end: span.index + span[0].length,
+    text: span[0].slice(1, -1).trim(),
+  }))
+  return [...line.matchAll(PAIR_CITATION)].filter((match) => {
+    const span = spans.find(({ start, end }) => match.index > start && match.index < end)
+    return !span || span.text === match[0]
+  })
+}
+
 /** O epico de cada historia que o diff fechou, com a linha do fechamento: o estado dele pode ter mudado. */
 function epicsOfClosedStories(lines, isChanged) {
   const epics = new Map()
@@ -484,7 +506,7 @@ export function findPairs(root, { base = 'main' } = {}) {
       if (text.some((line) => PAIR_RECORD_LINE.test(line))) continue
       const ownHeading = PAIR_DEFINITION_HEADING.exec(text[0] ?? '')?.[1]
       text.forEach((line, offset) => {
-        for (const match of line.matchAll(PAIR_CITATION)) {
+        for (const match of citationsIn(line)) {
           if (match[0] === ownHeading) continue
           citations.push({
             key: match[0],
@@ -510,6 +532,73 @@ export function findPairs(root, { base = 'main' } = {}) {
       .map(({ file, line, text }) => ({ file, line, text: text.trim() }))
     return { key, definedAt, citedBy }
   })
+}
+
+/**
+ * Onde cada ID citado no escopo e definido: a linha de tabela que abre com ele, ou o
+ * titulo. Sem definicao, a citacao nao tem para onde apontar; com duas ou mais, o mesmo
+ * fato vive em dois lugares e pode divergir entre eles.
+ */
+export function findDefinitions(root) {
+  const source = createSource(root)
+  const citedAt = new Map()
+  const definedAt = new Map()
+  for (const file of source.scope) {
+    let fenced = false
+    source
+      .read(file)
+      .split('\n')
+      .forEach((raw, index) => {
+        const line = raw.replace(/\r$/, '')
+        if (FENCE.test(line)) {
+          fenced = !fenced
+          return
+        }
+        if (fenced) return
+        const at = `${file}:${index + 1}`
+        for (const [id] of citationsIn(line)) if (!citedAt.has(id)) citedAt.set(id, at)
+        for (const pattern of [PAIR_DEFINITION_ROW, PAIR_DEFINITION_HEADING]) {
+          const id = pattern.exec(line)?.[1]
+          if (id) definedAt.set(id, [...(definedAt.get(id) ?? []), at])
+        }
+      })
+  }
+  return [...citedAt]
+    .map(([id, at]) => ({
+      id,
+      family: /^[A-Z]+/.exec(id)[0],
+      citedAt: at,
+      definedAt: definedAt.get(id) ?? [],
+    }))
+    .sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true }))
+}
+
+function reportDefinitions() {
+  const found = findDefinitions(ROOT)
+  const families = new Map()
+  for (const { family, definedAt } of found) {
+    const row = families.get(family) ?? { cited: 0, none: 0, one: 0, many: 0 }
+    row.cited++
+    if (definedAt.length === 0) row.none++
+    else if (definedAt.length === 1) row.one++
+    else row.many++
+    families.set(family, row)
+  }
+  console.log('familia  citados      0      1     2+')
+  for (const [family, row] of [...families].sort(([a], [b]) => a.localeCompare(b))) {
+    const cells = [row.cited, row.none, row.one, row.many].map((n) => String(n).padStart(6))
+    console.log(`${family.padEnd(7)} ${cells.join(' ')}`)
+  }
+  const none = found.filter((entry) => entry.definedAt.length === 0)
+  const many = found.filter((entry) => entry.definedAt.length > 1)
+  if (none.length > 0) console.log('\nsem definicao — a citacao nao tem para onde apontar:')
+  for (const { id, citedAt } of none) console.log(`  ${id}  citado em ${citedAt}`)
+  if (many.length > 0)
+    console.log('\ndefinido em mais de um lugar — o fato pode divergir entre eles:')
+  for (const { id, definedAt } of many) console.log(`  ${id}  ${definedAt.join(', ')}`)
+  console.log(
+    `\n${found.length} ID(s) citado(s), ${none.length} sem definicao, ${many.length} com mais de uma — relatorio, nao reprovacao.`,
+  )
 }
 
 function reportPairs() {
@@ -549,6 +638,7 @@ function reportLoose() {
 }
 
 function main() {
+  if (process.argv.includes('--definicoes')) return reportDefinitions()
   if (process.argv.includes('--pares')) return reportPairs()
   if (process.argv.includes('--nuas')) return reportLoose()
   const write = process.argv.includes('--write')

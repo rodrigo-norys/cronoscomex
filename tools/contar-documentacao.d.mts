@@ -44,6 +44,15 @@ export interface Pair {
 
 export function findPairs(root: string, options?: { base?: string }): Pair[]
 
+export interface Definition {
+  id: string
+  family: string
+  citedAt: string
+  definedAt: string[]
+}
+
+export function findDefinitions(root: string): Definition[]
+
 export function scanRegions(text: string): {
   counts: { line: number; raw: string; written: string }[]
   checks: { line: number; raw: string; body: string[] }[]

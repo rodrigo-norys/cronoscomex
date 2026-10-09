@@ -205,7 +205,7 @@ const PAIR_ID = String.raw`(?:IND|ALE|RNF|RF|TD|PD|A|D|H|P|R)-\d{2,3}(?:\.\d+)?|
 // A linha de tabela que abre com o ID tambem e alvo quando nao mudou: a `02` espelha a
 // `09`, e foi o espelho que envelheceu. O titulo nao: ele e a propria fonte.
 const PAIR_DEFINITION_ROW = new RegExp(String.raw`^\| \*{0,2}(${PAIR_ID})\*{0,2} \|`)
-const PAIR_DEFINITION_HEADING = new RegExp(String.raw`^#{2,4} (?:Épico )?(${PAIR_ID})\b`)
+const PAIR_DEFINITION_HEADING = new RegExp(String.raw`^#{1,4} (?:Épico )?(${PAIR_ID})\b`)
 const PAIR_EPIC = /^## Épico (E\d+)/
 const PAIR_STORY_CLOSED = /^> ✅ \*\*CONCLUÍDA/
 

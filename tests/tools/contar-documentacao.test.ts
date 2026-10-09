@@ -7,6 +7,7 @@ import { COUNTERS } from '../../tools/contar-documentacao.config.mjs'
 import {
   blocks,
   createSource,
+  findDefinitions,
   findLooseNumbers,
   findPairs,
   inspect,
@@ -498,7 +499,7 @@ describe('findPairs — quem cita o ID cuja definicao mudou', () => {
         .concat(['corpo', '', '### H-02 — Duas', '', 'corpo', ''])
         .join('\n')
     write('docs/06-backlog.md', backlog(false))
-    write('README.md', 'O `E1` é o único aberto.\n')
+    write('README.md', 'O `E1` é o único aberto.\n\nA assinatura `D0 CF 11 E0 A1 B1 1A E1`.\n')
     track()
     commit('base')
     const base = head()
@@ -524,5 +525,44 @@ describe('findPairs — quem cita o ID cuja definicao mudou', () => {
     write('docs/02-requisitos.md', 'O IND-14 acusa volume alto.\n')
 
     expect(findPairs(root, { base })).toEqual([])
+  })
+})
+
+describe('findDefinitions — onde cada ID citado e definido', () => {
+  it('titulo de nivel 1 a 4 e linha de tabela definem; aponta o ID sem definicao e o repetido', () => {
+    write('docs/adr/0003-tres.md', '# ADR-0003 — Tres\n')
+    write('docs/02-requisitos.md', '| RF-01 | Ler |\n\n#### TD-05 — Cor\n\n### TD-05 — medido\n')
+    write(
+      'CLAUDE.md',
+      'Segue a ADR-0003 e o RF-01; falta a PD-01.\n\n```\n| PD-02 | exemplo |\n```\n',
+    )
+    track()
+
+    const found = new Map(findDefinitions(root).map((entry) => [entry.id, entry]))
+
+    expect(found.get('ADR-0003')?.definedAt).toEqual(['docs/adr/0003-tres.md:1'])
+    expect(found.get('RF-01')?.definedAt).toEqual(['docs/02-requisitos.md:1'])
+    expect(found.get('TD-05')?.definedAt).toEqual([
+      'docs/02-requisitos.md:3',
+      'docs/02-requisitos.md:5',
+    ])
+    expect(found.get('PD-01')).toEqual({
+      id: 'PD-01',
+      family: 'PD',
+      citedAt: 'CLAUDE.md:1',
+      definedAt: [],
+    })
+    expect(found.has('PD-02')).toBe(false)
+  })
+
+  it('entre crases, so a crase que e o proprio ID cita: bytes e nome de arquivo nao', () => {
+    write('CLAUDE.md', 'assinatura `D0 CF 11 E0 A1 B1`, trava `~$E30.xlsx`, e a `H-35` fechada\n')
+    track()
+
+    const ids = findDefinitions(root).map((entry) => entry.id)
+
+    expect(ids).toContain('H-35')
+    expect(ids).not.toContain('E0')
+    expect(ids).not.toContain('E30')
   })
 })
