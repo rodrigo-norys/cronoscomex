@@ -269,7 +269,7 @@ describe('applyRowFill — casos de borda da chamada', () => {
    * que a regra inviolavel 3 proibe. E o criterio de aceite diz que apenas o
    * atributo `s=` muda.
    *
-   * Medido em 17/08/2026 sobre a planilha real: **744 linhas de dados, zero
+   * Medido em `H-27` sobre a planilha real: **744 linhas de dados, zero
    * celulas ausentes em A a L**. Nenhuma coluna fica sem pintar no uso real.
    */
   it('NAO cria a celula ausente, e nao mexe na linha por causa dela', () => {

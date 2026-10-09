@@ -65,7 +65,7 @@ export interface ColorEditCommand {
 }
 
 /**
- * A linha NOVA (02/09/2026). Nao tem `sourceRow` nem `previous`, e a ausencia
+ * A linha NOVA (`H-79`). Nao tem `sourceRow` nem `previous`, e a ausencia
  * dos dois e o contrato:
  *
  * - **sem `sourceRow`**, porque a linha ainda nao existe no arquivo. O numero e

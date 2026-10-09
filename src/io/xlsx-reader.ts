@@ -43,7 +43,7 @@ export class WorkbookReadError extends Error {
  * E o que o Excel grava quando a pasta e protegida por SENHA: o `.xlsx` deixa
  * de ser um zip e passa a ser um container cifrado, com a mesma extensao. Sem
  * esta conferencia o `fflate` falha em `invalid zip data`, que nao diz ao
- * operador o que houve nem o que fazer — medido em 17/09/2026, sobre um arquivo
+ * operador o que houve nem o que fazer — medido em `H-108`, sobre um arquivo
  * cifrado pelo Excel de verdade.
  *
  * `P-12` afirma que o arquivo real NAO e protegido, e o perfilamento a

@@ -235,7 +235,7 @@ describe('createWatcher', () => {
 })
 
 /**
- * O defeito que `verify-windows` revelou em 16/09/2026, travado aqui.
+ * O defeito que `verify-windows` revelou (`H-08`), travado aqui.
  *
  * Roda em QUALQUER sistema, porque o que se verifica e a comparacao, nao o
  * sistema de arquivos. Sem isto a regressao so reapareceria num runner Windows

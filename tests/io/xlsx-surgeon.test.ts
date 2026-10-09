@@ -522,8 +522,7 @@ describe('applyCellEdits — achados da revisão adversarial', () => {
   })
 
   /**
-   * **A forma que o Excel realmente emite, e ela refuta a premissa de `PD-05`**
-   * (01/09/2026).
+   * **A forma que o Excel realmente emite, e ela refuta a premissa de `PD-05`**.
    *
    * A pendência supunha que o Excel emite `i` apenas na PRIMEIRA entrada, com
    * as seguintes herdando a aba — o que a especificação OOXML permite. Medido em

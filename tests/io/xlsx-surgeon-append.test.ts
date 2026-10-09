@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 import { appendRow } from '../../src/io/xlsx-surgeon.ts'
 
 /**
- * `appendRow` — a linha nova no fim da aba (02/09/2026).
+ * `appendRow` — a linha nova no fim da aba (`H-78`).
  *
  * **A linha nasce em branco, no sentido do Excel:** cada célula recebe o estilo
  * declarado pela COLUNA, e nada mais. Copiar o estilo da linha de cima é o

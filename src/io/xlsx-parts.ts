@@ -90,7 +90,7 @@ const BUILT_IN_DATE_FORMAT_IDS = new Set([14, 15, 16, 17, 18, 19, 20, 21, 22, 45
  */
 const DATE_FORMAT_TOKEN = /[ymdhMsb]+/
 
-/** Serial 25569 e 1970-01-01; o epoch de 1904 fica 1462 dias adiante. */
+/** Serial 25569 e `1970-01-01`; o epoch de 1904 fica 1462 dias adiante. */
 const UNIX_EPOCH_SERIAL = 25569
 const DAYS_BETWEEN_EPOCHS = 1462
 const MS_PER_DAY = 86_400_000
@@ -319,7 +319,7 @@ function buildRow(rowNumber: number, inner: string, options: SheetParseOptions):
    *
    * **A herança de `<row customFormat="1">` NAO e implementada**, e a omissao e
    * declarada: `buildRow` recebe o interior da linha, e nao os atributos dela,
-   * e o ganho nao paga a mudanca de assinatura. Medido em 16/09/2026: com a
+   * e o ganho nao paga a mudanca de assinatura. Medido em `H-94`: com a
    * heranca sao 87,4% das celulas com cor, sem ela 87,3% — uma decima de ponto,
    * ~10 celulas em 10.400.
    */
@@ -355,7 +355,7 @@ function buildRow(rowNumber: number, inner: string, options: SheetParseOptions):
     cells[letter] = values.get(column) ?? emptyCell()
     // Coluna ausente do XML nao entra: `NO_FILL` explicito e "medi e nao tem
     // preenchimento", e a ausencia da chave e "nao havia celula". A distincao e
-    // a mesma que `ColorSource` faz desde 02/09/2026.
+    // a mesma que `ColorSource` faz (`H-79`).
     if (styleIds.has(column)) {
       cellStyleKeys[letter] = options.styles.styleKeyOf(styleIds.get(column) ?? null)
     }
@@ -386,7 +386,7 @@ function buildRow(rowNumber: number, inner: string, options: SheetParseOptions):
  * **Celula de cabecalho vazia NAO entra no resultado.** Coluna sem nome e
  * ausencia de rotulo, e devolver `''` faria a tabela desenhar um cabecalho em
  * branco como se fosse o nome — quem consome decide o que mostrar no lugar.
- * Medido em 16/09/2026: as 16 colunas da aba real tem nome, entao o caso e
+ * Medido em `H-95`: as 16 colunas da aba real tem nome, entao o caso e
  * hipotetico, e e por isso mesmo que ele nao pode adivinhar.
  *
  * O texto sai LITERAL, so com `trim`: a coluna `H` se chama `ETA` e guarda
