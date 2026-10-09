@@ -35,9 +35,11 @@ import { buildServer } from '../../src/http/server.ts'
  * 3. **história com `✅ CONCLUÍDA` no backlog exige a página montada** — a
  *    asserção vive em `web/tests/paginas-montadas.test.tsx`;
  * 4. **toda âncora citada em comentário existe** — onze famílias de ID e
- *    caminho de arquivo. Nasceu verde: 331 citações e 18 caminhos, zero mortos
- *    em 12/08/2026. O ID precisa ser **definido** em `docs/`, não só aparecer
- *    lá: citação satisfazia a versão anterior, e ID cuja definição some mas
+ *    caminho de arquivo, no código, nos testes, nas ferramentas, nos scripts
+ *    e no CI (`COMMENTED_AREAS`). Nasceu verde: 331 citações e 18 caminhos,
+ *    zero mortos (docs/08-qualidade-operacao.md §6.3). O ID precisa ser
+ *    **definido** em `docs/`, não só aparecer lá: citação satisfazia a versão
+ *    anterior, e ID cuja definição some mas
  *    que segue citado em outro documento passava verde; Não conserta dívida — impede que
  *    entre. É a metade computável da régua de `.claude/rules/comentarios.md`,
  *    e a razão de a régua exigir fonte em todo fato medido: número sem âncora
@@ -50,8 +52,9 @@ import { buildServer } from '../../src/http/server.ts'
  *    Claude Code;
  * 6. **todo identificador em camelCase citado entre crases num comentário
  *    ainda existe.** O modo de falha é o *rename symbol* do editor: ele
- *    atualiza o código e deixa a prosa para trás, em silêncio. Medido em
- *    12/08/2026: 120 citações, 70 identificadores distintos, zero ausentes;
+ *    atualiza o código e deixa a prosa para trás, em silêncio. Medido
+ *    (docs/08-qualidade-operacao.md §6.3): 120 citações, 70 identificadores
+ *    distintos, zero ausentes;
  * 7. **todo gatilho de reavaliação que `D-16` declara foi observado.** A
  *    decisão registra quatro, e dois estavam atingidos sem que ninguém tivesse
  *    notado — o `router.ts` acima de ~100 linhas, e o carregamento por rota que
@@ -60,13 +63,17 @@ import { buildServer } from '../../src/http/server.ts'
  *    observação: gatilho declarado e nunca conferido dá a impressão de que a
  *    decisão está sendo revisitada quando não está;
  * 8. **o resumo do backlog concorda com os blocos das histórias.** As marcas por
- *    história congelaram em 07/08/2026, com `H-17`, e a tabela seguiu afirmando
- *    que `H-13` estava aberta até 18/08 — contra o bloco `✅ CONCLUÍDA` dela e a
+ *    história congelaram com `H-17`, e a tabela seguiu afirmando que `H-13`
+ *    estava aberta (docs/06-backlog.md) — contra o bloco `✅ CONCLUÍDA` dela e a
  *    linha dela em `docs/09-rastreabilidade.md` §4. Foi a **única** coisa no
  *    repositório dizendo isso, e custou uma pergunta sobre história fechada há
  *    doze dias. O que a asserção defende não é a marca ✅, que passou a ser por
  *    épico de propósito: é o **total**, que é computável e por isso não
- *    envelhece em silêncio.
+ *    envelhece em silêncio;
+ * 9. **nenhuma data de dia fora de crase em comentário**, nas áreas de
+ *    `COMMENTED_AREAS` — as mesmas da asserção 4, mais `config/` e os `.ts` da
+ *    raiz. A data mora no registro, e o comentário cita o ID dele (`D-76`).
+ *    Nasceu verde: a data saiu dos comentários antes, e foi para o registro.
  *
  * Provado que morde, nas duas direções: bloco que a rota serve e o documento não
  * declara reprova, e campo que o documento promete e a rota não serve também.
@@ -290,21 +297,355 @@ describe('o documento de contrato acompanha a resposta real', () => {
   })
 })
 
-/** Todo `.ts`/`.tsx` de `src/` e `web/src`, recursivamente. */
-function sourceFiles(): string[] {
-  const found: string[] = []
+/**
+ * As areas cujo comentario as guardas leem, com o piso de linhas de comentario
+ * de cada uma.
+ *
+ * **O piso e ancora, e nao meta.** O que ele pega e o extrator que parou de
+ * reconhecer um estilo — o `#` do shell e do YAML, o `rem` do `.cmd`, a chave
+ * `_` do JSON de `config/` —: sem ele a area sai das guardas em silencio, e
+ * tudo fica verde. Folgado de proposito, na casa da metade do que cada area
+ * tem, para nao reprovar por refatoracao normal.
+ *
+ * A `raiz` sao os `.ts` do topo, como `vitest.config.ts`. `config/` e a raiz
+ * entram so na guarda de data; a de ancora le as demais. `.md` nao entra em
+ * area nenhuma: documento guarda a data no registro, e as guardas dele sao as
+ * de `tests/repo/documentacao.test.ts` e `tests/repo/contagens.test.ts`.
+ */
+const COMMENTED_AREAS: readonly {
+  name: string
+  pathspec: string
+  floor: number
+  anchors: boolean
+}[] = [
+  { name: 'src', pathspec: 'src', floor: 3000, anchors: true },
+  { name: 'web/src', pathspec: 'web/src', floor: 2000, anchors: true },
+  { name: 'tests', pathspec: 'tests', floor: 2000, anchors: true },
+  { name: 'web/tests', pathspec: 'web/tests', floor: 1000, anchors: true },
+  { name: 'tools', pathspec: 'tools', floor: 500, anchors: true },
+  { name: 'scripts', pathspec: 'scripts', floor: 180, anchors: true },
+  { name: '.github', pathspec: '.github', floor: 100, anchors: true },
+  { name: 'config', pathspec: 'config', floor: 40, anchors: false },
+  { name: 'raiz', pathspec: ':(glob)*.ts', floor: 20, anchors: false },
+]
 
-  const walk = (directory: string): void => {
-    for (const entry of readdirSync(directory, { withFileTypes: true })) {
-      const path = `${directory}/${entry.name}`
-      if (entry.isDirectory()) walk(path)
-      else if (/\.tsx?$/.test(entry.name)) found.push(path)
+const SLASH_STYLE = /\.(?:[cm]?[jt]sx?|css)$/
+const HASH_STYLE = /\.(?:sh|ya?ml|py|ps1)$/
+const BATCH_STYLE = /\.(?:cmd|bat)$/
+const JSON_STYLE = /^config\/[^/]+\.(?:json|exemplo)$/
+
+/**
+ * O piso de linhas de comentario de cada estilo, alem do de cada area.
+ *
+ * **O da area nao basta:** a minoria de uma area pode sumir sem levar a area
+ * abaixo do piso dela — e o `.cmd` e minoria nas duas em que existe. O piso por
+ * estilo pega o extrator quebrado onde quer que o estilo viva.
+ */
+const STYLE_FLOORS: Readonly<Record<CommentStyle, number>> = {
+  barra: 8000,
+  cerquilha: 200,
+  rem: 50,
+  json: 40,
+}
+
+type CommentStyle = 'barra' | 'cerquilha' | 'rem' | 'json'
+
+/** O comentario de um arquivo, por linha, e o codigo dele, inteiro. */
+interface CommentScan {
+  comments: Map<number, string>
+  code: string
+}
+
+interface CommentedFile extends CommentScan {
+  file: string
+  area: string
+  style: CommentStyle
+  anchors: boolean
+}
+
+/**
+ * Os arquivos que o git rastreia em cada area, com o comentario separado do
+ * codigo. Do git, e nao do disco, pelo mesmo motivo de `trackedPaths`: o CI tem
+ * exatamente o que o `git ls-files` lista.
+ */
+function commentedFiles(): CommentedFile[] {
+  const found: CommentedFile[] = []
+
+  for (const { name, pathspec, anchors } of COMMENTED_AREAS) {
+    const listed = execFileSync('git', ['ls-files', '-z', '--', pathspec], { encoding: 'utf-8' })
+    for (const file of listed.split('\0')) {
+      if (file === '' || file.endsWith('.md')) continue
+      const style = styleOf(file)
+      if (style === null) continue
+      const scan = scanComments(style, file, readFileSync(file, 'utf-8'))
+      found.push({ file, area: name, style, anchors, ...scan })
     }
   }
 
-  walk('src')
-  walk('web/src')
   return found
+}
+
+function styleOf(file: string): CommentStyle | null {
+  if (SLASH_STYLE.test(file)) return 'barra'
+  if (HASH_STYLE.test(file)) return 'cerquilha'
+  if (BATCH_STYLE.test(file)) return 'rem'
+  if (JSON_STYLE.test(file)) return 'json'
+  return null
+}
+
+function scanComments(style: CommentStyle, file: string, content: string): CommentScan {
+  if (style === 'barra') return scanSlashStyle(content)
+  if (style === 'cerquilha') return scanHashStyle(file, content)
+  if (style === 'rem') return scanBatchStyle(content)
+  return scanJsonStyle(content)
+}
+
+/**
+ * Comentario de TypeScript, JavaScript e CSS: as duas barras, o bloco e o bloco
+ * entre chaves do JSX — fora de string, template e regex.
+ *
+ * **Lexico, e nao por prefixo de linha.** A versao anterior reconhecia a linha
+ * que comeca com barra ou asterisco, e perdia o bloco cujas linhas nao levam
+ * asterisco, o comentario no fim de uma linha de codigo e o do JSX.
+ *
+ * **O limite declarado e a regex literal:** ela se distingue da divisao pelo
+ * caractere anterior, como faz um tokenizador sem gramatica — barra depois de
+ * parentese ou de identificador e divisao. String e regex nao atravessam linha,
+ * entao um engano para no fim dela; o template atravessa, e e rastreado com as
+ * chaves das interpolacoes.
+ *
+ * **O apostrofo colado a uma letra e texto, e nao abre string:** em codigo, a
+ * string nunca vem colada a uma letra; no texto JSX, `d'agua` abria uma string
+ * ate o fim da linha e escondia o comentario que vinha depois.
+ */
+function scanSlashStyle(content: string): CommentScan {
+  const comments = new Map<number, string>()
+  const code: string[] = []
+  const comment = (line: number, text: string): void => {
+    comments.set(line, `${comments.get(line) ?? ''}${text}`)
+  }
+  const regexAfter = '(,=:[!&|?{};+-*%~^'
+  const regexAfterWord = new Set(['return', 'typeof', 'case', 'in', 'of', 'void', 'throw'])
+
+  let state: 'code' | 'line' | 'block' | 'single' | 'double' | 'template' | 'regex' | 'class' =
+    'code'
+  const templateDepths: number[] = []
+  let braces = 0
+  let line = 1
+  let previous = ''
+  let word = ''
+
+  for (let index = 0; index < content.length; index++) {
+    const char = content[index] ?? ''
+    const next = content[index + 1] ?? ''
+
+    if (char === '\n') {
+      line++
+      code.push(char)
+      if (state !== 'block' && state !== 'template') state = 'code'
+      continue
+    }
+    if (state === 'line') {
+      comment(line, char)
+      continue
+    }
+    if (state === 'block') {
+      if (char === '*' && next === '/') {
+        comment(line, '*/')
+        state = 'code'
+        index++
+      } else comment(line, char)
+      continue
+    }
+
+    code.push(char)
+    if (state === 'single' || state === 'double' || state === 'template') {
+      if (char === '\\') {
+        code.push(next)
+        index++
+      } else if (
+        (state === 'single' && char === "'") ||
+        (state === 'double' && char === '"') ||
+        (state === 'template' && char === '`')
+      ) {
+        state = 'code'
+      } else if (state === 'template' && char === '$' && next === '{') {
+        templateDepths.push(braces)
+        braces++
+        state = 'code'
+        code.push(next)
+        index++
+      }
+      continue
+    }
+    if (state === 'regex' || state === 'class') {
+      if (char === '\\') {
+        code.push(next)
+        index++
+      } else if (state === 'regex' && char === '[') state = 'class'
+      else if (state === 'class' && char === ']') state = 'regex'
+      else if (state === 'regex' && char === '/') state = 'code'
+      continue
+    }
+
+    if (char === '/' && (next === '/' || next === '*')) {
+      code.pop()
+      comment(line, `/${next}`)
+      state = next === '/' ? 'line' : 'block'
+      index++
+      continue
+    }
+    if (char === "'" && !/\p{L}/u.test(content[index - 1] ?? '')) state = 'single'
+    else if (char === '"') state = 'double'
+    else if (char === '`') state = 'template'
+    else if (
+      char === '/' &&
+      (previous === '' || regexAfter.includes(previous) || regexAfterWord.has(word))
+    )
+      state = 'regex'
+    else if (char === '{') braces++
+    else if (char === '}') {
+      braces--
+      if (templateDepths.at(-1) === braces) {
+        templateDepths.pop()
+        state = 'template'
+      }
+    }
+
+    if (!/\s/.test(char)) {
+      word = /[\w$]/.test(char) ? (/[\w$]/.test(content[index - 1] ?? '') ? word + char : char) : ''
+      previous = char
+    }
+  }
+
+  return { comments, code: code.join('') }
+}
+
+/**
+ * `#` no comeco de palavra, fora de aspas — em shell, YAML, Python e
+ * PowerShell, que tem tambem o bloco entre `<#` e `#>`. O heredoc do shell e
+ * dado, e nao comentario: as linhas dele ficam de fora ate o terminador.
+ *
+ * **A here-string, `<<<`, nao e heredoc:** ela nao tem terminador, e lida como
+ * heredoc tirava o resto do arquivo das duas guardas.
+ */
+function scanHashStyle(file: string, content: string): CommentScan {
+  const comments = new Map<number, string>()
+  const code: string[] = []
+  const shell = file.endsWith('.sh')
+  const powershell = file.endsWith('.ps1')
+  let quote: string | null = null
+  let heredoc: string | null = null
+  let psBlock = false
+
+  content.split('\n').forEach((text, index) => {
+    const line = index + 1
+    if (heredoc !== null) {
+      code.push(text)
+      if (text.replace(/^\t+/, '') === heredoc) heredoc = null
+      return
+    }
+    if (psBlock) {
+      comments.set(line, text)
+      if (text.includes('#>')) psBlock = false
+      return
+    }
+
+    let cut = text.length
+    for (let column = 0; column < text.length; column++) {
+      const char = text[column] ?? ''
+      if (quote !== null) {
+        if (char === '\\' && quote === '"') column++
+        else if (char === quote) quote = null
+        continue
+      }
+      if (char === "'" || char === '"') {
+        quote = char
+        continue
+      }
+      if (powershell && char === '<' && text[column + 1] === '#') {
+        cut = column
+        psBlock = !text.slice(column + 2).includes('#>')
+        break
+      }
+      if (char === '#' && (column === 0 || /\s/.test(text[column - 1] ?? ''))) {
+        if (line === 1 && text[column + 1] === '!') break
+        cut = column
+        break
+      }
+    }
+
+    if (cut < text.length) comments.set(line, text.slice(cut))
+    code.push(text.slice(0, cut))
+    if (!shell) quote = null
+    else if (quote === null)
+      heredoc = /(?<!<)<<(?!<)-?\s*['"]?([A-Za-z_]\w*)['"]?/.exec(text)?.[1] ?? null
+  })
+
+  return { comments, code: code.join('\n') }
+}
+
+/** `rem` e `::` no comeco da linha, como o `cmd.exe` os le. */
+function scanBatchStyle(content: string): CommentScan {
+  const comments = new Map<number, string>()
+  const code: string[] = []
+
+  content.split('\n').forEach((text, index) => {
+    if (/^\s*(?:rem\b|::)/i.test(text)) comments.set(index + 1, text)
+    else code.push(text)
+  })
+
+  return { comments, code: code.join('\n') }
+}
+
+/**
+ * O valor das chaves `_` do JSON de `config/`, que e o comentario daqueles
+ * arquivos — inclusive objeto e array que atravessam linhas.
+ *
+ * **A chave aninhada fica de fora:** num comentario como `_naoIncluidas`, ela
+ * nomeia um valor do dominio — a grafia `DESEMBARACADA 03/02` da planilha —, e
+ * nao e prosa.
+ */
+function scanJsonStyle(content: string): CommentScan {
+  const comments = new Map<number, string>()
+  const code: string[] = []
+  const withoutKeys = (text: string): string => text.replace(/"(?:[^"\\]|\\.)*"\s*:/g, '')
+  let depth = 0
+
+  content.split('\n').forEach((text, index) => {
+    if (depth > 0) {
+      comments.set(index + 1, withoutKeys(text))
+      depth += bracketBalance(text)
+      return
+    }
+    const key = /^\s*"_[^"]*"\s*:(.*)$/.exec(text)
+    if (key === null) {
+      code.push(text)
+      return
+    }
+    comments.set(index + 1, withoutKeys(key[1] ?? ''))
+    depth = Math.max(0, bracketBalance(key[1] ?? ''))
+  })
+
+  return { comments, code: code.join('\n') }
+}
+
+/** Quantos `{` e `[` ficam abertos na linha, fora de string. */
+function bracketBalance(text: string): number {
+  let balance = 0
+  let inString = false
+
+  for (let index = 0; index < text.length; index++) {
+    const char = text[index]
+    if (inString) {
+      if (char === '\\') index++
+      else if (char === '"') inString = false
+    } else if (char === '"') inString = true
+    else if (char === '{' || char === '[') balance++
+    else if (char === '}' || char === ']') balance--
+  }
+
+  return balance
 }
 
 /** Todo `.md` de `docs/`, recursivamente. */
@@ -333,8 +674,9 @@ function documentationFiles(): string[] {
  * definição, e o comentário do código ficava sem lastro sem nada acusar.
  *
  * Definição é posição, e posição é computável: título `#`, ou **primeira
- * célula** de linha de tabela. Nenhuma lista fixa — medido em 12/08/2026, os
- * 261 IDs distintos de `docs/` têm posição de definição.
+ * célula** de linha de tabela. Nenhuma lista fixa — medido
+ * (docs/08-qualidade-operacao.md §6.3), os 261 IDs distintos de `docs/` têm
+ * posição de definição.
  */
 function definedIds(): Set<string> {
   const defined = new Set<string>()
@@ -354,7 +696,6 @@ function definedIds(): Set<string> {
   return defined
 }
 
-const COMMENT_LINE = /^\s*(\/\/|\*|\/\*)/
 /**
  * As onze famílias de âncora do plano. A ordem é do mais longo para o mais
  * curto por higiene, não por necessidade: os `\b` já impedem que `D-\d{2}` case
@@ -364,19 +705,20 @@ const COMMENT_LINE = /^\s*(\/\/|\*|\/\*)/
  * **Dois ou três dígitos.** Com `\d{2}` e o `\b` do fim, `H-100` não casava — o
  * `\b` exige fronteira entre o segundo e o terceiro dígito —, e desde que o
  * backlog passou de `H-99` nenhuma citação de três dígitos era conferida: um
- * comentário citando `H-999` passava verde. Achado por mutação (ADR-0007).
+ * comentário citando um `H-` de três dígitos inexistente passava verde. Achado
+ * por mutação (ADR-0007).
  */
 const PLAN_ID =
   /\b(?:ADR-\d{4}|RNF-\d{2,3}|IND-\d{2,3}|ALE-\d{2,3}|TD-\d{2,3}(?:\.\d)?|RF-\d{2,3}|H-\d{2,3}|A-\d{2,3}|D-\d{2,3}|P-\d{2,3}|R-\d{2,3})\b/g
 /**
  * `src/` e `web/` entraram em `H-21`: sem eles, `\b` casava o `tests` de
  * `web/tests/paginas-montadas.test.tsx` no meio da palavra e a guarda cobrava
- * um `tests/paginas-montadas.test.tsx` que nunca existiu — falso positivo em
+ * o mesmo caminho sem o `web/` da frente, que nunca existiu — falso positivo em
  * caminho certo, e cegueira nos dois diretorios onde o codigo vive.
  *
  * **O `(?<!\/)` entrou em `H-34`, e exclui URL.** Caminho de repositorio e
  * citado relativo — `src/io/xlsx-reader.ts` —, nunca precedido de barra. A rota
- * `/api/config/workbook` casava `config/workbook` e a guarda cobrava um arquivo
+ * `/api/config/workbook` casava do `config` em diante, e a guarda cobrava um arquivo
  * que nunca existiria, o que empurraria o nome da rota para fora do comentario
  * que a documenta. Sem a exclusao, toda rota sob um prefixo homonimo de
  * diretorio — `config`, `docs`, `tools` — teria o mesmo destino.
@@ -409,6 +751,20 @@ interface Citation {
 }
 
 /**
+ * O `.ts` e o `.tsx` de `src/` e `web/src` — o alcance do identificador em
+ * camelCase, dos dois lados: o que o comentario cita e o dicionario contra o
+ * qual se confere.
+ *
+ * **O ID e o caminho valem em toda area; o identificador, so aqui.** Em teste,
+ * ferramenta e script o comentario cita API de fora — `asyncUtilTimeout` da
+ * Testing Library, `allowJs` do compilador, `scrollWidth` do DOM —, e o
+ * dicionario do repositorio nao as tem: o falso positivo dominaria.
+ */
+function isApplicationCode(area: string, file: string): boolean {
+  return (area === 'src' || area === 'web/src') && /\.tsx?$/.test(file)
+}
+
+/**
  * As citações que aparecem **dentro de comentário**, nunca em código.
  *
  * A distinção não é cosmética: `import ... from '../../domain/types.ts'` não é
@@ -425,23 +781,21 @@ function citationsInComments(): {
   const paths: Citation[] = []
   const identifiers: Citation[] = []
 
-  for (const file of sourceFiles()) {
-    const lines = readFileSync(file, 'utf-8').split('\n')
-
-    lines.forEach((text, index) => {
-      if (!COMMENT_LINE.test(text)) return
-
+  for (const { file, comments, anchors, area } of COMMENTED) {
+    if (!anchors) continue
+    for (const [line, text] of comments) {
       for (const match of text.matchAll(PLAN_ID)) {
-        ids.push({ file, line: index + 1, token: match[0] })
+        ids.push({ file, line, token: match[0] })
       }
       for (const match of text.matchAll(REPO_PATH)) {
-        paths.push({ file, line: index + 1, token: match[0].replace(/[.,;:)]+$/, '') })
+        paths.push({ file, line, token: match[0].replace(/[.,;:)]+$/, '') })
       }
+      if (!isApplicationCode(area, file)) continue
       for (const match of text.matchAll(BACKTICKED)) {
         const token = match[1] ?? ''
-        if (IDENTIFIER.test(token)) identifiers.push({ file, line: index + 1, token })
+        if (IDENTIFIER.test(token)) identifiers.push({ file, line, token })
       }
-    })
+    }
   }
 
   return { ids, paths, identifiers }
@@ -462,12 +816,8 @@ function declaredTokens(): Set<string> {
     for (const token of content.match(/[A-Za-z_$][A-Za-z0-9_$]*/g) ?? []) tokens.add(token)
   }
 
-  for (const file of sourceFiles()) {
-    const code = readFileSync(file, 'utf-8')
-      .split('\n')
-      .filter((line) => !COMMENT_LINE.test(line))
-      .join('\n')
-    absorb(code)
+  for (const { code, area, file } of COMMENTED) {
+    if (isApplicationCode(area, file)) absorb(code)
   }
   for (const file of ['tsconfig.json', 'package.json', 'vitest.config.ts']) {
     if (existsSync(file)) absorb(readFileSync(file, 'utf-8'))
@@ -476,6 +826,7 @@ function declaredTokens(): Set<string> {
   return tokens
 }
 
+const COMMENTED = commentedFiles()
 const CITATIONS = citationsInComments()
 const DEFINED = definedIds()
 const TRACKED = trackedPaths()
@@ -508,12 +859,12 @@ function trackedPaths(): ReadonlySet<string> {
 
 describe('toda âncora citada em comentário ainda existe', () => {
   it('encontra citações — âncora contra guarda verde por vacuidade', () => {
-    // Medido em 17/08/2026, contando só linhas de comentário de `src/` e
-    // `web/src`: 331 IDs e 54 caminhos — eram 18 antes de `H-21` alcançar
-    // `src/` e `web/`. O piso é folgado de propósito: o que ele pega é a regex
-    // que parou de casar, não a variação normal de refatorar.
-    expect(CITATIONS.ids.length).toBeGreaterThan(200)
-    expect(CITATIONS.paths.length).toBeGreaterThan(30)
+    // `H-21` levou a guarda a `src/` e `web/`, e os caminhos conferidos de 18
+    // para 54; hoje ela le tambem testes, ferramentas, scripts e CI. O piso e
+    // folgado de proposito: o que ele pega e a regex que parou de casar, nao a
+    // variacao normal de refatorar. O de cada area esta em `COMMENTED_AREAS`.
+    expect(CITATIONS.ids.length).toBeGreaterThan(1000)
+    expect(CITATIONS.paths.length).toBeGreaterThan(120)
   })
 
   it('todo ID citado é DEFINIDO em docs/, não apenas citado lá também', () => {
@@ -535,11 +886,11 @@ describe('toda âncora citada em comentário ainda existe', () => {
    * **O que o git RASTREIA, e nao o que existe em disco.**
    *
    * A versao anterior usava `existsSync`, e com ela o portao local e o CI
-   * divergiam: `config/app.json` esta no `.gitignore` e existe na maquina do
-   * dono, entao citar `config/app.json` num comentario passava aqui e reprovava
-   * la, num checkout limpo. **Custou o PR #131 e reprovou de novo em
-   * 21/09/2026**, nos dois gates — `verify` e `verify-windows` — pelo mesmo
-   * comentario.
+   * divergiam: `app.json` esta no `.gitignore` e existe na maquina do dono,
+   * entao citar o caminho dele, com o `config/` da frente, num comentario
+   * passava aqui e reprovava la, num checkout limpo. **Custou o PR #131 e
+   * reprovou de novo** (ADR-0007), nos dois gates — `verify` e `verify-windows`
+   * — pelo mesmo comentario.
    *
    * Consultar o git torna as duas execucoes iguais por construcao: o CI tem
    * exatamente o que o `git ls-files` lista. A convencao que o repositorio ja
@@ -583,6 +934,93 @@ describe('toda âncora citada em comentário ainda existe', () => {
 })
 
 /**
+ * Data de dia: `dd/mm`, `dd/mm/aaaa` e `aaaa-mm-dd`, com um ou dois digitos no
+ * dia e no mes.
+ */
+const DAY_DATE = /\b\d{4}-\d{2}-\d{2}\b|\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/
+const CODE_SPAN = /`[^`]*`/g
+
+/**
+ * **A data mora no registro, e o comentario cita o ID dele** (`D-76`): "(A-60)",
+ * e nao a data do dia em que algo aconteceu. Comentario datado envelhece calado
+ * — o fato muda, a data fica, e ninguem sabe se a frase ainda vale.
+ *
+ * **Entre crases, a data passa, e e de proposito:** e o valor do dominio — o
+ * serial 1 e `01/01/1900`, o `Date` normaliza `2026-02-31` —, e nao o registro
+ * de quando algo aconteceu.
+ *
+ * **O que fica de fora, declarado:** data em `.md`, que e documento e guarda a
+ * data no registro; data em string ou em valor que nao e comentario, que e dado
+ * — o `eta2` de uma fixture; mes e ano sozinhos, como `set/2026`; e a docstring
+ * de Python, que o extrator nao le como comentario.
+ *
+ * **O alarme falso, declarado** — falha fechado, e a mensagem aponta a linha:
+ * - o `//` de texto JSX, como numa URL, e lido como comentario ate o fim da linha;
+ * - fracao e razao, como `1/2` e `24/7`, casam a forma `dd/mm`;
+ * - o `#` dentro de docstring de Python e lido como comentario.
+ *
+ * **A omissao, declarada** — falha aberto: no texto JSX, a aspa simples solta
+ * depois de espaco abre uma string, e o comentario seguinte na mesma linha nao e
+ * lido.
+ */
+describe('nenhuma data fora de crase em comentário', () => {
+  it('lê cada área e cada estilo — âncora contra guarda verde por vacuidade', () => {
+    const lines = new Map<string, number>()
+    for (const { area, style, comments } of COMMENTED) {
+      lines.set(area, (lines.get(area) ?? 0) + comments.size)
+      lines.set(style, (lines.get(style) ?? 0) + comments.size)
+    }
+    const floors = [
+      ...COMMENTED_AREAS.map(({ name, floor }) => [name, floor] as const),
+      ...Object.entries(STYLE_FLOORS),
+    ]
+
+    expect(
+      floors
+        .filter(([name, floor]) => (lines.get(name) ?? 0) < floor)
+        .map(
+          ([name, floor]) => `${name}: ${lines.get(name) ?? 0} linhas de comentario, piso ${floor}`,
+        ),
+    ).toEqual([])
+  })
+
+  it('toda data de dia em comentário está entre crases', () => {
+    const dated = COMMENTED.flatMap(({ file, comments }) =>
+      [...comments]
+        .filter(([, text]) => DAY_DATE.test(text.replace(CODE_SPAN, '')))
+        .map(([line]) => `${file}:${line}`),
+    )
+
+    expect(
+      dated.map(
+        (place) =>
+          `${place} tem data fora de crase em comentário — a data mora no registro, e o comentário cita o ID dele (.claude/rules/comentarios.md, regra 4)`,
+      ),
+    ).toEqual([])
+  })
+
+  it('o apóstrofo do texto JSX não esconde o comentário que vem depois dele', () => {
+    const { comments } = scanComments(
+      'barra',
+      'Pagina.tsx',
+      "<p>d'agua {/* medido em 05/10/2026 */}</p>",
+    )
+
+    expect(comments.get(1)).toBe('/* medido em 05/10/2026 */')
+  })
+
+  it('a here-string do shell não tira o resto do arquivo da guarda', () => {
+    const { comments } = scanComments(
+      'cerquilha',
+      'probe.sh',
+      'grep -q x <<< "abc"\n# medido em 05/10/2026',
+    )
+
+    expect(comments.get(2)).toBe('# medido em 05/10/2026')
+  })
+})
+
+/**
  * As peças de `.claude/`, no formato em que o `CLAUDE.md` as nomeia: skill por
  * `/nome`, subagente pelo nome sem extensão, hook e rule pelo nome do arquivo.
  */
@@ -620,8 +1058,8 @@ describe('o CLAUDE.md menciona toda peça de .claude/', () => {
   })
 
   /**
-   * O defeito que motivou a asserção tem data: `/nova-pagina` foi criada em
-   * 07/08/2026 e a tabela de marcos seguiu mandando criá-la por quatro dias.
+   * O defeito que motivou a asserção (ADR-0007): `/nova-pagina` foi criada e a
+   * tabela de marcos seguiu mandando criá-la por quatro dias.
    * `conferir-alinhamento.sh` deveria ter pego — mas roda em `ConfigChange`, e
    * editar o `CLAUDE.md` não é mudança de configuração. O evento nunca dispara
    * para o lado por onde o defeito entra.
@@ -730,10 +1168,10 @@ function codeLines(path: string): number {
 
 /**
  * Uma decisão que declara os próprios gatilhos de reavaliação só serve se
- * alguém os medir. `D-16` declarou quatro em 06/08/2026, e **dois foram
+ * alguém os medir. `D-16` declarou quatro, e **dois foram
  * atingidos sem que ninguém notasse**: `web/src/router.ts` passou de ~100
  * linhas em algum ponto entre `H-15` e `H-21`, e o carregamento por rota chegou
- * com a Página Histórico sob demanda, em 17/08/2026 — o próprio gatilho que a
+ * com a Página Histórico sob demanda, em `H-21` — o próprio gatilho que a
  * decisão cita como motivo para reconsiderar o `react-router`.
  *
  * Nenhum dos dois muda a conclusão, e não é isso que a asserção defende: ela
@@ -751,8 +1189,8 @@ describe('os gatilhos de reavaliação de D-16 foram observados', () => {
   })
 
   /**
-   * **Linhas de código, não linhas de arquivo.** O gatilho contava o arquivo
-   * inteiro até 17/08/2026, e media a coisa errada: comentário de porquê é 24%
+   * **Linhas de código, não linhas de arquivo** (`D-16`). Contar o arquivo
+   * inteiro mede a coisa errada: comentário de porquê é 24%
    * de `router.ts` por política deste repositório, então documentar bem
    * aproximava do limiar sem acrescentar um ramo sequer ao fluxo. Medido:
    * 132 linhas no total, 79 de código.
@@ -892,11 +1330,11 @@ describe('o índice do backlog alcança todas as histórias', () => {
   /**
    * O marcador de conclusão do índice concorda com o bloco da história.
    *
-   * Marcar história por história já foi tentado e falhou: as marcas congelaram
-   * em 07/08/2026 e o índice afirmou `H-13` aberta até 18/08/2026, contra o
-   * bloco `✅ CONCLUÍDA` dela. O defeito não era a marca, era ela ser manual e
-   * não verificada — esta asserção é o que autorizou a marca a voltar, em
-   * 31/08/2026. Sem lista fixa: o estado sai do próprio bloco.
+   * Marcar história por história já foi tentado e falhou (docs/06-backlog.md):
+   * as marcas congelaram e o índice afirmou `H-13` aberta, contra o bloco
+   * `✅ CONCLUÍDA` dela. O defeito não era a marca, era ela ser manual e não
+   * verificada — esta asserção é o que autorizou a marca a voltar. Sem lista
+   * fixa: o estado sai do próprio bloco.
    */
   it('o ✅ do índice concorda com o bloco de cada história', () => {
     const concluidas = new Set(
