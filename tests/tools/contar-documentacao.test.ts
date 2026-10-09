@@ -550,6 +550,86 @@ describe('inspect e rewrite, sobre o repositorio temporario', () => {
     expect(inspect(root)).toEqual({ divergences: [], errors: [] })
   })
 
+  it('confere que nao examina nenhum arquivo e erro com arquivo:linha, e cita a rule', () => {
+    write('src/domain/a.ts', '')
+    write('docs/vazio/.gitkeep', '')
+    write('docs/README.md', '')
+    write('docs/04-arquitetura.md', '')
+    track()
+    write('docs/vazio/nao-rastreado.md', '')
+    const regions = {
+      links: { file: 'docs/README.md', body: ['[0001](adr/0001-um.md), [0002](adr/0002-dois.md)'] },
+      arvore: {
+        file: 'docs/04-arquitetura.md',
+        body: ['├─ src/', '│  └─ domain/', '│     └─ a.ts'],
+      },
+    }
+    const found = (marker: string, { closed = true, body = '' } = {}) => {
+      const check = marker.startsWith('link') ? 'links' : 'arvore'
+      for (const { file } of Object.values(regions)) write(file, '')
+      const region = regions[check]
+      const lines = body ? [body] : region.body
+      write(
+        region.file,
+        [`<!-- confere:${marker} -->`, ...lines, ...(closed ? ['<!-- /confere -->'] : []), ''].join(
+          '\n',
+        ),
+      )
+      const { divergences, errors } = inspect(root)
+      return [
+        ...divergences.map(({ file, line, actual }) => `${file}:${line} ${actual}`),
+        ...errors.map(({ file, line, message }) => `${file}:${line} ${message}`),
+      ]
+    }
+    const vacuous = 'a confere nao examinaria nada (.claude/rules/documentacao.md, R5)'
+
+    expect(found('links[docs/adr]')).toEqual([])
+    expect(found('arvore[src/domain]')).toEqual([])
+
+    expect(found('links[docs/adr]', { closed: false })).toEqual([
+      'docs/README.md:1 confere sem fechamento',
+    ])
+    expect(found('linkz[docs/adr]')).toEqual([
+      'docs/README.md:1 nome desconhecido: linkz[docs/adr]',
+    ])
+    expect(found('links[docs/adrs]')).toEqual([
+      `docs/README.md:1 links[docs/adrs] falhou: docs/adrs nao tem arquivo no git, e ${vacuous}`,
+    ])
+    expect(found('links')).toEqual([
+      `docs/README.md:1 links falhou: nenhum diretorio no argumento, e ${vacuous}`,
+    ])
+    expect(found('links[]')).toEqual([
+      `docs/README.md:1 links[] falhou: nenhum diretorio no argumento, e ${vacuous}`,
+    ])
+    expect(found('links[adr]')).toEqual([
+      `docs/README.md:1 links[adr] falhou: adr nao tem arquivo no git, e ${vacuous}`,
+    ])
+    expect(found('links[docs/vazio]', { body: '[x](vazio/nao-rastreado.md)' })).toEqual([
+      `docs/README.md:1 links[docs/vazio] falhou: docs/vazio nao tem arquivo no git, e ${vacuous}`,
+    ])
+
+    expect(found('arvore[src/domain]', { closed: false })).toEqual([
+      'docs/04-arquitetura.md:1 confere sem fechamento',
+    ])
+    expect(found('arvorr[src/domain]')).toEqual([
+      'docs/04-arquitetura.md:1 nome desconhecido: arvorr[src/domain]',
+    ])
+    expect(found('arvore[src/domainx]')).toEqual([
+      `docs/04-arquitetura.md:1 arvore[src/domainx] falhou: src/domainx nao tem arquivo no git, e ${vacuous}`,
+    ])
+    expect(found('arvore')).toEqual([
+      `docs/04-arquitetura.md:1 arvore falhou: nenhum diretorio no argumento, e ${vacuous}`,
+    ])
+    expect(found('arvore[]')).toEqual([
+      `docs/04-arquitetura.md:1 arvore[] falhou: nenhum diretorio no argumento, e ${vacuous}`,
+    ])
+    expect(found('arvore[docs/vazio]', { body: '├─ docs/\n│  └─ vazio/    # 0 arquivos' })).toEqual(
+      [
+        `docs/04-arquitetura.md:1 arvore[docs/vazio] falhou: docs/vazio nao tem arquivo no git, e ${vacuous}`,
+      ],
+    )
+  })
+
   it('CRLF, como de editor no Windows: a regiao confere vale, e o --write preserva o CRLF', () => {
     const crlf = (lines: string[]) => lines.join('\r\n')
     write('src/domain/a.ts', '')

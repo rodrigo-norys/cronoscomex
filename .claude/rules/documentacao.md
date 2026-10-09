@@ -54,7 +54,8 @@ está em `language`, na configuração.
 **Fica de fora, por limite declarado** — medido sobre 104 frases de estado injetadas
 no corpus, das quais aponta 99, e sobre as regiões desembrulhadas no lugar (70 de
 85). A faixa de ID (`X-NN` a `X-MM`), o percentual, a versão só maior (`React N`), a
-célula de tabela com a unidade no cabeçalho e o número em negrito sem artigo custavam,
+célula de tabela com a unidade no cabeçalho ou com o rótulo na primeira célula
+(`| Total | N |`) e o número em negrito sem artigo custavam,
 no `--nuas --tudo`, mais falso positivo que acerto; o valor composto (`N · N · N`) não
 é número com unidade; a versão sem o nome do pacote (`da X.Y.Z`) é, sem ele, qualquer
 número; e a linha com data é o registro da medição. O que fica de fora
@@ -81,7 +82,8 @@ de espelho.
 **R5 — Lista de itens com estado é gerada, ou vira ponteiro.** A lista escrita à mão
 é a que esquece o item novo, e guarda nenhuma vê o que falta. Conjunto computável vai
 em região `conta` ou `confere`; o resto aponta para onde o conjunto é definido.
-*Revisão.*
+*Guarda:* a região `confere`, e é erro a que não examina nenhum arquivo — sem
+diretório no argumento, ou com um que não tem arquivo no `git`. *Revisão:* o resto.
 
 **R6 — Registro se marca pela estrutura, e não conta como estado.** Registro diz o
 que era verdade na data, e a data mora nele — a decisão `| D-NN`, a história fechada

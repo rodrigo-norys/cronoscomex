@@ -22,7 +22,8 @@ import config from './contar-documentacao.config.mjs'
  * - `confere`, com os dois marcadores sozinhos na linha, em volta de conteudo escrito
  *   a mao — a arvore de `04-arquitetura.md` traz anotacao `# H-49` ao lado do arquivo
  *   e se perderia regenerada, e o indice de ADRs do `docs/README.md`, a decisao de cada
- *   uma. A ferramenta so aponta a divergencia.
+ *   uma. A ferramenta so aponta a divergencia, e a `confere` que nao examina nenhum
+ *   arquivo e erro, e nao verde por vacuidade.
  *
  * `conta` em inicio de linha e erro: o CommonMark abre ali um bloco HTML, e o resto
  * da linha deixa de ser markdown. Marcador dentro de bloco cercado ou entre crases e
@@ -217,13 +218,29 @@ export function parseTree(lines) {
 }
 
 /**
+ * Os diretorios do argumento de uma `confere`, cada um com arquivo no `git`. Sem
+ * diretorio, ou com um que nao resolve, a conferencia nao examinaria nada e passaria
+ * verde por vacuidade: `links[docs/adrs]` comparava o indice vazio com o diretorio vazio, e
+ * conferia (R5 de `D-76`).
+ */
+function requestedDirs(source, arg) {
+  const vacuous = `a confere nao examinaria nada (${config.rule}, R5)`
+  const dirs = (arg ?? '').split(/\s+/).filter(Boolean)
+  if (dirs.length === 0) throw new Error(`nenhum diretorio no argumento, e ${vacuous}`)
+  for (const dir of dirs)
+    if (source.filesIn(dir).length === 0)
+      throw new Error(`${dir} nao tem arquivo no git, e ${vacuous}`)
+  return dirs
+}
+
+/**
  * Para cada diretorio pedido: se a arvore lista os arquivos dele, a lista tem de ser
  * a do `git`; se so anota "N arquivos", o N tem de ser a contagem.
  */
 function checkTree(source, arg, body) {
   const entries = parseTree(body)
   const problems = []
-  for (const dir of (arg ?? '').split(/\s+/).filter(Boolean)) {
+  for (const dir of requestedDirs(source, arg)) {
     const actual = source.filesIn(dir)
     const listed = entries
       .filter((entry) => dirname(entry.path) === dir && !entry.path.endsWith('/'))
@@ -256,7 +273,7 @@ function checkLinks(source, arg, body, file) {
     posix.join(posix.dirname(file), target),
   )
   const problems = []
-  for (const dir of (arg ?? '').split(/\s+/).filter(Boolean)) {
+  for (const dir of requestedDirs(source, arg)) {
     const actual = source.filesIn(dir)
     const linked = targets
       .filter((target) => posix.dirname(target) === dir)
