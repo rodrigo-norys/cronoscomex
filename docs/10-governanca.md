@@ -104,8 +104,9 @@ quatro emendas datadas em vigor — duas no `ADR-0004` (06/08/2026, sobre
 `xl/styles.xml`; 02/09/2026, por `D-25`), uma no `ADR-0003` (02/09/2026, por
 `D-25`) e uma no `ADR-0005` (17/08/2026, por `H-28`) —, mais a seção de
 validação empírica que `H-01` acrescentou ao `ADR-0003`. **Nenhum ADR novo
-nasceu desde o 0006.** O que continua proibido é a terceira forma: trocar o
-texto antigo sem deixar rastro.
+substituiu outro** — o status de cada um está no próprio arquivo, em `docs/adr/`.
+O que continua proibido é a terceira forma: trocar o texto antigo sem deixar
+rastro.
 
 ---
 
