@@ -12,8 +12,9 @@ import { inspect, inspectStructure } from '../../tools/contar-documentacao.mjs'
  * `verify`. A reprovação diz o comando que corrige; quem decide a regra de cada
  * contador é `tools/contar-documentacao.config.mjs`, e não este arquivo.
  *
- * A região `confere` — a árvore de `04-arquitetura.md` — reprova aqui do mesmo jeito,
- * mas não se corrige pelo comando: é conteúdo escrito à mão.
+ * As regiões `confere` — a árvore de `04-arquitetura.md` e o índice de ADRs do
+ * `docs/README.md` — reprovam aqui do mesmo jeito, mas não se corrigem pelo comando: são
+ * conteúdo escrito à mão.
  *
  * Os espelhos de estado — o mesmo ID com estado em dois documentos — e a tabela solta
  * depois de linha em branco também reprovam aqui, e também se corrigem à mão. A âncora

@@ -50,6 +50,8 @@ Leia nesta ordem. Cada documento pressupõe o anterior.
 
 ### Para entender por quê
 
+<!-- confere:links[docs/adr] -->
+
 | ADR | Decisão |
 |---|---|
 | [0001](adr/0001-planilha-como-fonte-da-verdade.md) | A planilha `.xlsx` é a única fonte da verdade |
@@ -59,6 +61,8 @@ Leia nesta ordem. Cada documento pressupõe o anterior.
 | [0005](adr/0005-historico-jsonl-append-only.md) | Histórico em JSONL append-only |
 | [0006](adr/0006-indicadores-em-memoria.md) | Indicadores como funções puras em memória |
 | [0007](adr/0007-governanca-da-configuracao-do-agente.md) | Governança da configuração do agente — **o que foi recusado, o que foi revertido e o que nunca foi verificado** |
+
+<!-- /confere -->
 
 ### De onde vieram os épicos nascidos depois do plano
 

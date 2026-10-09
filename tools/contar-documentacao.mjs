@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
-import { basename, dirname, join, resolve } from 'node:path'
+import { basename, dirname, join, posix, resolve } from 'node:path'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import config from './contar-documentacao.config.mjs'
 
@@ -21,7 +21,8 @@ import config from './contar-documentacao.config.mjs'
  *   entre os marcadores pertence a ferramenta, e `--write` o reescreve.
  * - `confere`, com os dois marcadores sozinhos na linha, em volta de conteudo escrito
  *   a mao — a arvore de `04-arquitetura.md` traz anotacao `# H-49` ao lado do arquivo
- *   e se perderia regenerada. A ferramenta so aponta a divergencia.
+ *   e se perderia regenerada, e o indice de ADRs do `docs/README.md`, a decisao de cada
+ *   uma. A ferramenta so aponta a divergencia.
  *
  * `conta` em inicio de linha e erro: o CommonMark abre ali um bloco HTML, e o resto
  * da linha deixa de ser markdown. Marcador dentro de bloco cercado ou entre crases e
@@ -105,6 +106,7 @@ export function createSource(root) {
 
 export const CHECKS = {
   arvore: checkTree,
+  links: checkLinks,
 }
 
 const formatValue = (value) => (typeof value === 'number' ? value.toLocaleString('pt-BR') : value)
@@ -244,6 +246,30 @@ function checkTree(source, arg, body) {
   return problems
 }
 
+/**
+ * Para cada diretorio pedido, os links do trecho que apontam para dentro dele tem de ser
+ * os arquivos do `git` ali: o indice escrito a mao, que esquecia a ADR nova (R5), reprova.
+ * O link resolve a partir do arquivo que o contem, como no GitHub.
+ */
+function checkLinks(source, arg, body, file) {
+  const targets = [...body.join('\n').matchAll(/\]\(([^)\s#]+)[^)]*\)/g)].map(([, target]) =>
+    posix.join(posix.dirname(file), target),
+  )
+  const problems = []
+  for (const dir of (arg ?? '').split(/\s+/).filter(Boolean)) {
+    const actual = source.filesIn(dir)
+    const linked = targets
+      .filter((target) => posix.dirname(target) === dir)
+      .map((target) => posix.basename(target))
+    const missing = actual.filter((name) => !linked.includes(name))
+    const extra = linked.filter((name) => !actual.includes(name))
+    if (missing.length > 0) problems.push(`${dir}: falta no indice ${missing.join(', ')}`)
+    if (extra.length > 0)
+      problems.push(`${dir}: o indice aponta o que nao existe: ${extra.join(', ')}`)
+  }
+  return problems
+}
+
 function evaluate(registry, source, raw, ...rest) {
   const parsed = parseName(raw)
   if (!parsed || !(parsed.name in registry)) return { error: `nome desconhecido: ${raw}` }
@@ -276,7 +302,7 @@ export function inspect(root) {
       }
     }
     for (const region of scanned.checks) {
-      const result = evaluate(CHECKS, source, region.raw, region.body)
+      const result = evaluate(CHECKS, source, region.raw, region.body, file)
       if (result.error) errors.push({ file, line: region.line, message: result.error })
       for (const problem of result.value ?? []) {
         divergences.push({

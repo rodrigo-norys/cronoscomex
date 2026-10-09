@@ -493,6 +493,32 @@ describe('inspect e rewrite, sobre o repositorio temporario', () => {
     expect(readFileSync(join(root, 'docs/04-arquitetura.md'), 'utf-8')).toBe(tree)
   })
 
+  it('confere os links: o indice aponta cada arquivo do diretorio, e so eles', () => {
+    const index = [
+      '<!-- confere:links[docs/adr] -->',
+      '',
+      '| ADR | Decisão |',
+      '|---|---|',
+      '| [0001](adr/0001-um.md) | Um |',
+      '| [0003](adr/0003-tres.md#contexto) | Tres, que nao existe |',
+      '| [fora](../README.md) | Fora do diretorio |',
+      '',
+      '<!-- /confere -->',
+      '',
+    ].join('\n')
+    write('docs/README.md', index)
+    track()
+
+    expect(inspect(root).divergences.map((divergence) => divergence.actual)).toEqual([
+      'docs/adr: falta no indice 0002-dois.md',
+      'docs/adr: o indice aponta o que nao existe: 0003-tres.md',
+    ])
+    expect(rewrite(root)).toEqual([])
+
+    write('docs/README.md', index.replace('adr/0003-tres.md#contexto', 'adr/0002-dois.md'))
+    expect(inspect(root)).toEqual({ divergences: [], errors: [] })
+  })
+
   it('CRLF, como de editor no Windows: a regiao confere vale, e o --write preserva o CRLF', () => {
     const crlf = (lines: string[]) => lines.join('\r\n')
     write('src/domain/a.ts', '')
