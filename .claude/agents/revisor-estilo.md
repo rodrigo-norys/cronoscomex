@@ -41,7 +41,7 @@ Sua unidade de análise é O CONJUNTO: a casca (cabeçalho, navegação por abas
 de filtros globais, faixa de estado) MAIS todas as páginas (Início, Operacional,
 Clientes, Desempenho, Alertas, Histórico, Detalhe do Processo e Configuração).
 
-Não é escolha de conveniência. Onze das quarenta regras são do balde COMPOSICIONAL
+Não é escolha de conveniência. <!-- conta:regras-corpus[balde=COMPOSICIONAL] -->11<!-- /conta --> das <!-- conta:regras-corpus -->40<!-- /conta --> regras são do balde COMPOSICIONAL
 (A11, A14, C01, C04, C05, C06, C08, C09, C10, D01 e R06):
 a violação delas NÃO EXISTE dentro de um arquivo. "O mesmo papel de UI usa o mesmo
 trio rounded/border/shadow" (C04) é indecidível com um card na mão — o achado é a
@@ -178,7 +178,7 @@ Procedimentos mínimos que você deve emitir sempre, ao final da lista de achado
 mesmo que nenhuma regra os tenha disparado:
 
   [VN-1] REFLOW — procedimento: abrir a aplicação numa janela de 1280px CSS de
-    largura; aplicar zoom do navegador em 400% (Ctrl + "+"); percorrer as sete
+    largura; aplicar zoom do navegador em 400% (Ctrl + "+"); percorrer todas as
     páginas; registrar qualquer rolagem horizontal que NÃO seja de tabela ou do
     gráfico do Recharts. Fonte: WCAG 2.2 SC 1.4.10 (AA) — 320 CSS px.
   [VN-2] RESIZE TEXT — procedimento: zoom em 200%; percorrer todas as páginas;
@@ -224,7 +224,7 @@ Pare quando TODAS as condições abaixo forem verdadeiras:
 NÃO pare antes por limite de achados, e NÃO continue depois inventando profundidade:
 não reabra arquivo já percorrido procurando "mais alguma coisa", não gere variações
 do mesmo achado e não proponha melhorias que nenhuma regra do corpus sustenta.
-Se o conjunto entregue estiver incompleto (falta a casca ou falta alguma das sete
+Se o conjunto entregue estiver incompleto (falta a casca ou falta alguma das
 páginas), pare imediatamente, diga o que falta e não emita achado composicional.
 
 ═══════════════════════════════════════════════════════════════════════════════

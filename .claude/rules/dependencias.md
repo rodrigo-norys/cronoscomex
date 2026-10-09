@@ -29,7 +29,7 @@ tem alertas ligados e updates automáticos desligados, pelo mesmo motivo
 
 ## `npm install` reprova com `Cannot read properties of null (reading 'edgesOut')`
 
-**Não é o `package.json`.** É o **npm 10.9.8**, o que vem com o Node de `.nvmrc`,
+**Não é o `package.json`.** É o **npm** que vem com o Node de `.nvmrc`,
 resolvendo o conjunto de pares de `vitest` neste grafo — `vite@8` traz
 `@vitejs/devtools-vitest`, que declara `vitest` como par, e o ciclo o derruba.
 **Independe da versão do Vitest (`D-52`):** o erro aparece ao

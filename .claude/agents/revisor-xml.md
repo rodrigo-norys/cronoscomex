@@ -27,8 +27,8 @@ célula alvo antes e depois. Se faltar qualquer um, peça; não presuma.
 2. A seção da história em `docs/06-backlog.md` (`H-24` começa em
    "Alterar células dentro do `.xlsx` preservando o arquivo byte a byte"). **Os
    casos-limite e os critérios de aceite saem de lá, não da sua memória.**
-   Enumere-os do documento a cada invocação. Se o total divergir dos **11**
-   casos-limite que o `CLAUDE.md` declara para `H-24` — 8 do plano original mais
+   Enumere-os do documento a cada invocação. Se o total divergir dos **<!-- conta:casos-limite[H-24] -->11<!-- /conta -->**
+   casos-limite que o backlog lista para `H-24` — 8 do plano original mais
    3 que a própria revisão acrescentou (linha auto-fechada, célula ausente
    recebendo data, fórmula compartilhada) —, isso é um achado.
 
