@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest'
  * chave de resposta, âncora de comentário. Este arquivo guarda o outro eixo:
  * **documento contra documento**, que é onde metade do trabalho do repositório
  * acontece — 220 dos 445 commits não-merge da `main` tocam apenas `docs/`,
- * `CLAUDE.md` ou `README.md` (medido em 11/09/2026) — e onde, até aqui, nenhuma
+ * `CLAUDE.md` ou `README.md` (medido na ADR-0007) — e onde, até aqui, nenhuma
  * asserção olhava.
  *
  * **Nenhuma expectativa é lista fixa.** Toda contagem sai do disco: épico novo,
@@ -16,8 +16,8 @@ import { describe, expect, it } from 'vitest'
  * cobra é concordância entre cópias do mesmo fato, e a fonte é sempre o bloco
  * da história ou a linha de definição — nunca a prosa que a resume.
  *
- * O total de histórias afirmado em prosa saiu daqui em 06/10/2026: desde as
- * regiões de 01/10/2026 o regex não casava linha nenhuma, e quem o cobre é
+ * O total de histórias afirmado em prosa saiu daqui (ADR-0007): com as
+ * regiões, o regex não casava linha nenhuma, e quem o cobre é
  * `tests/repo/contagens.test.ts`.
  *
  * A matriz contra o backlog, e o requisito revogado contra a matriz, também saíram:
@@ -98,7 +98,7 @@ const CORPO = grupoPorHistoria(BACKLOG, /^## Épico (E\d+)/, /^### (H-\d+)/)
 /**
  * O índice do backlog já é conferido em QUEM ele lista — âncora, entrada, ✅ e
  * destino, em `tests/repo/contratos.test.ts`. Não era conferido em ONDE: as
- * quatro histórias de `E15` entraram sob o cabeçalho de `E14` em 11/09/2026,
+ * quatro histórias de `E15` entraram sob o cabeçalho de `E14` (ADR-0007),
  * com as cinco asserções de índice verdes, e quem achou foi o olho do usuário.
  * Na mesma execução esta guarda reprovou **dois números vivos** que a revisão
  * adversarial não pegara, e um deles estava na skill que conduz a história.
@@ -181,7 +181,7 @@ describe('a tabela de resumo do backlog bate linha a linha', () => {
  *
  * O critério é o número de arquivos, e só ele: o "ou 1 contrato novo" da régua
  * apenas ALARGA `M`, nunca o estreita, então ignorá-lo não produz falso
- * positivo. Medido em 16/09/2026: as quatro de `E15` estavam rotuladas abaixo
+ * positivo. Medido (ADR-0007): as quatro de `E15` estavam rotuladas abaixo
  * da régua — `H-94` dizia `M` com **18** arquivos.
  */
 describe('o tamanho declarado respeita a régua, nas histórias abertas', () => {

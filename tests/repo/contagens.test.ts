@@ -4,10 +4,10 @@ import { inspect, inspectStructure } from '../../tools/contar-documentacao.mjs'
 /**
  * As regiões de contagem de `docs/`, `README.md`, `CLAUDE.md` e `.claude/` contra a
  * fonte de cada número, sobre o repositório real — documento versionado, como em
- * `documentacao.test.ts`; nada de planilha, `data/` ou `config/app.json`.
+ * `documentacao.test.ts`; nada de planilha, `data/` ou `app.json`.
  *
  * Existe porque só o total de histórias tinha guarda, e por regex sobre uma forma de
- * frase: o levantamento de 01/10/2026 achou seis de 41 números de estado atual velhos
+ * frase: o levantamento da ADR-0007 achou seis de 41 números de estado atual velhos
  * — 96 histórias com 114 no backlog, seis ADRs com sete, "sete passos" com oito no
  * `verify`. A reprovação diz o comando que corrige; quem decide a regra de cada
  * contador é `tools/contar-documentacao.config.mjs`, e não este arquivo.
