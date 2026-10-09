@@ -38,8 +38,9 @@ prosa: aponte o arquivo ou o comando. Número que nenhuma fonte do repositório 
 leva fonte e data — a planilha, que a regra inviolável 7 tira da suíte:
 "649 linhas de dados (medido em `H-01`, 03/08/2026)". Quem edita a linha reconfere o
 número; se não der em um comando, a frase está mal escrita. *Guarda:* a região. *Aviso:* o `--nuas`
-aponta número com unidade fora de região nas linhas que o diff acrescentou — a
-`/sugerir-commits` o roda antes do aceite, e a `/sugerir-prs` sobre o PR inteiro.
+aponta número com unidade fora de região nas linhas que o diff acrescentou, menos a
+que só o `--write` tocou — a `/sugerir-commits` o roda antes do aceite, e a
+`/sugerir-prs` sobre o PR inteiro.
 
 **O que o `--nuas` reconhece:** o número em algarismo ou por extenso, com negrito em
 volta de qualquer parte, em `N linhas` — no máximo uma palavra no meio, e a unidade
@@ -55,7 +56,8 @@ no corpus, das quais aponta 99, e sobre as regiões desembrulhadas no lugar (70 
 85). A faixa de ID (`X-NN` a `X-MM`), o percentual, a versão só maior (`React N`), a
 célula de tabela com a unidade no cabeçalho e o número em negrito sem artigo custavam,
 no `--nuas --tudo`, mais falso positivo que acerto; o valor composto (`N · N · N`) não
-é número com unidade; e a linha com data é o registro da medição. O que fica de fora
+é número com unidade; a versão sem o nome do pacote (`da X.Y.Z`) é, sem ele, qualquer
+número; e a linha com data é o registro da medição. O que fica de fora
 é da revisão.
 
 **Skill não usa região: calcula na invocação**, com `` !`comando` `` depois de espaço

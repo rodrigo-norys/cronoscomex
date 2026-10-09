@@ -357,6 +357,28 @@ describe('findLooseNumbers — so as linhas que o diff acrescentou', () => {
       'sete',
     )
   })
+
+  it('a linha que so o --write tocou nao e acrescentada; a editada em volta da regiao e', () => {
+    write(
+      'CLAUDE.md',
+      [
+        'São <!-- conta:historias -->2<!-- /conta --> histórias, do plano de cinco fases',
+        'Há <!-- conta:adrs -->1<!-- /conta --> ADRs e sete passos',
+        '',
+      ].join('\n'),
+    )
+    track()
+    commit('base')
+    const base = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: root, encoding: 'utf-8' }).trim()
+
+    expect(rewrite(root)).toEqual(['CLAUDE.md'])
+    const text = readFileSync(join(root, 'CLAUDE.md'), 'utf-8')
+    write('CLAUDE.md', text.replace('sete passos', 'oito passos'))
+
+    expect(
+      findLooseNumbers(root, { base }).map(({ file, line, number }) => `${file}:${line}:${number}`),
+    ).toEqual(['CLAUDE.md:2:oito'])
+  })
 })
 
 describe('scanRegions — onde um marcador vale', () => {

@@ -36,7 +36,9 @@ import config from './contar-documentacao.config.mjs'
  *
  * `--nuas` aponta o numero de estado escrito FORA de regiao — "sete passos", "18
  * epicos", "Abertas: 0" — nas linhas que o diff contra a base acrescentou; as formas
- * que reconhece estao em `LINE_FORMS`. So avisa, e nunca reprova:
+ * que reconhece estao em `LINE_FORMS`. A linha cuja unica mudanca e o valor de uma
+ * regiao nao conta como acrescentada: quem a tocou foi o `--write`, e o registro ao
+ * lado da regiao virava aviso sem ninguem o ter editado. So avisa, e nunca reprova:
  * medido em 06/10/2026, a varredura completa achou 260 numeros, e a classificacao a mao
  * deu ~47% de falso positivo mesmo depois das regras estruturais abaixo. No diff de
  * seis PRs recentes foram de 0 a 13 avisos, ~6 em 10 verdadeiros — e o #150 teria
@@ -681,11 +683,11 @@ export function changedLines(root, base, { ignoreRegionValues = false } = {}) {
   return changed
 }
 
-/** Os numeros soltos do escopo: no diff contra `base`, ou em tudo com `all`. */
+/** Os numeros soltos do escopo: no diff contra `base`, menos o que so o `--write` tocou, ou em tudo. */
 export function findLooseNumbers(root, { base = 'main', all = false } = {}) {
   const source = createSource(root)
   if (all) return source.scope.flatMap((file) => looseNumbers(file, source.read(file)))
-  return [...changedLines(root, base)].flatMap(([file, lines]) =>
+  return [...changedLines(root, base, { ignoreRegionValues: true })].flatMap(([file, lines]) =>
     looseNumbers(file, readFileSync(join(root, file), 'utf-8'), lines ?? undefined),
   )
 }
