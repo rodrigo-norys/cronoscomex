@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { brToIso, DateField, isoToBr } from '../src/components/DateField.tsx'
 
 /**
- * O campo de data em `dd/mm/aaaa` (18/09/2026).
+ * O campo de data em `dd/mm/aaaa` (`H-104`).
  *
  * O que se prova aqui e a fronteira: a tela escreve e le no formato brasileiro,
  * e o que atravessa para a URL e para a API continua sendo `AAAA-MM-DD`. Num
@@ -33,7 +33,7 @@ describe('isoToBr e brToIso — a traducao', () => {
   })
 
   /**
-   * Regra inviolavel 3: `new Date(2026, 1, 31)` normaliza para 03/03 em
+   * Regra inviolavel 3: `new Date(2026, 1, 31)` normaliza para `03/03` em
    * silencio. O campo prefere o buraco visivel.
    */
   it('recusa data que nao existe, em vez de normalizar', () => {

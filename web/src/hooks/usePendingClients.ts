@@ -77,7 +77,7 @@ export function useRuleReach(
   match: ClientMatch,
   value: string,
   dataVersion: number,
-  /** A coluna onde a regra procura (21/09/2026). Padrao `clt`, como antes. */
+  /** A coluna onde a regra procura (`H-105`). Padrao `clt`, como antes. */
   field: ClientField = 'clt',
 ): RuleReachState {
   const [state, setState] = useState<RuleReachState>({ status: 'ocioso' })

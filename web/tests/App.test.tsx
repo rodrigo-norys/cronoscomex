@@ -164,7 +164,7 @@ describe('casca', () => {
   })
 
   /**
-   * H-38. A tela de `H-34` existia desde 18/08/2026 e nao havia como chegar
+   * H-38. A tela de `H-34` existia e nao havia como chegar
    * nela: nenhuma linha de `web/src/` apontava para `/configuracao`, e o unico
    * acesso era digitar o endereco. Depois de apontar a planilha uma vez, o
    * operador PERDIA a tela — e a troca, que ja funcionava, ficava inalcancavel.
@@ -986,7 +986,7 @@ describe('a busca por atalho', () => {
   })
 
   /**
-   * Decidido em 04/09/2026, sobre o caso-limite que `H-83` deixou por declarar:
+   * Decidido em `H-83`, sobre o caso-limite que ela deixou por declarar:
    * duas sobreposicoes empilhadas quebram a prisao de foco e a inercia de uma
    * vez. O operador fecha com `Esc`, que ja e o gesto dele.
    */
@@ -1145,7 +1145,7 @@ describe('a contagem da lateral', () => {
    * O recorte NAO e fixado na historia: ele vem de `useProcessQuery`, e
    * `navigate` preserva a query entre paginas. Com `activeOnly` fixado em
    * `true` — como a versao anterior do backlog mandava —, a lateral diria 170
-   * com a tabela em 650 (`D-33`, medido em 04/09/2026).
+   * com a tabela em 650 (`D-33`).
    */
   it('espelha o recorte vigente da tela, e nao um valor fixado', async () => {
     window.history.replaceState(null, '', '/operacional?activeOnly=true')

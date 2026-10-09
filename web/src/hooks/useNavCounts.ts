@@ -16,7 +16,7 @@ import { useProcessQuery } from './useProcessQuery.ts'
  * que a Pagina Operacional usa, e `navigate` preserva a query ao trocar de
  * pagina — entao o numero da lateral e literalmente o que a tabela mostra ao
  * ser aberta. Uma versao anterior desta historia mandava fixar `activeOnly=true`;
- * `D-33` inverteu o padrao em 04/09/2026, e a lateral diria 170 com a tabela em
+ * `D-33` inverteu o padrao, e a lateral diria 170 com a tabela em
  * 650. Espelhar o hook faz o numero acompanhar sem esta historia ser reaberta.
  *
  * **`null` e ausencia de contagem, e nunca `0`.** Zero e uma afirmacao — filtro

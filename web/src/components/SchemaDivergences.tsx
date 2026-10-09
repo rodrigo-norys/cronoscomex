@@ -9,7 +9,7 @@ import { describeDivergence } from '../../../src/domain/sheet-schema.ts'
  * painel e a do que o servidor conhece —, e elas divergem no primeiro ajuste.
  *
  * **Nada aqui bloqueia nada.** A leitura segue, os processos entram, e o painel
- * nunca para (decisao do usuario em 17/09/2026). O que esta secao entrega e o
+ * nunca para (decisao do usuario, `D-45`). O que esta secao entrega e o
  * motivo, nomeando as duas pontas, que e o que `RF-44` exige.
  *
  * **Uma linha por MUDANCA, e nao por sintoma.** Inserir uma coluna desloca 14, e
@@ -24,7 +24,7 @@ export function SchemaDivergences({
   /*
     **O padrao vazio nao e conveniencia, e conserto de um defeito medido.** Sem
     ele, `divergences.length` sobre `undefined` lancava `TypeError` e derrubava
-    a PAGINA INTEIRA — medido em 17/09/2026, com 19 testes reprovando, entre
+    a PAGINA INTEIRA — medido em `H-96`, com 19 testes reprovando, entre
     eles varios sem relacao nenhuma com este painel.
 
     Um aviso que derruba a tela e o oposto do que `H-96` entrega: a historia

@@ -30,7 +30,7 @@ import { EditableCell } from './EditableCell.tsx'
  * parte, fora desta historia.
  *
  * **Nenhuma celula declara tamanho de fonte**, e isso e invariante desde
- * 04/09/2026. `H-61` decidiu a FAMILIA — mono onde ha codigo ou numero, porque
+ * `H-84`. `H-61` decidiu a FAMILIA — mono onde ha codigo ou numero, porque
  * monoespacada alinha os digitos entre linhas vizinhas e torna a coluna
  * comparavel — e nunca decidiu o corpo. As cinco colunas de codigo nasceram
  * `text-xs` e as quatro de texto livre ficaram nos `text-sm` da tabela, e o
@@ -177,9 +177,9 @@ const fillOf = (item: ProcessDto, column: Column): string | undefined =>
 /**
  * A tinta e o peso que o texto usa sobre a celula pintada (`H-97`).
  *
- * **Constante, e nao mais calculada.** Ate 16/09/2026 a tinta saia da
- * luminancia do fundo, entre uma escura e uma clara, e a formula da WCAG vivia
- * aqui para isso. O usuario pediu PRETO nas nove cores, incluindo o roxo — a
+ * **Constante, e nao calculada** (`H-97`): a tinta saindo da luminancia do
+ * fundo, entre uma escura e uma clara, pedia a formula da WCAG aqui. O usuario
+ * pediu PRETO nas nove cores, incluindo o roxo — a
  * unica que usava a clara: com uma tinta so nao ha escolha a fazer, e manter o
  * calculo seria um ramo que nunca dispara fingindo ser regra.
  *

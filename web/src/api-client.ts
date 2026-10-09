@@ -180,7 +180,7 @@ export async function getProcesses(
  */
 export async function getClientKeys(
   signal?: AbortSignal,
-  /** A coluna que a lista mostra (21/09/2026). Omitida, o servidor usa `clt`. */
+  /** A coluna que a lista mostra (`H-105`). Omitida, o servidor usa `clt`. */
   field: ClientField = 'clt',
 ): Promise<ClientKeysResponse> {
   const response = await fetch(`/api/clients?field=${field}`, signal ? { signal } : undefined)
@@ -200,7 +200,7 @@ export async function getRuleReach(
   match: ClientMatch,
   value: string,
   signal?: AbortSignal,
-  /** A coluna onde a regra procura (21/09/2026). Omitida, o servidor usa `clt`. */
+  /** A coluna onde a regra procura (`H-105`). Omitida, o servidor usa `clt`. */
   field: ClientField = 'clt',
 ): Promise<RuleReachResponse> {
   const query = `?match=${match}&value=${encodeURIComponent(value)}&field=${field}`
@@ -228,7 +228,7 @@ export async function createClientRule(
   match: ClientMatch,
   value: string,
   label: string,
-  /** A coluna onde a regra procura (21/09/2026). Omitido, o servidor usa `clt`. */
+  /** A coluna onde a regra procura (`H-105`). Omitido, o servidor usa `clt`. */
   field: ClientField = 'clt',
 ): Promise<ClientRuleCreatedResponse> {
   const response = await fetch('/api/clients/rules', {
@@ -535,7 +535,7 @@ export type ApplyRefusalCode = WriteRefusal | 'ERRO_INTERNO'
  * `tests/repo/contratos.test.ts` confere que toda `WriteRefusal` esta aqui, e
  * reprova na primeira que faltar.
  *
- * A guarda nasceu de um defeito medido em 02/09/2026: `TABELA_CHEIA` entrou no
+ * A guarda nasceu de um defeito medido em `H-80`: `TABELA_CHEIA` entrou no
  * servidor e nao aqui, e a recusa caia em `ERRO_INTERNO` — o operador via "Nao
  * foi possivel concluir", que significa "nao se sabe o que aconteceu", e o
  * rodape que garante "nada foi gravado, sua fila esta intacta" era SUPRIMIDO

@@ -311,8 +311,8 @@ describe('WorkbookSetup', () => {
       )
       const campo = await campoDoCaminho()
       // O campo aparece no commit, e o efeito que o preenche roda DEPOIS dele:
-      // digitar no intervalo entre os dois deixa o teste a merce da ordem, e foi
-      // o que o fez falhar uma vez em 19/08/2026.
+      // digitar no intervalo entre os dois deixa o teste a merce da ordem
+      // (`H-37`).
       await waitFor(() => expect(campo.value).not.toBe(''))
 
       fireEvent.change(campo, { target: { value: 'D:/ainda-digitando' } })
@@ -685,7 +685,7 @@ describe('WorkbookSetup', () => {
 /**
  * A divida de declaracao do mapa de clientes (`H-88`).
  *
- * Os numeros vem da planilha real, medidos em 08/09/2026: **111 grafias** sem
+ * Os numeros vem da planilha real, medidos em `H-88`: **111 grafias** sem
  * cliente declarado, **140 processos**, e **83 delas valendo um processo cada** —
  * e e isso que faz o teto e a ordem estavel importarem.
  */
@@ -919,7 +919,7 @@ describe('responsáveis por importador', () => {
 /**
  * `H-96`. O painel que diz o que mudou no cabeçalho da planilha.
  *
- * **Nada aqui bloqueia nada** — decisão do usuário em 17/09/2026: a leitura
+ * **Nada aqui bloqueia nada** — decisão do usuário (`D-45`): a leitura
  * segue, os processos entram, e o painel nunca para. O que esta seção entrega é
  * o MOTIVO, nomeando as duas pontas (`RF-44`).
  */
@@ -1009,9 +1009,9 @@ describe('diferenças no cabeçalho (H-96)', () => {
 /**
  * O painel do mapa de clientes, de volta a esta pagina em `D-50`.
  *
- * Percurso completo: nasceu aqui (`D-32`), mudou para a Pagina Clientes em
- * 09/09/2026 (`D-36`, que reverteu a determinacao 1 de `D-32`), e voltou em
- * 18/09/2026 — agora no TOPO e ao lado do painel de responsaveis. Os testes
+ * Percurso completo: nasceu aqui (`D-32`), mudou para a Pagina Clientes
+ * (`D-36`, que reverteu a determinacao 1 de `D-32`), e voltou (`D-50`) —
+ * agora no TOPO e ao lado do painel de responsaveis. Os testes
  * vieram junto da Pagina Clientes, com o render trocado e nada mais: o que eles
  * exercem e o componente, que nao mudou.
  */
@@ -1036,7 +1036,7 @@ async function abrirPainelDeClientes(): Promise<HTMLElement> {
 async function itens(): Promise<HTMLElement[]> {
   const painel = await abrirPainelDeClientes()
   const lista = await within(painel).findByRole('list', {
-    // O rotulo nomeia a COLUNA desde 21/09/2026: a lista acompanha a aba.
+    // O rotulo nomeia a COLUNA (`H-105`): a lista acompanha a aba.
     name: 'Valores de CLT sem cliente declarado',
   })
   return within(lista).findAllByRole('listitem')
@@ -1051,7 +1051,7 @@ async function declarados(): Promise<HTMLElement[]> {
 
 describe('clientes por declarar', () => {
   /**
-   * As duas tabelas separam o que falta do que já foi (08/09/2026): a fixture
+   * As duas tabelas separam o que falta do que já foi (`H-88`): a fixture
    * traz uma grafia livre e uma dentro de um pai, e cada uma vai para um lado.
    */
   it('poe a grafia sem cliente a esquerda, com contagem e REF de exemplo', async () => {
@@ -1083,7 +1083,7 @@ describe('clientes por declarar', () => {
     expect(lista[0]?.textContent).toContain('304 grafias')
   })
 
-  /** A frase evita o jargao "grafia" na abertura, e diz o EFEITO (09/09/2026). */
+  /** A frase evita o jargao "grafia" na abertura, e diz o EFEITO (`H-88`). */
   /**
    * **A faixa e o estado de repouso** (`D-37`): recolhida, ela custa uma linha
    * em vez dos 710 px medidos a 1920x1080, e a divida continua a vista.
@@ -1124,7 +1124,7 @@ describe('clientes por declarar', () => {
     await within(painel).findByRole('button', { name: 'Declarar clientes' })
 
     /*
-      A descricao ficou GENERICA em 21/09/2026, e cita as tres colunas: com a
+      A descricao e GENERICA (`H-105`), e cita as tres colunas: com a
       declaracao podendo vir de CLT, REF ou IMPORTADOR, a frase anterior —
       "A coluna CLT tem 509 valores diferentes" — prometia uma contagem de uma
       coluna so, e passaria a mentir quando um processo ganhasse dono por outra.
@@ -1232,7 +1232,7 @@ describe('clientes por declarar', () => {
     await itens()
 
     /*
-      A coluna passou a viajar na query em 21/09/2026, e o que este teste guarda
+      A coluna viaja na query (`H-105`), e o que este teste guarda
       continua sendo o mesmo: a divida de configuracao NAO segue o recorte da
       tela (`D-32`, determinacao 2). Por isso a assercao passou de "sem query
       nenhuma" para "so `field`" — filtro global aqui faria a divida sumir, e o
@@ -1349,7 +1349,7 @@ describe('declarar um cliente', () => {
     fireEvent.click(botao)
 
     await waitFor(() => expect(api.ruleBodies).toHaveLength(1))
-    // `field` viaja desde 21/09/2026, e `clt` e a aba em que o formulario abre.
+    // `field` viaja (`H-105`), e `clt` e a aba em que o formulario abre.
     expect(api.ruleBodies[0]).toEqual({ match: 'prefix', value: 'Y', label: 'Vivi', field: 'clt' })
   })
 
@@ -1419,7 +1419,7 @@ describe('escolher o nome do cliente', () => {
    * sugestao.
    */
   /**
-   * **Escopado no painel** (09/09/2026): o ranking de Clientes tambem tem um
+   * **Escopado no painel** (`D-36`): o ranking de Clientes tambem tem um
    * botao "Vivi" — a barra clicavel do grafico —, e desde `D-36` os dois vivem
    * na mesma pagina. Buscar no documento inteiro acha o do grafico.
    */
@@ -1518,7 +1518,7 @@ describe('desfazer o agrupamento', () => {
   })
 
   /**
-   * A opcao (a), escolhida pelo usuario em 18/09/2026.
+   * A opcao (a), escolhida pelo usuario (`D-53`).
    *
    * `Dennis` foi declarado quando cliente solto existia, e a carga o le como
    * grupo de um membro. Pai e filho dizem a mesma palavra: a tela nao a repete,
@@ -1537,7 +1537,7 @@ describe('desfazer o agrupamento', () => {
   })
 
   /**
-   * O que a mudanca de 18/09/2026 conserta: ate ela, `Dennis` nao tinha botao
+   * O que `D-53` conserta: sem ela, `Dennis` nao tinha botao
    * nenhum — cliente solto nao estava em agrupamento, e apagar regra ficara
    * fora de `H-88`. Desfazer uma declaracao exigia editar o JSON a mao.
    */
@@ -1606,7 +1606,7 @@ describe('desfazer o agrupamento', () => {
 })
 
 /**
- * As abas de coluna no formulario de declaracao (21/09/2026).
+ * As abas de coluna no formulario de declaracao (`H-105`).
  *
  * Opcao B do artefato, escolhida pelo usuario: a coluna escolhida fica visivel
  * o tempo todo, e o rotulo do campo de valor a acompanha — ate aqui ele dizia
