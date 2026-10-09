@@ -136,7 +136,7 @@ seguinte, a partir dos commits (`D-26`). O que elas registram estava vivo desde
 então nos testes, no contrato de `05-contratos-api.md §3` e em
 `.claude/rules/escrita-xlsx.md`.
 
-**Pendências abertas: <!-- conta:pendencias-abertas -->0<!-- /conta -->** — o registro das fechadas está em [Pendências abertas](#pendências-abertas).
+**Pendências abertas: <!-- conta:pendencias-abertas -->0<!-- /conta -->** — as fechadas ficam marcadas em [Pendências](#pendências).
 
 **O que cada história mediu e decidiu está no bloco `✅ CONCLUÍDA` dela**, em
 [06-backlog.md](06-backlog.md) — é lá que o registro técnico vive, não aqui. O
@@ -168,35 +168,25 @@ corrigida** — trocava o `styleId` inteiro, o que destruiria bordas.
 
 ---
 
-## Pendências abertas
+## Pendências
 
-**Abertas: <!-- conta:pendencias-abertas -->0<!-- /conta -->**, desde 06/10/2026. O `CLAUDE.md` da raiz traz uma linha por
-pendência aberta, e o detalhe vive aqui; ao fechar uma, ela sai dos dois.
+**Abertas: <!-- conta:pendencias-abertas -->0<!-- /conta -->**, desde 06/10/2026. Cada pendência tem uma linha
+aqui, aberta ou fechada, e a aberta tem também uma linha no `CLAUDE.md` da raiz. Ao
+fechar, a linha do `CLAUDE.md` sai e a daqui fica, com o estado `✅ Fechada em
+DD/MM/AAAA` e onde o resultado vive: a definição não se apaga, só muda de estado.
 
-> As fechadas saem daqui e vivem onde são usadas: `PD-06` (03/09/2026) em
-> `.claude/rules/operacao-windows.md`, `PD-01` (04/09/2026) no parágrafo abaixo,
-> e as lições da instalação — a árvore baixada sem `.git`, e o cliente novo com
-> servidor velho que falha mudo — em `.claude/rules/distribuicao.md`. **`PD-07` e
-> `PD-08` fecharam em 06/10/2026**, conferidas pelo usuário na máquina do operador:
-> as cores sem problema sob o modo forçado, e o mapa de clientes de `H-88` operando
-> pela tela. **`PD-09` fechou no mesmo dia, por decisão (`D-70`)**: a faixa
-> deixou de dizer "alguém" e diz só que a planilha está aberta no Excel, sem
-> depender de `P-15`.
-
-**`PD-10` fechou em `H-84`**, e
-**`PD-01` fechou com a primeira instalação na máquina do operador**, em
-04/09/2026 — a planilha apontada pela tela, sem `config/app.json` prévio, e
-`/api/health` respondendo `state: "pronto"`, com 649 linhas lidas e zero em
-quarentena; `PD-08` encolheu para uma correção no `README.md` da branch
-`distribuicao`, que a sincronização de 04/09 já fez. **`PD-06` fechou em
-03/09/2026** e **`PD-05` em 01/09/2026**, medida em dois arquivos que o próprio
-Excel gerou, e a premissa dela foi **refutada**. **`PD-07` restou só na paleta nominal do Windows**, que queria a máquina do
-operador: o item do `ConflictDialog`, que pedia uma fixture capaz de produzir o
-conflito, fechou pelo ensaio sobre a planilha real, que o produziu num
-navegador, e a gestão de foco saiu junto — `H-111`, 18/09/2026. **`PD-09` não fechava pelo proxy de uma
-máquina só**: medido em 03/09/2026, a planilha do operador está em `Downloads`,
-fora do OneDrive, e não há `~$` a observar — e fechou quando a frase de
-`StatusBanner.tsx` recuou (`D-70`).
+| Pendência | O que era | Estado |
+|---|---|---|
+| **PD-01** | `config/app.json` apontava para a planilha na raiz do projeto, para validar a partida em `H-02`, e a máquina do operador precisava do caminho real | ✅ Fechada em 04/09/2026 — com a primeira instalação na máquina do operador: a planilha apontada pela tela, sem `config/app.json` prévio, e `/api/health` respondendo `state: "pronto"`, com 649 linhas lidas e zero em quarentena. As lições da instalação — a árvore baixada sem `.git`, e o cliente novo com servidor velho que falha mudo — vivem em `.claude/rules/distribuicao.md` |
+| **PD-02** | Abrir no Excel real a **saída** de `applyCellEdits` (`H-24`) e confirmar que não há aviso de reparo e que a data gravada aparece como `29/ago`, e não `46263` | ✅ Fechada em 13/08/2026 — a saída abriu no Excel real sem aviso de reparo e com `29/ago`; o registro está no bloco `✅ CONCLUÍDA` de `H-24` |
+| **PD-03** | `data/` nasce em execução (`H-08`), e faltava o `README.md` da raiz instruir a criá-lo **fora** da pasta sincronizada do OneDrive | ✅ Fechada em 18/08/2026 — em `H-30`, pela seção de instalação do `README.md` da raiz |
+| **PD-04** | A célula ausente do XML herda o estilo da coluna (`fillId=0`), e abriria um buraco branco na faixa de cor da planilha real | ✅ Fechada em 13/08/2026 — por medição em `H-25`: a coluna `DOCS ENVIADOS` é branca por desenho, e herdar dela reproduz o que a planilha faz; o registro está no bloco `✅ CONCLUÍDA` de `H-25` |
+| **PD-05** | A remoção de entrada em `xl/calcChain.xml` só tinha teste sintético, e faltava a cadeia produzida pelo próprio Excel | ✅ Fechada em 01/09/2026 — medida em dois arquivos que o próprio Excel gerou, e a premissa dela foi **refutada**; vive na ADR-0004, em "A cadeia de cálculo: a premissa refutada" |
+| **PD-06** | `scripts/iniciar.cmd`, entregue por `H-30`, nunca tinha sido executado na máquina Windows | ✅ Fechada em 03/09/2026 — os últimos itens exercidos por SSH; o que virou regra vive em `.claude/rules/operacao-windows.md` |
+| **PD-07** | O resto de `VN-5`: o desenho sob `forced-colors`, com a paleta nominal do Windows, que queria a máquina do operador | ✅ Fechada em 06/10/2026 — conferida pelo usuário na máquina do operador, as cores sem problema sob o modo forçado. O item do `ConflictDialog`, que pedia uma fixture capaz de produzir o conflito, já tinha fechado pelo ensaio sobre a planilha real, que o produziu num navegador, e a gestão de foco saiu junto — `H-111`, 18/09/2026 |
+| **PD-08** | Os mapas de negócio de `H-48` viajam à parte da distribuição, e o `README.md` da branch `distribuicao` chegou a negar isso | ✅ Fechada em 06/10/2026 — conferida pelo usuário na máquina do operador, com o mapa de clientes de `H-88` operando pela tela. A correção no `README.md` da branch `distribuicao` a sincronização de 04/09/2026 já tinha feito; os mapas vivem em `.claude/rules/distribuicao.md` |
+| **PD-09** | A premissa `P-15` — o OneDrive sincroniza a trava `~$` entre máquinas — estava sem dono, e a faixa de arquivo aberto dizia "alguém" apoiada nela | ✅ Fechada em 06/10/2026 — por decisão (`D-70`): a faixa diz só que a planilha está aberta no Excel, sem depender de `P-15`. Não fechava pelo proxy de uma máquina só: medido em 03/09/2026, a planilha do operador está em `Downloads`, fora do OneDrive, e não há `~$` a observar |
+| **PD-10** | A suíte reprovava sob contenção por prazo — quatro casos de `Operational.test.tsx` e de `paginas-montadas.test.tsx` —, e o defeito não era de produto | ✅ Fechada em 04/09/2026 — em `H-84`, com o diagnóstico no bloco `✅ CONCLUÍDA` dela |
 
 ## Regras que valem para todo o projeto
 

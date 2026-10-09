@@ -108,7 +108,7 @@ a 19/08/2026: a branch e os commits de `H-35` dizem `H-44`.
 
 **Abertas: <!-- conta:pendencias-abertas -->0<!-- /conta -->.** Pendência nova entra aqui como linha da
 tabela `| **PD-NN** | o que falta |`, com o detalhe e o gatilho em
-`docs/README.md`; ao fechar, sai dos dois.
+`docs/README.md`; ao fechar, sai daqui e fica marcada fechada lá.
 
 ## Onde a regra já aprendida foi parar
 
