@@ -86,10 +86,10 @@ function validateRule(raw: unknown, where: string): ClientRule {
   }
 
   /*
-    A coluna onde a regra procura (21/09/2026).
+    A coluna onde a regra procura (`H-105`).
 
     **Ausente vale `clt`, e a tolerancia e deliberada:** o mapa do operador tem
-    regras escritas antes desta data, e recusa-las na carga o deixaria sem
+    regras escritas antes de `H-105`, e recusa-las na carga o deixaria sem
     consolidacao nenhuma por um campo que ele nao sabia existir — o mesmo
     tratamento que `team-map.json` da aos campos obsoletos de `H-93`.
   */
@@ -186,7 +186,7 @@ export function loadClientMap(path: string = DEFAULT_CLIENT_MAP_PATH): ClientMap
 
 /**
  * Todo cliente vive dentro de um grupo, inclusive os declarados ANTES de
- * 18/09/2026 (determinacao do usuario: cliente solto deixou de existir).
+ * cliente solto deixar de existir, por determinacao do usuario (`D-53`).
  *
  * **A derivacao acontece na LEITURA, e o arquivo do operador nao e reescrito.**
  * Migrar por gravacao automatica mexeria em `config/` na partida, sem ninguem
@@ -400,7 +400,7 @@ export function saveClientRule(plan: ClientRulePlan, path?: string): void {
     (rule) =>
       rule.match === plan.match &&
       normKey(rule.value) === plan.value &&
-      // A COLUNA entra na comparacao desde 21/09/2026: `ALFA` em CLT e `ALFA`
+      // A COLUNA entra na comparacao (`H-105`): `ALFA` em CLT e `ALFA`
       // em IMPORTADOR sao regras diferentes, e tratá-las como a mesma faria a
       // segunda declaracao virar um no-op silencioso.
       (rule.field ?? 'clt') === plan.field &&
@@ -479,7 +479,7 @@ export function removeClientGroup(removal: ClientGroupRemoval, path?: string): v
     (group) => typeof group.key === 'string' && normKey(group.key) === normKey(removal.key),
   )
   /**
-   * **Grupo ausente do arquivo nao aborta a remocao**, desde 18/09/2026.
+   * **Grupo ausente do arquivo nao aborta a remocao** (`H-105`).
    *
    * O grupo pode ser IMPLICITO — derivado na leitura para o cliente declarado
    * antes de cliente solto deixar de existir —, e nesse caso nao ha o que tirar
@@ -506,7 +506,7 @@ export function removeClientGroup(removal: ClientGroupRemoval, path?: string): v
 }
 
 /**
- * **As entradas saem junto** (08/09/2026): desagrupar e desdeclarar viraram uma
+ * **As entradas saem junto** (`H-88`): desagrupar e desdeclarar sao uma
  * operacao so, por escolha do usuario. O filho que SOBRA quando o pai se
  * dissolve nao e apagado — ele nao foi pedido.
  *
@@ -568,10 +568,10 @@ function saveClientParent(
   /**
    * O filho entra onde `beforeKey` mandar, e no FIM quando nao ha disputa.
    *
-   * **`beforeKey` passou a chegar aqui em 18/09/2026**, com a primeira
-   * declaracao virando grupo: ate entao este caminho so recebia conjunto —
-   * `prefix` e `contains`, que nunca disputam lugar — e empurrar para o fim
-   * bastava. Agora ele recebe tambem a `exact` de uma grafia, e essa PRECISA
+   * **`beforeKey` chega aqui porque a primeira declaracao vira grupo**
+   * (`H-105`): alem de conjunto — `prefix` e `contains`, que nunca disputam
+   * lugar, e para quem o fim basta —, este caminho recebe a `exact` de uma
+   * grafia, e essa PRECISA
    * vencer o prefixo que ja a captura: no fim da lista, a regra nova nunca seria
    * alcancada e a declaracao viraria no-op silencioso (regra inviolavel 2).
    */

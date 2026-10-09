@@ -66,7 +66,7 @@ export interface LogEntry {
   quarantineRate?: number
   cellsWritten?: number
   /**
-   * Quantas linhas NOVAS a escrita criou (02/09/2026). Sem ele, `write.done`
+   * Quantas linhas NOVAS a escrita criou (`H-79`). Sem ele, `write.done`
    * de uma aplicacao so de insercao sai com `cellsWritten: 0` — indistinguivel
    * do ramo em que nada mudou.
    */

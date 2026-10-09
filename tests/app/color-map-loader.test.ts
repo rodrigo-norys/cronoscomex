@@ -163,7 +163,7 @@ describe('display', () => {
 
   it('as 9 entradas do mapa real declaram display', () => {
     // Sem isto a tabela de `H-94` nao pinta nada — foi exatamente o que a
-    // conferencia contra a planilha real pegou em 16/09/2026.
+    // conferencia contra a planilha real pegou em `H-94`.
     const entries = loadColorMap('config/color-map.json')
 
     expect(entries.every((entry) => entry.display !== undefined)).toBe(true)

@@ -136,7 +136,7 @@ export function loadTeamMap(path: string = DEFAULT_TEAM_MAP_PATH): TeamMember[] 
     `IND-20` conta por pessoa: com o mesmo importador em dois membros, o mesmo
     processo entra nas duas carteiras e a soma deixa de fechar com o total. A
     tela recusa desde `H-91`, por `planTeamMember`; o arquivo editado a mao
-    passava — medido pelo ensaio em 17/09/2026.
+    passava — medido pelo ensaio (`H-109`).
 
     A comparacao usa `overlaps`, e nao igualdade: listar "ACME" ja casa
     "ACME - SC", entao dois membros com essas duas grafias disputam os mesmos

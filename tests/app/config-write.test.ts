@@ -10,7 +10,7 @@ import {
 } from '../../src/app/config.ts'
 
 /**
- * H-34. Nenhum destes testes toca `config/app.json` real — todo caminho e
+ * H-34. Nenhum destes testes toca o `app.json` real — todo caminho e
  * diretorio temporario (regra inviolavel 7).
  */
 
@@ -23,7 +23,7 @@ let workbook: string
  * E no Windows ele nao restringe ninguem. Pior: `process.getuid` nem existe
  * la, entao `undefined !== 0` dava `true` e a guarda se declarava satisfeita
  * exatamente onde deveria barrar — medido na primeira execucao de
- * `verify-windows`, em 16/09/2026.
+ * `verify-windows` (docs/08-qualidade-operacao.md §5.2).
  */
 const semPrivilegio = process.platform !== 'win32' && process.getuid?.() !== 0
 
