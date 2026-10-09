@@ -3,7 +3,7 @@
 
   "version": 1,
 
-  "_comentario_por_que": "A coluna CLT guarda a referencia do processo DAQUELE cliente, nao o cliente: medido em 31/08/2026, 649 processos produzem 509 valores distintos. Sem este mapa, o ranking de clientes conta processos e chama o resultado de cliente.",
+  "_comentario_por_que": "A coluna CLT guarda a referencia do processo DAQUELE cliente, nao o cliente: medido em docs/uso/RESULTADO.md, 649 processos produzem 509 valores distintos. Sem este mapa, o ranking de clientes conta processos e chama o resultado de cliente.",
 
   "_comentario_ordem": "A PRIMEIRA regra que casa vence — percorre-se `clients` na ordem, e dentro de cada um as `rules` na ordem. Nao ha correspondencia unica: o mesmo cliente costuma aparecer por prefixo E por texto contido. Ponha o caso especifico ANTES do geral.",
 
