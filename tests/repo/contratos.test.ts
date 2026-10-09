@@ -828,7 +828,7 @@ function totalDeclarado(): { total: number; concluidas: number; p: number; m: nu
     ?.replace(/<!-- \/?conta[^>]*-->/g, '')
   if (linha === undefined) throw new Error('a tabela de resumo não tem linha de Total')
 
-  const numeros = [...linha.matchAll(/\*\*(\d+)\*\*|(\d+) concluídas/g)].map((achado) =>
+  const numeros = [...linha.matchAll(/\*\*(\d+)\*\*|concluídas: (\d+)/g)].map((achado) =>
     Number(achado[1] ?? achado[2]),
   )
   if (numeros.length !== 5) {

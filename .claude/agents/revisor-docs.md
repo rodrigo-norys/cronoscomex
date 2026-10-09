@@ -78,7 +78,7 @@ Estas já têm asserção em `tests/repo/documentacao.test.ts` e em
 entrega de graça:
 
 - o índice do backlog agrupando cada história sob o épico do corpo;
-- as contagens P/M/G de cada linha da tabela de resumo, e o `N abertas`;
+- as contagens P/M/G de cada linha da tabela de resumo, e o `abertas: N`;
 - a matriz da §4 concordando com o backlog, história a história;
 - requisito marcado `REVOGADO` que siga "Entregue" na §5;
 - todo número preso em região `conta` — o total de histórias entre eles.

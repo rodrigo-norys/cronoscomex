@@ -126,8 +126,8 @@ describe('o índice do backlog agrupa cada história sob o épico do corpo', () 
 
 /**
  * A linha de Total da tabela de resumo já é conferida. As 15 linhas por épico —
- * 45 números — e o `N abertas` da própria linha de Total não eram: a regex de
- * `totalDeclarado()` casa `**N**` e `N concluídas`, e nada mais.
+ * 45 números — e o `abertas: N` da própria linha de Total não eram: a regex de
+ * `totalDeclarado()` casa `**N**` e `concluídas: N`, e nada mais.
  */
 describe('a tabela de resumo do backlog bate linha a linha', () => {
   const linhas = [...BACKLOG.matchAll(/^\| (E\d+) [^|]*\|[^|]*\| (\d+) \| (\d+) \| (\d+) \|$/gm)]
@@ -161,7 +161,7 @@ describe('a tabela de resumo do backlog bate linha a linha', () => {
     const total = (BACKLOG.split('\n').find((linha) => linha.startsWith('| **Total**')) ?? '')
       // A contagem vive em região `conta`; o número é lido sem os marcadores.
       .replace(/<!-- \/?conta[^>]*-->/g, '')
-    const declaradas = /(\d+) abertas?/.exec(total)?.[1]
+    const declaradas = /abertas: (\d+)/.exec(total)?.[1]
 
     expect(declaradas).toBeDefined()
     expect(Number(declaradas)).toBe(TOTAL - CONCLUIDAS)
