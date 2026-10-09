@@ -7,8 +7,8 @@ import { normKey } from './normalizer.ts'
  * src/app/client-map-loader.ts, porque src/domain/ nao faz I/O (ADR-0006) — a
  * mesma divisao de color-mapper.ts e color-map-loader.ts.
  *
- * **A celula guarda o processo do cliente, nao o cliente.** Medido em
- * 31/08/2026: 649 processos produzem 509 valores distintos em CLT, porque o
+ * **A celula guarda o processo do cliente, nao o cliente.** Medido: 649
+ * processos produzem 509 valores distintos em CLT, porque o
  * mesmo cliente aparece com sufixo crescente (docs/uso/RESULTADO.md §2). Sem
  * esta traducao, o ranking de clientes (IND-10) conta processos e chama o
  * resultado de cliente.
@@ -21,7 +21,7 @@ import { normKey } from './normalizer.ts'
  *
  * **Chave sem regra permanece como esta.** Nao consolidar e resultado legitimo,
  * e o unico honesto para os processos cujo cliente ainda nao foi declarado —
- * **140 deles, em 111 grafias**, medidos em 08/09/2026 sobre 12 entradas de
+ * **140 deles, em 111 grafias**, medidos sobre 12 entradas de
  * mapa (`H-88`). O numero que estava aqui, 121, foi medido em `H-49` e
  * envelheceu com o mapa; `clientKeys` e quem os conta agora.
  */
@@ -30,10 +30,10 @@ import { normKey } from './normalizer.ts'
 export type ClientMatch = 'prefix' | 'contains' | 'exact'
 
 /**
- * Em qual coluna a regra procura o valor (21/09/2026).
+ * Em qual coluna a regra procura o valor (`H-105`).
  *
  * **Ausente vale `clt`**, e a compatibilidade nao e detalhe: o mapa do operador
- * tem regras escritas antes desta data, e recusa-las na carga o deixaria sem
+ * tem regras escritas antes de `H-105`, e recusa-las na carga o deixaria sem
  * consolidacao nenhuma por um campo que ele nao sabia existir.
  */
 export type ClientField = 'clt' | 'ref' | 'importer'
@@ -42,7 +42,7 @@ export interface ClientRule {
   match: ClientMatch
   /** Ja normalizado por `normKey` na carga, para nao normalizar por linha. */
   value: string
-  /** A coluna onde `value` e procurado. Ausente, `clt` (21/09/2026). */
+  /** A coluna onde `value` e procurado. Ausente, `clt` (`H-105`). */
   field?: ClientField
   /**
    * Qualifica a regra pelo importador, tambem normalizado. Ausente, a regra
@@ -51,8 +51,8 @@ export interface ClientRule {
    * Existe pelo prefixo de 62 processos que cobre tres clientes: sem qualificar,
    * ou a regra casa demais, ou o grupo inteiro fica sem consolidacao.
    *
-   * **Nao se confunde com `field: 'importer'`, e os dois coexistem** por decisao
-   * do usuario em 21/09/2026: este RESTRINGE uma regra de outra coluna — CLT
+   * **Nao se confunde com `field: 'importer'`, e os dois coexistem**
+   * (`D-68`): este RESTRINGE uma regra de outra coluna — CLT
    * *e* importador X —, e aquele faz do importador a coluna procurada.
    */
   importer?: string
@@ -117,8 +117,8 @@ function matches(rule: ClientRule, fields: ClientFields): boolean {
  * JSON em vez de ser um detalhe de implementacao.
  *
  * Celula vazia nunca casa regra alguma — a guarda vive em `matches`, por
- * coluna. **Ate 21/09/2026 ela vivia AQUI, sobre a CLT**, e devolvia "sem
- * cliente" antes de olhar o mapa; com tres colunas isso passou a estar errado,
+ * coluna. **Ela nao vive AQUI, sobre a CLT** (`H-105`): devolver "sem
+ * cliente" antes de olhar o mapa estaria errado com tres colunas,
  * porque um processo de CLT vazia pode ter dono por REF ou por importador.
  */
 export function resolveClient(
@@ -185,7 +185,7 @@ export interface ClientName {
    *
    * A tela mostra o NUMERO, e nao a palavra "agrupa": "Vivi · 4 clientes" diz o
    * que "Vivi agrupa" so insinuava, e ainda informa o tamanho do que o operador
-   * esta prestes a engrossar (09/09/2026).
+   * esta prestes a engrossar (`H-88`).
    */
   children: number
 }
@@ -196,16 +196,15 @@ const SAMPLES_PER_KEY = 3
 /**
  * TODA a coluna CLT, com o dono de cada grafia (`H-88`).
  *
- * **Ela mostra o declarado tambem, e isso mudou em 08/09/2026.** A primeira
- * versao trazia so o que faltava declarar, e com isso tornava impossivel pela
- * tela o caso que o usuario descreveu: agrupar `AV` sob `Vivi` exige ver `AV`,
- * que ja e cliente e por isso sumia da lista.
+ * **Ela mostra o declarado tambem** (`H-88`): so o que falta declarar tornaria
+ * impossivel pela tela o caso que o usuario descreveu — agrupar `AV` sob `Vivi`
+ * exige ver `AV`, que ja e cliente.
  *
  * **Pertencer se decide por `resolveClient(...).mapped`, e nao pela igualdade
  * entre a chave resolvida e a da celula.** `planClientRule` usa `normKey(label)`
  * como chave da entrada, entao uma grafia declarada com o proprio valor como
  * nome do cliente resolveria para si mesma e a igualdade a chamaria de pendente.
- * Medido na planilha real em 08/09/2026: a igualdade acusa 118 grafias contra as
+ * Medido na planilha real (`H-88`): a igualdade acusa 118 grafias contra as
  * 111 que de fato faltam.
  *
  * **Celula vazia nao entra**: e ausencia de dado, nao cliente por declarar.
@@ -221,7 +220,7 @@ export function clientKeys(
   map: readonly ClientMapEntry[],
   groups: readonly ClientGroup[] = [],
   /**
-   * A coluna que a lista mostra (21/09/2026).
+   * A coluna que a lista mostra (`H-105`).
    *
    * **Ela acompanha a aba do formulario**, por pedido do usuario: declarar por
    * REF olhando uma lista de grafias de CLT obrigaria a procurar na planilha o
@@ -288,8 +287,8 @@ export interface ClientGroupRemoval {
    */
   dissolves: boolean
   /**
-   * As entradas de `clients[]` que saem JUNTO — escolha do usuario em
-   * 08/09/2026, e a segunda metade do que os botoes fazem.
+   * As entradas de `clients[]` que saem JUNTO — escolha do usuario
+   * (`H-88`), e a segunda metade do que os botoes fazem.
    *
    * **Desagrupar e desdeclarar viraram uma operacao so.** Antes o vinculo saia e
    * a regra ficava, e desfazer uma declaracao errada exigia editar o JSON. O
@@ -489,7 +488,7 @@ export function ruleReach(
   map: readonly ClientMapEntry[],
   match: ClientMatch,
   rawValue: string,
-  /** A coluna que a regra procura (21/09/2026). Padrao `clt`, como antes. */
+  /** A coluna que a regra procura (`H-105`). Padrao `clt`, como antes. */
   field: ClientField = 'clt',
 ): RuleReach {
   const value = normKey(rawValue)
@@ -513,7 +512,7 @@ export function ruleReach(
   for (const process of processes) {
     const campos = camposDe(process)
     /*
-      **A chave de agrupamento e a da COLUNA da regra** (21/09/2026), e nao mais
+      **A chave de agrupamento e a da COLUNA da regra** (`H-105`), e nao mais
       a grafia de CLT: uma regra por importador alcanca linhas cuja CLT esta
       vazia, e agrupa-las sob `''` diria que a regra alcanca uma grafia so.
 
@@ -542,7 +541,7 @@ export function ruleReach(
 
 /**
  * O que precisa mudar no mapa para que uma celula CLT passe a pertencer a um
- * cliente — a volta do caminho que `resolveClient` faz na ida (02/09/2026).
+ * cliente — a volta do caminho que `resolveClient` faz na ida (`H-79`).
  *
  * **Aqui so se PLANEJA.** Quem escreve o arquivo e `src/app/client-map-loader.ts`,
  * e escreve no JSON CRU: o mapa em memoria vem normalizado, e serializa-lo de
@@ -551,13 +550,13 @@ export function ruleReach(
  */
 export interface ClientRulePlan {
   /**
-   * **Os dois de PAI nasceram em 08/09/2026**, quando o usuario descreveu o
-   * comportamento que quer: para ele nao ha dois conceitos — ha um nome que
+   * **Os dois de PAI vem de como o usuario descreveu o que quer** (`H-88`):
+   * para ele nao ha dois conceitos — ha um nome que
    * recebe conjuntos, e o pai e o que acontece quando um nome os recebe.
    *
-   * **`entrada-nova` saiu em 21/09/2026**, e estava morto desde `D-53`: com
-   * toda declaracao virando grupo, a primeira passou a devolver `grupo-criado`,
-   * e nenhum caminho de `planClientRule` produzia mais o kind antigo. O
+   * **Nao ha `entrada-nova`** (`H-105`): morto desde `D-53` — com toda
+   * declaracao virando grupo, a primeira devolve `grupo-criado`, e nenhum
+   * caminho de `planClientRule` produz o kind antigo. O
    * tratamento em `saveClientRule` continua existindo e serve `regra-acrescentada`
    * — o que saiu foi o rotulo sem produtor, nao o codigo que grava.
    */
@@ -566,7 +565,7 @@ export interface ClientRulePlan {
   key: string
   /** Como a regra compara — `exact` sobre uma grafia, `prefix` sobre um grupo. */
   match: ClientMatch
-  /** Em que coluna ela procura (21/09/2026). `clt` reproduz o comportamento antigo. */
+  /** Em que coluna ela procura (`H-105`). `clt` reproduz o comportamento antigo. */
   field: ClientField
   /** O rotulo como o operador escreveu — so a entrada nova o usa. */
   label: string
@@ -619,7 +618,7 @@ export function planClientRule(
   map: readonly ClientMapEntry[],
   match: ClientMatch = 'exact',
   groups: readonly ClientGroup[] = [],
-  /** A coluna onde a regra procura (21/09/2026). Padrao `clt`, como antes. */
+  /** A coluna onde a regra procura (`H-105`). Padrao `clt`, como antes. */
   field: ClientField = 'clt',
 ): ClientRulePlan | ClientRuleRejection {
   const key = normKey(label)
@@ -633,7 +632,7 @@ export function planClientRule(
    * DIGITADO. Um `yt` escrito a mao ia para o
    * arquivo em minuscula, e `saveClientRule` compara `normKey(rule.value)` com
    * `plan.value`: a segunda declaracao do mesmo valor nao reconhecia a primeira
-   * e acrescentava uma regra duplicada. Medido em 08/09/2026, sobre uma regra
+   * e acrescentava uma regra duplicada. Medido (`H-88`), sobre uma regra
    * `contains` gravada como `yt` entre outras doze em maiuscula.
    */
   const value = normKey(clientKey)
@@ -657,14 +656,14 @@ export function planClientRule(
    * **A chave normaliza; o ROTULO preserva a grafia digitada.**
    *
    * E a mesma divisao de `clientKey` e `clientLabel` em `Process`: a chave casa
-   * a regra (`TD-04`), e o rotulo e o que a tela mostra. Ate 09/09/2026 os dois
-   * saiam de `normKey`, e quem digitava "Kelly" via "KELLY" declarado — o
-   * operador escreve o nome, nao a chave.
+   * a regra (`TD-04`), e o rotulo e o que a tela mostra. Com os dois saindo de
+   * `normKey`, quem digita "Kelly" ve "KELLY" declarado (`H-88`) — o operador
+   * escreve o nome, nao a chave.
    */
   const child: ClientKeyOwner = { key: value, label: clientKey.trim() }
 
   // O PAI vem antes do cliente na busca pelo alvo: com os dois existindo sob
-  // nomes parecidos — `Vivi` e `VIVI`, que foi o defeito de 08/09/2026 —, quem
+  // nomes parecidos — `Vivi` e `VIVI`, o defeito de `H-88` —, quem
   // recebe conjunto e o pai.
   const parent = groups.find((group) => normKey(group.label) === key || group.key === key)
   if (parent !== undefined) {
@@ -690,7 +689,7 @@ export function planClientRule(
    * arvore errada, ou nao a desenharia.
    *
    * A tela ja nao oferece o filho na lista de nomes; isto e a defesa para quem
-   * digita. Achado em 08/09/2026, simulando as declaracoes contra o mapa real.
+   * digita. Achado simulando as declaracoes contra o mapa real (`H-88`).
    */
   const isChild = groups.some((group) =>
     group.members.some((member) => normKey(member.client) === key),
@@ -698,7 +697,7 @@ export function planClientRule(
   if (isChild) return 'NOME_E_FILHO'
 
   /*
-    O valor digitado, posto NA COLUNA escolhida (21/09/2026): a disputa de lugar
+    O valor digitado, posto NA COLUNA escolhida (`H-105`): a disputa de lugar
     de uma regra `exact` so faz sentido contra quem ja casa aquela mesma coluna.
   */
   const candidato: ClientFields = {
@@ -725,7 +724,7 @@ export function planClientRule(
   }
 
   /**
-   * **O nome e novo, e ja nasce PAI** — determinacao do usuario em 18/09/2026.
+   * **O nome e novo, e ja nasce PAI** — determinacao do usuario (`D-53`).
    *
    * Ate aqui a primeira declaracao criava um cliente solto, e o pai so nascia
    * quando o SEGUNDO conjunto chegava ao mesmo nome (`D-35`). O usuario decidiu

@@ -46,7 +46,7 @@ export type EditRejection = 'CAMPO_NAO_EDITAVEL' | 'CORPO_INVALIDO' | 'CARACTERE
  * **O texto gravado vai para `sharedStrings.xml`, que e GLOBAL ao arquivo**, e
  * um caractere desses deixa o XML malformado: o Excel pede reparo, e o reparo
  * alcanca o texto das quatro abas, inclusive as fora de escopo. Medido em
- * 22/09/2026: o `<input>` do Chrome mantem U+0001, U+000B e U+001F colados, e
+ * `H-112`: o `<input>` do Chrome mantem U+0001, U+000B e U+001F colados, e
  * `validateEdit` so conferia o tamanho — o caminho da tela ate o arquivo estava
  * aberto.
  *

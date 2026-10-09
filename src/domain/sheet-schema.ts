@@ -22,13 +22,13 @@ import { normKey } from './normalizer.ts'
  * O modo de falha que ele mata esta medido em `D-43`: deslocar uma coluna faz
  * **616 dos 650** processos lerem o dado do vizinho e **580 categorias**
  * ficarem erradas, com quarentena zero. *(A frase dizia tambem "nenhuma
- * anomalia"; o ensaio de 17/09/2026 mediu ao menos uma no primeiro processo, e
+ * anomalia"; o ensaio mediu ao menos uma no primeiro processo, e
  * o total nao foi medido — `D-60`.)*
  *
  * **Os ramos de rotulo vazio e repetido nao sao alcancados pelo gesto do
  * operador.** Enquanto a `Tabela1` cobrir a coluna, o Excel renomeia sozinho o
  * cabecalho apagado para `Column1` e o repetido para `IMPORTADOR2` — medido no
- * ensaio de 17/09/2026 (`D-60`). So arquivo escrito fora do Excel chega a eles,
+ * ensaio (`D-60`). So arquivo escrito fora do Excel chega a eles,
  * e ali eles reagem como declarado.
  */
 
@@ -41,7 +41,7 @@ import { normKey } from './normalizer.ts'
  * sozinho. Corrigi-los aqui faria a conferencia reprovar o arquivo real
  * (regra inviolavel 1).
  *
- * Confirmado em 17/09/2026 nas NOVE fixtures: as 16 letras, identicas em todas,
+ * Confirmado nas NOVE fixtures (`H-96`): as 16 letras, identicas em todas,
  * e identicas as medidas na planilha real por `H-95`.
  */
 export const DECLARED_HEADERS: Readonly<Record<string, string>> = {
@@ -89,7 +89,7 @@ export interface SchemaDivergence {
    * Quantas colunas o MESMO deslocamento alcanca; `1` fora de bloco.
    *
    * **Existe porque uma edicao nao pode virar quatorze avisos.** Medido em
-   * 17/09/2026: inserir UMA coluna antes de `IMPORTADOR` desloca 14 — e o
+   * `H-96`: inserir UMA coluna antes de `IMPORTADOR` desloca 14 — e o
    * operador fez um gesto so. O painel mostra o bloco numa linha, e o contador
    * da lateral conta MUDANCAS, nao sintomas.
    */
@@ -104,7 +104,7 @@ export interface SchemaCheck {
   /**
    * `true` quando a ESCRITA e recusada — ver `blocksWritingOne` para a regra.
    *
-   * **Nenhuma divergencia impede a leitura** (decisao do usuario, 17/09/2026):
+   * **Nenhuma divergencia impede a leitura** (decisao do usuario, `D-45`):
    * o painel sempre mostra o dado e o aviso, e nunca para. Este campo existe
    * porque a ESCRITA e outra pergunta: gravar na coluna errada alcanca o
    * arquivo da empresa, e la nao ha desfazer.
@@ -115,10 +115,9 @@ export interface SchemaCheck {
    * real fica invisivel, e gravar trataria "nao conferivel" como "conferido e
    * certo" (regra inviolavel 3).
    *
-   * *(Ate 17/09/2026 o campo tinha um nome que descrevia o SINTOMA — mover
-   * dado — em vez da decisao, e foi o nome que produziu o buraco: a linha em
-   * branco nao move dado, entao ficava de fora e a escrita seguia. O nome
-   * passou a dizer o que o predicado decide.)*
+   * *(O nome diz o que o predicado decide, e nao o SINTOMA — mover dado: a
+   * linha em branco nao move dado, e um nome pelo sintoma a deixaria de fora
+   * com a escrita seguindo (`H-96`).)*
    *
    * **`EXTRA` e `DUPLICADO` nao recusam**, nem `AUSENTE` com o rotulo apenas
    * trocado de nome: nos tres a coluna declarada continua onde estava, e
@@ -208,7 +207,7 @@ const LETTERS = Object.keys(DECLARED_HEADERS)
  * qualquer letra alem de `P`, e o `-1` entrava na aritmetica de `groupShifted`
  * como se fosse posicao: a coluna empurrada para fora das declaradas nao
  * entrava no bloco e virava um aviso solto do MESMO gesto. Medido em
- * 17/09/2026, ao inserir uma coluna preservando `Coluna1`.
+ * `H-96`, ao inserir uma coluna preservando `Coluna1`.
  */
 function indexOfLetter(letter: string): number {
   let index = 0

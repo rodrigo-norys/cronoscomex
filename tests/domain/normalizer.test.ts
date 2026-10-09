@@ -90,7 +90,7 @@ describe('parseCellDate — TD-03', () => {
   })
 
   it('regra 2: serial numerico vira data, com o epoch de 1899-12-30', () => {
-    // 45292 = 2024-01-01, referencia conhecida do calendario do Excel.
+    // 45292 = `2024-01-01`, referencia conhecida do calendario do Excel.
     expect(serialToDate(45292)?.toISOString().slice(0, 10)).toBe('2024-01-01')
     expect(parseCellDate(numero(45292)).date?.toISOString().slice(0, 10)).toBe('2024-01-01')
   })
@@ -174,7 +174,7 @@ describe('parseCellDate — TD-03', () => {
 })
 
 /**
- * **A faixa plausivel de datas** (17/09/2026).
+ * **A faixa plausivel de datas** (`H-108`).
  *
  * O serial do Excel nao tem teto, e o leitor o convertia sem conferir: o ensaio
  * mediu `99999999` virando uma data do ano **275690** e `-500` virando **1898**,
@@ -195,7 +195,7 @@ describe('parseCellDate — a faixa plausivel', () => {
   /**
    * O serial NEGATIVO ja era recusado por `serialToDate`, antes desta faixa — e
    * cai em `DATA_SEM_ANO`. Fica registrado porque o ensaio o viu virar
-   * 16/08/1898: aquele era o outro caminho, pelo leitor, que converte o serial
+   * `16/08/1898`: aquele era o outro caminho, pelo leitor, que converte o serial
    * em `Date` sem conferir e entrega a data pronta ao dominio.
    */
   it('o serial negativo continua caindo em DATA_SEM_ANO, como antes', () => {

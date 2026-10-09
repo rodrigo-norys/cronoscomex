@@ -172,7 +172,7 @@ function buildOne(row: RawRow, deps: BuildDeps): { process: Process; unmappedCol
   const clientProcessKey = normKey(clientRaw)
   const importerKey = normKey(importerRaw)
   /*
-    As tres colunas que uma regra de cliente pode procurar (21/09/2026). A REF
+    As tres colunas que uma regra de cliente pode procurar (`H-105`). A REF
     entra aqui porque `ref` ja foi lida acima, e resolver o cliente passou a
     depender dela: uma regra pode agrupar por prefixo de REF ou por importador,
     e nao so pela CLT.

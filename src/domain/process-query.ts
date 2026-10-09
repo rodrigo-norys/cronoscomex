@@ -13,8 +13,8 @@ import type { Process } from './types.ts'
 /**
  * Os SEIS campos de texto da planilha (`D-34`).
  *
- * Eram tres ate 04/09/2026 — os de consulta declarados em §2 da especificacao
- * (`A-39`), que a busca resolveu. O operador pediu "qualquer coluna", e o
+ * Mais que os tres de consulta declarados em §2 da especificacao (`A-39`): o
+ * operador pediu "qualquer coluna", e o
  * recorte que sobrou tem criterio: **procedencia do dado**. Estes seis sao
  * texto de celula, e casam sem inventar formatacao.
  *
@@ -46,8 +46,8 @@ const SEARCHABLE = [
  * caso especial de "sem `sort`": tratado como ausencia, o operador que ordenou
  * por uma coluna nao teria como voltar (`D-33`).
  *
- * Eram cinco ate 02/09/2026, e a tabela mostrava nove colunas: quatro
- * cabecalhos nao eram clicaveis, sem que a tela dissesse por que. `client` e
+ * Toda coluna da tabela tem ordem (`H-77`): cabecalho que nao clica nao diz
+ * por que. `client` e
  * `clientProcess` sao ordens DIFERENTES de proposito, e nao duas grafias da
  * mesma: uma ordena pelo cliente consolidado, a outra pelo valor da celula CLT
  * — que sao coisas distintas desde `H-49`, quando 649 processos revelaram 509
@@ -163,7 +163,7 @@ function sortKey(process: Process, field: SortField): string | number | null {
  * "Sempre" inclui a ordem descendente, e e ai que a implementacao ingenua erra:
  * inverter o comparador inteiro jogaria os nulos para o topo em `desc`, e o
  * operador que inverte a coluna de ETA2 veria uma tela de tracos — medido, a
- * planilha tem **65 processos sem ETA2** (10/09/2026, sobre 650 linhas; eram 64
+ * planilha tem **65 processos sem ETA2** (`H-89`, sobre 650 linhas; eram 64
  * quando ela tinha 649). O nulo nao participa da inversao —
  * ele e ausencia de valor, nao um valor extremo.
  *

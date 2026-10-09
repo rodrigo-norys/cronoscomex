@@ -18,7 +18,7 @@ import { normKey } from './normalizer.ts'
  * inferiu status, e passou a nao inferir nada.
  *
  * **Nao atribuir e resultado legitimo, e passou a ser o caso comum.** Medido em
- * 10/09/2026 sobre as 649 linhas: 559 processos tem responsavel pelo
+ * `H-93` sobre as 649 linhas: 559 processos tem responsavel pelo
  * importador e **90** ficam sem — 48 a mais que antes, e os 48 sao todos
  * ativos. Empurra-los para alguem produziria um numero plausivel e errado
  * (regra inviolavel 3); "Sem responsavel" e destino, e nao ausencia.
@@ -88,7 +88,7 @@ function ownsImporter(member: TeamMember, importerKey: string): boolean {
  * de cor quando o mapa estava vazio (`D-23`); o nivel 3 usava a cor para
  * desempatar o que a lista nao alcancava; e o `fallback` varria "todo o resto"
  * para um membro. Os tres caem pelo mesmo motivo, dito pelo usuario em
- * 10/09/2026: *"o fallback deve cair no Sem responsavel, que ai o usuario ja
+ * `D-40`: *"o fallback deve cair no Sem responsavel, que ai o usuario ja
  * sabe que tem que definir um"*. E a regra inviolavel 3 aplicada ao proprio
  * mapa — cobertura total trocada por enxergar o que nao se sabe.
  *
@@ -177,7 +177,7 @@ export interface TeamPlan {
   nextKey: string
   /**
    * Linhas com IMPORTADOR em branco — 35 na planilha real, medidas em
-   * 08/09/2026 e reconfirmadas em 10/09.
+   * `H-91` e reconfirmadas em `H-93`.
    *
    * Contadas e exibidas, nunca oferecidas: nenhuma carteira as alcanca por
    * construcao, e some-las do painel seria descarte silencioso (regra
@@ -199,7 +199,7 @@ const MEMBER_KEY_PREFIX = 'membro'
  */
 /**
  * Exportada para que `loadTeamMap` recuse o mesmo importador em dois membros
- * pelo MESMO criterio que a tela usa (17/09/2026).
+ * pelo MESMO criterio que a tela usa (`H-109`).
  *
  * Ate aqui a recusa existia so em `planTeamMember`, e o ensaio mediu a
  * assimetria: um `team-map.json` editado a mao com o importador repetido
@@ -294,7 +294,7 @@ export type TeamRejection =
 /**
  * Cria ou redefine um responsavel (`H-91`).
  *
- * **Carteira vazia e legitima**, e foi a emenda de 11/09/2026: alguem entra na
+ * **Carteira vazia e legitima**, e foi a emenda de `H-91`: alguem entra na
  * equipe e ainda nao recebeu importador. Ate aqui `validateMember` recusava esse
  * arquivo e matava a partida — a operacao que o painel oferece e DESFAZER, nao
  * esvaziar, e um membro sem carteira apenas aparece com zero.

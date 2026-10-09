@@ -54,15 +54,15 @@ export interface DateParse {
  * A faixa em que uma data de despacho aduaneiro e plausivel.
  *
  * **O serial do Excel nao tem teto**, e o leitor o converte sem conferir: medido
- * em 17/09/2026, o serial `99999999` virava uma data do ano **275690** e `-500`
+ * em `H-108`, o serial `99999999` virava uma data do ano **275690** e `-500`
  * virava **1898**, ambos aceitos, sem quarentena e sem anomalia. Uma data
  * impossivel atravessava o dominio inteiro e chegava a tela como fato.
  *
- * `1900` e o piso do proprio formato — o serial 1 e 01/01/1900, e nada antes
+ * `1900` e o piso do proprio formato — o serial 1 e `01/01/1900`, e nada antes
  * dele existe em OOXML. `2200` e folga deliberada: o que se quer pegar e o
  * digito a mais, nao o planejamento de longo prazo.
  *
- * **Zero linhas da planilha real caem fora desta faixa** (medido em 17/09/2026),
+ * **Zero linhas da planilha real caem fora desta faixa** (medido em `H-108`),
  * entao a mudanca nao mexe em nenhum numero de hoje — ela existe para o dia em
  * que alguem digitar errado.
  */
@@ -96,7 +96,7 @@ const SEM_ANO: DateParse = { date: null, anomaly: 'DATA_SEM_ANO' }
  */
 function civilDate(year: number, month: number, day: number): Date | null {
   const date = new Date(Date.UTC(year, month - 1, day))
-  // Rejeita datas que "transbordam", como 32/01 ou 31/02.
+  // Rejeita datas que "transbordam", como `32/01` ou `31/02`.
   if (
     date.getUTCFullYear() !== year ||
     date.getUTCMonth() !== month - 1 ||
@@ -110,9 +110,9 @@ function civilDate(year: number, month: number, day: number): Date | null {
 /**
  * Converte o serial do Excel em data civil.
  *
- * O epoch e 1899-12-30 porque o Excel trata 1900 como bissexto, o que nao e
- * verdade: o serial 60 corresponde a um 29/02/1900 inexistente. Ancorar em
- * 30/12/1899 absorve o desvio para todas as datas posteriores a 01/03/1900,
+ * O epoch e `1899-12-30` porque o Excel trata 1900 como bissexto, o que nao e
+ * verdade: o serial 60 corresponde a um `29/02/1900` inexistente. Ancorar em
+ * `30/12/1899` absorve o desvio para todas as datas posteriores a `01/03/1900`,
  * que sao as unicas que ocorrem nesta planilha.
  */
 export function serialToDate(serial: number): Date | null {

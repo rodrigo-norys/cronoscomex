@@ -10,7 +10,7 @@ import {
 import type { Process, StatusCategory } from '../../src/domain/types.ts'
 
 /**
- * O criterio de aceite dos nove cartoes, pedido pelo usuario em 18/09/2026:
+ * O criterio de aceite dos nove cartoes, pedido pelo usuario (`H-102`):
  * **acrescentar uma linha que satisfaz a regra soma 1, e tira-la subtrai 1**.
  *
  * E o que um contador precisa provar e nenhum teste de valor prova: `overdue`
