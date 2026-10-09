@@ -31,7 +31,7 @@ ela a interpreta e a edita.
 | Indicadores | 21 dos 22 do catálogo (§4). O 22º está fora de escopo por decisão da própria especificação — ver 3.2 |
 | Alertas | Os 6 do catálogo (§5), incluindo "Processos parados" |
 | Telas | As 6 páginas de §6, a tela de detalhe do processo, e a **Página Configuração** — que não vem da especificação: ela nasceu entre `H-34` e `H-38` para o operador apontar a planilha sem editar JSON (RF-31) |
-| Filtros globais | Os **14** de `RF-17` — eram 10 em §7, e a auditoria mais `H-49` e `H-50` levaram ao número atual |
+| Filtros globais | Os de `RF-17`, que os lista — eram 10 em §7, e a auditoria mais `H-49` e `H-50` levaram à lista atual |
 | Edição | Campos de texto e data (Fase 2); campos que vivem na cor (Fase 4); a célula editada na **própria tabela**, a **criação de linha** e a declaração do cliente consolidado **a partir de um processo** (`E13`, por `D-25`; RF-33 a RF-35) *(**A declaração a partir do processo foi REVOGADA por `D-43`** em 11/09/2026: `PUT /api/processes/:ref/client` sai em `H-95`, junto da coluna Cliente da tabela. Declarar continua existindo, pelo painel da Página Clientes — `RF-39`; desde `D-50`, 18/09/2026, o painel está na Página Configuração.)* |
 | Escrita na planilha | Sob comando explícito, com seis defesas de integridade |
 | Histórico | Registro append-only das mudanças de categoria |

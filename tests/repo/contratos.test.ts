@@ -819,10 +819,13 @@ function historiasDoBacklog(): { id: string; tamanho: string; concluida: boolean
 /**
  * Os cinco números da linha de Total: o total, quantas estão concluídas, e a
  * contagem por tamanho. Lê da linha, e não de lista fixa — mudar a tabela muda
- * a expectativa, como em todas as outras asserções deste arquivo.
+ * a expectativa, como em todas as outras asserções deste arquivo. O total e as
+ * concluídas vivem em região `conta`, e o número é lido sem os marcadores.
  */
 function totalDeclarado(): { total: number; concluidas: number; p: number; m: number; g: number } {
-  const linha = BACKLOG.split('\n').find((candidata) => candidata.startsWith('| **Total**'))
+  const linha = BACKLOG.split('\n')
+    .find((candidata) => candidata.startsWith('| **Total**'))
+    ?.replace(/<!-- \/?conta[^>]*-->/g, '')
   if (linha === undefined) throw new Error('a tabela de resumo não tem linha de Total')
 
   const numeros = [...linha.matchAll(/\*\*(\d+)\*\*|(\d+) concluídas/g)].map((achado) =>

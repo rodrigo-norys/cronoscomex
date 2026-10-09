@@ -158,7 +158,9 @@ describe('a tabela de resumo do backlog bate linha a linha', () => {
   })
 
   it('as abertas declaradas no Total são as que não têm bloco de conclusão', () => {
-    const total = BACKLOG.split('\n').find((linha) => linha.startsWith('| **Total**')) ?? ''
+    const total = (BACKLOG.split('\n').find((linha) => linha.startsWith('| **Total**')) ?? '')
+      // A contagem vive em região `conta`; o número é lido sem os marcadores.
+      .replace(/<!-- \/?conta[^>]*-->/g, '')
     const declaradas = /(\d+) abertas?/.exec(total)?.[1]
 
     expect(declaradas).toBeDefined()

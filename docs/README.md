@@ -240,7 +240,7 @@ medido —, nunca o original.
 - **Especificação funcional** — documento do cliente. Tratada como fonte da
   verdade para regras de negócio e catálogo de indicadores, e como **superada**
   no que diz respeito a arquitetura de fonte de dados. Auditada integralmente em
-  [01-auditoria-especificacao.md](01-auditoria-especificacao.md), com os 65
+  [01-auditoria-especificacao.md](01-auditoria-especificacao.md), com os <!-- conta:achados -->65<!-- /conta -->
   achados citando o trecho de origem — quem lê a auditoria não precisa dela
 - **Fotos das linhas 475–484** da planilha real (colunas A–K e K–R). Evidência
   secundária, usada para confirmar ou contestar a especificação
