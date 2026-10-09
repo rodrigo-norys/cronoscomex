@@ -161,19 +161,21 @@ export const COUNTERS = {
 /**
  * Registro e o que nunca envelhece, porque diz o que era verdade na data: nem o `--nuas`
  * nem o `--pares` o apontam. Aqui sao os arquivos de registro, a linha de matriz
- * `✅ **Concluida`, o item de indice terminado em `✅`, a decisao `| D-NN`, "plano
- * original", e no backlog a historia fechada inteira e o epico com todas as historias
- * fechadas. A `00-visao-escopo.md` NAO e registro: mistura a especificacao com o escopo
- * vigente.
+ * `✅ **Concluida`, o item de indice terminado em `✅`, a decisao `| D-NN`, e no backlog
+ * a historia fechada inteira e o epico com todas as historias fechadas. A
+ * `00-visao-escopo.md` NAO e registro: mistura a especificacao com o escopo vigente. Nem
+ * "plano original": a frase que o cita diz tambem o estado de hoje, como a `09` e o
+ * `docs/README.md` ao lado da contagem de historias.
  */
 const RECORD_FILES =
   /^docs\/(?:adr|perfilamento|ensaio-planilha|uso)\/|^docs\/01-auditoria-especificacao\.md$/
-const RECORD_LINE = /✅ \*\*Conclu|\]\(#h-\d+\) ✅\s*$|^\| D-\d+ \||plano original/
-// O `--pares` usa o registro do `--nuas` menos "plano original", que escondia o paragrafo
-// de estado do `07`.
-const PAIR_RECORD_LINE = /✅ \*\*Conclu|\]\(#h-\d+\) ✅\s*$|^\| D-\d+ \|/
+const RECORD_LINE = /✅ \*\*Conclu|\]\(#h-\d+\) ✅\s*$|^\| D-\d+ \|/
 
-/** No backlog, historia fechada e epico com todas as historias fechadas sao registro inteiros. */
+/**
+ * No backlog, historia fechada e registro inteira, e o epico com todas as historias
+ * fechadas tambem — menos a secao `###` que nao e historia: a varredura de verbos do
+ * `E18` fala do backlog de hoje.
+ */
 function closedBacklogLines(lines) {
   const closed = new Set()
   const isClosed = (line) => line.startsWith('> ✅ **CONCLUÍDA')
@@ -189,7 +191,13 @@ function closedBacklogLines(lines) {
     const body = lines.slice(epic, end)
     const opened = body.filter((line) => line.startsWith('### H-')).length
     const done = body.filter(isClosed).length
-    if (opened > 0 && done >= opened) for (let i = epic; i < end; i++) closed.add(i)
+    if (opened > 0 && done >= opened) {
+      let other = false
+      for (let i = epic; i < end; i++) {
+        if (lines[i].startsWith('### ')) other = !lines[i].startsWith('### H-')
+        if (!other) closed.add(i)
+      }
+    }
     epic = -1
   }
   lines.forEach((line, index) => {
@@ -209,6 +217,7 @@ const PAIR_ID = String.raw`(?:IND|ALE|RNF|RF|TD|PD|A|D|H|P|R)-\d{2,3}(?:\.\d+)?|
 const PAIR_DEFINITION_ROW = new RegExp(String.raw`^\| \*{0,2}(${PAIR_ID})\*{0,2} \|`)
 const PAIR_DEFINITION_HEADING = new RegExp(String.raw`^#{1,4} (?:Épico )?(${PAIR_ID})\b`)
 const PAIR_EPIC = /^## Épico (E\d+)/
+const PAIR_STORY = /^### (H-\d+)/
 const PAIR_STORY_CLOSED = /^> ✅ \*\*CONCLUÍDA/
 
 // O ID fica na primeira celula; as colunas seguintes contam a partir de zero.
@@ -340,14 +349,13 @@ export default {
   record: {
     files: RECORD_FILES,
     line: RECORD_LINE,
-    pairLine: PAIR_RECORD_LINE,
     closedBlocks: { file: BACKLOG, lines: closedBacklogLines },
   },
   ids: {
     pattern: PAIR_ID,
     definitionRow: PAIR_DEFINITION_ROW,
     definitionHeading: PAIR_DEFINITION_HEADING,
-    closedStory: { file: BACKLOG, epic: PAIR_EPIC, closed: PAIR_STORY_CLOSED },
+    closedStory: { file: BACKLOG, epic: PAIR_EPIC, story: PAIR_STORY, closed: PAIR_STORY_CLOSED },
     mirrors: MIRRORS,
   },
   language: {

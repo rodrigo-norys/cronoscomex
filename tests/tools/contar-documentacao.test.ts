@@ -217,16 +217,21 @@ describe('looseNumbers — o numero escrito fora de regiao', () => {
     ).toEqual([])
   })
 
-  it('nao aponta linha de registro: matriz concluida, indice fechado, decisao, plano original', () => {
+  it('nao aponta linha de registro: matriz concluida, indice fechado, decisao', () => {
     expect(
       numbers('docs/09-rastreabilidade.md', [
         '| H-77 | RF-32 | ✅ **Concluída.** a tabela tem nove colunas |',
         '- [H-77 — A tabela ordena pelas nove colunas](#h-77) ✅',
         '| D-52 | 2026-09-18 | sobe em dois passos |',
-        'o plano original tinha 34 histórias',
         '| H-101 | RF-46 | **Aberta.** Nove blocos de teste |',
       ]),
-    ).toEqual(['5:Nove blocos'])
+    ).toEqual(['4:Nove blocos'])
+  })
+
+  it('"plano original" nao e registro: a frase que o cita diz tambem o estado de hoje', () => {
+    expect(
+      numbers('docs/README.md', ['sao 114 histórias (o 31 era do plano original de cinco fases)']),
+    ).toEqual(['1:114 histórias', '1:cinco fases'])
   })
 
   it('no backlog, historia fechada e epico todo fechado sao registro; o epico aberto nao', () => {
@@ -250,6 +255,23 @@ describe('looseNumbers — o numero escrito fora de regiao', () => {
       'mexe em cinco arquivos',
     ]
     expect(numbers('docs/06-backlog.md', backlog)).toEqual(['13:17 colunas', '17:cinco arquivos'])
+  })
+
+  it('no epico fechado, a secao ### que nao e historia fala do presente, e nao e registro', () => {
+    const backlog = [
+      '## Épico E18 — Fechado',
+      '',
+      '### H-01 — Uma',
+      '',
+      '> ✅ **CONCLUÍDA em 01/08/2026.**',
+      '',
+      'tinha sete passos',
+      '',
+      '### Varredura de verbos',
+      '',
+      'o backlog tem 114 histórias hoje',
+    ]
+    expect(numbers('docs/06-backlog.md', backlog)).toEqual(['11:114 histórias'])
   })
 
   it('arquivo de registro nao e varrido; a visao de escopo, que mistura spec e estado, e', () => {
@@ -494,27 +516,51 @@ describe('findPairs — quem cita o ID cuja definicao mudou', () => {
     ])
   })
 
-  it('historia fechada no diff traz o epico dela, e o titulo do epico nao cita a si mesmo', () => {
-    const backlog = (fechada: boolean) =>
-      ['## Épico E1 — Um', '', '### H-01 — Uma', '']
-        .concat(fechada ? ['> ✅ **CONCLUÍDA em 07/10/2026.**', ''] : [])
-        .concat(['corpo', '', '### H-02 — Duas', '', 'corpo', ''])
-        .join('\n')
+  const backlog = (fechada: boolean) =>
+    ['## Épico E1 — Um', '', '### H-01 — Uma', '']
+      .concat(fechada ? ['> ✅ **CONCLUÍDA em 07/10/2026.**', ''] : [])
+      .concat(['corpo', '', '### H-02 — Duas', '', 'corpo', ''])
+      .join('\n')
+  const keysAndCiters = () =>
+    findPairs(root, { base: 'HEAD' }).map(({ key, definedAt, citedBy }) => ({
+      key,
+      definedAt,
+      citedBy: citedBy.map(({ file, line }) => `${file}:${line}`),
+    }))
+
+  it('historia fechada no diff e chave e traz o epico dela; o titulo do epico nao cita a si mesmo', () => {
     write('docs/06-backlog.md', backlog(false))
-    write('README.md', 'O `E1` é o único aberto.\n\nA assinatura `D0 CF 11 E0 A1 B1 1A E1`.\n')
+    write(
+      'README.md',
+      'O `E1` é o único aberto.\n\nA assinatura `D0 CF 11 E0 A1 B1 1A E1`.\n\nA única aberta é `H-01`.\n',
+    )
     track()
     commit('base')
-    const base = head()
 
     write('docs/06-backlog.md', backlog(true))
 
-    expect(
-      findPairs(root, { base }).map(({ key, definedAt, citedBy }) => ({
-        key,
-        definedAt,
-        citedBy: citedBy.map(({ file, line }) => `${file}:${line}`),
-      })),
-    ).toEqual([{ key: 'E1', definedAt: ['docs/06-backlog.md:5'], citedBy: ['README.md:1'] }])
+    expect(keysAndCiters()).toEqual([
+      { key: 'H-01', definedAt: ['docs/06-backlog.md:5'], citedBy: ['README.md:5'] },
+      { key: 'E1', definedAt: ['docs/06-backlog.md:5'], citedBy: ['README.md:1'] },
+    ])
+  })
+
+  it('a regiao que o --write reescreveu nao tira do alvo o paragrafo em volta dela', () => {
+    write('docs/06-backlog.md', backlog(false))
+    write(
+      'CLAUDE.md',
+      'São <!-- conta:historias-concluidas -->0<!-- /conta --> concluídas: o `E1` segue\naberto, e resta `H-01`.\n',
+    )
+    track()
+    commit('base')
+
+    write('docs/06-backlog.md', backlog(true))
+    expect(rewrite(root)).toEqual(['CLAUDE.md'])
+
+    expect(keysAndCiters()).toEqual([
+      { key: 'H-01', definedAt: ['docs/06-backlog.md:5'], citedBy: ['CLAUDE.md:2'] },
+      { key: 'E1', definedAt: ['docs/06-backlog.md:5'], citedBy: ['CLAUDE.md:1'] },
+    ])
   })
 
   it('sem definicao alterada nao ha par, mesmo com o ID citado no trecho que mudou', () => {
@@ -647,8 +693,38 @@ describe('checkMirrors — o estado de um ID nos dois lados do espelho', () => {
 
     expect(problems('requisitos')).toEqual([
       'docs/09-rastreabilidade.md:3 RF-35: docs/09-rastreabilidade.md:3 diz "vigente"; docs/02-requisitos.md:4 diz "revogado"',
-      'docs/09-rastreabilidade.md:4 RF-23 falta em docs/02-requisitos.md',
-      'docs/09-rastreabilidade.md:4 RF-26 falta em docs/02-requisitos.md',
+      ...['RF-23', 'RF-24', 'RF-25', 'RF-26'].map(
+        (id) => `docs/09-rastreabilidade.md:4 ${id} falta em docs/02-requisitos.md`,
+      ),
+    ])
+  })
+
+  it('faixa de ID na primeira celula vale para cada ID dela, com "a" ou travessao', () => {
+    write(
+      'docs/02-requisitos.md',
+      [
+        '## 1. Requisitos funcionais',
+        '',
+        ...['RF-23', 'RF-24 | ~~Barrar~~ *(**REVOGADO**)*', 'RF-25', 'RF-26'].map(
+          (row) => `| ${row} | H-25 |`,
+        ),
+        ...['RF-07', 'RF-08 | ~~Ler~~ *(**REVOGADO**)*', 'RF-09'].map((row) => `| ${row} | H-02 |`),
+      ].join('\n'),
+    )
+    write(
+      'docs/09-rastreabilidade.md',
+      [
+        '## 5. Requisitos funcionais sem indicador correspondente',
+        '',
+        '| RF-23 a RF-26 · Defesas | D7 | H-25 | ✅ **Entregue.** |',
+        '| RF-07–RF-09 · Leitura | D1 | H-02 | ✅ **Entregue.** |',
+      ].join('\n'),
+    )
+    track()
+
+    expect(problems('requisitos')).toEqual([
+      'docs/09-rastreabilidade.md:3 RF-24: docs/09-rastreabilidade.md:3 diz "vigente"; docs/02-requisitos.md:4 diz "revogado"',
+      'docs/09-rastreabilidade.md:4 RF-08: docs/09-rastreabilidade.md:4 diz "vigente"; docs/02-requisitos.md:8 diz "revogado"',
     ])
   })
 
@@ -747,6 +823,27 @@ describe('looseTableRows e os pisos — a estrutura de que a renderizacao depend
       '```',
     ].join('\n')
     expect(looseTableRows(text)).toEqual([3])
+  })
+
+  it('dentro de citacao, mesmo recuada, a linha em branco e o > sozinho tambem soltam a seguinte', () => {
+    const text = [
+      '> | Campo | Tipo |',
+      '> |---|---|',
+      '> | a | x |',
+      '>',
+      '> | b | y |',
+      '',
+      '> | c | z |',
+      '>',
+      '> | Nova | tabela |',
+      '> |---|---|',
+      '',
+      '  > | Ramo | Código |',
+      '  > |---|---|',
+      '  >',
+      '  > | e | w |',
+    ].join('\n')
+    expect(looseTableRows(text)).toEqual([5, 7, 15])
   })
 
   it('reprova a tabela solta no escopo, e o escopo que nao passa do piso de regioes e de arquivos', () => {

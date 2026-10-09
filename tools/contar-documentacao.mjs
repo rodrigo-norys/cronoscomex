@@ -47,14 +47,16 @@ import config from './contar-documentacao.config.mjs'
  * `--pares` lista, para cada ID cuja DEFINICAO o diff mudou — a linha de tabela que
  * abre com ele, ou o titulo `### H-NN` e `## Épico ENN` —, os outros blocos que o
  * citam: e neles que o fato que acabou de mudar pode ter ficado para tras. Historia
- * fechada no diff traz junto o epico dela. So avisa. Medido sobre os 68 PRs de #100 a
- * #168: a lista tem mediana de 5 blocos e p90 de 30, e 30 PRs nao geram lista; em cinco
+ * fechada no diff e chave, e traz junto o epico dela. So avisa. Medido sobre os 68 PRs
+ * de #100 a #168: a lista tem mediana de 5 blocos e p90 de 30, e 30 PRs nao geram lista; em cinco
  * PRs de origem, achou 22 dos 24 lugares que de fato envelheceram — os aposentados de
  * `D-49` vivos na `02` e na §3 da `09`, e o estado dos epicos copiado no `07`. Tomar a
  * chave de todo bloco alterado achava os 24, com lista mediana de 138. Nao sao alvo: o
  * proprio diff, o bloco cercado, que e exemplo, o titulo que define a chave, e o
- * registro. O que NAO alcanca: fato sem ID — a contagem fica com o `--nuas`, o resto
- * com a revisao —, a lista que devia ganhar um item novo, e o codigo.
+ * registro. O valor de regiao que o `--write` reescreveu nao entra no diff: o paragrafo
+ * em volta segue alvo, porque ninguem o leu. O que NAO alcanca: fato sem ID — a
+ * contagem fica com o `--nuas`, o resto com a revisao —, a lista que devia ganhar um
+ * item novo, e o codigo.
  *
  * `--definicoes` conta, para cada ID citado no escopo, os lugares que o definem — a
  * linha de tabela que abre com ele, ou o titulo de nivel 1 a 4 —, e lista o ID sem
@@ -353,7 +355,6 @@ function readMirrorSide(source, family, side) {
   const span = sectionSpan(lines, levels, side.section)
   if (!span) return { error: `secao nao encontrada: ${side.section}` }
   const heading = new RegExp(String.raw`^#{1,6} (${family})\b`)
-  const cited = new RegExp(String.raw`\b(?:${family})\b`, 'g')
   const entries = new Map()
   const repeated = []
   const add = (id, index, text) => {
@@ -373,10 +374,27 @@ function readMirrorSide(source, family, side) {
       const end = Math.min(sectionEnd(levels, index), span.end)
       if (id) add(id, index, lines.slice(index, end).join('\n'))
     } else if (line.startsWith('|')) {
-      for (const [id] of (line.split('|')[1] ?? '').matchAll(cited)) add(id, index, line)
+      for (const id of cellIds(line.split('|')[1] ?? '', family)) add(id, index, line)
     }
   }
   return { entries, repeated }
+}
+
+/**
+ * Os IDs de uma celula, com a faixa expandida: "RF-23 a RF-26" na §5 da matriz deixava
+ * `RF-24` e `RF-25` de fora do espelho, e o revogado so na `02` passava.
+ */
+function cellIds(cell, family) {
+  const range = new RegExp(String.raw`\b(${family})(?:(?: a |\s*–\s*)(${family}))?\b`, 'g')
+  return [...cell.matchAll(range)].flatMap(([, first, last = first]) => {
+    const [, prefix, from] = /^(.*?)(\d+)$/.exec(first)
+    const [, lastPrefix, to] = /^(.*?)(\d+)$/.exec(last)
+    if (prefix !== lastPrefix) return [first, last]
+    const ids = [first]
+    for (let n = Number(from) + 1; n <= Number(to); n++)
+      ids.push(prefix + String(n).padStart(from.length, '0'))
+    return ids
+  })
 }
 
 /**
@@ -443,10 +461,11 @@ export function checkMirrors(source, mirrors, floors = {}) {
  * Linha em branco dentro de tabela encerra a tabela, e o que vem depois sai como texto
  * corrido — no GitHub e no preview: a tabela de decisoes quebrava na `D-44`, e a de
  * achados no `A-56`. Fora de bloco cercado, linha que abre com `|` logo depois de linha
- * em branco so pode ser o cabecalho de uma tabela nova, seguido do delimitador.
+ * em branco so pode ser o cabecalho de uma tabela nova, seguido do delimitador. Dentro de
+ * citacao a regra e a mesma depois do prefixo `>`, e o `>` sozinho e a linha em branco.
  */
 export function looseTableRows(text) {
-  const lines = linesOf(text)
+  const lines = linesOf(text).map((line) => line.replace(/^(?: {0,3}> ?)+/, ''))
   let fenced = false
   return lines.flatMap((line, index) => {
     if (FENCE.test(line)) {
@@ -532,15 +551,29 @@ export function looseNumbers(file, text, onlyLines) {
   return found
 }
 
+const withoutRegionValues = (line) => line.replace(INLINE, '<!-- conta:$1 --><!-- /conta -->')
+
 /**
  * Linhas acrescentadas desde o ponto em que a arvore saiu de `base`, incluindo o que
- * ainda nao foi commitado, e os arquivos novos nao rastreados por inteiro.
+ * ainda nao foi commitado, e os arquivos novos nao rastreados por inteiro. Com
+ * `ignoreRegionValues`, a linha cuja unica mudanca e o valor de uma regiao `conta` nao
+ * conta: e o `--write`, e nao uma edicao que alguem leu.
  */
-export function changedLines(root, base) {
+export function changedLines(root, base, { ignoreRegionValues = false } = {}) {
   const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf-8' })
   const forkPoint = git('merge-base', base, 'HEAD').trim()
   const changed = new Map()
   let file = null
+  let hunk = null
+  const flush = () => {
+    const removed = ignoreRegionValues ? (hunk?.removed.map(withoutRegionValues) ?? []) : []
+    hunk?.added.forEach((text, offset) => {
+      const same = removed.indexOf(withoutRegionValues(text))
+      if (same === -1) changed.get(file).add(hunk.start + offset)
+      else removed.splice(same, 1)
+    })
+    hunk = null
+  }
   for (const line of git(
     'diff',
     '-U0',
@@ -550,16 +583,21 @@ export function changedLines(root, base) {
     '--dst-prefix=b/',
     forkPoint,
   ).split('\n')) {
+    if (line.startsWith('diff ')) flush()
     if (line.startsWith('+++ ')) {
       file = line.startsWith('+++ b/') ? line.slice(6) : null
       continue
     }
-    const hunk = /^@@ -\S+ \+(\d+)(?:,(\d+))? @@/.exec(line)
-    if (!hunk || !file || !IN_SCOPE.test(file)) continue
-    if (!changed.has(file)) changed.set(file, new Set())
-    const start = Number(hunk[1])
-    for (let i = 0; i < Number(hunk[2] ?? 1); i++) changed.get(file).add(start + i)
+    const header = /^@@ -\S+ \+(\d+)(?:,(\d+))? @@/.exec(line)
+    if (header) {
+      flush()
+      if (!file || !IN_SCOPE.test(file)) continue
+      if (!changed.has(file)) changed.set(file, new Set())
+      hunk = { start: Number(header[1]), removed: [], added: [] }
+    } else if (hunk && line.startsWith('-')) hunk.removed.push(line.slice(1))
+    else if (hunk && line.startsWith('+')) hunk.added.push(line.slice(1))
   }
+  flush()
   for (const path of git('ls-files', '--others', '--exclude-standard').split('\n')) {
     if (IN_SCOPE.test(path)) changed.set(path, null)
   }
@@ -579,7 +617,6 @@ const PAIR_CITATION = new RegExp(String.raw`\b(?:${config.ids.pattern})\b`, 'g')
 const PAIR_DEFINITION_ROW = config.ids.definitionRow
 const PAIR_DEFINITION_HEADING = config.ids.definitionHeading
 const CLOSED_STORY = config.ids.closedStory
-const PAIR_RECORD_LINE = config.record.pairLine
 
 /** Os blocos de um arquivo, base 1: paragrafo, linha de tabela, item de lista, titulo, bloco cercado. */
 export function blocks(lines) {
@@ -633,15 +670,23 @@ function citationsIn(line) {
   })
 }
 
-/** O epico de cada historia que o diff fechou, com a linha do fechamento: o estado dele pode ter mudado. */
-function epicsOfClosedStories(lines, isChanged) {
-  const epics = new Map()
+/**
+ * A historia que o diff fechou e o epico dela, com a linha do fechamento: o estado dos
+ * dois mudou ali. O titulo `### H-NN` nao muda ao fechar, e sem a historia como chave o
+ * "a unica aberta e `H-101`" de tres documentos passava sem aviso.
+ */
+function closedInDiff(lines, isChanged) {
+  const keys = new Map()
   let epic = null
+  let story = null
   lines.forEach((line, index) => {
     epic = CLOSED_STORY.epic.exec(line)?.[1] ?? epic
-    if (epic && CLOSED_STORY.closed.test(line) && isChanged(index + 1)) epics.set(epic, index + 1)
+    if (/^#{1,3} /.test(line)) story = CLOSED_STORY.story.exec(line)?.[1] ?? null
+    if (!CLOSED_STORY.closed.test(line) || !isChanged(index + 1)) return
+    if (story) keys.set(story, index + 1)
+    if (epic) keys.set(epic, index + 1)
   })
-  return epics
+  return keys
 }
 
 /**
@@ -650,7 +695,7 @@ function epicsOfClosedStories(lines, isChanged) {
  */
 export function findPairs(root, { base = 'main' } = {}) {
   const source = createSource(root)
-  const changed = changedLines(root, base)
+  const changed = changedLines(root, base, { ignoreRegionValues: true })
   const parsed = new Map()
   for (const file of new Set([...source.scope, ...changed.keys()])) {
     const lines = source
@@ -680,8 +725,7 @@ export function findPairs(root, { base = 'main' } = {}) {
       }
     }
     if (file === CLOSED_STORY.file)
-      for (const [epic, line] of epicsOfClosedStories(info.lines, isChanged))
-        define(epic, `${file}:${line}`)
+      for (const [key, line] of closedInDiff(info.lines, isChanged)) define(key, `${file}:${line}`)
   }
 
   const citations = []
@@ -691,7 +735,7 @@ export function findPairs(root, { base = 'main' } = {}) {
       if (block.fenced || touched.has(`${file}:${block.start}`)) continue
       if (info.closed.has(block.start - 1)) continue
       const text = info.lines.slice(block.start - 1, block.end)
-      if (text.some((line) => PAIR_RECORD_LINE.test(line))) continue
+      if (text.some((line) => RECORD_LINE.test(line))) continue
       const ownHeading = PAIR_DEFINITION_HEADING.exec(text[0] ?? '')?.[1]
       text.forEach((line, offset) => {
         for (const match of citationsIn(line)) {

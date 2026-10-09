@@ -69,8 +69,8 @@ que era verdade na data, e a data mora nele — a decisão `| D-NN`, a história
 no backlog, o arquivo de `docs/adr/`. Não há marcação de isenção: o que é registro
 está em `record`, na configuração. *Aviso:* o `--nuas` e o `--pares` não o apontam.
 
-**R7 — O documento renderiza.** Linha em branco dentro de tabela a encerra, e o resto
-sai como texto; `conta` no início da linha abre bloco HTML. *Guarda:* a tabela solta e
+**R7 — O documento renderiza.** Linha em branco dentro de tabela a encerra — também
+dentro de citação, onde o `>` sozinho é a linha em branco —, e o resto sai como texto; `conta` no início da linha abre bloco HTML. *Guarda:* a tabela solta e
 o marcador quebrado.
 
 **O que o contrato não alcança:** fato sem ID e sem número, que fica com a revisão;
