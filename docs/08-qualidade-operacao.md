@@ -433,21 +433,11 @@ morta em `tests/repo/contratos.test.ts`.
 > protection cobre.
 
 O portão local é o mesmo comando, e é obrigatório antes de qualquer entrega:
-
-```
-npm run test:portas # recusa o portão com o dev no ar — o build apagaria o cache dele
-npm run test:hooks  # regressao de .claude/hooks/guard-dados-sensiveis.sh
-npm run test:dados  # .github/scripts/verifica-dados-sensiveis.sh, sobre o indice
-npm run test:strip  # importa src/ sob --experimental-strip-types
-npm run lint        # inclui a regra de fronteira: domain/ não importa io/, app/, http/
-npm run typecheck
-npm test            # Vitest — `vitest run`, SEM cobertura (ver a ressalva de §1.1)
-npm run build       # servidor + SPA em dist/
-```
-
-`npm run verify` encadeia os **<!-- conta:passos-verify -->8<!-- /conta -->** e é o comando único do portão. As duas
-regressões de guarda vêm logo depois da conferência de portas, de propósito:
-verificar a proteção antes de verificar o código.
+`npm run verify` encadeia os **<!-- conta:passos-verify -->8<!-- /conta -->** passos de `scripts.verify`, no `package.json`, nesta
+ordem — <!-- conta:passos-verify-lista -->`test:portas`, `test:hooks`, `test:dados`, `test:strip`, `lint`, `typecheck`, `test`, `build`<!-- /conta --> —, e é o comando único do portão. O que cada um
+roda está no script de mesmo nome; o `test` é `vitest run`, **sem** cobertura (ver a
+ressalva de §1.1). As duas regressões de guarda vêm logo depois da conferência de
+portas, de propósito: verificar a proteção antes de verificar o código.
 
 **`verifica-dados-sensiveis.sh` entrou no portão local em 02/09/2026**; até
 então só existia no CI, e o portão local passava enquanto o workflow reprovava —
