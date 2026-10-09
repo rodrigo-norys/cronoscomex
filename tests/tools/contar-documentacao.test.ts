@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { COUNTERS } from '../../tools/contar-documentacao.config.mjs'
+import config, { COUNTERS } from '../../tools/contar-documentacao.config.mjs'
 import {
   blocks,
   createSource,
@@ -11,6 +11,7 @@ import {
   findLooseNumbers,
   findPairs,
   inspect,
+  inspectStructure,
   looseNumbers,
   parseTree,
   rewrite,
@@ -551,8 +552,20 @@ describe('findDefinitions — onde cada ID citado e definido', () => {
       family: 'PD',
       citedAt: 'CLAUDE.md:1',
       definedAt: [],
+      mirror: null,
     })
     expect(found.has('PD-02')).toBe(false)
+  })
+
+  it('os dois lados de um espelho declarado nao contam como definicao repetida; um terceiro conta', () => {
+    write('docs/09-rastreabilidade.md', '## 4. Verificação\n\n| H-01 | ✅ |\n| H-02 | x |\n')
+    write('docs/perfilamento/RESULTADO.md', '# H-02 — Resultado\n')
+    track()
+
+    const found = new Map(findDefinitions(root).map((entry) => [entry.id, entry]))
+
+    expect(found.get('H-01')?.mirror).toBe('historias')
+    expect(found.get('H-02')).toMatchObject({ mirror: null, definedAt: { length: 3 } })
   })
 
   it('entre crases, so a crase que e o proprio ID cita: bytes e nome de arquivo nao', () => {
@@ -564,5 +577,152 @@ describe('findDefinitions — onde cada ID citado e definido', () => {
     expect(ids).toContain('H-35')
     expect(ids).not.toContain('E0')
     expect(ids).not.toContain('E30')
+  })
+})
+
+/**
+ * Os espelhos declarados em `contar-documentacao.config.mjs`, cada um sobre os dois
+ * documentos que ele liga. Os casos sao os que motivaram a guarda: RF-35, revogado por
+ * D-43 na `02` e "✅ Entregue" na matriz; historia fechada no backlog e aberta na §4, e o
+ * inverso; IND-21, "Bloqueado" de um lado e "Fora de escopo" do outro.
+ */
+describe('checkMirrors — o estado de um ID nos dois lados do espelho', () => {
+  const only = (name: string) => ({
+    mirrors: config.ids.mirrors.filter((mirror) => mirror.name === name),
+    floors: {},
+  })
+  const problems = (name: string) =>
+    inspectStructure(root, only(name)).problems.map(
+      ({ file, line, message }) => `${file}:${line} ${message}`,
+    )
+
+  it('historia: o estado do backlog e o da §4, nos dois sentidos, e a que falta de um lado', () => {
+    write(
+      'docs/09-rastreabilidade.md',
+      [
+        '## 4. Verificação de histórias órfãs',
+        '',
+        '| História | Aparece em | Papel |',
+        '|---|---|---|',
+        '| H-01 | x | ✅ **Concluída.** |',
+        '| H-02 | x | ✅ **Concluída.** |',
+        '| H-33 | x | **Aberta** |',
+        '| H-40 | x | **Aberta** |',
+        '',
+        '## 5. Requisitos',
+        '',
+        '| H-99 | fora da §4 |',
+      ].join('\n'),
+    )
+    track()
+
+    expect(problems('historias')).toEqual([
+      'docs/09-rastreabilidade.md:6 H-02: docs/09-rastreabilidade.md:6 diz "fechada"; docs/06-backlog.md:9 diz "aberta"',
+      'docs/09-rastreabilidade.md:7 H-33: docs/09-rastreabilidade.md:7 diz "aberta"; docs/06-backlog.md:17 diz "fechada"',
+      'docs/09-rastreabilidade.md:8 H-40 falta em docs/06-backlog.md',
+    ])
+  })
+
+  it('requisito: revogado na 02 e entregue na matriz reprova; o que a §5 nao lista, nao', () => {
+    write(
+      'docs/02-requisitos.md',
+      [
+        '## 1. Requisitos funcionais',
+        '',
+        '| RF-20 | Editar | H-23 |',
+        '| RF-35 | ~~Declarar~~ *(**REVOGADO por `D-43`**)* | H-79 |',
+      ].join('\n'),
+    )
+    write(
+      'docs/09-rastreabilidade.md',
+      [
+        '## 5. Requisitos funcionais sem indicador correspondente',
+        '',
+        '| RF-35 · ~~Declarar o cliente~~ | Decorrência | H-79 | ✅ **Entregue.** |',
+        '| RF-23 a RF-26 · Defesas | D7 | H-25 | ✅ **Entregue.** |',
+      ].join('\n'),
+    )
+    track()
+
+    expect(problems('requisitos')).toEqual([
+      'docs/09-rastreabilidade.md:3 RF-35: docs/09-rastreabilidade.md:3 diz "vigente"; docs/02-requisitos.md:4 diz "revogado"',
+      'docs/09-rastreabilidade.md:4 RF-23 falta em docs/02-requisitos.md',
+      'docs/09-rastreabilidade.md:4 RF-26 falta em docs/02-requisitos.md',
+    ])
+  })
+
+  it('indicador: aposentado e bloqueado tem palavras diferentes de cada lado', () => {
+    write(
+      'docs/09-rastreabilidade.md',
+      [
+        '| IND-01 | a | b | c | H-09 | t | ✅ **Entregue** |',
+        '| IND-03 | a | b | c | H-09 | t | ⏹️ **Aposentado** em D-49',
+        '| IND-21 | a | — | c | — | — | ⛔ **Bloqueado por lacuna.** |',
+        '| ALE-01 | a | b | c | H-14 | t | ✅ **Entregue** |',
+      ].join('\n'),
+    )
+    write(
+      'docs/02-requisitos.md',
+      [
+        '| IND-01 | Quantidade, que substitui o aposentado de nada | `count` | H-09 |',
+        '| IND-03 | Processos em desembaraço | `count` | H-09 |',
+        '| IND-21 | Tempo médio | **Fora de escopo.** | — |',
+        '| ALE-01 | ETA vencida | `eta2 < hoje` | H-14 |',
+      ].join('\n'),
+    )
+    track()
+
+    expect(problems('indicadores')).toEqual([
+      'docs/02-requisitos.md:1 IND-01: docs/02-requisitos.md:1 diz "aposentado"; docs/09-rastreabilidade.md:1 diz "ativo"',
+      'docs/02-requisitos.md:2 IND-03: docs/02-requisitos.md:2 diz "ativo"; docs/09-rastreabilidade.md:2 diz "aposentado"',
+    ])
+  })
+
+  it('pendencia: a fechada nao fica no CLAUDE.md, e a aberta nao falta dele', () => {
+    write(
+      'docs/README.md',
+      [
+        '## Pendências',
+        '',
+        '| Pendência | O que era | Estado |',
+        '|---|---|---|',
+        '| **PD-01** | a | ✅ Fechada em 04/09/2026 |',
+        '| **PD-02** | b | Aberta |',
+        '| **PD-03** | c | Aberta |',
+      ].join('\n'),
+    )
+    write(
+      'CLAUDE.md',
+      ['### Pendências abertas', '', '| **PD-01** | a |', '| **PD-03** | c |'].join('\n'),
+    )
+    track()
+
+    expect(problems('pendencias')).toEqual([
+      'CLAUDE.md:3 PD-01: CLAUDE.md:3 diz "aberta"; docs/README.md:5 diz "fechada"',
+      'docs/README.md:6 PD-02: CLAUDE.md nao o lista, e isso diz "fechada"; docs/README.md:6 diz "aberta"',
+    ])
+  })
+
+  it('o lado que nao passa do piso, a secao que sumiu e o ID repetido reprovam', () => {
+    write(
+      'docs/09-rastreabilidade.md',
+      ['## 4. Verificação', '', '| H-01 | ✅ |', '| H-01 | ✅ |'].join('\n'),
+    )
+    write('docs/README.md', '## Pendências que mudaram de nome\n')
+    write('CLAUDE.md', '### Pendências abertas\n')
+    track()
+
+    const floors = { mirrors: { historias: { source: 3, copy: 3 } } }
+    const historias = inspectStructure(root, { ...only('historias'), floors }).problems
+    expect(historias.map(({ file, line, message }) => `${file}:${line} ${message}`)).toEqual([
+      'docs/06-backlog.md:0 leu 3 ID(s), e o piso e 3',
+      'docs/09-rastreabilidade.md:4 H-01 repetido neste lado do espelho',
+      'docs/09-rastreabilidade.md:0 leu 1 ID(s), e o piso e 3',
+      'docs/06-backlog.md:9 H-02 falta em docs/09-rastreabilidade.md',
+      'docs/06-backlog.md:17 H-33 falta em docs/09-rastreabilidade.md',
+    ])
+    expect(problems('pendencias')).toEqual([
+      'docs/README.md:0 secao nao encontrada: /^## Pendências$/',
+    ])
   })
 })

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { createSource, inspect, scanRegions } from '../../tools/contar-documentacao.mjs'
+import {
+  createSource,
+  inspect,
+  inspectStructure,
+  scanRegions,
+} from '../../tools/contar-documentacao.mjs'
 
 /**
  * As regiões de contagem de `docs/`, `README.md`, `CLAUDE.md` e `.claude/` contra a
@@ -14,6 +19,10 @@ import { createSource, inspect, scanRegions } from '../../tools/contar-documenta
  *
  * A região `confere` — a árvore de `04-arquitetura.md` — reprova aqui do mesmo jeito,
  * mas não se corrige pelo comando: é conteúdo escrito à mão.
+ *
+ * Os espelhos de estado — o mesmo ID com estado em dois documentos — também reprovam
+ * aqui, e também se corrigem à mão: a declaração de cada um, com o piso de cada lado,
+ * está em `tools/contar-documentacao.config.mjs`.
  */
 
 const ROOT = process.cwd()
@@ -36,6 +45,17 @@ describe('as regiões de contagem da documentação batem com a fonte', () => {
         written === null
           ? `${file}:${line} ${name}: ${actual} — corrija à mão`
           : `${file}:${line} ${name}: escrito "${written}", real "${actual}" — rode node tools/contar-documentacao.mjs --write (.claude/rules/documentacao.md)`,
+      ),
+    ).toEqual([])
+  })
+})
+
+describe('os espelhos de estado concordam nos dois lados', () => {
+  it('nenhum ID diverge, nenhum falta, e cada lado passa do piso', () => {
+    expect(
+      inspectStructure(ROOT).problems.map(
+        ({ file, line, guard, message }) =>
+          `${file}:${line} ${guard}: ${message} — corrija à mão (.claude/rules/documentacao.md)`,
       ),
     ).toEqual([])
   })

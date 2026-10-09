@@ -1,13 +1,15 @@
 /**
  * O que e do CronosComex em `tools/contar-documentacao.mjs`: o escopo, os contadores das
- * regioes `conta`, a estrutura que marca registro, as familias de ID e a lingua em que
- * os numeros sao escritos. O nucleo nao sabe nada do projeto; quem adota o mecanismo
- * troca este arquivo e leva o nucleo como esta.
+ * regioes `conta`, a estrutura que marca registro, as familias de ID e os espelhos de
+ * estado entre documentos, o piso de cada espelho, e a lingua em que os numeros sao escritos. O nucleo
+ * nao sabe nada do projeto; quem adota o mecanismo troca este arquivo e leva o nucleo
+ * como esta.
  *
  * Contador novo entra em `counters`, com teste sobre fonte de valor concreto em
  * `tests/tools/contar-documentacao.test.ts`. O nome e o que a regiao escreve —
  * `<!-- conta:NOME -->` ou `<!-- conta:NOME[argumento] -->` —, e o contador recebe a
- * fonte e o argumento como texto.
+ * fonte e o argumento como texto. Espelho novo entra em `ids.mirrors`, com o piso de
+ * cada lado em `floors` e teste no mesmo arquivo.
  *
  * Nao importa nada do nucleo: e o nucleo que importa este arquivo.
  */
@@ -209,6 +211,106 @@ const PAIR_DEFINITION_HEADING = new RegExp(String.raw`^#{1,4} (?:Épico )?(${PAI
 const PAIR_EPIC = /^## Épico (E\d+)/
 const PAIR_STORY_CLOSED = /^> ✅ \*\*CONCLUÍDA/
 
+// O ID fica na primeira celula; as colunas seguintes contam a partir de zero.
+const cellAfterId = (row, index) => cellsOf(row.replace(/^\|[^|]*\|/, ''))[index] ?? ''
+const revoked = (row) => (/REVOGAD/i.test(row) ? 'revogado' : 'vigente')
+
+/**
+ * Espelho de estado: o mesmo ID com estado em dois documentos, por desenho. A guarda do
+ * `--check` le os dois lados e reprova o ID cujo estado difere. Cada lado diz o arquivo,
+ * a secao, se o ID abre titulo ou linha de tabela, e como o estado se reconhece ali — as
+ * palavras mudam de um lado para o outro. `absent` diz o que significa o ID faltar de um
+ * lado: um estado, ou `ignore`; sem ele, faltar e defeito.
+ */
+const MIRRORS = [
+  {
+    // A §4 da matriz lista toda historia do backlog, fechada ou aberta, com o estado.
+    name: 'historias',
+    family: String.raw`H-\d+`,
+    source: {
+      file: BACKLOG,
+      entries: 'headings',
+      state: (block) => (/^> ✅ \*\*CONCLUÍDA/m.test(block) ? 'fechada' : 'aberta'),
+    },
+    copy: {
+      file: TRACEABILITY,
+      section: /^## 4\. /,
+      entries: 'rows',
+      state: (row) => (row.includes('✅') ? 'fechada' : 'aberta'),
+    },
+  },
+  {
+    // RF-35 foi revogado por D-43 na `02`, e a §5 da matriz seguiu dizendo "✅ Entregue".
+    // A §5 so lista o RF sem indicador, e o que falta nela nao e defeito.
+    name: 'requisitos',
+    family: String.raw`RF-\d+`,
+    source: { file: 'docs/02-requisitos.md', section: /^## 1\. /, entries: 'rows', state: revoked },
+    copy: {
+      file: TRACEABILITY,
+      section: /^## 5\. /,
+      entries: 'rows',
+      state: revoked,
+      absent: 'ignore',
+    },
+  },
+  {
+    // O status da matriz e a setima coluna (ver `indicatorRows`); na `02`, o aposentado
+    // leva ⏹️ no nome, e o IND-21 que a matriz diz "Bloqueado" a `02` diz "Fora de escopo".
+    name: 'indicadores',
+    family: String.raw`(?:IND|ALE)-\d+`,
+    source: {
+      file: TRACEABILITY,
+      entries: 'rows',
+      state: (row) => {
+        const status = cellAfterId(row, 5)
+        if (/Aposentado/.test(status)) return 'aposentado'
+        return /Bloqueado/.test(status) ? 'bloqueado' : 'ativo'
+      },
+    },
+    copy: {
+      file: 'docs/02-requisitos.md',
+      entries: 'rows',
+      state: (row) => {
+        if (/⏹️|aposentad/i.test(cellAfterId(row, 0))) return 'aposentado'
+        return /Fora de escopo/i.test(cellAfterId(row, 1)) ? 'bloqueado' : 'ativo'
+      },
+    },
+  },
+  {
+    // A pendencia vive no `docs/README.md` aberta ou fechada; o `CLAUDE.md` so tem a aberta.
+    name: 'pendencias',
+    family: String.raw`PD-\d+`,
+    source: {
+      file: 'docs/README.md',
+      section: /^## Pendências$/,
+      entries: 'rows',
+      state: (row) => (cellAfterId(row, 1).includes('✅') ? 'fechada' : 'aberta'),
+    },
+    copy: {
+      file: 'CLAUDE.md',
+      section: /^### Pendências abertas/,
+      entries: 'rows',
+      state: () => 'aberta',
+      absent: 'fechada',
+    },
+  },
+]
+
+/**
+ * O minimo que cada guarda tem de examinar — o numero tem de passar do piso. Pega o
+ * padrao que parou de casar e deixaria a guarda verde por vacuidade, nao a variacao
+ * normal. O lado que pode estar vazio, como as pendencias abertas do `CLAUDE.md`, nao
+ * tem piso.
+ */
+const FLOORS = {
+  mirrors: {
+    historias: { source: 30, copy: 30 },
+    requisitos: { source: 30, copy: 15 },
+    indicadores: { source: 20, copy: 20 },
+    pendencias: { source: 5 },
+  },
+}
+
 const NUMBER_WORDS = [
   ...['dois', 'duas', 'três', 'quatro', 'cinco', 'seis', 'sete', 'oito', 'nove', 'dez'],
   ...['onze', 'doze', 'treze', 'catorze', 'quatorze', 'quinze', 'dezesseis', 'dezessete'],
@@ -230,6 +332,7 @@ const FORMAT_LIMIT = /(?:no máximo|no mínimo|até|máximo de|mínimo de|cada|p
 
 export default {
   scope: IN_SCOPE,
+  rule: '.claude/rules/documentacao.md',
   counters: COUNTERS,
   record: {
     files: RECORD_FILES,
@@ -242,6 +345,7 @@ export default {
     definitionRow: PAIR_DEFINITION_ROW,
     definitionHeading: PAIR_DEFINITION_HEADING,
     closedStory: { file: BACKLOG, epic: PAIR_EPIC, closed: PAIR_STORY_CLOSED },
+    mirrors: MIRRORS,
   },
   language: {
     numberWords: NUMBER_WORDS,
@@ -249,4 +353,5 @@ export default {
     dated: DATED,
     formatLimit: FORMAT_LIMIT,
   },
+  floors: FLOORS,
 }

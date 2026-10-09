@@ -3,7 +3,7 @@
  * pelo mesmo motivo de `contar-documentacao.d.mts`. Declara apenas o que a suite usa.
  */
 
-import type { Source } from './contar-documentacao.mjs'
+import type { Floors, Mirror, Source } from './contar-documentacao.mjs'
 
 type Counter = (source: Source, arg?: string) => number | string
 
@@ -32,3 +32,10 @@ export const COUNTERS: {
   'arvore-src': Counter
   versao: Counter
 }
+
+declare const config: {
+  ids: { mirrors: Mirror[] }
+  floors: Floors
+}
+
+export default config

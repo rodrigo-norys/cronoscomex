@@ -27,6 +27,11 @@ import config from './contar-documentacao.config.mjs'
  * da linha deixa de ser markdown. Marcador dentro de bloco cercado ou entre crases e
  * ignorado — e texto que documenta a sintaxe, e o GitHub o mostra literalmente.
  *
+ * Espelho de estado e o mesmo ID com estado em dois documentos, declarado na
+ * configuracao com o lado-fonte e o lado-copia. A conferencia reprova o ID cujo estado
+ * difere, o que falta de um lado sem significado declarado, e o lado que nao passa do
+ * piso: o padrao que parou de casar deixaria a guarda verde por vacuidade.
+ *
  * `--nuas` aponta o numero com unidade escrito FORA de regiao — "sete passos", "18
  * epicos" — nas linhas que o diff contra a base acrescentou. So avisa, e nunca reprova:
  * medido em 06/10/2026, a varredura completa achou 260 numeros, e a classificacao a mao
@@ -51,15 +56,16 @@ import config from './contar-documentacao.config.mjs'
  *
  * `--definicoes` conta, para cada ID citado no escopo, os lugares que o definem — a
  * linha de tabela que abre com ele, ou o titulo de nivel 1 a 4 —, e lista o ID sem
- * definicao e o definido em mais de um lugar. So relata. Citacao entre crases so vale
- * quando a crase e o proprio ID: `D0 CF 11 E0` sao bytes, e `~$E30.xlsx` e um arquivo.
+ * definicao e o definido em mais de um lugar, menos os dois lados de um espelho. So
+ * relata. Citacao entre crases so vale quando a crase e o proprio ID: `D0 CF 11 E0` sao
+ * bytes, e `~$E30.xlsx` e um arquivo.
  *
  * O que NAO faz: reescrever regiao `confere`; contar sobre codigo de `web/src/` — as
  * duas ficaram fora por decisao de 01/10/2026; avisar pela idade de uma medicao da
  * planilha — um terco das afirmacoes nao tem data, e o gatilho real e a aba `2027`.
  *
  * Uso, a partir da raiz do projeto:
- *   node tools/contar-documentacao.mjs                   confere; sai com 1 se divergir
+ *   node tools/contar-documentacao.mjs                   confere regioes e espelhos; 1 se divergir
  *   node tools/contar-documentacao.mjs --write           reescreve as regioes `conta`
  *   node tools/contar-documentacao.mjs --nuas            avisa no diff contra a `main`
  *   node tools/contar-documentacao.mjs --nuas --base X   avisa no diff contra `X`
@@ -305,6 +311,141 @@ export function rewrite(root) {
   return changed
 }
 
+/**
+ * O nivel de titulo de cada linha (base 0), e zero fora de titulo. Linha de bloco cercado
+ * nao e titulo: o comentario `# ...` de um exemplo em shell cortaria a secao no meio.
+ */
+function headingLevels(lines) {
+  let fenced = false
+  return lines.map((line) => {
+    if (FENCE.test(line)) {
+      fenced = !fenced
+      return 0
+    }
+    return fenced ? 0 : (/^(#{1,6}) /.exec(line)?.[1].length ?? 0)
+  })
+}
+
+/** Onde termina o titulo da linha `start`: no proximo de nivel igual ou acima, exclusivo. */
+function sectionEnd(levels, start) {
+  const end = levels.findIndex(
+    (level, index) => index > start && level > 0 && level <= levels[start],
+  )
+  return end === -1 ? levels.length : end
+}
+
+/** As linhas (base 0, fim exclusivo) da secao cujo titulo casa `heading`; sem ele, o arquivo. */
+function sectionSpan(lines, levels, heading) {
+  if (!heading) return { start: 0, end: lines.length }
+  const start = lines.findIndex((line, index) => levels[index] > 0 && heading.test(line))
+  return start === -1 ? null : { start: start + 1, end: sectionEnd(levels, start) }
+}
+
+const linesOf = (text) => text.split('\n').map((line) => line.replace(/\r$/, ''))
+
+/** Um lado do espelho: cada ID com a linha (base 1) e o estado, e o ID repetido a parte. */
+function readMirrorSide(source, family, side) {
+  if (!source.tracked.includes(side.file)) return { error: 'arquivo fora do git' }
+  const lines = linesOf(source.read(side.file))
+  const levels = headingLevels(lines)
+  const span = sectionSpan(lines, levels, side.section)
+  if (!span) return { error: `secao nao encontrada: ${side.section}` }
+  const heading = new RegExp(String.raw`^#{1,6} (${family})\b`)
+  const cited = new RegExp(String.raw`\b(?:${family})\b`, 'g')
+  const entries = new Map()
+  const repeated = []
+  const add = (id, index, text) => {
+    if (entries.has(id)) repeated.push({ id, line: index + 1 })
+    else entries.set(id, { line: index + 1, state: side.state(text) })
+  }
+  let fenced = false
+  for (let index = span.start; index < span.end; index++) {
+    const line = lines[index]
+    if (FENCE.test(line)) {
+      fenced = !fenced
+      continue
+    }
+    if (fenced) continue
+    if (side.entries === 'headings') {
+      const id = levels[index] > 0 ? heading.exec(line)?.[1] : undefined
+      const end = Math.min(sectionEnd(levels, index), span.end)
+      if (id) add(id, index, lines.slice(index, end).join('\n'))
+    } else if (line.startsWith('|')) {
+      for (const [id] of (line.split('|')[1] ?? '').matchAll(cited)) add(id, index, line)
+    }
+  }
+  return { entries, repeated }
+}
+
+/**
+ * Confere os espelhos de estado: o ID com estados diferentes nos dois lados, o que falta
+ * de um lado quando faltar nao tem significado declarado, o repetido, e o lado que nao
+ * passou do piso — o padrao que parou de casar deixaria a guarda verde por vacuidade.
+ */
+export function checkMirrors(source, mirrors, floors = {}) {
+  const problems = []
+  const report = (name, file, line, message) =>
+    problems.push({ file, line, guard: `espelho:${name}`, message })
+  for (const mirror of mirrors) {
+    const sides = { source: mirror.source, copy: mirror.copy }
+    const read = {}
+    for (const [role, side] of Object.entries(sides)) {
+      read[role] = readMirrorSide(source, mirror.family, side)
+      if (read[role].error) {
+        report(mirror.name, side.file, 0, read[role].error)
+        continue
+      }
+      for (const { id, line } of read[role].repeated)
+        report(mirror.name, side.file, line, `${id} repetido neste lado do espelho`)
+      const floor = floors[mirror.name]?.[role]
+      const count = read[role].entries.size
+      if (floor !== undefined && count <= floor)
+        report(mirror.name, side.file, 0, `leu ${count} ID(s), e o piso e ${floor}`)
+    }
+    if (read.source.error || read.copy.error) continue
+
+    for (const id of new Set([...read.source.entries.keys(), ...read.copy.entries.keys()])) {
+      const found = { source: read.source.entries.get(id), copy: read.copy.entries.get(id) }
+      const states = {}
+      let compare = true
+      for (const [role, other] of [
+        ['source', 'copy'],
+        ['copy', 'source'],
+      ]) {
+        if (found[role]) states[role] = found[role].state
+        else if (sides[role].absent === 'ignore') compare = false
+        else if (sides[role].absent !== undefined) states[role] = sides[role].absent
+        else {
+          report(
+            mirror.name,
+            sides[other].file,
+            found[other].line,
+            `${id} falta em ${sides[role].file}`,
+          )
+          compare = false
+        }
+      }
+      if (!compare || states.source === states.copy) continue
+      const say = (role) =>
+        found[role]
+          ? `${sides[role].file}:${found[role].line} diz "${states[role]}"`
+          : `${sides[role].file} nao o lista, e isso diz "${states[role]}"`
+      const at = found.copy ? 'copy' : 'source'
+      report(mirror.name, sides[at].file, found[at].line, `${id}: ${say('copy')}; ${say('source')}`)
+    }
+  }
+  return problems
+}
+
+/** As guardas de estrutura, alem das regioes: espelho de estado, com o piso de cada lado. */
+export function inspectStructure(
+  root,
+  { mirrors = config.ids.mirrors, floors = config.floors } = {},
+) {
+  const source = createSource(root)
+  return { problems: checkMirrors(source, mirrors, floors.mirrors) }
+}
+
 const RECORD_FILES = config.record.files
 const RECORD_LINE = config.record.line
 const CLOSED_BLOCKS = config.record.closedBlocks
@@ -537,9 +678,10 @@ export function findPairs(root, { base = 'main' } = {}) {
 /**
  * Onde cada ID citado no escopo e definido: a linha de tabela que abre com ele, ou o
  * titulo. Sem definicao, a citacao nao tem para onde apontar; com duas ou mais, o mesmo
- * fato vive em dois lugares e pode divergir entre eles.
+ * fato vive em dois lugares e pode divergir entre eles — menos quando sao os dois lados
+ * de um espelho declarado, que a guarda do `--check` confere.
  */
-export function findDefinitions(root) {
+export function findDefinitions(root, { mirrors = config.ids.mirrors } = {}) {
   const source = createSource(root)
   const citedAt = new Map()
   const definedAt = new Map()
@@ -563,12 +705,38 @@ export function findDefinitions(root) {
         }
       })
   }
+  const spans = mirrors.map((mirror) => ({
+    name: mirror.name,
+    family: new RegExp(`^(?:${mirror.family})$`),
+    sides: [mirror.source, mirror.copy].map((side) => {
+      if (!source.tracked.includes(side.file)) return { file: side.file, start: 0, end: 0 }
+      const lines = linesOf(source.read(side.file))
+      const span = sectionSpan(lines, headingLevels(lines), side.section)
+      return { file: side.file, ...(span ?? { start: 0, end: 0 }) }
+    }),
+  }))
+  const inside = (at, side) => {
+    const line = Number(at.slice(at.lastIndexOf(':') + 1))
+    return at.startsWith(`${side.file}:`) && line > side.start && line <= side.end
+  }
+  const mirrorOf = (id, places) => {
+    if (places.length !== 2) return null
+    const [first, second] = places
+    const mirror = spans.find(
+      ({ family, sides: [one, other] }) =>
+        family.test(id) &&
+        ((inside(first, one) && inside(second, other)) ||
+          (inside(first, other) && inside(second, one))),
+    )
+    return mirror?.name ?? null
+  }
   return [...citedAt]
     .map(([id, at]) => ({
       id,
       family: /^[A-Z]+/.exec(id)[0],
       citedAt: at,
       definedAt: definedAt.get(id) ?? [],
+      mirror: mirrorOf(id, definedAt.get(id) ?? []),
     }))
     .sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true }))
 }
@@ -576,28 +744,29 @@ export function findDefinitions(root) {
 function reportDefinitions() {
   const found = findDefinitions(ROOT)
   const families = new Map()
-  for (const { family, definedAt } of found) {
-    const row = families.get(family) ?? { cited: 0, none: 0, one: 0, many: 0 }
+  for (const { family, definedAt, mirror } of found) {
+    const row = families.get(family) ?? { cited: 0, none: 0, one: 0, many: 0, mirrored: 0 }
     row.cited++
     if (definedAt.length === 0) row.none++
     else if (definedAt.length === 1) row.one++
+    else if (mirror) row.mirrored++
     else row.many++
     families.set(family, row)
   }
-  console.log('familia  citados      0      1     2+')
+  console.log('familia  citados      0      1     2+ espelho')
   for (const [family, row] of [...families].sort(([a], [b]) => a.localeCompare(b))) {
-    const cells = [row.cited, row.none, row.one, row.many].map((n) => String(n).padStart(6))
-    console.log(`${family.padEnd(7)} ${cells.join(' ')}`)
+    const cells = [row.cited, row.none, row.one, row.many, row.mirrored]
+    console.log(`${family.padEnd(7)} ${cells.map((n) => String(n).padStart(6)).join(' ')}`)
   }
   const none = found.filter((entry) => entry.definedAt.length === 0)
-  const many = found.filter((entry) => entry.definedAt.length > 1)
+  const many = found.filter((entry) => entry.definedAt.length > 1 && !entry.mirror)
   if (none.length > 0) console.log('\nsem definicao — a citacao nao tem para onde apontar:')
   for (const { id, citedAt } of none) console.log(`  ${id}  citado em ${citedAt}`)
   if (many.length > 0)
     console.log('\ndefinido em mais de um lugar — o fato pode divergir entre eles:')
   for (const { id, definedAt } of many) console.log(`  ${id}  ${definedAt.join(', ')}`)
   console.log(
-    `\n${found.length} ID(s) citado(s), ${none.length} sem definicao, ${many.length} com mais de uma — relatorio, nao reprovacao.`,
+    `\n${found.length} ID(s) citado(s), ${none.length} sem definicao, ${many.length} com mais de uma fora de espelho — relatorio, nao reprovacao.`,
   )
 }
 
@@ -647,6 +816,7 @@ function main() {
     console.log(changed.length > 0 ? `reescritos:\n  ${changed.join('\n  ')}` : 'nada a reescrever')
   }
   const { divergences, errors } = inspect(ROOT)
+  const { problems } = inspectStructure(ROOT)
   for (const { file, line, message } of errors) console.error(`${file}:${line}  ERRO  ${message}`)
   for (const { file, line, name, written, actual } of divergences) {
     console.error(
@@ -655,15 +825,19 @@ function main() {
         : `${file}:${line}  ${name}  escrito "${written}", real "${actual}"`,
     )
   }
-  if (errors.length > 0 || divergences.length > 0) {
+  for (const { file, line, guard, message } of problems)
+    console.error(`${line ? `${file}:${line}` : file}  ${guard}  ${message}`)
+  if (errors.length > 0 || divergences.length > 0 || problems.length > 0) {
     const fixable = divergences.some((divergence) => divergence.written !== null)
     if (fixable && !write)
       console.error(
         '\nas regioes conta se corrigem com: node tools/contar-documentacao.mjs --write',
       )
+    if (problems.length > 0)
+      console.error(`\na estrutura se corrige no documento, pela regra de ${config.rule}`)
     process.exit(1)
   }
-  console.log('regioes conferidas: nenhuma divergencia')
+  console.log('regioes e estrutura conferidas: nenhuma divergencia')
 }
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) main()

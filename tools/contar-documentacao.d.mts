@@ -49,9 +49,47 @@ export interface Definition {
   family: string
   citedAt: string
   definedAt: string[]
+  mirror: string | null
 }
 
-export function findDefinitions(root: string): Definition[]
+export interface MirrorSide {
+  file: string
+  section?: RegExp
+  entries: 'headings' | 'rows'
+  state: (text: string) => string
+  absent?: string
+}
+
+export interface Mirror {
+  name: string
+  family: string
+  source: MirrorSide
+  copy: MirrorSide
+}
+
+export interface Floors {
+  mirrors?: Record<string, { source?: number; copy?: number }>
+}
+
+export function findDefinitions(root: string, options?: { mirrors?: Mirror[] }): Definition[]
+
+export interface Problem {
+  file: string
+  line: number
+  guard: string
+  message: string
+}
+
+export function checkMirrors(
+  source: Source,
+  mirrors: Mirror[],
+  floors?: Floors['mirrors'],
+): Problem[]
+
+export function inspectStructure(
+  root: string,
+  options?: { mirrors?: Mirror[]; floors?: Floors },
+): { problems: Problem[] }
 
 export function scanRegions(text: string): {
   counts: { line: number; raw: string; written: string }[]

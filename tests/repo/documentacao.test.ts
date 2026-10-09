@@ -23,11 +23,13 @@ import { describe, expect, it } from 'vitest'
  * O total de histórias afirmado em prosa saiu daqui em 06/10/2026: desde as
  * regiões de 01/10/2026 o regex não casava linha nenhuma, e quem o cobre é
  * `tests/repo/contagens.test.ts`.
+ *
+ * A matriz contra o backlog, e o requisito revogado contra a matriz, também saíram:
+ * são espelhos de estado declarados em `tools/contar-documentacao.config.mjs`, que o
+ * `--check` confere e `tests/repo/contagens.test.ts` cobra.
  */
 
 const BACKLOG = readFileSync('docs/06-backlog.md', 'utf-8')
-const MATRIZ = readFileSync('docs/09-rastreabilidade.md', 'utf-8')
-const REQUISITOS = readFileSync('docs/02-requisitos.md', 'utf-8')
 
 interface Historia {
   id: string
@@ -208,74 +210,6 @@ describe('o tamanho declarado respeita a régua, nas histórias abertas', () => 
       )
 
     expect(violacoes).toEqual([])
-  })
-})
-
-/**
- * A §4 da matriz é o único lugar do repositório que enumera história por
- * história fora do backlog, e o cabeçalho dela registra o modo de falha com
- * todas as letras: o número "já envelheceu QUATRO vezes — 33, depois 43, depois
- * 61, depois 81 —, e a ressalva que anunciava o modo de falha não o impediu,
- * nem na vez em que ela mesma trazia o número" (`docs/09-rastreabilidade.md:180`).
- * O documento publica as duas receitas `grep -cE` em prosa; isto as executa.
- */
-describe('a matriz de rastreabilidade concorda com o backlog', () => {
-  const naMatriz = [...MATRIZ.matchAll(/^\| (H-\d+) \|(.*)$/gm)].map((linha) => ({
-    id: linha[1] ?? '',
-    concluida: (linha[2] ?? '').includes('✅'),
-  }))
-
-  it('encontra as linhas — âncora contra guarda verde por vacuidade', () => {
-    expect(naMatriz.length).toBeGreaterThan(30)
-  })
-
-  it('toda história tem linha na §4, e toda linha tem história', () => {
-    expect(naMatriz.map((linha) => linha.id).sort()).toEqual(
-      HISTORIAS.map((historia) => historia.id).sort(),
-    )
-  })
-
-  it('o estado da §4 é o do bloco da história', () => {
-    const divergentes = naMatriz
-      .filter((linha) => linha.concluida !== HISTORIAS.find((h) => h.id === linha.id)?.concluida)
-      .map((linha) => linha.id)
-
-    expect(divergentes).toEqual([])
-  })
-})
-
-/** A primeira célula de uma linha de tabela — onde o identificador é definido. */
-function primeiraCelula(linha: string): string {
-  return linha.split('|')[1] ?? ''
-}
-
-/**
- * Revogar um requisito é a mudança de estado que mais viaja: ela nasce em
- * `02-requisitos.md` e precisa alcançar a §5 da matriz. Em 11/09/2026 `RF-35`
- * foi revogado por `D-43` e a matriz seguiu dizendo "✅ **Entregue**" — a
- * propagação que não aconteceu, e que nenhuma asserção via.
- */
-describe('requisito revogado não continua entregue na matriz', () => {
-  const revogados = [...REQUISITOS.matchAll(/^\| (RF-\d+) \|(.*)$/gm)]
-    .filter((linha) => /REVOGAD/i.test(linha[2] ?? ''))
-    .map((linha) => linha[1] ?? '')
-
-  it('encontra os requisitos — âncora contra guarda verde por vacuidade', () => {
-    expect([...REQUISITOS.matchAll(/^\| (RF-\d+) \|/gm)].length).toBeGreaterThan(30)
-  })
-
-  it('toda linha da matriz que define um revogado diz que ele foi revogado', () => {
-    const desalinhadas = revogados.flatMap((requisito) =>
-      MATRIZ.split('\n')
-        .filter(
-          (linha) =>
-            linha.startsWith('|') && new RegExp(`\\b${requisito}\\b`).test(primeiraCelula(linha)),
-        )
-        .filter((linha) => !/REVOGAD/i.test(linha))
-        .map((linha) => `${requisito}: ${linha.slice(0, 80)}`),
-    )
-
-    expect(desalinhadas).toEqual([])
   })
 })
 
