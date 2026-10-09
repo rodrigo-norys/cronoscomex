@@ -23,8 +23,8 @@ import { type FilterOption, MultiSelect } from './MultiSelect.tsx'
  *
  * **Modal de verdade, e nao um popover grande** — a quarta determinacao de
  * `D-30`. Foco preso, `Esc` fecha, o resto da tela e inerte, e o foco volta para
- * o gatilho. **Este foi o primeiro modal do conjunto com teste**, e ate
- * 17/09/2026 o unico: o `ConflictDialog` so abre com a planilha alterada durante
+ * o gatilho. **Este foi o primeiro modal do conjunto com teste**, e o unico
+ * ate `H-111`: o `ConflictDialog` so abre com a planilha alterada durante
  * a sessao, e a gestao de foco dele estava parada em `PD-07`. O ensaio produziu
  * o conflito num navegador real, mediu o dialogo abrindo com o foco no `<body>`,
  * e os dois passaram a usar `useModalFocus`.
@@ -163,7 +163,7 @@ export function FilterPanel({ filters, options, optionsError, onClose }: FilterP
                   {MULTI_FILTER_LABELS[control.key]}
                 </h3>
                 {/* `max-h` por controle, e nao no painel: sao 509 clientes
-                    medidos em 07/08/2026, e sem teto proprio a lista de um
+                    medidos em `H-15`, e sem teto proprio a lista de um
                     filtro empurraria os outros treze para fora do alcance. */}
                 <div className="max-h-56 overflow-y-auto rounded-container border border-border-subtle p-2">
                   <MultiSelect

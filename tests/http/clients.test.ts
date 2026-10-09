@@ -180,7 +180,7 @@ describe('GET /api/clients', () => {
 
   /**
    * O campo de declaracao oferece os nomes existentes — e foi a falta disso que
-   * criou um cliente `VIVI` ao lado do pai `Vivi` em 08/09/2026.
+   * criou um cliente `VIVI` ao lado do pai `Vivi` (`H-88`).
    */
   it('serve os nomes que o campo sugere, com o pai marcado', async () => {
     const mapa: ClientMapEntry[] = [
@@ -315,7 +315,7 @@ describe('POST /api/clients/rules', () => {
     })
 
     expect(resposta.statusCode).toBe(201)
-    // `grupo-criado` desde 18/09/2026: a PRIMEIRA declaracao ja forma o pai.
+    // `grupo-criado` (`D-53`): a PRIMEIRA declaracao ja forma o pai.
     expect(resposta.json()).toEqual({
       outcome: 'grupo-criado',
       key: 'CLIENTE D',
@@ -404,7 +404,7 @@ describe('POST /api/clients/rules', () => {
   })
 
   /**
-   * **O pai nasce no PRIMEIRO conjunto desde 18/09/2026**, e o segundo apenas
+   * **O pai nasce no PRIMEIRO conjunto** (`D-53`), e o segundo apenas
    * entra nele.
    *
    * A determinacao 8 de `H-88` fazia o pai nascer no segundo, e este teste a
@@ -460,7 +460,7 @@ describe('POST /api/clients/rules', () => {
 
   /**
    * A REGRA normaliza, o ROTULO nao: quem digita "Kelly" ve "Kelly" declarado.
-   * Medido no mapa real em 09/09/2026, onde a entrada trocou de `label: 'Kelly'`
+   * Medido no mapa real (`H-88`), onde a entrada trocou de `label: 'Kelly'`
    * para `label: 'KELLY'` ao ser redeclarada.
    */
   it('grava a grafia digitada como rotulo do cliente', async () => {
@@ -557,7 +557,7 @@ describe('DELETE /api/clients/groups', () => {
 
     const gravado = JSON.parse(readFileSync(mapPath, 'utf-8'))
     expect(gravado.groups[0].members).toEqual([{ client: 'AV' }, { client: 'CHUN' }])
-    // A declaracao sai JUNTO desde 08/09/2026: as grafias de `KELLY` voltam a
+    // A declaracao sai JUNTO (`H-88`): as grafias de `KELLY` voltam a
     // ficar sem cliente, e a lista da esquerda as recebe de volta.
     expect(gravado.clients.map((entry: { key: string }) => entry.key)).toEqual(['AV', 'CHUN'])
   })

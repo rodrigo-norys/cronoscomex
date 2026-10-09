@@ -16,7 +16,7 @@
 # A lista de arquivos do alvo vem de `git ls-files`, com ARQUIVOS_PARA_VERIFICAR
 # como ponto de injecao. Sem ele esta regressao seria impossivel, porque o hook
 # guard-dados-sensiveis.sh — corretamente — impede montar um indice de teste
-# contendo planilha e config/app.json.
+# contendo planilha e o app.json de config.
 #
 #   bash .github/scripts/test-verifica-dados-sensiveis.sh
 
@@ -93,8 +93,9 @@ printf 'const caminho = "/home/fulano/Desktop/projeto/x"\n' > src/vaza.ts
 printf 'o marcador /home/usuario/ e generico\n'              > docs/marcador.md
 printf 'blocks "git diff --output=/tmp/../home/vazamento.txt"\n' > .claude/hooks/test-guard.sh
 printf 'const s = "C:\\Users\\fulano\\OneDrive"\n'           > src/windows.ts
-# scripts/ so entrou na verificacao 6 em 02/09/2026, e e onde o caminho absoluto
-# do Windows e MAIS provavel: iniciar.cmd e o lancador da maquina do operador.
+# scripts/ esta na verificacao 6 porque e onde o caminho absoluto do Windows e
+# MAIS provavel: iniciar.cmd e o lancador da maquina do operador
+# (docs/08-qualidade-operacao.md §5.2).
 printf 'set "CAMINHO=C:\\Users\\fulano\\OneDrive\\planilha.xlsx"\n' > scripts/iniciar.cmd
 printf 'const raiz = "/home/fulano/Desktop/CronosComex"\n' > scripts/sincronizar-distribuicao.ts
 popd > /dev/null || exit 1
@@ -144,8 +145,7 @@ roda_local aprova  'regressao de guard com payload de caminho'  '.github/scripts
 
 # A guarda das fixtures esta na mesma isencao, e pelo mesmo motivo: a ancora
 # dela prova que a regex reconhece um diretorio de usuario, e a prova exige a
-# forma. Foi a CI que descobriu, porque ate 02/09/2026 o `npm run verify` nao
-# rodava este script — hoje roda, como `test:dados`, e foi essa a licao.
+# forma (docs/08-qualidade-operacao.md §5.2).
 mkdir -p tests/repo
 printf 'expect(CAMINHO.test("/home/beltrano/x")).toBe(true)\n' > tests/repo/fixtures-anonimas.test.ts
 roda_local aprova  'guarda das fixtures com payload de caminho' 'tests/repo/fixtures-anonimas.test.ts'

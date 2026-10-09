@@ -62,7 +62,7 @@ export interface CellFill {
 
 /**
  * De onde a resolucao veio — e "sem cor" NAO e o mesmo que "cor que eu nao
- * conheco" (02/09/2026).
+ * conheco" (`H-79`).
  *
  * Enquanto a aplicacao so LIA, os dois casos coincidiam: nenhuma das 649 linhas
  * nascia sem preenchimento, entao a ausencia so podia ser engano. Ao passar a
@@ -169,7 +169,7 @@ function targetKey(target: ColorTarget): string {
  * **A PRIMEIRA entrada que casa vence**, e nao "exatamente uma". Exigir
  * correspondencia unica — como 05-contratos-api.md dizia ate H-27 — recusaria
  * tres das nove entradas do mapa real, entre elas o verde, que cobre 477 das
- * 649 linhas (medido em H-01, 03/08/2026). A primeira e o tom canonico, o mesmo
+ * 649 linhas (medido em H-01). A primeira e o tom canonico, o mesmo
  * criterio que o caso-limite de H-27 ja fixa para a linha verde tom B repintada
  * de verde: a aplicacao unifica no tom do mapa.
  */
@@ -183,8 +183,7 @@ export function resolveFillTarget(
 
 /**
  * Uma entrada por combinacao distinta, na ordem do mapa — o que a aplicacao
- * sabe GRAVAR. Sao SETE no mapa real, contra nove entradas — medido em
- * 08/09/2026 chamando a propria funcao; o comentario dizia seis.
+ * sabe GRAVAR. Sao SETE no mapa real, contra nove entradas (`H-51`).
  *
  * A interface oferece esta lista, e nao as nove: rotular uma opcao "Branco" e
  * gravar verde seria a tela afirmando o que o codigo nao faz. Branco e os tons

@@ -53,7 +53,7 @@ export function RankingBar({
         <p className="mt-3 text-sm text-text-secondary">{emptyMessage}</p>
       ) : (
         /*
-          **A rolagem e do QUADRO, e nao da pagina** (21/09/2026), pelo mesmo
+          **A rolagem e do QUADRO, e nao da pagina** (`H-106`), pelo mesmo
           motivo de `ClientDeclaration` e da tabela da Operacional: com "Todos"
           selecionado o ranking de clientes chega a 180 itens, e sem teto os
           tres cards teriam alturas diferentes e a pagina cresceria com o mapa
@@ -141,7 +141,7 @@ function RankingRow({
   const content = (
     <>
       {/*
-        A posicao, em ordinal (21/09/2026).
+        A posicao, em ordinal (`H-106`).
 
         **`aria-hidden`, e a escolha e deliberada:** a lista ja e um `<ol>`, e o
         leitor de tela anuncia "item 3 de 10" por conta propria — repetir "3o"

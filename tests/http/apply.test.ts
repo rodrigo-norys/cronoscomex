@@ -74,7 +74,7 @@ describe('POST /api/edits/apply — sucesso', () => {
       // `H-27`: separado de `cellsWritten` porque uma troca de cor toca 12
       // celulas sem gravar valor algum.
       rowsRepainted: 0,
-      // 02/09/2026, pelo mesmo motivo: uma linha nova nao grava celula por
+      // `H-79`, pelo mesmo motivo: uma linha nova nao grava celula por
       // `applyCellEdits` nem repinta, e sem este campo a tela anunciava "nada
       // precisou ser gravado" a quem acabou de criar um processo.
       rowsInserted: 0,
@@ -98,7 +98,7 @@ describe('POST /api/edits/apply — sucesso', () => {
 
 /**
  * **Sem contagem no titulo, e a lista NAO e a uniao inteira.** `TABELA_CHEIA`
- * nunca entrou aqui, desde 02/09/2026 — buraco preexistente, apontado pelo
+ * nunca entrou aqui, desde `D-25` — buraco preexistente, apontado pelo
  * revisor-xml e deixado como esta porque nao rastreia a `H-96`.
  *
  * Os dois codigos de cabecalho entraram: sem eles o `409` deles nao tinha
@@ -164,7 +164,7 @@ describe('POST /api/edits/apply — o detail de cada recusa', () => {
   /**
    * `D-64`, o elo do MEIO: o `WriteResult` tem a lista, e o `ConflictDialog` a
    * exibe, mas nada afirmava que a rota a repassa. E o elo exato que
-   * `TABELA_CHEIA` perdeu em 02/09/2026, quando o codigo nao atravessou ate a
+   * `TABELA_CHEIA` perdeu em `H-80`, quando o codigo nao atravessou ate a
    * tela e caiu em `ERRO_INTERNO`. Achado do revisor-xml.
    */
   it('leva as REF inadmissiveis em ESCRITA_INVALIDA', async () => {

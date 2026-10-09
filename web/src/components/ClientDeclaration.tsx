@@ -12,7 +12,7 @@ import { type RuleReachState, useClientKeys, useRuleReach } from '../hooks/usePe
 /**
  * O painel que opera o mapa de clientes (`H-88`).
  *
- * **Ele vive na Pagina Clientes desde 09/09/2026** (`D-36`), e nasceu na Pagina
+ * **Ele vive na Pagina Clientes** (`D-36`), e nasceu na Pagina
  * Configuracao: a determinacao 1 de `D-32` o pos la por ser manutencao, nao
  * analise, e o usuario a reverteu depois de USAR a tela — declarar cliente e
  * olhar o ranking de clientes sao o mesmo trabalho, e separa-los obrigava a
@@ -32,7 +32,7 @@ import { type RuleReachState, useClientKeys, useRuleReach } from '../hooks/usePe
  *
  * **A rolagem e do quadro, e nao da pagina** — mesma escolha de `H-84` para a
  * tabela da Operacional, e de `FilterPanel` para os 509 clientes. Com 111
- * grafias medidas em 08/09/2026, uma lista sem teto empurraria as etapas da
+ * grafias medidas em `H-88`, uma lista sem teto empurraria as etapas da
  * partida e o inventario para fora do alcance; e um teto SEM rolagem, que foi a
  * primeira versao desta tela, obrigava a expandir de 20 em 20 para ver o fim.
  *
@@ -42,7 +42,7 @@ import { type RuleReachState, useClientKeys, useRuleReach } from '../hooks/usePe
 const PENDING_VIEWPORT = 'pending-viewport overflow-y-auto'
 
 /**
- * As tres colunas onde uma regra pode procurar (21/09/2026).
+ * As tres colunas onde uma regra pode procurar (`H-105`).
  *
  * **A aba diz a coluna, e o rotulo do campo repete a palavra** de proposito: o
  * operador digita num campo, nao numa aba, e o rotulo e o que ele le no instante
@@ -80,7 +80,7 @@ export function ClientDeclaration({ dataVersion }: { dataVersion: number }) {
   const [version, setVersion] = useState(0)
   const [field, setField] = useState<ClientField>('clt')
   /*
-    **A lista acompanha a aba** (21/09/2026): trocar para "Por REF" recarrega a
+    **A lista acompanha a aba** (`H-105`): trocar para "Por REF" recarrega a
     lista com as REFs, e nao com as grafias de CLT. Declarar numa coluna olhando
     a lista de outra obrigaria a procurar na planilha o valor que se vai digitar.
   */
@@ -108,7 +108,7 @@ export function ClientDeclaration({ dataVersion }: { dataVersion: number }) {
   /**
    * **A faixa nasce recolhida** (`D-37`).
    *
-   * Medido em 09/09/2026, a 1920x1080: expandido o painel consome 710 px de uma
+   * Medido a 1920x1080 (`D-37`): expandido o painel consome 710 px de uma
    * janela de 1080, e os tres rankings ficavam abaixo da dobra numa pagina de
    * 1752 px. Recolhido ele custa uma linha, e a divida continua a vista —
    * o numero esta na propria faixa.
@@ -399,7 +399,7 @@ function DeclareRule({
       <h3 className="text-sm font-medium text-text-secondary">Declarar um cliente</h3>
 
       {/*
-        **Uma aba por coluna** (opcao B, escolhida pelo usuario em 21/09/2026).
+        **Uma aba por coluna** (opcao B, escolhida pelo usuario em `H-105`).
         A coluna escolhida fica visivel o tempo todo, sem abrir um seletor, e o
         rotulo do campo de valor a acompanha — ate aqui ele dizia "na coluna
         CLT" e seria falso nas outras duas.
@@ -507,18 +507,17 @@ function DeclareRule({
       </p>
 
       {/*
-        **Os nomes existentes sao BOTOES, e nao um `datalist`** (09/09/2026).
+        **Os nomes existentes sao BOTOES, e nao um `datalist`** (`H-88`).
         O dropdown nativo nao aceita a paleta do conjunto — ele herda a do
         agente de usuario —, e o operador precisava abri-lo para descobrir que
         havia sugestao. Aqui eles estao a vista, e clicar preenche.
-        Foi a falta da sugestao que criou um cliente `VIVI` ao lado do pai
-        `Vivi` em 08/09/2026, com o ranking mostrando 326 e 58 como se fossem
-        clientes diferentes.
+        Sem a sugestao a vista, nasce um cliente `VIVI` ao lado do pai `Vivi`, e
+        o ranking os mostra como clientes diferentes (`H-88`).
       */}
       {names.length > 0 && (
         <p className="mt-3 flex flex-wrap items-center gap-2 text-xs text-text-secondary">
           {/*
-            **O rotulo diz a ACAO, e nao o estado** (09/09/2026): "Já existem"
+            **O rotulo diz a ACAO, e nao o estado** (`H-88`): "Já existem"
             descrevia a lista e nao convidava a clicar. O operador nao viu o
             chip como controle — a borda fina sem fundo le como etiqueta.
           */}
@@ -532,7 +531,7 @@ function DeclareRule({
             >
               {name.label}
               {/* O NUMERO, e nao a palavra: "agrupa" era jargao nosso, e colado
-                  ao nome dava para ler como parte dele (09/09/2026). Quem tem
+                  ao nome dava para ler como parte dele (`H-88`). Quem tem
                   contagem e pai; quem nao tem, e cliente solto. */}
               {name.isParent && (
                 <span className="rounded-control bg-action-soft px-1.5 font-mono text-xs tabular-nums text-text-secondary">
@@ -564,8 +563,8 @@ function DeclareRule({
  * **Ela lista CLIENTES, e nao grafias**, e e o que a torna util: `AV` consolida
  * 304 celulas que diriam todas "Vivi > AV". Desfazer age sobre o cliente.
  *
- * **Os dois botoes apagam a declaracao junto** — escolha do usuario em
- * 08/09/2026. "Tirar de Vivi" remove o vinculo E a regra do cliente; "Desfazer
+ * **Os dois botoes apagam a declaracao junto** — escolha do usuario
+ * (`H-88`). "Tirar de Vivi" remove o vinculo E a regra do cliente; "Desfazer
  * Vivi" faz isso com todos. As grafias voltam para a lista da esquerda.
  *
  * **Os rotulos dizem menos do que os botoes fazem, e isso foi decidido:** o
@@ -618,7 +617,7 @@ function Declared({
             >
               {/*
                 **O nivel some quando pai e filho dizem a mesma palavra** —
-                opcao (a), escolhida pelo usuario em 18/09/2026. Com toda
+                opcao (a), escolhida pelo usuario em `D-53`. Com toda
                 declaracao virando grupo, o cliente cujo nome e o proprio valor
                 da regra apareceria como "DENNIS › DENNIS", que e exatamente o
                 que `D-35` recusou ao decidir que o filho nao herda o rotulo do
@@ -642,7 +641,7 @@ function Declared({
               </span>
 
               {/*
-                Todo declarado tem pai desde 18/09/2026, entao os botoes valem
+                Todo declarado tem pai (`D-53`), entao os botoes valem
                 para todos — era o que faltava para desfazer pela tela o cliente
                 que fora declarado solto.
 

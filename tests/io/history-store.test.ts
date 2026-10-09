@@ -260,7 +260,7 @@ describe('recordChanges — casos-limite', () => {
   /**
    * A compatibilidade que `H-51` precisou dar ao arquivo ja gravado.
    *
-   * O historico e append-only: as linhas escritas antes de 31/08/2026 dizem
+   * O historico e append-only: as linhas escritas antes de `H-51` dizem
    * `nenhum`, e recusa-las esvaziaria o indice — todo REF voltaria a ser visto
    * pela primeira vez, e `categoryChangedAt` reiniciaria em 649 processos,
    * zerando ALE-06. Lidas como `indefinido`, elas casam com o que a leitura de

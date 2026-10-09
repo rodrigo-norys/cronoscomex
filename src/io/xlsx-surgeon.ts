@@ -9,7 +9,7 @@ import { hasForbiddenXmlChar } from '../domain/editable-fields.ts'
  * TRES cirurgias, e elas nao se cruzam: `applyCellEdits` grava VALOR em celula
  * de linha que existe e preserva o estilo; `applyRowFill` troca o `fillId` do
  * estilo e nao encosta em valor; `appendRow` cria uma linha DEPOIS da ultima,
- * com o estilo que a COLUNA declara (02/09/2026).
+ * com o estilo que a COLUNA declara (`H-78`).
  *
  * "Byte a byte identicas" vale sobre o CONTEUDO DESCOMPRIMIDO de cada entrada
  * do zip, nao sobre os bytes comprimidos: recompactar reproduz o conteudo, nao
@@ -73,7 +73,7 @@ import { hasForbiddenXmlChar } from '../domain/editable-fields.ts'
  *    posicao; o Excel sempre o emite primeiro.
  *    **`appendRow` NAO herda este limite**, e por isso ela nao usa `findRow`:
  *    `lastRowOf` le o `r` em qualquer posicao da tag e depois de qualquer
- *    whitespace, e o guarda dela e "vem depois de TODAS". Medido em 02/09/2026,
+ *    whitespace, e o guarda dela e "vem depois de TODAS". Medido em `H-78`,
  *    depois de o revisor-xml achar o caso do TAB: `<row\tr="4">` era ignorado
  *    pela leitura por espaco literal, e a linha nova saia com `r` DUPLICADO.
  *
@@ -96,7 +96,7 @@ export interface RowFillEdit {
 }
 
 /**
- * Uma linha NOVA no fim da aba (02/09/2026).
+ * Uma linha NOVA no fim da aba (`H-78`).
  *
  * `sourceRow` vem de quem chama, resolvido contra a leitura canonica do
  * momento da escrita — nunca de um numero congelado no enfileiramento. A defesa
@@ -148,7 +148,7 @@ const MAX_ROW = 1_048_576
 const MAX_COLUMN = 16_384
 
 const MS_PER_DAY = 86_400_000
-// O Excel conta a partir de 1899-12-30 por causa do ano bissexto ficticio de
+// O Excel conta a partir de `1899-12-30` por causa do ano bissexto ficticio de
 // 1900, que ele mantem por compatibilidade com o Lotus 1-2-3.
 const EXCEL_EPOCH_MS = Date.UTC(1899, 11, 30)
 
@@ -212,7 +212,7 @@ export function applyCellEdits(
  *
  * **A linha nasce em branco, no sentido do Excel**: cada celula recebe o estilo
  * declarado pela COLUNA em `<cols>`, e nada mais. Medido no arquivo real em
- * 02/09/2026: as 16 colunas declaram `style="162"` — fonte 1, centralizado, sem
+ * `D-25`: as 16 colunas declaram `style="162"` — fonte 1, centralizado, sem
  * preenchimento e sem borda. Copiar o estilo da linha de cima seria mais facil e
  * estaria errado: `xf 181`, o das ultimas 95 linhas, carrega `fillId 8`, que o
  * `color-map.json` traduz como **Colaborador 1** — todo processo novo nasceria
@@ -567,7 +567,7 @@ function paintRow(
     // inventada (regra inviolavel 3), e o criterio de aceite de H-27 diz que
     // apenas o atributo `s=` muda.
     //
-    // Medido em 17/08/2026 sobre a planilha real: 744 linhas de dados, ZERO
+    // Medido em `H-27` sobre a planilha real: 744 linhas de dados, ZERO
     // celulas ausentes em A a L. O ramo nao e alcancavel pelo arquivo de
     // producao; existe para nao inventar aparencia num arquivo atipico.
     if (!existing) continue
@@ -858,7 +858,7 @@ class SharedStringPool {
       `<si/>` auto-fechado entra na lista. Descarta-lo deslocaria em um TODO
       indice `t="s"` posterior a ele — e o pool e GLOBAL a pasta de trabalho,
       entao as quatro abas passariam a exibir a string errada, inclusive as tres
-      fora de escopo (regra inviolavel 10). Achado do revisor-xml em 02/09/2026,
+      fora de escopo (regra inviolavel 10). Achado do revisor-xml em `D-25`,
       e o defeito existia desde `H-24`.
     */
     this.items = xml?.match(/<si>[\s\S]*?<\/si>|<si\s*\/>/g) ?? []

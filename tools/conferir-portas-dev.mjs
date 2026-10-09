@@ -5,15 +5,14 @@ import { createServer } from 'node:net'
  *
  * O `vite build` compartilha o diretorio de cache com o dev e apaga as
  * dependencias otimizadas: o cliente passa a receber `504` nos modulos, a raiz
- * da aplicacao fica vazia, e NADA e registrado em log nenhum. Medido em
- * 08/09/2026, ao validar `H-87`.
+ * da aplicacao fica vazia, e NADA e registrado em log nenhum. Medido ao
+ * validar `H-87`.
  *
- * **O aviso existia em prosa no `CLAUDE.md`, e prosa depende de lembrar.** Em
- * 17/09/2026 ele foi lembrado, e ainda assim custou o mesmo preambulo de guarda
- * colado a mao em OITO invocacoes do portao, porque nada o executava sozinho.
- * Mesmo movimento de `verifica-dados-sensiveis.sh`, que ate 02/09/2026 so
- * existia no CI: o portao local passava e o workflow reprovava, que e a ordem
- * errada de descobrir.
+ * **O aviso existia em prosa no `CLAUDE.md`, e prosa depende de lembrar**
+ * (ADR-0007): nada o executava sozinho. Mesmo movimento de
+ * `verifica-dados-sensiveis.sh`, que so no CI deixava o portao local passar com
+ * o workflow reprovando — a ordem errada de descobrir
+ * (docs/08-qualidade-operacao.md §5.2).
  *
  * **Sonda por `EADDRINUSE`, e nao por ferramenta de rede do sistema:** RNF-26
  * declara Windows como alvo e ha execucao do portao la, onde `ss` nao existe.

@@ -157,9 +157,9 @@ export const ARRIVAL_HORIZON_DAYS = 15
  * testado desde `H-10`; acrescentar limite la mudaria o indicador para todos os
  * consumidores. O teto e desta apresentacao, entao vive aqui.
  *
- * O corte importa na pratica: medido na planilha real em 07/08/2026, sao 16
+ * O corte importa na pratica: medido na planilha real em `H-17`, sao 16
  * grupos (navio, dia) no total e **8** dentro de 15 dias — o mais distante cai
- * em 09/09. Cortar no cliente seria regra fora do dominio.
+ * em `09/09`. Cortar no cliente seria regra fora do dominio.
  *
  * **Dia sem chegada nao aparece.** O calendario lista o que chega, e uma linha
  * vazia por dia so afastaria as que importam.
@@ -288,7 +288,7 @@ export function hasPendingDocs(process: Process, today: Date): boolean {
  * A palavra que diz, no texto de STATUS, que a declaracao ja foi feita.
  *
  * Comparada por CONTINENCIA sobre o texto normalizado, por determinacao do
- * usuario em 18/09/2026 (`D-49`). A consequencia foi medida e aceita: as 8
+ * usuario (`D-49`). A consequencia foi medida e aceita: as 8
  * linhas com `DOCS APROVADOS - AG CONFECCAO DE DUIMP` contam como tendo DUIMP,
  * embora a declaracao ainda esteja por fazer.
  */
@@ -301,7 +301,7 @@ export function mentionsDuimp(process: Process): boolean {
 
 /**
  * As cores de exibicao que dizem "em desembaraco" — bege, azul e roxo, nomeadas
- * pelo usuario em 18/09/2026 (`D-49`).
+ * pelo usuario (`D-49`).
  *
  * Sao cores de EXIBICAO, nao chaves de estilo: os dois tons de roxo do arquivo
  * real ja compartilham `#A74F7B` por `D-42`, e e assim que "ou similar" se
@@ -310,7 +310,7 @@ export function mentionsDuimp(process: Process): boolean {
  */
 /**
  * As cores de exibicao que dizem DESEMBARACADO — verde e vermelho, nomeadas
- * pelo usuario em 18/09/2026 (`D-54`).
+ * pelo usuario (`D-54`).
  *
  * Sao as duas unicas cores que o arquivo usa para dizer canal, e por isso o
  * numero coincide hoje com o `known` de `channelDistribution`. **A coincidencia
@@ -355,7 +355,7 @@ export function colorCount(processes: readonly Process[], keys: ReadonlySet<stri
  * processo cuja carga ja chegou e segue sem DUIMP e o mais grave, e um
  * intervalo fechado o excluiria. Processo desembaracado fica de fora — STATUS
  * `DESEMBARACADA` nao contem DUIMP, e sem esta condicao o cartao mediria 542
- * das 650 linhas em vez de 62 (medido em 18/09/2026).
+ * das 650 linhas em vez de 62 (medido em `H-102`).
  */
 export function overdueWithoutDuimpCount(processes: readonly Process[], today: Date): number {
   const horizon = addDays(today, PENDING_DOCS_HORIZON_DAYS).getTime()
@@ -523,7 +523,7 @@ export function groupCountWithGroups(
  * O grupo de um membro so, cujo nome e a propria grafia da coluna CLT.
  *
  * **Sem `segments`, a tela nao desenha ramo nenhum** — determinacao do usuario
- * em 18/09/2026, ao ver `DENNIS` com um galho `DENNIS` de 47 embaixo de uma
+ * (`D-53`), ao ver `DENNIS` com um galho `DENNIS` de 47 embaixo de uma
  * barra `DENNIS` de 47. Arvore que repete o rotulo e o numero do proprio tronco
  * nao diz o que o tronco ja disse.
  *

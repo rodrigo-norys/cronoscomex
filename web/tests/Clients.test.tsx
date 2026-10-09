@@ -84,7 +84,7 @@ describe('os tres rankings', () => {
 
     const itens = await within(await ranking('Clientes')).findAllByRole('listitem')
     /*
-      O texto inteiro, com a POSICAO na frente (21/09/2026): antes o teste
+      O texto inteiro, com a POSICAO na frente (`H-106`): antes o teste
       apagava os digitos do fim para comparar so o rotulo, e com o ordinal a
       esquerda a assercao passou a fixar as duas coisas de uma vez — a ordem
       recebida e o numero que acompanha cada linha.
@@ -388,7 +388,7 @@ describe('grupo de clientes no ranking', () => {
 })
 
 /**
- * A posicao e o quadro rolavel (21/09/2026).
+ * A posicao e o quadro rolavel (`H-106`).
  *
  * Os dois vieram do mesmo pedido: o ranking ganhou um ordinal a esquerda, e o
  * contentor passou a ter teto para que "Todos" — 180 clientes medidos — nao

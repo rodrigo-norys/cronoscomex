@@ -303,7 +303,7 @@ describe('parseSheetRows — a chave de estilo de cada celula', () => {
   })
 
   it('celula AUSENTE do XML nao entra: "nao havia celula" nao e "sem cor"', () => {
-    // A distincao e a mesma de `ColorSource` desde 02/09/2026 — `none` explicito
+    // A distincao e a mesma de `ColorSource` (`H-79`) — `none` explicito
     // e medida, chave ausente e ausencia de medida.
     const [linha] = parseSheetRows(
       sheet('<row r="2"><c r="A2" s="165"/><c r="C2" s="165" t="s"><v>0</v></c></row>'),
@@ -328,7 +328,7 @@ describe('parseSheetRows — a chave de estilo de cada celula', () => {
  * `H-95`. A linha de cabecalho, que era lida e jogada fora.
  *
  * `parseSheetRows` a pula por `firstDataRow`, e `headerRow` existia em
- * `config/app.json` sem ninguem ler o conteudo dela.
+ * `app.json` sem ninguem ler o conteudo dela.
  */
 describe('parseHeaderLabels', () => {
   it('le os rotulos da linha de cabecalho, por letra de coluna', () => {
@@ -370,7 +370,7 @@ describe('parseHeaderLabels', () => {
   })
 
   it('le o rotulo LITERAL, sem corrigir o que o arquivo diz', () => {
-    // Medido em 16/09/2026: a coluna `H` se chama `ETA` e guarda PORTO, e `M` e
+    // Medido em `H-95`: a coluna `H` se chama `ETA` e guarda PORTO, e `M` e
     // `P` se chamam `Coluna 13` e `Coluna1`. Corrigir aqui criaria uma segunda
     // verdade (regra inviolavel 1).
     const labels = parseHeaderLabels(

@@ -12,7 +12,7 @@ import {
 /**
  * H-48. A carga do mapa de equipe.
  *
- * Nomes ficticios, e nenhum teste toca `config/team-map.json` real (RNF-38).
+ * Nomes ficticios, e nenhum teste toca o `team-map.json` real (RNF-38).
  */
 
 let dir: string
@@ -277,7 +277,7 @@ describe('removeTeamMember', () => {
  * **Um importador pertence a um responsavel so, e agora a carga tambem cobra.**
  *
  * A tela recusa desde `H-91`, por `planTeamMember`. O arquivo editado a mao
- * passava — medido pelo ensaio em 17/09/2026, que carregou um mapa com o mesmo
+ * passava — medido pelo ensaio (`H-109`), que carregou um mapa com o mesmo
  * importador em dois membros sem um erro sequer. `IND-20` conta por pessoa: o
  * processo entraria nas duas carteiras e a soma deixaria de fechar com o total.
  */

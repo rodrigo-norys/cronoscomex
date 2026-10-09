@@ -6,7 +6,8 @@ import { describe, expect, it } from 'vitest'
  * Guarda de dado pessoal DENTRO das nove fixtures `.xlsx` versionadas.
  *
  * **Ela existe porque nenhuma camada olhava para dentro delas, e um vazamento
- * sobreviveu meses por isso.** Medido em 01/09/2026: as nove carregavam, em
+ * sobreviveu meses por isso.** Medido (docs/08-qualidade-operacao.md §1.2): as
+ * nove carregavam, em
  * `xl/threadedComments/threadedComment1.xml`, comentario copiado da planilha do
  * operador, com nome de duas pessoas e uma instrucao de pagamento — e
  * `xl/workbook.xml` trazia a pasta de onde o arquivo foi salvo.

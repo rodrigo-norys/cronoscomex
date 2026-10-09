@@ -45,7 +45,7 @@ describe('a arvore de distribuicao e calculavel', () => {
   })
 
   it('inclui a pagina carregada por import DINAMICO', () => {
-    // Medido em 31/08/2026: a primeira versao do extrator exigia espaco depois
+    // Medido em `H-48`: a primeira versao do extrator exigia espaco depois
     // de `import` e nao casava `lazy(() => import('./pages/History.tsx'))` de
     // `web/src/App.tsx`. O script marcava os dois arquivos como sobrando, e
     // `--aplicar` os teria REMOVIDO — a Pagina Historico quebraria so la.
@@ -58,7 +58,7 @@ describe('a arvore de distribuicao e calculavel', () => {
   })
 
   it('inclui TODO asset que o CSS cita por url("/..."), e a licenca deles', () => {
-    // Medido em 03/09/2026: o fecho tratava `.css` como folha, e os seis
+    // Medido em `D-28`: o fecho tratava `.css` como folha, e os seis
     // `.woff2` de `H-58` nunca entraram na `distribuicao`. Fonte faltando nao
     // quebra nada — o navegador cai no fallback —, entao o script imprimia
     // "sincronizada com HEAD" e o operador via outra tipografia desde sempre.

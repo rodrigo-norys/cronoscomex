@@ -405,9 +405,8 @@ describe('reconstructMonthly — H-54', () => {
     expect(resultado.points.at(-1)?.desembaracados).toBe(2)
   })
 
-  // O caso-limite do backlog: 18 processos com ETA2 em set/2026, medido em
-  // 31/08/2026. A serie vai ate o ultimo mes datado, e o trecho futuro e
-  // marcado como previsao — nao omitido.
+  // O caso-limite de `H-54`: 18 processos com ETA2 em set/2026. A serie vai ate o
+  // ultimo mes datado, e o trecho futuro e marcado como previsao — nao omitido.
   it('marca como previsao o mes posterior ao corrente, sem corta-lo', () => {
     const conjunto = [datado(2, '2026-08-01', null), datado(3, '2026-09-05', null)]
 
@@ -493,7 +492,7 @@ describe('countRegistrationsMonthly — D-56', () => {
   })
 
   // A-05: RG preenchido em linha que a categoria nao da por concluida. Medido na
-  // planilha real em 21/09/2026: 3 linhas em 483.
+  // planilha real em `H-107`: 3 linhas em 483.
   it('conta em `registered` o RG de linha nao desembaracada, e nao em `cleared`', () => {
     const conjunto = [
       registrado(2, '2026-01-10'),
@@ -520,7 +519,7 @@ describe('countRegistrationsMonthly — D-56', () => {
     ])
   })
 
-  // O caso medido em 21/09/2026: o RG mais recente da planilha e 31/07/2026, e a
+  // O caso medido em `H-107`: o RG mais recente da planilha e `31/07/2026`, e a
   // tela abre em setembro. Parar em julho leria como "ainda nao chegou".
   it('estende a serie ate o mes corrente quando o ultimo RG e anterior', () => {
     const { points } = countRegistrationsMonthly([registrado(2, '2026-07-31')], HOJE, SP)

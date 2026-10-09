@@ -177,7 +177,7 @@ function PeriodPicker({
  * **O denominador aparece ao lado da fracao, e nao embaixo dela** (A-42): o
  * percentual e sobre os processos cujo canal a cor classifica, e as linhas em
  * `indefinido` sao contadas separadamente, fora da conta. Sao 167 das 649 na
- * planilha real, medidas em 31/08/2026 — dilui-las no percentual afirmaria que
+ * planilha real, medidas em docs/uso/RESULTADO.md §4 — dilui-las no percentual afirmaria que
  * o canal delas e conhecido.
  *
  * Nada e calculado aqui: as contagens e as duas fracoes vem prontas de

@@ -47,7 +47,7 @@ describe('loadConfig', () => {
   /**
    * As tres assercoes abaixo foram INVERTIDAS em H-34, e a inversao e a
    * historia. Ate ela, cada uma destas condicoes matava a partida — e isso
-   * criava um circulo: `config/app.json` nao e versionado, entao numa
+   * criava um circulo: `app.json` nao e versionado, entao numa
    * instalacao nova o processo morria antes de servir a tela de configuracao
    * que existe para consertar o caminho.
    */
@@ -108,7 +108,7 @@ describe('loadConfig', () => {
  * operador o que houve — ele ve a aplicacao morrer na partida por um caractere
  * invisivel que nao digitou.
  *
- * Medido em 17/09/2026, por acidente: o ensaio gravou um `app.json` com
+ * Medido por acidente (`H-109`): o ensaio gravou um `app.json` com
  * `[System.Text.Encoding]::UTF8` do .NET, que inclui BOM, e a partida morreu.
  *
  * `app.json` e o unico que o operador edita a mao com alguma frequencia, mas a

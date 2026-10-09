@@ -17,7 +17,7 @@ const DAY_MS = 86_400_000
  * O dia civil corrente no fuso informado, ancorado em UTC.
  *
  * Sem esta conversao, uma consulta feita as 22h em Sao Paulo veria o dia
- * seguinte — `new Date()` as 22h de 03/08 e `2026-08-04T01:00:00Z`, e comparar
+ * seguinte — `new Date()` as 22h de `03/08` e `2026-08-04T01:00:00Z`, e comparar
  * isso com um `eta2` da planilha erraria por um dia todas as noites.
  */
 export function today(timezone: string, now: Date = new Date()): Date {

@@ -12,7 +12,7 @@ import {
 /**
  * H-48. A carga do mapa de clientes.
  *
- * Nenhum teste toca `config/client-map.json` real (RNF-38): tudo acontece em
+ * Nenhum teste toca o `client-map.json` real (RNF-38): tudo acontece em
  * diretorio temporario, e o caminho e sempre injetado.
  */
 
@@ -59,7 +59,7 @@ describe('loadClientMap', () => {
     expect(map.clients).toEqual([
       { key: 'ALFA', label: 'Alfa', rules: [{ match: 'prefix', value: 'ALF' }] },
     ])
-    // O grupo IMPLICITO de 18/09/2026: cliente sem grupo declarado e lido como
+    // O grupo IMPLICITO de `D-53`: cliente sem grupo declarado e lido como
     // grupo de um membro, porque cliente solto deixou de existir.
     expect(map.groups).toEqual([
       { key: 'ALFA', label: 'Alfa', members: [{ client: 'ALFA', label: 'Alfa' }] },
@@ -175,7 +175,7 @@ describe('loadClientMap — a secao "groups"', () => {
   })
 
   /**
-   * Sem a secao, cada cliente vira um grupo de um membro (18/09/2026).
+   * Sem a secao, cada cliente vira um grupo de um membro (`D-53`).
    *
    * **A derivacao nao reescreve o arquivo**: ela acontece na leitura, e o mapa
    * do operador continua como ele o deixou.
@@ -237,7 +237,7 @@ describe('loadClientMap — a secao "groups"', () => {
 })
 
 /**
- * A gravacao da regra (02/09/2026), que fecha o caminho de volta: a coluna
+ * A gravacao da regra (`H-79`), que fecha o caminho de volta: a coluna
  * Cliente lê o mapa desde `H-49`, e agora escreve nele.
  *
  * O que estes casos protegem e o arquivo do OPERADOR. Ele carrega `_origem`,
@@ -245,7 +245,7 @@ describe('loadClientMap — a secao "groups"', () => {
  * valores e dele — serializar o mapa em memoria por cima apagaria os dois.
  *
  * **Quatro deles diziam `entrada-nova` e passaram a `regra-acrescentada` em
- * 21/09/2026**, sem mudar de assunto: o kind antigo saiu do contrato por nao
+ * `H-105`**, sem mudar de assunto: o kind antigo saiu do contrato por nao
  * ter produtor desde `D-53`, e o CAMINHO que eles exercem — o que escreve
  * direto em `clients`, fora do de pai — continua vivo servindo o novo.
  */
@@ -536,7 +536,7 @@ describe('saveClientRule com pai', () => {
 })
 
 /**
- * O grupo IMPLICITO e a remocao dele (18/09/2026).
+ * O grupo IMPLICITO e a remocao dele (`D-53`).
  *
  * Cliente declarado antes de cliente solto deixar de existir nao tem entrada em
  * `groups[]` no arquivo. A carga o le como grupo de um membro, e a remocao

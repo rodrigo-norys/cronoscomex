@@ -47,7 +47,7 @@ export type ColorResponsible =
  * membros da equipe do operador.
  *
  * `''` e "sem responsavel", e e valor de dominio — nunca ausencia de dado.
- * Medido em 10/09/2026: **90 dos 649**, contra 42 antes de `H-93`.
+ * Medido em `H-93`: **90 dos 649**, contra 42 antes dela.
  *
  * **A chave de cor deixou de habitar este dominio em `H-93`.** Ate ali, sem
  * mapa de equipe, o campo carregava uma chave de `ColorResponsible` (`D-23`);
@@ -65,7 +65,7 @@ export type Responsible = string
  * A cor e um canal de informacao unico, disputado por tres significados: uma
  * linha azul diz responsavel, e por isso NAO diz canal. Afirmar `nenhum` para
  * ela era afirmar que se sabe que nao houve canal — 167 das 649 linhas, medidas
- * em 31/08/2026 (docs/uso/RESULTADO.md secao 4). E a regra inviolavel 3
+ * em docs/uso/RESULTADO.md secao 4. E a regra inviolavel 3
  * aplicada ao proprio mapa de cores.
  */
 export type CustomsChannel = 'verde' | 'vermelho' | 'indefinido'
@@ -82,7 +82,7 @@ export type AnomalyCode =
 
 /*
   `RESPONSAVEL_DIVERGENTE` saiu em `H-93`, e sai **sem nunca ter detectado uma
-  ocorrencia**: zero em 31/08/2026 e zero em 10/09/2026. Ela existia para a
+  ocorrencia**: zero quando nasceu e zero quando saiu (`H-93`). Ela existia para a
   primeira divergencia entre o importador e a cor, que ninguem veria acontecer —
   e deixa de ter sentido quando a cor para de atribuir responsavel (`D-40`).
   Registrar isto e o ponto: o codigo foi criado deliberadamente com zero
@@ -121,7 +121,7 @@ export interface RawRow {
    * ignoradas para classificar. Isto existe para PINTAR, e renderizar nao
    * classifica.
    *
-   * Medido em 16/09/2026 sobre as linhas reais: 36 delas divergem internamente
+   * Medido em `H-94` sobre as linhas reais: 36 delas divergem internamente
    * dentro de A–L, o que refuta a afirmacao de `A-44` de que K e L acompanham a
    * cor da linha.
    */
@@ -208,7 +208,7 @@ export interface Process {
    *
    * **Vem do IMPORTADOR, e so dele, desde `H-93`.** Ate `H-50` este campo era a
    * cor, e a cor virou `colorResponsible`; ate `H-93` ela ainda desempatava.
-   * Medido em 10/09/2026: o importador preenche **559** das 649, e **90** ficam
+   * Medido em `H-93`: o importador preenche **559** das 649, e **90** ficam
    * sem responsavel — os 48 que o desempate cobria migraram, e sao todos
    * ativos.
    */

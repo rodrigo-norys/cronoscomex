@@ -67,7 +67,7 @@ export interface StoreState {
    * cabecalho, a lista volta a vazia sozinha — senao a tela seguiria avisando
    * de algo que o operador ja resolveu.
    *
-   * **A divergencia NAO impede a leitura** (decisao do usuario, 17/09/2026): os
+   * **A divergencia NAO impede a leitura** (decisao do usuario, `D-45`): os
    * processos entram, o painel nunca para, e o que ele ganha e saber o que
    * mudou. O que isso custa esta medido em `D-43` — com as colunas deslocadas,
    * 616 dos 650 processos leem o dado do vizinho —, e a diferenca para o estado
@@ -204,12 +204,12 @@ export function initStore(next: StoreOptions): void {
  */
 export function getState(): StoreState {
   /*
-    **A saida por lista vazia caiu em 02/09/2026**, e ela era um atalho que
-    deixou de valer quando a fila passou a CRIAR processo. Numa aba sem nenhum
-    — a `2027` recem-criada, que e o cenario que o piso de `firstDataRow` existe
-    para atender — a linha nova era enfileirada, nao aparecia na tabela, e toda
-    tentativa de preencher uma celula dela voltava `404` sobre a REF que a
-    propria aplicacao acabara de aceitar. Achado do revisor-xml.
+    **Nao ha saida por lista vazia** (`H-79`): a fila CRIA processo. Numa aba
+    sem nenhum — a `2027` recem-criada, que e o cenario que o piso de
+    `firstDataRow` existe para atender —, o atalho deixaria a linha nova
+    enfileirada fora da tabela, e toda tentativa de preencher uma celula dela
+    voltaria `404` sobre a REF que a propria aplicacao acabou de aceitar.
+    Achado do revisor-xml.
 
     Sem `initStore` a projecao continua pulada, e por outro motivo: nao ha
     `statusAliases` nem mapa de cor para re-derivar.
@@ -397,8 +397,8 @@ async function runReload(deps: StoreOptions): Promise<void> {
     /**
      * O cabecalho confere? (`H-96`)
      *
-     * **A divergencia AVISA e nao impede nada** — decisao do usuario em
-     * 17/09/2026. A leitura segue, os processos entram, e o que o operador
+     * **A divergencia AVISA e nao impede nada** — decisao do usuario
+     * (`D-45`). A leitura segue, os processos entram, e o que o operador
      * ganha e saber o que mudou: a tela nomeia as duas pontas (`RF-44`) e a
      * lateral conta as mudancas.
      *
@@ -507,7 +507,7 @@ export async function reload(): Promise<void> {
 }
 
 /**
- * Troca o mapa de clientes com o processo no ar, e reprojeta (02/09/2026).
+ * Troca o mapa de clientes com o processo no ar, e reprojeta (`H-79`).
  *
  * Existe porque o mapa deixou de ser so configuracao de partida: declarar o
  * cliente de uma linha na Pagina Operacional grava em `client-map.json`, e sem
@@ -518,7 +518,7 @@ export async function reload(): Promise<void> {
  * motivo de `reconfigureWorkbook`: as rotas e o write-guard capturaram o mesmo
  * objeto por referencia na partida.
  *
- * **Re-deriva em memoria, e NAO chama `reload`** — medido em 02/09/2026, com a
+ * **Re-deriva em memoria, e NAO chama `reload`** — medido em `H-79`, com a
  * regra gravada e a tela mostrando a consolidacao antiga. `runReload` sai antes
  * de recompor quando o hash do arquivo nao mudou, que e a otimizacao de `H-28`
  * contra o "salvar sem editar" do OneDrive; aqui quem mudou foi o MAPA, e o
@@ -564,7 +564,7 @@ export async function refreshClientMap(
  * o conteudo muda sob os pes delas.
  *
  * **Re-deriva em memoria, e NAO chama `reload`**, pelo motivo medido em
- * 02/09/2026 com o mapa de clientes: `runReload` sai antes de recompor quando o
+ * `H-79` com o mapa de clientes: `runReload` sai antes de recompor quando o
  * hash do arquivo nao mudou, e aqui quem mudou foi o MAPA — o arquivo esta
  * igual de proposito.
  */

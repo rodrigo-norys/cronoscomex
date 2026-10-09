@@ -34,7 +34,7 @@ const map = normalizeClientMap([
 ])
 
 /**
- * Os tres campos que uma regra pode procurar (21/09/2026).
+ * Os tres campos que uma regra pode procurar (`H-105`).
  *
  * Os testes deste arquivo exercem a coluna CLT e o qualificador por importador,
  * que existiam antes; `ref` entra vazia porque nenhuma regra deles a procura.
@@ -170,7 +170,7 @@ describe('grupos de clientes', () => {
 })
 
 /**
- * A volta do caminho (02/09/2026): declarar, a partir de uma linha da tela, a
+ * A volta do caminho (`H-79`): declarar, a partir de uma linha da tela, a
  * que cliente a celula CLT pertence.
  *
  * O que estes casos protegem e a POSICAO da entrada. A primeira que casa vence,
@@ -201,7 +201,7 @@ describe('planClientRule', () => {
   /**
    * A celula nao casa regra nenhuma: a entrada nova pode ir para o fim.
    *
-   * **`grupo-criado`, e nao `entrada-nova`** (18/09/2026): a primeira
+   * **`grupo-criado`, e nao `entrada-nova`** (`D-53`): a primeira
    * declaracao ja forma o pai, porque cliente solto deixou de ser estado
    * possivel. Sem `demoted` — nao ha cliente anterior a rebaixar.
    */
@@ -241,10 +241,10 @@ describe('planClientRule', () => {
   /**
    * **O SEGUNDO conjunto num nome faz nascer o pai** (`H-88`, determinação 8).
    *
-   * Ate 08/09/2026 isto devolvia `regra-acrescentada`, somando a regra ao
-   * cliente que ja existia. O usuario descreveu outro comportamento ao usar a
-   * tela: para ele nao ha dois conceitos — ha um nome que recebe conjuntos, e o
-   * pai e o que acontece no segundo. O cliente que existia vira filho, nomeado
+   * Somar a regra ao cliente que ja existia, como `regra-acrescentada`, nao e
+   * o que o usuario descreveu ao usar a tela: para ele nao ha dois conceitos —
+   * ha um nome que recebe conjuntos, e o pai e o que acontece no segundo. O
+   * cliente que existia vira filho, nomeado
    * pelo valor da PRIMEIRA regra dele.
    */
   it('faz nascer o pai quando o nome ja tem conjunto, com os dois por filhos', () => {
@@ -272,7 +272,7 @@ describe('planClientRule', () => {
   /**
    * O nome ja e um PAI: o conjunto entra como mais um filho, sem converter nada.
    * O pai vem antes do cliente na busca do alvo — com `Vivi` e `VIVI` existindo
-   * ao mesmo tempo, que foi o defeito de 08/09/2026, quem recebe e o pai.
+   * ao mesmo tempo, o defeito de `H-88`, quem recebe e o pai.
    */
   it('acrescenta o filho quando o nome ja e um pai', () => {
     const grupos: ClientGroup[] = [
@@ -294,7 +294,7 @@ describe('planClientRule', () => {
 
   /**
    * Pai dentro de pai nao existe no modelo: `ClientGroupIndex` e cliente → UM
-   * grupo. Achado em 08/09/2026, simulando declaracoes contra o mapa real.
+   * grupo. Achado simulando declaracoes contra o mapa real (`H-88`).
    */
   it('recusa declarar num nome que ja e filho de outro', () => {
     const grupos: ClientGroup[] = [
@@ -324,7 +324,7 @@ describe('planClientRule', () => {
 })
 
 /**
- * As tres colunas que uma regra pode procurar (21/09/2026).
+ * As tres colunas que uma regra pode procurar (`H-105`).
  *
  * O pedido veio de procedimentos internos do operador: declarar cliente a
  * partir de REF ou de IMPORTADOR, e nao so da CLT. A regra de precedencia nao
@@ -431,7 +431,7 @@ describe('resolveClient com as tres colunas', () => {
 })
 
 /**
- * A lista "Por declarar" segue a COLUNA da aba (21/09/2026).
+ * A lista "Por declarar" segue a COLUNA da aba (`H-105`).
  *
  * Pedido do usuario: declarar por REF olhando uma lista de grafias de CLT
  * obrigaria a procurar na planilha o valor que se vai digitar.

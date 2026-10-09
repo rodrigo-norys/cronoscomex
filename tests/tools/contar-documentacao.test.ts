@@ -27,7 +27,7 @@ import {
  * arquivo nao rastreado e arquivo oculto nao contam, e e isso que separa o portao
  * local do CI.
  *
- * Os formatos vem do que o levantamento de 01/10/2026 achou nos documentos: historia
+ * Os formatos vem do que o levantamento da ADR-0007 achou nos documentos: historia
  * cujo bloco seguinte e um epico, linha de tabela sem `|` final, e o balde "DE
  * EXECUCAO" escrito em duas variantes.
  */

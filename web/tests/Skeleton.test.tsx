@@ -54,7 +54,7 @@ describe('a forma', () => {
   /**
    * Doze linhas sao 600 px — `p-4` mais 12 × 40 px com 8 px de intervalo —, uma
    * tela util numa janela de 900. **O padrao e uma tela, e nao a altura do
-   * conteudo**: medido em 04/09/2026 sobre a planilha real, a Pagina Alertas
+   * conteudo**: medido em `H-85` sobre a planilha real, a Pagina Alertas
    * tem 9.198 px de conteudo, e um esqueleto fiel daria 191 barras.
    */
   it('o padrao e uma tela', () => {

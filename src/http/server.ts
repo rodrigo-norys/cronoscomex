@@ -84,10 +84,10 @@ export function buildServer(
    *
    * **O ponto de injecao ja existia em `registerEditsRoutes`, e esta assinatura
    * nao o expunha.** Quem monta por `buildServer` nao tinha como redirecionar a
-   * fila, e o default e relativo ao cwd: em 01/09/2026 um harness de medicao
-   * gravou quatro edicoes e um descarte total na fila do operador, restaurada a
-   * mao. E o mesmo modo de falha da regra inviolavel 7 que `H-28` e `H-34`
-   * pagaram, num terceiro caminho de escrita — e o unico que faltava.
+   * fila, e o default e relativo ao cwd: um harness de medicao chegou a gravar
+   * quatro edicoes e um descarte total na fila do operador (`H-110`). E o mesmo
+   * modo de falha da regra inviolavel 7 que `H-28` e `H-34` pagaram, num
+   * terceiro caminho de escrita — e o unico que faltava.
    *
    * A suite nunca dependeu disto: `tests/http/edits.test.ts` registra a rota
    * direto, com o caminho injetado. O buraco era de quem monta o servidor
@@ -143,13 +143,13 @@ export function buildServer(
   /*
     `queuePath` tambem aqui, e nao so em `registerEditsRoutes`: a rota de cor
     escreve na MESMA fila, e a assinatura dela sempre aceitou o caminho — era
-    esta chamada que nao o repassava. Medido em 17/09/2026, pelo ensaio: com uma
+    esta chamada que nao o repassava. Medido pelo ensaio (`H-110`): com uma
     fila injetada, o `PATCH` gravava em `data/pending-edits.jsonl` enquanto o
     `apply` lia a fila injetada e respondia `NADA_A_APLICAR`. As duas pontas do
     mesmo gesto apontando para arquivos diferentes.
 
     E o mesmo modo de falha que a nota de `queuePath` acima descreve ter custado
-    quatro edicoes na fila do operador em 01/09/2026 — num sexto caminho de
+    quatro edicoes na fila do operador — num sexto caminho de
     escrita, que passou despercebido porque em producao ambos caem no padrao.
   */
   registerProcessColorRoute(app, store, colorMap, queuePath)
@@ -342,7 +342,7 @@ async function main(): Promise<void> {
  * servidor.
  *
  * `pathToFileURL`, e NUNCA concatenar `file://` com o caminho. A concatenacao
- * esteve aqui de H-30 ate 19/08/2026 e funcionava em Linux por acidente — o
+ * funciona em Linux por acidente (`H-35`) — o
  * caminho ja comeca com barra, entao `file://` + `/home/...` produz as tres
  * barras certas. Em Windows `process.argv[1]` e `C:\...\server.ts`, a
  * concatenacao produz `file://C:\...` e `import.meta.url` traz

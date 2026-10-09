@@ -9,7 +9,7 @@ import { ConflictDialog } from '../src/components/ConflictDialog.tsx'
  * **Ele estava sem gestao de foco, e o motivo era a dificuldade de o abrir:** o
  * cabecalho do `FilterPanel` registrava que "o `ConflictDialog` so abre com a
  * planilha alterada durante a sessao, e por isso a gestao de foco dele segue
- * parada em `PD-07`". O ensaio de 17/09/2026 produziu o conflito num navegador
+ * parada em `PD-07`". O ensaio (`H-111`) produziu o conflito num navegador
  * real — enfileirar, alterar a planilha por fora, esperar o watcher, aplicar —
  * e mediu o que faltava: o dialogo abria com `document.activeElement` ainda no
  * `<body>`.

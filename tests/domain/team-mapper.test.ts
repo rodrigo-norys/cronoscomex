@@ -218,7 +218,7 @@ describe('teamPlan', () => {
   })
 
   it('conta o importador em BRANCO e nao o oferece', () => {
-    // 35 linhas na planilha real, medidas em 10/09/2026: nenhuma carteira as
+    // 35 linhas na planilha real, medidas em `H-93`: nenhuma carteira as
     // alcanca por construcao, e some-las seria descarte silencioso (regra 2).
     const plano = teamPlan(processos, map)
 

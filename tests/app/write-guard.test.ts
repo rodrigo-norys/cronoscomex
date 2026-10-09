@@ -40,7 +40,7 @@ import { hashFile, type ReadResult, readWorkbook } from '../../src/io/xlsx-reade
  * pasta temporaria — nenhum toca a planilha real (RNF-38), e a fixture
  * versionada precisa sobreviver a uma suite que escreve de proposito.
  *
- * `basico.xlsx`: linha 2 = FT001.26 (B='CLIENTE A', I=2026-08-01), linha 3 =
+ * `basico.xlsx`: linha 2 = FT001.26 (B='CLIENTE A', I=`2026-08-01`), linha 3 =
  * FT002.26 (B='CLIENTE B'), linha 4 = FT003.26.
  */
 
@@ -1197,7 +1197,7 @@ describe('aplicacao que nao muda nada', () => {
 })
 
 /**
- * A linha NOVA (02/09/2026). As mesmas defesas, com duas trocas que a
+ * A linha NOVA (`H-79`). As mesmas defesas, com duas trocas que a
  * natureza da operação impõe:
  *
  * - o alvo **não** é resolvido pela REF, porque ela ainda não está no arquivo —
@@ -1252,8 +1252,8 @@ describe('linha nova', () => {
     expect(celulas.B ?? '').toBe('')
   })
 
-  /** A linha nasce sem preenchimento, e desde 02/09/2026 isso é estado
-      legítimo — não vai para a quarentena. */
+  /** A linha nasce sem preenchimento, e isso é estado legítimo (`H-79`) —
+      não vai para a quarentena. */
   it('a linha nova nasce SEM cor', async () => {
     const antes = await ultimaLinha()
     queueInsert()
@@ -1351,7 +1351,7 @@ describe('linha nova', () => {
 })
 
 /**
- * Os achados da revisão da fatia (02/09/2026). Cada um foi medido pelo
+ * Os achados da revisão da fatia (`D-25`). Cada um foi medido pelo
  * `revisor-xml` sobre um caminho que a suíte não alcançava.
  */
 describe('linha nova — os achados da revisão', () => {
@@ -1471,7 +1471,7 @@ describe('linha nova — os achados da revisão', () => {
 })
 
 /**
- * `H-96`, 17/09/2026. A coluna mudou de lugar: a LEITURA segue, a escrita nao.
+ * `H-96`. A coluna mudou de lugar: a LEITURA segue, a escrita nao.
  *
  * **A assimetria e a decisao do usuario.** Ler com as colunas deslocadas mostra
  * dado errado numa tela que avisa; gravar escreve na coluna fisica errada do

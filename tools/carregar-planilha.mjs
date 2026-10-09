@@ -14,9 +14,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
  * conferencia manual: o passo 4 do ciclo de `/novo-indicador`, e o "medido na
  * planilha real" que todo fechamento de historia carrega.
  *
- * **Mas ela ESCREVE**, e por padrao no temporario desde 02/09/2026. Antes disso
- * `carregarPlanilha()` sobrescrevia `data/quarantine.json` em toda execucao bem
- * sucedida e fazia append em `data/history.jsonl` — os dois sao estado do
+ * **Mas ela ESCREVE**, e por padrao no temporario (ADR-0007): sem isso,
+ * `carregarPlanilha()` sobrescreveria `data/quarantine.json` em toda execucao bem
+ * sucedida e faria append em `data/history.jsonl` — os dois sao estado do
  * operador, e o segundo alimenta a Pagina Historico. Pior que a escrita era a
  * assimetria: sob `NODE_ENV=test` o historico era pulado EM SILENCIO
  * (`persistHistory` engole a recusa num `catch` nu), entao a mesma conferencia
@@ -52,7 +52,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
  * escrita**. Em `H-25` e `H-26` este preambulo foi reescrito em onze scripts.
  *
  * Rode com `node --experimental-strip-types`, e a partir da raiz do projeto —
- * `loadConfig` resolve `config/app.json` relativo ao diretorio corrente.
+ * `loadConfig` resolve o `app.json` de config relativo ao diretorio corrente.
  */
 
 const RAIZ = resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -114,12 +114,8 @@ export async function carregarPlanilha({ quarantinePath, historyPath } = {}) {
   const estado = getState()
 
   // TODOS os modulos de `src/domain/`, enumerados do diretorio — o script nao
-  // precisa de mais um import por indicador medido, e a lista nao envelhece.
-  // Ela ja envelheceu duas vezes escrita a mao (6 -> 8), e a segunda mordeu: em
-  // 02/09/2026 quatro dos cinco modulos alterados no dia estavam FORA do pacote
-  // — `color-mapper`, `process-query`, `process-builder` e `process-projection`
-  // —, entao a conferencia daquele trabalho precisava importar a mao justamente
-  // o que este arquivo existe para evitar.
+  // precisa de mais um import por indicador medido, e a lista nao envelhece
+  // (ADR-0007).
   //
   // O filtro por extensao e obrigatorio: `readdirSync` devolve o `.fronteira.md`
   // do mesmo diretorio. `types.ts` nao exporta nada em runtime e entra so por
@@ -152,8 +148,8 @@ export async function carregarPlanilha({ quarantinePath, historyPath } = {}) {
  * sobre copia.
  *
  * A aba `2026` **nao tem** formatacao condicional, validacao de dados,
- * autofiltro proprio, celula mesclada nem `calcChain` — medido em 02/09/2026, e
- * o texto anterior prometia as duas primeiras. Quem precisa exercer CF, DV ou
+ * autofiltro proprio, celula mesclada nem `calcChain` — medido em `D-25`.
+ * Quem precisa exercer CF, DV ou
  * formula usa `tests/fixtures/formatado.xlsx`, onde `enriquecer_formatado` as
  * injetou de proposito, justamente porque o arquivo real nao as oferece.
  *
@@ -233,8 +229,8 @@ export async function compararZip(caminhoA, caminhoB) {
 
     "Estritamente aditivo" (TD-05.1, passo 5b) e uma afirmacao sobre tamanho:
     `xl/styles.xml` pode crescer e nunca encolher. Sem o numero, conferi-la exige
-    reabrir os dois zips a mao — foi o que levou o ensaio de 17/09/2026 a
-    escrever uma segunda funcao de comparacao, que agora vive aqui. Duas
+    reabrir os dois zips a mao — a segunda funcao de comparacao que o ensaio
+    escreveu vive aqui (docs/ensaio-planilha/RESULTADO.md). Duas
     respostas para a mesma pergunta divergem na primeira correcao.
 
     `ausente` distingue a entrada que sumiu da que ficou vazia, que sao coisas

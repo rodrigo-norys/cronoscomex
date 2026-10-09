@@ -440,7 +440,7 @@ describe('groupCountWithGroups — o grupo colapsa os membros', () => {
 })
 
 /**
- * O ramo que repete o tronco (18/09/2026).
+ * O ramo que repete o tronco (`D-53`).
  *
  * Com toda declaracao virando grupo (`D-53`), o cliente cujo nome e a propria
  * grafia da coluna CLT passou a aparecer no ranking como uma barra `DENNIS` de
@@ -504,7 +504,7 @@ describe('o grupo que repete o proprio nome nao ramifica', () => {
 })
 
 /**
- * O grupo ocupa UMA posicao no corte de `topN` (21/09/2026).
+ * O grupo ocupa UMA posicao no corte de `topN` (`H-106`).
  *
  * Determinacao do usuario ao tornar o tamanho configuravel: pedindo 10 itens,
  * `Vivi` com `av` e `kelly` gasta **uma** das dez, e nao tres. O comportamento

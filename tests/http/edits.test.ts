@@ -19,10 +19,9 @@ import { DEFAULT_QUEUE_PATH, enqueue } from '../../src/io/edit-queue.ts'
  * montar o servidor inteiro traria store, mapa de cor e rota estatica para um
  * teste que so quer a fila.
  *
- * **Ate 01/09/2026 este bloco dizia outra coisa** — que so sem `buildServer` era
- * possivel passar o caminho da fila. Era verdade, e era um defeito: a assinatura
- * nao expunha `queuePath`, entao quem montava o servidor inteiro escrevia em
- * `data/pending-edits.jsonl` da raiz. O ultimo `describe` deste arquivo e a
+ * **`buildServer` tambem aceita o caminho da fila** (`H-110`): sem isso, quem
+ * montasse o servidor inteiro escreveria em `data/pending-edits.jsonl` da raiz.
+ * O ultimo `describe` deste arquivo e a
  * guarda que impede a regressao.
  */
 
@@ -551,7 +550,7 @@ describe('a fila e imutavel enquanto a escrita acontece', () => {
  * A fila e injetavel **tambem por `buildServer`**, e nao so pelo registrador da
  * rota.
  *
- * Custou um acidente: em 01/09/2026 um harness de medicao montou o servidor
+ * Custou um acidente (`H-110`): um harness de medicao montou o servidor
  * inteiro para exercer a Pagina Detalhe, e `POST /api/edits` gravou quatro
  * edicoes e um descarte total na fila do OPERADOR — `data/pending-edits.jsonl`
  * da raiz, porque o default e relativo ao cwd. A fila foi restaurada byte a
@@ -607,7 +606,7 @@ describe('buildServer repassa o caminho da fila', () => {
   /**
    * **A rota de COR escreve na mesma fila, e por isso entra na mesma guarda.**
    *
-   * Medido em 17/09/2026, pelo ensaio sobre a planilha real: `buildServer`
+   * Medido pelo ensaio sobre a planilha real (`H-110`): `buildServer`
    * repassava `queuePath` a `registerEditsRoutes` e **nao** a
    * `registerProcessColorRoute`, embora a assinatura desta sempre o aceitasse.
    * O efeito era as duas pontas do mesmo gesto em arquivos diferentes — o
@@ -711,7 +710,7 @@ describe('buildServer repassa o caminho da fila', () => {
 })
 
 /**
- * `POST /api/edits/row` — a linha nova (02/09/2026).
+ * `POST /api/edits/row` — a linha nova (`H-79`).
  *
  * **Não grava nada**, como as demais: enfileira, e a planilha só muda no
  * `Aplicar alterações`. O que estes casos protegem é o que a rota recusa — a
@@ -797,7 +796,7 @@ describe('POST /api/edits/row', () => {
 })
 
 /**
- * **A linha do arquivo vence a inserção órfã** (02/09/2026). Se a REF passar a
+ * **A linha do arquivo vence a inserção órfã** (`H-79`). Se a REF passar a
  * existir na planilha — alguém a digitou no Excel — a projeção deixa de mostrar
  * a linha pendente, mas a fila ainda a tem. Antes, a edição da linha REAL era
  * desviada para o registro invisível: o operador recebia `201`, a célula não

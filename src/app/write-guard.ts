@@ -71,7 +71,7 @@ import {
  * sem que o numero acompanhasse em nenhum dos dois momentos. A lista e a fonte.
  * Achado do revisor-xml.
  *
- * **A conferencia de cabecalho entrou em `H-96` (17/09/2026), e vem ANTES do
+ * **A conferencia de cabecalho entrou em `H-96`, e vem ANTES do
  * lock** — invertendo o que seria a ordem natural. A razao esta na mensagem:
  * ela manda o operador desfazer a mudanca **no Excel**, e recusar antes por
  * `EXCEL_ABERTO` o mandaria fechar o programa de que ele precisa para consertar.
@@ -80,7 +80,7 @@ import {
  * a toa. Achado do revisor-xml.
  *
  * **A cirurgia vem antes do backup desde H-27**, invertendo o diagrama — que
- * traz a emenda de 17/08/2026 registrando a troca. Ela e pura: opera sobre o
+ * traz a emenda registrando a troca. Ela e pura: opera sobre o
  * buffer em memoria e nao toca o disco, entao adia-la nao muda o que o backup
  * guarda. O que a inversao compra e nao gastar backup, nem reescrever o
  * arquivo, quando a fila resolve para o que a planilha ja tem. A invariante
@@ -108,7 +108,7 @@ import {
  * o `previous` de cada edicao e conferido contra o valor atual SEMPRE, e nao
  * apenas quando o hash diverge.
  *
- * **A fila tem TRES tipos de edicao** desde 02/09/2026, e os tres percorrem as
+ * **A fila tem TRES tipos de edicao** (`H-79`), e os tres percorrem as
  * mesmas defesas: campo, que grava valor de celula; cor, que troca o `fillId`
  * das colunas A a L; e linha nova, que cria a linha depois da ultima que existe.
  * Uma so cirurgia por aplicacao seria mais simples, mas o contrato de H-27 fixa
@@ -136,7 +136,7 @@ export type WriteRefusal =
   | 'ESCRITA_EM_ANDAMENTO'
   | 'ESCRITA_INVALIDA'
   /**
-   * A folga da Tabela do Excel acabou (02/09/2026). Codigo proprio porque a
+   * A folga da Tabela do Excel acabou (`D-25`). Codigo proprio porque a
    * instrucao ao operador e outra, e o evento e previsivel: `Tabela1` cobre ate
    * a linha 997 e a aba tem 745 escritas, entao ha algumas centenas de linhas de
    * folga. Sem ele, o fim da folga chegaria como "a gravacao nao pode ser
@@ -144,7 +144,7 @@ export type WriteRefusal =
    */
   | 'TABELA_CHEIA'
   /**
-   * Uma coluna mudou de lugar na planilha (`H-96`, 17/09/2026).
+   * Uma coluna mudou de lugar na planilha (`H-96`).
    *
    * **Codigo proprio, pelo mesmo motivo de `TABELA_CHEIA`:** a instrucao ao
    * operador e especifica — conserte o cabecalho, ou o esquema declarado —, e
@@ -161,7 +161,7 @@ export type WriteRefusal =
    */
   | 'CABECALHO_DESLOCADO'
   /**
-   * A linha de cabecalho esta em branco (`H-96`, 17/09/2026).
+   * A linha de cabecalho esta em branco (`H-96`).
    *
    * **Nao e "nao ha deslocamento"; e "nao da para saber".** Sem rotulo nenhum na
    * linha 1, um deslocamento real fica invisivel a conferencia, e gravar
@@ -211,7 +211,7 @@ export interface Conflict {
    */
   refMissing?: true
   /**
-   * A REF da linha NOVA ja esta no arquivo (02/09/2026). E o espelho de
+   * A REF da linha NOVA ja esta no arquivo (`H-79`). E o espelho de
    * `refMissing`, e a defesa que substitui o `previous` numa insercao: nao ha
    * valor anterior a conferir, e o que nao pode acontecer e nascer uma segunda
    * linha com a mesma chave. Regra inviolavel 3 pelo mesmo motivo do irmao —
@@ -233,7 +233,7 @@ export interface WriteResult {
    * operador que ele gravou doze coisas quando ele mudou uma.
    */
   rowsRepainted: number
-  /** Quantas linhas NOVAS foram criadas (02/09/2026). */
+  /** Quantas linhas NOVAS foram criadas (`H-79`). */
   rowsInserted: number
   backupPath: string | null
   conflicts: Conflict[]
@@ -279,7 +279,7 @@ export interface WriteResult {
    * para o mesmo texto — `describeDivergence` ja e a primeira, e e ela que o
    * painel de Configuracao usa.
    *
-   * **Existe porque a instrucao sozinha nao bastava** (`H-96`, 17/09/2026): a
+   * **Existe porque a instrucao sozinha nao bastava** (`H-96`): a
    * mensagem diz o que fazer, e o painel que nomeia a coluna e montado **so**
    * na Pagina Configuracao e no arranque a frio. O botao `Aplicar alteracoes`
    * nao vive nessas telas, entao no instante da recusa o operador tinha a
@@ -810,7 +810,7 @@ async function guardedWrite(
     await store.settle()
 
     /*
-      **Antes de tudo que abre o arquivo** (`H-96`, 17/09/2026): o deslocamento
+      **Antes de tudo que abre o arquivo** (`H-96`): o deslocamento
       e condicao do estado JA conhecido, e abrir a planilha para descobrir que
       nao vamos gravar e trabalho a toa.
 

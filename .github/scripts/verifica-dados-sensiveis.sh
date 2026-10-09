@@ -6,7 +6,7 @@
 # e PreToolUse e so ve o que o agente faz. Este roda sobre o que efetivamente
 # esta versionado, independente de quem commitou e com qual ferramenta.
 #
-# Recusa: planilha fora de tests/fixtures/, config/app.json, os dois mapas de
+# Recusa: planilha fora de tests/fixtures/, o app.json de config, os dois mapas de
 # negocio de config/, artefato de data/, imagem, perfilamento bruto, caminho
 # absoluto de usuario em codigo ou configuracao (A-05), e — so onde ha usuario
 # real — o nome do dono da maquina em qualquer arquivo.
@@ -27,7 +27,7 @@ ESTE_SCRIPT='.github/scripts/verifica-dados-sensiveis.sh'
 # A isencao vale SO para o check de caminho absoluto. O nome real do dono da
 # maquina continua valendo para eles: ali nao existe payload legitimo.
 #
-# `tests/repo/fixtures-anonimas.test.ts` entrou em 01/09/2026 pela mesma razao:
+# `tests/repo/fixtures-anonimas.test.ts` esta isento pela mesma razao:
 # a ancora dele prova que a regex de caminho reconhece um diretorio de usuario,
 # e a prova exige a forma. Ela reusa os TRES padroes deste check, verbatim — a
 # regra e uma so, e o que muda e o alcance: aqui, arquivo de texto; la, parte de
@@ -50,7 +50,7 @@ reportar() {
 # A lista sai do indice do git. ARQUIVOS_PARA_VERIFICAR existe para a
 # regressao em .github/scripts/test-verifica-dados-sensiveis.sh: o hook
 # guard-dados-sensiveis.sh — corretamente — impede montar um indice com
-# planilha e config/app.json, mesmo em repositorio descartavel.
+# planilha e o app.json de config, mesmo em repositorio descartavel.
 #
 # Sem os dois-pontos de proposito: `${VAR-default}` distingue "nao definida" de
 # "definida e vazia". Com `${VAR:-default}`, testar a lista vazia cairia no
@@ -58,13 +58,13 @@ reportar() {
 # uma substituicao: `-z` nao cabe dentro de `${VAR-...}` sem perder a distincao.
 #
 # `-z` e obrigatorio, e nao estilo: `git ls-files` CITA nome fora do ASCII por
-# padrao (`core.quotePath` vem `true`), e `"src/relat\303\263rio.ts"` sai com
+# padrao (`core.quotePath` vem `true`), e `"relat\303\263rio.ts"` sai com
 # aspas literais. Elas derrotam as sete verificacoes de uma vez e em silencio —
 # as de padrao ancoram em `$`, e a linha termina em aspa; as de conteudo tentam
 # abrir a string citada como arquivo, `grep -Iq .` falha, e o laco faz
 # `continue` sem sinal nenhum. `core.quotePath=false` nao basta: com ele o git
-# ainda cita nome que contenha `"` ou `\`. Medido em 02/09/2026, num repo com
-# tres nomes hostis — o script de entao alcancava 1 dos 3, e com `-z` alcanca 3.
+# ainda cita nome que contenha `"` ou `\`. Medido num repo com tres nomes
+# hostis (docs/08-qualidade-operacao.md §5.2): sem `-z`, 1 dos 3; com ele, 3.
 if [ -n "${ARQUIVOS_PARA_VERIFICAR+definida}" ]; then
   versionados="$ARQUIVOS_PARA_VERIFICAR"
 else
@@ -83,11 +83,10 @@ versionados="$(printf '%s\n' "$versionados" | sed -E 's/^"(.*)"$/\1/')"
 
 # 1. Planilhas fora das fixtures. As de tests/fixtures/ sao derivadas do
 #    arquivo real com nomes trocados, e versiona-las e exigencia da regra 7.
-#    guard-dados-sensiveis.sh faz a MESMA excecao no `git add`, desde 13/08/2026.
+#    guard-dados-sensiveis.sh faz a MESMA excecao no `git add`.
 #
-#    A excecao e por CAMINHO, e ate 01/09/2026 nada olhava DENTRO delas — nem
-#    aqui, nem no hook, e o check 6 pula binario por construcao. Um comentario
-#    da planilha do operador, com nome de duas pessoas, sobreviveu meses assim.
+#    A excecao e por CAMINHO, e nada aqui nem no hook olha DENTRO delas — o
+#    check 6 pula binario por construcao (docs/08-qualidade-operacao.md §5.2).
 #    Quem olha para dentro e tests/repo/fixtures-anonimas.test.ts, que roda no
 #    `npm run verify` e no verify.yml. Esta excecao so se sustenta com ela.
 planilhas="$(printf '%s\n' "$versionados" | grep -iE '\.xlsx$' | grep -v '^tests/fixtures/' || true)"
@@ -104,7 +103,7 @@ config="$(printf '%s\n' "$versionados" | grep -xE 'config/app\.json' || true)"
 #     de pessoa da equipe (regra inviolavel 8), nao caminho local. O `-x` e o
 #     que mantem os `.exemplo` liberados, que sao versionados desde H-48.
 #
-#     `src/http/routes/process-client.ts` CRIA o client-map.json ao gravar a
+#     `src/http/routes/clients.ts` CRIA o client-map.json ao gravar a
 #     regra de consolidacao, entao ele passa a existir em toda maquina de
 #     desenvolvimento — o arquivo deixou de depender de alguem te-lo copiado.
 mapas="$(printf '%s\n' "$versionados" | grep -xE 'config/(client-map|team-map)\.json' || true)"
@@ -166,9 +165,10 @@ done <<< "$alvos_config"
 #    vazamento. So `github.com/<dono>/` e isento; o nome NU continua reprovando,
 #    inclusive na mesma linha.
 #
-#    Medido em 01/09/2026, antes da excecao: 16 linhas em 1 arquivo, TODAS URL
-#    de PR. Zero ocorrencias nuas. Sem isto o check reprova na maquina do dono e
-#    aprova no runner, que e o pior dos dois mundos: verde onde ninguem olha.
+#    Medido antes da excecao: 16 linhas em 1 arquivo, TODAS URL de PR, e zero
+#    ocorrencias nuas (docs/08-qualidade-operacao.md §5.2). Sem isto o check
+#    reprova na maquina do dono e aprova no runner, que e o pior dos dois
+#    mundos: verde onde ninguem olha.
 dono="${USER:-}"
 case "$dono" in
   '' | runner | root | nobody) dono='' ;;

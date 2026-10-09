@@ -149,7 +149,7 @@ describe('readWorkbook', () => {
  * Protegido por senha, o `.xlsx` deixa de ser um zip: o Excel grava um container
  * OLE2 com a mesma extensao.
  *
- * Medido em 17/09/2026, sobre um arquivo cifrado pelo Excel de verdade na
+ * Medido em `H-108`, sobre um arquivo cifrado pelo Excel de verdade na
  * maquina do operador — nenhuma das nove fixtures tem essa forma, e produzi-la
  * exige o Excel. O que a aplicacao respondia era `invalid zip data`, do
  * `fflate`: nao nomeia a causa, nao cita `P-12`, e nao diz ao operador o que
@@ -244,8 +244,8 @@ describe('readWorkbook — chaves de estilo', () => {
   })
 
   /**
-   * A **decima primeira** linha nao tem preenchimento nenhum, e desde
-   * 02/09/2026 isso e estado legitimo — e a linha como o Excel a cria, e como a
+   * A **decima primeira** linha nao tem preenchimento nenhum, e isso e estado
+   * legitimo (`D-25`) — e a linha como o Excel a cria, e como a
    * insercao a escreve. Antes o papel de "cor desconhecida" era dela, o que
    * confundia ausencia com engano.
    */

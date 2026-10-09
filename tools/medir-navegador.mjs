@@ -8,17 +8,15 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 /**
  * Medicao da interface num Chrome de verdade, por CDP.
  *
- * Existe porque **o mesmo harness foi reconstruido do zero em duas sessoes** —
- * 31/08/2026 declarou os procedimentos de navegador inalcancaveis e estava
- * errada; 01/09/2026 os executou e mediu seis historias, e o harness morreu com
- * o scratchpad dela. Foi a Pendencia 2 do relatorio daquele dia. `E11` inteiro
- * depende deste arquivo, e `H-65` o exige por definicao.
+ * Existe porque **o mesmo harness foi reconstruido do zero em duas sessoes**
+ * (ADR-0007). `E11` inteiro depende deste arquivo, e `H-65` o exige por
+ * definicao.
  *
  * **Sem dependencia nova** (`D-16` vale para o runtime, e a regra do plano vale
  * para tudo): `WebSocket` e global no Node 22, e o Chrome ja esta na maquina.
  *
  * **Nada aqui toca estado real** — nem a planilha do operador, nem `data/`, nem
- * `config/app.json`, nem `config/client-map.json`, **nem a fixture versionada**.
+ * o `app.json`, nem o `client-map.json`, **nem a fixture versionada**.
  * `abrirAplicacao` COPIA a planilha para o temporario e injeta os demais
  * caminhos de escrita; sao **nove destinos, todos sob `area`**, e a lista se
  * confere com `grep -n "join(area" tools/medir-navegador.mjs`:
@@ -26,11 +24,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
  *     planilha.xlsx · quarantine.json · history.jsonl · pending-edits.jsonl
  *     backups/ · aplicadas/ · client-map.json · app.json · team-map.json
  *
- * A copia e o `app.json` entraram em 02/09/2026: sem a primeira, "Aplicar
- * alteracoes" numa medicao gravaria na fixture do repositorio; sem o segundo,
- * `PUT /api/config/workbook` gravava na configuracao do operador. Em 01/09/2026
- * um harness de medicao gravou na fila do operador **duas vezes**; as duas
- * defesas — fixture e caminhos injetados — sao a resposta, e nenhuma delas
+ * A copia e o `app.json` vao para o temporario (ADR-0007): sem a primeira,
+ * "Aplicar alteracoes" numa medicao gravaria na fixture do repositorio; sem o
+ * segundo, `PUT /api/config/workbook` gravaria na configuracao do operador. As
+ * duas defesas — fixture e caminhos injetados — sao necessarias, e nenhuma delas
  * sozinha basta.
  *
  * Sem ordinal em comentario nenhum, de proposito: o arquivo chegou a carregar
@@ -99,12 +96,10 @@ export async function abrirAplicacao({ fixture = 'cores.xlsx', porta = 5199 } = 
   copyFileSync(resolve(RAIZ, 'tests/fixtures', fixture), planilha)
 
   /*
-    O `AppConfig` COMPLETO. Faltavam `headerRow`, `firstDataRow` e
-    `stalledDaysThreshold`: este arquivo e `.mjs` e o `tsc` nao o confere, entao
-    a falta so aparecia em execucao — e apareceu, em 02/09/2026, como
-    `linha invalida: NaN` na primeira medicao de "Aplicar alteracoes". Quem
-    pegou foi a validacao de `appendRow`; sem ela, `Math.max(n, undefined)`
-    teria virado uma coordenada NaN no XML.
+    O `AppConfig` COMPLETO: este arquivo e `.mjs` e o `tsc` nao o confere, entao
+    campo faltando so aparece em execucao — como `linha invalida: NaN` na
+    medicao de "Aplicar alteracoes" (ADR-0007). Quem pega e a validacao de
+    `appendRow`; sem ela, `Math.max(n, undefined)` vira uma coordenada NaN no XML.
   */
   const config = {
     workbookPath: planilha,
@@ -128,7 +123,7 @@ export async function abrirAplicacao({ fixture = 'cores.xlsx', porta = 5199 } = 
     MAIS fiel que antes: somem os dois `restartPending` espurios que a medicao
     produzia.
 
-    Sem isto, `PUT /api/config/workbook` gravava no `config/app.json` do
+    Sem isto, `PUT /api/config/workbook` gravava no `app.json` do
     OPERADOR durante uma medicao — `saveWorkbookPath` so recusa o padrao sob
     `NODE_ENV=test`, que o cabecalho proibe usar aqui. Mesmo modo de falha que
     `H-34` mediu, e a pagina esta em `NAV_PAGES`, logo e um dos alvos.
@@ -184,7 +179,7 @@ export async function abrirAplicacao({ fixture = 'cores.xlsx', porta = 5199 } = 
     [],
     join(area, 'pending-edits.jsonl'),
     [],
-    // Caminho de escrita de 02/09/2026: `PUT
+    // Caminho de escrita de `H-79`: `PUT
     // /api/processes/:ref/client` grava a regra de consolidacao. Sem este
     // argumento a medicao escreveria no `client-map.json` do OPERADOR — a
     // recusa de `saveClientRule` so vale sob `NODE_ENV=test`, e aqui nao vale
@@ -307,7 +302,7 @@ export async function comNavegador(opcoes, fn) {
     // `hover:` do Tailwind v4 vive dentro de `@media (hover: hover)`, e o
     // headless nao declara apontador nenhum: as duas features respondem `false`
     // e NENHUM utilitario de cursor entra, ainda que `:hover` case. Medido em
-    // 01/09/2026, e e a explicacao do que `PD-07` registrou como "precisa de
+    // `H-64`, e e a explicacao do que `PD-07` registrou como "precisa de
     // cursor real" — `Emulation.setEmulatedMedia` nao alcanca estas duas, que
     // sao capacidade do dispositivo e nao preferencia do usuario.
     //
@@ -404,8 +399,8 @@ export async function comNavegador(opcoes, fn) {
     conexao?.fechar()
     chrome.kill('SIGKILL')
     // O Chrome ainda escreve no cache quando o sinal chega, e `maxRetries` **nao
-    // basta**: medido em 01/09/2026, `ENOTEMPTY` voltou DEPOIS de uma medicao
-    // que ja tinha dado certo, e o erro aparecia como defeito do que se media.
+    // basta**: medido (ADR-0007), `ENOTEMPTY` volta DEPOIS de uma medicao que
+    // ja deu certo, e o erro aparece como defeito do que se media.
     //
     // **Limpar o perfil temporario nao vale derrubar a medicao.** O diretorio
     // fica em `/tmp`, que o sistema recolhe; perder a medicao custa a sessao.
@@ -434,7 +429,7 @@ const LOOPBACK_HOST = '127.0.0.1'
 /**
  * A MESMA sonda sobre N cenarios, com a aplicacao subindo e caindo uma vez so.
  *
- * **Existe porque o preambulo foi reescrito OITO vezes** em 04 e 08/09/2026 —
+ * **Existe porque o preambulo foi reescrito OITO vezes** (ADR-0007) —
  * `abrirAplicacao`, porta escolhida a mao, laco de espera pelo carregamento,
  * `fechar`, `JSON.stringify` no fim. Duas dessas vezes custaram uma execucao
  * extra por defeito no andaime, e nao na medida: um backtick dentro de template
@@ -492,7 +487,7 @@ export async function medirCenarios({ fixture, rota, cenarios, sonda, esperarPor
  * **O esqueleto de `H-85` nao poe texto no `<main>`:** as barras sao
  * `aria-hidden` e o anuncio sai por portal para a regiao viva da casca, fora
  * dele. Uma espera que so procurasse "Carregando" retornaria no ato e mediria a
- * pagina vazia — medido em 08/09/2026, ao provar esta funcao: a Pagina Alertas
+ * pagina vazia — medido ao provar esta funcao (ADR-0007): a Pagina Alertas
  * devolveu 900 px, a altura da janela, contra os 9.248 reais.
  *
  * `aria-busy` cobre o esqueleto e os cartoes de `StatCard`; o texto cobre o

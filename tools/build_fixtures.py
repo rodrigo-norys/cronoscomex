@@ -316,11 +316,10 @@ def sanitize(name, data):
                 'xl/persons/person.xml', 'docProps/core.xml', 'xl/workbook.xml',
                 'xl/worksheets/_rels/sheet4.xml.rels') or name.startswith('customXml/'):
         data = EMAIL.sub(b'exemplo@exemplo.com', data)
-        # Comentario tem DUAS formas, e ate 01/09/2026 so a primeira era coberta:
-        # `<t>` e o legado, de xl/comments1.xml, e `<text>` e o encadeado, de
-        # xl/threadedComments/. A lista acima ja citava a parte encadeada — o que
-        # falhava era a regex, que mirava a tag errada —, e por isso as nove
-        # fixtures versionadas carregaram texto real da planilha do operador.
+        # Comentario tem DUAS formas, e as duas precisam ser cobertas: `<t>` e o
+        # legado, de xl/comments1.xml, e `<text>` e o encadeado, de
+        # xl/threadedComments/. Citar a parte na lista acima nao basta: e a regex
+        # que precisa mirar a tag certa (docs/08-qualidade-operacao.md §1.2).
         #
         # **As duas regras toleram atributo**, e essa e a licao do proprio
         # defeito: `<text>` sem tolerancia deixaria passar
@@ -429,9 +428,9 @@ FIXTURES = {
                          'vermelho','amarelo','branco'], start=101)
  ] + [
    # 169 -> fillId 6 -> argb:FFB7E1CD. Cor REAL do arquivo, e fora do mapa: e
-   # ela que exercita COR_NAO_MAPEADA desde 02/09/2026. Antes o papel era do
-   # estilo 163, que nao tem preenchimento nenhum — e ausencia de cor deixou de
-   # ser pendencia quando a aplicacao passou a criar linha em branco.
+   # ela que exercita COR_NAO_MAPEADA, e nao o estilo 163, que nao tem
+   # preenchimento nenhum: ausencia de cor nao e pendencia, porque a aplicacao
+   # cria linha em branco (`D-25`).
    (169, {'A':'FT999.26','B':'COR DESCONHECIDA','I':D('2026-08-10'),'L':''}),
    # 163 -> fillId 0 -> patternType="none". A linha como o Excel a cria, e como
    # a insercao a escreve: sem cor, indefinida nos tres campos, sem quarentena.
@@ -786,8 +785,8 @@ for name, (rows, note) in FIXTURES.items():
 gerar_formulas(os.path.join(OUT, 'basico.xlsx'), os.path.join(OUT, 'formulas.xlsx'))
 
 # Pelo mesmo motivo de `gerar_formulas`: a `formatado.xlsx` versionada e a saida
-# deste script MAIS este passo, e ate 02/09/2026 ele so existia no modo manual —
-# quem regenerasse perdia cinco elementos asseridos pela suite, em silencio. A
-# funcao e idempotente (guarda por 'conditionalFormatting').
+# deste script MAIS este passo, e sem ele quem regenerasse perderia cinco
+# elementos asseridos pela suite, em silencio (docs/08-qualidade-operacao.md
+# §1.2). A funcao e idempotente (guarda por 'conditionalFormatting').
 enriquecer_formatado(os.path.join(OUT, 'formatado.xlsx'))
 print('\nOK -> %s/' % OUT)

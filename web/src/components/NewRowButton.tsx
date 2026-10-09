@@ -3,7 +3,7 @@ import { enqueueRow } from '../api-client.ts'
 import { LiveAnnouncement } from './PageAlert.tsx'
 
 /**
- * A linha nova da Pagina Operacional (02/09/2026).
+ * A linha nova da Pagina Operacional (`H-80`).
  *
  * **Pede a REF, e so ela.** A REF e a chave natural — sem ela a linha nao e um
  * processo, e nasceria na quarentena por `REF_AUSENTE`. O resto se preenche na

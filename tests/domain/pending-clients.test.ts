@@ -14,7 +14,7 @@ import {
  * `H-88`. A coluna CLT com o dono de cada grafia, o alcance de uma regra
  * candidata, e o `match` do plano.
  *
- * Os numeros dos casos sao os medidos na planilha real em 08/09/2026: **509
+ * Os numeros dos casos sao os medidos na planilha real em `H-88`: **509
  * grafias distintas**, das quais 111 sem cliente declarado, 140 processos,
  * **11 entradas de mapa** e um pai com tres filhos, mais 38 linhas sem CLT.
  */
@@ -35,7 +35,7 @@ const MAPA: ClientMapEntry[] = [
 
 describe('clientKeys', () => {
   /**
-   * A lista traz TUDO desde 08/09/2026: trazer so o pendente tornava impossivel
+   * A lista traz TUDO (`H-88`): trazer so o pendente tornaria impossivel
    * agrupar `AV`, que ja e cliente e por isso sumia dela.
    */
   it('devolve toda a coluna, dizendo a quem cada grafia pertence', () => {
@@ -276,8 +276,8 @@ describe('planClientRule com match', () => {
   /**
    * **A chave normaliza; o rotulo preserva a grafia digitada.**
    *
-   * Ate 09/09/2026 os dois saiam de `normKey`, e quem digitava "Kelly" no valor
-   * via "KELLY" declarado — medido no mapa real, onde a entrada trocou de
+   * Com os dois saindo de `normKey`, quem digita "Kelly" no valor ve "KELLY"
+   * declarado (`H-88`) — medido no mapa real, onde a entrada trocou de
    * `label: 'Kelly'` para `label: 'KELLY'` ao ser redeclarada.
    */
   it('o filho leva a grafia digitada por rotulo, e a chave normalizada por chave', () => {
@@ -306,7 +306,7 @@ describe('planClientRule com match', () => {
 /**
  * `clientNames` — os nomes que o campo de declaracao oferece (`H-88`).
  *
- * Existe por um defeito observado em 08/09/2026: declarando "Vivi" a mao, o
+ * Existe por um defeito observado em `H-88`: declarando "Vivi" a mao, o
  * operador criou um cliente `VIVI` ao lado do pai `Vivi` que ja existia, e o
  * ranking passou a mostrar 326 e 58 como clientes diferentes.
  */
@@ -352,7 +352,7 @@ describe('clientNames', () => {
 /**
  * `planGroupRemoval` — o desfazer (`H-88`, determinacao 9).
  *
- * **Desagrupar e desdeclarar sao uma operacao so** desde 08/09/2026: os botoes
+ * **Desagrupar e desdeclarar sao uma operacao so** (`H-88`): os botoes
  * tiram do pai E apagam a regra, por escolha do usuario.
  */
 describe('planGroupRemoval', () => {

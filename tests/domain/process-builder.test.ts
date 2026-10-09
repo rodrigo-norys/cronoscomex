@@ -460,7 +460,7 @@ describe('buildProcesses — responsavel pela pessoa (H-50, H-93)', () => {
     **Os dois testes da anomalia `RESPONSAVEL_DIVERGENTE` sairam em `H-93`.**
 
     Eles mediam o importador e a cor apontando pessoas diferentes — zero
-    ocorrencias em 31/08/2026 e zero em 10/09/2026. Com a cor fora da regra nao
+    ocorrencias quando nasceu e zero quando saiu (`H-93`). Com a cor fora da regra nao
     ha o que divergir, e a anomalia saiu do `AnomalyCode` sem nunca ter
     detectado uma.
   */

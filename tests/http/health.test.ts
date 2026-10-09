@@ -87,7 +87,7 @@ describe('GET /api/health', () => {
    */
   it('serializa a divergencia de cabecalho com as duas pontas', async () => {
     const comDivergencia: StoreState = {
-      // **A leitura seguiu**: divergencia avisa e nao impede nada (17/09/2026).
+      // **A leitura seguiu**: divergencia avisa e nao impede nada (`D-45`).
       // O estado e `pronto`, os processos entraram, e o aviso viaja ao lado.
       state: 'pronto',
       processes: [],

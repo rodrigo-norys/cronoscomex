@@ -69,8 +69,8 @@ export interface ClientRuleCreatedResponse {
   /**
    * `grupo-criado` e `membro-acrescentado` sao os dois kinds de pai (`H-88`).
    *
-   * **`entrada-nova` saiu do contrato em 21/09/2026**, sem produtor desde
-   * `D-53`: nenhuma resposta o carregava, e mante-lo prometia ao cliente um
+   * **`entrada-nova` nao esta no contrato** (`H-105`), sem produtor desde
+   * `D-53`: nenhuma resposta o carrega, e mante-lo prometeria ao cliente um
    * desfecho que a rota nao tem como devolver.
    */
   outcome: 'regra-acrescentada' | 'sem-efeito' | 'grupo-criado' | 'membro-acrescentado'
@@ -88,8 +88,8 @@ export interface ClientGroupRemovedResponse {
   /**
    * As declaracoes apagadas junto — as grafias delas voltam a "sem cliente".
    *
-   * Desagrupar e desdeclarar sao uma operacao so desde 08/09/2026, por escolha
-   * do usuario.
+   * Desagrupar e desdeclarar sao uma operacao so, por escolha do usuario
+   * (`H-88`).
    */
   removed: string[]
   /**
@@ -102,11 +102,11 @@ export interface ClientGroupRemovedResponse {
 const MATCHES: readonly ClientMatch[] = ['prefix', 'contains', 'exact']
 
 /**
- * As colunas onde uma regra pode procurar (21/09/2026).
+ * As colunas onde uma regra pode procurar (`H-105`).
  *
- * **Ausente vale `clt`, e nao e erro:** quem chamava a rota antes desta data
+ * **Ausente vale `clt`, e nao e erro:** quem chamava a rota antes de `H-105`
  * nao mandava o campo, e recusar por isso quebraria a tela anterior contra o
- * servidor novo — o modo de falha que a instalacao de 04/09/2026 registrou.
+ * servidor novo — o modo de falha que a primeira instalacao registrou (`PD-01`).
  */
 const FIELDS: readonly ClientField[] = ['clt', 'ref', 'importer']
 
@@ -176,7 +176,7 @@ export function registerClientsRoutes(
     if (semLeitura(reply)) return reply
 
     /*
-      A lista segue a COLUNA pedida (21/09/2026), e valor invalido cai em `clt`
+      A lista segue a COLUNA pedida (`H-105`), e valor invalido cai em `clt`
       em vez de recusar: o parametro escolhe o que a lista mostra, e derrubar o
       painel por um `field=xyz` na URL seria desproporcional.
     */

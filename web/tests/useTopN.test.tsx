@@ -7,7 +7,7 @@ import { type ApiStub, indicatorsFixture, stubApi } from './support/api-stub.ts'
 import { mountLiveRegions, unmountLiveRegions } from './support/live-region.ts'
 
 /**
- * O tamanho dos rankings, escolhido pelo operador (21/09/2026).
+ * O tamanho dos rankings, escolhido pelo operador (`H-106`).
  *
  * O que se prova aqui e a fronteira: o seletor escreve na URL, e a frase da
  * tela le o ECO do servidor. Com os dois divergindo — a URL pedindo um valor
@@ -73,7 +73,7 @@ describe('o seletor de itens por dimensão', () => {
 })
 
 /**
- * O `topN` some ao sair da Pagina Clientes (21/09/2026).
+ * O `topN` some ao sair da Pagina Clientes (`H-106`).
  *
  * **Emenda `D-55`**, que o declarara global: o argumento de la — Clientes e
  * Performance consomem os mesmos rankings — continua verdadeiro e deixou de ser

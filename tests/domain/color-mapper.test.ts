@@ -109,7 +109,7 @@ describe('resolveColor — as 9 cores reais', () => {
     expect(r.responsible).toBe('indefinido')
   })
 
-  // Decisao do usuario sobre A-38, reafirmada em 31/08/2026 com a alternativa a
+  // Decisao do usuario sobre A-38, reafirmada em `H-51` com a alternativa a
   // vista: amarelo e localizacao, nao canal. `H-51` acrescentou canal verde e
   // NAO canal amarelo — a cor da unica linha amarela esta ocupada dizendo outra
   // coisa, e por isso o canal dela e desconhecido, nao ausente.
@@ -196,7 +196,7 @@ describe('resolveColor — chave nao reconhecida', () => {
   })
 
   /**
-   * **Ausencia de cor nao e cor desconhecida** (02/09/2026). Enquanto a
+   * **Ausencia de cor nao e cor desconhecida** (`H-79`). Enquanto a
    * aplicacao so lia, os dois casos coincidiam — nenhuma das 649 linhas nascia
    * sem preenchimento. Ao passar a criar linha em branco, tratar a ausencia
    * como engano mandaria para a quarentena toda linha que ela mesma escreveu.
@@ -257,7 +257,7 @@ describe('resolveColorIndexed', () => {
  * O mapa real NAO e uma bijecao: duas entradas casam com
  * `indefinido/verde/false` e duas com `colaborador2/indefinido/false` (A-48).
  * Exigir correspondencia unica, como o contrato dizia ate `H-27`, recusaria o
- * verde — 477 das 649 linhas (medido em `H-01`, 03/08/2026).
+ * verde — 477 das 649 linhas (medido em `H-01`).
  */
 describe('resolveFillTarget', () => {
   it('devolve a entrada da combinacao com uma cor so', () => {

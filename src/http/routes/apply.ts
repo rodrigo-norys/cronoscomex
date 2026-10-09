@@ -19,7 +19,7 @@ export interface ApplyResponse {
   cellsWritten: number
   /** Linhas repintadas (`H-27`). Nao entra em `cellsWritten` — ver `WriteResult`. */
   rowsRepainted: number
-  /** Quantas linhas NOVAS foram criadas (02/09/2026). */
+  /** Quantas linhas NOVAS foram criadas (`H-79`). */
   rowsInserted: number
   backupPath: string | null
   /** `null` quando a fila nao foi arquivada. Ver o aviso em §3 do contrato. */

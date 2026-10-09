@@ -21,7 +21,7 @@ import type { QuarantineResponse } from '../../../src/http/routes/quarantine.ts'
 import type { TeamResponse } from '../../../src/http/routes/team.ts'
 
 /**
- * Os valores medidos na planilha real em 07/08/2026, e nao numeros inventados:
+ * Os valores medidos na planilha real em `H-16`, e nao numeros inventados:
  * a soma das quatro categorias fecha com o total por construcao, entao um teste
  * que quebre essa invariante quebra por escolha explicita, nao por descuido na
  * fixture.
@@ -54,7 +54,7 @@ export function indicatorsFixture(
       explicita.
     */
     categoryCheck: { sum: 649, total: 649, matches: true, ...checkOverrides },
-    // `H-51`. Medido em 31/08/2026 sobre a planilha real: 477 verdes, 5
+    // `H-51`. Medido sobre a planilha real: 477 verdes, 5
     // vermelhas e 167 sem canal, somando as 649. O denominador do percentual e
     // 482, e as 167 ficam fora dele — contadas, nunca diluidas.
     channelDistribution: {
@@ -99,7 +99,7 @@ export function indicatorsFixture(
 }
 
 /**
- * Os valores medidos na planilha real em 07/08/2026: 40 linhas achatadas para
+ * Os valores medidos na planilha real em `H-20`: 40 linhas achatadas para
  * 25 processos distintos. `items` fica vazio de proposito — cada teste serve o
  * recorte que exercita.
  *
@@ -113,8 +113,8 @@ export function indicatorsFixture(
  * Pagina Alertas passou despercebido.
  */
 /**
- * A coluna CLT como a rota a serve (`H-88`). Medido na planilha real em
- * 08/09/2026: **509 grafias distintas**, das quais 111 sem cliente declarado, e
+ * A coluna CLT como a rota a serve (`H-88`). Medido na planilha real nela:
+ * **509 grafias distintas**, das quais 111 sem cliente declarado, e
  * a maior pendente valendo 3 processos. `items` traz um recorte da FORMA — uma
  * grafia livre e uma declarada dentro de um pai —, e cada teste serve a lista
  * que exercita.
@@ -131,7 +131,7 @@ export function clientKeysFixture(overrides: Partial<ClientKeysResponse> = {}): 
         parent: null,
       },
       // Uma grafia JA declarada e dentro de um pai: a lista mostra o estado
-      // inteiro desde 08/09/2026, e nao so o que falta.
+      // inteiro (`H-88`), e nao so o que falta.
       {
         key: 'AV-480',
         label: 'AV-480',
@@ -153,7 +153,7 @@ export function clientKeysFixture(overrides: Partial<ClientKeysResponse> = {}): 
         count: 304,
       },
       /*
-        O grupo IMPLICITO de 18/09/2026: `Dennis` foi declarado quando cliente
+        O grupo IMPLICITO de `D-53`: `Dennis` foi declarado quando cliente
         solto ainda existia, e a carga o le como grupo de um membro. Pai e filho
         dizem a mesma palavra — e o caso que a opcao (a) trata.
       */
@@ -210,7 +210,7 @@ export function alertsFixture(overrides: Partial<AlertsResponse> = {}): AlertsRe
 }
 
 /**
- * O estado real do historico em 17/08/2026: ele comecou em `H-28`, entao existe
+ * O estado real do historico em `H-21`: ele comecou em `H-28`, entao existe
  * um unico mes, e uma janela de 12 o excede — `truncated` e `true` por
  * construcao, nao por escolha da fixture. Os tres numeros sao os medidos na
  * planilha real, os mesmos de `indicatorsFixture`.
@@ -235,7 +235,7 @@ export function monthlyHistoryFixture(
       missingRegistration: 166,
     },
     // `D-56`. A serie de registros do mes, que nao acumula. Os tres pontos sao
-    // a forma medida em 21/09/2026: o RG mais recente e 31/07, e o eixo alcanca
+    // a forma medida em `H-107`: o RG mais recente e `31/07`, e o eixo alcanca
     // o mes corrente com zero medido.
     registrations: {
       points: [
@@ -287,7 +287,7 @@ export function processFixture(overrides: Partial<ProcessDto> = {}): ProcessDto 
 }
 
 /**
- * Os 16 rotulos da aba real, medidos em 16/09/2026 (`H-95`).
+ * Os 16 rotulos da aba real, medidos em `H-95`.
  *
  * Literais de proposito: `H` se chama `ETA` e guarda PORTO, e `M` e `P` tem
  * nomes que o Excel gerou sozinho. A tabela mostra o que o arquivo diz, e uma
@@ -383,7 +383,7 @@ export function healthFixture(overrides: Partial<HealthResponse> = {}): HealthRe
 
 /**
  * O inventario da configuracao (`H-35`), no estado de uma instalacao JA
- * apontada: `config/app.json` existe, so `workbookPath` foi declarado, e os
+ * apontada: `app.json` existe, so `workbookPath` foi declarado, e os
  * outros sete campos vem do padrao.
  *
  * A origem de cada campo e o que a tela mostra, e e por isso que a fixture nao
@@ -461,7 +461,7 @@ export function filterOptionsFixture(
 /**
  * O mapa de equipe como a rota o serve (`H-91`). Os numeros sao os medidos na
  * planilha real: duas pessoas cobrindo **202** e **357** das 649 linhas pelas
- * carteiras declaradas em 10/09/2026, `MPA` como o **unico** importador que
+ * carteiras declaradas em `H-93`, `MPA` como o **unico** importador que
  * nenhuma carteira alcanca — 55 processos —, e **35** linhas com o campo
  * IMPORTADOR em branco, que nenhum mapa alcanca por construcao.
  */
@@ -669,7 +669,7 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
               outcome: membro ? 'membro-removido' : 'grupo-desfeito',
               key: 'VIVI-GRUPO',
               client: membro ? decodeURIComponent(path.split('/members/')[1] ?? '') : null,
-              // Desagrupar e desdeclarar sao uma operacao so (08/09/2026).
+              // Desagrupar e desdeclarar sao uma operacao so (`H-88`).
               removed: membro
                 ? [decodeURIComponent(path.split('/members/')[1] ?? '')]
                 : ['AV', 'CHUN', 'KELLY'],
@@ -697,7 +697,7 @@ export function stubApi(initial: HealthResponse = healthFixture()): ApiStub {
           json: () =>
             Promise.resolve({
               // `grupo-criado` desde `D-53`: a PRIMEIRA declaracao ja forma o
-              // pai, e `entrada-nova` saiu do contrato em 21/09/2026.
+              // pai, e `entrada-nova` nao esta no contrato (`H-105`).
               outcome: 'grupo-criado',
               key: String(enviado.label ?? '').toUpperCase(),
               label: enviado.label,

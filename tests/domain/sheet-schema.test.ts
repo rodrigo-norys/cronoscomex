@@ -11,7 +11,7 @@ import {
  * `H-96`. A conferencia do cabecalho contra o esquema declarado.
  *
  * **Os valores sao os medidos**, e nao ilustrativos: os 16 cabecalhos saem de
- * `H-01` e foram reconferidos em 17/09/2026 nas NOVE fixtures e na planilha
+ * `H-01` e foram reconferidos em `H-96` nas NOVE fixtures e na planilha
  * real, onde sao identicos. Por isso o cenario feliz usa `DECLARED_HEADERS`
  * como entrada — ele E o que o arquivo tem.
  *
@@ -202,7 +202,7 @@ describe('as demais divergências', () => {
 })
 
 /**
- * **Nenhuma divergência impede a leitura** — decisão do usuário em 17/09/2026.
+ * **Nenhuma divergência impede a leitura** — decisão do usuário (`D-45`).
  * O painel nunca para; o que ele ganha é saber o que mudou.
  *
  * `blocksWriting` é outra pergunta, e existe para a ESCRITA: gravar na coluna

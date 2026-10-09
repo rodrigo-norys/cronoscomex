@@ -28,7 +28,7 @@ const NOME_DA_COLUNA: Record<string, string> = {
   // Nao e coluna: e a cor da linha inteira (H-27). Entra aqui porque a coluna
   // "Campo" precisa dizer o que mudou, e "cor" sozinho nao diz.
   cor: 'Cor da linha',
-  // Nem coluna nem cor: a linha INTEIRA que se queria criar (02/09/2026).
+  // Nem coluna nem cor: a linha INTEIRA que se queria criar (`H-80`).
   'linha-nova': 'Linha nova',
 }
 
@@ -67,7 +67,7 @@ export function ConflictDialog({ refusal, onClose }: ConflictDialogProps) {
 
     Ele estava faltando aqui, e o cabecalho do `FilterPanel` dizia por que: "o
     `ConflictDialog` so abre com a planilha alterada durante a sessao, e por
-    isso a gestao de foco dele segue parada em `PD-07`". Medido em 17/09/2026,
+    isso a gestao de foco dele segue parada em `PD-07`". Medido em `H-111`,
     produzindo o conflito num navegador real: o dialogo abria com
     `document.activeElement` ainda no `<body>`.
 

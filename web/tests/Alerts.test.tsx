@@ -58,7 +58,7 @@ function fila(): Promise<HTMLElement> {
 describe('agrupamento por processo (A-60)', () => {
   /**
    * O critério de aceite venceu o caso-limite do backlog, que dizia o oposto —
-   * texto anterior à decisão de 06/08/2026. Medido na planilha real: 40 linhas
+   * texto anterior à decisão de `A-60` (`H-20`). Medido na planilha real: 40 linhas
    * achatadas para 25 processos, e 13 deles apareceriam repetidos.
    */
   it('exibe o processo uma unica vez, com os tres tipos', async () => {

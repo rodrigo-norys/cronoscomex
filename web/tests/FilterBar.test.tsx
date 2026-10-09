@@ -88,7 +88,7 @@ function fichas(): string[] {
 
 describe('a linha de fichas', () => {
   /**
-   * A frase do estado vazio SAIU em 10/09/2026. Ela dizia "Todos os processos,
+   * A frase do estado vazio SAIU em `D-38`. Ela dizia "Todos os processos,
    * sem recorte" e afirmava o falso com `Ocultar desembaracados` ligado — o
    * checkbox vive em `useProcessQuery`, e esta barra e da casca.
    */

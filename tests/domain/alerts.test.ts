@@ -313,7 +313,7 @@ describe('buildAlerts — ALE-06, processos parados (H-29)', () => {
     expect(buildAlerts([concluido], HOJE, new Map([['FT996.26', 90]]), LIMIAR)).toEqual([])
   })
 
-  // A-32: o limiar vem de config/app.json, e nada no dominio o fixa.
+  // A-32: o limiar vem do app.json, e nada no dominio o fixa.
   it('responde ao limiar recebido, sem constante propria', () => {
     const parado = process({ ref: 'FT995.26' })
     const parados = new Map([['FT995.26', 8]])

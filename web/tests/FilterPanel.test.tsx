@@ -9,7 +9,7 @@ import { filterOptionsFixture } from './support/api-stub.ts'
  * O primeiro modal do conjunto com teste (`H-82`, `D-30`).
  *
  * O `ConflictDialog` so abre com a planilha alterada durante a sessao, e por
- * isso a gestao de foco dele ficou parada em `PD-07` ate 17/09/2026; este abre a
+ * isso a gestao de foco dele ficou parada em `PD-07` ate `H-111`; este abre a
  * qualquer momento, e o padrao passou a ter prova primeiro aqui.
  * `ConflictDialog.test.tsx` e o par, escrito depois de o ensaio produzir o
  * conflito num navegador real.

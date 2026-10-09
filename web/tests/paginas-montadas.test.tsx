@@ -69,7 +69,7 @@ afterEach(() => {
 /**
  * O chunk da Página Histórico é carregado ANTES da primeira montagem — `PD-10`.
  *
- * **O diagnóstico da pendência era o alvo errado**, e a medição de 04/09/2026
+ * **O diagnóstico da pendência era o alvo errado**, e a medição de `H-84`
  * mostrou por quê. Ela propunha trocar a espera do fallback por uma asserção
  * positiva; mas `findBy*` e `waitForElementToBeRemoved` usam o **mesmo**
  * `asyncUtilTimeout` de 1.000 ms, então a troca move a forma da espera sem
@@ -98,7 +98,7 @@ describe('história concluída exige página montada', () => {
     window.history.replaceState(null, '', path)
     render(<App />)
 
-    // A Página Histórico é carregada sob demanda desde 17/08/2026 — o Recharts
+    // A Página Histórico é carregada sob demanda desde `H-21` — o Recharts
     // responde por 374 dos 634 kB do pacote. Sem esperar o módulo chegar, a
     // consulta abaixo aconteceria com o fallback do `Suspense` na tela, e a
     // guarda passaria **sem nunca ter renderizado a página**.
@@ -151,7 +151,7 @@ describe('C08 — um h1 por página, sem salto de nível', () => {
 
 /**
  * As duas listas mantidas à mão que o `web/` guarda do servidor, e que nenhuma
- * asserção cobria até 02/09/2026.
+ * asserção cobria antes de `H-80`.
  *
  * `web/` só importa **tipo**, e só de `src/http/routes/` (`D-18`), então valor
  * compartilhado é declarado duas vezes por construção. O que impede a
@@ -199,7 +199,7 @@ describe('o que o cliente duplica do servidor', () => {
     // detectaria a propria cegueira — foi assim que a versao anterior passou
     // aprovando enquanto dois membros escapavam.
     //
-    // **10 desde 17/09/2026**, com `CABECALHO_DESLOCADO` e `CABECALHO_VAZIO`
+    // **10**, com `CABECALHO_DESLOCADO` e `CABECALHO_VAZIO`
     // (`H-96`). Os dois percorreram os mesmos cinco elos de `TABELA_CHEIA`: a
     // uniao, `ApiErrorCode`, os dois `Record` da rota, a lista do cliente e esta
     // ancora — e cada elo so apareceu depois de o anterior ser resolvido.

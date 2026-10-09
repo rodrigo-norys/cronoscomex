@@ -2,14 +2,14 @@ import { useCallback, useMemo } from 'react'
 import { replaceQuery, useQuery } from '../router.ts'
 
 /**
- * Quantos itens cada ranking mostra, escolhido pelo operador (21/09/2026).
+ * Quantos itens cada ranking mostra, escolhido pelo operador (`H-106`).
  *
  * **Ate aqui o numero vivia so em `app.json`**, e mudar de 10 para 20
  * exigia editar JSON e reiniciar — o mesmo gesto que `H-34` tirou do caminho da
  * planilha e `H-88` do mapa de clientes.
  *
  * **E parametro DA PAGINA, e a casca o apaga ao sair dela** — emenda de
- * 21/09/2026 a `D-55`, que o declarara global. O argumento de la continua
+ * `H-106` a `D-55`, que o declarara global. O argumento de la continua
  * verdadeiro e deixou de ser decisivo: Clientes e Performance consomem os
  * mesmos rankings, e agora o valor escolhido numa nao alcanca a outra, que
  * volta ao padrao de `app.json`. Quem apaga e `App.tsx`, pela tabela

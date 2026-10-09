@@ -326,7 +326,7 @@ describe('paginacao', () => {
    * e estes casos pedem o menor que ainda pagina: o que eles exercitam e a
    * navegacao, nunca a montagem.
    *
-   * Medido em 04/09/2026, com `PAGE_SIZE` ainda fixo em 200: os tres custavam
+   * Medido em `H-84`, com `PAGE_SIZE` ainda fixo em 200: os tres custavam
    * 494 ms, 366 ms e 177 ms com a maquina livre, e 2.542 ms, 900 ms e 1.359 ms
    * sob carga — 5,1x, 2,5x e 7,7x. Era montagem, e nao espera: `desabilita
    * Anterior` nao navega nem aguarda nada, e era justamente o que mais
@@ -676,7 +676,7 @@ describe('densidade e número na tabela (H-61)', () => {
    * isso: as cinco colunas de código nasceram `text-xs` e as quatro de texto
    * livre ficaram nos `text-sm` da tabela — 12 px contra 14 px na mesma linha,
    * desalinhando opticamente a REF e o importador na mesma linha. Achado do usuário em
-   * 04/09/2026, olhando a tela, em duas passadas: a primeira pegou a REF, que
+   * `H-84`, olhando a tela, em duas passadas: a primeira pegou a REF, que
    * era uma terceira combinação (mono em 14 px), e a segunda o degrau restante.
    *
    * **A asserção é a regra inteira, e por isso mira a ausência:** nenhuma
@@ -828,7 +828,7 @@ describe('densidade e número na tabela (H-61)', () => {
   /**
    * `H-94`. A celula mostra a cor que a planilha da a ELA, e nao a da linha.
    *
-   * Medido em 16/09/2026: 36 das linhas divergem internamente dentro de A-L, o
+   * Medido em `H-94`: 36 das linhas divergem internamente dentro de A-L, o
    * que refuta `A-44` — por isso a pintura e por celula, e nao por linha.
    */
   it('pinta cada celula com a cor que a planilha da a ela', async () => {
@@ -853,7 +853,7 @@ describe('densidade e número na tabela (H-61)', () => {
       entao a tinta e a escura. Sem isto o texto do tema escuro ficava em
       **1,16** de contraste sobre o verde de 477 linhas; com ela, 15,30 e 19,56.
       *(Eram 13,20 e 16,87 enquanto a tinta escura era `#14161a`. Ela passou a
-      PRETO PURO a pedido do usuario, em 16/09/2026, depois de ver a tela.)*
+      PRETO PURO a pedido do usuario (`H-97`), depois de ver a tela.)*
     */
     expect(celulas[0]?.style.color).toBe('var(--color-cell-ink)')
     expect(celulas[11]?.style.color).toBe('var(--color-cell-ink)')
@@ -868,8 +868,8 @@ describe('densidade e número na tabela (H-61)', () => {
    *
    * Este bloco ja provou o contrario. Ele nasceu mostrando que o roxo recebia a
    * tinta CLARA e chegava a 5,19, o que refutava a determinacao 2 de `D-41`
-   * — ela media `#14161a` (3,49) e preto (4,05) e nunca medira branco. Em
-   * 16/09/2026, vendo a prova de tinta, o usuario preferiu preto uniforme nas
+   * — ela media `#14161a` (3,49) e preto (4,05) e nunca medira branco. Vendo
+   * a prova de tinta (`H-97`), o usuario preferiu preto uniforme nas
    * nove: a excecao de `D-41` voltou a valer, agora por ESCOLHA.
    *
    * A assercao fica, invertida, porque o que ela guarda e a uniformidade — se
@@ -924,7 +924,7 @@ describe('densidade e número na tabela (H-61)', () => {
 })
 
 /**
- * A edição na própria célula, sem abrir o detalhe (02/09/2026).
+ * A edição na própria célula, sem abrir o detalhe (`H-80`).
  *
  * **Nada aqui grava no `.xlsx`.** A célula enfileira pela porta de `H-23`, e o
  * valor volta à tela pela projeção do servidor — a mesma que a tabela já lia.
@@ -1037,7 +1037,7 @@ describe('edição na célula', () => {
 })
 
 /**
- * A tabela como **grade** (02/09/2026), no padrão `grid` da WAI-ARIA.
+ * A tabela como **grade** (`H-80`), no padrão `grid` da WAI-ARIA.
  *
  * O que estes casos protegem é a contagem de paradas de tabulação. Medido num
  * Chrome real antes da grade: 7 por linha — o link da REF mais as seis células

@@ -213,7 +213,7 @@ describe('logger — RNF-33, nenhum dado pessoal', () => {
 
 describe('logger — retencao de 30 dias', () => {
   it('mantem o arquivo de exatamente 30 dias e remove o de 31', () => {
-    existingLogFile('20260705') // 30 dias antes de 2026-08-04
+    existingLogFile('20260705') // 30 dias antes de `2026-08-04`
     existingLogFile('20260704') // 31 dias
     existingLogFile('20260804') // hoje
 

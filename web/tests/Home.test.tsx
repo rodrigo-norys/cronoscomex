@@ -9,7 +9,7 @@ import { findLiveRegion, mountLiveRegions, unmountLiveRegions } from './support/
  * backlog, e nenhum numero calculado aqui — todos vem de `GET /api/indicators`,
  * ja recortado no servidor.
  *
- * Os valores das fixtures sao os medidos na planilha real em 07/08/2026.
+ * Os valores das fixtures sao os medidos na planilha real em `H-16`.
  */
 
 let api: ApiStub
@@ -233,7 +233,7 @@ describe('a distribuicao por canal', () => {
     await waitFor(() => expect(painel()).toBeTruthy())
     const texto = painel().textContent ?? ''
 
-    // 477 de 482, medido na planilha real em 31/08/2026 — 98,96%, exibido com
+    // 477 de 482, medido na planilha real em `H-51` — 98,96%, exibido com
     // uma casa no maximo.
     expect(texto).toContain('477')
     expect(texto).toContain('99% de 482')

@@ -16,8 +16,8 @@ import type { Process, StatusCategory } from '../../src/domain/types.ts'
  * As tres sao regra de negocio: o que casa numa busca, onde um nulo cai numa
  * ordenacao e o que a contagem significa nao sao traducao de HTTP.
  *
- * A fabrica e local, como nas demais suites de dominio. Extrair um
- * `tests/support/process-factory.ts` e melhoria real — a mesma fabrica esta
+ * A fabrica e local, como nas demais suites de dominio. Extrair um modulo de
+ * fabrica compartilhado e melhoria real — a mesma fabrica esta
  * repetida em varios arquivos —, mas refatorar as existentes nao cabe nesta
  * fatia, e um helper usado por um teste so criaria duas formas convivendo.
  */
@@ -284,7 +284,7 @@ describe('sortProcesses — nulos sempre por ultimo', () => {
 })
 
 /**
- * As cinco ordens que 02/09/2026 acrescentou, uma por coluna que a tabela
+ * As cinco ordens que `H-77` acrescentou, uma por coluna que a tabela
  * mostrava sem cabecalho clicavel.
  */
 describe('sortProcesses — as colunas que nao tinham ordem', () => {
@@ -355,7 +355,7 @@ describe('sortProcesses — as colunas que nao tinham ordem', () => {
  *
  * Ela e o unico campo sem coluna na tabela, e o unico que nunca e nulo — o ramo
  * de ausencia de `sortProcesses` nao e alcancavel por ele, ao contrario de
- * `eta2`, que tem 65 ausencias nas 650 linhas (medido em 10/09/2026).
+ * `eta2`, que tem 65 ausencias nas 650 linhas (medido em `H-89`).
  */
 describe('sortProcesses — sourceRow, a ordem da planilha', () => {
   const terceira = makeProcess({ sourceRow: 12, ref: 'C' })
@@ -377,7 +377,7 @@ describe('sortProcesses — sourceRow, a ordem da planilha', () => {
   /**
    * `UNWRITTEN_ROW` e zero, entao a linha que o operador acabou de criar e ainda
    * nao aplicou abre no TOPO — e nao no fim, onde ela estara depois de gravada.
-   * O backlog de `H-89` afirmava o contrario ate 10/09/2026; quem esta certo e a
+   * O backlog de `H-89` chegou a afirmar o contrario; quem esta certo e a
    * projecao, que se recusa a inventar um numero de linha (`D-25`).
    */
   it('a linha ainda nao gravada vem antes de todas', () => {

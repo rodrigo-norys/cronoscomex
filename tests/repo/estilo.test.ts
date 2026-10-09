@@ -8,8 +8,8 @@ import { describe, expect, it } from 'vitest'
  * consumidores. Nada impede que o próximo `.tsx` volte a escrever
  * `text-slate-600`: o Tailwind gera a classe, o build passa, e a divergência só
  * apareceria numa auditoria seguinte — foi assim que o conjunto chegou a 40
- * classes de cor distintas e zero tokens, medido em
- * a revisão de estilo de 18/08/2026 (`D-48`).
+ * classes de cor distintas e zero tokens, medido na revisão de estilo
+ * (`D-48`).
  *
  * **Ela entra em `H-42`, e não em `H-39`, porque só aqui pode passar.**
  * Declarada antes, reprovaria enquanto `H-40` e `H-41` não tivessem migrado — e
@@ -135,7 +135,7 @@ const FILES = interfaceFiles()
 
 describe('nenhum passo bruto de paleta em web/src', () => {
   it('encontra os arquivos — âncora contra guarda verde por vacuidade', () => {
-    // 30 arquivos em 21/08/2026, ao fechar `H-42`. O piso é folgado: o que ele
+    // 30 arquivos ao fechar `H-42`. O piso é folgado: o que ele
     // pega é o coletor que parou de andar na árvore, não arquivo a mais ou a
     // menos.
     expect(FILES.length).toBeGreaterThan(20)
@@ -286,7 +286,7 @@ function tables(): Occurrence[] {
 
 describe('R01 — toda tabela rola dentro do próprio invólucro', () => {
   it('encontra as tabelas — âncora contra guarda verde por vacuidade', () => {
-    // Quatro em 31/08/2026, ao fechar `H-46`: `ProcessTable`, `History`,
+    // Quatro ao fechar `H-46`: `ProcessTable`, `History`,
     // `Performance` e `ConflictDialog`.
     expect(tables().length).toBeGreaterThanOrEqual(4)
   })
@@ -432,9 +432,8 @@ function bloco(marcador: string): string {
 /**
  * O token de cor que **não tem par no escuro de propósito** (`H-97`, `D-44`).
  *
- * *(Eram dois — tinta escura e clara — até 16/09/2026, quando o usuário pediu
- * preto em todas as nove cores da planilha. Sem segunda tinta, a lista caiu
- * para um.)*
+ * *(Um só porque o usuário pediu preto em todas as nove cores da planilha
+ * (`H-97`): sem segunda tinta, não há par a declarar.)*
  *
  * A regra de `D-21` pressupõe que a cor do token é escolha do AUTOR, e por isso
  * precisa de um valor por esquema. A tinta da célula pintada quebra a premissa:
@@ -458,7 +457,7 @@ describe('D-21 — todo token de cor tem par no esquema escuro', () => {
   const escuros = tokensDe(bloco('@media (prefers-color-scheme: dark)'))
 
   it('encontra os dois blocos — âncora contra guarda verde por vacuidade', () => {
-    // 44 tokens de cor em 01/09/2026, ao fechar `H-57`. O piso é folgado: o que
+    // 44 tokens de cor ao fechar `H-57`. O piso é folgado: o que
     // ele pega é o parser que parou de casar, não token a mais ou a menos.
     expect(claros.length).toBeGreaterThan(30)
     expect(escuros.length).toBeGreaterThan(30)
@@ -510,7 +509,7 @@ describe('D-21 — todo token de cor tem par no esquema escuro', () => {
  * alcança isto** — ele está na tabela, e quem se recusa a encolher é a trilha,
  * acima dela.
  *
- * Medido em 01/09/2026, com a Página Operacional: `lg:grid-cols-[1fr_20rem]`
+ * Medido em `H-59`, com a Página Operacional: `lg:grid-cols-[1fr_20rem]`
  * estourava o documento entre 1024 px, onde `lg:` liga, e ~1240 px. `H-59`
  * estreitou a coluna de conteúdo em 216 px e levou o estouro até 1440 —
  * revelando o defeito em vez de criá-lo. Com `minmax(0,1fr)`, zero estouros em
@@ -615,7 +614,7 @@ describe('RNF-34 — nenhuma origem externa na interface', () => {
  * paleta de voltar, e a mecânica é a mesma: sem guarda, o próximo arquivo nasce
  * com `rounded-md` e `shadow-sm` porque era o que estava à mão — foi assim que
  * o conjunto chegou a **81 ocorrências de raio, 77 delas no mesmo valor**, e a
- * duas sombras, medido na revisão de estilo de 18/08/2026 (`D-48`).
+ * duas sombras, medido na revisão de estilo (`D-48`).
  *
  * **Ela entra aqui, e não em `H-61`, porque só aqui pode passar.** Escrita
  * naquela fatia, nascia vermelha: sobravam 47 `rounded`, 2 `rounded-sm` e 1
@@ -623,7 +622,7 @@ describe('RNF-34 — nenhuma origem externa na interface', () => {
  * vermelha é desligada, não obedecida.
  *
  * **O escopo é o utilitário, nunca a prosa.** O único `font-bold` do conjunto
- * em 01/09/2026 era um comentário de `H-58` afirmando que havia zero; contar
+ * em `H-63` era um comentário de `H-58` afirmando que havia zero; contar
  * prosa faria a guarda reprovar a própria documentação.
  */
 const EM_UTILITARIO = (nome: string) => new RegExp(`\\b${nome}`)
@@ -979,9 +978,9 @@ describe('C04 — o botão de ação primária tem uma forma só', () => {
   /**
    * Âncora: sem consumidores, a asserção acima passaria por vacuidade.
    *
-   * **Sete desde 16/09/2026** — `TeamMap` é o sétimo, e entra pelo mesmo motivo
+   * **Sete** — `TeamMap`, de `H-91`, é o sétimo, e entra pelo mesmo motivo
    * dos anteriores: atribuir um importador a um responsável é ação primária.
-   * `NewRowButton` foi o sexto, em 02/09/2026, e escrever a composição à mão foi
+   * `NewRowButton` foi o sexto, de `H-80`, e escrever a composição à mão foi
    * o que `ACHADO 4` encontrou divergindo em 3 de 5.
    *
    * **A contagem é fixa de propósito, e é o que torna a âncora uma âncora:** ela

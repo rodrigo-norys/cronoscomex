@@ -65,7 +65,7 @@ export function Clients({ queryString, dataVersion }: ClientsProps) {
         de nada.
 
         O que se perde e a vizinhanca: quem ve o ranking com a grafia da celula
-        deixa de ter a saida na mesma tela. Decisao do usuario, 18/09/2026.
+        deixa de ter a saida na mesma tela. Decisao do usuario (`H-103`).
       */}
       <Rankings queryString={queryString} dataVersion={dataVersion} />
     </div>
@@ -131,7 +131,7 @@ function Rankings({ queryString, dataVersion }: ClientsProps) {
     <div className="flex flex-col gap-4">
       {/*
         **O tamanho e escolhido aqui, e o numero da frase vem do SERVIDOR**
-        (21/09/2026). `meta.topN` ecoa o que a rota de fato aplicou: com a URL
+        (`H-106`). `meta.topN` ecoa o que a rota de fato aplicou: com a URL
         pedindo um valor fora da faixa, ela volta ao padrao de `app.json`, e a
         frase diria outro numero se fosse lida do seletor.
 
@@ -164,16 +164,16 @@ function Rankings({ queryString, dataVersion }: ClientsProps) {
       </div>
 
       {/*
-        **Pares, e nao tres colunas** (`D-37`, emendada em 09/09/2026). A primeira
+        **Pares, e nao tres colunas** (`D-37`, com a emenda dela). A primeira
         versao do arranjo pos os tres na mesma linha para nao deixar espaco
         vazio; o usuario preferiu o par — dois lado a lado, e o terceiro embaixo
         do primeiro, ocupando **uma** coluna. O espaco ao lado dele fica
         reservado no mesmo tamanho, para a quarta dimensao quando ela existir.
 
-        **Sem `items-start`, e a ausencia e deliberada.** Ele esteve aqui por
-        algumas horas em 09/09/2026, para "o card sozinho nao esticar" — efeito
-        que a classe NAO tem: `align-items` opera no eixo de bloco, e um item
-        sozinho na sua linha DEFINE a altura dela, entao `stretch` nele e no-op.
+        **Sem `items-start`, e a ausencia e deliberada** (`D-37`): "o card
+        sozinho nao esticar" e efeito que a classe NAO tem: `align-items` opera
+        no eixo de bloco, e um item sozinho na sua linha DEFINE a altura dela,
+        entao `stretch` nele e no-op.
         Medido nesta pagina, num Chrome real a 1920: com a classe, o par sai
         478/382; sem ela, 478/478, e Mercadorias fica em 440 nos dois casos. O
         unico efeito observavel era impedir o par de ficar uniforme.

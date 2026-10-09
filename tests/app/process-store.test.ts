@@ -701,8 +701,8 @@ describe('process-store — reconfiguracao do caminho (H-34)', () => {
     await reconfigureWorkbook(outra)
 
     expect(getState().state).toBe('pronto')
-    // 11 desde 02/09/2026: `cores.xlsx` ganhou a linha SEM preenchimento, que
-    // deixou de ser cor desconhecida e passou a ser linha em branco legitima.
+    // 11 (`D-25`): `cores.xlsx` tem a linha SEM preenchimento, que e linha em
+    // branco legitima, e nao cor desconhecida.
     expect(getState().rowsRead).toBe(11)
   })
 
@@ -922,7 +922,7 @@ describe('initStore — o mapa de equipe chega a composicao (H-50)', () => {
 })
 
 /**
- * `refreshClientMap` (02/09/2026): a coluna Cliente passou a escrever no
+ * `refreshClientMap` (`H-79`): a coluna Cliente passou a escrever no
  * `client-map.json`, e a tela precisa mostrar a consolidação nova sem reinício.
  */
 describe('process-store — troca do mapa de clientes', () => {
@@ -953,7 +953,7 @@ describe('process-store — troca do mapa de clientes', () => {
   })
 
   /**
-   * **O defeito medido em 02/09/2026, e a razão de não chamar `reload`.**
+   * **O defeito medido em `H-79`, e a razão de não chamar `reload`.**
    * `runReload` sai antes de recompor quando o hash do arquivo não mudou — a
    * otimização de `H-28` contra o "salvar sem editar" do OneDrive. Com ela no
    * caminho, a regra era gravada e a tela seguia mostrando o rótulo antigo.
@@ -980,7 +980,7 @@ describe('process-store — troca do mapa de clientes', () => {
 })
 
 /**
- * **A projeção não pode depender de já haver processo lido** (02/09/2026).
+ * **A projeção não pode depender de já haver processo lido** (`H-79`).
  *
  * O atalho por lista vazia valia enquanto a fila só ALTERAVA processo. Com a
  * linha nova, ele criava um estado em que a aplicação aceita a inserção (`201`),

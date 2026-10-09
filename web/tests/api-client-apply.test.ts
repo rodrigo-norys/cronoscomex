@@ -6,7 +6,7 @@ import { ApplyRefusedError, applyEdits } from '../src/api-client.ts'
  * recusa em `ApplyRefusal`, e nada afirmava que o `detail` atravessa.
  *
  * **O elo existe e ja se perdeu uma vez:** `TABELA_CHEIA` nao chegou a tela em
- * 02/09/2026 e caiu em `ERRO_INTERNO`. Com a rota e o dialogo testados nas duas
+ * `H-80` e caiu em `ERRO_INTERNO`. Com a rota e o dialogo testados nas duas
  * pontas, a traducao no meio passava verde mesmo desligada. Achado do
  * revisor-xml.
  *

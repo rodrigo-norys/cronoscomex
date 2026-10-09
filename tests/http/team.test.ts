@@ -328,8 +328,8 @@ describe('PUT /api/team/:key', () => {
 
   it('REPROJETA com a equipe nova, e nao so grava', async () => {
     // Sem isto a gravacao acontece e o campo Responsavel segue mostrando a
-    // atribuicao antiga ate o reinicio — o defeito que `H-91` mediu no mapa de
-    // clientes em 02/09/2026.
+    // atribuicao antiga ate o reinicio — o defeito que o mapa de clientes teve
+    // em `H-79`.
     comArquivo()
     // A assinatura e DECLARADA: sem ela `mock.calls` e uma tupla vazia, e o
     // `expect` sobre o primeiro argumento nao compila.
