@@ -201,6 +201,56 @@ describe('looseNumbers — o numero escrito fora de regiao', () => {
     ).toEqual(['1:sete passos', '2:18 épicos', '2:649 linhas'])
   })
 
+  it('aponta as outras formas de estado que o corpus usa, alem de "numero, unidade"', () => {
+    expect(
+      numbers('CLAUDE.md', [
+        '**113 das 114 histórias** estão concluídas',
+        '**Pendências abertas: 1**, e Total: **114**',
+        'Por custo: **baixo 19** · **médio 17**',
+        'são 27 `IND-NN` definidos',
+        'o verify encadeia os **8**, na ordem',
+        'React 19.2.8 e Tailwind CSS 4.3.3',
+        'Total: 114 — 113 concluídas, 1 aberta',
+        'com os 65',
+        'achados, e as sete',
+        'páginas do painel',
+      ]),
+    ).toEqual([
+      '1:113 histórias',
+      '1:114 histórias',
+      '2:1 Pendências',
+      '2:114 Total',
+      '3:19 custo',
+      '3:17 custo',
+      '4:27 IND-NN',
+      '5:8 …',
+      '6:19.2.8 React',
+      '6:4.3.3 Tailwind CSS',
+      '7:114 Total',
+      '7:113 concluídas',
+      '7:1 aberta',
+      '8:65 achados',
+      '9:sete páginas',
+    ])
+  })
+
+  it('nao aponta o que so parece estado: numero da palavra seguinte, versao maior, faixa, percentual', () => {
+    expect(
+      numbers('CLAUDE.md', [
+        'REGRA ANTI-PROLIFERAÇÃO: duas peças que compartilham gatilho',
+        'Faixa total: 28 a 66 sessões',
+        'só existe se as ondas 1 e 2 estiverem concluídas',
+        'React 19 com Tailwind v4',
+        'os épicos vão de `E1` a `E19`',
+        'acha cerca de 30% das divergências',
+        'a API atende em **5173**',
+        'termina em os 65',
+        '',
+        'achados',
+      ]),
+    ).toEqual([])
+  })
+
   it('nao aponta regiao, crase, titulo, data, medicao, limite de formato nem bloco cercado', () => {
     expect(
       numbers('CLAUDE.md', [

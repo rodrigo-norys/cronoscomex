@@ -338,7 +338,20 @@ const UNITS = [
   ...['contadores?', 'regiões', 'região', 'blocos?', 'asserções', 'commits?', 'PRs?', 'cores?'],
   ...['estados?', 'seções', 'seção', 'itens', 'item', 'células?', 'eixos?', 'baldes?', 'ondas?'],
   'categorias?',
+  // O marcador de familia, `IND-NN` ou `ADR-NNNN`, e a unidade de "os 27 `IND-NN`".
+  '[A-Z]+-N{2,4}',
 ]
+// O adjetivo de estado faz as vezes da unidade: "113 concluídas, 1 aberta".
+// biome-ignore lint/security/noSecrets: regex de palavra com e sem acento, nao credencial
+const STATES = ['Abert[ao]s?', 'Fechad[ao]s?', 'Conclu[ií]d[ao]s?', 'Ativ[ao]s?']
+// O rotulo antes de dois-pontos: "Abertas: 0", "Total: **114**".
+const LABELS = ['Total', ...STATES]
+// Quem tem versao exata na prosa; a regiao `versao[...]` le a do `package.json`.
+const VERSIONED = [
+  ...['Node(?:\\.js)?', 'npm', 'React', 'Vite', 'Vitest', 'TypeScript', 'Tailwind(?: CSS)?'],
+  ...['Recharts', 'Fastify', 'fflate', 'chokidar', 'Biome', 'jsdom', 'Testing Library'],
+]
+const CONNECTIVES = { partOf: 'de|das|dos', article: 'os|as', breakdown: 'Por' }
 const DATED = /\b\d{2}\/\d{2}(?:\/\d{4})?\b|\b[Mm]edid[oa]s?\b/
 const FORMAT_LIMIT = /(?:no máximo|no mínimo|até|máximo de|mínimo de|cada|por)\s*(?:\*\*)?$/i
 
@@ -361,6 +374,10 @@ export default {
   language: {
     numberWords: NUMBER_WORDS,
     units: UNITS,
+    states: STATES,
+    labels: LABELS,
+    versioned: VERSIONED,
+    connectives: CONNECTIVES,
     dated: DATED,
     formatLimit: FORMAT_LIMIT,
   },

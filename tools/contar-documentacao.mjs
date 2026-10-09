@@ -34,15 +34,17 @@ import config from './contar-documentacao.config.mjs'
  * conferencia reprova a linha de tabela solta depois de linha em branco, que o GitHub
  * mostra como texto, e o escopo com menos regioes e arquivos que o piso.
  *
- * `--nuas` aponta o numero com unidade escrito FORA de regiao — "sete passos", "18
- * epicos" — nas linhas que o diff contra a base acrescentou. So avisa, e nunca reprova:
+ * `--nuas` aponta o numero de estado escrito FORA de regiao — "sete passos", "18
+ * epicos", "Abertas: 0" — nas linhas que o diff contra a base acrescentou; as formas
+ * que reconhece estao em `LINE_FORMS`. So avisa, e nunca reprova:
  * medido em 06/10/2026, a varredura completa achou 260 numeros, e a classificacao a mao
  * deu ~47% de falso positivo mesmo depois das regras estruturais abaixo. No diff de
  * seis PRs recentes foram de 0 a 13 avisos, ~6 em 10 verdadeiros — e o #150 teria
  * apontado as copias de "114 historias" que o #153 precisou prender em regiao depois.
  * O que NAO e apontado, por estrutura, sem marcacao no documento: bloco cercado,
- * titulo, regiao, trecho entre crases, linha com data ou "medido", limite de formato
- * ("no maximo 3 linhas"), e o que a configuracao declara registro.
+ * titulo, regiao, trecho entre crases que nao e so a unidade, linha com data ou
+ * "medido", limite de formato ("no maximo 3 linhas"), e o que a configuracao declara
+ * registro.
  *
  * `--pares` lista, para cada ID cuja DEFINICAO o diff mudou — a linha de tabela que
  * abre com ele, ou o titulo `### H-NN` e `## Épico ENN` —, os outros blocos que o
@@ -518,20 +520,95 @@ const CLOSED_BLOCKS = config.record.closedBlocks
 const {
   numberWords: NUMBER_WORDS,
   units: UNITS,
+  states: STATES,
+  labels: LABELS,
+  versioned: VERSIONED,
+  connectives: CONNECTIVES,
   dated: DATED,
   formatLimit: FORMAT_LIMIT,
 } = config.language
-// O numero, no maximo uma palavra entre ele e a unidade — "649 linhas", "seis campos
-// novos", "18 **épicos**" —, e negrito em volta de qualquer parte.
-const LOOSE = new RegExp(
-  String.raw`(?<![\w.\-/:#°§])(\d{1,3}(?:\.\d{3})+|\d+|${NUMBER_WORDS.join('|')})(?:\*\*)?(?:\s+(?:\*\*)?[\wÀ-ú-]+(?:\*\*)?)?\s+(?:\*\*)?(${UNITS.join('|')})\b`,
-  'giu',
+const NUMBER = String.raw`\d{1,3}(?:\.\d{3})+|\d+|${NUMBER_WORDS.join('|')}`
+const UNIT = UNITS.join('|')
+const BOLD = String.raw`(?:\*\*)?`
+const WORD = String.raw`[\wÀ-ú-]+`
+const FREE = String.raw`(?<![\w.\-/:#°§])`
+const AFTER_NO_WORD = String.raw`(?<![\wÀ-ú])`
+const form = (source) => new RegExp(source, 'giud')
+/**
+ * As formas em que um numero de estado se escreve, cada uma com o grupo `number` e,
+ * quando a frase a diz, o `unit`. A gramatica e "numero, no maximo uma palavra,
+ * unidade"; as outras sao as que o teste de efetividade achou escapando dela, e ficaram
+ * so as que custam pouco falso positivo no `--nuas --tudo`.
+ */
+const LINE_FORMS = [
+  // "649 linhas", "seis campos novos", "18 **épicos**".
+  String.raw`${FREE}(?<number>${NUMBER})${BOLD}(?:\s+${BOLD}${WORD}${BOLD})?\s+${BOLD}(?<unit>${UNIT})\b`,
+  // "113 concluídas, 1 aberta": o estado faz as vezes da unidade, mas so colado ao numero —
+  // em "as ondas 1 e 2 estiverem concluídas" o numero e da onda.
+  String.raw`${FREE}(?<number>${NUMBER})${BOLD}\s+${BOLD}(?<unit>${STATES.join('|')})\b`,
+  // "113 das 114 histórias": o primeiro numero envelhece junto com o segundo.
+  String.raw`${FREE}(?<number>${NUMBER})${BOLD}\s+(?:${CONNECTIVES.partOf})\s+${BOLD}(?:${NUMBER})${BOLD}(?:\s+${BOLD}${WORD}${BOLD})?\s+${BOLD}(?<unit>${UNIT})\b`,
+  // "Pendências abertas: 1", "Abertas: 0", "Total: **114**" — e nao "REGRA X: duas peças",
+  // em que o numero e da palavra seguinte.
+  String.raw`${AFTER_NO_WORD}(?<unit>${UNIT}|${LABELS.join('|')})(?:\s+${WORD})?${BOLD}:${BOLD}\s*${BOLD}(?<number>${NUMBER})\b(?!${BOLD}\s+[\wÀ-ú])`,
+  // "encadeia os **8**": a unidade ficou na frase anterior, e o negrito marca a contagem.
+  String.raw`${AFTER_NO_WORD}(?:${CONNECTIVES.article})\s+\*\*(?<number>${NUMBER})\*\*(?!\s*${BOLD}(?:${WORD}\s+)?${BOLD}(?:${UNIT})\b)`,
+  // "Vite 8.2.0": a versao exata e estado (R2); a maior sozinha, "React 19", fica de fora.
+  String.raw`${AFTER_NO_WORD}(?<unit>${VERSIONED.join('|')})\s+v?(?<number>\d+\.\d+(?:\.\d+)?)\b`,
+].map(form)
+// "Por balde: **LOCAL 24** · **COMPOSICIONAL 11**": a unidade vem antes, e cada numero
+// fecha o negrito do proprio rotulo.
+const BREAKDOWN = new RegExp(`${AFTER_NO_WORD}(?:${CONNECTIVES.breakdown}) (${WORD}):`, 'iu')
+const BREAKDOWN_ITEM = form(String.raw`\*\*[^*]*?[\wÀ-ú]\s(?<number>${NUMBER})\*\*`)
+// "com os 65" no fim da linha e "achados" no comeco da seguinte, no mesmo paragrafo.
+const LINE_END = form(String.raw`${FREE}(?<number>${NUMBER})${BOLD}\s*$`)
+const NEXT_START = new RegExp(
+  String.raw`^\s*${BOLD}(?:${WORD}${BOLD}\s+)?${BOLD}(?<unit>${UNIT})\b`,
+  'iu',
 )
+const UNIT_ONLY = new RegExp(`^(?:${UNIT})$`, 'iu')
+
+/** A linha sem regiao e sem crase — menos a crase que e so a unidade: os 27 `IND-NN`. */
+const withoutCode = (line) =>
+  line
+    .replace(new RegExp(INLINE.source, 'g'), ' ')
+    .replace(/`([^`]*)`/g, (_, inner) => (UNIT_ONLY.test(inner.trim()) ? ` ${inner} ` : ' '))
+
+const matchesOf = (regex, text, offset = 0, unit) =>
+  [...text.matchAll(regex)].map((match) => ({
+    index: offset + match.indices.groups.number[0],
+    number: match.groups.number,
+    unit: unit ?? match.groups.unit ?? '…',
+  }))
+
+/** Os numeros de estado de uma linha limpa; `next` e a seguinte, quando continua o paragrafo. */
+function numbersIn(clean, next) {
+  const found = LINE_FORMS.flatMap((regex) => matchesOf(regex, clean))
+  const breakdown = BREAKDOWN.exec(clean)
+  if (breakdown)
+    found.push(
+      ...matchesOf(BREAKDOWN_ITEM, clean.slice(breakdown.index), breakdown.index, breakdown[1]),
+    )
+  const unit = next === undefined ? null : NEXT_START.exec(next)?.groups.unit
+  if (unit) found.push(...matchesOf(LINE_END, clean, 0, unit))
+  const seen = new Set()
+  return found
+    .filter(({ index }) => !seen.has(index) && seen.add(index))
+    .sort((a, b) => a.index - b.index)
+}
+
 /** Os numeros soltos de um arquivo; com `onlyLines`, so nas linhas (base 1) do conjunto. */
 export function looseNumbers(file, text, onlyLines) {
   if (RECORD_FILES.test(file)) return []
   const lines = text.split('\n').map((line) => line.replace(/\r$/, ''))
   const closed = file === CLOSED_BLOCKS.file ? CLOSED_BLOCKS.lines(lines) : new Set()
+  const excluded = (line, index) =>
+    /^#{1,6} /.test(line) || closed.has(index) || RECORD_LINE.test(line) || DATED.test(line)
+  const continues = (line, index) =>
+    line !== undefined &&
+    line.trim() !== '' &&
+    !/^\s*(?:\||[-*] |\d+\. |>|```|~~~)/.test(line) &&
+    !excluded(line, index)
   const found = []
   let fenced = false
   lines.forEach((raw, index) => {
@@ -540,12 +617,12 @@ export function looseNumbers(file, text, onlyLines) {
       return
     }
     if (fenced || (onlyLines && !onlyLines.has(index + 1))) return
-    if (/^#{1,6} /.test(raw) || closed.has(index) || RECORD_LINE.test(raw) || DATED.test(raw))
-      return
-    const clean = raw.replace(new RegExp(INLINE.source, 'g'), ' ').replace(/`[^`]*`/g, ' ')
-    for (const match of clean.matchAll(LOOSE)) {
-      if (FORMAT_LIMIT.test(clean.slice(Math.max(0, match.index - 25), match.index))) continue
-      found.push({ file, line: index + 1, number: match[1], unit: match[2], text: raw.trim() })
+    if (excluded(raw, index)) return
+    const clean = withoutCode(raw)
+    const next = continues(lines[index + 1], index + 1) ? withoutCode(lines[index + 1]) : undefined
+    for (const { index: at, number, unit } of numbersIn(clean, next)) {
+      if (FORMAT_LIMIT.test(clean.slice(Math.max(0, at - 25), at))) continue
+      found.push({ file, line: index + 1, number, unit, text: raw.trim() })
     }
   })
   return found
