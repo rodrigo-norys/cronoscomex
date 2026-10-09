@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  createSource,
-  inspect,
-  inspectStructure,
-  scanRegions,
-} from '../../tools/contar-documentacao.mjs'
+import { inspect, inspectStructure } from '../../tools/contar-documentacao.mjs'
 
 /**
  * As regiões de contagem de `docs/`, `README.md`, `CLAUDE.md` e `.claude/` contra a
@@ -20,22 +15,15 @@ import {
  * A região `confere` — a árvore de `04-arquitetura.md` — reprova aqui do mesmo jeito,
  * mas não se corrige pelo comando: é conteúdo escrito à mão.
  *
- * Os espelhos de estado — o mesmo ID com estado em dois documentos — também reprovam
- * aqui, e também se corrigem à mão: a declaração de cada um, com o piso de cada lado,
- * está em `tools/contar-documentacao.config.mjs`.
+ * Os espelhos de estado — o mesmo ID com estado em dois documentos — e a tabela solta
+ * depois de linha em branco também reprovam aqui, e também se corrigem à mão. A âncora
+ * contra guarda verde por vacuidade é o piso de cada guarda — regiões, arquivos e IDs de
+ * cada lado de espelho —, em `floors`, em `tools/contar-documentacao.config.mjs`.
  */
 
 const ROOT = process.cwd()
 
 describe('as regiões de contagem da documentação batem com a fonte', () => {
-  it('encontra as regiões — âncora contra guarda verde por vacuidade', () => {
-    // Medido em 01/10/2026 com `tools/contar-documentacao.mjs`: 63 regiões `conta` em
-    // 13 arquivos. O piso pega o marcador que parou de casar, não a variação normal.
-    const source = createSource(ROOT)
-    const regions = source.scope.flatMap((file) => scanRegions(source.read(file)).counts)
-    expect(regions.length).toBeGreaterThan(40)
-  })
-
   it('nenhuma região diverge da fonte, e nenhum marcador está quebrado', () => {
     const { divergences, errors } = inspect(ROOT)
 
@@ -50,8 +38,8 @@ describe('as regiões de contagem da documentação batem com a fonte', () => {
   })
 })
 
-describe('os espelhos de estado concordam nos dois lados', () => {
-  it('nenhum ID diverge, nenhum falta, e cada lado passa do piso', () => {
+describe('a estrutura da documentação: espelhos, tabelas e pisos', () => {
+  it('nenhum espelho diverge, nenhuma tabela fica solta, e cada guarda passa do piso', () => {
     expect(
       inspectStructure(ROOT).problems.map(
         ({ file, line, guard, message }) =>

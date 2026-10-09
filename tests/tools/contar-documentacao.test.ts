@@ -13,6 +13,7 @@ import {
   inspect,
   inspectStructure,
   looseNumbers,
+  looseTableRows,
   parseTree,
   rewrite,
   scanRegions,
@@ -592,9 +593,9 @@ describe('checkMirrors — o estado de um ID nos dois lados do espelho', () => {
     floors: {},
   })
   const problems = (name: string) =>
-    inspectStructure(root, only(name)).problems.map(
-      ({ file, line, message }) => `${file}:${line} ${message}`,
-    )
+    inspectStructure(root, only(name))
+      .problems.filter(({ guard }) => guard === `espelho:${name}`)
+      .map(({ file, line, message }) => `${file}:${line} ${message}`)
 
   it('historia: o estado do backlog e o da §4, nos dois sentidos, e a que falta de um lado', () => {
     write(
@@ -713,7 +714,9 @@ describe('checkMirrors — o estado de um ID nos dois lados do espelho', () => {
     track()
 
     const floors = { mirrors: { historias: { source: 3, copy: 3 } } }
-    const historias = inspectStructure(root, { ...only('historias'), floors }).problems
+    const historias = inspectStructure(root, { ...only('historias'), floors }).problems.filter(
+      ({ guard }) => guard === 'espelho:historias',
+    )
     expect(historias.map(({ file, line, message }) => `${file}:${line} ${message}`)).toEqual([
       'docs/06-backlog.md:0 leu 3 ID(s), e o piso e 3',
       'docs/09-rastreabilidade.md:4 H-01 repetido neste lado do espelho',
@@ -723,6 +726,44 @@ describe('checkMirrors — o estado de um ID nos dois lados do espelho', () => {
     ])
     expect(problems('pendencias')).toEqual([
       'docs/README.md:0 secao nao encontrada: /^## Pendências$/',
+    ])
+  })
+})
+
+describe('looseTableRows e os pisos — a estrutura de que a renderizacao depende', () => {
+  it('aponta a linha de tabela depois de linha em branco, e nao a tabela nova nem o exemplo', () => {
+    const text = [
+      '| D-43 | a |',
+      '',
+      '| D-44 | partida |',
+      '',
+      '| Nova | tabela |',
+      '|---|---|',
+      '| x | y |',
+      '',
+      '```',
+      '',
+      '| exemplo | cercado |',
+      '```',
+    ].join('\n')
+    expect(looseTableRows(text)).toEqual([3])
+  })
+
+  it('reprova a tabela solta no escopo, e o escopo que nao passa do piso de regioes e de arquivos', () => {
+    write(
+      'README.md',
+      'tem <!-- conta:adrs -->2<!-- /conta --> ADRs\n\n| a |\n|---|\n\n| solta |\n',
+    )
+    track()
+
+    expect(
+      inspectStructure(root, { mirrors: [], floors: { regions: 1, tables: 4 } }).problems.map(
+        ({ file, line, guard, message }) => `${file}:${line} ${guard} ${message}`,
+      ),
+    ).toEqual([
+      'README.md:6 tabela linha de tabela solta depois de linha em branco: o GitHub a mostra como texto',
+      'escopo:0 piso examinou 1 regiao(oes) conta, e o piso e 1',
+      'escopo:0 piso examinou 4 arquivo(s) em busca de tabela solta, e o piso e 4',
     ])
   })
 })

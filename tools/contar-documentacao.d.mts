@@ -68,6 +68,8 @@ export interface Mirror {
 }
 
 export interface Floors {
+  regions?: number
+  tables?: number
   mirrors?: Record<string, { source?: number; copy?: number }>
 }
 
@@ -85,6 +87,8 @@ export function checkMirrors(
   mirrors: Mirror[],
   floors?: Floors['mirrors'],
 ): Problem[]
+
+export function looseTableRows(text: string): number[]
 
 export function inspectStructure(
   root: string,

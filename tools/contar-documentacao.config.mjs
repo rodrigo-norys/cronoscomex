@@ -1,7 +1,7 @@
 /**
  * O que e do CronosComex em `tools/contar-documentacao.mjs`: o escopo, os contadores das
  * regioes `conta`, a estrutura que marca registro, as familias de ID e os espelhos de
- * estado entre documentos, o piso de cada espelho, e a lingua em que os numeros sao escritos. O nucleo
+ * estado entre documentos, o piso de cada guarda, e a lingua em que os numeros sao escritos. O nucleo
  * nao sabe nada do projeto; quem adota o mecanismo troca este arquivo e leva o nucleo
  * como esta.
  *
@@ -297,12 +297,15 @@ const MIRRORS = [
 ]
 
 /**
- * O minimo que cada guarda tem de examinar — o numero tem de passar do piso. Pega o
- * padrao que parou de casar e deixaria a guarda verde por vacuidade, nao a variacao
- * normal. O lado que pode estar vazio, como as pendencias abertas do `CLAUDE.md`, nao
- * tem piso.
+ * O minimo que cada guarda tem de examinar — o numero tem de passar do piso: as regioes
+ * `conta` do escopo, os arquivos em que a tabela solta e procurada, e os IDs de cada lado
+ * de cada espelho. Pega o padrao que parou de casar e deixaria a guarda verde por
+ * vacuidade, nao a variacao normal. O lado que pode estar vazio, como as pendencias
+ * abertas do `CLAUDE.md`, nao tem piso.
  */
 const FLOORS = {
+  regions: 40,
+  tables: 30,
   mirrors: {
     historias: { source: 30, copy: 30 },
     requisitos: { source: 30, copy: 15 },

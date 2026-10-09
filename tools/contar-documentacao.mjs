@@ -30,7 +30,9 @@ import config from './contar-documentacao.config.mjs'
  * Espelho de estado e o mesmo ID com estado em dois documentos, declarado na
  * configuracao com o lado-fonte e o lado-copia. A conferencia reprova o ID cujo estado
  * difere, o que falta de um lado sem significado declarado, e o lado que nao passa do
- * piso: o padrao que parou de casar deixaria a guarda verde por vacuidade.
+ * piso: o padrao que parou de casar deixaria a guarda verde por vacuidade. A mesma
+ * conferencia reprova a linha de tabela solta depois de linha em branco, que o GitHub
+ * mostra como texto, e o escopo com menos regioes e arquivos que o piso.
  *
  * `--nuas` aponta o numero com unidade escrito FORA de regiao — "sete passos", "18
  * epicos" — nas linhas que o diff contra a base acrescentou. So avisa, e nunca reprova:
@@ -65,7 +67,7 @@ import config from './contar-documentacao.config.mjs'
  * planilha — um terco das afirmacoes nao tem data, e o gatilho real e a aba `2027`.
  *
  * Uso, a partir da raiz do projeto:
- *   node tools/contar-documentacao.mjs                   confere regioes e espelhos; 1 se divergir
+ *   node tools/contar-documentacao.mjs                   confere regioes, espelhos e tabelas
  *   node tools/contar-documentacao.mjs --write           reescreve as regioes `conta`
  *   node tools/contar-documentacao.mjs --nuas            avisa no diff contra a `main`
  *   node tools/contar-documentacao.mjs --nuas --base X   avisa no diff contra `X`
@@ -437,13 +439,58 @@ export function checkMirrors(source, mirrors, floors = {}) {
   return problems
 }
 
-/** As guardas de estrutura, alem das regioes: espelho de estado, com o piso de cada lado. */
+/**
+ * Linha em branco dentro de tabela encerra a tabela, e o que vem depois sai como texto
+ * corrido — no GitHub e no preview: a tabela de decisoes quebrava na `D-44`, e a de
+ * achados no `A-56`. Fora de bloco cercado, linha que abre com `|` logo depois de linha
+ * em branco so pode ser o cabecalho de uma tabela nova, seguido do delimitador.
+ */
+export function looseTableRows(text) {
+  const lines = linesOf(text)
+  let fenced = false
+  return lines.flatMap((line, index) => {
+    if (FENCE.test(line)) {
+      fenced = !fenced
+      return []
+    }
+    const afterBlank = index > 0 && lines[index - 1].trim() === ''
+    const opensTable = /^\|\s*:?-/.test(lines[index + 1] ?? '')
+    return !fenced && line.startsWith('|') && afterBlank && !opensTable ? [index + 1] : []
+  })
+}
+
+/**
+ * As guardas de estrutura, alem do valor das regioes: espelho de estado, tabela solta, e o
+ * piso de cada uma — quantas regioes, quantos arquivos e quantos IDs ela tem de examinar.
+ */
 export function inspectStructure(
   root,
   { mirrors = config.ids.mirrors, floors = config.floors } = {},
 ) {
   const source = createSource(root)
-  return { problems: checkMirrors(source, mirrors, floors.mirrors) }
+  const problems = checkMirrors(source, mirrors, floors.mirrors)
+  for (const file of source.scope)
+    for (const line of looseTableRows(source.read(file)))
+      problems.push({
+        file,
+        line,
+        guard: 'tabela',
+        message: 'linha de tabela solta depois de linha em branco: o GitHub a mostra como texto',
+      })
+  const examined = [
+    ['regions', source.scope.flatMap((file) => scanRegions(source.read(file)).counts).length],
+    ['tables', source.scope.length],
+  ]
+  const what = { regions: 'regiao(oes) conta', tables: 'arquivo(s) em busca de tabela solta' }
+  for (const [key, count] of examined)
+    if (floors[key] !== undefined && count <= floors[key])
+      problems.push({
+        file: 'escopo',
+        line: 0,
+        guard: 'piso',
+        message: `examinou ${count} ${what[key]}, e o piso e ${floors[key]}`,
+      })
+  return { problems }
 }
 
 const RECORD_FILES = config.record.files
