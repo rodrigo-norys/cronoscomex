@@ -221,7 +221,7 @@ describe('GET /* — sem o build (caso-limite de H-30)', () => {
     // ao `ready`. Escrever o arquivo antes disso deixaria o teste passar contra
     // a implementacao antiga tambem — o glob do plugin ainda nao teria rodado,
     // e o cenario medido (servidor NO AR quando o build acontece) nao seria
-    // exercido. Reproduzido em 21/08/2026, ao corrigir o proprio teste.
+    // exercido. Reproduzido ao corrigir o proprio teste (`H-42`).
     await app.inject({ method: 'GET', url: '/assets/index-abc123.js' })
 
     writeFileSync(join(root, 'assets', 'index-def456.js'), 'export const painel = 2\n', 'utf-8')

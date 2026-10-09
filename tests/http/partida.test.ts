@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest'
 /**
  * A guarda do disparo de `main()` em `src/http/server.ts`.
  *
- * Existe por um defeito que sobreviveu de `H-30` a 19/08/2026 e so aparece em
+ * Existe por um defeito que sobreviveu de `H-30` a `H-35` e so aparece em
  * Windows — o unico ambiente que nenhum teste alcanca, e o unico onde a
  * aplicacao roda de verdade. A condicao era
  * `import.meta.url === \`file://${process.argv[1]}\``, que funciona em Linux por
@@ -20,7 +20,7 @@ import { describe, expect, it } from 'vitest'
  * inteira de teste na maquina do operador (PD-06).
  *
  * A assercao e sobre o CODIGO porque o comportamento nao e testavel daqui: subir
- * o servidor de verdade tocaria `config/app.json` e `data/` reais (regra
+ * o servidor de verdade tocaria o `app.json` e `data/` reais (regra
  * inviolavel 7), e nenhum runner deste projeto executa em Windows.
  */
 const SERVER = readFileSync('src/http/server.ts', 'utf-8')

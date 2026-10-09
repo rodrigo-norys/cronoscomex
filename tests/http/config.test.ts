@@ -8,7 +8,7 @@ import type { StoreAccess, StoreState } from '../../src/app/process-store.ts'
 import { buildServer } from '../../src/http/server.ts'
 
 /**
- * H-34. Nenhum teste toca `config/app.json` real nem a planilha real: o caminho
+ * H-34. Nenhum teste toca o `app.json` real nem a planilha real: o caminho
  * do arquivo de configuracao e injetado, e a planilha e um temporario.
  */
 

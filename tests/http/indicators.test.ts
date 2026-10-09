@@ -948,9 +948,9 @@ describe('GET /api/indicators — periodo declarado (H-52)', () => {
 })
 
 /**
- * O `topN` escolhido pelo operador (21/09/2026).
+ * O `topN` escolhido pelo operador (`H-106`).
  *
- * Ate aqui o numero vinha so de `config/app.json`. Ele passou a ser o PADRAO: a
+ * Ate aqui o numero vinha so do `app.json`. Ele passou a ser o PADRAO: a
  * query manda, e o que a rota aplicou volta em `meta.topN` — a tela escreve a
  * frase com o eco, e nao com o que pediu.
  */

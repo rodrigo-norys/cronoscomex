@@ -134,7 +134,7 @@ export function registerProcessColorRoute(
     }
 
     /*
-      **Linha ainda nao gravada nao recebe cor** (02/09/2026). Ela aparece em
+      **Linha ainda nao gravada nao recebe cor** (`H-79`). Ela aparece em
       `state.processes` pela projecao, entao a rota a encontra — mas o
       `write-guard` resolve o alvo da repintura pela REF no ARQUIVO, e ali ela
       nao esta: a edicao voltaria com `refMissing`, recusando a fila INTEIRA e

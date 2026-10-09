@@ -26,7 +26,7 @@ import { apiError, queueBlockedError } from '../errors.ts'
 
 /**
  * As CINCO rotas de edicao — contrato em `docs/05-contratos-api.md §3`. A quinta
- * e `POST /api/edits/row`, de 02/09/2026.
+ * e `POST /api/edits/row`, de `H-79`.
  *
  * **Nenhuma toca o `.xlsx`.** Elas registram intencao numa fila em disco; a
  * escrita e de `H-24` a `H-26`, atras das defesas de `write-guard`.
@@ -70,7 +70,7 @@ interface EditRequestBody {
  * resolve tentando de novo — em vez de perder o que digitou.
  *
  * Exportada porque `PATCH /api/processes/:ref/color` (`H-27`) tambem escreve na
- * fila, e desde 02/09/2026 sao CINCO as rotas que escrevem: uma segunda copia da
+ * fila, e sao CINCO as rotas que escrevem (`H-79`): uma segunda copia da
  * regra divergiria da primeira.
  */
 export function refuseDuringWrite(store: StoreAccess, reply: FastifyReply): boolean {
@@ -241,7 +241,7 @@ export function registerEditsRoutes(
   })
 
   /**
-   * `POST /api/edits/row` — a linha NOVA (02/09/2026).
+   * `POST /api/edits/row` — a linha NOVA (`H-79`).
    *
    * **Enfileira, e nao grava.** A linha aparece na tabela pela projecao e vai
    * para a planilha no `Aplicar alteracoes`, com as mesmas defesas das demais
