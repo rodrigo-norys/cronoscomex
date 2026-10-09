@@ -38,6 +38,9 @@ export const COUNTERS: {
 }
 
 declare const config: {
+  base: string
+  counters: Record<string, Counter>
+  language: { locale: string; treeFiles: string }
   ids: { mirrors: Mirror[] }
   floors: Floors
 }

@@ -4,8 +4,10 @@ import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import config, { COUNTERS } from '../../tools/contar-documentacao.config.mjs'
+import type { MirrorSide } from '../../tools/contar-documentacao.mjs'
 import {
   blocks,
+  checkMirrors,
   createSource,
   findDefinitions,
   findLooseNumbers,
@@ -1039,6 +1041,40 @@ describe('checkMirrors — o estado de um ID nos dois lados do espelho', () => {
       'docs/README.md:0 secao nao encontrada: /^## Pendências$/',
     ])
   })
+
+  it('`cell` le o ID de outra celula, e `merge` junta o estado do ID em mais linhas', () => {
+    write(
+      'docs/matriz.md',
+      [
+        '| RF-01 | H-01 | ✅ |',
+        '| RF-02 | H-01, H-02 | — |',
+        '| RF-03 | H-02 | ✅ |',
+        '| RF-04 | H-33 | ✅ |',
+      ].join('\n'),
+    )
+    track()
+    const copy: MirrorSide = {
+      file: 'docs/matriz.md',
+      entries: 'rows',
+      cell: 1,
+      state: (row) => (row.includes('✅') ? 'fechada' : 'aberta'),
+    }
+    const problemsWith = (side: MirrorSide) =>
+      checkMirrors(
+        createSource(root),
+        only('historias').mirrors.map((mirror) => ({ ...mirror, copy: side })),
+      ).map(({ file, line, message }) => `${file}:${line} ${message}`)
+
+    expect(
+      problemsWith({ ...copy, merge: (state, other) => (state === 'fechada' ? state : other) }),
+    ).toEqual([
+      'docs/matriz.md:3 H-02: docs/matriz.md:3 diz "fechada"; docs/06-backlog.md:9 diz "aberta"',
+    ])
+    expect(problemsWith(copy)).toEqual([
+      'docs/matriz.md:2 H-01 repetido neste lado do espelho',
+      'docs/matriz.md:3 H-02 repetido neste lado do espelho',
+    ])
+  })
 })
 
 describe('looseTableRows e os pisos — a estrutura de que a renderizacao depende', () => {
@@ -1125,5 +1161,67 @@ describe('looseTableRows e os pisos — a estrutura de que a renderizacao depend
       'confere:links:0 piso achou 0 regiao(oes) fora de bloco cercado; precisa passar de 0 (.claude/rules/documentacao.md, R5)',
       'conta:rules:0 piso achou 0 regiao(oes) fora de bloco cercado; precisa passar de 0 (.claude/rules/documentacao.md, R5)',
     ])
+  })
+})
+
+describe('o que a configuracao troca no nucleo — formato do numero, anotacao e base', () => {
+  const saved = { base: config.base, ...config.language }
+  afterEach(() => {
+    config.base = saved.base
+    config.language.locale = saved.locale
+    config.language.treeFiles = saved.treeFiles
+    Reflect.deleteProperty(config.counters, 'milhar')
+  })
+
+  it('o numero sai no formato de `language.locale`', () => {
+    config.counters.milhar = () => 1234
+    write('README.md', 'sao <!-- conta:milhar -->1.234<!-- /conta --> linhas\n')
+    track()
+    expect(inspect(root).divergences).toEqual([])
+
+    config.language.locale = 'en-US'
+    expect(inspect(root).divergences.map(({ actual }) => actual)).toEqual(['1,234'])
+  })
+
+  it('a anotacao da arvore e a palavra de `language.treeFiles`', () => {
+    write('src/domain/a.ts', '')
+    write(
+      'docs/04-arquitetura.md',
+      [
+        '<!-- confere:arvore[src/domain] -->',
+        '├─ src/',
+        '│  └─ domain/    # 1 file',
+        '<!-- /confere -->',
+      ].join('\n'),
+    )
+    track()
+    const problems = () => inspect(root).divergences.map(({ actual }) => actual)
+    expect(problems()).toEqual(['src/domain: a arvore nao lista nem anota este diretorio'])
+
+    config.language.treeFiles = 'files?'
+    expect(problems()).toEqual([])
+  })
+
+  it('sem `base` na chamada, o `--nuas` e o `--pares` comparam contra a `base` da configuracao', () => {
+    const git = (...args: string[]) =>
+      execFileSync('git', ['-c', 'user.name=t', '-c', 'user.email=t@t', ...args], { cwd: root })
+    git('symbolic-ref', 'HEAD', 'refs/heads/topico')
+    write('CLAUDE.md', 'antes havia sete passos\n\nA H-02 segue aberta.\n')
+    track()
+    git('commit', '-qm', 'base')
+    git('branch', 'tronco')
+    write('CLAUDE.md', 'antes havia sete passos\nagora sao 18 épicos\n\nA H-02 segue aberta.\n')
+    write(
+      'docs/06-backlog.md',
+      BACKLOG.replace('### H-02 — Segunda', '### H-02 — Segunda, renomeada'),
+    )
+    config.base = 'tronco'
+
+    expect(
+      findLooseNumbers(root).map(({ file, line, number }) => `${file}:${line}:${number}`),
+    ).toEqual(['CLAUDE.md:2:18'])
+    expect(
+      findPairs(root).map(({ key, citedBy }) => [key, citedBy.map(({ line }) => line)]),
+    ).toEqual([['H-02', [4]]])
   })
 })

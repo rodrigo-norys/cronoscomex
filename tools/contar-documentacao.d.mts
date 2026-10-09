@@ -58,6 +58,8 @@ export interface MirrorSide {
   entries: 'headings' | 'rows'
   state: (text: string) => string
   absent?: string
+  cell?: number
+  merge?: (state: string, other: string) => string
 }
 
 export interface Mirror {

@@ -5,25 +5,27 @@ import { fileURLToPath, pathToFileURL } from 'node:url'
 import config from './contar-documentacao.config.mjs'
 
 /**
- * Prende os numeros de estado atual da documentacao a fonte deles.
+ * contrato de documentacao — versao 1
  *
- * Existe pelo levantamento de 01/10/2026: das 41 ocorrencias de estado atual que
- * citam uma contagem sobre o repositorio, seis estavam velhas — `09-rastreabilidade.md`
- * dizia 96 historias com 114 no backlog, o `README.md` dizia seis ADRs com sete em
- * `docs/adr/`, e duas pecas diziam "sete passos" com oito em `scripts.verify`. So o
- * total de historias tinha guarda, e por regex sobre uma forma de frase.
+ * Prende os numeros de estado atual da documentacao a fonte deles, e confere o estado que
+ * um documento repete de outro. Numero escrito a mao envelhece sem que nada falhe: aqui
+ * ele vive numa regiao que a ferramenta calcula, e a copia de estado vive num espelho que
+ * a ferramenta confere.
  *
- * Este arquivo e o mecanismo; o que e do projeto esta em `contar-documentacao.config.mjs`,
- * e o cabecalho dela diz o que entra la.
+ * Este arquivo e o mecanismo, e nao sabe nada do projeto. O que e do projeto — escopo,
+ * base dos avisos, contadores, registro, familias de ID, espelhos, lingua e pisos — esta em
+ * `contar-documentacao.config.mjs`, e o cabecalho dela diz o que entra la. A regra que as
+ * reprovacoes citam e a `rule` da configuracao.
  *
  * Dois tipos de regiao:
  * - `conta`, numa linha so, entre `<!-- conta:NOME -->` e `<!-- /conta -->`: o valor
- *   entre os marcadores pertence a ferramenta, e `--write` o reescreve.
- * - `confere`, com os dois marcadores sozinhos na linha, em volta de conteudo escrito
- *   a mao — a arvore de `04-arquitetura.md` traz anotacao `# H-49` ao lado do arquivo
- *   e se perderia regenerada, e o indice de ADRs do `docs/README.md`, a decisao de cada
- *   uma. A ferramenta so aponta a divergencia, e a `confere` que nao examina nenhum
- *   arquivo e erro, e nao verde por vacuidade.
+ *   entre os marcadores pertence a ferramenta, e `--write` o reescreve. Em
+ *   `conta:NOME[argumento]`, o argumento vai para o contador como texto.
+ * - `confere`, com os dois marcadores sozinhos na linha, em volta de conteudo escrito a
+ *   mao que se perderia regenerado — a arvore com anotacao ao lado do arquivo, o indice
+ *   com a decisao de cada item. A ferramenta so aponta a divergencia: `arvore[dir ...]`
+ *   confere a arvore desenhada contra o `git`, e `links[dir ...]`, os links do trecho. A
+ *   `confere` que nao examina nenhum arquivo e erro, e nao verde por vacuidade.
  *
  * `conta` em inicio de linha e erro: o CommonMark abre ali um bloco HTML, e o resto
  * da linha deixa de ser markdown. Marcador dentro de bloco cercado ou entre crases e
@@ -37,51 +39,40 @@ import config from './contar-documentacao.config.mjs'
  * mostra como texto, e o escopo com menos regioes, arquivos ou regioes de um nome que o
  * piso.
  *
- * `--nuas` aponta o numero de estado escrito FORA de regiao — "sete passos", "18
- * epicos", "Abertas: 0" — nas linhas que o diff contra a base acrescentou; as formas
- * que reconhece estao em `LINE_FORMS`. A linha cuja unica mudanca e o valor de uma
- * regiao nao conta como acrescentada: quem a tocou foi o `--write`, e o registro ao
- * lado da regiao virava aviso sem ninguem o ter editado. So avisa, e nunca reprova:
- * medido em 06/10/2026, a varredura completa achou 260 numeros, e a classificacao a mao
- * deu ~47% de falso positivo mesmo depois das regras estruturais abaixo. No diff de
- * seis PRs recentes foram de 0 a 13 avisos, ~6 em 10 verdadeiros — e o #150 teria
- * apontado as copias de "114 historias" que o #153 precisou prender em regiao depois.
- * O que NAO e apontado, por estrutura, sem marcacao no documento: bloco cercado,
- * titulo, regiao, trecho entre crases que nao e so a unidade, linha com data ou
- * "medido", limite de formato ("no maximo 3 linhas"), e o que a configuracao declara
- * registro.
+ * `--nuas` aponta o numero de estado escrito FORA de regiao nas linhas que o diff contra a
+ * base acrescentou; as formas que reconhece estao em `LINE_FORMS`, e o vocabulario, na
+ * configuracao. A linha cuja unica mudanca e o valor de uma regiao nao conta como
+ * acrescentada: quem a tocou foi o `--write`, e o registro ao lado da regiao virava aviso
+ * sem ninguem o ter editado. So avisa, e nunca reprova: na varredura inteira ele acha
+ * tambem registro e especificacao, e so quem le os separa. O que NAO e apontado, por
+ * estrutura, sem marcacao no documento: bloco cercado, titulo, regiao, trecho entre
+ * crases que nao e so a unidade, linha com data ou "medido", limite de formato ("no
+ * maximo 3 linhas"), e o que a configuracao declara registro.
  *
- * `--pares` lista, para cada ID cuja DEFINICAO o diff mudou — a linha de tabela que
- * abre com ele, ou o titulo `### H-NN` e `## Épico ENN` —, os outros blocos que o
- * citam: e neles que o fato que acabou de mudar pode ter ficado para tras. Historia
- * fechada no diff e chave, e traz junto o epico dela. So avisa. Medido sobre os 68 PRs
- * de #100 a #168: a lista tem mediana de 5 blocos e p90 de 30, e 30 PRs nao geram lista; em cinco
- * PRs de origem, achou 22 dos 24 lugares que de fato envelheceram — os aposentados de
- * `D-49` vivos na `02` e na §3 da `09`, e o estado dos epicos copiado no `07`. Tomar a
- * chave de todo bloco alterado achava os 24, com lista mediana de 138. Nao sao alvo: o
- * proprio diff, o bloco cercado, que e exemplo, o titulo que define a chave, e o
- * registro. O valor de regiao que o `--write` reescreveu nao entra no diff: o paragrafo
- * em volta segue alvo, porque ninguem o leu. O que NAO alcanca: fato sem ID — a
- * contagem fica com o `--nuas`, o resto com a revisao —, a lista que devia ganhar um
- * item novo, e o codigo.
+ * `--pares` lista, para cada ID cuja DEFINICAO o diff mudou — a linha de tabela que abre
+ * com ele, ou o titulo —, os outros blocos que o citam: e neles que o fato que acabou de
+ * mudar pode ter ficado para tras. O item que o diff fechou e chave, e traz junto o
+ * agrupador dele (`ids.closedStory`, na configuracao). So avisa. Nao sao alvo: o proprio
+ * diff, o bloco cercado, que e exemplo, o titulo que define a chave, e o registro. O valor
+ * de regiao que o `--write` reescreveu nao entra no diff: o paragrafo em volta segue
+ * alvo, porque ninguem o leu.
  *
- * `--definicoes` conta, para cada ID citado no escopo, os lugares que o definem — a
- * linha de tabela que abre com ele, ou o titulo de nivel 1 a 4 —, e lista o ID sem
- * definicao e o definido em mais de um lugar, menos os dois lados de um espelho. So
- * relata. Citacao entre crases so vale quando a crase e o proprio ID: `D0 CF 11 E0` sao
- * bytes, e `~$E30.xlsx` e um arquivo.
+ * `--definicoes` conta, para cada ID citado no escopo, os lugares que o definem — a linha
+ * de tabela que abre com ele, ou o titulo de nivel 1 a 4 —, e lista o ID sem definicao e
+ * o definido em mais de um lugar, menos os dois lados de um espelho. So relata. Citacao
+ * entre crases so vale quando a crase e o proprio ID.
  *
- * O que NAO faz: reescrever regiao `confere`; contar sobre codigo de `web/src/` — as
- * duas ficaram fora por decisao de 01/10/2026; avisar pela idade de uma medicao da
- * planilha — um terco das afirmacoes nao tem data, e o gatilho real e a aba `2027`.
+ * O que NAO faz: reescrever regiao `confere`; contar sobre codigo ou tela; conferir dado
+ * de fora do repositorio; avisar pela idade de uma medicao; achar o fato sem ID e sem
+ * numero, e a lista que devia ganhar um item e nao ganhou.
  *
- * Uso, a partir da raiz do projeto:
- *   node tools/contar-documentacao.mjs                   confere regioes, espelhos e tabelas
+ * O arquivo mora em `tools/`, e a raiz do projeto e o diretorio acima. Uso, da raiz:
+ *   node tools/contar-documentacao.mjs                   confere regioes, espelhos e tabelas; sai 1
  *   node tools/contar-documentacao.mjs --write           reescreve as regioes `conta`
- *   node tools/contar-documentacao.mjs --nuas            avisa no diff contra a `main`
+ *   node tools/contar-documentacao.mjs --nuas            avisa no diff contra a `base`
  *   node tools/contar-documentacao.mjs --nuas --base X   avisa no diff contra `X`
  *   node tools/contar-documentacao.mjs --nuas --tudo     avisa nos documentos inteiros
- *   node tools/contar-documentacao.mjs --pares           pares no diff contra a `main`
+ *   node tools/contar-documentacao.mjs --pares           pares no diff contra a `base`
  *   node tools/contar-documentacao.mjs --pares --base X  pares no diff contra `X`
  *   node tools/contar-documentacao.mjs --definicoes      onde cada ID citado e definido
  */
@@ -111,7 +102,8 @@ export const CHECKS = {
   links: checkLinks,
 }
 
-const formatValue = (value) => (typeof value === 'number' ? value.toLocaleString('pt-BR') : value)
+const formatValue = (value) =>
+  typeof value === 'number' ? value.toLocaleString(config.language.locale) : value
 
 /** `nome` ou `nome[argumento]` — o argumento vai para o contador como texto. */
 function parseName(raw) {
@@ -133,9 +125,9 @@ const insideInlineCode = (line, index) => (line.slice(0, index).match(/`/g) ?? [
  * linha (base 1), e os erros de estrutura — o que impede saber o que a regiao diz.
  */
 export function scanRegions(text) {
-  // Arquivo em CRLF deixa um `\r` final que quebrava o `$` dos marcadores de bloco: o
-  // `verify-windows` do PR #153 reprovou assim a arvore de `04-arquitetura.md`, antes de o
-  // `.gitattributes` fixar LF no checkout. A tolerancia fica para CRLF vindo de editor.
+  // Arquivo em CRLF deixa um `\r` final que quebra o `$` dos marcadores de bloco: o
+  // checkout no Windows sem `.gitattributes` que fixe LF reprovava a `confere`, e o editor
+  // ainda pode gravar CRLF.
   const lines = text.split('\n').map((line) => line.replace(/\r$/, ''))
   const counts = []
   const checks = []
@@ -221,8 +213,8 @@ export function parseTree(lines) {
 /**
  * Os diretorios do argumento de uma `confere`, cada um com arquivo no `git`. Sem
  * diretorio, ou com um que nao resolve, a conferencia nao examinaria nada e passaria
- * verde por vacuidade: `links[docs/adrs]` comparava o indice vazio com o diretorio vazio, e
- * conferia (R5 de `D-76`).
+ * verde por vacuidade: o diretorio com o nome errado comparava o indice vazio com o
+ * diretorio vazio, e conferia.
  */
 function requestedDirs(source, arg) {
   const vacuous = `a confere nao examinaria nada (${config.rule}, R5)`
@@ -247,7 +239,9 @@ function checkTree(source, arg, body) {
       .filter((entry) => dirname(entry.path) === dir && !entry.path.endsWith('/'))
       .map((entry) => basename(entry.path))
     const node = entries.find((entry) => entry.path === `${dir}/`)
-    const annotated = /^(\d+) arquivos/.exec(node?.annotation ?? '')
+    const annotated = new RegExp(String.raw`^(\d+) (?:${config.language.treeFiles})`).exec(
+      node?.annotation ?? '',
+    )
     if (listed.length > 0) {
       const missing = actual.filter((name) => !listed.includes(name))
       const extra = listed.filter((name) => !actual.includes(name))
@@ -395,7 +389,12 @@ function sectionSpan(lines, levels, heading) {
 
 const linesOf = (text) => text.split('\n').map((line) => line.replace(/\r$/, ''))
 
-/** Um lado do espelho: cada ID com a linha (base 1) e o estado, e o ID repetido a parte. */
+/**
+ * Um lado do espelho: cada ID com a linha (base 1) e o estado, e o ID repetido a parte. Em
+ * tabela, o ID vem da celula `cell`, contada a partir de zero, e sem ela da primeira. O ID
+ * em mais de uma linha e repetido, menos quando o lado declara `merge(estado, outro)`, que
+ * junta os estados: a matriz que cita a mesma tarefa em dois requisitos.
+ */
 function readMirrorSide(source, family, side) {
   if (!source.tracked.includes(side.file)) return { error: 'arquivo fora do git' }
   const lines = linesOf(source.read(side.file))
@@ -405,9 +404,15 @@ function readMirrorSide(source, family, side) {
   const heading = new RegExp(String.raw`^#{1,6} (${family})\b`)
   const entries = new Map()
   const repeated = []
+  // Com `merge`, a linha que fica e a que decidiu o estado: e ela que a reprovacao aponta.
   const add = (id, index, text) => {
-    if (entries.has(id)) repeated.push({ id, line: index + 1 })
-    else entries.set(id, { line: index + 1, state: side.state(text) })
+    const known = entries.get(id)
+    if (!known) entries.set(id, { line: index + 1, state: side.state(text) })
+    else if (!side.merge) repeated.push({ id, line: index + 1 })
+    else {
+      const state = side.merge(known.state, side.state(text))
+      if (state !== known.state) entries.set(id, { line: index + 1, state })
+    }
   }
   let fenced = false
   for (let index = span.start; index < span.end; index++) {
@@ -422,15 +427,16 @@ function readMirrorSide(source, family, side) {
       const end = Math.min(sectionEnd(levels, index), span.end)
       if (id) add(id, index, lines.slice(index, end).join('\n'))
     } else if (line.startsWith('|')) {
-      for (const id of cellIds(line.split('|')[1] ?? '', family)) add(id, index, line)
+      for (const id of cellIds(line.split('|')[(side.cell ?? 0) + 1] ?? '', family))
+        add(id, index, line)
     }
   }
   return { entries, repeated }
 }
 
 /**
- * Os IDs de uma celula, com a faixa expandida: "RF-23 a RF-26" na §5 da matriz deixava
- * `RF-24` e `RF-25` de fora do espelho, e o revogado so na `02` passava.
+ * Os IDs de uma celula, com a faixa expandida: sem ela, "X-23 a X-26" deixava `X-24` e
+ * `X-25` de fora do espelho, e o estado deles passava sem conferencia.
  */
 function cellIds(cell, family) {
   const range = new RegExp(String.raw`\b(${family})(?:(?: a |\s*–\s*)(${family}))?\b`, 'g')
@@ -507,10 +513,10 @@ export function checkMirrors(source, mirrors, floors = {}) {
 
 /**
  * Linha em branco dentro de tabela encerra a tabela, e o que vem depois sai como texto
- * corrido — no GitHub e no preview: a tabela de decisoes quebrava na `D-44`, e a de
- * achados no `A-56`. Fora de bloco cercado, linha que abre com `|` logo depois de linha
- * em branco so pode ser o cabecalho de uma tabela nova, seguido do delimitador. Dentro de
- * citacao a regra e a mesma depois do prefixo `>`, e o `>` sozinho e a linha em branco.
+ * corrido — no GitHub e no preview. Fora de bloco cercado, linha que abre com `|` logo
+ * depois de linha em branco so pode ser o cabecalho de uma tabela nova, seguido do
+ * delimitador. Dentro de citacao a regra e a mesma depois do prefixo `>`, e o `>` sozinho
+ * e a linha em branco.
  */
 export function looseTableRows(text) {
   const lines = linesOf(text).map((line) => line.replace(/^(?: {0,3}> ?)+/, ''))
@@ -630,7 +636,7 @@ const NEXT_START = new RegExp(
 )
 const UNIT_ONLY = new RegExp(`^(?:${UNIT})$`, 'iu')
 
-/** A linha sem regiao e sem crase — menos a crase que e so a unidade: os 27 `IND-NN`. */
+/** A linha sem regiao e sem crase — menos a crase que e so a unidade: os 12 `X-NN`. */
 const withoutCode = (line) =>
   line
     .replace(new RegExp(INLINE.source, 'g'), ' ')
@@ -744,7 +750,7 @@ export function changedLines(root, base, { ignoreRegionValues = false } = {}) {
 }
 
 /** Os numeros soltos do escopo: no diff contra `base`, menos o que so o `--write` tocou, ou em tudo. */
-export function findLooseNumbers(root, { base = 'main', all = false } = {}) {
+export function findLooseNumbers(root, { base = config.base, all = false } = {}) {
   const source = createSource(root)
   if (all) return source.scope.flatMap((file) => looseNumbers(file, source.read(file)))
   return [...changedLines(root, base, { ignoreRegionValues: true })].flatMap(([file, lines]) =>
@@ -795,7 +801,8 @@ export function blocks(lines) {
 
 /**
  * As citacoes de ID numa linha. Dentro de crases, so a crase que e o proprio ID cita:
- * `H-35` cita; `D0 CF 11 E0 A1 B1` e `~$E30.xlsx` sao bytes e nome de arquivo.
+ * `D0 CF 11 E0 A1 B1` e `~$E30.xlsx` sao bytes e nome de arquivo, e uma familia curta
+ * como `E\d+` casaria dentro deles.
  */
 function citationsIn(line) {
   const spans = [...line.matchAll(/`[^`]*`/g)].map((span) => ({
@@ -810,9 +817,9 @@ function citationsIn(line) {
 }
 
 /**
- * A historia que o diff fechou e o epico dela, com a linha do fechamento: o estado dos
- * dois mudou ali. O titulo `### H-NN` nao muda ao fechar, e sem a historia como chave o
- * "a unica aberta e `H-101`" de tres documentos passava sem aviso.
+ * O item que o diff fechou e o agrupador dele, com a linha do fechamento: o estado dos
+ * dois mudou ali. O titulo do item nao muda ao fechar, e sem ele como chave a frase que
+ * diz qual item segue aberto passava sem aviso.
  */
 function closedInDiff(lines, isChanged) {
   const keys = new Map()
@@ -832,7 +839,7 @@ function closedInDiff(lines, isChanged) {
  * Para cada ID cuja definicao o diff contra `base` mudou, os outros blocos que o citam.
  * Bloco alterado no proprio diff, bloco cercado e registro nao sao alvo.
  */
-export function findPairs(root, { base = 'main' } = {}) {
+export function findPairs(root, { base = config.base } = {}) {
   const source = createSource(root)
   const changed = changedLines(root, base, { ignoreRegionValues: true })
   const parsed = new Map()
@@ -1002,7 +1009,7 @@ function reportDefinitions() {
 
 function reportPairs() {
   const baseIndex = process.argv.indexOf('--base')
-  const base = baseIndex === -1 ? 'main' : process.argv[baseIndex + 1]
+  const base = baseIndex === -1 ? config.base : process.argv[baseIndex + 1]
   const pairs = findPairs(ROOT, { base })
   let total = 0
   for (const { key, definedAt, citedBy } of pairs.filter((pair) => pair.citedBy.length > 0)) {
@@ -1026,7 +1033,7 @@ function reportPairs() {
 function reportLoose() {
   const all = process.argv.includes('--tudo')
   const baseIndex = process.argv.indexOf('--base')
-  const base = baseIndex === -1 ? 'main' : process.argv[baseIndex + 1]
+  const base = baseIndex === -1 ? config.base : process.argv[baseIndex + 1]
   const found = findLooseNumbers(ROOT, { base, all })
   for (const { file, line, number, unit, text } of found)
     console.log(`${file}:${line}  [${number} ${unit}]  ${text.slice(0, 140)}`)

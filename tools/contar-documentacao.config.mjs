@@ -1,9 +1,42 @@
 /**
- * O que e do CronosComex em `tools/contar-documentacao.mjs`: o escopo, os contadores das
- * regioes `conta`, a estrutura que marca registro, as familias de ID e os espelhos de
- * estado entre documentos, o piso de cada guarda, e a lingua em que os numeros sao escritos. O nucleo
- * nao sabe nada do projeto; quem adota o mecanismo troca este arquivo e leva o nucleo
- * como esta.
+ * O que e do CronosComex em `tools/contar-documentacao.mjs`: o escopo, a base dos avisos, os
+ * contadores das regioes `conta`, a estrutura que marca registro, as familias de ID e os
+ * espelhos de estado entre documentos, o piso de cada guarda, e a lingua em que os numeros
+ * sao escritos. O nucleo nao sabe nada do projeto; quem adota o mecanismo troca este arquivo
+ * e leva o nucleo como esta.
+ *
+ * O nucleo existe pelo levantamento que abriu o contrato (`D-76`): das 41 ocorrencias de
+ * estado atual que citavam uma contagem sobre o repositorio, seis estavam velhas —
+ * `09-rastreabilidade.md` dizia 96 historias com 114 no backlog, o `README.md` dizia seis
+ * ADRs com sete em `docs/adr/`, e duas pecas diziam "sete passos" com oito em
+ * `scripts.verify`. So o total de historias tinha guarda, e por regex sobre uma forma de
+ * frase.
+ *
+ * O que cada aviso mediu aqui (`D-76`):
+ * - `--nuas` so avisa: a varredura completa achou 260 numeros, e a classificacao a mao deu
+ *   ~47% de falso positivo mesmo depois das regras estruturais do nucleo. No diff de seis
+ *   PRs foram de 0 a 13 avisos, ~6 em 10 verdadeiros — e o #150 teria apontado as copias de
+ *   "114 historias" que o #153 precisou prender em regiao depois.
+ * - `--pares`, sobre os 68 PRs de #100 a #168: a lista tem mediana de 5 blocos e p90 de 30,
+ *   e 30 PRs nao geram lista; em cinco PRs de origem, achou 22 dos 24 lugares que de fato
+ *   envelheceram — os aposentados de `D-49` vivos na `02` e na §3 da `09`, e o estado dos
+ *   epicos copiado no `07`. Tomar a chave de todo bloco alterado achava os 24, com lista
+ *   mediana de 138. Nao alcanca o fato sem ID — a contagem fica com o `--nuas`, o resto com
+ *   a revisao —, a lista que devia ganhar um item novo, e o codigo.
+ *
+ * As duas `confere` daqui: a arvore de `04-arquitetura.md` traz anotacao `# H-49` ao lado do
+ * arquivo e se perderia regenerada, e o indice de ADRs do `docs/README.md` traz a decisao de
+ * cada uma. Ficaram fora por decisao, na abertura do contrato, reescrever `confere` e contar
+ * sobre codigo de `web/src/`; e fica fora o aviso pela idade de uma medicao da planilha:
+ * um terco das afirmacoes nao tem data, e o gatilho real e a aba `2027`.
+ *
+ * Os defeitos daqui que o nucleo guarda: o `verify-windows` do PR #153 reprovou a arvore de
+ * `04-arquitetura.md` em CRLF, antes de o `.gitattributes` fixar LF; `links[docs/adrs]`
+ * comparava o indice vazio com o diretorio vazio, e conferia (R5); "RF-23 a RF-26" na §5 da
+ * matriz deixava `RF-24` e `RF-25` fora do espelho; a tabela de decisoes quebrava na `D-44`,
+ * e a de achados no `A-56`; `H-35` cita os bytes `D0 CF 11 E0 A1 B1` e o arquivo
+ * `~$E30.xlsx`, que nao sao ID; e sem a historia fechada como chave do `--pares`, o "a unica
+ * aberta e `H-101`" de tres documentos passava sem aviso.
  *
  * Contador novo entra em `counters`, com teste sobre fonte de valor concreto em
  * `tests/tools/contar-documentacao.test.ts`. O nome e o que a regiao escreve —
@@ -401,6 +434,7 @@ const FORMAT_LIMIT = /(?:no máximo|no mínimo|até|máximo de|mínimo de|cada|p
 export default {
   scope: IN_SCOPE,
   rule: '.claude/rules/documentacao.md',
+  base: 'main',
   counters: COUNTERS,
   record: {
     files: RECORD_FILES,
@@ -415,6 +449,9 @@ export default {
     mirrors: MIRRORS,
   },
   language: {
+    locale: 'pt-BR',
+    // A palavra de "N arquivos", a anotacao da `confere:arvore` no lugar da lista.
+    treeFiles: 'arquivos',
     numberWords: NUMBER_WORDS,
     units: UNITS,
     states: STATES,
