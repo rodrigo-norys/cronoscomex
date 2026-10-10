@@ -8,8 +8,9 @@ paths:
 # Dependências e versões
 
 > **Esta rule é orientação, e pode não carregar.** Ela entra em contexto quando
-> `Read`, `Edit` ou `Write` tocam arquivo do `paths:` — nunca pelo shell, e,
-> medido (ADR-0007), nem sempre nesses casos. **O que nela não pode falhar tem
+> o agente lê arquivo do `paths:` com `Read` e, conforme a versão do Claude Code,
+> também quando o escreve, o edita ou o lê pelo shell (ADR-0007) — mas, medido,
+> nem sempre nesses casos. **O que nela não pode falhar tem
 > guarda:** a versão citada em documento é imposta por
 > `tests/repo/contagens.test.ts`, pela região `versao[...]`. "Não troque versão
 > sem registrar o motivo" está no `CLAUDE.md`, que carrega sempre.

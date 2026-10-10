@@ -12,8 +12,9 @@ paths:
 # Comentários
 
 > **Esta rule é orientação, e pode não carregar.** Ela entra em contexto quando
-> `Read`, `Edit` ou `Write` tocam arquivo do `paths:` — nunca pelo shell, e,
-> medido (ADR-0007), nem sempre nesses casos. **O que nela não pode falhar tem
+> o agente lê arquivo do `paths:` com `Read` e, conforme a versão do Claude Code,
+> também quando o escreve, o edita ou o lê pelo shell (ADR-0007) — mas, medido,
+> nem sempre nesses casos. **O que nela não pode falhar tem
 > guarda:** a regra 4 — fato medido cita fonte que existe — é imposta por
 > `tests/repo/contratos.test.ts`, que reprova âncora morta e data fora de crase em
 > comentário, e cita esta rule. As regras 1 a 3 são julgamento, e quem as cobra é
