@@ -41,10 +41,8 @@ export type DialogRunner = () => Promise<string>
 
 /**
  * O operador escolhendo um arquivo leva segundos; cinco minutos era o tempo de
- * ir tomar um cafe. **Caiu para dois em 19/08/2026**, quando o dialogo nao
- * apareceu na primeira maquina Windows e o unico sinal foi o cursor girando: o
- * limite deixou de ser generosidade com quem escolhe e passou a ser o teto de
- * quanto tempo um defeito pode ficar mudo.
+ * ir tomar um cafe. **Sao dois** (`H-37`): o limite nao e generosidade com
+ * quem escolhe, e sim o teto de quanto tempo um defeito pode ficar mudo.
  */
 const DIALOG_TIMEOUT_MS = 2 * 60_000
 
@@ -59,8 +57,8 @@ const DIALOG_TIMEOUT_MS = 2 * 60_000
  * **O dono do dialogo precisa ser uma janela DE VERDADE.** Um `Form` construido
  * e nunca mostrado nao tem handle nem entrada na barra de tarefas: o dialogo
  * nasce sem pai visivel, atras de tudo e sem como ser alcancado, e o operador ve
- * o cursor girando sem nada na tela — medido na primeira maquina Windows,
- * 19/08/2026. Por isso `Show()` e `Activate()`, com o `Form` de 1 px e opacidade
+ * o cursor girando sem nada na tela — medido na primeira maquina Windows
+ * (`H-37`). Por isso `Show()` e `Activate()`, com o `Form` de 1 px e opacidade
  * zero: ele existe para o Windows e nao para quem olha.
  */
 const WINDOWS_SCRIPT = `
@@ -118,8 +116,8 @@ async function runWindowsDialog(): Promise<string> {
     ['-NoProfile', '-STA', '-EncodedCommand', encoded],
     // A opcao windowsHide do Node fica de FORA. Ela cria o processo com
     // CREATE_NO_WINDOW, e um processo sem janela nenhuma tem dificuldade de
-    // trazer um dialogo ao primeiro plano — que e exatamente o sintoma medido em
-    // 19/08/2026. O console piscando um instante e preco barato por uma janela
+    // trazer um dialogo ao primeiro plano — que e exatamente o sintoma medido
+    // em `H-37`. O console piscando um instante e preco barato por uma janela
     // que aparece.
     { timeout: DIALOG_TIMEOUT_MS },
   )

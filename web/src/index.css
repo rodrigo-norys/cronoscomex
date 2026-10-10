@@ -17,7 +17,7 @@
  * abaixo — de Sans e de Mono.
  *
  * **Tres pesos, e nao quatro.** 400, 500 e 600. O teto e decisao da proposta, e
- * hoje ja e verdade: medido em 01/09/2026, o conjunto tem **zero** `font-bold`
+ * hoje ja e verdade: medido em `H-58`, o conjunto tem **zero** `font-bold`
  * e **zero** `italic`. Peso que nao existe em arquivo o navegador sintetiza,
  * engordando o traco — declarar so o que existe evita isso.
  *
@@ -112,7 +112,7 @@
    * `text-muted` (`#81878f`) a 4,18 e reprova. Quem fixa o degrau e o `muted`,
    * nao o `secondary`, que sobrevive aos dois em 6,20 e 6,49.
    *
-   * O recuo existe para a cor da celula aparecer: medido em 16/09/2026, 87,3%
+   * O recuo existe para a cor da celula aparecer: medido em `H-94`, 87,3%
    * das celulas tem cor, e o fundo so aparece nos 12,7% restantes.
    */
   --color-surface-table: #f4f5f7;
@@ -120,8 +120,8 @@
   /*
    * A tinta sobre a celula PINTADA (`H-97`).
    *
-   * **UM token, e nao dois.** Ate 16/09/2026 eram dois — escura e clara —, e a
-   * escolha entre eles saia da luminancia do fundo. O usuario pediu PRETO nas
+   * **UM token, e nao dois** (`H-97`): com dois — escura e clara —, a escolha
+   * entre eles sairia da luminancia do fundo. O usuario pediu PRETO nas
    * nove cores, inclusive no roxo, que era a unica a usar a clara: sem segunda
    * tinta nao ha o que escolher, e a funcao de luminancia saiu junto.
    *
@@ -133,16 +133,16 @@
    * *(Este comentario NAO escreve a consulta de media por extenso, e a omissao e
    * deliberada: `tests/repo/estilo.test.ts` acha o bloco escuro por
    * `indexOf` do literal, e cita-lo aqui faria a guarda analisar este
-   * comentario no lugar dele — medido em 16/09/2026, com tres assercoes
+   * comentario no lugar dele — medido em `H-97`, com tres assercoes
    * reprovando.)*
    *
-   * **Medido em 16/09/2026 sobre as 9 cores de `config/color-map.json`:** preto
+   * **Medido em `H-97` sobre as 9 cores de `config/color-map.json`:** preto
    * leva oito delas a AA com folga — o verde de 5.723 celulas a **15,30**, o
    * vermelho a **5,25** — e **reprova no roxo, em 4,05**, contra o piso de 4,5.
    * O texto do tema escuro media **1,16** sobre o verde, que foi o defeito
    * original, reportado com um print.
    *
-   * **O roxo e excecao DECLARADA, por ordem do usuario em 16/09/2026**, depois
+   * **O roxo e excecao DECLARADA, por ordem do usuario** (`H-97`), depois
    * de ver a prova de tinta. Branco o levava a 5,19 e passava; ele preferiu o
    * preto uniforme nas nove, e a uniformidade e o que se ganhou em troca dos
    * 0,45 que faltam.
@@ -456,7 +456,7 @@
  * rodape — e esta em `rem` porque tudo aquilo cresce junto da fonte-base.
  *
  * **O piso tambem e em `rem`, e e ele que salva o pior caso.** Medido em
- * 04/09/2026, no cenario "Muito grande" — fonte-base de 24 px numa tela de
+ * `H-84`, no cenario "Muito grande" — fonte-base de 24 px numa tela de
  * 768 px: a reserva vale 480 px e o teto cai para 288 px, o piso de `15rem`
  * vale 360 px, e `min-height` vence `max-height` no CSS. O quadro fica com os
  * 360 px e mostra QUATRO linhas de 60 px alem do cabecalho de 61 px — o
@@ -476,7 +476,7 @@
  *
  * **Em `rem`, e nao em pixel**, pelo mesmo motivo de `table-viewport`: a linha
  * cresce com a fonte-base, e um teto fixo mostraria menos linhas conforme o
- * operador aumenta o texto (`SC 1.4.4`). Medido em 08/09/2026 num Chrome real,
+ * operador aumenta o texto (`SC 1.4.4`). Medido em `H-88` num Chrome real,
  * com fonte-base de 16 px: `26rem` mostra DEZ das 111 grafias, e a secao inteira
  * fica em 496 px contra os 1.832 px da pagina.
  *
@@ -491,11 +491,11 @@
 }
 
 /*
- * A altura do quadro de um ranking (21/09/2026).
+ * A altura do quadro de um ranking (`H-106`).
  *
  * **300 px e o teto que o Carbon Design System usa** para o mesmo caso — a
  * tabela de cabecalho grudado, cujo `stickyHeader` limita a altura para forcar
- * a rolagem (consultado em 21/09/2026). Com "Todos" selecionado o ranking de
+ * a rolagem (`H-106`). Com "Todos" selecionado o ranking de
  * clientes chega a 180 itens, e sem teto os tres cards da pagina teriam
  * alturas diferentes e a pagina cresceria com o mapa do operador.
  *

@@ -23,7 +23,7 @@ import { TOP_N_PARAM } from './hooks/useTopN.ts'
  * Que parametros pertencem a cada pagina — e, por consequencia, quais somem ao
  * sair dela.
  *
- * **`topN` entrou em 21/09/2026, emendando `D-55`.** Aquela decisao o declarou
+ * **`topN` entrou em `H-106`, emendando `D-55`.** Aquela decisao o declarou
  * GLOBAL, porque Clientes e Performance consomem os mesmos rankings e quem pede
  * 20 numa quereria 20 na outra; o usuario decidiu o contrario depois de ver
  * `?topN=50` sobreviver a troca de pagina. O custo e declarado: a Performance
@@ -54,7 +54,7 @@ import { consumePendingPageFocus, pageOf, type Route, replaceQuery, useRoute } f
 
 /**
  * A Pagina Historico e a unica que importa o Recharts, e ele responde por 374
- * dos 634 kB do pacote — medido em 17/08/2026, comparando a build com e sem
+ * dos 634 kB do pacote — medido em `H-21`, comparando a build com e sem
  * ela. Carregada sob demanda, sai do caminho das outras seis paginas.
  *
  * `lazy` exige `default`, e as paginas deste projeto sao exportacoes nomeadas.
@@ -225,7 +225,7 @@ export function App() {
    * e roubar a tecla de quem esta digitando perderia o texto. A guarda e a mesma
    * de `useGridNavigation`: alvo que seja campo nao dispara.
    *
-   * **Sobreposicao aberta tambem vence** — decisao de 04/09/2026, sobre o
+   * **Sobreposicao aberta tambem vence** — decisao de `H-83`, sobre o
    * caso-limite que `H-83` deixou por declarar. Duas sobreposicoes empilhadas
    * quebram as duas garantias de uma vez: qual delas prende o foco, e o painel
    * ficaria inerte sob a busca sendo IRMAO dela, nao ancestral. O operador fecha
@@ -260,7 +260,7 @@ export function App() {
       {/*
         `SC 2.4.1 Bypass Blocks`. A lateral, o topo e a barra de filtros vem
         ANTES do conteudo no DOM e se repetem nas sete telas — 20 paradas de
-        tabulacao para chegar ao primeiro dado, medidas em 01/09/2026. O salto
+        tabulacao para chegar ao primeiro dado, medidas em `H-59`. O salto
         e o unico jeito de o operador de teclado passar por elas.
         **Ele ja faltava antes de `H-59`**, com as sete abas horizontais; a
         historia o pede porque e aqui que a ordem de foco e redesenhada.
@@ -294,7 +294,7 @@ export function App() {
       <div className="flex min-w-0 flex-1 flex-col">
         {/*
           A barra de topo fica FORA do contexto de posicionamento do veu, e isso
-          e a terceira determinacao de `D-30`: "Dados de 03/09/2026", `Aplicar
+          e a terceira determinacao de `D-30`: `Dados de 03/09/2026`, `Aplicar
           alteracoes` e `Atualizar` permanecem a vista com o painel aberto.
           Cobrir a acao que grava no arquivo do operador seria esconder o que ele
           precisa saber que existe. Inerte, sim; invisivel, nao.

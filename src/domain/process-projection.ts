@@ -47,7 +47,7 @@ export interface ColorEdit {
 }
 
 /**
- * A linha NOVA, ainda nao gravada (02/09/2026).
+ * A linha NOVA, ainda nao gravada (`H-79`).
  *
  * Ela **acrescenta** um processo, em vez de alterar um que existe — e e a unica
  * das tres que faz isso. Sem ela, o operador digitaria a linha e nao a veria
@@ -107,8 +107,8 @@ function withEditApplied(process: Process, edit: ProjectedEdit): Process {
  * campos que o operador preencheu.
  *
  * `styleKey` e a AUSENCIA de preenchimento, que e o que `appendRow` grava — a
- * tela mostra a mesma cor que o arquivo vai ter. Desde 02/09/2026 isso resolve
- * para indefinido nos tres campos de cor, e nao para quarentena.
+ * tela mostra a mesma cor que o arquivo vai ter. Isso resolve para indefinido
+ * nos tres campos de cor, e nao para quarentena (`H-79`).
  */
 export function insertToRawRow(insert: RowInsertEdit): RawRow {
   const cells: Record<string, RawCell> = {}

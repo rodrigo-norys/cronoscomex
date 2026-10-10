@@ -3,7 +3,7 @@ import { type KeyboardEvent, useCallback, useEffect, useRef, useState } from 're
 /**
  * Navegacao por setas numa tabela editavel, no padrao `grid` da WAI-ARIA.
  *
- * **O que ela conserta e uma medicao, nao um gosto** (02/09/2026). A tabela da
+ * **O que ela conserta e uma medicao, nao um gosto** (`H-80`). A tabela da
  * Pagina Operacional tem um link por linha desde `H-17` e ganhou seis celulas
  * editaveis; medido num Chrome real, sao **7 paradas de tabulacao por linha**, e
  * a paginacao vem DEPOIS da tabela no DOM. Numa pagina cheia de 200 linhas, quem
@@ -67,8 +67,8 @@ export function useGridNavigation(rows: number, columns: number): GridNavigation
    * roubaria o foco na montagem da pagina e a cada releitura da lista — o
    * operador estaria digitando na busca e o foco pularia para a tabela.
    *
-   * **Ela foi um `useRef` booleano ate 03/09/2026, e era a origem de dois
-   * defeitos.** Ref e global no tempo; o efeito que a consome e por commit. Com
+   * **Ela nao e um `useRef` booleano, que era a origem de dois defeitos**
+   * (`H-80`). Ref e global no tempo; o efeito que a consome e por commit. Com
    * os efeitos passivos da montagem ainda pendentes na fila do Scheduler — o
    * que acontece quando a grade monta ao resolver a requisicao, fora do
    * ambiente de act —, a tecla armava a marca antes de eles drenarem, o efeito

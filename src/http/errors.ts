@@ -7,7 +7,7 @@ export type ApiErrorCode =
   /** `D-61`: caractere que o XML 1.0 nao admite, em geral de texto colado. */
   | 'CARACTERE_INVALIDO'
   | 'PROCESSO_NAO_ENCONTRADO'
-  /** A REF da linha nova ja esta na planilha (02/09/2026). */
+  /** A REF da linha nova ja esta na planilha (`H-79`). */
   | 'REF_DUPLICADA'
   /** A linha existe so na fila: nao da para repintar o que nao foi gravado. */
   | 'LINHA_NAO_GRAVADA'
@@ -24,15 +24,15 @@ export type ApiErrorCode =
   | 'ESCRITA_EM_ANDAMENTO'
   | 'ARQUIVO_INDISPONIVEL'
   | 'ESCRITA_INVALIDA'
-  /** A folga da Tabela do Excel acabou (02/09/2026). */
+  /** A folga da Tabela do Excel acabou (`D-25`). */
   | 'TABELA_CHEIA'
   /**
-   * Uma coluna mudou de lugar na planilha (`H-96`, 17/09/2026). Recusa de
+   * Uma coluna mudou de lugar na planilha (`H-96`). Recusa de
    * ESCRITA apenas: a leitura segue, e o painel mostra o dado com o aviso.
    */
   | 'CABECALHO_DESLOCADO'
   /**
-   * A linha de cabecalho esta em branco (`H-96`, 17/09/2026). Recusa de ESCRITA
+   * A linha de cabecalho esta em branco (`H-96`). Recusa de ESCRITA
    * apenas, como a anterior — e separada dela porque a causa e outra: nao ha
    * deslocamento detectado, ha impossibilidade de detectar.
    */

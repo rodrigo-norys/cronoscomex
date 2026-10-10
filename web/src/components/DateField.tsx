@@ -5,7 +5,7 @@ import { useEffect, useId, useRef, useState } from 'react'
  *
  * **Existe porque `input type="date"` nao deixa escolher o formato.** O Chrome
  * o desenha no idioma da INTERFACE DO NAVEGADOR, e nao no `lang` do documento —
- * medido em 18/09/2026 na maquina do operador, que exibia `mm/dd/yyyy` com
+ * medido na maquina do operador (`H-104`), que exibia `mm/dd/yyyy` com
  * `lang="pt-BR"` ja declarado em `web/index.html`. Num painel de desembaraco
  * aduaneiro, `03/09` e `09/03` sao datas diferentes e igualmente plausiveis: o
  * formato nao e preferencia, e sim leitura correta.

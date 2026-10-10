@@ -257,7 +257,7 @@ function monthOfCivil(date: Date): string {
  *
  * O intervalo vem das datas, e nao da janela da pagina: a planilha tem passado
  * datado, e cortar pela janela esconderia justamente o que a historia existe
- * para mostrar. Medido em 31/08/2026: `registrationDate` cobre sete meses de
+ * para mostrar. Medido: `registrationDate` cobre sete meses de
  * 2026 e `ETA2` cobre dez a partir de dez/2025 (`docs/uso/RESULTADO.md` secao 6).
  */
 export function reconstructMonthly(
@@ -327,14 +327,14 @@ export interface RegistrationSeries {
  *
  * **`cleared` nunca excede `registered`**, e as duas leituras divergem so onde
  * A-05 ocorre — RG lancado em linha que a categoria ainda nao da por concluida.
- * Medido na planilha real em 21/09/2026: 3 linhas em 483, e os 480 processos da
+ * Medido na planilha real (`H-107`): 3 linhas em 483, e os 480 processos da
  * categoria Desembaracado tem todos RG.
  *
  * **O intervalo vai do primeiro RG ate o mes CORRENTE**, e nao ate o ultimo RG
  * como em `reconstructMonthly`. Parar no ultimo faria a serie terminar em
  * jul/2026 numa tela aberta em setembro, e mes ausente do eixo se le como "ainda
- * nao chegou" em vez de "nao houve registro" — medido em 21/09/2026: o RG mais
- * recente da planilha e 31/07/2026. Zero medido e dado; coluna que nao existe
+ * nao chegou" em vez de "nao houve registro" — medido em `H-107`: o RG mais
+ * recente da planilha e de `31/07/2026`. Zero medido e dado; coluna que nao existe
  * nao e (regra inviolavel 3).
  */
 export function countRegistrationsMonthly(

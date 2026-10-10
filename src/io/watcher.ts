@@ -19,7 +19,7 @@ export const DEFAULT_DEBOUNCE_MS = 2000
 /**
  * Compara dois caminhos ignorando a convencao de separador.
  *
- * Medido em 16/09/2026, na primeira execucao de `verify-windows`: o chokidar
+ * Medido na primeira execucao de `verify-windows` (`H-08`): o chokidar
  * entrega o candidato como `C:/...` mesmo no Windows, enquanto `dirname()`
  * devolve `C:\...`. A igualdade de string entre os dois e SEMPRE falsa la, e o
  * preco era total — o diretorio observado caia na regra seguinte, era ignorado,

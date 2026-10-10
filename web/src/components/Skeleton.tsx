@@ -12,7 +12,7 @@ import { LiveAnnouncement } from './PageAlert.tsx'
  * trocaria um salto por outro, menor.
  *
  * **A altura e UMA TELA, e nao a do conteudo inteiro** — decidido em
- * 04/09/2026, contra o que o criterio da historia dizia, e por medicao: a
+ * `H-85`, contra o que o criterio da historia dizia, e por medicao: a
  * Pagina Alertas tem **9.198 px** de conteudo com a planilha real, e a
  * Performance **1.773 px**. Um esqueleto fiel daria 191 barras pulsando e uma
  * barra de rolagem enorme que some ao carregar — pior que o salto que ele

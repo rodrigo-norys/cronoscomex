@@ -81,7 +81,7 @@ export function Operational({ dataVersion }: OperationalProps) {
         O `minmax(0,1fr)` que vivia aqui existia porque `1fr` e
         `minmax(auto,1fr)`, e o `auto` minimo e a largura INTRINSECA da tabela —
         o grid entao recusava encolher e empurrava o conteudo para fora da tela
-        (`SC 1.4.10`, medido em 01/09/2026). **Sem a segunda trilha nao ha o que
+        (`SC 1.4.10`, medido em `H-59`). **Sem a segunda trilha nao ha o que
         negociar**, e quem contem a rolagem passa a ser o `overflow-x-auto` de
         `R01`, na propria tabela.
       */}

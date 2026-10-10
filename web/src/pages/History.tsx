@@ -209,7 +209,7 @@ export function History({ queryString, dataVersion }: HistoryProps) {
  * **Barra, e nao linha**, porque a medida e contagem discreta de um periodo
  * fechado; linha afirmaria continuidade entre dois meses que nao se tocam. E
  * **uma medida por vez**: o checkbox TROCA o que a barra conta, em vez de somar
- * camada. Medido na planilha real em 21/09/2026, `cleared` e 480 contra 483 de
+ * camada. Medido na planilha real em `H-107`, `cleared` e 480 contra 483 de
  * `registered` — sobrepor as duas prometeria uma comparacao de 3 linhas em 483,
  * que nenhum desenho entrega a 2 px de diferenca.
  *
@@ -372,7 +372,7 @@ function RegistrationTooltip({
  *
  * Processo sem `ETA2` nao entra no volume, e sem data de registro nao entra nos
  * desembaracados: data ausente nao pertence a mes nenhum (A-20), e sumir sem
- * contagem seria descarte silencioso (regra inviolavel 2). Medido em 21/09/2026:
+ * contagem seria descarte silencioso (regra inviolavel 2). Medido em `H-107`:
  * 65 dos 650 sem `ETA2` e 167 sem `RG`.
  *
  * **Vive DENTRO do painel desde `D-58`, e o nome deixou de citar a reconstrucao.**

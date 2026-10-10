@@ -1,5 +1,5 @@
 {
-  "_origem": "Gerado por H-01 (tools/profile_workbook.py) sobre CONTROLE DOS EMBARQUE.xlsx, aba 2026, em 03/08/2026. Os valores de styleKey e fillId sao MEDIDOS, nao ilustrativos. Ver docs/perfilamento/RESULTADO.md secao 5. O campo display entrou em H-94, medido em 16/09/2026.",
+  "_origem": "Gerado por H-01 (tools/profile_workbook.py) sobre CONTROLE DOS EMBARQUE.xlsx, aba 2026. Os valores de styleKey e fillId sao MEDIDOS, nao ilustrativos. Ver docs/perfilamento/RESULTADO.md secao 5. O campo display entrou em H-94, e foi medido nela.",
 
   "version": 1,
   "sheetName": "2026",
@@ -115,7 +115,7 @@
     }
   ],
 
-  "_comentario_cellFills": "H-94. Cores que PINTAM celulas e nao significam nada — lista separada de entries, e a separacao e o ponto. Uma entrada de entries declara fillId, responsible, customsChannel e importerOutsideRj: ela alimenta resolveColor e entra em representableTargets, isto e, vira ALVO DE ESCRITA. Estas quatro sao pintura das colunas M e N, que a cor da linha nunca alcancou (A-44); declara-las em entries exigiria inventar um fillId, contra a regra inviolavel 3, ou torna-las cor gravavel, que H-94 exclui. Contagens medidas em 16/09/2026 sobre as linhas que viram processo: somam 1237 celulas, contra as 9080 com cor.",
+  "_comentario_cellFills": "H-94. Cores que PINTAM celulas e nao significam nada — lista separada de entries, e a separacao e o ponto. Uma entrada de entries declara fillId, responsible, customsChannel e importerOutsideRj: ela alimenta resolveColor e entra em representableTargets, isto e, vira ALVO DE ESCRITA. Estas quatro sao pintura das colunas M e N, que a cor da linha nunca alcancou (A-44); declara-las em entries exigiria inventar um fillId, contra a regra inviolavel 3, ou torna-las cor gravavel, que H-94 exclui. Contagens medidas em H-94 sobre as linhas que viram processo: somam 1237 celulas, contra as 9080 com cor.",
 
   "cellFills": [
     {
@@ -161,9 +161,9 @@
     "ESCRITA (H-27): trocar o styleId inteiro DESTRUIRIA borda e fonte da linha. A escrita troca apenas o fillId, preservando fontId, borderId e numFmtId do cellXf original. Ver achado A-49.",
     "Chave ausente deste mapa: a linha ENTRA nos indicadores de volume com responsible e customsChannel em 'indefinido' e importerOutsideRj em null, e aparece na quarentena com motivo COR_NAO_MAPEADA. Nunca e descartada em silencio.",
     "NAO ha tolerancia nem aproximacao por proximidade de cor. Os tons A e B sao entradas SEPARADAS que apontam para o mesmo significado - nao ha limiar de distancia. Ver ADR-0003.",
-    "Cobertura medida em 03/08/2026: as 9 entradas cobrem 649 de 649 linhas com REF preenchido (100%). Taxa de COR_NAO_MAPEADA esperada: 0%.",
-    "CANAL (H-51, 31/08/2026): a cor e um canal de informacao unico disputado por tres significados, entao linha azul, roxa, bege, amarela ou branca NAO diz canal - customsChannel e 'indefinido', nunca 'nenhum'. Distribuicao medida: verde 477, vermelho 5, indefinido 167, soma 649. O amarelo MANTEM importerOutsideRj e nao vira canal amarelo (D-02, A-38).",
+    "Cobertura medida em H-01: as 9 entradas cobrem 649 de 649 linhas com REF preenchido (100%). Taxa de COR_NAO_MAPEADA esperada: 0%.",
+    "CANAL (H-51): a cor e um canal de informacao unico disputado por tres significados, entao linha azul, roxa, bege, amarela ou branca NAO diz canal - customsChannel e 'indefinido', nunca 'nenhum'. Distribuicao medida: verde 477, vermelho 5, indefinido 167, soma 649. O amarelo MANTEM importerOutsideRj e nao vira canal amarelo (D-02, A-38).",
     "EFEITO DE H-51 NA ESCRITA: o branco deixou de colapsar com o verde em representableTargets - as duas entradas compartilhavam a tupla 'indefinido|nenhum|false' e agora diferem no canal. Sao 7 alvos gravaveis, contra 6 antes, e o novo grava fillId 13, que e o branco do tema. Nenhum fillId existente mudou.",
-    "H-94: 'cellFills' NAO entra em representableTargets e NAO alimenta resolveColor. A cor do PROCESSO continua saindo da ancora, e ADR-0003 nao e tocado — renderizar nao classifica. Medido em 16/09/2026: 13 cores distintas nas celulas A-P contra as 9 de 'entries', e 36 das linhas divergem internamente dentro de A-L, o que REFUTA a afirmacao de A-44 de que K e L acompanham a cor da linha."
+    "H-94: 'cellFills' NAO entra em representableTargets e NAO alimenta resolveColor. A cor do PROCESSO continua saindo da ancora, e ADR-0003 nao e tocado — renderizar nao classifica. Medido: 13 cores distintas nas celulas A-P contra as 9 de 'entries', e 36 das linhas divergem internamente dentro de A-L, o que REFUTA a afirmacao de A-44 de que K e L acompanham a cor da linha."
   ]
 }

@@ -36,7 +36,7 @@ export const WEB_DIST = 'dist/web'
  *
  * Em ambos, o `index.html` era servido (esse ja era lido por requisicao) e
  * apontava para arquivos que caiam no proprio `/*`, devolvendo HTML onde o
- * navegador esperava JavaScript. Medido em 21/08/2026.
+ * navegador esperava JavaScript. Medido em `H-42`.
  *
  * Servir a mao troca o plugin por ~20 linhas e faz o comentario acima virar
  * verdade. O preco e a guarda de travessia, abaixo, que o plugin dava de graca.

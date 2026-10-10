@@ -149,7 +149,7 @@ export interface IndicatorsResponse {
    * E um recorte de `expectedVessels`, nao um indicador novo: aquele nao tem
    * teto por definicao (A-24, IND-12) e continua intacto. O teto vive aqui
    * porque e da apresentacao — e precisa vir do servidor, senao cortar em
-   * `hoje+15` seria regra de negocio no cliente. Medido em 07/08/2026: dos 16
+   * `hoje+15` seria regra de negocio no cliente. Medido em `H-17`: dos 16
    * grupos (navio, dia) da planilha real, **8** caem dentro do horizonte.
    */
   arrivalCalendar: ArrivalDay[]
@@ -160,7 +160,7 @@ export interface IndicatorsResponse {
 }
 
 /**
- * O `topN` da query, ou o padrao de `app.json` (21/09/2026).
+ * O `topN` da query, ou o padrao de `app.json` (`H-106`).
  *
  * **Recusar nao serve aqui.** O parametro e de apresentacao, e um `topN=abc`
  * digitado na URL derrubaria o painel inteiro por um detalhe de quantos itens
@@ -230,7 +230,7 @@ export function registerIndicatorsRoute(
 
     /*
       Quantos itens cada ranking mostra, escolhido pelo OPERADOR na tela
-      (21/09/2026). `config.topN` deixa de ser o unico valor e passa a ser o
+      (`H-106`). `config.topN` deixa de ser o unico valor e passa a ser o
       PADRAO: quem nao manda `topN` na query recebe o que o `app.json` diz, e
       nada muda para as telas que nao oferecem o controle.
 

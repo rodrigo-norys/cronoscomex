@@ -205,8 +205,8 @@ echo.
 
 rem  O navegador abre em paralelo, e SO quando a porta responde.
 rem
-rem  --- Duas correcoes de 19/08/2026, medidas na PRIMEIRA execucao real em
-rem  --- Windows. As duas sao deste bloco, e a segunda e a que importa.
+rem  --- Duas correcoes medidas na PRIMEIRA execucao real em Windows, H-35.
+rem  --- As duas sao deste bloco, e a segunda e a que importa.
 rem
 rem  1. Aqui havia `timeout /t 4`, e a partida demorou mais que isso: o
 rem     operador recebeu ERR_CONNECTION_REFUSED com o servidor subindo atras.

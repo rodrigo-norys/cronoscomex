@@ -29,7 +29,7 @@ interface MultiSelectProps {
 /**
  * Acima disto, rolar a lista custa mais que digitar.
  *
- * Medido na planilha real em 07/08/2026: **509** clientes, 217 mercadorias, 70
+ * Medido na planilha real em `H-15`: **509** clientes, 217 mercadorias, 70
  * navios, 35 agentes, 26 importadores — contra 6 portos, 4 categorias, 4
  * responsaveis e 3 canais. O limiar separa exatamente os dois grupos, e nenhum
  * valor real fica na fronteira.

@@ -145,7 +145,7 @@ const CHANNELS: readonly string[] = ['verde', 'vermelho', 'indefinido']
  * O canal que `H-51` aposentou, aceito **so na leitura** do arquivo ja gravado.
  *
  * O historico e append-only e sem retroatividade (ADR-0005, A-43): as linhas
- * escritas antes de 31/08/2026 dizem `nenhum` e nenhuma delas pode ser
+ * escritas antes de `H-51` dizem `nenhum` e nenhuma delas pode ser
  * reescrita. Recusa-las como valor fora do dominio esvaziaria o indice, e cada
  * REF voltaria a ser "visto pela primeira vez" — o que reiniciaria
  * `categoryChangedAt` em todos, e com ele ALE-06, o alerta de processos

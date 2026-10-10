@@ -78,7 +78,7 @@ const COUNT_TONE: Partial<Record<PageId, string>> = {
    * pedem acao, o outro conta defeito estrutural no arquivo —, e dar-lhes a
    * mesma cor diria que sao a mesma coisa.
    *
-   * Medido em 16/09/2026 nos DOIS fundos que o item pode ter: 5,92:1 e 5,13:1
+   * Medido em `H-96` nos DOIS fundos que o item pode ter: 5,92:1 e 5,13:1
    * no claro, 8,93:1 e 7,65:1 no escuro, contra o piso de 4,5. O fundo do item
    * corrente e o unico do conjunto que pinta, e foi exatamente ali que
    * `text-muted` reprovou antes.

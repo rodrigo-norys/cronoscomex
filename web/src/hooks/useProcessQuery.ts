@@ -79,8 +79,8 @@ export const DEFAULT_PAGE_SIZE = 200
 /**
  * O nome de cada tamanho na tela (`H-100`).
  *
- * **`MAX_LIMIT` se chama "Todas", e a opcao existe por ordem do usuario em
- * 16/09/2026.** `D-31` fixara o oposto — "500 e teto, e nao todas" —, para a
+ * **`MAX_LIMIT` se chama "Todas", e a opcao existe por ordem do usuario
+ * (`D-44`).** `D-31` fixara o oposto — "500 e teto, e nao todas" —, para a
  * paginacao nunca desaparecer e o pior caso de renderizacao ficar previsivel;
  * ele pediu a opcao mesmo assim, e a emenda fica registrada.
  *
