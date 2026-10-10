@@ -8,7 +8,8 @@ import { describe, expect, it } from 'vitest'
  * repositório e não dizem nada a quem usa o painel.
  *
  * Existe porque a rule sozinha não garante nada: ela só entra em contexto quando
- * `Read`, `Edit` ou `Write` tocam um `.tsx` de `web/src/`, e, medido nas
+ * o agente lê um `.tsx` de `web/src/` com `Read` e, conforme a versão do
+ * Claude Code, também quando o escreve, o edita ou o lê pelo shell, e, medido nas
  * transcrições do projeto (ADR-0007), carregou em **zero** das três sessões que
  * tocaram esses arquivos depois de criada. Na mesma medição, sete identificadores
  * estavam no texto de apoio de três páginas.

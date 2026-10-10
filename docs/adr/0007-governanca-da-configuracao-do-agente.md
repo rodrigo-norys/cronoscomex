@@ -162,6 +162,24 @@ com `Edit`, outra só com `Write`, duas com `Read` —, e no mesmo dia uma leitu
 `Read` de `scripts/sincronizar-distribuicao.ts` não carregou `distribuicao.md`. Rule
 já lida ou escrita na sessão também não é anexada de novo.
 
+**O "nunca pelo shell" acima é o registro de 06/10/2026, e o gatilho da rule muda
+com a versão do Claude Code.** Pelo
+[changelog](https://github.com/anthropics/claude-code/blob/main/CHANGELOG.md) e pela
+seção [Path-specific rules](https://code.claude.com/docs/en/memory#path-specific-rules)
+da documentação, os dois consultados em 10/10/2026:
+
+| Versão do Claude Code | A rule com `paths:` carrega quando o arquivo do glob é | Fonte |
+|---|---|---|
+| até a 2.1.287 | lido por `Read` | changelog da 2.1.288: *"previously only Read loaded them"* |
+| a partir da 2.1.288 | também criado ou alterado por `Write` ou `Edit` | changelog da 2.1.288: *"Fixed path-scoped `.claude/rules` and nested CLAUDE.md files not loading when Write or Edit creates or changes a file in their scope"* |
+| a partir da 2.1.293 | também lido pelo shell, com `cat`, `head`, `tail`, `sed -n` ou `grep` de um arquivo só | changelog da 2.1.293; e a documentação: *"A path-scoped rule loads when Claude uses the Read, Write, or Edit tool on a matching file. It also loads when Claude views a matching file with a Bash command that counts as a read, such as `cat` or `head` on a single file."* |
+
+**Isso explica as sessões da medição de 06/10/2026 que tocaram o glob só com `Edit`
+ou só com `Write` sem carga:** nenhuma transcrição da linha principal até aquele dia
+roda versão posterior à 2.1.287 (campo `version`). As de `Read` seguem sem
+explicação, porque `Read` carrega em todas as versões. Pelo mesmo changelog, "o
+gatilho da rule é `Read`, não `Write`", em Consequências, valia até a 2.1.287.
+
 **O efeito apareceu na tela:** a `microcopia.md` proíbe identificador de auditoria no
 texto que o operador lê, e sete estavam lá, em três páginas.
 

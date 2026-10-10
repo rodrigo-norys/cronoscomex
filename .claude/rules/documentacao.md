@@ -7,8 +7,9 @@ paths:
 # O contrato da documentação
 
 > **Esta rule é orientação, e pode não carregar.** Ela entra em contexto quando
-> `Read`, `Edit` ou `Write` tocam arquivo do `paths:` — nunca pelo shell, e,
-> medido (ADR-0007), nem sempre nesses casos. **O que nela não pode falhar tem
+> o agente lê arquivo do `paths:` com `Read` e, conforme a versão do Claude Code,
+> também quando o escreve, o edita ou o lê pelo shell (ADR-0007) — mas, medido,
+> nem sempre nesses casos. **O que nela não pode falhar tem
 > guarda:** região, espelho de estado, tabela solta e o piso de cada um são impostos
 > por `node tools/contar-documentacao.mjs`, que `tests/repo/contagens.test.ts` leva ao
 > portão; o índice, o resumo e o tamanho das histórias do backlog, por

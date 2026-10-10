@@ -6,8 +6,9 @@ paths:
 # A partida na máquina do operador — `PD-06`
 
 > **Esta rule é orientação, e pode não carregar.** Ela entra em contexto quando
-> `Read`, `Edit` ou `Write` tocam arquivo do `paths:` — nunca pelo shell, e,
-> medido (ADR-0007), nem sempre nesses casos. **O que nela não pode falhar tem
+> o agente lê arquivo do `paths:` com `Read` e, conforme a versão do Claude Code,
+> também quando o escreve, o edita ou o lê pelo shell (ADR-0007) — mas, medido,
+> nem sempre nesses casos. **O que nela não pode falhar tem
 > guarda:** o disparo de `main()` por `pathToFileURL` é imposto por
 > `tests/http/partida.test.ts`, que cita esta rule ao reprovar. O resto só se
 > prova em Windows: `verify-windows.yml`, que não é obrigatório, e a máquina do
